@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-// SPDX-FileCopyrightText: Your Name <your@email.com>
+// SPDX-FileCopyrightText: Chen Asraf <contact@casraf.dev>
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-namespace OCA\NextcloudAppTemplate\Db;
+namespace OCA\Pantry\Db;
 
-use OCA\NextcloudAppTemplate\AppInfo\Application;
+use OCA\Pantry\AppInfo\Application;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\QueryBuilder\IQueryBuilder;

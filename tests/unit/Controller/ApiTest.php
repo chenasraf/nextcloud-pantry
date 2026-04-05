@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Controller;
 
-use OCA\NextcloudAppTemplate\AppInfo\Application;
-use OCA\NextcloudAppTemplate\Controller\ApiController;
+use OCA\Pantry\AppInfo\Application;
+use OCA\Pantry\Controller\ApiController;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\IRequest;

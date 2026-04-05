@@ -1,7 +1,7 @@
 {
     "openapi": "3.0.3",
     "info": {
-        "title": "nextcloudapptemplate",
+        "title": "pantry",
         "version": "0.0.1",
         "description": "Enter your app summary here.",
         "license": {
@@ -47,7 +47,7 @@
         }
     },
     "paths": {
-        "/ocs/v2.php/apps/nextcloudapptemplate/api/hello": {
+        "/ocs/v2.php/apps/pantry/api/hello": {
             "get": {
                 "operationId": "api-get-hello",
                 "summary": "GET /api/hello",

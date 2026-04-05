@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-// SPDX-FileCopyrightText: Your Name <your@email.com>
+// SPDX-FileCopyrightText: Chen Asraf <contact@casraf.dev>
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-namespace OCA\NextcloudAppTemplate\Controller;
+namespace OCA\Pantry\Controller;
 
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;

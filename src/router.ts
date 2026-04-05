@@ -4,7 +4,7 @@ import { generateUrl } from '@nextcloud/router'
 const routes: RouteRecordRaw[] = [{ path: '/', component: () => import('@/views/AppView.vue') }]
 
 const router = createRouter({
-  history: createWebHistory(generateUrl('/apps/nextcloudapptemplate')),
+  history: createWebHistory(generateUrl('/apps/pantry')),
   routes,
 })
 

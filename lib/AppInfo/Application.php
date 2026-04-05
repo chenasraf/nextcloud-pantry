@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-// SPDX-FileCopyrightText: Your Name <your@email.com>
+// SPDX-FileCopyrightText: Chen Asraf <contact@casraf.dev>
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-namespace OCA\NextcloudAppTemplate\AppInfo;
+namespace OCA\Pantry\AppInfo;
 
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -13,7 +13,7 @@ use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 class Application extends App implements IBootstrap {
-	public const APP_ID = 'nextcloudapptemplate';
+	public const APP_ID = 'pantry';
 	public const DIST_DIR = '../dist';
 	public const JS_DIR = self::DIST_DIR . '/js';
 	public const CSS_DIR = self::DIST_DIR . '/css';

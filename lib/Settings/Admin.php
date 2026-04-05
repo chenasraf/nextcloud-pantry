@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-// SPDX-FileCopyrightText: Your Name <your@email.com>
+// SPDX-FileCopyrightText: Chen Asraf <contact@casraf.dev>
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-namespace OCA\NextcloudAppTemplate\Settings;
+namespace OCA\Pantry\Settings;
 
-use OCA\NextcloudAppTemplate\AppInfo\Application;
+use OCA\Pantry\AppInfo\Application;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IAppConfig;
 use OCP\IL10N;

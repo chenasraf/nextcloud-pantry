@@ -71,8 +71,8 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nextcloudapptemplate.tar.gz
-          path: build/artifacts/appstore/nextcloudapptemplate.tar.gz
+          name: pantry.tar.gz
+          path: build/artifacts/appstore/pantry.tar.gz
 
   upload:
     runs-on: ubuntu-latest
@@ -86,18 +86,18 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: nextcloudapptemplate.tar.gz
+          name: pantry.tar.gz
 
       - name: Prepare Artifact Upload
-        run: test -f "$PWD/nextcloudapptemplate.tar.gz"
+        run: test -f "$PWD/pantry.tar.gz"
 
       - name: Upload to Release
         if: ${{ needs.release.outputs.release_created }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mv nextcloudapptemplate.tar.gz "nextcloudapptemplate-${{ needs.release.outputs.tag_name }}.tar.gz"
-          gh release upload ${{ needs.release.outputs.tag_name }} nextcloudapptemplate-${{ needs.release.outputs.tag_name }}.tar.gz
+          mv pantry.tar.gz "pantry-${{ needs.release.outputs.tag_name }}.tar.gz"
+          gh release upload ${{ needs.release.outputs.tag_name }} pantry-${{ needs.release.outputs.tag_name }}.tar.gz
 
   release-nextcloud:
     name: Release to Nextcloud Apps
@@ -115,7 +115,7 @@ jobs:
             echo "Private key not provided"
             exit 1
           fi
-          echo -n "${{ secrets.NEXTCLOUD_APP_PRIVATE_KEY }}" > ~/.nextcloud/certificates/nextcloudapptemplate.key
+          echo -n "${{ secrets.NEXTCLOUD_APP_PRIVATE_KEY }}" > ~/.nextcloud/certificates/pantry.key
 
       - name: Release to Nextcloud Apps
         if: ${{ needs.release.outputs.release_created }}

@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug or issue with the NextcloudAppTemplate app
+description: Report a bug or issue with the Pantry app
 labels: ["bug"]
 body:
   - type: markdown
@@ -59,8 +59,8 @@ body:
   - type: input
     id: app-version
     attributes:
-      label: NextcloudAppTemplate App Version
-      description: What version of the NextcloudAppTemplate app are you using?
+      label: Pantry App Version
+      description: What version of the Pantry app are you using?
       placeholder: e.g., 1.0.0
     validations:
       required: true
@@ -108,21 +108,21 @@ body:
       description: |
         **How to check migration status:**
 
-        This shows which database migrations have been executed for the NextcloudAppTemplate app.
+        This shows which database migrations have been executed for the Pantry app.
 
         **For Docker installations:**
         ```bash
-        docker exec --user www-data -i nextcloud-aio-nextcloud php occ migrations:status nextcloudapptemplate
+        docker exec --user www-data -i nextcloud-aio-nextcloud php occ migrations:status pantry
         ```
 
         **For standard installations:**
         ```bash
-        php occ migrations:status nextcloudapptemplate
+        php occ migrations:status pantry
         ```
 
         Or from the Nextcloud directory:
         ```bash
-        sudo -u www-data php occ migrations:status nextcloudapptemplate
+        sudo -u www-data php occ migrations:status pantry
         ```
       placeholder: Paste the migration status output here...
       render: shell
@@ -134,25 +134,25 @@ body:
       description: |
         **How to get server logs:**
 
-        Look for errors related to the NextcloudAppTemplate app (last 20-50 lines recommended).
+        Look for errors related to the Pantry app (last 20-50 lines recommended).
 
         **Via Web UI:**
         - Go to Nextcloud Settings → Administration → Logging (or `/settings/admin/logging`)
-        - Look for entries containing "nextcloudapptemplate"
+        - Look for entries containing "pantry"
 
         **For Docker installations:**
         ```bash
-        docker exec --user www-data -i nextcloud-aio-nextcloud tail -100 /var/www/html/data/nextcloud.log | grep -i nextcloudapptemplate
+        docker exec --user www-data -i nextcloud-aio-nextcloud tail -100 /var/www/html/data/nextcloud.log | grep -i pantry
         ```
 
         **For standard installations:**
         ```bash
-        tail -100 /path/to/nextcloud/data/nextcloud.log | grep -i nextcloudapptemplate
+        tail -100 /path/to/nextcloud/data/nextcloud.log | grep -i pantry
         ```
 
         Or from the Nextcloud directory:
         ```bash
-        sudo -u www-data tail -100 data/nextcloud.log | grep -i nextcloudapptemplate
+        sudo -u www-data tail -100 data/nextcloud.log | grep -i pantry
         ```
       placeholder: Paste Nextcloud server logs here...
       render: shell
@@ -166,7 +166,7 @@ body:
         1. Open the page where the issue occurs
         2. Press **F12** (or right-click → Inspect → Console tab)
         3. Look for red error messages
-        4. Copy any errors related to the NextcloudAppTemplate app
+        4. Copy any errors related to the Pantry app
 
         **Tip:** You can right-click on an error and select "Copy message" or "Copy stack trace"
       placeholder: Paste browser console errors here...
@@ -184,13 +184,13 @@ body:
         4. Look for failed requests (shown in red or with 4xx/5xx status codes)
         5. Click on the failed request
         6. Copy the following information:
-           - **Request URL** (e.g., `/apps/nextcloudapptemplate/api/...`)
+           - **Request URL** (e.g., `/apps/pantry/api/...`)
            - **Status Code** (e.g., 500, 404, 403)
            - **Response** tab content (the error message/data returned)
 
         **Example format:**
         ```
-        Request: POST /apps/nextcloudapptemplate/api/...
+        Request: POST /apps/pantry/api/...
         Status: 500 Internal Server Error
         Response: {"error": "Database connection failed"}
         ```

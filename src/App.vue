@@ -1,5 +1,5 @@
 <template>
-  <NcContent app-name="nextcloudapptemplate">
+  <NcContent app-name="pantry">
     <!-- Left sidebar -->
     <NcAppNavigation>
       <template #search>
@@ -98,21 +98,21 @@ export default {
       searchValue: '',
       isRouterLoading: false,
       // Mount path for this app section; adjust to your mount.
-      basePath: '/apps/nextcloudapptemplate',
+      basePath: '/apps/pantry',
       strings: {
-        title: t('nextcloudapptemplate', 'Hello World — App'),
+        title: t('pantry', 'Hello World — App'),
         subtitle: t(
-          'nextcloudapptemplate',
+          'pantry',
           'Use the sidebar to navigate between views. Backend calls use {cStart}axios{cEnd} and OCS responses.',
           { cStart: '<code>', cEnd: '</code>' },
           undefined,
           { escape: false },
         ),
-        searchLabel: t('nextcloudapptemplate', 'Search'),
-        searchPlaceholder: t('nextcloudapptemplate', 'Type to filter…'),
-        navHome: t('nextcloudapptemplate', 'Home'),
-        navExamples: t('nextcloudapptemplate', 'Examples'),
-        navAbout: t('nextcloudapptemplate', 'About'),
+        searchLabel: t('pantry', 'Search'),
+        searchPlaceholder: t('pantry', 'Type to filter…'),
+        navHome: t('pantry', 'Home'),
+        navExamples: t('pantry', 'Examples'),
+        navAbout: t('pantry', 'About'),
       },
       _removeBeforeEach: null,
       _removeAfterEach: null,

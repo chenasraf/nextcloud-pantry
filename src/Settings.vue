@@ -1,5 +1,5 @@
 <template>
-  <div id="nextcloudapptemplate-content" class="section">
+  <div id="pantry-content" class="section">
     <h2>{{ strings.title }}</h2>
 
     <!-- Information / quick start -->
@@ -161,10 +161,10 @@ export default {
       // Example: select with label <-> value mapping (like your intervals)
       themeLabel: null,
       themeOptions: [
-        { label: t('nextcloudapptemplate', 'Light'), value: 'light' },
-        { label: t('nextcloudapptemplate', 'Dark'), value: 'dark' },
+        { label: t('pantry', 'Light'), value: 'light' },
+        { label: t('pantry', 'Dark'), value: 'dark' },
         {
-          label: n('nextcloudapptemplate', 'System (1 option)', 'System (%n options)', 2),
+          label: n('pantry', 'System (1 option)', 'System (%n options)', 2),
           value: 'system',
         },
       ],
@@ -183,15 +183,15 @@ export default {
       // All user-visible strings go here
       strings: {
         // Titles / headers
-        title: t('nextcloudapptemplate', 'Hello World — App Template'),
-        infoTitle: t('nextcloudapptemplate', 'Information'),
-        examplesHeader: t('nextcloudapptemplate', 'Quick Examples'),
-        itemsHeader: t('nextcloudapptemplate', 'Editable List'),
-        backendHeader: t('nextcloudapptemplate', 'Backend Calls'),
+        title: t('pantry', 'Hello World — App Template'),
+        infoTitle: t('pantry', 'Information'),
+        examplesHeader: t('pantry', 'Quick Examples'),
+        itemsHeader: t('pantry', 'Editable List'),
+        backendHeader: t('pantry', 'Backend Calls'),
 
         // Info
         infoIntro: t(
-          'nextcloudapptemplate',
+          'pantry',
           'This view shows {bStart}small, focused examples{bEnd} for inputs, lists, selections, and backend calls.',
           { bStart: '<b>', bEnd: '</b>' },
           undefined,
@@ -200,21 +200,21 @@ export default {
 
         gettingStartedList: [
           t(
-            'nextcloudapptemplate',
+            'pantry',
             'Import UI parts from {cStart}@nextcloud/vue{cEnd} and wire them with {cStart}v-model{cEnd}.',
             { cStart: '<code>', cEnd: '</code>' },
             undefined,
             { escape: false },
           ),
           t(
-            'nextcloudapptemplate',
+            'pantry',
             'Use {cStart}axios{cEnd} for API calls; return OCS data as needed.',
             { cStart: '<code>', cEnd: '</code>' },
             undefined,
             { escape: false },
           ),
           t(
-            'nextcloudapptemplate',
+            'pantry',
             'Keep user-facing text in a central {cStart}strings{cEnd} object with {cStart}t/n{cEnd}.',
             { cStart: '<code>', cEnd: '</code>' },
             undefined,
@@ -223,7 +223,7 @@ export default {
         ],
 
         tipsNote: t(
-          'nextcloudapptemplate',
+          'pantry',
           'Pro tip: keep labels in {cStart}label{cEnd} and values in {cStart}value{cEnd} to simplify mapping.',
           { cStart: '<code>', cEnd: '</code>' },
           undefined,
@@ -231,40 +231,40 @@ export default {
         ),
 
         // Name example
-        nameInputHeader: t('nextcloudapptemplate', 'Your Name'),
-        nameInputLabel: t('nextcloudapptemplate', 'Name'),
-        nameInputPlaceholder: t('nextcloudapptemplate', 'e.g. Ada Lovelace'),
-        livePreview: t('nextcloudapptemplate', 'Live preview:'),
+        nameInputHeader: t('pantry', 'Chen Asraf'),
+        nameInputLabel: t('pantry', 'Name'),
+        nameInputPlaceholder: t('pantry', 'e.g. Ada Lovelace'),
+        livePreview: t('pantry', 'Live preview:'),
 
         // Theme example
-        themeHeader: t('nextcloudapptemplate', 'Theme'),
-        themeLabel: t('nextcloudapptemplate', 'Choose a theme'),
-        themePreview: t('nextcloudapptemplate', 'Active value:'),
+        themeHeader: t('pantry', 'Theme'),
+        themeLabel: t('pantry', 'Choose a theme'),
+        themePreview: t('pantry', 'Active value:'),
 
         // Counter example
-        counterHeader: t('nextcloudapptemplate', 'Counter'),
-        plus: t('nextcloudapptemplate', '+1'),
-        minus: t('nextcloudapptemplate', '-1'),
+        counterHeader: t('pantry', 'Counter'),
+        plus: t('pantry', '+1'),
+        minus: t('pantry', '-1'),
 
         // Items table
-        newItemLabel: t('nextcloudapptemplate', 'New item'),
-        newItemPlaceholder: t('nextcloudapptemplate', 'e.g. Hello item'),
-        add: t('nextcloudapptemplate', 'Add'),
-        clear: t('nextcloudapptemplate', 'Clear'),
-        tableItem: t('nextcloudapptemplate', 'Item'),
-        tableActions: t('nextcloudapptemplate', 'Actions'),
-        editItemAria: t('nextcloudapptemplate', 'Edit item'),
-        duplicate: t('nextcloudapptemplate', 'Duplicate'),
-        remove: t('nextcloudapptemplate', 'Remove'),
-        noItems: t('nextcloudapptemplate', 'No items yet'),
+        newItemLabel: t('pantry', 'New item'),
+        newItemPlaceholder: t('pantry', 'e.g. Hello item'),
+        add: t('pantry', 'Add'),
+        clear: t('pantry', 'Clear'),
+        tableItem: t('pantry', 'Item'),
+        tableActions: t('pantry', 'Actions'),
+        editItemAria: t('pantry', 'Edit item'),
+        duplicate: t('pantry', 'Duplicate'),
+        remove: t('pantry', 'Remove'),
+        noItems: t('pantry', 'No items yet'),
 
         // Backend
-        fetchHello: t('nextcloudapptemplate', 'Fetch Hello'),
-        save: t('nextcloudapptemplate', 'Save'),
-        loading: t('nextcloudapptemplate', 'Loading…'),
-        lastHelloAt: t('nextcloudapptemplate', 'Last hello at:'),
-        never: t('nextcloudapptemplate', 'Never'),
-        serverSaid: t('nextcloudapptemplate', 'Server said:'),
+        fetchHello: t('pantry', 'Fetch Hello'),
+        save: t('pantry', 'Save'),
+        loading: t('pantry', 'Loading…'),
+        lastHelloAt: t('pantry', 'Last hello at:'),
+        never: t('pantry', 'Never'),
+        serverSaid: t('pantry', 'Server said:'),
       },
     }
   },
@@ -359,7 +359,7 @@ function cryptoRandom() {
 </script>
 
 <style scoped lang="scss">
-#nextcloudapptemplate-content {
+#pantry-content {
   h2:first-child {
     margin-top: 0;
   }

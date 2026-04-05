@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-// SPDX-FileCopyrightText: Your Name <your@email.com>
+// SPDX-FileCopyrightText: Chen Asraf <contact@casraf.dev>
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-namespace OCA\NextcloudAppTemplate\Sections;
+namespace OCA\Pantry\Sections;
 
-use OCA\NextcloudAppTemplate\AppInfo;
+use OCA\Pantry\AppInfo;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Settings\IIconSection;
@@ -30,7 +30,7 @@ class Admin implements IIconSection {
 	}
 
 	public function getName(): string {
-		return $this->l->t('Nextcloud App Template');
+		return $this->l->t('Pantry');
 	}
 
 	public function getPriority(): int {

@@ -1,9 +1,9 @@
 <!--
-SPDX-FileCopyrightText: Your Name <your@email.com>
+SPDX-FileCopyrightText: Chen Asraf <contact@casraf.dev>
 SPDX-License-Identifier: CC0-1.0
 -->
 
-# Nextcloud App Template
+# Pantry
 
 This is a starter template for a Nextcloud app, using Vue 3 with Vite as frontend.
 

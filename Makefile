@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Bernhard Posselt <dev@bernhard-posselt.com>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# NextcloudAppTemplate — Makefile
+# Pantry — Makefile
 # ---------------------------------
 # A friendly, batteries-included Makefile for building and packaging a Nextcloud app
 # that uses pnpm (JS) and Composer (PHP).
@@ -26,8 +26,8 @@
 #   make release   → upload release to Nextcloud App Store
 #
 
-app_name=nextcloudapptemplate
-repo_path=your-user/nextcloud-$(app_name)
+app_name=pantry
+repo_path=chenasraf/nextcloud-$(app_name)
 build_tools_directory=$(CURDIR)/build/tools
 source_build_directory=$(CURDIR)/build/artifacts/source
 source_intermediate_directory=$(CURDIR)/build/artifacts/intermediate-source/$(app_name)

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\NextcloudAppTemplate\Controller;
+namespace OCA\Pantry\Controller;
 
-use OCA\NextcloudAppTemplate\AppInfo\Application;
+use OCA\Pantry\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;

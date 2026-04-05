@@ -25,7 +25,7 @@ if ($nextcloudBootstrap && file_exists($nextcloudBootstrap)) {
 	}
 	require_once $nextcloudBootstrap;
 	require_once __DIR__ . '/../vendor/autoload.php';
-	\OC_App::loadApp(OCA\NextcloudAppTemplate\AppInfo\Application::APP_ID);
+	\OC_App::loadApp(OCA\Pantry\AppInfo\Application::APP_ID);
 	OC_Hook::clear();
 } else {
 	// Cannot find Nextcloud bootstrap

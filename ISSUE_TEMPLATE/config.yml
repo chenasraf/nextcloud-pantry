@@ -4,5 +4,5 @@ contact_links:
     url: https://help.nextcloud.com
     about: Ask questions and get help from the Nextcloud community
   - name: Security Issue
-    url: https://github.com/chenasraf/nextcloud-nextcloudapptemplate/security/advisories/new
+    url: https://github.com/chenasraf/nextcloud-pantry/security/advisories/new
     about: Report a security vulnerability privately

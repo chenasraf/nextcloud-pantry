@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or enhancement for the NextcloudAppTemplate app
+description: Suggest a new feature or enhancement for the Pantry app
 labels: ["enhancement"]
 body:
   - type: markdown

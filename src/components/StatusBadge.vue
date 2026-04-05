@@ -69,10 +69,10 @@ export default defineComponent({
     },
     tooltipText(): string {
       const statusLabels: Record<StatusType, string> = {
-        success: t('nextcloudapptemplate', 'Completed successfully'),
-        warning: t('nextcloudapptemplate', 'Completed with warnings'),
-        pending: t('nextcloudapptemplate', 'In progress'),
-        error: t('nextcloudapptemplate', 'Failed'),
+        success: t('pantry', 'Completed successfully'),
+        warning: t('pantry', 'Completed with warnings'),
+        pending: t('pantry', 'In progress'),
+        error: t('pantry', 'Failed'),
       }
       return statusLabels[this.status] || ''
     },
