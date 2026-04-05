@@ -25,7 +25,7 @@
     "@nextcloud/l10n": "^3.4.1",
     "@nextcloud/router": "^3.1.0",
     "@nextcloud/vite-config": "^2.5.2",
-    "@nextcloud/vue": "^9.5.0",
+    "@nextcloud/vue": "^9.6.0",
     "date-fns": "^4.1.0",
     "linkifyjs": "^4.3.2",
     "vue": "^3.5.28",
