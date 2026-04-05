@@ -37,12 +37,13 @@ class ShoppingListServiceTest extends TestCase {
 		$item = new ShoppingListItem();
 		$item->setListId($overrides['listId'] ?? 1);
 		$item->setName($overrides['name'] ?? 'Milk');
-		$item->setCategory($overrides['category'] ?? null);
+		$item->setCategoryId($overrides['categoryId'] ?? null);
 		$item->setQuantity($overrides['quantity'] ?? null);
 		$item->setBought($overrides['bought'] ?? false);
 		$item->setBoughtAt($overrides['boughtAt'] ?? null);
 		$item->setBoughtBy($overrides['boughtBy'] ?? null);
 		$item->setRrule($overrides['rrule'] ?? null);
+		$item->setRepeatFromCompletion($overrides['repeatFromCompletion'] ?? false);
 		$item->setNextDueAt($overrides['nextDueAt'] ?? null);
 		$item->setSortOrder($overrides['sortOrder'] ?? 0);
 		$item->setCreatedAt($overrides['createdAt'] ?? 0);
@@ -95,16 +96,38 @@ class ShoppingListServiceTest extends TestCase {
 		$this->assertNull($toggled->getNextDueAt());
 	}
 
-	public function testToggleItemOnRecurringComputesNextDue(): void {
+	public function testToggleItemFromCompletionModeComputesNextDueFromNow(): void {
 		$now = 1_700_000_000; // 2023-11-14 22:13:20 UTC
-		$item = $this->makeItem(['rrule' => 'FREQ=WEEKLY']);
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=WEEKLY',
+			'repeatFromCompletion' => true,
+			'createdAt' => $now - 86400 * 30, // irrelevant in this mode
+		]);
 		$this->itemMapper->method('findById')->willReturn($item);
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
 		$this->assertTrue($toggled->getBought());
-		$this->assertNotNull($toggled->getNextDueAt());
 		$this->assertSame($now + 7 * 86400, $toggled->getNextDueAt());
+	}
+
+	public function testToggleItemFixedScheduleModeComputesFromCreatedAtAnchor(): void {
+		// createdAt is a Monday at 00:00 UTC, and we tick off on the following Wednesday.
+		$anchor = strtotime('2026-04-06 00:00:00 UTC'); // Monday
+		$now = strtotime('2026-04-08 10:00:00 UTC');    // Wednesday
+		$expected = strtotime('2026-04-13 00:00:00 UTC'); // next Monday
+
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=WEEKLY',
+			'repeatFromCompletion' => false,
+			'createdAt' => $anchor,
+		]);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
+
+		$toggled = $this->svc->toggleItem(42, 'alice', $now);
+		$this->assertTrue($toggled->getBought());
+		$this->assertSame($expected, $toggled->getNextDueAt());
 	}
 
 	public function testToggleItemCheckingOffClearsEverything(): void {

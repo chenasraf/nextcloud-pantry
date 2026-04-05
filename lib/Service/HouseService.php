@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
+use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\HouseMember;
@@ -25,6 +26,7 @@ class HouseService {
 		private HouseMemberMapper $memberMapper,
 		private ShoppingListMapper $listMapper,
 		private ShoppingListItemMapper $itemMapper,
+		private CategoryMapper $categoryMapper,
 		private IDBConnection $db,
 		private IUserManager $userManager,
 	) {
@@ -107,6 +109,7 @@ class HouseService {
 				$this->itemMapper->deleteByList((int)$list->getId());
 			}
 			$this->listMapper->deleteByHouse($houseId);
+			$this->categoryMapper->deleteByHouse($houseId);
 			$this->memberMapper->deleteByHouse($houseId);
 			$this->houseMapper->delete($house);
 			$this->db->commit();

@@ -43,9 +43,10 @@ export async function listItems(houseId: number, listId: number): Promise<Shoppi
 
 export interface ItemInput {
   name: string
-  category?: string | null
+  categoryId?: number | null
   quantity?: string | null
   rrule?: string | null
+  repeatFromCompletion?: boolean
   sortOrder?: number
 }
 

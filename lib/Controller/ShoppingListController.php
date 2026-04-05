@@ -10,6 +10,7 @@ namespace OCA\Pantry\Controller;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
+use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\ShoppingListService;
 use OCP\AppFramework\Http;
@@ -32,6 +33,7 @@ final class ShoppingListController extends OCSController {
 		string $appName,
 		IRequest $request,
 		private ShoppingListService $lists,
+		private CategoryService $categories,
 		private HouseAuthService $auth,
 		private IUserSession $userSession,
 	) {
@@ -194,9 +196,10 @@ final class ShoppingListController extends OCSController {
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
 	 * @param string $name Item name.
-	 * @param string|null $category Optional category label.
+	 * @param int|null $categoryId Optional category id (must belong to the same house).
 	 * @param string|null $quantity Optional quantity string.
 	 * @param string|null $rrule Optional RFC 5545 RRULE for recurrence.
+	 * @param bool $repeatFromCompletion If true, the next occurrence is measured from when the item is marked bought; if false, the schedule is anchored at item creation.
 	 * @param int|null $sortOrder Optional sort order.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
@@ -209,20 +212,25 @@ final class ShoppingListController extends OCSController {
 		int $houseId,
 		int $listId,
 		string $name,
-		?string $category = null,
+		?int $categoryId = null,
 		?string $quantity = null,
 		?string $rrule = null,
+		bool $repeatFromCompletion = false,
 		?int $sortOrder = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $category, $quantity, $rrule, $sortOrder): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $categoryId, $quantity, $rrule, $repeatFromCompletion, $sortOrder): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$list = $this->lists->getList($listId);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($categoryId !== null) {
+				$this->categories->assertInHouse($categoryId, $houseId);
+			}
 			$item = $this->lists->addItem($listId, [
 				'name' => $name,
-				'category' => $category,
+				'categoryId' => $categoryId,
 				'quantity' => $quantity,
 				'rrule' => $rrule,
+				'repeatFromCompletion' => $repeatFromCompletion,
 				'sortOrder' => $sortOrder ?? 0,
 			]);
 			return new DataResponse($item->jsonSerialize());
@@ -236,9 +244,10 @@ final class ShoppingListController extends OCSController {
 	 * @param int $listId List id.
 	 * @param int $itemId Item id.
 	 * @param string|null $name New name.
-	 * @param string|null $category New category (empty string clears).
+	 * @param int|null $categoryId New category id (0 or negative clears).
 	 * @param string|null $quantity New quantity (empty string clears).
 	 * @param string|null $rrule New RRULE (empty string clears).
+	 * @param bool|null $repeatFromCompletion New recurrence anchor mode.
 	 * @param int|null $sortOrder New sort order.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
@@ -252,12 +261,13 @@ final class ShoppingListController extends OCSController {
 		int $listId,
 		int $itemId,
 		?string $name = null,
-		?string $category = null,
+		?int $categoryId = null,
 		?string $quantity = null,
 		?string $rrule = null,
+		?bool $repeatFromCompletion = null,
 		?int $sortOrder = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $category, $quantity, $rrule, $sortOrder): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $categoryId, $quantity, $rrule, $repeatFromCompletion, $sortOrder): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$item = $this->lists->getItem($itemId);
 			$list = $this->lists->getList($item->getListId());
@@ -269,14 +279,22 @@ final class ShoppingListController extends OCSController {
 			if ($name !== null) {
 				$patch['name'] = $name;
 			}
-			if ($category !== null) {
-				$patch['category'] = $category;
+			if ($categoryId !== null) {
+				if ($categoryId > 0) {
+					$this->categories->assertInHouse($categoryId, $houseId);
+					$patch['categoryId'] = $categoryId;
+				} else {
+					$patch['categoryId'] = null;
+				}
 			}
 			if ($quantity !== null) {
 				$patch['quantity'] = $quantity;
 			}
 			if ($rrule !== null) {
 				$patch['rrule'] = $rrule;
+			}
+			if ($repeatFromCompletion !== null) {
+				$patch['repeatFromCompletion'] = $repeatFromCompletion;
 			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;

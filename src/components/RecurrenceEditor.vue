@@ -118,6 +118,16 @@
 
       <hr class="pantry-recurrence__divider" />
 
+      <!-- Anchor mode toggle -->
+      <section class="pantry-recurrence__section">
+        <NcCheckboxRadioSwitch v-model="fromCompletionLocal" type="switch">
+          {{ strings.fromCompletionLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="pantry-recurrence__hint">{{ fromCompletionHint }}</p>
+      </section>
+
+      <hr class="pantry-recurrence__divider" />
+
       <section class="pantry-recurrence__section">
         <p class="pantry-recurrence__summary">
           <RepeatIcon :size="16" />
@@ -144,6 +154,7 @@ import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import RepeatIcon from '@icons/Repeat.vue'
 import { Frequency, RRule, Weekday } from 'rrule'
 
@@ -158,11 +169,18 @@ interface FreqOption {
 }
 
 // ---------- Props / emits ----------
-const props = defineProps<{ open: boolean; modelValue: string | null }>()
+const props = defineProps<{
+  open: boolean
+  modelValue: string | null
+  fromCompletion?: boolean
+}>()
 const emit = defineEmits<{
   (e: 'update:open', v: boolean): void
   (e: 'update:modelValue', v: string | null): void
+  (e: 'update:fromCompletion', v: boolean): void
 }>()
+
+const fromCompletionLocal = ref<boolean>(!!props.fromCompletion)
 
 // ---------- Form state ----------
 const frequencyOptions = computed<FreqOption[]>(() => [
@@ -400,9 +418,24 @@ const summaryText = computed<string>(() => {
 watch(
   () => props.open,
   (isOpen) => {
-    if (isOpen) loadFromRrule(props.modelValue)
+    if (isOpen) {
+      loadFromRrule(props.modelValue)
+      fromCompletionLocal.value = !!props.fromCompletion
+    }
   },
   { immediate: true },
+)
+
+const fromCompletionHint = computed<string>(() =>
+  fromCompletionLocal.value
+    ? t(
+        'pantry',
+        'The next occurrence is counted from the moment you tick the item off, so it always comes back a full interval after it was bought.',
+      )
+    : t(
+        'pantry',
+        'The schedule is fixed: the item reappears on its next scheduled occurrence, regardless of when you tick it off.',
+      ),
 )
 
 // ---------- Submit / clear ----------
@@ -410,6 +443,7 @@ function submit(): void {
   try {
     const raw = buildRrule()
     emit('update:modelValue', raw)
+    emit('update:fromCompletion', fromCompletionLocal.value)
     emit('update:open', false)
   } catch (e) {
     error.value = (e as Error).message || t('pantry', 'Invalid recurrence rule.')
@@ -418,6 +452,7 @@ function submit(): void {
 
 function clear(): void {
   emit('update:modelValue', null)
+  emit('update:fromCompletion', false)
   emit('update:open', false)
 }
 
@@ -434,6 +469,7 @@ const strings = {
   endAfter: t('pantry', 'After'),
   endAfterSuffix: t('pantry', 'occurrences'),
   endOn: t('pantry', 'On date'),
+  fromCompletionLabel: t('pantry', 'Count interval from when the item is ticked off'),
   summaryLabel: t('pantry', 'Summary:'),
   cancel: t('pantry', 'Cancel'),
   save: t('pantry', 'Save'),

@@ -9,6 +9,7 @@
         <NcAppNavigationItem
           :name="strings.lists"
           :to="{ name: 'lists', params: { houseId: String(currentHouseId) } }"
+          :active="isNavActive(['lists', 'list-detail', 'list-'])"
         >
           <template #icon>
             <CartIcon :size="20" />
@@ -18,6 +19,7 @@
         <NcAppNavigationItem
           :name="strings.photos"
           :to="{ name: 'photos', params: { houseId: String(currentHouseId) } }"
+          :active="isNavActive(['photos', 'photo-'])"
         >
           <template #icon>
             <ImageIcon :size="20" />
@@ -27,6 +29,7 @@
         <NcAppNavigationItem
           :name="strings.notes"
           :to="{ name: 'notes', params: { houseId: String(currentHouseId) } }"
+          :active="isNavActive(['notes', 'note-'])"
         >
           <template #icon>
             <NoteIcon :size="20" />
@@ -36,6 +39,7 @@
         <NcAppNavigationItem
           :name="strings.members"
           :to="{ name: 'members', params: { houseId: String(currentHouseId) } }"
+          :active="isNavActive(['members', 'member-'])"
         >
           <template #icon>
             <AccountGroupIcon :size="20" />
@@ -46,6 +50,7 @@
           v-if="canAdmin"
           :name="strings.houseSettings"
           :to="{ name: 'house-settings', params: { houseId: String(currentHouseId) } }"
+          :active="isNavActive(['house-settings'])"
         >
           <template #icon>
             <CogIcon :size="20" />
@@ -168,6 +173,17 @@ const currentHouseId = computed<number | null>(() => {
 const house = computed(() =>
   currentHouseId.value !== null ? findById(currentHouseId.value) : undefined,
 )
+/**
+ * Prefix-based route matcher for sidebar items. An item is active when the
+ * current route name equals any of the given prefixes, or starts with one of
+ * them (so sub-pages like `list-detail` highlight their parent `lists` item).
+ */
+function isNavActive(prefixes: string[]): boolean {
+  const name = typeof route.name === 'string' ? route.name : ''
+  if (!name) return false
+  return prefixes.some((p) => name === p || name.startsWith(p))
+}
+
 const canAdmin = computed(() => {
   const role = house.value?.role
   return role === 'owner' || role === 'admin'

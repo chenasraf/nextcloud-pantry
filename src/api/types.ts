@@ -29,16 +29,28 @@ export interface ShoppingList {
   updatedAt: number
 }
 
+export interface Category {
+  id: number
+  houseId: number
+  name: string
+  icon: string
+  color: string
+  sortOrder: number
+  createdAt: number
+  updatedAt: number
+}
+
 export interface ShoppingListItem {
   id: number
   listId: number
   name: string
-  category: string | null
+  categoryId: number | null
   quantity: string | null
   bought: boolean
   boughtAt: number | null
   boughtBy: string | null
   rrule: string | null
+  repeatFromCompletion: boolean
   nextDueAt: number | null
   sortOrder: number
   createdAt: number

@@ -137,12 +137,13 @@ class ShoppingListService {
 		$item = new ShoppingListItem();
 		$item->setListId($listId);
 		$item->setName($name);
-		$item->setCategory($this->strOrNull($data['category'] ?? null));
+		$item->setCategoryId($this->intOrNull($data['categoryId'] ?? null));
 		$item->setQuantity($this->strOrNull($data['quantity'] ?? null));
 		$item->setBought(false);
 		$item->setBoughtAt(null);
 		$item->setBoughtBy(null);
 		$item->setRrule($rrule);
+		$item->setRepeatFromCompletion(!empty($data['repeatFromCompletion']));
 		$item->setNextDueAt(null);
 		$item->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : 0);
 		$item->setCreatedAt($now);
@@ -162,8 +163,8 @@ class ShoppingListService {
 			}
 			$item->setName($name);
 		}
-		if (array_key_exists('category', $patch)) {
-			$item->setCategory($this->strOrNull($patch['category']));
+		if (array_key_exists('categoryId', $patch)) {
+			$item->setCategoryId($this->intOrNull($patch['categoryId']));
 		}
 		if (array_key_exists('quantity', $patch)) {
 			$item->setQuantity($this->strOrNull($patch['quantity']));
@@ -180,12 +181,15 @@ class ShoppingListService {
 				$rrule = trim((string)$rrule);
 				$this->recurrence->validate($rrule);
 				$item->setRrule($rrule);
-				// If already bought, recompute next due from now.
-				if ($item->getBought()) {
-					$next = $this->recurrence->computeNextOccurrence($rrule, new \DateTimeImmutable('@' . time()));
-					$item->setNextDueAt($next?->getTimestamp());
-				}
 			}
+		}
+		if (array_key_exists('repeatFromCompletion', $patch)) {
+			$item->setRepeatFromCompletion((bool)$patch['repeatFromCompletion']);
+		}
+		// If already bought and rrule or mode changed, recompute next due.
+		if ($item->getBought() && $item->getRrule() !== null
+			&& (array_key_exists('rrule', $patch) || array_key_exists('repeatFromCompletion', $patch))) {
+			$item->setNextDueAt($this->computeNextDueAt($item, time())?->getTimestamp());
 		}
 		if (isset($patch['sortOrder'])) {
 			$item->setSortOrder((int)$patch['sortOrder']);
@@ -205,11 +209,7 @@ class ShoppingListService {
 			$item->setBoughtAt($now);
 			$item->setBoughtBy($uid);
 			if ($item->getRrule() !== null) {
-				$next = $this->recurrence->computeNextOccurrence(
-					$item->getRrule(),
-					(new \DateTimeImmutable())->setTimestamp($now),
-				);
-				$item->setNextDueAt($next?->getTimestamp());
+				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 			}
 		} else {
 			$item->setBought(false);
@@ -220,6 +220,26 @@ class ShoppingListService {
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
 		return $item;
+	}
+
+	/**
+	 * Compute the next due time for an item that was just marked bought.
+	 *
+	 * - "from completion" mode: interval counts from now — next occurrence = now + one step.
+	 * - "fixed schedule" mode: the schedule is anchored at the item's creation time; next
+	 *   occurrence is the first one strictly after now on that anchored series.
+	 */
+	private function computeNextDueAt(ShoppingListItem $item, int $now): ?\DateTimeImmutable {
+		$rrule = $item->getRrule();
+		if ($rrule === null) {
+			return null;
+		}
+		$nowDt = (new \DateTimeImmutable())->setTimestamp($now);
+		if ($item->getRepeatFromCompletion()) {
+			return $this->recurrence->computeNextOccurrence($rrule, $nowDt);
+		}
+		$anchor = (new \DateTimeImmutable())->setTimestamp($item->getCreatedAt() ?: $now);
+		return $this->recurrence->nextOccurrenceAfter($rrule, $anchor, $nowDt);
 	}
 
 	public function deleteItem(int $itemId): void {
@@ -233,5 +253,21 @@ class ShoppingListService {
 		}
 		$t = trim($v);
 		return $t === '' ? null : $t;
+	}
+
+	private function intOrNull(mixed $v): ?int {
+		if ($v === null || $v === '' || $v === false) {
+			return null;
+		}
+		if (is_int($v)) {
+			return $v;
+		}
+		if (is_string($v) && ctype_digit($v)) {
+			return (int)$v;
+		}
+		if (is_numeric($v)) {
+			return (int)$v;
+		}
+		return null;
 	}
 }

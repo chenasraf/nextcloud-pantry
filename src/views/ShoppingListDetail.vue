@@ -25,10 +25,10 @@
         :label="strings.quantityLabel"
         :placeholder="strings.quantityPlaceholder"
       />
-      <NcTextField
-        v-model="newCategory"
+      <CategoryPicker
+        v-model="newCategoryId"
+        :house-id="houseIdNum"
         :label="strings.categoryLabel"
-        :placeholder="strings.categoryPlaceholder"
       />
       <NcButton variant="tertiary" @click="showRecurrenceEditor = true">
         <template #icon>
@@ -73,7 +73,14 @@
         </NcCheckboxRadioSwitch>
         <div class="pantry-item__meta">
           <span v-if="item.quantity" class="pantry-item__quantity">{{ item.quantity }}</span>
-          <span v-if="item.category" class="pantry-item__category">{{ item.category }}</span>
+          <span
+            v-if="categoryFor(item.categoryId)"
+            class="pantry-item__category"
+            :style="{ color: categoryFor(item.categoryId)!.color }"
+          >
+            <component :is="categoryIconComponent(categoryFor(item.categoryId)!.icon)" :size="14" />
+            {{ categoryFor(item.categoryId)!.name }}
+          </span>
           <span v-if="item.rrule" class="pantry-item__recurrence" :title="item.rrule">
             <RepeatIcon :size="14" />
             {{ formatRrule(item.rrule) }}
@@ -93,7 +100,11 @@
       </li>
     </ul>
 
-    <RecurrenceEditor v-model:open="showRecurrenceEditor" v-model="newRrule" />
+    <RecurrenceEditor
+      v-model:open="showRecurrenceEditor"
+      v-model="newRrule"
+      v-model:from-completion="newRepeatFromCompletion"
+    />
   </div>
 </template>
 
@@ -111,7 +122,10 @@ import DeleteIcon from '@icons/Delete.vue'
 import RepeatIcon from '@icons/Repeat.vue'
 import CartIcon from '@icons/Cart.vue'
 import RecurrenceEditor from '@/components/RecurrenceEditor.vue'
+import CategoryPicker from '@/components/CategoryPicker.vue'
+import { categoryIconComponent } from '@/components/categoryIcons'
 import { useShoppingListItems } from '@/composables/useShoppingList'
+import { useCategories } from '@/composables/useCategories'
 import { getList } from '@/api/lists'
 import type { ShoppingList } from '@/api/types'
 import { RRule } from 'rrule'
@@ -126,11 +140,17 @@ const { items, loading, load, add, toggle, remove } = useShoppingListItems(
   houseIdNum.value,
   listIdNum.value,
 )
+const categories = useCategories(houseIdNum.value)
+
+function categoryFor(id: number | null) {
+  return categories.findById(id) ?? null
+}
 
 const newName = ref('')
 const newQuantity = ref('')
-const newCategory = ref('')
+const newCategoryId = ref<number | null>(null)
 const newRrule = ref<string | null>(null)
+const newRepeatFromCompletion = ref<boolean>(false)
 const adding = ref(false)
 const showRecurrenceEditor = ref(false)
 
@@ -139,7 +159,7 @@ async function loadList() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadList(), load()])
+  await Promise.all([loadList(), load(), categories.load()])
 })
 
 watch(
@@ -165,13 +185,15 @@ async function submitAdd() {
     await add({
       name,
       quantity: newQuantity.value.trim() || null,
-      category: newCategory.value.trim() || null,
+      categoryId: newCategoryId.value,
       rrule: newRrule.value,
+      repeatFromCompletion: newRepeatFromCompletion.value,
     })
     newName.value = ''
     newQuantity.value = ''
-    newCategory.value = ''
+    newCategoryId.value = null
     newRrule.value = null
+    newRepeatFromCompletion.value = false
   } finally {
     adding.value = false
   }
@@ -197,12 +219,11 @@ function formatRrule(rrule: string): string {
 const strings = {
   back: t('pantry', 'Back to lists'),
   add: t('pantry', 'Add'),
-  newItemLabel: t('pantry', 'Item:'),
+  newItemLabel: t('pantry', 'Item name'),
   newItemPlaceholder: t('pantry', 'e.g. Milk'),
-  quantityLabel: t('pantry', 'Quantity:'),
+  quantityLabel: t('pantry', 'Quantity'),
   quantityPlaceholder: t('pantry', 'e.g. 2 L'),
-  categoryLabel: t('pantry', 'Category:'),
-  categoryPlaceholder: t('pantry', 'e.g. Dairy'),
+  categoryLabel: t('pantry', 'Category'),
   recurrenceButton: t('pantry', 'Repeat …'),
   recurrenceSet: t('pantry', 'Repeat: set'),
   removeItem: t('pantry', 'Remove item'),

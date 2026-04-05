@@ -21,8 +21,10 @@ class RecurrenceService {
 	 * @throws \InvalidArgumentException if the rule is malformed.
 	 */
 	public function validate(string $rrule): void {
+		$normalized = $this->normalize($rrule);
+		$this->preflight($normalized);
 		try {
-			new RRuleIterator($this->normalize($rrule), new \DateTimeImmutable('2000-01-01T00:00:00Z'));
+			new RRuleIterator($normalized, new \DateTimeImmutable('2000-01-01T00:00:00Z'));
 		} catch (InvalidDataException $e) {
 			throw new \InvalidArgumentException('Invalid RRULE: ' . $e->getMessage(), 0, $e);
 		}
@@ -35,8 +37,10 @@ class RecurrenceService {
 	 * successive occurrences per the rule. We seed with DTSTART = $from and advance once.
 	 */
 	public function computeNextOccurrence(string $rrule, \DateTimeImmutable $from): ?\DateTimeImmutable {
+		$normalized = $this->normalize($rrule);
+		$this->preflight($normalized);
 		try {
-			$iter = new RRuleIterator($this->normalize($rrule), $from);
+			$iter = new RRuleIterator($normalized, $from);
 		} catch (InvalidDataException $e) {
 			throw new \InvalidArgumentException('Invalid RRULE: ' . $e->getMessage(), 0, $e);
 		}
@@ -53,11 +57,72 @@ class RecurrenceService {
 		return \DateTimeImmutable::createFromInterface($current);
 	}
 
+	/**
+	 * Compute the next occurrence of a rule strictly after $after, using $dtStart as the
+	 * schedule anchor.
+	 *
+	 * This is the "fixed schedule" semantics: the series of occurrences is determined by
+	 * $dtStart (e.g. the item creation time), and we skip forward until we find the first
+	 * one that is still in the future. Caps iteration to avoid runaway loops on malformed
+	 * rules.
+	 */
+	public function nextOccurrenceAfter(
+		string $rrule,
+		\DateTimeImmutable $dtStart,
+		\DateTimeImmutable $after,
+	): ?\DateTimeImmutable {
+		$normalized = $this->normalize($rrule);
+		$this->preflight($normalized);
+		try {
+			$iter = new RRuleIterator($normalized, $dtStart);
+		} catch (InvalidDataException $e) {
+			throw new \InvalidArgumentException('Invalid RRULE: ' . $e->getMessage(), 0, $e);
+		}
+
+		$guard = 0;
+		while ($iter->valid() && $guard < 10_000) {
+			$current = $iter->current();
+			if ($current instanceof \DateTimeInterface) {
+				if ($current->getTimestamp() > $after->getTimestamp()) {
+					return \DateTimeImmutable::createFromInterface($current);
+				}
+			}
+			$iter->next();
+			$guard++;
+		}
+		return null;
+	}
+
 	private function normalize(string $rrule): string {
 		$trim = trim($rrule);
 		if (stripos($trim, 'RRULE:') === 0) {
 			return substr($trim, 6);
 		}
 		return $trim;
+	}
+
+	/**
+	 * Shallow structural check before the string ever reaches sabre/vobject.
+	 *
+	 * Why this exists: sabre/vobject 4.5.x on some PHP 8.2 / doctrine combinations raises a
+	 * PHP deprecation while parsing malformed input, which bubbles up to PHPUnit as a
+	 * "deprecation" and fails CI under `--fail-on-warning`. Rejecting obvious garbage here
+	 * keeps the error path within our own code.
+	 *
+	 * @throws \InvalidArgumentException if the rule is not a well-formed list of KEY=VALUE
+	 *                                   parts or lacks a supported FREQ= clause.
+	 */
+	private function preflight(string $rrule): void {
+		if ($rrule === '') {
+			throw new \InvalidArgumentException('Invalid RRULE: empty rule');
+		}
+		// Whole rule must be KEY=VALUE(;KEY=VALUE)*
+		if (!preg_match('/^[A-Z][A-Z0-9-]*=[^;]*(?:;[A-Z][A-Z0-9-]*=[^;]*)*$/i', $rrule)) {
+			throw new \InvalidArgumentException('Invalid RRULE: expected KEY=VALUE parts separated by ";"');
+		}
+		// Must contain a supported FREQ clause.
+		if (!preg_match('/(?:^|;)FREQ=(SECONDLY|MINUTELY|HOURLY|DAILY|WEEKLY|MONTHLY|YEARLY)(?:;|$)/i', $rrule)) {
+			throw new \InvalidArgumentException('Invalid RRULE: missing or unsupported FREQ clause');
+		}
 	}
 }

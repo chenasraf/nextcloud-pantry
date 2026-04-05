@@ -123,6 +123,47 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 			$table->addIndex(['house_id'], 'pantry_lists_house_idx');
 		}
 
+		// ---- pantry_categories ----
+		$categoriesTable = Application::tableName('categories');
+		if (!$schema->hasTable($categoriesTable)) {
+			$table = $schema->createTable($categoriesTable);
+			$table->addColumn('id', Types::BIGINT, [
+				'autoincrement' => true,
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('house_id', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('name', Types::STRING, [
+				'notnull' => true,
+				'length' => 128,
+			]);
+			$table->addColumn('icon', Types::STRING, [
+				'notnull' => true,
+				'length' => 64,
+			]);
+			$table->addColumn('color', Types::STRING, [
+				'notnull' => true,
+				'length' => 16,
+			]);
+			$table->addColumn('sort_order', Types::INTEGER, [
+				'notnull' => true,
+				'default' => 0,
+			]);
+			$table->addColumn('created_at', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('updated_at', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->setPrimaryKey(['id']);
+			$table->addUniqueIndex(['house_id', 'name'], 'pantry_cat_house_name_uq');
+		}
+
 		// ---- pantry_list_items ----
 		$itemsTable = Application::tableName('list_items');
 		if (!$schema->hasTable($itemsTable)) {
@@ -140,17 +181,16 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 255,
 			]);
-			$table->addColumn('category', Types::STRING, [
+			$table->addColumn('category_id', Types::BIGINT, [
 				'notnull' => false,
-				'length' => 128,
+				'length' => 20,
 			]);
 			$table->addColumn('quantity', Types::STRING, [
 				'notnull' => false,
 				'length' => 64,
 			]);
 			$table->addColumn('bought', Types::BOOLEAN, [
-				'notnull' => true,
-				'default' => 0,
+				'notnull' => false,
 			]);
 			$table->addColumn('bought_at', Types::BIGINT, [
 				'notnull' => false,
@@ -163,6 +203,9 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 			$table->addColumn('rrule', Types::STRING, [
 				'notnull' => false,
 				'length' => 512,
+			]);
+			$table->addColumn('repeat_from_completion', Types::BOOLEAN, [
+				'notnull' => false,
 			]);
 			$table->addColumn('next_due_at', Types::BIGINT, [
 				'notnull' => false,
@@ -182,6 +225,7 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 			]);
 			$table->setPrimaryKey(['id']);
 			$table->addIndex(['list_id'], 'pantry_items_list_idx');
+			$table->addIndex(['category_id'], 'pantry_items_cat_idx');
 		}
 
 		return $schema;
