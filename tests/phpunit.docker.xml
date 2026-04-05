@@ -7,7 +7,7 @@
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
          colors="true">
   <testsuites>
-    <testsuite name="Forum Tests">
+    <testsuite name="Pantry Tests">
       <directory suffix="Test.php">.</directory>
     </testsuite>
   </testsuites>

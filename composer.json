@@ -1,6 +1,6 @@
 {
-  "name": "nextcloud/forum",
-  "description": "A community-driven forum built right into your Nextcloud instance",
+  "name": "nextcloud/pantry",
+  "description": "Nextcloud app for managing your household. Lists, photos and notes, all in one place.",
   "license": "AGPL-3.0-or-later",
   "authors": [
     {
@@ -11,7 +11,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "OCA\\Forum\\": "lib/"
+      "OCA\\Pantry\\": "lib/"
     }
   },
   "scripts": {
