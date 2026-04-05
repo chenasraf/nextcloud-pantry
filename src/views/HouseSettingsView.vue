@@ -93,7 +93,7 @@ async function deleteHouse() {
   if (!house.value) return
   await remove(house.value.id)
   confirmingDelete.value = false
-  await router.push({ name: 'houses' })
+  await router.push({ name: 'home' })
 }
 
 const strings = {

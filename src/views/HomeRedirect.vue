@@ -18,13 +18,13 @@ const lastHouse = useLastHouse()
 onMounted(async () => {
   await load()
   if (houses.value.length === 0) {
-    await router.replace({ name: 'houses' })
+    await router.replace({ name: 'welcome' })
     return
   }
   const lastId = await lastHouse.get()
   const first = houses.value[0]
   if (!first) {
-    await router.replace({ name: 'houses' })
+    await router.replace({ name: 'welcome' })
     return
   }
   const target = lastId !== null && houses.value.some((h) => h.id === lastId) ? lastId : first.id

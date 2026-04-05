@@ -150,7 +150,7 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 			]);
 			$table->addColumn('bought', Types::BOOLEAN, [
 				'notnull' => true,
-				'default' => false,
+				'default' => 0,
 			]);
 			$table->addColumn('bought_at', Types::BIGINT, [
 				'notnull' => false,

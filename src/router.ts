@@ -1,9 +1,8 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { generateUrl } from '@nextcloud/router'
 
+const SideNavigation = () => import('@/views/SideNavigation.vue')
 const HouseLayout = () => import('@/views/HouseLayout.vue')
-const HousesNavigation = () => import('@/views/HousesNavigation.vue')
-const HouseNavigation = () => import('@/views/HouseNavigation.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -11,24 +10,24 @@ const routes: RouteRecordRaw[] = [
     name: 'home',
     components: {
       default: () => import('@/views/HomeRedirect.vue'),
-      navigation: HousesNavigation,
+      navigation: SideNavigation,
     },
   },
   {
-    path: '/houses',
-    name: 'houses',
+    path: '/welcome',
+    name: 'welcome',
     components: {
-      default: () => import('@/views/HousesList.vue'),
-      navigation: HousesNavigation,
+      default: () => import('@/views/WelcomeView.vue'),
+      navigation: SideNavigation,
     },
   },
   {
     path: '/houses/:houseId',
     components: {
       default: HouseLayout,
-      navigation: HouseNavigation,
+      navigation: SideNavigation,
     },
-    props: { default: true, navigation: true },
+    props: { default: true, navigation: false },
     children: [
       { path: '', redirect: (to) => ({ name: 'lists', params: to.params }) },
       {

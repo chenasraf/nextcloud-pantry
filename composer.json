@@ -1,6 +1,6 @@
 {
-  "name": "nextcloud/pantry",
-  "description": "Nextcloud app for managing your household. Lists, photos and notes, all in one place.",
+  "name": "nextcloud/forum",
+  "description": "A community-driven forum built right into your Nextcloud instance",
   "license": "AGPL-3.0-or-later",
   "authors": [
     {
@@ -15,11 +15,18 @@
     }
   },
   "scripts": {
+    "post-install-cmd": [
+      "@php -r \"if (getenv('COMPOSER_DEV_MODE') !== '0') { passthru(getenv('COMPOSER_BINARY').' bin all install --ansi'); }\""
+    ],
+    "post-update-cmd": [
+      "@php -r \"if (getenv('COMPOSER_DEV_MODE') !== '0') { passthru(getenv('COMPOSER_BINARY').' bin all update --ansi'); }\""
+    ],
     "lint": "find . -name \\*.php -not -path './vendor/*' -not -path './vendor-bin/*' -not -path './gen/*'  -not -path './build/*' -print0 | xargs -0 -n1 php -l",
     "cs:check": "php-cs-fixer fix --dry-run --diff",
     "cs:fix": "php-cs-fixer fix",
     "psalm": "psalm --threads=1 --no-cache",
     "test:unit": "phpunit tests -c tests/phpunit.xml --colors=always --fail-on-warning --fail-on-risky",
+    "test:integration": "phpunit tests -c tests/phpunit.integration.xml --colors=always --fail-on-warning --fail-on-risky",
     "openapi": "generate-spec"
   },
   "require": {

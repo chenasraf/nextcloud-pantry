@@ -163,7 +163,7 @@ async function removeExisting(memberId: number) {
 
 async function leave() {
   await api.leaveHouse(houseIdNum.value)
-  await router.push({ name: 'houses' })
+  await router.push({ name: 'home' })
 }
 
 function roleLabel(role: HouseRole): string {
