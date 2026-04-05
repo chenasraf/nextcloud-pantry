@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<!--
+		SPDX-FileCopyrightText: Your Name <your@email.com>
+		SPDX-License-Identifier: CC0-1.0
+	-->
+	<id>nextcloudapptemplate</id>
+	<name>Nextcloud App Template</name>
+	<summary>Enter your app summary here.</summary>
+	<description><![CDATA[
+Enter your app description here.
+]]></description>
+	<version>1.0.0</version>
+	<licence>agpl</licence>
+	<author mail="your@email.com" homepage="https://your.website">Your Name</author>
+	<namespace>NextcloudAppTemplate</namespace>
+	<documentation>
+		<user>https://github.com/your-user/nextcloud-nextcloudapptemplate/blob/master/README.md</user>
+		<admin>https://github.com/your-user/nextcloud-nextcloudapptemplate#installation</admin>
+		<developer>https://github.com/your-user/nextcloud-nextcloudapptemplate#development</developer>
+	</documentation>
+	<category>organization</category>
+	<category>tools</category>
+	<website>https://github.com/your-user/nextcloud-nextcloudapptemplate</website>
+	<bugs>https://github.com/your-user/nextcloud-nextcloudapptemplate/issues</bugs>
+	<repository>https://github.com/your-user/nextcloud-nextcloudapptemplate</repository>
+	<screenshot>https://raw.githubusercontent.com/your-user/nextcloud-nextcloudapptemplate/refs/heads/master/promo.png</screenshot>
+	<dependencies>
+		<nextcloud min-version="29" max-version="32"/>
+	</dependencies>
+	<settings>
+		<admin>OCA\NextcloudAppTemplate\Settings\Admin</admin>
+		<admin-section>OCA\NextcloudAppTemplate\Sections\Admin</admin-section>
+	</settings>
+	<navigations>
+		<navigation role="all">
+			<name>Nextcloud App Template</name>
+			<route>nextcloudapptemplate.page.index</route>
+			<icon>app.svg</icon>
+			<order>6</order>
+		</navigation>
+	</navigations>
+</info>

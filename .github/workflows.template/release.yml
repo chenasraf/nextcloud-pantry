@@ -1,0 +1,125 @@
+# This workflow is provided via the organization template repository
+#
+# https://github.com/nextcloud/.github
+# https://docs.github.com/en/actions/learn-github-actions/sharing-workflows-with-your-organization
+
+name: Release
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download builds
+        uses: actions/download-artifact@v4
+
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+  build:
+    name: App Store Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get php version
+        id: versions
+        uses: icewind1991/nextcloud-version-matrix@v1
+
+      - name: Set up php${{ steps.versions.outputs.php-available }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ steps.versions.outputs.php-available }}
+          extensions: bz2, ctype, curl, dom, fileinfo, gd, iconv, intl, json, libxml, mbstring, openssl, pcntl, posix, session, simplexml, xmlreader, xmlwriter, zip, zlib, sqlite, pdo_sqlite
+          coverage: none
+          ini-file: development
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build App
+        run: |
+          npm i -g pnpm
+          make && make appstore
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextcloudapptemplate.tar.gz
+          path: build/artifacts/appstore/nextcloudapptemplate.tar.gz
+
+  upload:
+    runs-on: ubuntu-latest
+    name: Upload Release Artifacts
+    needs: [build, release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nextcloudapptemplate.tar.gz
+
+      - name: Prepare Artifact Upload
+        run: test -f "$PWD/nextcloudapptemplate.tar.gz"
+
+      - name: Upload to Release
+        if: ${{ needs.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mv nextcloudapptemplate.tar.gz "nextcloudapptemplate-${{ needs.release.outputs.tag_name }}.tar.gz"
+          gh release upload ${{ needs.release.outputs.tag_name }} nextcloudapptemplate-${{ needs.release.outputs.tag_name }}.tar.gz
+
+  release-nextcloud:
+    name: Release to Nextcloud Apps
+    runs-on: ubuntu-latest
+    needs: [build, release, upload]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write Private Key to File
+        run: |
+          mkdir -p ~/.nextcloud/certificates
+          if [ -z "${{  secrets.NEXTCLOUD_APP_PRIVATE_KEY }}" ]; then
+            echo "Private key not provided"
+            exit 1
+          fi
+          echo -n "${{ secrets.NEXTCLOUD_APP_PRIVATE_KEY }}" > ~/.nextcloud/certificates/nextcloudapptemplate.key
+
+      - name: Release to Nextcloud Apps
+        if: ${{ needs.release.outputs.release_created }}
+        env:
+          NEXTCLOUD_API_TOKEN: ${{ secrets.NEXTCLOUD_API_TOKEN }}
+        run: |
+          make release

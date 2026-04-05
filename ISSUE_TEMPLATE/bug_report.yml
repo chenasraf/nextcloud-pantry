@@ -1,0 +1,212 @@
+name: Bug Report
+description: Report a bug or issue with the NextcloudAppTemplate app
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us investigate.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: Describe what should happen...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+      placeholder: Describe what actually happens...
+    validations:
+      required: true
+
+  - type: input
+    id: nextcloud-version
+    attributes:
+      label: Nextcloud Version
+      description: What version of Nextcloud are you running?
+      placeholder: e.g., 28.0.1
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: NextcloudAppTemplate App Version
+      description: What version of the NextcloudAppTemplate app are you using?
+      placeholder: e.g., 1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: php-version
+    attributes:
+      label: PHP Version
+      description: What version of PHP is your server running?
+      placeholder: e.g., 8.2.12
+    validations:
+      required: true
+
+  - type: dropdown
+    id: database
+    attributes:
+      label: Database
+      description: Which database are you using?
+      options:
+        - SQLite
+        - MySQL/MariaDB
+        - PostgreSQL
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: Which browser are you using? (if applicable)
+      placeholder: e.g., Firefox 120, Chrome 119, Safari 17
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 Debugging Information
+
+        The following information helps us investigate and fix issues quickly. Please provide as much detail as possible.
+
+  - type: textarea
+    id: migration-status
+    attributes:
+      label: Migration Status
+      description: |
+        **How to check migration status:**
+
+        This shows which database migrations have been executed for the NextcloudAppTemplate app.
+
+        **For Docker installations:**
+        ```bash
+        docker exec --user www-data -i nextcloud-aio-nextcloud php occ migrations:status nextcloudapptemplate
+        ```
+
+        **For standard installations:**
+        ```bash
+        php occ migrations:status nextcloudapptemplate
+        ```
+
+        Or from the Nextcloud directory:
+        ```bash
+        sudo -u www-data php occ migrations:status nextcloudapptemplate
+        ```
+      placeholder: Paste the migration status output here...
+      render: shell
+
+  - type: textarea
+    id: nextcloud-logs
+    attributes:
+      label: Nextcloud Server Logs
+      description: |
+        **How to get server logs:**
+
+        Look for errors related to the NextcloudAppTemplate app (last 20-50 lines recommended).
+
+        **Via Web UI:**
+        - Go to Nextcloud Settings → Administration → Logging (or `/settings/admin/logging`)
+        - Look for entries containing "nextcloudapptemplate"
+
+        **For Docker installations:**
+        ```bash
+        docker exec --user www-data -i nextcloud-aio-nextcloud tail -100 /var/www/html/data/nextcloud.log | grep -i nextcloudapptemplate
+        ```
+
+        **For standard installations:**
+        ```bash
+        tail -100 /path/to/nextcloud/data/nextcloud.log | grep -i nextcloudapptemplate
+        ```
+
+        Or from the Nextcloud directory:
+        ```bash
+        sudo -u www-data tail -100 data/nextcloud.log | grep -i nextcloudapptemplate
+        ```
+      placeholder: Paste Nextcloud server logs here...
+      render: shell
+
+  - type: textarea
+    id: browser-console
+    attributes:
+      label: Browser Console Errors
+      description: |
+        **How to check browser console:**
+        1. Open the page where the issue occurs
+        2. Press **F12** (or right-click → Inspect → Console tab)
+        3. Look for red error messages
+        4. Copy any errors related to the NextcloudAppTemplate app
+
+        **Tip:** You can right-click on an error and select "Copy message" or "Copy stack trace"
+      placeholder: Paste browser console errors here...
+      render: javascript
+
+  - type: textarea
+    id: network-errors
+    attributes:
+      label: Network Request Errors
+      description: |
+        **How to check network requests:**
+        1. Open the page where the issue occurs
+        2. Press **F12** → Go to the **Network** tab
+        3. Reproduce the issue
+        4. Look for failed requests (shown in red or with 4xx/5xx status codes)
+        5. Click on the failed request
+        6. Copy the following information:
+           - **Request URL** (e.g., `/apps/nextcloudapptemplate/api/...`)
+           - **Status Code** (e.g., 500, 404, 403)
+           - **Response** tab content (the error message/data returned)
+
+        **Example format:**
+        ```
+        Request: POST /apps/nextcloudapptemplate/api/...
+        Status: 500 Internal Server Error
+        Response: {"error": "Database connection failed"}
+        ```
+      placeholder: Paste network error details here...
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: |
+        If applicable, add screenshots to help explain your problem.
+        You can drag and drop images directly into this field.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here (e.g., recent changes, specific configuration, workarounds attempted)

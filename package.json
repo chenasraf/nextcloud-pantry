@@ -1,0 +1,58 @@
+{
+  "name": "nextcloudapptemplate",
+  "version": "0.0.0",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "engines": {
+    "node": "^22.19.0",
+    "pnpm": "^10.17.0"
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "lint": "eslint src",
+    "format": "eslint --fix src && prettier --write {vite.config.ts,src/,README.md}",
+    "prepare": "husky",
+    "gen": "simple-scaffold -c . -k",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "browserslist": [
+    "extends @nextcloud/browserslist-config"
+  ],
+  "dependencies": {
+    "@nextcloud/axios": "^2.5.2",
+    "@nextcloud/l10n": "^3.4.1",
+    "@nextcloud/router": "^3.1.0",
+    "@nextcloud/vite-config": "^2.5.2",
+    "@nextcloud/vue": "^9.5.0",
+    "date-fns": "^4.1.0",
+    "linkifyjs": "^4.3.2",
+    "vue": "^3.5.28",
+    "vue-material-design-icons": "^5.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@nextcloud/browserslist-config": "^3.1.2",
+    "@nextcloud/eslint-config": "^8.4.2",
+    "@nextcloud/stylelint-config": "^3.2.1",
+    "@vitejs/plugin-vue": "^6.0.4",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.8.1",
+    "eslint": "^10.0.2",
+    "happy-dom": "^20.7.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
+    "rollup-plugin-visualizer": "^7.0.0",
+    "sass": "^1.97.3",
+    "sass-embedded": "^1.97.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "vite": "^7.3.1",
+    "vite-plugin-checker": "^0.12.0",
+    "vitest": "^4.0.18",
+    "vue-router": "^5.0.3",
+    "vue-tsc": "^3.2.5"
+  }
+}

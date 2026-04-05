@@ -1,0 +1,69 @@
+name: Lint OpenAPI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openapi-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  openapi:
+    runs-on: ubuntu-latest
+
+    if: ${{ github.repository_owner != 'nextcloud-gmbh' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get php version
+        id: php_versions
+        uses: icewind1991/nextcloud-version-matrix@v1
+
+      - name: Set up php
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ steps.php_versions.outputs.php-available }}
+          extensions: xml
+          coverage: none
+          ini-file: development
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Typescript OpenApi types
+        id: check_typescript_openapi
+        uses: andstor/file-existence-action@v3
+        with:
+          files: 'src/types/openapi/openapi*.ts'
+
+      - name: Install dependencies
+        env:
+          CYPRESS_INSTALL_BINARY: 0
+          PUPPETEER_SKIP_DOWNLOAD: true
+        run: |
+          npm i -g pnpm
+          pnpm i --frozen-lockfile
+
+      - name: Set up dependencies
+        run: composer i
+
+      - name: Regenerate OpenAPI
+        run: composer run openapi
+
+      - name: Check openapi*.json and typescript changes
+        run: |
+          bash -c "[[ ! \"`git status --porcelain `\" ]] || (echo 'Please run \"composer run openapi\" and commit the openapi*.json files and (if applicable) src/types/openapi/openapi*.ts, see the section \"Show changes on failure\" for details' && exit 1)"
+
+      - name: Show changes on failure
+        if: failure()
+        run: |
+          git status
+          git --no-pager diff
+          exit 1 # make it red to grab attention

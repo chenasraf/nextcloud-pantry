@@ -1,0 +1,9 @@
+[main]
+host     = https://www.transifex.com
+lang_map = hu_HU: hu, nb_NO: nb, sk_SK: sk, th_TH: th, ja_JP: ja, bg_BG: bg, cs_CZ: cs, fi_FI: fi, he_IL: he, ar_AR: ar
+
+[o:nextcloud:p:nextcloud:r:nextcloudapptemplate]
+file_filter = translationfiles/<lang>/nextcloudapptemplate.po
+source_file = translationfiles/templates/nextcloudapptemplate.pot
+source_lang = en
+type        = PO

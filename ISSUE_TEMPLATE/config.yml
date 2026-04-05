@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Nextcloud Community Forum
+    url: https://help.nextcloud.com
+    about: Ask questions and get help from the Nextcloud community
+  - name: Security Issue
+    url: https://github.com/chenasraf/nextcloud-nextcloudapptemplate/security/advisories/new
+    about: Report a security vulnerability privately

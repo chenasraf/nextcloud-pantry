@@ -1,0 +1,41 @@
+# This workflow is provided via the organization template repository
+#
+# https://github.com/nextcloud/.github
+# https://docs.github.com/en/actions/learn-github-actions/sharing-workflows-with-your-organization
+#
+# Use lint-eslint together with lint-eslint-when-unrelated to make eslint a required check for GitHub actions
+# https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+
+name: Build NPM
+
+on:
+  - pull_request
+  - push
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-npm-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    name: PNPM Build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        env:
+          CYPRESS_INSTALL_BINARY: 0
+          PUPPETEER_SKIP_DOWNLOAD: true
+        run: |
+          npm i -g pnpm
+          pnpm i --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
