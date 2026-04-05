@@ -98,9 +98,9 @@ async function deleteHouse() {
 
 const strings = {
   title: t('pantry', 'House settings'),
-  nameLabel: t('pantry', 'Name:'),
+  nameLabel: t('pantry', 'Name'),
   namePlaceholder: t('pantry', 'House name'),
-  descriptionLabel: t('pantry', 'Description:'),
+  descriptionLabel: t('pantry', 'Description'),
   descriptionPlaceholder: t('pantry', 'A short description'),
   save: t('pantry', 'Save changes'),
   saving: t('pantry', 'Saving …'),

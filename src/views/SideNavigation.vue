@@ -116,7 +116,7 @@
     :open="showCreate"
     @update:open="showCreate = $event"
   >
-    <form class="pantry-create-form" @submit.prevent="submitCreate">
+    <form id="pantry-create-house-form" class="pantry-create-form" @submit.prevent="submitCreate">
       <NcTextField
         v-model="newName"
         :label="strings.nameLabel"
@@ -131,7 +131,12 @@
     </form>
     <template #actions>
       <NcButton @click="showCreate = false">{{ strings.cancel }}</NcButton>
-      <NcButton variant="primary" :disabled="creating || !newName.trim()" @click="submitCreate">
+      <NcButton
+        form="pantry-create-house-form"
+        type="submit"
+        variant="primary"
+        :disabled="creating || !newName.trim()"
+      >
         {{ creating ? strings.creating : strings.create }}
       </NcButton>
     </template>
@@ -264,9 +269,9 @@ const strings = {
   createHouse: t('pantry', 'New house …'),
   welcomeHint: t('pantry', 'Pick or create a house to get started.'),
   createDialogTitle: t('pantry', 'Create a house'),
-  nameLabel: t('pantry', 'Name:'),
+  nameLabel: t('pantry', 'Name'),
   namePlaceholder: t('pantry', 'e.g. Home, Beach house'),
-  descriptionLabel: t('pantry', 'Description (optional):'),
+  descriptionLabel: t('pantry', 'Description (optional)'),
   descriptionPlaceholder: t('pantry', 'A short description'),
   create: t('pantry', 'Create'),
   creating: t('pantry', 'Creating …'),

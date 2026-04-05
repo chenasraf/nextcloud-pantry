@@ -231,10 +231,10 @@ function iconFor(key: string) {
 const strings = {
   placeholder: t('pantry', 'Pick a category'),
   createTitle: t('pantry', 'New category'),
-  nameLabel: t('pantry', 'Name:'),
+  nameLabel: t('pantry', 'Name'),
   namePlaceholder: t('pantry', 'e.g. Produce, Dairy'),
-  iconLabel: t('pantry', 'Icon:'),
-  colorLabel: t('pantry', 'Color:'),
+  iconLabel: t('pantry', 'Icon'),
+  colorLabel: t('pantry', 'Color'),
   create: t('pantry', 'Create'),
   saving: t('pantry', 'Saving …'),
   cancel: t('pantry', 'Cancel'),

@@ -62,6 +62,12 @@ class ShoppingListItem extends Entity implements \JsonSerializable {
 		$this->addType('sortOrder', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
+		// Force these bool fields to be included in INSERTs. Their PHP defaults
+		// match the initial value, so the magic setter would otherwise never
+		// mark them dirty and the column would be omitted from the INSERT.
+		// fromRow() resets updated fields after hydration, so reads are unaffected.
+		$this->markFieldUpdated('bought');
+		$this->markFieldUpdated('repeatFromCompletion');
 	}
 
 	public function jsonSerialize(): array {

@@ -25,8 +25,11 @@ export function useShoppingLists(houseId: number) {
     return created
   }
 
-  async function rename(listId: number, name: string): Promise<void> {
-    const updated = await api.updateList(houseId, listId, { name })
+  async function update(
+    listId: number,
+    patch: { name?: string; description?: string | null },
+  ): Promise<void> {
+    const updated = await api.updateList(houseId, listId, patch)
     lists.value = lists.value.map((l) => (l.id === listId ? updated : l))
   }
 
@@ -35,7 +38,7 @@ export function useShoppingLists(houseId: number) {
     lists.value = lists.value.filter((l) => l.id !== listId)
   }
 
-  return { lists, loading, error, load, create, rename, remove }
+  return { lists, loading, error, load, create, update, remove }
 }
 
 export function useShoppingListItems(houseId: number, listId: number) {

@@ -186,9 +186,9 @@ const strings = {
   colRole: t('pantry', 'Role'),
   colJoined: t('pantry', 'Joined'),
   addDialogTitle: t('pantry', 'Add a member'),
-  userIdLabel: t('pantry', 'Account ID:'),
+  userIdLabel: t('pantry', 'Account ID'),
   userIdPlaceholder: t('pantry', 'The Nextcloud username'),
-  roleLabel: t('pantry', 'Role:'),
+  roleLabel: t('pantry', 'Role'),
   cancel: t('pantry', 'Cancel'),
 }
 </script>
