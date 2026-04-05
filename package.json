@@ -46,7 +46,7 @@
     "prettier": "^3.8.1",
     "rollup-plugin-visualizer": "^7.0.0",
     "sass": "^1.97.3",
-    "sass-embedded": "^1.97.3",
+    "sass-embedded": "^1.99.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1",
