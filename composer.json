@@ -24,7 +24,7 @@
   },
   "require": {
     "php": "^8.1",
-    "chriskonnertz/bbcode": "^1.1"
+    "sabre/vobject": "^4.5"
   },
   "require-dev": {
     "bamarni/composer-bin-plugin": "^1.8",

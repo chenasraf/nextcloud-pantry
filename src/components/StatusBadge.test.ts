@@ -254,7 +254,7 @@ describe('StatusBadge', () => {
 
       const emittedEvents = wrapper.emitted('click')
       expect(emittedEvents).toBeTruthy()
-      expect(emittedEvents![0][0]).toBeInstanceOf(MouseEvent)
+      expect(emittedEvents![0]![0]).toBeInstanceOf(MouseEvent)
     })
   })
 

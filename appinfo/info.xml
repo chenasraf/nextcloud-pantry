@@ -6,9 +6,16 @@
 	-->
 	<id>pantry</id>
 	<name>Pantry</name>
-	<summary>Enter your app summary here.</summary>
+	<summary>Manage your household: shared shopping lists, photos and notes.</summary>
 	<description><![CDATA[
-Enter your app description here.
+Pantry helps households stay organized in Nextcloud.
+
+- **Houses** group members and their shared data. A user can belong to multiple houses and switch between them.
+- **Shopping lists** support recurring items (e.g. milk every week) that automatically reappear when due.
+- **Photo boards** (coming soon) let you keep shared reference photos — the right brand of dog food, a favorite recipe card, and so on.
+- **Notes wall** (coming soon) gives the household a lightweight shared space for reminders.
+
+All data is scoped to a house; members only see the houses they belong to.
 ]]></description>
 	<version>1.0.0</version>
 	<licence>agpl</licence>
@@ -26,7 +33,7 @@ Enter your app description here.
 	<repository>https://github.com/chenasraf/nextcloud-pantry</repository>
 	<screenshot>https://raw.githubusercontent.com/chenasraf/nextcloud-pantry/refs/heads/master/promo.png</screenshot>
 	<dependencies>
-		<nextcloud min-version="29" max-version="32"/>
+		<nextcloud min-version="29" max-version="34"/>
 	</dependencies>
 	<settings>
 		<admin>OCA\Pantry\Settings\Admin</admin>
