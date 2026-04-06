@@ -81,6 +81,18 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  * }
  *
+ * @psalm-type PantryNote = array{
+ *     id: int,
+ *     houseId: int,
+ *     title: string,
+ *     content: string|null,
+ *     color: string|null,
+ *     createdBy: string,
+ *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
+ *
  * @psalm-type PantryPhoto = array{
  *     id: int,
  *     houseId: int,

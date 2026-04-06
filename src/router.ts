@@ -57,7 +57,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'notes',
         name: 'notes',
-        component: () => import('@/views/NotesWallStub.vue'),
+        component: () => import('@/views/NotesWallView.vue'),
+        props: true,
       },
     ],
   },

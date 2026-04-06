@@ -2,6 +2,7 @@
   <NcDialog
     :name="photo.caption ?? strings.preview"
     :open="open"
+    close-on-click-outside
     size="large"
     @update:open="$emit('update:open', $event)"
   >

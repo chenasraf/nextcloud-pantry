@@ -58,6 +58,18 @@ export interface ShoppingListItem {
   updatedAt: number
 }
 
+export interface Note {
+  id: number
+  houseId: number
+  title: string
+  content: string | null
+  color: string | null
+  createdBy: string
+  sortOrder: number
+  createdAt: number
+  updatedAt: number
+}
+
 export interface PhotoFolder {
   id: number
   houseId: number

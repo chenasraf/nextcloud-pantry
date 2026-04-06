@@ -64,6 +64,7 @@
       v-if="showCreate"
       :name="strings.createDialogTitle"
       :open="showCreate"
+      close-on-click-outside
       @update:open="showCreate = $event"
     >
       <form id="pantry-create-list-form" class="pantry-form" @submit.prevent="submitCreate">
@@ -95,6 +96,7 @@
       v-if="editing"
       :name="strings.editDialogTitle"
       :open="!!editing"
+      close-on-click-outside
       @update:open="(v) => !v && (editing = null)"
     >
       <form class="pantry-form" @submit.prevent="submitEdit">
@@ -121,6 +123,7 @@
       v-if="deleting"
       :name="strings.deleteDialogTitle"
       :open="!!deleting"
+      close-on-click-outside
       @update:open="(v) => !v && (deleting = null)"
     >
       <p>{{ deleteConfirmBody }}</p>

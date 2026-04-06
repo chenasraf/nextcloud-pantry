@@ -321,6 +321,50 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 			$table->addIndex(['folder_id'], 'pantry_photos_folder_idx');
 		}
 
+		// ---- pantry_notes ----
+		$notesTable = Application::tableName('notes');
+		if (!$schema->hasTable($notesTable)) {
+			$table = $schema->createTable($notesTable);
+			$table->addColumn('id', Types::BIGINT, [
+				'autoincrement' => true,
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('house_id', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('title', Types::STRING, [
+				'notnull' => true,
+				'length' => 255,
+			]);
+			$table->addColumn('content', Types::TEXT, [
+				'notnull' => false,
+			]);
+			$table->addColumn('color', Types::STRING, [
+				'notnull' => false,
+				'length' => 16,
+			]);
+			$table->addColumn('created_by', Types::STRING, [
+				'notnull' => true,
+				'length' => 64,
+			]);
+			$table->addColumn('sort_order', Types::INTEGER, [
+				'notnull' => true,
+				'default' => 0,
+			]);
+			$table->addColumn('created_at', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('updated_at', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->setPrimaryKey(['id']);
+			$table->addIndex(['house_id'], 'pantry_notes_house_idx');
+		}
+
 		return $schema;
 	}
 }

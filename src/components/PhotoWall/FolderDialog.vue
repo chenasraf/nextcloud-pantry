@@ -1,5 +1,10 @@
 <template>
-  <NcDialog :name="dialogTitle" :open="open" @update:open="$emit('update:open', $event)">
+  <NcDialog
+    :name="dialogTitle"
+    :open="open"
+    close-on-click-outside
+    @update:open="$emit('update:open', $event)"
+  >
     <form :id="formId" class="pantry-form" @submit.prevent="submit">
       <NcTextField
         v-model="nameValue"

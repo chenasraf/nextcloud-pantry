@@ -2,6 +2,7 @@
   <NcDialog
     :name="strings.title"
     :open="open"
+    close-on-click-outside
     size="normal"
     @update:open="$emit('update:open', $event)"
   >

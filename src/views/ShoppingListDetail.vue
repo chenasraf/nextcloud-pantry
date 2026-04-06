@@ -131,6 +131,7 @@
       v-if="editing"
       :name="strings.editDialogTitle"
       :open="!!editing"
+      close-on-click-outside
       @update:open="(v) => !v && (editing = null)"
     >
       <form id="pantry-edit-item-form" class="pantry-form" @submit.prevent="submitEdit">
@@ -222,6 +223,7 @@
       v-if="previewing"
       :name="previewing.name"
       :open="!!previewing"
+      close-on-click-outside
       size="large"
       @update:open="(v) => !v && (previewing = null)"
     >

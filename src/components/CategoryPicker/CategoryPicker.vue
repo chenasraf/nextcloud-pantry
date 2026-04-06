@@ -47,6 +47,7 @@
       v-if="showCreate"
       :name="strings.createTitle"
       :open="showCreate"
+      close-on-click-outside
       @update:open="showCreate = $event"
     >
       <form class="pantry-create-cat" @submit.prevent="submitCreate">

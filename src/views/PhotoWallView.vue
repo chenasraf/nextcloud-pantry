@@ -158,6 +158,7 @@
       v-if="editingPhoto"
       :name="strings.editPhotoTitle"
       :open="!!editingPhoto"
+      close-on-click-outside
       @update:open="(v) => !v && (editingPhoto = null)"
     >
       <form id="pantry-edit-photo-form" class="pantry-form" @submit.prevent="submitEditPhoto">
@@ -180,6 +181,7 @@
       v-if="deletingPhoto"
       :name="strings.deletePhotoTitle"
       :open="!!deletingPhoto"
+      close-on-click-outside
       @update:open="(v) => !v && (deletingPhoto = null)"
     >
       <p>{{ strings.deletePhotoBody }}</p>
@@ -194,6 +196,7 @@
       v-if="deletingFolder"
       :name="strings.deleteFolderTitle"
       :open="!!deletingFolder"
+      close-on-click-outside
       @update:open="(v) => !v && (deletingFolder = null)"
     >
       <p>{{ deleteFolderBody }}</p>

@@ -116,6 +116,7 @@
     v-if="showCreate"
     :name="strings.createDialogTitle"
     :open="showCreate"
+    close-on-click-outside
     @update:open="showCreate = $event"
   >
     <form id="pantry-create-house-form" class="pantry-create-form" @submit.prevent="submitCreate">

@@ -101,6 +101,7 @@
     v-if="showAdd"
     :name="strings.addDialogTitle"
     :open="showAdd"
+    close-on-click-outside
     @update:open="showAdd = $event"
   >
     <form class="pantry-form" @submit.prevent="submitAdd">
@@ -124,6 +125,7 @@
     v-if="confirmingDelete"
     :name="strings.deleteDialogTitle"
     :open="confirmingDelete"
+    close-on-click-outside
     @update:open="confirmingDelete = $event"
   >
     <p>{{ strings.deleteConfirmBody }}</p>

@@ -12,6 +12,7 @@ use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\HouseMember;
 use OCA\Pantry\Db\HouseMemberMapper;
+use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Db\PhotoFolderMapper;
 use OCA\Pantry\Db\PhotoMapper;
 use OCA\Pantry\Db\ShoppingListItemMapper;
@@ -31,6 +32,7 @@ class HouseService {
 		private CategoryMapper $categoryMapper,
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $photoFolderMapper,
+		private NoteMapper $noteMapper,
 		private IDBConnection $db,
 		private IUserManager $userManager,
 	) {
@@ -116,6 +118,7 @@ class HouseService {
 			$this->categoryMapper->deleteByHouse($houseId);
 			$this->photoMapper->deleteByHouse($houseId);
 			$this->photoFolderMapper->deleteByHouse($houseId);
+			$this->noteMapper->deleteByHouse($houseId);
 			$this->memberMapper->deleteByHouse($houseId);
 			$this->houseMapper->delete($house);
 			$this->db->commit();
