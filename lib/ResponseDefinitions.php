@@ -32,6 +32,7 @@ namespace OCA\Pantry;
  *     houseId: int,
  *     name: string,
  *     description: string|null,
+ *     icon: string,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,

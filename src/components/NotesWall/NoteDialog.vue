@@ -29,6 +29,7 @@
         resize="none"
         rows="3"
         class="note-dialog__content-input"
+        autocomplete="off"
       />
       <div
         v-else

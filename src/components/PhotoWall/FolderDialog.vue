@@ -5,11 +5,12 @@
     close-on-click-outside
     @update:open="$emit('update:open', $event)"
   >
-    <form :id="formId" class="pantry-form" @submit.prevent="submit">
+    <form :id="formId" class="pantry-form" autocomplete="off" @submit.prevent="submit">
       <NcTextField
         v-model="nameValue"
         :label="strings.nameLabel"
         :placeholder="strings.namePlaceholder"
+        autocomplete="off"
       />
     </form>
     <template #actions>

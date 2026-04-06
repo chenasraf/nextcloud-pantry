@@ -7,9 +7,14 @@
   >
     <NcAppSettingsSection id="pantry-images" :name="strings.imagesSection">
       <p class="account-settings__hint">{{ strings.imagesHint }}</p>
-      <form class="account-settings__form" @submit.prevent="save">
+      <form class="account-settings__form" autocomplete="off" @submit.prevent="save">
         <div class="account-settings__folder-row">
-          <NcTextField v-model="folder" :label="strings.folderLabel" placeholder="/Pantry" />
+          <NcTextField
+            v-model="folder"
+            :label="strings.folderLabel"
+            placeholder="/Pantry"
+            autocomplete="off"
+          />
           <NcButton type="button" variant="secondary" @click="browseFolder">
             <template #icon>
               <FolderIcon :size="20" />

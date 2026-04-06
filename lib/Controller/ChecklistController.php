@@ -11,9 +11,9 @@ use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
+use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\ImageService;
-use OCA\Pantry\Service\ChecklistService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -71,6 +71,7 @@ final class ChecklistController extends OCSController {
 	 * @param int $houseId House id.
 	 * @param string $name List name.
 	 * @param string|null $description Optional description.
+	 * @param string|null $icon Optional icon key.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
 	 *
@@ -78,10 +79,10 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists')]
 	#[NoAdminRequired]
-	public function createList(int $houseId, string $name, ?string $description = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $description): DataResponse {
+	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $description, $icon): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$list = $this->lists->createList($houseId, $name, $description);
+			$list = $this->lists->createList($houseId, $name, $description, $icon);
 			return new DataResponse($list->jsonSerialize());
 		});
 	}
@@ -114,6 +115,7 @@ final class ChecklistController extends OCSController {
 	 * @param int $listId List id.
 	 * @param string|null $name New name.
 	 * @param string|null $description New description.
+	 * @param string|null $icon New icon key.
 	 * @param int|null $sortOrder New sort order.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
@@ -122,8 +124,8 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}')]
 	#[NoAdminRequired]
-	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?int $sortOrder = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $sortOrder): DataResponse {
+	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?int $sortOrder = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $sortOrder): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$existing = $this->lists->getList($listId);
 			$this->assertListInHouse($existing->getHouseId(), $houseId);
@@ -133,6 +135,9 @@ final class ChecklistController extends OCSController {
 			}
 			if ($description !== null) {
 				$patch['description'] = $description;
+			}
+			if ($icon !== null) {
+				$patch['icon'] = $icon;
 			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;

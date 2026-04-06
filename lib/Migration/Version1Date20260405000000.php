@@ -107,6 +107,11 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 			$table->addColumn('description', Types::TEXT, [
 				'notnull' => false,
 			]);
+			$table->addColumn('icon', Types::STRING, [
+				'notnull' => true,
+				'length' => 64,
+				'default' => 'clipboard-check',
+			]);
 			$table->addColumn('sort_order', Types::INTEGER, [
 				'notnull' => true,
 				'default' => 0,

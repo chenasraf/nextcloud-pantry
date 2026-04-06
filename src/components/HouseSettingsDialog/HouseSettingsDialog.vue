@@ -6,16 +6,18 @@
     @update:open="(v) => emit('update:open', v)"
   >
     <NcAppSettingsSection id="house-general" :name="strings.generalSection">
-      <form class="pantry-form" @submit.prevent="saveGeneral">
+      <form class="pantry-form" autocomplete="off" @submit.prevent="saveGeneral">
         <NcTextField
           v-model="name"
           :label="strings.nameLabel"
           :placeholder="strings.namePlaceholder"
+          autocomplete="off"
         />
         <NcTextField
           v-model="description"
           :label="strings.descriptionLabel"
           :placeholder="strings.descriptionPlaceholder"
+          autocomplete="off"
         />
         <div class="pantry-form__actions">
           <NcButton type="submit" variant="primary" :disabled="savingGeneral || !name.trim()">
@@ -104,11 +106,12 @@
     close-on-click-outside
     @update:open="showAdd = $event"
   >
-    <form class="pantry-form" @submit.prevent="submitAdd">
+    <form class="pantry-form" autocomplete="off" @submit.prevent="submitAdd">
       <NcTextField
         v-model="newUserId"
         :label="strings.userIdLabel"
         :placeholder="strings.userIdPlaceholder"
+        autocomplete="off"
       />
       <NcSelect v-model="newRoleOption" :options="roleOptions" :input-label="strings.roleLabel" />
       <p v-if="addError" class="pantry-form-error">{{ addError }}</p>

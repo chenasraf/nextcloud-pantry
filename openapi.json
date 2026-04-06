@@ -134,6 +134,7 @@
                     "houseId",
                     "name",
                     "description",
+                    "icon",
                     "sortOrder",
                     "createdAt",
                     "updatedAt"
@@ -153,6 +154,9 @@
                     "description": {
                         "type": "string",
                         "nullable": true
+                    },
+                    "icon": {
+                        "type": "string"
                     },
                     "sortOrder": {
                         "type": "integer",
@@ -1145,6 +1149,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Optional description."
+                                    },
+                                    "icon": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Optional icon key."
                                     }
                                 }
                             }
@@ -1375,6 +1385,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New description."
+                                    },
+                                    "icon": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New icon key."
                                     },
                                     "sortOrder": {
                                         "type": "integer",

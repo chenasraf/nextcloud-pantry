@@ -24,6 +24,7 @@ export interface Checklist {
   houseId: number
   name: string
   description: string | null
+  icon: string
   sortOrder: number
   createdAt: number
   updatedAt: number

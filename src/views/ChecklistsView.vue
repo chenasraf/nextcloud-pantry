@@ -40,7 +40,11 @@
             }"
             class="pantry-list-card"
           >
-            <ClipboardCheckIcon :size="28" class="pantry-list-card__icon" />
+            <component
+              :is="checklistIconComponent(list.icon)"
+              :size="28"
+              class="pantry-list-card__icon"
+            />
             <div class="pantry-list-card__body">
               <h3>{{ list.name }}</h3>
               <p v-if="list.description">{{ list.description }}</p>
@@ -67,17 +71,40 @@
       close-on-click-outside
       @update:open="showCreate = $event"
     >
-      <form id="pantry-create-list-form" class="pantry-form" @submit.prevent="submitCreate">
+      <form
+        id="pantry-create-list-form"
+        class="pantry-form"
+        autocomplete="off"
+        @submit.prevent="submitCreate"
+      >
         <NcTextField
           v-model="newName"
           :label="strings.nameLabel"
           :placeholder="strings.namePlaceholder"
+          autocomplete="off"
         />
         <NcTextField
           v-model="newDescription"
           :label="strings.descriptionLabel"
           :placeholder="strings.descriptionPlaceholder"
+          autocomplete="off"
         />
+        <div>
+          <label class="pantry-icon-picker__label">{{ strings.iconLabel }}</label>
+          <div class="pantry-icon-picker__grid">
+            <button
+              v-for="opt in CHECKLIST_ICONS"
+              :key="opt.key"
+              type="button"
+              class="pantry-icon-picker__button"
+              :class="{ 'pantry-icon-picker__button--active': newIcon === opt.key }"
+              :title="opt.label"
+              @click="newIcon = opt.key"
+            >
+              <component :is="opt.component" :size="20" />
+            </button>
+          </div>
+        </div>
       </form>
       <template #actions>
         <NcButton @click="showCreate = false">{{ strings.cancel }}</NcButton>
@@ -99,17 +126,35 @@
       close-on-click-outside
       @update:open="(v) => !v && (editing = null)"
     >
-      <form class="pantry-form" @submit.prevent="submitEdit">
+      <form class="pantry-form" autocomplete="off" @submit.prevent="submitEdit">
         <NcTextField
           v-model="editName"
           :label="strings.nameLabel"
           :placeholder="strings.namePlaceholder"
+          autocomplete="off"
         />
         <NcTextField
           v-model="editDescription"
           :label="strings.descriptionLabel"
           :placeholder="strings.descriptionPlaceholder"
+          autocomplete="off"
         />
+        <div>
+          <label class="pantry-icon-picker__label">{{ strings.iconLabel }}</label>
+          <div class="pantry-icon-picker__grid">
+            <button
+              v-for="opt in CHECKLIST_ICONS"
+              :key="opt.key"
+              type="button"
+              class="pantry-icon-picker__button"
+              :class="{ 'pantry-icon-picker__button--active': editIcon === opt.key }"
+              :title="opt.label"
+              @click="editIcon = opt.key"
+            >
+              <component :is="opt.component" :size="20" />
+            </button>
+          </div>
+        </div>
       </form>
       <template #actions>
         <NcButton @click="editing = null">{{ strings.cancel }}</NcButton>
@@ -153,6 +198,11 @@ import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import type { Checklist } from '@/api/types'
 import { useChecklists } from '@/composables/useChecklist'
+import {
+  CHECKLIST_ICONS,
+  DEFAULT_CHECKLIST_ICON_KEY,
+  checklistIconComponent,
+} from '@/components/ChecklistIconPicker'
 
 const props = defineProps<{ houseId: string }>()
 const router = useRouter()
@@ -169,14 +219,16 @@ watch(
 const showCreate = ref(false)
 const newName = ref('')
 const newDescription = ref('')
+const newIcon = ref(DEFAULT_CHECKLIST_ICON_KEY)
 
 async function submitCreate() {
   const name = newName.value.trim()
   if (!name) return
-  const list = await create(name, newDescription.value.trim() || null)
+  const list = await create(name, newDescription.value.trim() || null, newIcon.value)
   showCreate.value = false
   newName.value = ''
   newDescription.value = ''
+  newIcon.value = DEFAULT_CHECKLIST_ICON_KEY
   await router.push({
     name: 'list-detail',
     params: { houseId: String(houseIdNum.value), listId: String(list.id) },
@@ -186,11 +238,13 @@ async function submitCreate() {
 const editing = ref<Checklist | null>(null)
 const editName = ref('')
 const editDescription = ref('')
+const editIcon = ref(DEFAULT_CHECKLIST_ICON_KEY)
 
 function startEdit(list: Checklist) {
   editing.value = list
   editName.value = list.name
   editDescription.value = list.description ?? ''
+  editIcon.value = list.icon || DEFAULT_CHECKLIST_ICON_KEY
 }
 
 async function submitEdit() {
@@ -201,6 +255,7 @@ async function submitEdit() {
   await update(target.id, {
     name,
     description: editDescription.value.trim() || null,
+    icon: editIcon.value,
   })
   editing.value = null
 }
@@ -241,6 +296,7 @@ const strings = {
   namePlaceholder: t('pantry', 'e.g. Weekly groceries'),
   descriptionLabel: t('pantry', 'Description (optional)'),
   descriptionPlaceholder: t('pantry', 'A short description'),
+  iconLabel: t('pantry', 'Icon:'),
   emptyTitle: t('pantry', 'No lists yet'),
   emptyBody: t('pantry', 'Create your first checklist to start adding items.'),
 }
@@ -324,5 +380,44 @@ const strings = {
   flex-direction: column;
   gap: 1rem;
   padding: 0.5rem 0;
+}
+
+.pantry-icon-picker {
+  &__label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.35rem;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    gap: 0.35rem;
+  }
+
+  &__button {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid transparent;
+    border-radius: var(--border-radius, 4px);
+    background: var(--color-background-dark);
+    color: var(--color-main-text);
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
+
+    &:hover {
+      background: var(--color-background-hover);
+    }
+
+    &--active {
+      border-color: var(--color-primary-element);
+      background: var(--color-primary-element-light);
+    }
+  }
 }
 </style>

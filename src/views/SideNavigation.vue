@@ -119,16 +119,23 @@
     close-on-click-outside
     @update:open="showCreate = $event"
   >
-    <form id="pantry-create-house-form" class="pantry-create-form" @submit.prevent="submitCreate">
+    <form
+      id="pantry-create-house-form"
+      class="pantry-create-form"
+      autocomplete="off"
+      @submit.prevent="submitCreate"
+    >
       <NcTextField
         v-model="newName"
         :label="strings.nameLabel"
         :placeholder="strings.namePlaceholder"
+        autocomplete="off"
       />
       <NcTextField
         v-model="newDescription"
         :label="strings.descriptionLabel"
         :placeholder="strings.descriptionPlaceholder"
+        autocomplete="off"
       />
       <p v-if="createError" class="pantry-create-form__error">{{ createError }}</p>
     </form>

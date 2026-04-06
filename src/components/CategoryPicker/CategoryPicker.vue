@@ -50,11 +50,12 @@
       close-on-click-outside
       @update:open="showCreate = $event"
     >
-      <form class="pantry-create-cat" @submit.prevent="submitCreate">
+      <form class="pantry-create-cat" autocomplete="off" @submit.prevent="submitCreate">
         <NcTextField
           v-model="newName"
           :label="strings.nameLabel"
           :placeholder="strings.namePlaceholder"
+          autocomplete="off"
         />
 
         <div>

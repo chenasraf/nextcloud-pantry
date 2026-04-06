@@ -19,15 +19,19 @@ export function useChecklists(houseId: number) {
     }
   }
 
-  async function create(name: string, description?: string | null): Promise<Checklist> {
-    const created = await api.createList(houseId, name, description)
+  async function create(
+    name: string,
+    description?: string | null,
+    icon?: string | null,
+  ): Promise<Checklist> {
+    const created = await api.createList(houseId, name, description, icon)
     lists.value = [...lists.value, created]
     return created
   }
 
   async function update(
     listId: number,
-    patch: { name?: string; description?: string | null },
+    patch: { name?: string; description?: string | null; icon?: string },
   ): Promise<void> {
     const updated = await api.updateList(houseId, listId, patch)
     lists.value = lists.value.map((l) => (l.id === listId ? updated : l))

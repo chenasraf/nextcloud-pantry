@@ -10,10 +10,12 @@ export async function createList(
   houseId: number,
   name: string,
   description?: string | null,
+  icon?: string | null,
 ): Promise<Checklist> {
   const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists`, {
     name,
     description: description ?? null,
+    icon: icon ?? null,
   })
   return resp.data
 }
@@ -26,7 +28,7 @@ export async function getList(houseId: number, listId: number): Promise<Checklis
 export async function updateList(
   houseId: number,
   listId: number,
-  patch: { name?: string; description?: string | null; sortOrder?: number },
+  patch: { name?: string; description?: string | null; icon?: string; sortOrder?: number },
 ): Promise<Checklist> {
   const resp = await ocs.patch<Checklist>(`/houses/${houseId}/lists/${listId}`, patch)
   return resp.data

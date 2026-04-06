@@ -15,16 +15,18 @@
     </PageToolbar>
 
     <div class="pantry-detail__body">
-      <form class="pantry-detail__add" @submit.prevent="submitAdd">
+      <form class="pantry-detail__add" autocomplete="off" @submit.prevent="submitAdd">
         <NcTextField
           v-model="newName"
           :label="strings.newItemLabel"
           :placeholder="strings.newItemPlaceholder"
+          autocomplete="off"
         />
         <NcTextField
           v-model="newQuantity"
           :label="strings.quantityLabel"
           :placeholder="strings.quantityPlaceholder"
+          autocomplete="off"
         />
         <CategoryPicker
           v-model="newCategoryId"
@@ -55,7 +57,7 @@
         :description="strings.emptyBody"
       >
         <template #icon>
-          <ClipboardCheckIcon />
+          <component :is="checklistIconComponent(list?.icon)" />
         </template>
       </NcEmptyContent>
 
@@ -134,16 +136,23 @@
       close-on-click-outside
       @update:open="(v) => !v && (editing = null)"
     >
-      <form id="pantry-edit-item-form" class="pantry-form" @submit.prevent="submitEdit">
+      <form
+        id="pantry-edit-item-form"
+        class="pantry-form"
+        autocomplete="off"
+        @submit.prevent="submitEdit"
+      >
         <NcTextField
           v-model="editName"
           :label="strings.newItemLabel"
           :placeholder="strings.newItemPlaceholder"
+          autocomplete="off"
         />
         <NcTextField
           v-model="editQuantity"
           :label="strings.quantityLabel"
           :placeholder="strings.quantityPlaceholder"
+          autocomplete="off"
         />
         <CategoryPicker
           v-model="editCategoryId"
@@ -254,7 +263,7 @@ import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import RepeatIcon from '@icons/Repeat.vue'
-import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
+import { checklistIconComponent } from '@/components/ChecklistIconPicker'
 import UploadIcon from '@icons/Upload.vue'
 import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'

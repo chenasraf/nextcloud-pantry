@@ -161,11 +161,17 @@
       close-on-click-outside
       @update:open="(v) => !v && (editingPhoto = null)"
     >
-      <form id="pantry-edit-photo-form" class="pantry-form" @submit.prevent="submitEditPhoto">
+      <form
+        id="pantry-edit-photo-form"
+        class="pantry-form"
+        autocomplete="off"
+        @submit.prevent="submitEditPhoto"
+      >
         <NcTextField
           v-model="editCaption"
           :label="strings.captionLabel"
           :placeholder="strings.captionPlaceholder"
+          autocomplete="off"
         />
       </form>
       <template #actions>
