@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import * as api from '@/api/notes'
 import type { Note } from '@/api/types'
 
-export function useNotesWall(houseId: number) {
+export function useNotes(houseId: number) {
   const notes = ref<Note[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)

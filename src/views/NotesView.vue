@@ -83,16 +83,16 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import PageToolbar from '@/components/PageToolbar'
-import { NoteCard, NoteDialog } from '@/components/NotesWall'
+import { NoteCard, NoteDialog } from '@/components/Notes'
 import PlusIcon from '@icons/Plus.vue'
 import NoteIcon from '@icons/Note.vue'
 import type { Note } from '@/api/types'
-import { useNotesWall } from '@/composables/useNotesWall'
+import { useNotes } from '@/composables/useNotes'
 
 const props = defineProps<{ houseId: string }>()
 
 const houseIdNum = computed(() => Number(props.houseId))
-const { notes, loading, load, create, update, remove, reorder } = useNotesWall(houseIdNum.value)
+const { notes, loading, load, create, update, remove, reorder } = useNotes(houseIdNum.value)
 
 onMounted(load)
 watch(

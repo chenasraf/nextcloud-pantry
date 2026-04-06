@@ -11,7 +11,7 @@ use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
-use OCA\Pantry\Service\NotesWallService;
+use OCA\Pantry\Service\NoteService;
 use OCA\Pantry\Service\NotificationService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -25,13 +25,13 @@ use OCP\IUserSession;
  * @psalm-import-type PantryNote from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  */
-final class NotesWallController extends OCSController {
+final class NoteController extends OCSController {
 	use TranslatesDomainExceptions;
 
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private NotesWallService $notes,
+		private NoteService $notes,
 		private HouseAuthService $auth,
 		private NotificationService $notifications,
 		private IUserSession $userSession,

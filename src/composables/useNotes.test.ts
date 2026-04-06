@@ -11,7 +11,7 @@ const mockApi = vi.hoisted(() => ({
 
 vi.mock('@/api/notes', () => mockApi)
 
-import { useNotesWall } from './useNotesWall'
+import { useNotes } from './useNotes'
 
 function makeNote(overrides: Partial<Note> = {}): Note {
   return {
@@ -28,7 +28,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
   }
 }
 
-describe('useNotesWall', () => {
+describe('useNotes', () => {
   beforeEach(() => {
     vi.resetAllMocks()
   })
@@ -38,7 +38,7 @@ describe('useNotesWall', () => {
       const notes = [makeNote({ id: 1 }), makeNote({ id: 2 })]
       mockApi.listNotes.mockResolvedValue(notes)
 
-      const wall = useNotesWall(1)
+      const wall = useNotes(1)
       await wall.load()
 
       expect(wall.notes.value).toEqual(notes)
@@ -49,7 +49,7 @@ describe('useNotesWall', () => {
     it('sets error on failure', async () => {
       mockApi.listNotes.mockRejectedValue(new Error('Network error'))
 
-      const wall = useNotesWall(1)
+      const wall = useNotes(1)
       await wall.load()
 
       expect(wall.error.value).toBe('Network error')
@@ -63,7 +63,7 @@ describe('useNotesWall', () => {
       const newNote = makeNote({ id: 10 })
       mockApi.createNote.mockResolvedValue(newNote)
 
-      const wall = useNotesWall(1)
+      const wall = useNotes(1)
       await wall.load()
       const result = await wall.create('New Note', 'content', '#ff0000')
 
@@ -80,7 +80,7 @@ describe('useNotesWall', () => {
       mockApi.listNotes.mockResolvedValue([original])
       mockApi.updateNote.mockResolvedValue(updated)
 
-      const wall = useNotesWall(1)
+      const wall = useNotes(1)
       await wall.load()
       await wall.update(1, { title: 'New' })
 
@@ -93,7 +93,7 @@ describe('useNotesWall', () => {
       mockApi.listNotes.mockResolvedValue([makeNote({ id: 1 }), makeNote({ id: 2 })])
       mockApi.deleteNote.mockResolvedValue(undefined)
 
-      const wall = useNotesWall(1)
+      const wall = useNotes(1)
       await wall.load()
       await wall.remove(1)
 
@@ -110,7 +110,7 @@ describe('useNotesWall', () => {
       ])
       mockApi.reorderNotes.mockResolvedValue(undefined)
 
-      const wall = useNotesWall(1)
+      const wall = useNotes(1)
       await wall.load()
       await wall.reorder([
         { id: 2, sortOrder: 0 },

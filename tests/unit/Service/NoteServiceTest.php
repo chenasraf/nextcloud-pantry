@@ -10,19 +10,19 @@ namespace OCA\Pantry\Tests\Unit\Service;
 use OCA\Pantry\Db\Note;
 use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Exception\NotFoundException;
-use OCA\Pantry\Service\NotesWallService;
+use OCA\Pantry\Service\NoteService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class NotesWallServiceTest extends TestCase {
+class NoteServiceTest extends TestCase {
 	/** @var NoteMapper&MockObject */
 	private NoteMapper $noteMapper;
-	private NotesWallService $svc;
+	private NoteService $svc;
 
 	protected function setUp(): void {
 		$this->noteMapper = $this->createMock(NoteMapper::class);
-		$this->svc = new NotesWallService($this->noteMapper);
+		$this->svc = new NoteService($this->noteMapper);
 	}
 
 	private function makeNote(array $overrides = []): Note {

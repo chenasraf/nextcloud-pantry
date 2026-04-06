@@ -14,7 +14,7 @@ use OCA\Pantry\Db\PhotoMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
-class PhotoWallService {
+class PhotoService {
 	public function __construct(
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $folderMapper,

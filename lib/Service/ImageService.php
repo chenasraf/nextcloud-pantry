@@ -13,7 +13,7 @@ use OCP\Files\NotPermittedException;
 
 class ImageService {
 	public const CHECKLIST_ITEMS_SUBDIR = 'Checklist items';
-	public const PHOTO_WALL_SUBDIR = 'Photo wall';
+	public const PHOTOS_SUBDIR = 'Photo board';
 
 	public function __construct(
 		private IRootFolder $rootFolder,
@@ -41,13 +41,13 @@ class ImageService {
 
 	/**
 	 * Upload image bytes to the user's configured pantry image folder under the
-	 * "Photo wall" subdirectory, returning the Nextcloud file id on success.
+	 * "Photo board" subdirectory, returning the Nextcloud file id on success.
 	 */
-	public function uploadPhotoWall(string $uid, int $houseId, string $originalName, string $data): int {
+	public function uploadPhoto(string $uid, int $houseId, string $originalName, string $data): int {
 		if ($data === '') {
 			throw new \InvalidArgumentException('Empty file');
 		}
-		$folder = $this->resolvePhotoWallFolder($uid, $houseId);
+		$folder = $this->resolvePhotoFolder($uid, $houseId);
 		$filename = $this->uniqueName($folder, $originalName);
 		try {
 			$file = $folder->newFile($filename, $data);
@@ -57,9 +57,9 @@ class ImageService {
 		return $file->getId();
 	}
 
-	private function resolvePhotoWallFolder(string $uid, int $houseId): Folder {
+	private function resolvePhotoFolder(string $uid, int $houseId): Folder {
 		$base = $this->resolveBaseFolder($uid, $houseId);
-		return $this->getOrCreateSubFolder($base, self::PHOTO_WALL_SUBDIR);
+		return $this->getOrCreateSubFolder($base, self::PHOTOS_SUBDIR);
 	}
 
 	private function resolveChecklistItemsFolder(string $uid, int $houseId): Folder {

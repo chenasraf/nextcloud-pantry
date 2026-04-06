@@ -16,7 +16,7 @@ const mockApi = vi.hoisted(() => ({
 
 vi.mock('@/api/photos', () => mockApi)
 
-import { usePhotoWall } from './usePhotoWall'
+import { usePhotos } from './usePhotos'
 
 function makePhoto(overrides: Partial<Photo> = {}): Photo {
   return {
@@ -45,7 +45,7 @@ function makeFolder(overrides: Partial<PhotoFolder> = {}): PhotoFolder {
   }
 }
 
-describe('usePhotoWall', () => {
+describe('usePhotos', () => {
   beforeEach(() => {
     vi.resetAllMocks()
   })
@@ -57,7 +57,7 @@ describe('usePhotoWall', () => {
       mockApi.listPhotos.mockResolvedValue(photos)
       mockApi.listFolders.mockResolvedValue(folders)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
 
       expect(wall.photos.value).toEqual(photos)
@@ -70,7 +70,7 @@ describe('usePhotoWall', () => {
       mockApi.listPhotos.mockRejectedValue(new Error('Network error'))
       mockApi.listFolders.mockResolvedValue([])
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
 
       expect(wall.error.value).toBe('Network error')
@@ -87,7 +87,7 @@ describe('usePhotoWall', () => {
       ])
       mockApi.listFolders.mockResolvedValue([])
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
 
       expect(wall.rootPhotos.value).toHaveLength(2)
@@ -105,7 +105,7 @@ describe('usePhotoWall', () => {
       ])
       mockApi.listFolders.mockResolvedValue([])
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
 
       expect(wall.photosInFolder(5)).toHaveLength(2)
@@ -122,7 +122,7 @@ describe('usePhotoWall', () => {
       const newPhoto = makePhoto({ id: 10, fileId: 100 })
       mockApi.uploadPhoto.mockResolvedValue(newPhoto)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
       const file = new File(['data'], 'test.jpg')
       const result = await wall.upload(file, 5)
@@ -142,7 +142,7 @@ describe('usePhotoWall', () => {
       mockApi.listFolders.mockResolvedValue([])
       mockApi.updatePhoto.mockResolvedValue(updated)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
       await wall.updatePhoto(1, { caption: 'New' })
 
@@ -156,7 +156,7 @@ describe('usePhotoWall', () => {
       mockApi.listFolders.mockResolvedValue([])
       mockApi.deletePhoto.mockResolvedValue(undefined)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
       await wall.removePhoto(1)
 
@@ -174,7 +174,7 @@ describe('usePhotoWall', () => {
       mockApi.listFolders.mockResolvedValue([])
       mockApi.reorderPhotos.mockResolvedValue(undefined)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
       await wall.reorderPhotos([
         { id: 2, sortOrder: 0 },
@@ -193,7 +193,7 @@ describe('usePhotoWall', () => {
       const newFolder = makeFolder({ id: 10, name: 'New' })
       mockApi.createFolder.mockResolvedValue(newFolder)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
       const result = await wall.createFolder('New')
 
@@ -211,7 +211,7 @@ describe('usePhotoWall', () => {
       mockApi.listFolders.mockResolvedValue([original])
       mockApi.updateFolder.mockResolvedValue(updated)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
       await wall.updateFolder(1, { name: 'New' })
 
@@ -228,7 +228,7 @@ describe('usePhotoWall', () => {
       mockApi.listFolders.mockResolvedValue([makeFolder({ id: 5 })])
       mockApi.deleteFolder.mockResolvedValue(undefined)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
       await wall.removeFolder(5)
 
@@ -248,7 +248,7 @@ describe('usePhotoWall', () => {
       ])
       mockApi.reorderFolders.mockResolvedValue(undefined)
 
-      const wall = usePhotoWall(1)
+      const wall = usePhotos(1)
       await wall.load()
       await wall.reorderFolders([
         { id: 2, sortOrder: 0 },

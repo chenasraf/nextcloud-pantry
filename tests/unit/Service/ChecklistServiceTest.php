@@ -11,8 +11,8 @@ use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
-use OCA\Pantry\Service\RecurrenceService;
 use OCA\Pantry\Service\ChecklistService;
+use OCA\Pantry\Service\RecurrenceService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 

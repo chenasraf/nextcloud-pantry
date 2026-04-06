@@ -13,7 +13,7 @@ use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\NotificationService;
-use OCA\Pantry\Service\PhotoWallService;
+use OCA\Pantry\Service\PhotoService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -27,13 +27,13 @@ use OCP\IUserSession;
  * @psalm-import-type PantryPhotoFolder from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  */
-final class PhotoWallController extends OCSController {
+final class PhotoController extends OCSController {
 	use TranslatesDomainExceptions;
 
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private PhotoWallService $photos,
+		private PhotoService $photos,
 		private HouseAuthService $auth,
 		private ImageService $images,
 		private NotificationService $notifications,
@@ -223,7 +223,7 @@ final class PhotoWallController extends OCSController {
 				throw new \RuntimeException('Could not read uploaded file');
 			}
 			$original = (string)($data['name'] ?? 'image.jpg');
-			$fileId = $this->images->uploadPhotoWall($uid, $houseId, $original, $bytes);
+			$fileId = $this->images->uploadPhoto($uid, $houseId, $original, $bytes);
 
 			$photo = $this->photos->addPhoto($houseId, $uid, $fileId, $folderId, $caption);
 			$this->notifications->notifyPhotoUploaded($houseId, $uid);

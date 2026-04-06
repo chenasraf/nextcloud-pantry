@@ -10,16 +10,22 @@
     <PageToolbar :title="activeFolderId ? activeFolder?.name : strings.title">
       <template v-if="activeFolderId" #before-title>
         <NcButton variant="tertiary" :aria-label="strings.back" @click="navigateToFolder(null)">
-          <template #icon><ArrowLeftIcon :size="20" /></template>
+          <template #icon>
+            <ArrowLeftIcon :size="20" />
+          </template>
         </NcButton>
       </template>
       <template #actions>
         <NcButton v-if="!activeFolderId" @click="showFolderDialog = true">
-          <template #icon><FolderPlusIcon :size="20" /></template>
+          <template #icon>
+            <FolderPlusIcon :size="20" />
+          </template>
           {{ strings.newFolder }}
         </NcButton>
         <NcButton variant="primary" @click="triggerUpload">
-          <template #icon><UploadIcon :size="20" /></template>
+          <template #icon>
+            <UploadIcon :size="20" />
+          </template>
           {{ strings.upload }}
         </NcButton>
       </template>
@@ -224,13 +230,13 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PageToolbar from '@/components/PageToolbar'
-import { PhotoCard, FolderStack, FolderDialog, PhotoPreview } from '@/components/PhotoWall'
+import { PhotoCard, FolderStack, FolderDialog, PhotoPreview } from '@/components/Photos'
 import UploadIcon from '@icons/Upload.vue'
 import ImageIcon from '@icons/Image.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import FolderPlusIcon from '@icons/FolderPlus.vue'
 import type { Photo, PhotoFolder } from '@/api/types'
-import { usePhotoWall } from '@/composables/usePhotoWall'
+import { usePhotos } from '@/composables/usePhotos'
 
 const props = defineProps<{ houseId: string; folderId?: string }>()
 const router = useRouter()
@@ -249,7 +255,7 @@ const {
   createFolder,
   updateFolder,
   removeFolder,
-} = usePhotoWall(houseIdNum.value)
+} = usePhotos(houseIdNum.value)
 
 onMounted(load)
 watch(
@@ -549,7 +555,7 @@ async function submitDeleteFolder() {
 }
 
 const strings = {
-  title: t('pantry', 'Photo wall'),
+  title: t('pantry', 'Photo board'),
   upload: t('pantry', 'Upload'),
   newFolder: t('pantry', 'New folder'),
   back: t('pantry', 'Back'),

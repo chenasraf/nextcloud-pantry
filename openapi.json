@@ -3680,10 +3680,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/notes": {
             "get": {
-                "operationId": "notes_wall-index-notes",
+                "operationId": "note-index-notes",
                 "summary": "List all notes in a house",
                 "tags": [
-                    "notes_wall"
+                    "note"
                 ],
                 "security": [
                     {
@@ -3803,10 +3803,10 @@
                 }
             },
             "post": {
-                "operationId": "notes_wall-create-note",
+                "operationId": "note-create-note",
                 "summary": "Create a note",
                 "tags": [
-                    "notes_wall"
+                    "note"
                 ],
                 "security": [
                     {
@@ -3933,10 +3933,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/notes/{noteId}": {
             "patch": {
-                "operationId": "notes_wall-update-note",
+                "operationId": "note-update-note",
                 "summary": "Update a note",
                 "tags": [
-                    "notes_wall"
+                    "note"
                 ],
                 "security": [
                     {
@@ -4077,10 +4077,10 @@
                 }
             },
             "delete": {
-                "operationId": "notes_wall-delete-note",
+                "operationId": "note-delete-note",
                 "summary": "Delete a note",
                 "tags": [
-                    "notes_wall"
+                    "note"
                 ],
                 "security": [
                     {
@@ -4186,10 +4186,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/notes/reorder": {
             "post": {
-                "operationId": "notes_wall-reorder-notes",
+                "operationId": "note-reorder-notes",
                 "summary": "Batch reorder notes",
                 "tags": [
-                    "notes_wall"
+                    "note"
                 ],
                 "security": [
                     {
@@ -4319,10 +4319,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/photos/folders": {
             "get": {
-                "operationId": "photo_wall-index-folders",
+                "operationId": "photo-index-folders",
                 "summary": "List all photo folders in a house",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -4442,10 +4442,10 @@
                 }
             },
             "post": {
-                "operationId": "photo_wall-create-folder",
+                "operationId": "photo-create-folder",
                 "summary": "Create a photo folder",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -4560,10 +4560,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/photos/folders/{folderId}": {
             "patch": {
-                "operationId": "photo_wall-update-folder",
+                "operationId": "photo-update-folder",
                 "summary": "Update a photo folder",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -4692,11 +4692,11 @@
                 }
             },
             "delete": {
-                "operationId": "photo_wall-delete-folder",
+                "operationId": "photo-delete-folder",
                 "summary": "Delete a photo folder",
                 "description": "Photos in this folder are moved to the wall root.",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -4802,10 +4802,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/photos/folders/reorder": {
             "post": {
-                "operationId": "photo_wall-reorder-folders",
+                "operationId": "photo-reorder-folders",
                 "summary": "Batch reorder folders",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -4935,10 +4935,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/photos": {
             "get": {
-                "operationId": "photo_wall-index-photos",
+                "operationId": "photo-index-photos",
                 "summary": "List all photos in a house",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -5058,10 +5058,10 @@
                 }
             },
             "post": {
-                "operationId": "photo_wall-upload-photo",
+                "operationId": "photo-upload-photo",
                 "summary": "Upload a photo",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -5182,10 +5182,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/photos/{photoId}": {
             "patch": {
-                "operationId": "photo_wall-update-photo",
+                "operationId": "photo-update-photo",
                 "summary": "Update a photo",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -5321,10 +5321,10 @@
                 }
             },
             "delete": {
-                "operationId": "photo_wall-delete-photo",
+                "operationId": "photo-delete-photo",
                 "summary": "Delete a photo",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {
@@ -5430,10 +5430,10 @@
         },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/photos/reorder": {
             "post": {
-                "operationId": "photo_wall-reorder-photos",
+                "operationId": "photo-reorder-photos",
                 "summary": "Batch reorder photos",
                 "tags": [
-                    "photo_wall"
+                    "photo"
                 ],
                 "security": [
                     {

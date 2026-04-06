@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import * as api from '@/api/photos'
 import type { Photo, PhotoFolder } from '@/api/types'
 
-export function usePhotoWall(houseId: number) {
+export function usePhotos(houseId: number) {
   const photos = ref<Photo[]>([])
   const folders = ref<PhotoFolder[]>([])
   const loading = ref(false)

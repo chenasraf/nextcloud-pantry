@@ -12,7 +12,7 @@ use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
-class NotesWallService {
+class NoteService {
 	public function __construct(
 		private NoteMapper $noteMapper,
 	) {
