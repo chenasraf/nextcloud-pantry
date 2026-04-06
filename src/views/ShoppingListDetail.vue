@@ -1,120 +1,125 @@
 <template>
   <div class="pantry-detail">
-    <header class="pantry-detail__header">
-      <NcButton
-        variant="tertiary"
-        :aria-label="strings.back"
-        @click="$router.push({ name: 'lists', params: { houseId } })"
-      >
-        <template #icon>
-          <ArrowLeftIcon :size="20" />
-        </template>
-      </NcButton>
-      <h2 v-if="list">{{ list.name }}</h2>
-      <h2 v-else>&nbsp;</h2>
-    </header>
-
-    <form class="pantry-detail__add" @submit.prevent="submitAdd">
-      <NcTextField
-        v-model="newName"
-        :label="strings.newItemLabel"
-        :placeholder="strings.newItemPlaceholder"
-      />
-      <NcTextField
-        v-model="newQuantity"
-        :label="strings.quantityLabel"
-        :placeholder="strings.quantityPlaceholder"
-      />
-      <CategoryPicker
-        v-model="newCategoryId"
-        :house-id="houseIdNum"
-        :label="strings.categoryLabel"
-      />
-      <NcButton variant="tertiary" @click="showRecurrenceEditor = true">
-        <template #icon>
-          <RepeatIcon :size="20" />
-        </template>
-        {{ newRrule ? strings.recurrenceSet : strings.recurrenceButton }}
-      </NcButton>
-      <NcButton type="submit" variant="primary" :disabled="!newName.trim() || adding">
-        <template #icon>
-          <PlusIcon :size="20" />
-        </template>
-        {{ strings.add }}
-      </NcButton>
-    </form>
-
-    <div v-if="loading" class="pantry-center">
-      <NcLoadingIcon :size="36" />
-    </div>
-
-    <NcEmptyContent
-      v-else-if="items.length === 0"
-      :name="strings.emptyTitle"
-      :description="strings.emptyBody"
-    >
-      <template #icon>
-        <CartIcon />
-      </template>
-    </NcEmptyContent>
-
-    <ul v-else class="pantry-items">
-      <li
-        v-for="item in sortedItems"
-        :key="item.id"
-        class="pantry-item"
-        :class="{ 'pantry-item--bought': item.bought }"
-      >
-        <NcCheckboxRadioSwitch
-          :model-value="item.bought"
-          @update:model-value="handleToggle(item.id)"
+    <PageToolbar :title="list?.name">
+      <template #before-title>
+        <NcButton
+          variant="tertiary"
+          :aria-label="strings.back"
+          @click="$router.push({ name: 'lists', params: { houseId } })"
         >
-          <span class="pantry-item__label">
-            <button
-              v-if="item.imageFileId"
-              type="button"
-              class="pantry-item__thumb"
-              :aria-label="strings.viewImage"
-              @click.stop.prevent="openPreview(item)"
+          <template #icon>
+            <ArrowLeftIcon :size="20" />
+          </template>
+        </NcButton>
+      </template>
+    </PageToolbar>
+
+    <div class="pantry-detail__body">
+      <form class="pantry-detail__add" @submit.prevent="submitAdd">
+        <NcTextField
+          v-model="newName"
+          :label="strings.newItemLabel"
+          :placeholder="strings.newItemPlaceholder"
+        />
+        <NcTextField
+          v-model="newQuantity"
+          :label="strings.quantityLabel"
+          :placeholder="strings.quantityPlaceholder"
+        />
+        <CategoryPicker
+          v-model="newCategoryId"
+          :house-id="houseIdNum"
+          :placeholder="strings.categoryPlaceholder"
+        />
+        <NcButton variant="tertiary" @click="showRecurrenceEditor = true">
+          <template #icon>
+            <RepeatIcon :size="20" />
+          </template>
+          {{ newRrule ? strings.recurrenceSet : strings.recurrenceButton }}
+        </NcButton>
+        <NcButton type="submit" variant="primary" :disabled="!newName.trim() || adding">
+          <template #icon>
+            <PlusIcon :size="20" />
+          </template>
+          {{ strings.add }}
+        </NcButton>
+      </form>
+
+      <div v-if="loading" class="pantry-center">
+        <NcLoadingIcon :size="36" />
+      </div>
+
+      <NcEmptyContent
+        v-else-if="items.length === 0"
+        :name="strings.emptyTitle"
+        :description="strings.emptyBody"
+      >
+        <template #icon>
+          <CartIcon />
+        </template>
+      </NcEmptyContent>
+
+      <ul v-else class="pantry-items">
+        <li
+          v-for="item in sortedItems"
+          :key="item.id"
+          class="pantry-item"
+          :class="{ 'pantry-item--bought': item.bought }"
+        >
+          <NcCheckboxRadioSwitch
+            :model-value="item.bought"
+            @update:model-value="handleToggle(item.id)"
+          >
+            <span class="pantry-item__label">
+              <button
+                v-if="item.imageFileId"
+                type="button"
+                class="pantry-item__thumb"
+                :aria-label="strings.viewImage"
+                @click.stop.prevent="openPreview(item)"
+              >
+                <img :src="thumbUrl(item.imageFileId)" :alt="item.name" />
+              </button>
+              <span class="pantry-item__name">{{ item.name }}</span>
+            </span>
+          </NcCheckboxRadioSwitch>
+          <div class="pantry-item__meta">
+            <span v-if="item.quantity" class="pantry-item__quantity">{{ item.quantity }}</span>
+            <span
+              v-if="categoryFor(item.categoryId)"
+              class="pantry-item__category"
+              :style="{ color: categoryFor(item.categoryId)!.color }"
             >
-              <img :src="thumbUrl(item.imageFileId)" :alt="item.name" />
-            </button>
-            <span class="pantry-item__name">{{ item.name }}</span>
-          </span>
-        </NcCheckboxRadioSwitch>
-        <div class="pantry-item__meta">
-          <span v-if="item.quantity" class="pantry-item__quantity">{{ item.quantity }}</span>
-          <span
-            v-if="categoryFor(item.categoryId)"
-            class="pantry-item__category"
-            :style="{ color: categoryFor(item.categoryId)!.color }"
-          >
-            <component :is="categoryIconComponent(categoryFor(item.categoryId)!.icon)" :size="14" />
-            {{ categoryFor(item.categoryId)!.name }}
-          </span>
-          <span v-if="item.rrule" class="pantry-item__recurrence" :title="item.rrule">
-            <RepeatIcon :size="14" />
-            {{ formatRrule(item.rrule) }}
-          </span>
-        </div>
-        <div class="pantry-item__actions">
-          <NcButton variant="tertiary" :aria-label="strings.editItem" @click="startEdit(item)">
-            <template #icon>
-              <PencilIcon :size="18" />
-            </template>
-          </NcButton>
-          <NcButton
-            variant="tertiary"
-            :aria-label="strings.removeItem"
-            @click="handleRemove(item.id)"
-          >
-            <template #icon>
-              <DeleteIcon :size="18" />
-            </template>
-          </NcButton>
-        </div>
-      </li>
-    </ul>
+              <component
+                :is="categoryIconComponent(categoryFor(item.categoryId)!.icon)"
+                :size="14"
+              />
+              {{ categoryFor(item.categoryId)!.name }}
+            </span>
+            <span v-if="item.rrule" class="pantry-item__recurrence" :title="item.rrule">
+              <RepeatIcon :size="14" />
+              {{ formatRrule(item.rrule) }}
+            </span>
+          </div>
+          <div class="pantry-item__actions">
+            <NcButton variant="tertiary" :aria-label="strings.editItem" @click="startEdit(item)">
+              <template #icon>
+                <PencilIcon :size="18" />
+              </template>
+            </NcButton>
+            <NcButton
+              variant="tertiary"
+              :aria-label="strings.removeItem"
+              @click="handleRemove(item.id)"
+            >
+              <template #icon>
+                <DeleteIcon :size="18" />
+              </template>
+            </NcButton>
+          </div>
+        </li>
+      </ul>
+    </div>
 
     <RecurrenceEditor
       v-model:open="showRecurrenceEditor"
@@ -143,6 +148,7 @@
           v-model="editCategoryId"
           :house-id="houseIdNum"
           :label="strings.categoryLabel"
+          :placeholder="strings.categoryPlaceholder"
         />
         <NcButton variant="tertiary" type="button" @click="showEditRecurrenceEditor = true">
           <template #icon>
@@ -240,6 +246,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import { generateUrl } from '@nextcloud/router'
+import PageToolbar from '@/components/PageToolbar'
 import PlusIcon from '@icons/Plus.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import DeleteIcon from '@icons/Delete.vue'
@@ -438,6 +445,7 @@ const strings = {
   quantityLabel: t('pantry', 'Quantity'),
   quantityPlaceholder: t('pantry', 'e.g. 2 L'),
   categoryLabel: t('pantry', 'Category'),
+  categoryPlaceholder: t('pantry', 'Category'),
   recurrenceButton: t('pantry', 'Repeat …'),
   recurrenceSet: t('pantry', 'Repeat: set'),
   editItem: t('pantry', 'Edit item'),
@@ -455,18 +463,9 @@ const strings = {
 
 <style scoped lang="scss">
 .pantry-detail {
-  max-width: 900px;
-  margin: 0 auto;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-
-    h2 {
-      margin: 0;
-    }
+  &__body {
+    max-width: 900px;
+    margin: 0 auto;
   }
 
   &__add {
@@ -475,6 +474,10 @@ const strings = {
     gap: 0.75rem;
     align-items: end;
     margin-bottom: 1.5rem;
+
+    :deep(.v-select.select) {
+      margin-bottom: 0;
+    }
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr 1fr;

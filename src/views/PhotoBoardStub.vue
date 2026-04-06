@@ -1,14 +1,18 @@
 <template>
-  <NcEmptyContent :name="strings.title" :description="strings.body">
-    <template #icon>
-      <ImageIcon />
-    </template>
-  </NcEmptyContent>
+  <div>
+    <PageToolbar :title="strings.title" />
+    <NcEmptyContent :name="strings.title" :description="strings.body">
+      <template #icon>
+        <ImageIcon />
+      </template>
+    </NcEmptyContent>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { t } from '@nextcloud/l10n'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import PageToolbar from '@/components/PageToolbar'
 import ImageIcon from '@icons/Image.vue'
 
 const strings = {

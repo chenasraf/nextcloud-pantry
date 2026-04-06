@@ -306,11 +306,14 @@ const strings = {
   list-style: none;
   padding: 8px 8px 0;
   margin: 0;
+  position: relative;
+  z-index: 0;
 }
 
 .pantry-switcher {
   position: relative;
-  padding: 8px;
+  z-index: 1;
+  padding: 0 8px 8px;
   border-top: 1px solid var(--color-border);
 
   &__trigger {
@@ -318,7 +321,7 @@ const strings = {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 8px;
     background: transparent;
     color: var(--color-main-text);
     border: 1px solid var(--color-border);

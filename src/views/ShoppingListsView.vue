@@ -1,61 +1,64 @@
 <template>
   <div class="pantry-lists">
-    <header class="pantry-lists__header">
-      <h2>{{ strings.title }}</h2>
-      <NcButton variant="primary" @click="showCreate = true">
-        <template #icon>
-          <PlusIcon :size="20" />
-        </template>
-        {{ strings.newList }}
-      </NcButton>
-    </header>
-
-    <div v-if="loading" class="pantry-center">
-      <NcLoadingIcon :size="36" />
-    </div>
-
-    <NcEmptyContent
-      v-else-if="lists.length === 0"
-      :name="strings.emptyTitle"
-      :description="strings.emptyBody"
-    >
-      <template #icon>
-        <CartIcon />
-      </template>
-      <template #action>
+    <PageToolbar :title="strings.title">
+      <template #actions>
         <NcButton variant="primary" @click="showCreate = true">
+          <template #icon>
+            <PlusIcon :size="20" />
+          </template>
           {{ strings.newList }}
         </NcButton>
       </template>
-    </NcEmptyContent>
+    </PageToolbar>
 
-    <ul v-else class="pantry-lists__grid">
-      <li v-for="list in lists" :key="list.id" class="pantry-list-card-wrap">
-        <router-link
-          :to="{
-            name: 'list-detail',
-            params: { houseId: String(houseIdNum), listId: String(list.id) },
-          }"
-          class="pantry-list-card"
-        >
-          <CartIcon :size="28" class="pantry-list-card__icon" />
-          <div class="pantry-list-card__body">
-            <h3>{{ list.name }}</h3>
-            <p v-if="list.description">{{ list.description }}</p>
-          </div>
-        </router-link>
-        <NcActions class="pantry-list-card__actions" :aria-label="strings.listMenu">
-          <NcActionButton @click="startEdit(list)">
-            <template #icon><PencilIcon :size="20" /></template>
-            {{ strings.edit }}
-          </NcActionButton>
-          <NcActionButton @click="confirmDelete(list)">
-            <template #icon><DeleteIcon :size="20" /></template>
-            {{ strings.delete }}
-          </NcActionButton>
-        </NcActions>
-      </li>
-    </ul>
+    <div class="pantry-lists__body">
+      <div v-if="loading" class="pantry-center">
+        <NcLoadingIcon :size="36" />
+      </div>
+
+      <NcEmptyContent
+        v-else-if="lists.length === 0"
+        :name="strings.emptyTitle"
+        :description="strings.emptyBody"
+      >
+        <template #icon>
+          <CartIcon />
+        </template>
+        <template #action>
+          <NcButton variant="primary" @click="showCreate = true">
+            {{ strings.newList }}
+          </NcButton>
+        </template>
+      </NcEmptyContent>
+
+      <ul v-else class="pantry-lists__grid">
+        <li v-for="list in lists" :key="list.id" class="pantry-list-card-wrap">
+          <router-link
+            :to="{
+              name: 'list-detail',
+              params: { houseId: String(houseIdNum), listId: String(list.id) },
+            }"
+            class="pantry-list-card"
+          >
+            <CartIcon :size="28" class="pantry-list-card__icon" />
+            <div class="pantry-list-card__body">
+              <h3>{{ list.name }}</h3>
+              <p v-if="list.description">{{ list.description }}</p>
+            </div>
+          </router-link>
+          <NcActions class="pantry-list-card__actions" :aria-label="strings.listMenu">
+            <NcActionButton @click="startEdit(list)">
+              <template #icon><PencilIcon :size="20" /></template>
+              {{ strings.edit }}
+            </NcActionButton>
+            <NcActionButton @click="confirmDelete(list)">
+              <template #icon><DeleteIcon :size="20" /></template>
+              {{ strings.delete }}
+            </NcActionButton>
+          </NcActions>
+        </li>
+      </ul>
+    </div>
 
     <NcDialog
       v-if="showCreate"
@@ -141,6 +144,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import PageToolbar from '@/components/PageToolbar'
 import PlusIcon from '@icons/Plus.vue'
 import CartIcon from '@icons/Cart.vue'
 import PencilIcon from '@icons/Pencil.vue'
@@ -242,18 +246,9 @@ const strings = {
 
 <style scoped lang="scss">
 .pantry-lists {
-  max-width: 1100px;
-  margin: 0 auto;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-
-    h2 {
-      margin: 0;
-    }
+  &__body {
+    max-width: 1100px;
+    margin: 0 auto;
   }
 
   &__grid {
