@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-export PHP_CS_FIXER_IGNORE_ENV=1
-pnpm lint-staged -- --relative

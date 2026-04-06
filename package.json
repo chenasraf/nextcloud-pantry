@@ -13,7 +13,7 @@
     "build": "vite build",
     "lint": "eslint src",
     "format": "eslint --fix src && prettier --write {vite.config.ts,src/,README.md}",
-    "prepare": "husky",
+    "prepare": "lefthook install",
     "gen": "simple-scaffold -c . -k",
     "test": "vitest",
     "test:run": "vitest run"
@@ -34,6 +34,11 @@
     "vue": "^3.5.32",
     "vue-material-design-icons": "^5.3.1"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "lefthook"
+    ]
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@nextcloud/browserslist-config": "^3.1.2",
@@ -44,8 +49,7 @@
     "@vue/tsconfig": "^0.9.1",
     "eslint": "^10.2.0",
     "happy-dom": "^20.8.9",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.4.0",
+    "lefthook": "^1.12.5",
     "prettier": "^3.8.1",
     "rollup-plugin-visualizer": "^7.0.1",
     "sass": "^1.99.0",

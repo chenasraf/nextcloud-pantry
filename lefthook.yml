@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  commands:
+    eslint:
+      glob: "*.{ts,vue}"
+      run: pnpm eslint --fix {staged_files} && git add {staged_files}
+    prettier:
+      glob: "*.{scss,vue,ts,md}"
+      run: pnpm prettier --write {staged_files} && git add {staged_files}
+    prettier-json:
+      glob: "*.json"
+      exclude: "openapi.json"
+      run: pnpm prettier --write {staged_files} && git add {staged_files}
+    php-cs-fixer:
+      glob: "*.php"
+      exclude: "/gen/"
+      env:
+        PHP_CS_FIXER_IGNORE_ENV: "1"
+      run: make php-cs-fixer && make test
+    openapi:
+      glob: "*Controller.php"
+      run: make openapi && git add openapi.json
