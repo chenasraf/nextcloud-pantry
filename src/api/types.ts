@@ -57,3 +57,24 @@ export interface ShoppingListItem {
   createdAt: number
   updatedAt: number
 }
+
+export interface PhotoFolder {
+  id: number
+  houseId: number
+  name: string
+  sortOrder: number
+  createdAt: number
+  updatedAt: number
+}
+
+export interface Photo {
+  id: number
+  houseId: number
+  folderId: number | null
+  fileId: number
+  caption: string | null
+  uploadedBy: string
+  sortOrder: number
+  createdAt: number
+  updatedAt: number
+}

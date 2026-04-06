@@ -111,7 +111,6 @@
       />
       <NcSelect v-model="newRoleOption" :options="roleOptions" :input-label="strings.roleLabel" />
       <p v-if="addError" class="pantry-form-error">{{ addError }}</p>
-      <button type="submit" class="pantry-hidden-submit" aria-hidden="true" tabindex="-1" />
     </form>
     <template #actions>
       <NcButton @click="showAdd = false">{{ strings.cancel }}</NcButton>

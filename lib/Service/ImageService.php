@@ -13,6 +13,7 @@ use OCP\Files\NotPermittedException;
 
 class ImageService {
 	public const SHOPPING_ITEMS_SUBDIR = 'Shopping list items';
+	public const PHOTO_WALL_SUBDIR = 'Photo wall';
 
 	public function __construct(
 		private IRootFolder $rootFolder,
@@ -36,6 +37,29 @@ class ImageService {
 			throw new \RuntimeException('Could not write file: ' . $e->getMessage(), 0, $e);
 		}
 		return $file->getId();
+	}
+
+	/**
+	 * Upload image bytes to the user's configured pantry image folder under the
+	 * "Photo wall" subdirectory, returning the Nextcloud file id on success.
+	 */
+	public function uploadPhotoWall(string $uid, int $houseId, string $originalName, string $data): int {
+		if ($data === '') {
+			throw new \InvalidArgumentException('Empty file');
+		}
+		$folder = $this->resolvePhotoWallFolder($uid, $houseId);
+		$filename = $this->uniqueName($folder, $originalName);
+		try {
+			$file = $folder->newFile($filename, $data);
+		} catch (NotPermittedException $e) {
+			throw new \RuntimeException('Could not write file: ' . $e->getMessage(), 0, $e);
+		}
+		return $file->getId();
+	}
+
+	private function resolvePhotoWallFolder(string $uid, int $houseId): Folder {
+		$base = $this->resolveBaseFolder($uid, $houseId);
+		return $this->getOrCreateSubFolder($base, self::PHOTO_WALL_SUBDIR);
 	}
 
 	private function resolveShoppingItemsFolder(string $uid, int $houseId): Folder {

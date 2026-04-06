@@ -71,6 +71,27 @@ namespace OCA\Pantry;
  * @psalm-type PantryLastHouse = array{houseId: int|null}
  *
  * @psalm-type PantryImageFolder = array{folder: string}
+ *
+ * @psalm-type PantryPhotoFolder = array{
+ *     id: int,
+ *     houseId: int,
+ *     name: string,
+ *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
+ *
+ * @psalm-type PantryPhoto = array{
+ *     id: int,
+ *     houseId: int,
+ *     folderId: int|null,
+ *     fileId: int,
+ *     caption: string|null,
+ *     uploadedBy: string,
+ *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
  */
 class ResponseDefinitions {
 }

@@ -242,6 +242,85 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 			}
 		}
 
+		// ---- pantry_photo_folders ----
+		$photoFoldersTable = Application::tableName('photo_folders');
+		if (!$schema->hasTable($photoFoldersTable)) {
+			$table = $schema->createTable($photoFoldersTable);
+			$table->addColumn('id', Types::BIGINT, [
+				'autoincrement' => true,
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('house_id', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('name', Types::STRING, [
+				'notnull' => true,
+				'length' => 255,
+			]);
+			$table->addColumn('sort_order', Types::INTEGER, [
+				'notnull' => true,
+				'default' => 0,
+			]);
+			$table->addColumn('created_at', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('updated_at', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->setPrimaryKey(['id']);
+			$table->addIndex(['house_id'], 'pantry_pfolders_house_idx');
+		}
+
+		// ---- pantry_photos ----
+		$photosTable = Application::tableName('photos');
+		if (!$schema->hasTable($photosTable)) {
+			$table = $schema->createTable($photosTable);
+			$table->addColumn('id', Types::BIGINT, [
+				'autoincrement' => true,
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('house_id', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('folder_id', Types::BIGINT, [
+				'notnull' => false,
+				'length' => 20,
+			]);
+			$table->addColumn('file_id', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('caption', Types::STRING, [
+				'notnull' => false,
+				'length' => 255,
+			]);
+			$table->addColumn('uploaded_by', Types::STRING, [
+				'notnull' => true,
+				'length' => 64,
+			]);
+			$table->addColumn('sort_order', Types::INTEGER, [
+				'notnull' => true,
+				'default' => 0,
+			]);
+			$table->addColumn('created_at', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->addColumn('updated_at', Types::BIGINT, [
+				'notnull' => true,
+				'length' => 20,
+			]);
+			$table->setPrimaryKey(['id']);
+			$table->addIndex(['house_id'], 'pantry_photos_house_idx');
+			$table->addIndex(['folder_id'], 'pantry_photos_folder_idx');
+		}
+
 		return $schema;
 	}
 }

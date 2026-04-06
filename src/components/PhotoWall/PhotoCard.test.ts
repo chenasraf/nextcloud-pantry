@@ -1,0 +1,174 @@
+import { mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+
+import { createIconMock, nextcloudL10nMock } from '@/test-utils'
+import type { Photo } from '@/api/types'
+
+vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
+vi.mock('@nextcloud/router', () => ({
+  generateUrl: (path: string) => path,
+}))
+vi.mock('@icons/Pencil.vue', () => createIconMock('PencilIcon'))
+vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
+vi.mock('@icons/ArrowUp.vue', () => createIconMock('ArrowUpIcon'))
+
+vi.mock('@nextcloud/vue/components/NcActions', () => ({
+  default: {
+    name: 'NcActions',
+    template: '<div class="nc-actions"><slot /></div>',
+    props: ['ariaLabel'],
+  },
+}))
+vi.mock('@nextcloud/vue/components/NcActionButton', () => ({
+  default: {
+    name: 'NcActionButton',
+    template: '<button class="nc-action-button"><slot name="icon" /><slot /></button>',
+  },
+}))
+
+import PhotoCard from './PhotoCard.vue'
+
+function makePhoto(overrides: Partial<Photo> = {}): Photo {
+  return {
+    id: 1,
+    houseId: 1,
+    folderId: null,
+    fileId: 42,
+    caption: null,
+    uploadedBy: 'admin',
+    sortOrder: 0,
+    createdAt: 0,
+    updatedAt: 0,
+    ...overrides,
+  }
+}
+
+describe('PhotoCard', () => {
+  describe('rendering', () => {
+    it('renders an image with correct preview URL', () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto() } })
+      const img = wrapper.find('.photo-card__img')
+      expect(img.exists()).toBe(true)
+      expect(img.attributes('src')).toContain('fileId=42')
+      expect(img.attributes('src')).toContain('x=300')
+    })
+
+    it('shows caption when provided', () => {
+      const wrapper = mount(PhotoCard, {
+        props: { photo: makePhoto({ caption: 'Test caption' }) },
+      })
+      const caption = wrapper.find('.photo-card__caption')
+      expect(caption.exists()).toBe(true)
+      expect(caption.text()).toBe('Test caption')
+    })
+
+    it('does not show caption when null', () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto() } })
+      expect(wrapper.find('.photo-card__caption').exists()).toBe(false)
+    })
+
+    it('uses caption as alt text on image', () => {
+      const wrapper = mount(PhotoCard, {
+        props: { photo: makePhoto({ caption: 'Alt text' }) },
+      })
+      expect(wrapper.find('.photo-card__img').attributes('alt')).toBe('Alt text')
+    })
+
+    it('is draggable', () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto() } })
+      expect(wrapper.find('.photo-card').attributes('draggable')).toBe('true')
+    })
+  })
+
+  describe('actions', () => {
+    it('always shows Edit action', () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto() } })
+      const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(texts).toContain('Edit')
+    })
+
+    it('always shows Delete action', () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto() } })
+      const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(texts).toContain('Delete')
+    })
+
+    it('shows "Move to wall" action when photo is in a folder', () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto({ folderId: 5 }) } })
+      const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(texts).toContain('Move to wall')
+    })
+
+    it('hides "Move to wall" action when photo is at root', () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto({ folderId: null }) } })
+      const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(texts).not.toContain('Move to wall')
+    })
+  })
+
+  describe('events', () => {
+    it('emits preview on click', async () => {
+      const photo = makePhoto()
+      const wrapper = mount(PhotoCard, { props: { photo } })
+      await wrapper.find('.photo-card').trigger('click')
+      expect(wrapper.emitted('preview')).toBeTruthy()
+      expect(wrapper.emitted('preview')![0]).toEqual([photo])
+    })
+
+    it('emits edit when Edit action is clicked', async () => {
+      const photo = makePhoto()
+      const wrapper = mount(PhotoCard, { props: { photo } })
+      const editBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Edit')!
+      await editBtn.trigger('click')
+      expect(wrapper.emitted('edit')).toBeTruthy()
+      expect(wrapper.emitted('edit')![0]).toEqual([photo])
+    })
+
+    it('emits delete when Delete action is clicked', async () => {
+      const photo = makePhoto()
+      const wrapper = mount(PhotoCard, { props: { photo } })
+      const delBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Delete')!
+      await delBtn.trigger('click')
+      expect(wrapper.emitted('delete')).toBeTruthy()
+      expect(wrapper.emitted('delete')![0]).toEqual([photo])
+    })
+
+    it('emits move-to-root when "Move to wall" is clicked', async () => {
+      const photo = makePhoto({ folderId: 5 })
+      const wrapper = mount(PhotoCard, { props: { photo } })
+      const moveBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Move to wall')!
+      await moveBtn.trigger('click')
+      expect(wrapper.emitted('move-to-root')).toBeTruthy()
+      expect(wrapper.emitted('move-to-root')![0]).toEqual([photo])
+    })
+
+    it('does not emit preview when actions wrapper is clicked', async () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto() } })
+      await wrapper.find('.photo-card__actions').trigger('click')
+      expect(wrapper.emitted('preview')).toBeFalsy()
+    })
+
+    it('emits drag-start on dragstart', async () => {
+      const photo = makePhoto({ id: 7 })
+      const wrapper = mount(PhotoCard, { props: { photo } })
+      await wrapper.find('.photo-card').trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(wrapper.emitted('drag-start')).toBeTruthy()
+      expect(wrapper.emitted('drag-start')![0]).toEqual([7])
+    })
+
+    it('applies dragging class on dragstart and removes on dragend', async () => {
+      const wrapper = mount(PhotoCard, { props: { photo: makePhoto() } })
+      const card = wrapper.find('.photo-card')
+
+      await card.trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(card.classes()).toContain('photo-card--dragging')
+
+      await card.trigger('dragend')
+      expect(card.classes()).not.toContain('photo-card--dragging')
+    })
+  })
+})

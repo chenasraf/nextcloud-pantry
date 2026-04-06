@@ -1,0 +1,109 @@
+import { computed, ref } from 'vue'
+import * as api from '@/api/photos'
+import type { Photo, PhotoFolder } from '@/api/types'
+
+export function usePhotoWall(houseId: number) {
+  const photos = ref<Photo[]>([])
+  const folders = ref<PhotoFolder[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+
+  async function load(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const [p, f] = await Promise.all([api.listPhotos(houseId), api.listFolders(houseId)])
+      photos.value = p
+      folders.value = f
+    } catch (e) {
+      error.value = (e as Error).message
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const rootPhotos = computed(() => photos.value.filter((p) => p.folderId === null))
+
+  function photosInFolder(folderId: number): Photo[] {
+    return photos.value.filter((p) => p.folderId === folderId)
+  }
+
+  // ----- Photos -----
+
+  async function upload(file: File, folderId?: number | null): Promise<Photo> {
+    const created = await api.uploadPhoto(houseId, file, folderId)
+    photos.value = [...photos.value, created]
+    return created
+  }
+
+  async function updatePhoto(
+    photoId: number,
+    patch: Parameters<typeof api.updatePhoto>[2],
+  ): Promise<void> {
+    const updated = await api.updatePhoto(houseId, photoId, patch)
+    photos.value = photos.value.map((p) => (p.id === photoId ? updated : p))
+  }
+
+  async function removePhoto(photoId: number): Promise<void> {
+    await api.deletePhoto(houseId, photoId)
+    photos.value = photos.value.filter((p) => p.id !== photoId)
+  }
+
+  async function reorderPhotos(items: { id: number; sortOrder: number }[]): Promise<void> {
+    await api.reorderPhotos(houseId, items)
+    // Apply locally
+    const map = new Map(items.map((i) => [i.id, i.sortOrder]))
+    photos.value = photos.value
+      .map((p) => (map.has(p.id) ? { ...p, sortOrder: map.get(p.id)! } : p))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+  }
+
+  // ----- Folders -----
+
+  async function createFolder(name: string): Promise<PhotoFolder> {
+    const created = await api.createFolder(houseId, name)
+    folders.value = [...folders.value, created]
+    return created
+  }
+
+  async function updateFolder(
+    folderId: number,
+    patch: { name?: string; sortOrder?: number },
+  ): Promise<void> {
+    const updated = await api.updateFolder(houseId, folderId, patch)
+    folders.value = folders.value.map((f) => (f.id === folderId ? updated : f))
+  }
+
+  async function removeFolder(folderId: number): Promise<void> {
+    await api.deleteFolder(houseId, folderId)
+    folders.value = folders.value.filter((f) => f.id !== folderId)
+    // Photos in the deleted folder move to root
+    photos.value = photos.value.map((p) => (p.folderId === folderId ? { ...p, folderId: null } : p))
+  }
+
+  async function reorderFolders(items: { id: number; sortOrder: number }[]): Promise<void> {
+    await api.reorderFolders(houseId, items)
+    const map = new Map(items.map((i) => [i.id, i.sortOrder]))
+    folders.value = folders.value
+      .map((f) => (map.has(f.id) ? { ...f, sortOrder: map.get(f.id)! } : f))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+  }
+
+  return {
+    photos,
+    folders,
+    loading,
+    error,
+    load,
+    rootPhotos,
+    photosInFolder,
+    upload,
+    updatePhoto,
+    removePhoto,
+    reorderPhotos,
+    createFolder,
+    updateFolder,
+    removeFolder,
+    reorderFolders,
+  }
+}

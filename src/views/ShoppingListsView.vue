@@ -108,7 +108,6 @@
           :label="strings.descriptionLabel"
           :placeholder="strings.descriptionPlaceholder"
         />
-        <button type="submit" class="pantry-hidden-submit" aria-hidden="true" tabindex="-1" />
       </form>
       <template #actions>
         <NcButton @click="editing = null">{{ strings.cancel }}</NcButton>

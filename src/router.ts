@@ -45,7 +45,14 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'photos',
         name: 'photos',
-        component: () => import('@/views/PhotoBoardStub.vue'),
+        component: () => import('@/views/PhotoWallView.vue'),
+        props: true,
+      },
+      {
+        path: 'photos/folders/:folderId',
+        name: 'photo-folder',
+        component: () => import('@/views/PhotoWallView.vue'),
+        props: true,
       },
       {
         path: 'notes',
