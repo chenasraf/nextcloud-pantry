@@ -35,27 +35,6 @@
             <NoteIcon :size="20" />
           </template>
         </NcAppNavigationItem>
-
-        <NcAppNavigationItem
-          :name="strings.members"
-          :to="{ name: 'members', params: { houseId: String(currentHouseId) } }"
-          :active="isNavActive(['members', 'member-'])"
-        >
-          <template #icon>
-            <AccountGroupIcon :size="20" />
-          </template>
-        </NcAppNavigationItem>
-
-        <NcAppNavigationItem
-          v-if="canAdmin"
-          :name="strings.houseSettings"
-          :to="{ name: 'house-settings', params: { houseId: String(currentHouseId) } }"
-          :active="isNavActive(['house-settings'])"
-        >
-          <template #icon>
-            <CogIcon :size="20" />
-          </template>
-        </NcAppNavigationItem>
       </template>
 
       <li v-if="currentHouseId === null" class="pantry-nav__welcome">
@@ -65,7 +44,16 @@
 
     <template #footer>
       <ul class="pantry-nav__footer-list">
-        <NcAppNavigationItem :name="strings.appSettings" @click="showSettings = true">
+        <NcAppNavigationItem
+          v-if="currentHouseId !== null"
+          :name="strings.houseSettings"
+          @click="showHouseSettings = true"
+        >
+          <template #icon>
+            <CogIcon :size="20" />
+          </template>
+        </NcAppNavigationItem>
+        <NcAppNavigationItem :name="strings.accountSettings" @click="showSettings = true">
           <template #icon>
             <CogOutlineIcon :size="20" />
           </template>
@@ -117,6 +105,7 @@
     </template>
   </NcAppNavigation>
 
+  <HouseSettingsDialog v-if="currentHouseId !== null" v-model:open="showHouseSettings" />
   <PantrySettingsDialog v-model:open="showSettings" />
 
   <NcDialog
@@ -165,7 +154,6 @@ import HomeIcon from '@icons/Home.vue'
 import CartIcon from '@icons/Cart.vue'
 import ImageIcon from '@icons/Image.vue'
 import NoteIcon from '@icons/Note.vue'
-import AccountGroupIcon from '@icons/AccountGroup.vue'
 import CogIcon from '@icons/Cog.vue'
 import CogOutlineIcon from '@icons/CogOutline.vue'
 import ChevronUpIcon from '@icons/ChevronUp.vue'
@@ -173,6 +161,7 @@ import ChevronDownIcon from '@icons/ChevronDown.vue'
 import CheckIcon from '@icons/Check.vue'
 import PlusIcon from '@icons/Plus.vue'
 import { useHouses } from '@/composables/useHouses'
+import HouseSettingsDialog from '@/components/HouseSettingsDialog.vue'
 import PantrySettingsDialog from '@/components/PantrySettingsDialog.vue'
 
 const route = useRoute()
@@ -199,11 +188,6 @@ function isNavActive(prefixes: string[]): boolean {
   if (!name) return false
   return prefixes.some((p) => name === p || name.startsWith(p))
 }
-
-const canAdmin = computed(() => {
-  const role = house.value?.role
-  return role === 'owner' || role === 'admin'
-})
 
 onMounted(() => {
   void load()
@@ -237,7 +221,8 @@ async function pickHouse(id: number) {
   await router.push({ name: 'lists', params: { houseId: String(id) } })
 }
 
-// -------- App settings dialog --------
+// -------- Settings dialogs --------
+const showHouseSettings = ref(false)
 const showSettings = ref(false)
 
 // -------- Create house dialog --------
@@ -277,9 +262,8 @@ const strings = {
   lists: t('pantry', 'Shopping lists'),
   photos: t('pantry', 'Photo board'),
   notes: t('pantry', 'Notes wall'),
-  members: t('pantry', 'Members'),
   houseSettings: t('pantry', 'House settings'),
-  appSettings: t('pantry', 'Pantry settings'),
+  accountSettings: t('pantry', 'Account settings'),
   pickHouse: t('pantry', 'Pick a house'),
   createHouse: t('pantry', 'New house …'),
   welcomeHint: t('pantry', 'Pick or create a house to get started.'),

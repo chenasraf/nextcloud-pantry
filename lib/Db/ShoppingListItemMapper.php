@@ -47,6 +47,22 @@ class ShoppingListItemMapper extends QBMapper {
 		return $this->findEntity($qb);
 	}
 
+	/**
+	 * Find all bought items whose next_due_at has passed.
+	 *
+	 * @return ShoppingListItem[]
+	 */
+	public function findDueRecurring(int $now): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('bought', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->isNotNull('next_due_at'))
+			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)));
+
+		return $this->findEntities($qb);
+	}
+
 	public function deleteByList(int $listId): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())

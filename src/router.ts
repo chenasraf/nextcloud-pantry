@@ -52,18 +52,6 @@ const routes: RouteRecordRaw[] = [
         name: 'notes',
         component: () => import('@/views/NotesWallStub.vue'),
       },
-      {
-        path: 'members',
-        name: 'members',
-        component: () => import('@/views/MembersView.vue'),
-        props: true,
-      },
-      {
-        path: 'settings',
-        name: 'house-settings',
-        component: () => import('@/views/HouseSettingsView.vue'),
-        props: true,
-      },
     ],
   },
 ]

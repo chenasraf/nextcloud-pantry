@@ -92,21 +92,9 @@ class ShoppingListService {
 	 * @return ShoppingListItem[]
 	 */
 	public function listItems(int $listId, ?int $now = null): array {
-		$now ??= time();
-		$items = $this->itemMapper->findByList($listId);
-		$refreshed = [];
-		foreach ($items as $item) {
-			if ($item->getBought() && $item->getNextDueAt() !== null && $item->getNextDueAt() <= $now) {
-				$item->setBought(false);
-				$item->setBoughtAt(null);
-				$item->setBoughtBy(null);
-				$item->setNextDueAt(null);
-				$item->setUpdatedAt($now);
-				$this->itemMapper->update($item);
-			}
-			$refreshed[] = $item;
-		}
-		return $refreshed;
+		// Eagerly reopen any due recurring items in this list before returning.
+		$this->reopenDueItems($now);
+		return $this->itemMapper->findByList($listId);
 	}
 
 	public function getItem(int $itemId): ShoppingListItem {
@@ -244,6 +232,33 @@ class ShoppingListService {
 		}
 		$anchor = (new \DateTimeImmutable())->setTimestamp($item->getCreatedAt() ?: $now);
 		return $this->recurrence->nextOccurrenceAfter($rrule, $anchor, $nowDt);
+	}
+
+	/**
+	 * Reopen all recurring items whose next_due_at has passed.
+	 *
+	 * Called both lazily from listItems() and periodically by the background job.
+	 */
+	public function reopenDueItems(?int $now = null): int {
+		$now ??= time();
+		$items = $this->itemMapper->findDueRecurring($now);
+		foreach ($items as $item) {
+			$item->setBought(false);
+			$item->setBoughtAt(null);
+			$item->setBoughtBy(null);
+			if ($item->getRepeatFromCompletion()) {
+				// Completion-based: next interval starts when the user checks
+				// the item off again, so clear the schedule for now.
+				$item->setNextDueAt(null);
+			} else {
+				// Fixed schedule: immediately compute the next occurrence so the
+				// item keeps cycling even if the user never interacts with it.
+				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
+			}
+			$item->setUpdatedAt($now);
+			$this->itemMapper->update($item);
+		}
+		return count($items);
 	}
 
 	public function deleteItem(int $itemId): void {

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\AppInfo;
 
+use OCA\Pantry\BackgroundJob\ReopenRecurringItemsJob;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -24,6 +25,7 @@ class Application extends App implements IBootstrap {
 	}
 
 	public function register(IRegistrationContext $context): void {
+		$context->registerTimedJob(ReopenRecurringItemsJob::class);
 	}
 
 	public function boot(IBootContext $context): void {

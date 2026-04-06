@@ -566,6 +566,15 @@ const strings = {
     }
   }
 
+  :deep(.checkbox-content__icon) {
+    margin-block: auto !important;
+  }
+
+  :deep(.checkbox-radio-switch__content) {
+    width: 100%;
+    max-width: unset;
+  }
+
   &__label {
     display: inline-flex;
     align-items: center;

@@ -58,6 +58,7 @@ class ShoppingListServiceTest extends TestCase {
 			'boughtAt' => $now - 86400 * 8,
 			'boughtBy' => 'alice',
 			'rrule' => 'FREQ=WEEKLY',
+			'repeatFromCompletion' => true,
 			'nextDueAt' => $now - 10,
 		]);
 		$freshItem = $this->makeItem([
@@ -69,6 +70,7 @@ class ShoppingListServiceTest extends TestCase {
 		]);
 
 		$this->itemMapper->method('findByList')->willReturn([$dueItem, $freshItem]);
+		$this->itemMapper->method('findDueRecurring')->with($now)->willReturn([$dueItem]);
 		$this->itemMapper->expects($this->once())
 			->method('update')
 			->with($this->callback(function (ShoppingListItem $i) {
