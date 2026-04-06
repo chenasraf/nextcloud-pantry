@@ -22,6 +22,7 @@ use OCP\IUserSession;
 /**
  * @psalm-import-type PantryLastHouse from ResponseDefinitions
  * @psalm-import-type PantryImageFolder from ResponseDefinitions
+ * @psalm-import-type PantryNotificationPrefs from ResponseDefinitions
  */
 final class PrefsController extends OCSController {
 	use TranslatesDomainExceptions;
@@ -121,6 +122,56 @@ final class PrefsController extends OCSController {
 			$this->auth->requireMember($houseId, $uid);
 			$stored = $this->prefs->setImageFolder($uid, $houseId, $folder);
 			return new DataResponse(['folder' => $stored]);
+		});
+	}
+
+	/**
+	 * Get notification preferences for a house
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryNotificationPrefs, array{}>
+	 *
+	 * 200: Prefs returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/notifications')]
+	#[NoAdminRequired]
+	public function getNotificationPrefs(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			return new DataResponse($this->prefs->getNotificationPrefs($uid, $houseId));
+		});
+	}
+
+	/**
+	 * Update notification preferences for a house
+	 *
+	 * @param int $houseId House id.
+	 * @param bool|null $notifyPhoto Photo upload notifications.
+	 * @param bool|null $notifyNoteCreate Note creation notifications.
+	 * @param bool|null $notifyNoteEdit Note edit notifications.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryNotificationPrefs, array{}>
+	 *
+	 * 200: Prefs updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/notifications')]
+	#[NoAdminRequired]
+	public function setNotificationPrefs(int $houseId, ?bool $notifyPhoto = null, ?bool $notifyNoteCreate = null, ?bool $notifyNoteEdit = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			if ($notifyPhoto !== null) {
+				$this->prefs->setNotificationPref($uid, $houseId, 'notify_photo', $notifyPhoto);
+			}
+			if ($notifyNoteCreate !== null) {
+				$this->prefs->setNotificationPref($uid, $houseId, 'notify_note_create', $notifyNoteCreate);
+			}
+			if ($notifyNoteEdit !== null) {
+				$this->prefs->setNotificationPref($uid, $houseId, 'notify_note_edit', $notifyNoteEdit);
+			}
+			return new DataResponse($this->prefs->getNotificationPrefs($uid, $houseId));
 		});
 	}
 

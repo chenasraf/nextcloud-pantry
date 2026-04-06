@@ -52,6 +52,38 @@ class PrefsService {
 		return $normalized;
 	}
 
+	// ----- Notification preferences -----
+
+	public function getNotificationPref(string $uid, int $houseId, string $prefKey): bool {
+		$value = $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			$prefKey . '_' . $houseId,
+			'1', // enabled by default
+		);
+		return $value === '1';
+	}
+
+	public function setNotificationPref(string $uid, int $houseId, string $prefKey, bool $enabled): void {
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			$prefKey . '_' . $houseId,
+			$enabled ? '1' : '0',
+		);
+	}
+
+	/**
+	 * @return array<string, bool>
+	 */
+	public function getNotificationPrefs(string $uid, int $houseId): array {
+		return [
+			'notifyPhoto' => $this->getNotificationPref($uid, $houseId, 'notify_photo'),
+			'notifyNoteCreate' => $this->getNotificationPref($uid, $houseId, 'notify_note_create'),
+			'notifyNoteEdit' => $this->getNotificationPref($uid, $houseId, 'notify_note_edit'),
+		];
+	}
+
 	private function normalizeFolder(string $folder): string {
 		$trimmed = trim($folder);
 		if ($trimmed === '') {

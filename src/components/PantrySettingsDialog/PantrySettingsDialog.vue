@@ -25,19 +25,50 @@
         </div>
       </form>
     </NcAppSettingsSection>
+
+    <NcAppSettingsSection id="pantry-notifications" :name="strings.notificationsSection">
+      <p class="pantry-settings__hint">{{ strings.notificationsHint }}</p>
+      <div class="pantry-settings__checks">
+        <NcCheckboxRadioSwitch
+          :model-value="notifPrefs.notifyPhoto"
+          @update:model-value="updateNotifPref('notifyPhoto', $event)"
+        >
+          {{ strings.notifyPhoto }}
+        </NcCheckboxRadioSwitch>
+        <NcCheckboxRadioSwitch
+          :model-value="notifPrefs.notifyNoteCreate"
+          @update:model-value="updateNotifPref('notifyNoteCreate', $event)"
+        >
+          {{ strings.notifyNoteCreate }}
+        </NcCheckboxRadioSwitch>
+        <NcCheckboxRadioSwitch
+          :model-value="notifPrefs.notifyNoteEdit"
+          @update:model-value="updateNotifPref('notifyNoteEdit', $event)"
+        >
+          {{ strings.notifyNoteEdit }}
+        </NcCheckboxRadioSwitch>
+      </div>
+    </NcAppSettingsSection>
   </NcAppSettingsDialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcAppSettingsDialog from '@nextcloud/vue/components/NcAppSettingsDialog'
 import NcAppSettingsSection from '@nextcloud/vue/components/NcAppSettingsSection'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
 import FolderIcon from '@icons/Folder.vue'
-import { getImageFolder, setImageFolder } from '@/api/prefs'
+import {
+  getImageFolder,
+  setImageFolder,
+  getNotificationPrefs,
+  setNotificationPrefs,
+  type NotificationPrefs,
+} from '@/api/prefs'
 
 const props = defineProps<{ open: boolean; houseId: number | null }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -61,6 +92,7 @@ watch(
     if (isOpen) {
       saved.value = false
       void loadFolder()
+      void loadNotifPrefs()
     }
   },
   { immediate: true },
@@ -99,6 +131,36 @@ async function save() {
   }
 }
 
+// ----- Notification prefs -----
+
+const notifPrefs = reactive<NotificationPrefs>({
+  notifyPhoto: true,
+  notifyNoteCreate: true,
+  notifyNoteEdit: true,
+})
+
+async function loadNotifPrefs() {
+  if (props.houseId === null) return
+  try {
+    const prefs = await getNotificationPrefs(props.houseId)
+    Object.assign(notifPrefs, prefs)
+  } catch {
+    // Keep defaults.
+  }
+}
+
+async function updateNotifPref(key: keyof NotificationPrefs, value: boolean) {
+  if (props.houseId === null) return
+  notifPrefs[key] = value
+  try {
+    const updated = await setNotificationPrefs(props.houseId, { [key]: value })
+    Object.assign(notifPrefs, updated)
+  } catch {
+    // Revert on error
+    notifPrefs[key] = !value
+  }
+}
+
 const strings = {
   title: t('pantry', 'Account settings'),
   imagesSection: t('pantry', 'Images'),
@@ -112,6 +174,14 @@ const strings = {
   save: t('pantry', 'Save'),
   saving: t('pantry', 'Saving …'),
   saved: t('pantry', 'Saved.'),
+  notificationsSection: t('pantry', 'Notifications'),
+  notificationsHint: t(
+    'pantry',
+    'Choose which notifications you want to receive from this household.',
+  ),
+  notifyPhoto: t('pantry', 'Photo uploads'),
+  notifyNoteCreate: t('pantry', 'New notes'),
+  notifyNoteEdit: t('pantry', 'Note edits'),
 }
 </script>
 
@@ -148,5 +218,11 @@ const strings = {
 .pantry-settings__saved {
   color: var(--color-success);
   font-size: 0.85rem;
+}
+
+.pantry-settings__checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 </style>

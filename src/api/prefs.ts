@@ -20,3 +20,22 @@ export async function setImageFolder(houseId: number, folder: string): Promise<s
   })
   return resp.data?.folder ?? folder
 }
+
+export interface NotificationPrefs {
+  notifyPhoto: boolean
+  notifyNoteCreate: boolean
+  notifyNoteEdit: boolean
+}
+
+export async function getNotificationPrefs(houseId: number): Promise<NotificationPrefs> {
+  const resp = await ocs.get<NotificationPrefs>(`/houses/${houseId}/prefs/notifications`)
+  return resp.data ?? { notifyPhoto: true, notifyNoteCreate: true, notifyNoteEdit: true }
+}
+
+export async function setNotificationPrefs(
+  houseId: number,
+  prefs: Partial<NotificationPrefs>,
+): Promise<NotificationPrefs> {
+  const resp = await ocs.put<NotificationPrefs>(`/houses/${houseId}/prefs/notifications`, prefs)
+  return resp.data ?? { notifyPhoto: true, notifyNoteCreate: true, notifyNoteEdit: true }
+}

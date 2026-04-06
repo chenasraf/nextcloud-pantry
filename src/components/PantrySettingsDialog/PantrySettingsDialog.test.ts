@@ -9,6 +9,8 @@ vi.mock('@icons/Folder.vue', () => createIconMock('FolderIcon'))
 vi.mock('@/api/prefs', () => ({
   getImageFolder: vi.fn(),
   setImageFolder: vi.fn(),
+  getNotificationPrefs: vi.fn(),
+  setNotificationPrefs: vi.fn(),
 }))
 
 // Mock Nextcloud Vue components that pull in CSS
@@ -40,8 +42,22 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
     props: ['variant', 'disabled', 'type'],
   },
 }))
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template:
+      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><slot /></label>',
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
+}))
 
-import { getImageFolder, setImageFolder } from '@/api/prefs'
+import {
+  getImageFolder,
+  setImageFolder,
+  getNotificationPrefs,
+  setNotificationPrefs,
+} from '@/api/prefs'
 import PantrySettingsDialog from './PantrySettingsDialog.vue'
 
 const NcAppSettingsDialogStub = {
@@ -88,6 +104,16 @@ describe('PantrySettingsDialog', () => {
     vi.clearAllMocks()
     vi.mocked(getImageFolder).mockResolvedValue('/Pantry')
     vi.mocked(setImageFolder).mockResolvedValue('/Pantry')
+    vi.mocked(getNotificationPrefs).mockResolvedValue({
+      notifyPhoto: true,
+      notifyNoteCreate: true,
+      notifyNoteEdit: true,
+    })
+    vi.mocked(setNotificationPrefs).mockResolvedValue({
+      notifyPhoto: true,
+      notifyNoteCreate: true,
+      notifyNoteEdit: true,
+    })
   })
 
   describe('rendering', () => {
@@ -176,6 +202,48 @@ describe('PantrySettingsDialog', () => {
       await flushPromises()
 
       expect(setImageFolder).toHaveBeenCalledWith(5, '/MyFolder')
+    })
+  })
+
+  describe('notification preferences', () => {
+    it('has a Notifications section', async () => {
+      const wrapper = mountComponent({ open: true, houseId: 1 })
+      await flushPromises()
+
+      const sections = wrapper.findAll('.nc-app-settings-section')
+      expect(sections.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('loads notification prefs on open', async () => {
+      mountComponent({ open: true, houseId: 7 })
+      await flushPromises()
+
+      expect(getNotificationPrefs).toHaveBeenCalledWith(7)
+    })
+
+    it('renders three notification checkboxes', async () => {
+      const wrapper = mountComponent({ open: true, houseId: 1 })
+      await flushPromises()
+
+      const checkboxes = wrapper.findAll('.nc-checkbox')
+      expect(checkboxes).toHaveLength(3)
+    })
+
+    it('calls setNotificationPrefs when a checkbox is toggled', async () => {
+      vi.mocked(setNotificationPrefs).mockResolvedValue({
+        notifyPhoto: false,
+        notifyNoteCreate: true,
+        notifyNoteEdit: true,
+      })
+
+      const wrapper = mountComponent({ open: true, houseId: 3 })
+      await flushPromises()
+
+      const checkbox = wrapper.find('.nc-checkbox input')
+      await checkbox.setValue(false)
+      await flushPromises()
+
+      expect(setNotificationPrefs).toHaveBeenCalledWith(3, { notifyPhoto: false })
     })
   })
 })

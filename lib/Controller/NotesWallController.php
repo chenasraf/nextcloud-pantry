@@ -12,6 +12,7 @@ use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\NotesWallService;
+use OCA\Pantry\Service\NotificationService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -32,6 +33,7 @@ final class NotesWallController extends OCSController {
 		IRequest $request,
 		private NotesWallService $notes,
 		private HouseAuthService $auth,
+		private NotificationService $notifications,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -78,6 +80,7 @@ final class NotesWallController extends OCSController {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$note = $this->notes->createNote($houseId, $uid, $title, $content, $color);
+			$this->notifications->notifyNoteCreated($houseId, $uid, (int)$note->getId(), $note->getTitle());
 			return new DataResponse($note->jsonSerialize());
 		});
 	}
@@ -100,7 +103,8 @@ final class NotesWallController extends OCSController {
 	#[NoAdminRequired]
 	public function updateNote(int $houseId, int $noteId, ?string $title = null, ?string $content = null, ?string $color = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $noteId, $title, $content, $color, $sortOrder): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->notes->getNote($noteId);
 			$this->assertInHouse($existing->getHouseId(), $houseId);
 			$patch = [];
@@ -117,6 +121,10 @@ final class NotesWallController extends OCSController {
 				$patch['sortOrder'] = $sortOrder;
 			}
 			$note = $this->notes->updateNote($noteId, $patch);
+			// Only notify for content/title changes, not color/sort-order-only changes
+			if ($title !== null || $content !== null) {
+				$this->notifications->notifyNoteEdited($houseId, $uid, (int)$note->getId(), $note->getTitle());
+			}
 			return new DataResponse($note->jsonSerialize());
 		});
 	}

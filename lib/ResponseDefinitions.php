@@ -72,6 +72,12 @@ namespace OCA\Pantry;
  *
  * @psalm-type PantryImageFolder = array{folder: string}
  *
+ * @psalm-type PantryNotificationPrefs = array{
+ *     notifyPhoto: bool,
+ *     notifyNoteCreate: bool,
+ *     notifyNoteEdit: bool,
+ * }
+ *
  * @psalm-type PantryPhotoFolder = array{
  *     id: int,
  *     houseId: int,

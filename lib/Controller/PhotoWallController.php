@@ -12,6 +12,7 @@ use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\ImageService;
+use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PhotoWallService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -35,6 +36,7 @@ final class PhotoWallController extends OCSController {
 		private PhotoWallService $photos,
 		private HouseAuthService $auth,
 		private ImageService $images,
+		private NotificationService $notifications,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -224,6 +226,7 @@ final class PhotoWallController extends OCSController {
 			$fileId = $this->images->uploadPhotoWall($uid, $houseId, $original, $bytes);
 
 			$photo = $this->photos->addPhoto($houseId, $uid, $fileId, $folderId, $caption);
+			$this->notifications->notifyPhotoUploaded($houseId, $uid);
 			return new DataResponse($photo->jsonSerialize());
 		});
 	}
