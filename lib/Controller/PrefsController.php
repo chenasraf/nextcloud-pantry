@@ -151,6 +151,8 @@ final class PrefsController extends OCSController {
 	 * @param bool|null $notifyPhoto Photo upload notifications.
 	 * @param bool|null $notifyNoteCreate Note creation notifications.
 	 * @param bool|null $notifyNoteEdit Note edit notifications.
+	 * @param bool|null $notifyItemAdd Checklist item added notifications.
+	 * @param bool|null $notifyItemRecur Recurring item reappeared notifications.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryNotificationPrefs, array{}>
 	 *
@@ -158,8 +160,8 @@ final class PrefsController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/notifications')]
 	#[NoAdminRequired]
-	public function setNotificationPrefs(int $houseId, ?bool $notifyPhoto = null, ?bool $notifyNoteCreate = null, ?bool $notifyNoteEdit = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit): DataResponse {
+	public function setNotificationPrefs(int $houseId, ?bool $notifyPhoto = null, ?bool $notifyNoteCreate = null, ?bool $notifyNoteEdit = null, ?bool $notifyItemAdd = null, ?bool $notifyItemRecur = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			if ($notifyPhoto !== null) {
@@ -170,6 +172,12 @@ final class PrefsController extends OCSController {
 			}
 			if ($notifyNoteEdit !== null) {
 				$this->prefs->setNotificationPref($uid, $houseId, 'notify_note_edit', $notifyNoteEdit);
+			}
+			if ($notifyItemAdd !== null) {
+				$this->prefs->setNotificationPref($uid, $houseId, 'notify_item_add', $notifyItemAdd);
+			}
+			if ($notifyItemRecur !== null) {
+				$this->prefs->setNotificationPref($uid, $houseId, 'notify_item_recur', $notifyItemRecur);
 			}
 			return new DataResponse($this->prefs->getNotificationPrefs($uid, $houseId));
 		});

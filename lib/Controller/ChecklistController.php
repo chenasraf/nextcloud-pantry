@@ -14,6 +14,7 @@ use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\ImageService;
+use OCA\Pantry\Service\NotificationService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -37,6 +38,7 @@ final class ChecklistController extends OCSController {
 		private CategoryService $categories,
 		private HouseAuthService $auth,
 		private ImageService $images,
+		private NotificationService $notifications,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -240,6 +242,7 @@ final class ChecklistController extends OCSController {
 				'repeatFromCompletion' => $repeatFromCompletion,
 				'sortOrder' => $sortOrder ?? 0,
 			]);
+			$this->notifications->notifyItemAdded($houseId, $this->requireUid(), $item->getName(), $list->getName());
 			return new DataResponse($item->jsonSerialize());
 		});
 	}

@@ -125,6 +125,38 @@ class NotifierTest extends TestCase {
 		$this->assertSame($n, $result);
 	}
 
+	public function testItemAddedSetsRichSubject(): void {
+		$n = $this->makeNotification('pantry', 'item_added', [
+			'userId' => 'alice',
+			'userDisplayName' => 'Alice',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Milk',
+			'listName' => 'Groceries',
+		]);
+
+		$n->expects($this->once())->method('setRichSubject');
+		$n->expects($this->once())->method('setParsedSubject');
+
+		$result = $this->notifier->prepare($n, 'en');
+		$this->assertSame($n, $result);
+	}
+
+	public function testItemRecurredSetsRichSubject(): void {
+		$n = $this->makeNotification('pantry', 'item_recurred', [
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Milk',
+			'listName' => 'Groceries',
+		]);
+
+		$n->expects($this->once())->method('setRichSubject');
+		$n->expects($this->once())->method('setParsedSubject');
+
+		$result = $this->notifier->prepare($n, 'en');
+		$this->assertSame($n, $result);
+	}
+
 	public function testParsedSubjectReplacesPlaceholders(): void {
 		$parsedSubject = '';
 		$n = $this->makeNotification('pantry', 'photo_uploaded', [

@@ -25,11 +25,21 @@ export interface NotificationPrefs {
   notifyPhoto: boolean
   notifyNoteCreate: boolean
   notifyNoteEdit: boolean
+  notifyItemAdd: boolean
+  notifyItemRecur: boolean
 }
 
 export async function getNotificationPrefs(houseId: number): Promise<NotificationPrefs> {
   const resp = await ocs.get<NotificationPrefs>(`/houses/${houseId}/prefs/notifications`)
-  return resp.data ?? { notifyPhoto: true, notifyNoteCreate: true, notifyNoteEdit: true }
+  return (
+    resp.data ?? {
+      notifyPhoto: true,
+      notifyNoteCreate: true,
+      notifyNoteEdit: true,
+      notifyItemAdd: true,
+      notifyItemRecur: true,
+    }
+  )
 }
 
 export async function setNotificationPrefs(
@@ -37,5 +47,13 @@ export async function setNotificationPrefs(
   prefs: Partial<NotificationPrefs>,
 ): Promise<NotificationPrefs> {
   const resp = await ocs.put<NotificationPrefs>(`/houses/${houseId}/prefs/notifications`, prefs)
-  return resp.data ?? { notifyPhoto: true, notifyNoteCreate: true, notifyNoteEdit: true }
+  return (
+    resp.data ?? {
+      notifyPhoto: true,
+      notifyNoteCreate: true,
+      notifyNoteEdit: true,
+      notifyItemAdd: true,
+      notifyItemRecur: true,
+    }
+  )
 }

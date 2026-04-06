@@ -344,7 +344,9 @@
                 "required": [
                     "notifyPhoto",
                     "notifyNoteCreate",
-                    "notifyNoteEdit"
+                    "notifyNoteEdit",
+                    "notifyItemAdd",
+                    "notifyItemRecur"
                 ],
                 "properties": {
                     "notifyPhoto": {
@@ -354,6 +356,12 @@
                         "type": "boolean"
                     },
                     "notifyNoteEdit": {
+                        "type": "boolean"
+                    },
+                    "notifyItemAdd": {
+                        "type": "boolean"
+                    },
+                    "notifyItemRecur": {
                         "type": "boolean"
                     }
                 }
@@ -6107,6 +6115,18 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Note edit notifications."
+                                    },
+                                    "notifyItemAdd": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Checklist item added notifications."
+                                    },
+                                    "notifyItemRecur": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Recurring item reappeared notifications."
                                     }
                                 }
                             }

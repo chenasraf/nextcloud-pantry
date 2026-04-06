@@ -77,6 +77,8 @@ namespace OCA\Pantry;
  *     notifyPhoto: bool,
  *     notifyNoteCreate: bool,
  *     notifyNoteEdit: bool,
+ *     notifyItemAdd: bool,
+ *     notifyItemRecur: bool,
  * }
  *
  * @psalm-type PantryPhotoFolder = array{

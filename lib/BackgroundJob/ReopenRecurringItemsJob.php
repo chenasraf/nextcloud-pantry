@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\Pantry\BackgroundJob;
 
 use OCA\Pantry\Service\ChecklistService;
+use OCA\Pantry\Service\NotificationService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
@@ -20,6 +21,7 @@ class ReopenRecurringItemsJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $time,
 		private ChecklistService $lists,
+		private NotificationService $notifications,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($time);
@@ -29,9 +31,24 @@ class ReopenRecurringItemsJob extends TimedJob {
 	}
 
 	protected function run(mixed $argument): void {
-		$count = $this->lists->reopenDueItems();
-		if ($count > 0) {
-			$this->logger->info('Pantry: reopened {count} recurring item(s)', ['count' => $count]);
+		$reopened = $this->lists->reopenDueItems();
+		if (count($reopened) > 0) {
+			$this->logger->info('Pantry: reopened {count} recurring item(s)', ['count' => count($reopened)]);
+			foreach ($reopened as $item) {
+				try {
+					$list = $this->lists->getList($item->getListId());
+					$this->notifications->notifyItemRecurred(
+						$list->getHouseId(),
+						$item->getName(),
+						$list->getName(),
+					);
+				} catch (\Throwable $e) {
+					$this->logger->warning('Pantry: failed to notify for recurring item {id}: {msg}', [
+						'id' => $item->getId(),
+						'msg' => $e->getMessage(),
+					]);
+				}
+			}
 		}
 	}
 }

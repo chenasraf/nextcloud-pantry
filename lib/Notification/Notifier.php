@@ -99,6 +99,57 @@ class Notifier implements INotifier {
 				);
 				break;
 
+			case 'item_added':
+				$notification->setRichSubject(
+					$l->t('{user} added "{item}" to {list} in {house}'),
+					[
+						'user' => [
+							'type' => 'user',
+							'id' => $params['userId'] ?? '',
+							'name' => $params['userDisplayName'] ?? '',
+						],
+						'item' => [
+							'type' => 'highlight',
+							'id' => 'item',
+							'name' => $params['itemName'] ?? '',
+						],
+						'list' => [
+							'type' => 'highlight',
+							'id' => 'list',
+							'name' => $params['listName'] ?? '',
+						],
+						'house' => [
+							'type' => 'highlight',
+							'id' => (string)($params['houseId'] ?? ''),
+							'name' => $params['houseName'] ?? '',
+						],
+					]
+				);
+				break;
+
+			case 'item_recurred':
+				$notification->setRichSubject(
+					$l->t('"{item}" is back on {list} in {house}'),
+					[
+						'item' => [
+							'type' => 'highlight',
+							'id' => 'item',
+							'name' => $params['itemName'] ?? '',
+						],
+						'list' => [
+							'type' => 'highlight',
+							'id' => 'list',
+							'name' => $params['listName'] ?? '',
+						],
+						'house' => [
+							'type' => 'highlight',
+							'id' => (string)($params['houseId'] ?? ''),
+							'name' => $params['houseName'] ?? '',
+						],
+					]
+				);
+				break;
+
 			default:
 				throw new \InvalidArgumentException('Unknown notification');
 		}

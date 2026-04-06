@@ -81,6 +81,8 @@ class PrefsService {
 			'notifyPhoto' => $this->getNotificationPref($uid, $houseId, 'notify_photo'),
 			'notifyNoteCreate' => $this->getNotificationPref($uid, $houseId, 'notify_note_create'),
 			'notifyNoteEdit' => $this->getNotificationPref($uid, $houseId, 'notify_note_edit'),
+			'notifyItemAdd' => $this->getNotificationPref($uid, $houseId, 'notify_item_add'),
+			'notifyItemRecur' => $this->getNotificationPref($uid, $houseId, 'notify_item_recur'),
 		];
 	}
 

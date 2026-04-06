@@ -247,8 +247,10 @@ class ChecklistService {
 	 * Reopen all recurring items whose next_due_at has passed.
 	 *
 	 * Called both lazily from listItems() and periodically by the background job.
+	 *
+	 * @return ChecklistItem[] The items that were reopened.
 	 */
-	public function reopenDueItems(?int $now = null): int {
+	public function reopenDueItems(?int $now = null): array {
 		$now ??= time();
 		$items = $this->itemMapper->findDueRecurring($now);
 		foreach ($items as $item) {
@@ -267,7 +269,7 @@ class ChecklistService {
 			$item->setUpdatedAt($now);
 			$this->itemMapper->update($item);
 		}
-		return count($items);
+		return $items;
 	}
 
 	public function deleteItem(int $itemId): void {

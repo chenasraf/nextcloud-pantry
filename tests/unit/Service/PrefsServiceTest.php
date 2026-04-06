@@ -57,7 +57,7 @@ class PrefsServiceTest extends TestCase {
 		$this->svc->setNotificationPref('bob', 5, 'notify_note_create', true);
 	}
 
-	public function testGetNotificationPrefsReturnsAllThree(): void {
+	public function testGetNotificationPrefsReturnsAll(): void {
 		$this->config->method('getUserValue')->willReturnCallback(
 			function (string $uid, string $app, string $key, string $default): string {
 				if ($key === 'notify_photo_1') {
@@ -69,6 +69,12 @@ class PrefsServiceTest extends TestCase {
 				if ($key === 'notify_note_edit_1') {
 					return '0';
 				}
+				if ($key === 'notify_item_add_1') {
+					return '1';
+				}
+				if ($key === 'notify_item_recur_1') {
+					return '0';
+				}
 				return $default;
 			}
 		);
@@ -78,6 +84,8 @@ class PrefsServiceTest extends TestCase {
 			'notifyPhoto' => false,
 			'notifyNoteCreate' => true,
 			'notifyNoteEdit' => false,
+			'notifyItemAdd' => true,
+			'notifyItemRecur' => false,
 		], $result);
 	}
 

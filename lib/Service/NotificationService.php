@@ -17,6 +17,8 @@ class NotificationService {
 	public const PREF_NOTIFY_PHOTO = 'notify_photo';
 	public const PREF_NOTIFY_NOTE_CREATE = 'notify_note_create';
 	public const PREF_NOTIFY_NOTE_EDIT = 'notify_note_edit';
+	public const PREF_NOTIFY_ITEM_ADD = 'notify_item_add';
+	public const PREF_NOTIFY_ITEM_RECUR = 'notify_item_recur';
 
 	public function __construct(
 		private INotificationManager $notificationManager,
@@ -67,6 +69,34 @@ class NotificationService {
 				'houseName' => $house->getName(),
 				'noteId' => $noteId,
 				'noteTitle' => $noteTitle,
+			];
+		});
+	}
+
+	public function notifyItemAdded(int $houseId, string $authorUid, string $itemName, string $listName): void {
+		$this->sendToHouseMembers($houseId, $authorUid, 'item_added', 'item', self::PREF_NOTIFY_ITEM_ADD, function () use ($houseId, $authorUid, $itemName, $listName) {
+			$house = $this->houseService->get($houseId);
+			$author = $this->userManager->get($authorUid);
+			return [
+				'userId' => $authorUid,
+				'userDisplayName' => $author ? $author->getDisplayName() : $authorUid,
+				'houseId' => $houseId,
+				'houseName' => $house->getName(),
+				'itemName' => $itemName,
+				'listName' => $listName,
+			];
+		});
+	}
+
+	public function notifyItemRecurred(int $houseId, string $itemName, string $listName): void {
+		// No author to exclude — this is a system event.
+		$this->sendToHouseMembers($houseId, '', 'item_recurred', 'item', self::PREF_NOTIFY_ITEM_RECUR, function () use ($houseId, $itemName, $listName) {
+			$house = $this->houseService->get($houseId);
+			return [
+				'houseId' => $houseId,
+				'houseName' => $house->getName(),
+				'itemName' => $itemName,
+				'listName' => $listName,
 			];
 		});
 	}
