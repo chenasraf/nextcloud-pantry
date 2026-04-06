@@ -92,5 +92,15 @@ export function useShoppingListItems(houseId: number, listId: number) {
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
-  return { items, loading, error, load, add, update, toggle, remove }
+  async function uploadImage(itemId: number, file: File): Promise<void> {
+    const updated = await api.uploadItemImage(houseId, listId, itemId, file)
+    items.value = items.value.map((i) => (i.id === itemId ? updated : i))
+  }
+
+  async function clearImage(itemId: number): Promise<void> {
+    const updated = await api.clearItemImage(houseId, listId, itemId)
+    items.value = items.value.map((i) => (i.id === itemId ? updated : i))
+  }
+
+  return { items, loading, error, load, add, update, toggle, remove, uploadImage, clearImage }
 }

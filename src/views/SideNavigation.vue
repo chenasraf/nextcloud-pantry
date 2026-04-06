@@ -58,12 +58,19 @@
         </NcAppNavigationItem>
       </template>
 
-      <li v-else class="pantry-nav__welcome">
+      <li v-if="currentHouseId === null" class="pantry-nav__welcome">
         {{ strings.welcomeHint }}
       </li>
     </template>
 
     <template #footer>
+      <ul class="pantry-nav__footer-list">
+        <NcAppNavigationItem :name="strings.appSettings" @click="showSettings = true">
+          <template #icon>
+            <CogOutlineIcon :size="20" />
+          </template>
+        </NcAppNavigationItem>
+      </ul>
       <div class="pantry-switcher">
         <button
           ref="triggerRef"
@@ -109,6 +116,8 @@
       </div>
     </template>
   </NcAppNavigation>
+
+  <PantrySettingsDialog v-model:open="showSettings" />
 
   <NcDialog
     v-if="showCreate"
@@ -158,11 +167,13 @@ import ImageIcon from '@icons/Image.vue'
 import NoteIcon from '@icons/Note.vue'
 import AccountGroupIcon from '@icons/AccountGroup.vue'
 import CogIcon from '@icons/Cog.vue'
+import CogOutlineIcon from '@icons/CogOutline.vue'
 import ChevronUpIcon from '@icons/ChevronUp.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
 import CheckIcon from '@icons/Check.vue'
 import PlusIcon from '@icons/Plus.vue'
 import { useHouses } from '@/composables/useHouses'
+import PantrySettingsDialog from '@/components/PantrySettingsDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -226,6 +237,9 @@ async function pickHouse(id: number) {
   await router.push({ name: 'lists', params: { houseId: String(id) } })
 }
 
+// -------- App settings dialog --------
+const showSettings = ref(false)
+
 // -------- Create house dialog --------
 const showCreate = ref(false)
 const newName = ref('')
@@ -265,6 +279,7 @@ const strings = {
   notes: t('pantry', 'Notes wall'),
   members: t('pantry', 'Members'),
   houseSettings: t('pantry', 'House settings'),
+  appSettings: t('pantry', 'Pantry settings'),
   pickHouse: t('pantry', 'Pick a house'),
   createHouse: t('pantry', 'New house …'),
   welcomeHint: t('pantry', 'Pick or create a house to get started.'),
@@ -297,6 +312,12 @@ const strings = {
   color: var(--color-text-maxcontrast);
   font-size: 0.9rem;
   line-height: 1.4;
+}
+
+.pantry-nav__footer-list {
+  list-style: none;
+  padding: 8px 8px 0;
+  margin: 0;
 }
 
 .pantry-switcher {

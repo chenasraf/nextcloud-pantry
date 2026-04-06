@@ -17,7 +17,7 @@ Pantry helps households stay organized in Nextcloud.
 
 All data is scoped to a house; members only see the houses they belong to.
 ]]></description>
-	<version>1.0.0</version>
+	<version>0.0.1</version>
 	<licence>agpl</licence>
 	<author mail="contact@casraf.dev" homepage="https://github.com/chenasraf/nextcloud-pantry">Chen Asraf</author>
 	<namespace>Pantry</namespace>

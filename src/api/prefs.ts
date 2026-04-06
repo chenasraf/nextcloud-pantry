@@ -8,3 +8,13 @@ export async function getLastHouse(): Promise<number | null> {
 export async function setLastHouse(houseId: number | null): Promise<void> {
   await ocs.put('/prefs/last-house', { houseId })
 }
+
+export async function getImageFolder(): Promise<string> {
+  const resp = await ocs.get<{ folder: string }>('/prefs/image-folder')
+  return resp.data?.folder ?? '/Pantry'
+}
+
+export async function setImageFolder(folder: string): Promise<string> {
+  const resp = await ocs.put<{ folder: string }>('/prefs/image-folder', { folder })
+  return resp.data?.folder ?? folder
+}

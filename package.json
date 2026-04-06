@@ -23,6 +23,7 @@
   ],
   "dependencies": {
     "@nextcloud/axios": "^2.5.2",
+    "@nextcloud/dialogs": "^7.3.0",
     "@nextcloud/l10n": "^3.4.1",
     "@nextcloud/router": "^3.1.0",
     "@nextcloud/vite-config": "^2.5.2",

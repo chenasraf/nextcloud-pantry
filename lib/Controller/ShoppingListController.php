@@ -12,6 +12,7 @@ use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\HouseAuthService;
+use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\ShoppingListService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -35,6 +36,7 @@ final class ShoppingListController extends OCSController {
 		private ShoppingListService $lists,
 		private CategoryService $categories,
 		private HouseAuthService $auth,
+		private ImageService $images,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -248,6 +250,7 @@ final class ShoppingListController extends OCSController {
 	 * @param string|null $quantity New quantity (empty string clears).
 	 * @param string|null $rrule New RRULE (empty string clears).
 	 * @param bool|null $repeatFromCompletion New recurrence anchor mode.
+	 * @param int|null $imageFileId File id of attached image (0 or negative clears).
 	 * @param int|null $sortOrder New sort order.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
@@ -265,9 +268,10 @@ final class ShoppingListController extends OCSController {
 		?string $quantity = null,
 		?string $rrule = null,
 		?bool $repeatFromCompletion = null,
+		?int $imageFileId = null,
 		?int $sortOrder = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $categoryId, $quantity, $rrule, $repeatFromCompletion, $sortOrder): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $categoryId, $quantity, $rrule, $repeatFromCompletion, $imageFileId, $sortOrder): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$item = $this->lists->getItem($itemId);
 			$list = $this->lists->getList($item->getListId());
@@ -295,6 +299,9 @@ final class ShoppingListController extends OCSController {
 			}
 			if ($repeatFromCompletion !== null) {
 				$patch['repeatFromCompletion'] = $repeatFromCompletion;
+			}
+			if ($imageFileId !== null) {
+				$patch['imageFileId'] = $imageFileId > 0 ? $imageFileId : null;
 			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
@@ -356,6 +363,81 @@ final class ShoppingListController extends OCSController {
 			}
 			$this->lists->deleteItem($itemId);
 			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Upload an image for an item
+	 *
+	 * Uploads the request body as an image into the user's configured pantry
+	 * image folder and attaches it to the item.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int $itemId Item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
+	 *
+	 * 200: Image uploaded and attached
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/image')]
+	#[NoAdminRequired]
+	public function uploadItemImage(int $houseId, int $listId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+
+			$data = $this->request->getUploadedFile('image');
+			if ($data === null || !is_array($data) || ($data['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+				throw new \InvalidArgumentException('No image uploaded');
+			}
+			$tmp = (string)($data['tmp_name'] ?? '');
+			if ($tmp === '' || !is_uploaded_file($tmp)) {
+				throw new \InvalidArgumentException('Invalid upload');
+			}
+			$bytes = file_get_contents($tmp);
+			if ($bytes === false) {
+				throw new \RuntimeException('Could not read uploaded file');
+			}
+			$original = (string)($data['name'] ?? 'image.jpg');
+			$fileId = $this->images->uploadForUser($uid, $original, $bytes);
+
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId]);
+			return new DataResponse($updated->jsonSerialize());
+		});
+	}
+
+	/**
+	 * Clear the image attached to an item
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int $itemId Item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
+	 *
+	 * 200: Image cleared
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/image')]
+	#[NoAdminRequired]
+	public function clearItemImage(int $houseId, int $listId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null]);
+			return new DataResponse($updated->jsonSerialize());
 		});
 	}
 

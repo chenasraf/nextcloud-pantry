@@ -49,6 +49,7 @@ namespace OCA\Pantry;
  *     rrule: string|null,
  *     repeatFromCompletion: bool,
  *     nextDueAt: int|null,
+ *     imageFileId: int|null,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,
@@ -68,6 +69,8 @@ namespace OCA\Pantry;
  * @psalm-type PantrySuccess = array{success: true}
  *
  * @psalm-type PantryLastHouse = array{houseId: int|null}
+ *
+ * @psalm-type PantryImageFolder = array{folder: string}
  */
 class ResponseDefinitions {
 }

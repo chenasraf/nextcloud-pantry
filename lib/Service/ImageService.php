@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+// SPDX-FileCopyrightText: Chen Asraf <contact@casraf.dev>
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+namespace OCA\Pantry\Service;
+
+use OCP\Files\Folder;
+use OCP\Files\IRootFolder;
+use OCP\Files\NotPermittedException;
+
+class ImageService {
+	public const SHOPPING_ITEMS_SUBDIR = 'Shopping list items';
+
+	public function __construct(
+		private IRootFolder $rootFolder,
+		private PrefsService $prefs,
+	) {
+	}
+
+	/**
+	 * Upload image bytes to the user's configured pantry image folder, returning
+	 * the Nextcloud file id on success.
+	 */
+	public function uploadForUser(string $uid, string $originalName, string $data): int {
+		if ($data === '') {
+			throw new \InvalidArgumentException('Empty file');
+		}
+		$folder = $this->resolveShoppingItemsFolder($uid);
+		$filename = $this->uniqueName($folder, $originalName);
+		try {
+			$file = $folder->newFile($filename, $data);
+		} catch (NotPermittedException $e) {
+			throw new \RuntimeException('Could not write file: ' . $e->getMessage(), 0, $e);
+		}
+		return $file->getId();
+	}
+
+	private function resolveShoppingItemsFolder(string $uid): Folder {
+		$base = $this->resolveBaseFolder($uid);
+		return $this->getOrCreateSubFolder($base, self::SHOPPING_ITEMS_SUBDIR);
+	}
+
+	private function resolveBaseFolder(string $uid): Folder {
+		$userFolder = $this->rootFolder->getUserFolder($uid);
+		$path = $this->prefs->getImageFolder($uid);
+		$relative = ltrim($path, '/');
+		if ($relative === '') {
+			return $userFolder;
+		}
+		if ($userFolder->nodeExists($relative)) {
+			$node = $userFolder->get($relative);
+			if (!$node instanceof Folder) {
+				throw new \RuntimeException('Configured image path is not a folder: ' . $path);
+			}
+			return $node;
+		}
+		return $userFolder->newFolder($relative);
+	}
+
+	private function getOrCreateSubFolder(Folder $parent, string $name): Folder {
+		if ($parent->nodeExists($name)) {
+			$node = $parent->get($name);
+			if (!$node instanceof Folder) {
+				throw new \RuntimeException('Expected a folder at ' . $name);
+			}
+			return $node;
+		}
+		return $parent->newFolder($name);
+	}
+
+	private function uniqueName(Folder $folder, string $original): string {
+		$base = basename($original);
+		if ($base === '' || $base === '.' || $base === '..') {
+			$base = 'image.jpg';
+		}
+		// Strip characters Nextcloud disallows in filenames.
+		$base = preg_replace('/[\/\\\\]/', '_', $base) ?? 'image.jpg';
+		$dot = strrpos($base, '.');
+		$name = $dot === false ? $base : substr($base, 0, $dot);
+		$ext = $dot === false ? '' : substr($base, $dot);
+		$candidate = $base;
+		$i = 1;
+		while ($folder->nodeExists($candidate)) {
+			$candidate = sprintf('%s (%d)%s', $name, $i, $ext);
+			$i++;
+		}
+		return $candidate;
+	}
+}

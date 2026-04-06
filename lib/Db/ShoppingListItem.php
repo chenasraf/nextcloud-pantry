@@ -30,6 +30,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setRepeatFromCompletion(bool $repeatFromCompletion)
  * @method int|null getNextDueAt()
  * @method void setNextDueAt(?int $nextDueAt)
+ * @method int|null getImageFileId()
+ * @method void setImageFileId(?int $imageFileId)
  * @method int getSortOrder()
  * @method void setSortOrder(int $sortOrder)
  * @method int getCreatedAt()
@@ -48,6 +50,7 @@ class ShoppingListItem extends Entity implements \JsonSerializable {
 	protected ?string $rrule = null;
 	protected bool $repeatFromCompletion = false;
 	protected ?int $nextDueAt = null;
+	protected ?int $imageFileId = null;
 	protected int $sortOrder = 0;
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
@@ -59,6 +62,7 @@ class ShoppingListItem extends Entity implements \JsonSerializable {
 		$this->addType('boughtAt', 'integer');
 		$this->addType('repeatFromCompletion', 'boolean');
 		$this->addType('nextDueAt', 'integer');
+		$this->addType('imageFileId', 'integer');
 		$this->addType('sortOrder', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
@@ -83,6 +87,7 @@ class ShoppingListItem extends Entity implements \JsonSerializable {
 			'rrule' => $this->rrule,
 			'repeatFromCompletion' => $this->repeatFromCompletion,
 			'nextDueAt' => $this->nextDueAt,
+			'imageFileId' => $this->imageFileId,
 			'sortOrder' => $this->sortOrder,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,

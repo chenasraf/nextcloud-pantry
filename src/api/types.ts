@@ -52,6 +52,7 @@ export interface ShoppingListItem {
   rrule: string | null
   repeatFromCompletion: boolean
   nextDueAt: number | null
+  imageFileId: number | null
   sortOrder: number
   createdAt: number
   updatedAt: number

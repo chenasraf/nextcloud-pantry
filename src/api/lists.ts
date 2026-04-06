@@ -86,3 +86,29 @@ export async function toggleItem(
 export async function deleteItem(houseId: number, listId: number, itemId: number): Promise<void> {
   await ocs.delete(`/houses/${houseId}/lists/${listId}/items/${itemId}`)
 }
+
+export async function uploadItemImage(
+  houseId: number,
+  listId: number,
+  itemId: number,
+  file: File,
+): Promise<ShoppingListItem> {
+  const form = new FormData()
+  form.append('image', file, file.name)
+  const resp = await ocs.post<ShoppingListItem>(
+    `/houses/${houseId}/lists/${listId}/items/${itemId}/image`,
+    form,
+  )
+  return resp.data
+}
+
+export async function clearItemImage(
+  houseId: number,
+  listId: number,
+  itemId: number,
+): Promise<ShoppingListItem> {
+  const resp = await ocs.delete<ShoppingListItem>(
+    `/houses/${houseId}/lists/${listId}/items/${itemId}/image`,
+  )
+  return resp.data
+}

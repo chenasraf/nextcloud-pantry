@@ -145,6 +145,7 @@ class ShoppingListService {
 		$item->setRrule($rrule);
 		$item->setRepeatFromCompletion(!empty($data['repeatFromCompletion']));
 		$item->setNextDueAt(null);
+		$item->setImageFileId($this->intOrNull($data['imageFileId'] ?? null));
 		$item->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : 0);
 		$item->setCreatedAt($now);
 		$item->setUpdatedAt($now);
@@ -185,6 +186,9 @@ class ShoppingListService {
 		}
 		if (array_key_exists('repeatFromCompletion', $patch)) {
 			$item->setRepeatFromCompletion((bool)$patch['repeatFromCompletion']);
+		}
+		if (array_key_exists('imageFileId', $patch)) {
+			$item->setImageFileId($this->intOrNull($patch['imageFileId']));
 		}
 		// If already bought and rrule or mode changed, recompute next due.
 		if ($item->getBought() && $item->getRrule() !== null

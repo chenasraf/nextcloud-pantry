@@ -21,6 +21,7 @@ use OCP\IUserSession;
 
 /**
  * @psalm-import-type PantryLastHouse from ResponseDefinitions
+ * @psalm-import-type PantryImageFolder from ResponseDefinitions
  */
 final class PrefsController extends OCSController {
 	use TranslatesDomainExceptions;
@@ -80,6 +81,41 @@ final class PrefsController extends OCSController {
 			}
 			$this->prefs->setLastHouseId($uid, $houseId);
 			return new DataResponse(['houseId' => $houseId]);
+		});
+	}
+
+	/**
+	 * Get the user's preferred image upload folder
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryImageFolder, array{}>
+	 *
+	 * 200: Folder returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/prefs/image-folder')]
+	#[NoAdminRequired]
+	public function getImageFolder(): DataResponse {
+		return $this->runAction(function (): DataResponse {
+			$uid = $this->requireUid();
+			return new DataResponse(['folder' => $this->prefs->getImageFolder($uid)]);
+		});
+	}
+
+	/**
+	 * Set the user's preferred image upload folder
+	 *
+	 * @param string $folder Absolute path within the user's files.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryImageFolder, array{}>
+	 *
+	 * 200: Folder updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/prefs/image-folder')]
+	#[NoAdminRequired]
+	public function setImageFolder(string $folder): DataResponse {
+		return $this->runAction(function () use ($folder): DataResponse {
+			$uid = $this->requireUid();
+			$stored = $this->prefs->setImageFolder($uid, $folder);
+			return new DataResponse(['folder' => $stored]);
 		});
 	}
 

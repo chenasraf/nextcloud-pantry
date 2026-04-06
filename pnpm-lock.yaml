@@ -11,6 +11,9 @@ importers:
       '@nextcloud/axios':
         specifier: ^2.5.2
         version: 2.5.2
+      '@nextcloud/dialogs':
+        specifier: ^7.3.0
+        version: 7.3.0(@vue/compiler-sfc@3.5.32)(typescript@6.0.2)
       '@nextcloud/l10n':
         specifier: ^3.4.1
         version: 3.4.1
@@ -647,6 +650,9 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@mdi/js@7.4.47':
+    resolution: {integrity: sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==}
+
   '@microsoft/api-extractor-model@7.33.5':
     resolution: {integrity: sha512-Xh4dXuusndVQqVz4nEN9xOp0DyzsKxeD2FFJkSPg4arAjDSKPcy6cAc7CaeBPA7kF2wV1fuDlo2p/bNMpVr8yg==}
 
@@ -687,6 +693,10 @@ packages:
   '@nextcloud/capabilities@1.2.1':
     resolution: {integrity: sha512-snZ0/910zzwN6PDsIlx2Uvktr1S5x0ClhDUnfPlCj7ntNvECzuVHNY5wzby22LIkc+9ZjaDKtCwuCt2ye+9p/Q==}
     engines: {node: ^20.0.0 || ^22.0.0 || ^24.0.0}
+
+  '@nextcloud/dialogs@7.3.0':
+    resolution: {integrity: sha512-pFuM10Dkvip+wSBaElcbSAN7Jynp41HJUh5kndRYpJipYl0SpNfjIe32+uNfOI43/tln4ScTlrfjIX6cK+3uHg==}
+    engines: {node: ^20 || ^22 || ^24}
 
   '@nextcloud/eslint-config@8.4.2':
     resolution: {integrity: sha512-zsDcBxvp2Vr/BgasK/vNYJ84LOXjl4RseJPrcp93zcnaB2WnygV50Sd0nQ5JN0ngTyPjiIlGd92MMzrMTofjRA==}
@@ -1227,6 +1237,9 @@ packages:
 
   '@types/sizzle@2.3.10':
     resolution: {integrity: sha512-TC0dmN0K8YcWEAEfiPi5gJP14eJe30TTGjkvek3iM/1NdHHsdCA/Td6GvNndMOo/iSnIsZ4HuuhrYPDAmbxzww==}
+
+  '@types/toastify-js@1.12.4':
+    resolution: {integrity: sha512-zfZHU4tKffPCnZRe7pjv/eFKzTVHozKewFCKaCjZ4gFinKgJRz/t0bkZiMCXJxPhv/ZoeDGNOeRD09R0kQZ/nw==}
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
@@ -4267,6 +4280,9 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
+  toastify-js@1.12.0:
+    resolution: {integrity: sha512-HeMHCO9yLPvP9k0apGSdPUWrUbLnxUKNFzgUoZp1PHCLploIX/4DSQ7V8H25ef+h4iO9n0he7ImfcndnN6nDrQ==}
+
   tributejs@5.1.3:
     resolution: {integrity: sha512-B5CXihaVzXw+1UHhNFyAwUTMDk1EfoLP5Tj1VhD9yybZ1I8DZJEv8tZ1l0RJo0t0tk9ZhR8eG5tEsaCvRigmdQ==}
 
@@ -4862,7 +4878,6 @@ snapshots:
   '@buttercup/fetch@0.2.1':
     optionalDependencies:
       node-fetch: 3.3.2
-    optional: true
 
   '@ckpack/vue-color@1.6.0(vue@3.5.32(typescript@6.0.2))':
     dependencies:
@@ -5160,6 +5175,8 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@mdi/js@7.4.47': {}
+
   '@microsoft/api-extractor-model@7.33.5(@types/node@25.5.2)':
     dependencies:
       '@microsoft/tsdoc': 0.16.0
@@ -5226,6 +5243,35 @@ snapshots:
     dependencies:
       '@nextcloud/initial-state': 3.0.0
 
+  '@nextcloud/dialogs@7.3.0(@vue/compiler-sfc@3.5.32)(typescript@6.0.2)':
+    dependencies:
+      '@mdi/js': 7.4.47
+      '@nextcloud/auth': 2.5.3
+      '@nextcloud/axios': 2.5.2
+      '@nextcloud/browser-storage': 0.5.0
+      '@nextcloud/event-bus': 3.3.3
+      '@nextcloud/files': 4.0.0
+      '@nextcloud/initial-state': 3.0.0
+      '@nextcloud/l10n': 3.4.1
+      '@nextcloud/paths': 3.1.0
+      '@nextcloud/router': 3.1.0
+      '@nextcloud/sharing': 0.4.0
+      '@nextcloud/vue': 9.6.0(@vue/compiler-sfc@3.5.32)(typescript@6.0.2)
+      '@types/toastify-js': 1.12.4
+      '@vueuse/core': 14.2.1(vue@3.5.32(typescript@6.0.2))
+      p-queue: 9.1.1
+      toastify-js: 1.12.0
+      vue: 3.5.32(typescript@6.0.2)
+      webdav: 5.9.0
+    transitivePeerDependencies:
+      - '@nuxt/kit'
+      - '@pinia/colada'
+      - '@vue/compiler-sfc'
+      - debug
+      - pinia
+      - supports-color
+      - typescript
+
   '@nextcloud/eslint-config@8.4.2(@babel/core@7.26.0)(@babel/eslint-parser@7.25.9(@babel/core@7.26.0)(eslint@10.2.0))(@nextcloud/eslint-plugin@2.2.1(eslint@10.2.0))(@vue/eslint-config-typescript@13.0.0(eslint-plugin-vue@9.32.0(eslint@10.2.0))(eslint@10.2.0)(typescript@6.0.2))(eslint-config-standard@17.1.0(eslint-plugin-import@2.31.0)(eslint-plugin-n@16.6.2(eslint@10.2.0))(eslint-plugin-promise@6.6.0(eslint@10.2.0))(eslint@10.2.0))(eslint-import-resolver-exports@1.0.0-beta.5(eslint-plugin-import@2.31.0)(eslint@10.2.0))(eslint-import-resolver-typescript@3.6.3)(eslint-plugin-import@2.31.0)(eslint-plugin-jsdoc@46.10.1(eslint@10.2.0))(eslint-plugin-n@16.6.2(eslint@10.2.0))(eslint-plugin-promise@6.6.0(eslint@10.2.0))(eslint-plugin-vue@9.32.0(eslint@10.2.0))(eslint@10.2.0)(typescript@6.0.2)':
     dependencies:
       '@babel/core': 7.26.0
@@ -5282,7 +5328,6 @@ snapshots:
       is-svg: 6.1.0
       typescript-event-target: 1.1.2
       webdav: 5.9.0
-    optional: true
 
   '@nextcloud/initial-state@3.0.0': {}
 
@@ -5298,8 +5343,7 @@ snapshots:
     dependencies:
       '@nextcloud/auth': 2.5.3
 
-  '@nextcloud/paths@3.1.0':
-    optional: true
+  '@nextcloud/paths@3.1.0': {}
 
   '@nextcloud/router@3.1.0':
     dependencies:
@@ -5311,7 +5355,6 @@ snapshots:
       is-svg: 6.1.0
     optionalDependencies:
       '@nextcloud/files': 3.12.2
-    optional: true
 
   '@nextcloud/sharing@0.4.0':
     dependencies:
@@ -5747,6 +5790,8 @@ snapshots:
   '@types/semver@7.7.1': {}
 
   '@types/sizzle@2.3.10': {}
+
+  '@types/toastify-js@1.12.4': {}
 
   '@types/trusted-types@2.0.7':
     optional: true
@@ -6309,8 +6354,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  base-64@1.0.0:
-    optional: true
+  base-64@1.0.0: {}
 
   base64-js@1.5.1: {}
 
@@ -6425,8 +6469,7 @@ snapshots:
     dependencies:
       run-applescript: 7.1.0
 
-  byte-length@1.0.2:
-    optional: true
+  byte-length@1.0.2: {}
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
@@ -6464,8 +6507,7 @@ snapshots:
 
   character-reference-invalid@2.0.1: {}
 
-  charenc@0.0.2:
-    optional: true
+  charenc@0.0.2: {}
 
   chokidar@4.0.3:
     dependencies:
@@ -6590,8 +6632,7 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  crypt@0.0.2:
-    optional: true
+  crypt@0.0.2: {}
 
   crypto-browserify@3.12.1:
     dependencies:
@@ -6619,8 +6660,7 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  data-uri-to-buffer@4.0.1:
-    optional: true
+  data-uri-to-buffer@4.0.1: {}
 
   data-view-buffer@1.0.2:
     dependencies:
@@ -6782,8 +6822,7 @@ snapshots:
 
   entities@4.5.0: {}
 
-  entities@6.0.1:
-    optional: true
+  entities@6.0.1: {}
 
   entities@7.0.1: {}
 
@@ -7217,7 +7256,6 @@ snapshots:
   fast-xml-builder@1.1.4:
     dependencies:
       path-expression-matcher: 1.2.1
-    optional: true
 
   fast-xml-parser@4.5.6:
     dependencies:
@@ -7228,7 +7266,6 @@ snapshots:
       fast-xml-builder: 1.1.4
       path-expression-matcher: 1.2.1
       strnum: 2.2.2
-    optional: true
 
   fastest-levenshtein@1.0.16: {}
 
@@ -7244,7 +7281,6 @@ snapshots:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
-    optional: true
 
   file-entry-cache@8.0.0:
     dependencies:
@@ -7307,7 +7343,6 @@ snapshots:
   formdata-polyfill@4.0.10:
     dependencies:
       fetch-blob: 3.2.0
-    optional: true
 
   fs-extra@11.3.4:
     dependencies:
@@ -7518,8 +7553,7 @@ snapshots:
 
   hookable@5.5.3: {}
 
-  hot-patcher@2.0.1:
-    optional: true
+  hot-patcher@2.0.1: {}
 
   html-tags@3.3.1: {}
 
@@ -7604,8 +7638,7 @@ snapshots:
       call-bound: 1.0.4
       has-tostringtag: 1.0.2
 
-  is-buffer@1.1.6:
-    optional: true
+  is-buffer@1.1.6: {}
 
   is-builtin-module@3.2.1:
     dependencies:
@@ -7807,8 +7840,7 @@ snapshots:
 
   kolorist@1.8.0: {}
 
-  layerr@3.0.0:
-    optional: true
+  layerr@3.0.0: {}
 
   levn@0.4.1:
     dependencies:
@@ -7951,7 +7983,6 @@ snapshots:
       charenc: 0.0.2
       crypt: 0.0.2
       is-buffer: 1.1.6
-    optional: true
 
   mdast-squeeze-paragraphs@6.0.0:
     dependencies:
@@ -8257,14 +8288,12 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  nested-property@4.0.0:
-    optional: true
+  nested-property@4.0.0: {}
 
   node-addon-api@7.1.1:
     optional: true
 
-  node-domexception@1.0.0:
-    optional: true
+  node-domexception@1.0.0: {}
 
   node-exports-info@1.6.0:
     dependencies:
@@ -8278,7 +8307,6 @@ snapshots:
       data-uri-to-buffer: 4.0.1
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
-    optional: true
 
   node-releases@2.0.37: {}
 
@@ -8458,8 +8486,7 @@ snapshots:
 
   path-exists@4.0.0: {}
 
-  path-expression-matcher@1.2.1:
-    optional: true
+  path-expression-matcher@1.2.1: {}
 
   path-key@3.1.1: {}
 
@@ -8467,8 +8494,7 @@ snapshots:
 
   path-parse@1.0.7: {}
 
-  path-posix@1.0.0:
-    optional: true
+  path-posix@1.0.0: {}
 
   path-scurry@1.11.1:
     dependencies:
@@ -8592,8 +8618,7 @@ snapshots:
 
   querystring-es3@0.2.1: {}
 
-  querystringify@2.2.0:
-    optional: true
+  querystringify@2.2.0: {}
 
   queue-microtask@1.2.3: {}
 
@@ -8710,8 +8735,7 @@ snapshots:
 
   requireindex@1.2.0: {}
 
-  requires-port@1.0.0:
-    optional: true
+  requires-port@1.0.0: {}
 
   resolve-from@4.0.0: {}
 
@@ -9221,8 +9245,7 @@ snapshots:
 
   strnum@1.1.2: {}
 
-  strnum@2.2.2:
-    optional: true
+  strnum@2.2.2: {}
 
   strtok3@10.3.5:
     dependencies:
@@ -9385,6 +9408,8 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
+  toastify-js@1.12.0: {}
+
   tributejs@5.1.3: {}
 
   trim-lines@3.0.1: {}
@@ -9462,8 +9487,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  typescript-event-target@1.1.2:
-    optional: true
+  typescript-event-target@1.1.2: {}
 
   typescript@5.9.3: {}
 
@@ -9547,14 +9571,12 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  url-join@5.0.0:
-    optional: true
+  url-join@5.0.0: {}
 
   url-parse@1.5.10:
     dependencies:
       querystringify: 2.2.0
       requires-port: 1.0.0
-    optional: true
 
   url@0.11.4:
     dependencies:
@@ -9747,8 +9769,7 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.2
 
-  web-streams-polyfill@3.3.3:
-    optional: true
+  web-streams-polyfill@3.3.3: {}
 
   webdav@5.9.0:
     dependencies:
@@ -9766,7 +9787,6 @@ snapshots:
       path-posix: 1.0.0
       url-join: 5.0.0
       url-parse: 1.5.10
-    optional: true
 
   webpack-virtual-modules@0.6.2: {}
 

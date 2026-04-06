@@ -211,6 +211,10 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 				'notnull' => false,
 				'length' => 20,
 			]);
+			$table->addColumn('image_file_id', Types::BIGINT, [
+				'notnull' => false,
+				'length' => 20,
+			]);
 			$table->addColumn('sort_order', Types::INTEGER, [
 				'notnull' => true,
 				'default' => 0,
@@ -226,6 +230,16 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 			$table->setPrimaryKey(['id']);
 			$table->addIndex(['list_id'], 'pantry_items_list_idx');
 			$table->addIndex(['category_id'], 'pantry_items_cat_idx');
+		} else {
+			// Idempotent adds for columns introduced after the initial create
+			// (covers early-dev deployments where the table already existed).
+			$table = $schema->getTable($itemsTable);
+			if (!$table->hasColumn('image_file_id')) {
+				$table->addColumn('image_file_id', Types::BIGINT, [
+					'notnull' => false,
+					'length' => 20,
+				]);
+			}
 		}
 
 		return $schema;
