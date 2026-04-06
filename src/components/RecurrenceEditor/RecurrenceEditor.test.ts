@@ -38,8 +38,8 @@ vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
   default: {
     name: 'NcCheckboxRadioSwitch',
     template:
-      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><slot /></label>',
-    props: ['modelValue', 'type'],
+      "<label :class=\"type === 'radio' ? 'nc-radio' : 'nc-checkbox'\"><input :type=\"type === 'radio' ? 'radio' : 'checkbox'\" :checked=\"type === 'radio' ? modelValue === value : !!modelValue\" :value=\"value\" :name=\"name\" @change=\"$emit('update:modelValue', type === 'radio' ? value : $event.target.checked)\" /><slot /></label>",
+    props: ['modelValue', 'type', 'value', 'name'],
     emits: ['update:modelValue'],
   },
 }))
@@ -143,7 +143,7 @@ describe('RecurrenceEditor', () => {
 
     it('renders end condition radio buttons', () => {
       const wrapper = mountEditor()
-      const radios = wrapper.findAll('.pantry-recurrence__radio')
+      const radios = wrapper.findAll('.nc-radio')
       expect(radios.length).toBe(3)
     })
 

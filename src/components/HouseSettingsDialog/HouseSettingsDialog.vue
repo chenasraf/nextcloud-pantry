@@ -45,14 +45,15 @@
             <tr v-for="member in members" :key="member.id">
               <td>{{ member.displayName }}</td>
               <td>
-                <select
+                <NcSelect
                   v-if="canAdmin && member.role !== 'owner'"
-                  :value="member.role"
-                  @change="changeRole(member.id, ($event.target as HTMLSelectElement).value)"
-                >
-                  <option value="admin">{{ roleLabel('admin') }}</option>
-                  <option value="member">{{ roleLabel('member') }}</option>
-                </select>
+                  :model-value="roleOptionFor(member.role)"
+                  :options="roleOptions"
+                  :clearable="false"
+                  :searchable="false"
+                  autocomplete="off"
+                  @option:selected="(opt: RoleOption) => changeRole(member.id, opt.value)"
+                />
                 <span v-else>{{ roleLabel(member.role) }}</span>
               </td>
               <td>
@@ -154,7 +155,12 @@
         :placeholder="strings.userIdPlaceholder"
         autocomplete="off"
       />
-      <NcSelect v-model="newRoleOption" :options="roleOptions" :input-label="strings.roleLabel" />
+      <NcSelect
+        v-model="newRoleOption"
+        :options="roleOptions"
+        :input-label="strings.roleLabel"
+        autocomplete="off"
+      />
       <p v-if="addError" class="pantry-form-error">{{ addError }}</p>
     </form>
     <template #actions>
@@ -560,6 +566,10 @@ function roleLabel(role: HouseRole): string {
     default:
       return t('pantry', 'Member')
   }
+}
+
+function roleOptionFor(role: HouseRole): RoleOption {
+  return roleOptions.value.find((o) => o.value === role) ?? roleOptions.value[0]!
 }
 
 const strings = {

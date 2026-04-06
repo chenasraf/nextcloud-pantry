@@ -87,13 +87,25 @@
       <section class="pantry-recurrence__section">
         <label class="pantry-recurrence__label">{{ strings.endsLabel }}</label>
         <div class="pantry-recurrence__ends">
-          <label class="pantry-recurrence__radio">
-            <input v-model="endKind" type="radio" value="never" />
-            <span>{{ strings.endNever }}</span>
-          </label>
-          <label class="pantry-recurrence__radio">
-            <input v-model="endKind" type="radio" value="count" />
-            <span>{{ strings.endAfter }}</span>
+          <NcCheckboxRadioSwitch
+            :model-value="endKind"
+            value="never"
+            name="pantry-end-kind"
+            type="radio"
+            @update:model-value="endKind = $event"
+          >
+            {{ strings.endNever }}
+          </NcCheckboxRadioSwitch>
+          <div class="pantry-recurrence__radio-row">
+            <NcCheckboxRadioSwitch
+              :model-value="endKind"
+              value="count"
+              name="pantry-end-kind"
+              type="radio"
+              @update:model-value="endKind = $event"
+            >
+              {{ strings.endAfter }}
+            </NcCheckboxRadioSwitch>
             <input
               v-model.number="endCount"
               type="number"
@@ -103,17 +115,24 @@
               :disabled="endKind !== 'count'"
             />
             <span>{{ strings.endAfterSuffix }}</span>
-          </label>
-          <label class="pantry-recurrence__radio">
-            <input v-model="endKind" type="radio" value="until" />
-            <span>{{ strings.endOn }}</span>
+          </div>
+          <div class="pantry-recurrence__radio-row">
+            <NcCheckboxRadioSwitch
+              :model-value="endKind"
+              value="until"
+              name="pantry-end-kind"
+              type="radio"
+              @update:model-value="endKind = $event"
+            >
+              {{ strings.endOn }}
+            </NcCheckboxRadioSwitch>
             <input
               v-model="endUntil"
               type="date"
               class="pantry-recurrence__date"
               :disabled="endKind !== 'until'"
             />
-          </label>
+          </div>
         </div>
       </section>
 
@@ -610,11 +629,10 @@ const strings = {
     gap: 0.5rem;
   }
 
-  &__radio {
+  &__radio-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    cursor: pointer;
   }
 
   &__divider {
