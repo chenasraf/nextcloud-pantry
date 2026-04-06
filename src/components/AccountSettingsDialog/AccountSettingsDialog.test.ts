@@ -58,7 +58,7 @@ import {
   getNotificationPrefs,
   setNotificationPrefs,
 } from '@/api/prefs'
-import PantrySettingsDialog from './PantrySettingsDialog.vue'
+import AccountSettingsDialog from './AccountSettingsDialog.vue'
 
 const NcAppSettingsDialogStub = {
   template: '<div class="nc-app-settings-dialog"><slot /></div>',
@@ -86,7 +86,7 @@ const NcButtonStub = {
 function mountComponent(
   props: { open: boolean; houseId: number | null } = { open: true, houseId: 1 },
 ) {
-  return mount(PantrySettingsDialog, {
+  return mount(AccountSettingsDialog, {
     props,
     global: {
       stubs: {
@@ -99,7 +99,7 @@ function mountComponent(
   })
 }
 
-describe('PantrySettingsDialog', () => {
+describe('AccountSettingsDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getImageFolder).mockResolvedValue('/Pantry')

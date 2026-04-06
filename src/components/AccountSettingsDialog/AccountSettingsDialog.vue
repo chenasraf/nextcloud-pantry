@@ -6,9 +6,9 @@
     @update:open="(v) => emit('update:open', v)"
   >
     <NcAppSettingsSection id="pantry-images" :name="strings.imagesSection">
-      <p class="pantry-settings__hint">{{ strings.imagesHint }}</p>
-      <form class="pantry-settings__form" @submit.prevent="save">
-        <div class="pantry-settings__folder-row">
+      <p class="account-settings__hint">{{ strings.imagesHint }}</p>
+      <form class="account-settings__form" @submit.prevent="save">
+        <div class="account-settings__folder-row">
           <NcTextField v-model="folder" :label="strings.folderLabel" placeholder="/Pantry" />
           <NcButton type="button" variant="secondary" @click="browseFolder">
             <template #icon>
@@ -17,18 +17,18 @@
             {{ strings.browse }}
           </NcButton>
         </div>
-        <div class="pantry-settings__actions">
+        <div class="account-settings__actions">
           <NcButton type="submit" variant="primary" :disabled="saving || !folder.trim()">
             {{ saving ? strings.saving : strings.save }}
           </NcButton>
-          <span v-if="saved" class="pantry-settings__saved">{{ strings.saved }}</span>
+          <span v-if="saved" class="account-settings__saved">{{ strings.saved }}</span>
         </div>
       </form>
     </NcAppSettingsSection>
 
     <NcAppSettingsSection id="pantry-notifications" :name="strings.notificationsSection">
-      <p class="pantry-settings__hint">{{ strings.notificationsHint }}</p>
-      <div class="pantry-settings__checks">
+      <p class="account-settings__hint">{{ strings.notificationsHint }}</p>
+      <div class="account-settings__checks">
         <NcCheckboxRadioSwitch
           :model-value="notifPrefs.notifyPhoto"
           @update:model-value="updateNotifPref('notifyPhoto', $event)"
@@ -186,19 +186,19 @@ const strings = {
 </script>
 
 <style scoped lang="scss">
-.pantry-settings__hint {
+.account-settings__hint {
   color: var(--color-text-maxcontrast);
   margin: 0 0 0.75rem 0;
   font-size: 0.9rem;
 }
 
-.pantry-settings__form {
+.account-settings__form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.pantry-settings__folder-row {
+.account-settings__folder-row {
   display: flex;
   align-items: end;
   gap: 0.5rem;
@@ -209,18 +209,18 @@ const strings = {
   }
 }
 
-.pantry-settings__actions {
+.account-settings__actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.pantry-settings__saved {
+.account-settings__saved {
   color: var(--color-success);
   font-size: 0.85rem;
 }
 
-.pantry-settings__checks {
+.account-settings__checks {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;

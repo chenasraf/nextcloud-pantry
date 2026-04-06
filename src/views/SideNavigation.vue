@@ -110,7 +110,7 @@
   </NcAppNavigation>
 
   <HouseSettingsDialog v-if="currentHouseId !== null" v-model:open="showHouseSettings" />
-  <PantrySettingsDialog v-model:open="showSettings" :house-id="currentHouseId" />
+  <AccountSettingsDialog v-model:open="showSettings" :house-id="currentHouseId" />
 
   <NcDialog
     v-if="showCreate"
@@ -167,7 +167,7 @@ import CheckIcon from '@icons/Check.vue'
 import PlusIcon from '@icons/Plus.vue'
 import { useHouses } from '@/composables/useHouses'
 import HouseSettingsDialog from '@/components/HouseSettingsDialog'
-import PantrySettingsDialog from '@/components/PantrySettingsDialog'
+import AccountSettingsDialog from '@/components/AccountSettingsDialog'
 
 const route = useRoute()
 const router = useRouter()
