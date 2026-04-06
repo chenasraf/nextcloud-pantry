@@ -53,7 +53,11 @@
             <CogIcon :size="20" />
           </template>
         </NcAppNavigationItem>
-        <NcAppNavigationItem :name="strings.accountSettings" @click="showSettings = true">
+        <NcAppNavigationItem
+          v-if="currentHouseId !== null"
+          :name="strings.accountSettings"
+          @click="showSettings = true"
+        >
           <template #icon>
             <CogOutlineIcon :size="20" />
           </template>
@@ -106,7 +110,7 @@
   </NcAppNavigation>
 
   <HouseSettingsDialog v-if="currentHouseId !== null" v-model:open="showHouseSettings" />
-  <PantrySettingsDialog v-model:open="showSettings" />
+  <PantrySettingsDialog v-model:open="showSettings" :house-id="currentHouseId" />
 
   <NcDialog
     v-if="showCreate"

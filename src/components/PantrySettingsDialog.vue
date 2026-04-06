@@ -39,7 +39,7 @@ import { getFilePickerBuilder } from '@nextcloud/dialogs'
 import FolderIcon from '@icons/Folder.vue'
 import { getImageFolder, setImageFolder } from '@/api/prefs'
 
-const props = defineProps<{ open: boolean }>()
+const props = defineProps<{ open: boolean; houseId: number | null }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
 const folder = ref('/Pantry')
@@ -47,8 +47,9 @@ const saving = ref(false)
 const saved = ref(false)
 
 async function loadFolder() {
+  if (props.houseId === null) return
   try {
-    folder.value = await getImageFolder()
+    folder.value = await getImageFolder(props.houseId)
   } catch {
     // Keep default.
   }
@@ -87,11 +88,11 @@ async function browseFolder() {
 
 async function save() {
   const value = folder.value.trim()
-  if (!value) return
+  if (!value || props.houseId === null) return
   saving.value = true
   saved.value = false
   try {
-    folder.value = await setImageFolder(value)
+    folder.value = await setImageFolder(props.houseId, value)
     saved.value = true
   } finally {
     saving.value = false
@@ -99,7 +100,7 @@ async function save() {
 }
 
 const strings = {
-  title: t('pantry', 'Pantry settings'),
+  title: t('pantry', 'Account settings'),
   imagesSection: t('pantry', 'Images'),
   imagesHint: t(
     'pantry',

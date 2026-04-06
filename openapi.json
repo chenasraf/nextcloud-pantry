@@ -2157,10 +2157,10 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/prefs/image-folder": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/prefs/image-folder": {
             "get": {
                 "operationId": "prefs-get-image-folder",
-                "summary": "Get the user's preferred image upload folder",
+                "summary": "Get the user's preferred image upload folder for a house",
                 "tags": [
                     "prefs"
                 ],
@@ -2173,6 +2173,16 @@
                     }
                 ],
                 "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
                     {
                         "name": "OCS-APIRequest",
                         "in": "header",
@@ -2247,7 +2257,7 @@
             },
             "put": {
                 "operationId": "prefs-set-image-folder",
-                "summary": "Set the user's preferred image upload folder",
+                "summary": "Set the user's preferred image upload folder for a house",
                 "tags": [
                     "prefs"
                 ],
@@ -2279,6 +2289,16 @@
                     }
                 },
                 "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
                     {
                         "name": "OCS-APIRequest",
                         "in": "header",

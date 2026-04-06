@@ -36,19 +36,19 @@ class PrefsService {
 		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_LAST_HOUSE, (string)$houseId);
 	}
 
-	public function getImageFolder(string $uid): string {
+	public function getImageFolder(string $uid, int $houseId): string {
 		$value = $this->config->getUserValue(
 			$uid,
 			Application::APP_ID,
-			self::KEY_IMAGE_FOLDER,
+			self::KEY_IMAGE_FOLDER . '_' . $houseId,
 			self::DEFAULT_IMAGE_FOLDER,
 		);
 		return $this->normalizeFolder($value);
 	}
 
-	public function setImageFolder(string $uid, string $folder): string {
+	public function setImageFolder(string $uid, int $houseId, string $folder): string {
 		$normalized = $this->normalizeFolder($folder);
-		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_IMAGE_FOLDER, $normalized);
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_IMAGE_FOLDER . '_' . $houseId, $normalized);
 		return $normalized;
 	}
 

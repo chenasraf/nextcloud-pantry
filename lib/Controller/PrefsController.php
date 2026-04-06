@@ -85,36 +85,41 @@ final class PrefsController extends OCSController {
 	}
 
 	/**
-	 * Get the user's preferred image upload folder
+	 * Get the user's preferred image upload folder for a house
+	 *
+	 * @param int $houseId House id.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryImageFolder, array{}>
 	 *
 	 * 200: Folder returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/prefs/image-folder')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/image-folder')]
 	#[NoAdminRequired]
-	public function getImageFolder(): DataResponse {
-		return $this->runAction(function (): DataResponse {
+	public function getImageFolder(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
 			$uid = $this->requireUid();
-			return new DataResponse(['folder' => $this->prefs->getImageFolder($uid)]);
+			$this->auth->requireMember($houseId, $uid);
+			return new DataResponse(['folder' => $this->prefs->getImageFolder($uid, $houseId)]);
 		});
 	}
 
 	/**
-	 * Set the user's preferred image upload folder
+	 * Set the user's preferred image upload folder for a house
 	 *
+	 * @param int $houseId House id.
 	 * @param string $folder Absolute path within the user's files.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryImageFolder, array{}>
 	 *
 	 * 200: Folder updated
 	 */
-	#[ApiRoute(verb: 'PUT', url: '/api/prefs/image-folder')]
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/image-folder')]
 	#[NoAdminRequired]
-	public function setImageFolder(string $folder): DataResponse {
-		return $this->runAction(function () use ($folder): DataResponse {
+	public function setImageFolder(int $houseId, string $folder): DataResponse {
+		return $this->runAction(function () use ($houseId, $folder): DataResponse {
 			$uid = $this->requireUid();
-			$stored = $this->prefs->setImageFolder($uid, $folder);
+			$this->auth->requireMember($houseId, $uid);
+			$stored = $this->prefs->setImageFolder($uid, $houseId, $folder);
 			return new DataResponse(['folder' => $stored]);
 		});
 	}

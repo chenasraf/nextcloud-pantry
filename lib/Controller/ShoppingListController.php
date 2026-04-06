@@ -406,7 +406,7 @@ final class ShoppingListController extends OCSController {
 				throw new \RuntimeException('Could not read uploaded file');
 			}
 			$original = (string)($data['name'] ?? 'image.jpg');
-			$fileId = $this->images->uploadForUser($uid, $original, $bytes);
+			$fileId = $this->images->uploadForUser($uid, $houseId, $original, $bytes);
 
 			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId]);
 			return new DataResponse($updated->jsonSerialize());
