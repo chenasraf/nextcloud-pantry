@@ -12,15 +12,15 @@ SPDX-License-Identifier: CC0-1.0
 [![PHPUnit MySQL](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/phpunit-mysql.yml/badge.svg)](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/phpunit-mysql.yml)
 [![PHPUnit PostgreSQL](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/phpunit-pgsql.yml/badge.svg)](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/phpunit-pgsql.yml)
 
-A household management app for Nextcloud — shared shopping lists, photo boards, and notes, all in
-one place.
+A household management app for Nextcloud — shared checklists, photo boards, and notes, all in one
+place.
 
 ## Features
 
 - **Houses**: Group household members and their shared data. A person can belong to multiple houses
   and switch between them freely.
-- **Shopping Lists**: Create and manage shared shopping lists with support for recurring items (e.g.
-  milk every week) that automatically reappear when due.
+- **Checklists**: Create and manage shared checklists with support for recurring items (e.g. milk
+  every week) that automatically reappear when due.
 - **Photo Boards**: Keep shared reference photos organized in folders — the right brand of dog food,
   a favorite recipe card, a product label, and so on.
 - **Notes Wall**: A lightweight shared space for household reminders, pinned messages, and quick

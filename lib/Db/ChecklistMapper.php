@@ -14,15 +14,15 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 /**
- * @template-extends QBMapper<ShoppingList>
+ * @template-extends QBMapper<Checklist>
  */
-class ShoppingListMapper extends QBMapper {
+class ChecklistMapper extends QBMapper {
 	public function __construct(IDBConnection $db) {
-		parent::__construct($db, Application::tableName('lists'), ShoppingList::class);
+		parent::__construct($db, Application::tableName('lists'), Checklist::class);
 	}
 
 	/**
-	 * @return ShoppingList[]
+	 * @return Checklist[]
 	 */
 	public function findByHouse(int $houseId): array {
 		$qb = $this->db->getQueryBuilder();
@@ -38,7 +38,7 @@ class ShoppingListMapper extends QBMapper {
 	/**
 	 * @throws DoesNotExistException
 	 */
-	public function findById(int $id): ShoppingList {
+	public function findById(int $id): Checklist {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())

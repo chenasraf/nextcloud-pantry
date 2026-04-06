@@ -14,15 +14,15 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 /**
- * @template-extends QBMapper<ShoppingListItem>
+ * @template-extends QBMapper<ChecklistItem>
  */
-class ShoppingListItemMapper extends QBMapper {
+class ChecklistItemMapper extends QBMapper {
 	public function __construct(IDBConnection $db) {
-		parent::__construct($db, Application::tableName('list_items'), ShoppingListItem::class);
+		parent::__construct($db, Application::tableName('list_items'), ChecklistItem::class);
 	}
 
 	/**
-	 * @return ShoppingListItem[]
+	 * @return ChecklistItem[]
 	 */
 	public function findByList(int $listId): array {
 		$qb = $this->db->getQueryBuilder();
@@ -38,7 +38,7 @@ class ShoppingListItemMapper extends QBMapper {
 	/**
 	 * @throws DoesNotExistException
 	 */
-	public function findById(int $id): ShoppingListItem {
+	public function findById(int $id): ChecklistItem {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
@@ -50,7 +50,7 @@ class ShoppingListItemMapper extends QBMapper {
 	/**
 	 * Find all bought items whose next_due_at has passed.
 	 *
-	 * @return ShoppingListItem[]
+	 * @return ChecklistItem[]
 	 */
 	public function findDueRecurring(int $now): array {
 		$qb = $this->db->getQueryBuilder();

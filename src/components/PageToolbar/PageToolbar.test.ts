@@ -13,12 +13,12 @@ describe('PageToolbar', () => {
 
     it('renders the title when provided', () => {
       const wrapper = mount(PageToolbar, {
-        props: { title: 'Shopping lists' },
+        props: { title: 'Checklists' },
       })
 
       const h2 = wrapper.find('.pantry-toolbar__title')
       expect(h2.exists()).toBe(true)
-      expect(h2.text()).toBe('Shopping lists')
+      expect(h2.text()).toBe('Checklists')
     })
 
     it('does not render the title element when omitted', () => {

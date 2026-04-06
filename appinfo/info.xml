@@ -6,12 +6,12 @@
 	-->
 	<id>pantry</id>
 	<name>Pantry</name>
-	<summary>Manage your household: shared shopping lists, photo boards, and notes.</summary>
+	<summary>Manage your household: shared checklists, photo boards, and notes.</summary>
 	<description><![CDATA[
 Pantry helps households stay organized in Nextcloud.
 
 - **Houses** group members and their shared data. A person can belong to multiple houses and switch between them freely.
-- **Shopping lists** support recurring items (e.g. milk every week) that automatically reappear when due. Share lists with the whole household so everyone knows what to pick up.
+- **Checklists** support recurring items (e.g. milk every week) that automatically reappear when due. Share lists with the whole household so everyone knows what to pick up.
 - **Photo boards** let you keep shared reference photos organized in folders — the right brand of dog food, a favorite recipe card, a product label, and so on.
 - **Notes wall** gives the household a lightweight shared space for reminders, pinned messages, and quick notes with customizable colors.
 - **Notifications** keep everyone in the loop when photos are uploaded or notes are added or edited.

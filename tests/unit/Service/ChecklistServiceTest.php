@@ -7,34 +7,34 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Tests\Unit\Service;
 
-use OCA\Pantry\Db\ShoppingList;
-use OCA\Pantry\Db\ShoppingListItem;
-use OCA\Pantry\Db\ShoppingListItemMapper;
-use OCA\Pantry\Db\ShoppingListMapper;
+use OCA\Pantry\Db\Checklist;
+use OCA\Pantry\Db\ChecklistItem;
+use OCA\Pantry\Db\ChecklistItemMapper;
+use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Service\RecurrenceService;
-use OCA\Pantry\Service\ShoppingListService;
+use OCA\Pantry\Service\ChecklistService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class ShoppingListServiceTest extends TestCase {
-	/** @var ShoppingListMapper&MockObject */
-	private ShoppingListMapper $listMapper;
-	/** @var ShoppingListItemMapper&MockObject */
-	private ShoppingListItemMapper $itemMapper;
-	private ShoppingListService $svc;
+class ChecklistServiceTest extends TestCase {
+	/** @var ChecklistMapper&MockObject */
+	private ChecklistMapper $listMapper;
+	/** @var ChecklistItemMapper&MockObject */
+	private ChecklistItemMapper $itemMapper;
+	private ChecklistService $svc;
 
 	protected function setUp(): void {
-		$this->listMapper = $this->createMock(ShoppingListMapper::class);
-		$this->itemMapper = $this->createMock(ShoppingListItemMapper::class);
-		$this->svc = new ShoppingListService(
+		$this->listMapper = $this->createMock(ChecklistMapper::class);
+		$this->itemMapper = $this->createMock(ChecklistItemMapper::class);
+		$this->svc = new ChecklistService(
 			$this->listMapper,
 			$this->itemMapper,
 			new RecurrenceService(),
 		);
 	}
 
-	private function makeItem(array $overrides = []): ShoppingListItem {
-		$item = new ShoppingListItem();
+	private function makeItem(array $overrides = []): ChecklistItem {
+		$item = new ChecklistItem();
 		$item->setListId($overrides['listId'] ?? 1);
 		$item->setName($overrides['name'] ?? 'Milk');
 		$item->setCategoryId($overrides['categoryId'] ?? null);
@@ -73,7 +73,7 @@ class ShoppingListServiceTest extends TestCase {
 		$this->itemMapper->method('findDueRecurring')->with($now)->willReturn([$dueItem]);
 		$this->itemMapper->expects($this->once())
 			->method('update')
-			->with($this->callback(function (ShoppingListItem $i) {
+			->with($this->callback(function (ChecklistItem $i) {
 				return $i->getBought() === false
 					&& $i->getBoughtAt() === null
 					&& $i->getBoughtBy() === null
@@ -151,13 +151,13 @@ class ShoppingListServiceTest extends TestCase {
 	}
 
 	public function testAddItemRejectsEmptyName(): void {
-		$this->listMapper->method('findById')->willReturn(new ShoppingList());
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->expectException(\InvalidArgumentException::class);
 		$this->svc->addItem(1, ['name' => '  ']);
 	}
 
 	public function testAddItemRejectsBadRrule(): void {
-		$this->listMapper->method('findById')->willReturn(new ShoppingList());
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->expectException(\InvalidArgumentException::class);
 		$this->svc->addItem(1, ['name' => 'Eggs', 'rrule' => 'not valid']);
 	}

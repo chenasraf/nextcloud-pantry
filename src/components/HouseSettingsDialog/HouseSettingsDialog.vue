@@ -306,7 +306,7 @@ const strings = {
   imagesSection: t('pantry', 'Images'),
   imagesHint: t(
     'pantry',
-    'Pick the base folder where Pantry will store uploaded images for this house. Shopping list item images go into a "Shopping list items" subfolder inside it, created automatically.',
+    'Pick the base folder where Pantry will store uploaded images for this house. Checklist item images go into a "Checklist items" subfolder inside it, created automatically.',
   ),
   folderLabel: t('pantry', 'Upload folder'),
   browse: t('pantry', 'Browse …'),

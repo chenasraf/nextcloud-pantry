@@ -55,7 +55,7 @@
         :description="strings.emptyBody"
       >
         <template #icon>
-          <CartIcon />
+          <ClipboardCheckIcon />
         </template>
       </NcEmptyContent>
 
@@ -254,15 +254,15 @@ import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import RepeatIcon from '@icons/Repeat.vue'
-import CartIcon from '@icons/Cart.vue'
+import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import UploadIcon from '@icons/Upload.vue'
 import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
 import { categoryIconComponent } from '@/components/CategoryPicker'
-import { useShoppingListItems } from '@/composables/useShoppingList'
+import { useChecklistItems } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { getList } from '@/api/lists'
-import type { ShoppingList, ShoppingListItem } from '@/api/types'
+import type { Checklist, ChecklistItem } from '@/api/types'
 import { RRule } from 'rrule'
 
 const props = defineProps<{ houseId: string; listId: string }>()
@@ -270,9 +270,9 @@ const props = defineProps<{ houseId: string; listId: string }>()
 const houseIdNum = computed(() => Number(props.houseId))
 const listIdNum = computed(() => Number(props.listId))
 
-const list = ref<ShoppingList | null>(null)
+const list = ref<Checklist | null>(null)
 const { items, loading, load, add, update, toggle, remove, uploadImage, clearImage } =
-  useShoppingListItems(houseIdNum.value, listIdNum.value)
+  useChecklistItems(houseIdNum.value, listIdNum.value)
 const categories = useCategories(houseIdNum.value)
 
 function categoryFor(id: number | null) {
@@ -340,7 +340,7 @@ async function handleRemove(itemId: number) {
   await remove(itemId)
 }
 
-const editing = ref<ShoppingListItem | null>(null)
+const editing = ref<ChecklistItem | null>(null)
 const editName = ref('')
 const editQuantity = ref('')
 const editCategoryId = ref<number | null>(null)
@@ -349,7 +349,7 @@ const editRepeatFromCompletion = ref<boolean>(false)
 const showEditRecurrenceEditor = ref(false)
 const savingEdit = ref(false)
 
-function startEdit(item: ShoppingListItem) {
+function startEdit(item: ChecklistItem) {
   editing.value = item
   editName.value = item.name
   editQuantity.value = item.quantity ?? ''
@@ -378,8 +378,8 @@ async function submitEdit() {
   }
 }
 
-const previewing = ref<ShoppingListItem | null>(null)
-function openPreview(item: ShoppingListItem) {
+const previewing = ref<ChecklistItem | null>(null)
+function openPreview(item: ChecklistItem) {
   previewing.value = item
 }
 

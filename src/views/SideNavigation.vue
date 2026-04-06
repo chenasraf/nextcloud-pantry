@@ -12,7 +12,7 @@
           :active="isNavActive(['lists', 'list-detail', 'list-'])"
         >
           <template #icon>
-            <CartIcon :size="20" />
+            <ClipboardCheckIcon :size="20" />
           </template>
         </NcAppNavigationItem>
 
@@ -156,7 +156,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import HomeIcon from '@icons/Home.vue'
-import CartIcon from '@icons/Cart.vue'
+import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import ImageIcon from '@icons/Image.vue'
 import NoteIcon from '@icons/Note.vue'
 import CogIcon from '@icons/Cog.vue'
@@ -264,7 +264,7 @@ async function submitCreate() {
 watch(currentHouseId, closeMenu)
 
 const strings = {
-  lists: t('pantry', 'Shopping lists'),
+  lists: t('pantry', 'Checklists'),
   photos: t('pantry', 'Photo board'),
   notes: t('pantry', 'Notes wall'),
   houseSettings: t('pantry', 'House settings'),

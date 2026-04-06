@@ -19,7 +19,7 @@ export interface HouseMember {
   joinedAt: number
 }
 
-export interface ShoppingList {
+export interface Checklist {
   id: number
   houseId: number
   name: string
@@ -40,7 +40,7 @@ export interface Category {
   updatedAt: number
 }
 
-export interface ShoppingListItem {
+export interface ChecklistItem {
   id: number
   listId: number
   name: string

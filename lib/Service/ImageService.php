@@ -12,7 +12,7 @@ use OCP\Files\IRootFolder;
 use OCP\Files\NotPermittedException;
 
 class ImageService {
-	public const SHOPPING_ITEMS_SUBDIR = 'Shopping list items';
+	public const CHECKLIST_ITEMS_SUBDIR = 'Checklist items';
 	public const PHOTO_WALL_SUBDIR = 'Photo wall';
 
 	public function __construct(
@@ -29,7 +29,7 @@ class ImageService {
 		if ($data === '') {
 			throw new \InvalidArgumentException('Empty file');
 		}
-		$folder = $this->resolveShoppingItemsFolder($uid, $houseId);
+		$folder = $this->resolveChecklistItemsFolder($uid, $houseId);
 		$filename = $this->uniqueName($folder, $originalName);
 		try {
 			$file = $folder->newFile($filename, $data);
@@ -62,9 +62,9 @@ class ImageService {
 		return $this->getOrCreateSubFolder($base, self::PHOTO_WALL_SUBDIR);
 	}
 
-	private function resolveShoppingItemsFolder(string $uid, int $houseId): Folder {
+	private function resolveChecklistItemsFolder(string $uid, int $houseId): Folder {
 		$base = $this->resolveBaseFolder($uid, $houseId);
-		return $this->getOrCreateSubFolder($base, self::SHOPPING_ITEMS_SUBDIR);
+		return $this->getOrCreateSubFolder($base, self::CHECKLIST_ITEMS_SUBDIR);
 	}
 
 	private function resolveBaseFolder(string $uid, int $houseId): Folder {

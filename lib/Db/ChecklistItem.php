@@ -39,7 +39,7 @@ use OCP\AppFramework\Db\Entity;
  * @method int getUpdatedAt()
  * @method void setUpdatedAt(int $updatedAt)
  */
-class ShoppingListItem extends Entity implements \JsonSerializable {
+class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $listId = 0;
 	protected string $name = '';
 	protected ?int $categoryId = null;

@@ -15,7 +15,7 @@ use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
 
 /**
- * Initial schema for Pantry: houses, members, shopping lists, list items.
+ * Initial schema for Pantry: houses, members, checklists, list items.
  */
 class Version1Date20260405000000 extends SimpleMigrationStep {
 	/**

@@ -7,17 +7,17 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
-use OCA\Pantry\Db\ShoppingList;
-use OCA\Pantry\Db\ShoppingListItem;
-use OCA\Pantry\Db\ShoppingListItemMapper;
-use OCA\Pantry\Db\ShoppingListMapper;
+use OCA\Pantry\Db\Checklist;
+use OCA\Pantry\Db\ChecklistItem;
+use OCA\Pantry\Db\ChecklistItemMapper;
+use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
-class ShoppingListService {
+class ChecklistService {
 	public function __construct(
-		private ShoppingListMapper $listMapper,
-		private ShoppingListItemMapper $itemMapper,
+		private ChecklistMapper $listMapper,
+		private ChecklistItemMapper $itemMapper,
 		private RecurrenceService $recurrence,
 	) {
 	}
@@ -25,13 +25,13 @@ class ShoppingListService {
 	// ----- Lists -----
 
 	/**
-	 * @return ShoppingList[]
+	 * @return Checklist[]
 	 */
 	public function listForHouse(int $houseId): array {
 		return $this->listMapper->findByHouse($houseId);
 	}
 
-	public function getList(int $listId): ShoppingList {
+	public function getList(int $listId): Checklist {
 		try {
 			return $this->listMapper->findById($listId);
 		} catch (DoesNotExistException) {
@@ -39,25 +39,25 @@ class ShoppingListService {
 		}
 	}
 
-	public function createList(int $houseId, string $name, ?string $description): ShoppingList {
+	public function createList(int $houseId, string $name, ?string $description): Checklist {
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('List name cannot be empty');
 		}
 		$now = time();
-		$list = new ShoppingList();
+		$list = new Checklist();
 		$list->setHouseId($houseId);
 		$list->setName($name);
 		$list->setDescription($description !== null && $description !== '' ? $description : null);
 		$list->setSortOrder(0);
 		$list->setCreatedAt($now);
 		$list->setUpdatedAt($now);
-		/** @var ShoppingList $saved */
+		/** @var Checklist $saved */
 		$saved = $this->listMapper->insert($list);
 		return $saved;
 	}
 
-	public function updateList(int $listId, array $patch): ShoppingList {
+	public function updateList(int $listId, array $patch): Checklist {
 		$list = $this->getList($listId);
 		if (isset($patch['name'])) {
 			$name = trim((string)$patch['name']);
@@ -89,7 +89,7 @@ class ShoppingListService {
 	/**
 	 * List items for a list, auto-unchecking any recurring items whose next_due_at has passed.
 	 *
-	 * @return ShoppingListItem[]
+	 * @return ChecklistItem[]
 	 */
 	public function listItems(int $listId, ?int $now = null): array {
 		// Eagerly reopen any due recurring items in this list before returning.
@@ -97,7 +97,7 @@ class ShoppingListService {
 		return $this->itemMapper->findByList($listId);
 	}
 
-	public function getItem(int $itemId): ShoppingListItem {
+	public function getItem(int $itemId): ChecklistItem {
 		try {
 			return $this->itemMapper->findById($itemId);
 		} catch (DoesNotExistException) {
@@ -105,7 +105,7 @@ class ShoppingListService {
 		}
 	}
 
-	public function addItem(int $listId, array $data): ShoppingListItem {
+	public function addItem(int $listId, array $data): ChecklistItem {
 		// Ensure the list exists.
 		$this->getList($listId);
 
@@ -122,7 +122,7 @@ class ShoppingListService {
 		}
 
 		$now = time();
-		$item = new ShoppingListItem();
+		$item = new ChecklistItem();
 		$item->setListId($listId);
 		$item->setName($name);
 		$item->setCategoryId($this->intOrNull($data['categoryId'] ?? null));
@@ -137,12 +137,12 @@ class ShoppingListService {
 		$item->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : 0);
 		$item->setCreatedAt($now);
 		$item->setUpdatedAt($now);
-		/** @var ShoppingListItem $saved */
+		/** @var ChecklistItem $saved */
 		$saved = $this->itemMapper->insert($item);
 		return $saved;
 	}
 
-	public function updateItem(int $itemId, array $patch): ShoppingListItem {
+	public function updateItem(int $itemId, array $patch): ChecklistItem {
 		$item = $this->getItem($itemId);
 
 		if (isset($patch['name'])) {
@@ -192,7 +192,7 @@ class ShoppingListService {
 		return $item;
 	}
 
-	public function toggleItem(int $itemId, string $uid, ?int $now = null): ShoppingListItem {
+	public function toggleItem(int $itemId, string $uid, ?int $now = null): ChecklistItem {
 		$item = $this->getItem($itemId);
 		$now ??= time();
 
@@ -221,7 +221,7 @@ class ShoppingListService {
 	 * - "fixed schedule" mode: the schedule is anchored at the item's creation time; next
 	 *   occurrence is the first one strictly after now on that anchored series.
 	 */
-	private function computeNextDueAt(ShoppingListItem $item, int $now): ?\DateTimeImmutable {
+	private function computeNextDueAt(ChecklistItem $item, int $now): ?\DateTimeImmutable {
 		$rrule = $item->getRrule();
 		if ($rrule === null) {
 			return null;

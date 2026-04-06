@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace OCA\Pantry\Service;
 
 use OCA\Pantry\Db\CategoryMapper;
+use OCA\Pantry\Db\ChecklistItemMapper;
+use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\HouseMember;
@@ -15,8 +17,6 @@ use OCA\Pantry\Db\HouseMemberMapper;
 use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Db\PhotoFolderMapper;
 use OCA\Pantry\Db\PhotoMapper;
-use OCA\Pantry\Db\ShoppingListItemMapper;
-use OCA\Pantry\Db\ShoppingListMapper;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -27,8 +27,8 @@ class HouseService {
 	public function __construct(
 		private HouseMapper $houseMapper,
 		private HouseMemberMapper $memberMapper,
-		private ShoppingListMapper $listMapper,
-		private ShoppingListItemMapper $itemMapper,
+		private ChecklistMapper $listMapper,
+		private ChecklistItemMapper $itemMapper,
 		private CategoryMapper $categoryMapper,
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $photoFolderMapper,

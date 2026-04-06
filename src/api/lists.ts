@@ -1,8 +1,8 @@
 import { ocs } from '@/axios'
-import type { ShoppingList, ShoppingListItem } from './types'
+import type { Checklist, ChecklistItem } from './types'
 
-export async function listLists(houseId: number): Promise<ShoppingList[]> {
-  const resp = await ocs.get<ShoppingList[]>(`/houses/${houseId}/lists`)
+export async function listLists(houseId: number): Promise<Checklist[]> {
+  const resp = await ocs.get<Checklist[]>(`/houses/${houseId}/lists`)
   return resp.data ?? []
 }
 
@@ -10,16 +10,16 @@ export async function createList(
   houseId: number,
   name: string,
   description?: string | null,
-): Promise<ShoppingList> {
-  const resp = await ocs.post<ShoppingList>(`/houses/${houseId}/lists`, {
+): Promise<Checklist> {
+  const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists`, {
     name,
     description: description ?? null,
   })
   return resp.data
 }
 
-export async function getList(houseId: number, listId: number): Promise<ShoppingList> {
-  const resp = await ocs.get<ShoppingList>(`/houses/${houseId}/lists/${listId}`)
+export async function getList(houseId: number, listId: number): Promise<Checklist> {
+  const resp = await ocs.get<Checklist>(`/houses/${houseId}/lists/${listId}`)
   return resp.data
 }
 
@@ -27,8 +27,8 @@ export async function updateList(
   houseId: number,
   listId: number,
   patch: { name?: string; description?: string | null; sortOrder?: number },
-): Promise<ShoppingList> {
-  const resp = await ocs.patch<ShoppingList>(`/houses/${houseId}/lists/${listId}`, patch)
+): Promise<Checklist> {
+  const resp = await ocs.patch<Checklist>(`/houses/${houseId}/lists/${listId}`, patch)
   return resp.data
 }
 
@@ -36,8 +36,8 @@ export async function deleteList(houseId: number, listId: number): Promise<void>
   await ocs.delete(`/houses/${houseId}/lists/${listId}`)
 }
 
-export async function listItems(houseId: number, listId: number): Promise<ShoppingListItem[]> {
-  const resp = await ocs.get<ShoppingListItem[]>(`/houses/${houseId}/lists/${listId}/items`)
+export async function listItems(houseId: number, listId: number): Promise<ChecklistItem[]> {
+  const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/lists/${listId}/items`)
   return resp.data ?? []
 }
 
@@ -54,8 +54,8 @@ export async function addItem(
   houseId: number,
   listId: number,
   input: ItemInput,
-): Promise<ShoppingListItem> {
-  const resp = await ocs.post<ShoppingListItem>(`/houses/${houseId}/lists/${listId}/items`, input)
+): Promise<ChecklistItem> {
+  const resp = await ocs.post<ChecklistItem>(`/houses/${houseId}/lists/${listId}/items`, input)
   return resp.data
 }
 
@@ -64,8 +64,8 @@ export async function updateItem(
   listId: number,
   itemId: number,
   patch: Partial<ItemInput>,
-): Promise<ShoppingListItem> {
-  const resp = await ocs.patch<ShoppingListItem>(
+): Promise<ChecklistItem> {
+  const resp = await ocs.patch<ChecklistItem>(
     `/houses/${houseId}/lists/${listId}/items/${itemId}`,
     patch,
   )
@@ -76,8 +76,8 @@ export async function toggleItem(
   houseId: number,
   listId: number,
   itemId: number,
-): Promise<ShoppingListItem> {
-  const resp = await ocs.post<ShoppingListItem>(
+): Promise<ChecklistItem> {
+  const resp = await ocs.post<ChecklistItem>(
     `/houses/${houseId}/lists/${listId}/items/${itemId}/toggle`,
   )
   return resp.data
@@ -92,10 +92,10 @@ export async function uploadItemImage(
   listId: number,
   itemId: number,
   file: File,
-): Promise<ShoppingListItem> {
+): Promise<ChecklistItem> {
   const form = new FormData()
   form.append('image', file, file.name)
-  const resp = await ocs.post<ShoppingListItem>(
+  const resp = await ocs.post<ChecklistItem>(
     `/houses/${houseId}/lists/${listId}/items/${itemId}/image`,
     form,
   )
@@ -106,8 +106,8 @@ export async function clearItemImage(
   houseId: number,
   listId: number,
   itemId: number,
-): Promise<ShoppingListItem> {
-  const resp = await ocs.delete<ShoppingListItem>(
+): Promise<ChecklistItem> {
+  const resp = await ocs.delete<ChecklistItem>(
     `/houses/${houseId}/lists/${listId}/items/${itemId}/image`,
   )
   return resp.data

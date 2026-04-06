@@ -33,13 +33,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'lists',
         name: 'lists',
-        component: () => import('@/views/ShoppingListsView.vue'),
+        component: () => import('@/views/ChecklistsView.vue'),
         props: true,
       },
       {
         path: 'lists/:listId',
         name: 'list-detail',
-        component: () => import('@/views/ShoppingListDetail.vue'),
+        component: () => import('@/views/ChecklistDetail.vue'),
         props: true,
       },
       {

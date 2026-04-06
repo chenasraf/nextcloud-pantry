@@ -7,19 +7,19 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\BackgroundJob;
 
-use OCA\Pantry\Service\ShoppingListService;
+use OCA\Pantry\Service\ChecklistService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
 
 /**
- * Periodically reopens recurring shopping-list items whose next_due_at has
+ * Periodically reopens recurring checklist items whose next_due_at has
  * passed, so they appear unchecked without waiting for a user to open the list.
  */
 class ReopenRecurringItemsJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $time,
-		private ShoppingListService $lists,
+		private ChecklistService $lists,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($time);

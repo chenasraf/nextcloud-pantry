@@ -23,7 +23,7 @@ export default {
         aboutHeader: t('pantry', 'About:'),
         aboutBody: t(
           'pantry',
-          'Pantry is a household organizer. Open the Pantry app from the top navigation to manage your houses, shopping lists, photos and notes.',
+          'Pantry is a household organizer. Open the Pantry app from the top navigation to manage your houses, checklists, photos and notes.',
         ),
       },
     }

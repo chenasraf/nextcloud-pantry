@@ -1,9 +1,9 @@
 import { ref } from 'vue'
 import * as api from '@/api/lists'
-import type { ShoppingList, ShoppingListItem } from '@/api/types'
+import type { Checklist, ChecklistItem } from '@/api/types'
 
-export function useShoppingLists(houseId: number) {
-  const lists = ref<ShoppingList[]>([])
+export function useChecklists(houseId: number) {
+  const lists = ref<Checklist[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -19,7 +19,7 @@ export function useShoppingLists(houseId: number) {
     }
   }
 
-  async function create(name: string, description?: string | null): Promise<ShoppingList> {
+  async function create(name: string, description?: string | null): Promise<Checklist> {
     const created = await api.createList(houseId, name, description)
     lists.value = [...lists.value, created]
     return created
@@ -41,8 +41,8 @@ export function useShoppingLists(houseId: number) {
   return { lists, loading, error, load, create, update, remove }
 }
 
-export function useShoppingListItems(houseId: number, listId: number) {
-  const items = ref<ShoppingListItem[]>([])
+export function useChecklistItems(houseId: number, listId: number) {
+  const items = ref<ChecklistItem[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -58,7 +58,7 @@ export function useShoppingListItems(houseId: number, listId: number) {
     }
   }
 
-  async function add(input: api.ItemInput): Promise<ShoppingListItem> {
+  async function add(input: api.ItemInput): Promise<ChecklistItem> {
     const created = await api.addItem(houseId, listId, input)
     items.value = [...items.value, created]
     return created

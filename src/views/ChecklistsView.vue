@@ -22,7 +22,7 @@
         :description="strings.emptyBody"
       >
         <template #icon>
-          <CartIcon />
+          <ClipboardCheckIcon />
         </template>
         <template #action>
           <NcButton variant="primary" @click="showCreate = true">
@@ -40,7 +40,7 @@
             }"
             class="pantry-list-card"
           >
-            <CartIcon :size="28" class="pantry-list-card__icon" />
+            <ClipboardCheckIcon :size="28" class="pantry-list-card__icon" />
             <div class="pantry-list-card__body">
               <h3>{{ list.name }}</h3>
               <p v-if="list.description">{{ list.description }}</p>
@@ -148,17 +148,17 @@ import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import PageToolbar from '@/components/PageToolbar'
 import PlusIcon from '@icons/Plus.vue'
-import CartIcon from '@icons/Cart.vue'
+import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
-import type { ShoppingList } from '@/api/types'
-import { useShoppingLists } from '@/composables/useShoppingList'
+import type { Checklist } from '@/api/types'
+import { useChecklists } from '@/composables/useChecklist'
 
 const props = defineProps<{ houseId: string }>()
 const router = useRouter()
 
 const houseIdNum = computed(() => Number(props.houseId))
-const { lists, loading, load, create, update, remove } = useShoppingLists(houseIdNum.value)
+const { lists, loading, load, create, update, remove } = useChecklists(houseIdNum.value)
 
 onMounted(load)
 watch(
@@ -183,11 +183,11 @@ async function submitCreate() {
   })
 }
 
-const editing = ref<ShoppingList | null>(null)
+const editing = ref<Checklist | null>(null)
 const editName = ref('')
 const editDescription = ref('')
 
-function startEdit(list: ShoppingList) {
+function startEdit(list: Checklist) {
   editing.value = list
   editName.value = list.name
   editDescription.value = list.description ?? ''
@@ -205,7 +205,7 @@ async function submitEdit() {
   editing.value = null
 }
 
-const deleting = ref<ShoppingList | null>(null)
+const deleting = ref<Checklist | null>(null)
 const deleteConfirmBody = computed(() =>
   t(
     'pantry',
@@ -214,7 +214,7 @@ const deleteConfirmBody = computed(() =>
   ),
 )
 
-function confirmDelete(list: ShoppingList) {
+function confirmDelete(list: Checklist) {
   deleting.value = list
 }
 
@@ -226,7 +226,7 @@ async function submitDelete() {
 }
 
 const strings = {
-  title: t('pantry', 'Shopping lists'),
+  title: t('pantry', 'Checklists'),
   newList: t('pantry', 'New list'),
   create: t('pantry', 'Create'),
   save: t('pantry', 'Save'),
@@ -234,15 +234,15 @@ const strings = {
   edit: t('pantry', 'Edit'),
   delete: t('pantry', 'Delete'),
   listMenu: t('pantry', 'List actions'),
-  createDialogTitle: t('pantry', 'Create a shopping list'),
-  editDialogTitle: t('pantry', 'Edit shopping list'),
-  deleteDialogTitle: t('pantry', 'Delete shopping list'),
+  createDialogTitle: t('pantry', 'Create a checklist'),
+  editDialogTitle: t('pantry', 'Edit checklist'),
+  deleteDialogTitle: t('pantry', 'Delete checklist'),
   nameLabel: t('pantry', 'Name'),
   namePlaceholder: t('pantry', 'e.g. Weekly groceries'),
   descriptionLabel: t('pantry', 'Description (optional)'),
   descriptionPlaceholder: t('pantry', 'A short description'),
   emptyTitle: t('pantry', 'No lists yet'),
-  emptyBody: t('pantry', 'Create your first shopping list to start adding items.'),
+  emptyBody: t('pantry', 'Create your first checklist to start adding items.'),
 }
 </script>
 

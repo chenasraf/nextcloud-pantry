@@ -16,7 +16,7 @@ import HomeIcon from '@icons/Home.vue'
 
 const strings = {
   title: t('pantry', 'Welcome to Pantry'),
-  body: t('pantry', 'Create a house to start organizing your shopping lists, photos and notes.'),
+  body: t('pantry', 'Create a house to start organizing your checklists, photos and notes.'),
   hint: t('pantry', 'Use the house picker at the bottom of the sidebar to create one.'),
 }
 </script>

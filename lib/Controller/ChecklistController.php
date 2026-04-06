@@ -13,7 +13,7 @@ use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\ImageService;
-use OCA\Pantry\Service\ShoppingListService;
+use OCA\Pantry\Service\ChecklistService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -27,13 +27,13 @@ use OCP\IUserSession;
  * @psalm-import-type PantryListItem from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  */
-final class ShoppingListController extends OCSController {
+final class ChecklistController extends OCSController {
 	use TranslatesDomainExceptions;
 
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private ShoppingListService $lists,
+		private ChecklistService $lists,
 		private CategoryService $categories,
 		private HouseAuthService $auth,
 		private ImageService $images,
@@ -43,7 +43,7 @@ final class ShoppingListController extends OCSController {
 	}
 
 	/**
-	 * List all shopping lists in a house
+	 * List all checklists in a house
 	 *
 	 * @param int $houseId House id.
 	 * @param int<1, 500> $limit Maximum number of lists to return.
@@ -66,7 +66,7 @@ final class ShoppingListController extends OCSController {
 	}
 
 	/**
-	 * Create a shopping list in a house
+	 * Create a checklist in a house
 	 *
 	 * @param int $houseId House id.
 	 * @param string $name List name.
@@ -87,7 +87,7 @@ final class ShoppingListController extends OCSController {
 	}
 
 	/**
-	 * Get a shopping list
+	 * Get a checklist
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
@@ -108,7 +108,7 @@ final class ShoppingListController extends OCSController {
 	}
 
 	/**
-	 * Update a shopping list
+	 * Update a checklist
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
@@ -143,7 +143,7 @@ final class ShoppingListController extends OCSController {
 	}
 
 	/**
-	 * Delete a shopping list
+	 * Delete a checklist
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
@@ -165,7 +165,7 @@ final class ShoppingListController extends OCSController {
 	}
 
 	/**
-	 * List items in a shopping list
+	 * List items in a checklist
 	 *
 	 * Auto-reopens recurring items whose next occurrence has arrived.
 	 *
