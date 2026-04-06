@@ -32,6 +32,9 @@ class HouseMember extends Entity implements \JsonSerializable {
 	public function __construct() {
 		$this->addType('houseId', 'integer');
 		$this->addType('joinedAt', 'integer');
+		// Force role to be included in INSERTs — without this, the ORM
+		// skips it because the PHP default matches the initial value.
+		$this->markFieldUpdated('role');
 	}
 
 	public function isAtLeastAdmin(): bool {
