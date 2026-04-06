@@ -116,7 +116,7 @@ import {
   CATEGORY_ICONS,
   DEFAULT_CATEGORY_ICON_KEY,
   categoryIconComponent,
-} from '@/components/categoryIcons'
+} from './categoryIcons'
 import type { Category } from '@/api/types'
 
 const props = defineProps<{

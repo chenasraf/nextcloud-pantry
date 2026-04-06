@@ -165,8 +165,8 @@ import ChevronDownIcon from '@icons/ChevronDown.vue'
 import CheckIcon from '@icons/Check.vue'
 import PlusIcon from '@icons/Plus.vue'
 import { useHouses } from '@/composables/useHouses'
-import HouseSettingsDialog from '@/components/HouseSettingsDialog.vue'
-import PantrySettingsDialog from '@/components/PantrySettingsDialog.vue'
+import HouseSettingsDialog from '@/components/HouseSettingsDialog'
+import PantrySettingsDialog from '@/components/PantrySettingsDialog'
 
 const route = useRoute()
 const router = useRouter()
