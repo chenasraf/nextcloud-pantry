@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.1.0...v0.1.1) (2026-04-07)
+
+
+### Documentation
+
+* update app info screenshots ([e67bb9a](https://github.com/chenasraf/nextcloud-pantry/commit/e67bb9a6e4cee46d0c696fcb0dbf737fefa5ed2d))
+
 ## 0.1.0 (2026-04-07)
 
 
