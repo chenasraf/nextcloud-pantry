@@ -40,6 +40,9 @@ All data is scoped to a house; members only see the houses they belong to.
 		<admin>OCA\Pantry\Settings\Admin</admin>
 		<admin-section>OCA\Pantry\Sections\Admin</admin-section>
 	</settings>
+	<background-jobs>
+		<job>OCA\Pantry\BackgroundJob\ReopenRecurringItemsJob</job>
+	</background-jobs>
 	<navigations>
 		<navigation role="all">
 			<name>Pantry</name>

@@ -12,6 +12,7 @@ use OCA\Pantry\Db\HouseMemberMapper;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\Notification\IManager as INotificationManager;
+use Psr\Log\LoggerInterface;
 
 class NotificationService {
 	public const PREF_NOTIFY_PHOTO = 'notify_photo';
@@ -28,6 +29,7 @@ class NotificationService {
 		private PrefsService $prefs,
 		private IURLGenerator $urlGenerator,
 		private IUserManager $userManager,
+		private LoggerInterface $logger,
 	) {
 	}
 
@@ -150,6 +152,7 @@ class NotificationService {
 	 */
 	private function sendToHouseMembers(int $houseId, string $authorUid, string $subject, string $objectType, string $prefKey, callable $paramsFn): void {
 		$members = $this->memberMapper->findByHouse($houseId);
+
 		$recipients = [];
 		foreach ($members as $member) {
 			$uid = $member->getUserId();
@@ -172,17 +175,36 @@ class NotificationService {
 			$this->urlGenerator->imagePath(Application::APP_ID, 'app-dark.svg')
 		);
 
-		foreach ($recipients as $uid) {
-			$notification = $this->notificationManager->createNotification();
-			$notification->setApp(Application::APP_ID)
-				->setUser($uid)
-				->setDateTime(new \DateTime())
-				->setObject($objectType, (string)($params['noteId'] ?? $params['houseId']))
-				->setSubject($subject, $params)
-				->setLink($link)
-				->setIcon($iconUrl);
+		$objectId = (string)($params['noteId'] ?? $params['houseId']);
 
-			$this->notificationManager->notify($notification);
+		foreach ($recipients as $uid) {
+			try {
+				// Dismiss any previous notification for the same object so edits
+				// don't pile up — only the latest notification is shown.
+				$stale = $this->notificationManager->createNotification();
+				$stale->setApp(Application::APP_ID)
+					->setUser($uid)
+					->setObject($objectType, $objectId);
+				$this->notificationManager->markProcessed($stale);
+
+				$notification = $this->notificationManager->createNotification();
+				$notification->setApp(Application::APP_ID)
+					->setUser($uid)
+					->setDateTime(new \DateTime())
+					->setObject($objectType, $objectId)
+					->setSubject($subject, $params)
+					->setLink($link)
+					->setIcon($iconUrl);
+
+				$this->notificationManager->notify($notification);
+			} catch (\Throwable $e) {
+				$this->logger->error('Pantry notify: failed to send {subject} to {uid}: {msg}', [
+					'subject' => $subject,
+					'uid' => $uid,
+					'msg' => $e->getMessage(),
+					'exception' => $e,
+				]);
+			}
 		}
 	}
 
