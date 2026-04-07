@@ -20,3 +20,6 @@ pre-commit:
     openapi:
       glob: "*Controller.php"
       run: make openapi && git add openapi.json
+    lint-appinfo:
+      glob: "appinfo/info.xml"
+      run: make lint-appinfo
