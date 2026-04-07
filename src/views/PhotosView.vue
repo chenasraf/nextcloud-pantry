@@ -70,6 +70,7 @@
             @delete="confirmDeleteFolder(folder)"
             @drop-photo="onDropPhotoToFolder"
             @drop-files="onDropFilesToFolder"
+            @drag-over-change="onFolderDragOverChange"
           />
           <template v-for="(item, i) in rootGridItems" :key="item.key">
             <div
@@ -421,10 +422,18 @@ async function onFilesSelected(e: Event) {
 // ----- Drag and drop (file upload) -----
 
 let dragCounter = 0
+const folderHasDrag = ref(false)
+
+function onFolderDragOverChange(isOver: boolean) {
+  folderHasDrag.value = isOver
+  if (isOver) {
+    isFileDragOver.value = false
+  }
+}
 
 function onWallDragEnter(e: DragEvent) {
   dragCounter++
-  if (e.dataTransfer?.types.includes('Files')) {
+  if (e.dataTransfer?.types.includes('Files') && !folderHasDrag.value) {
     isFileDragOver.value = true
   }
 }

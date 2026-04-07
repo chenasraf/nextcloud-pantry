@@ -62,6 +62,7 @@ const emit = defineEmits<{
   delete: [folder: PhotoFolder]
   'drop-photo': [photoId: number, folderId: number]
   'drop-files': [files: File[], folderId: number]
+  'drag-over-change': [isOver: boolean]
 }>()
 
 const isDragOver = ref(false)
@@ -99,7 +100,14 @@ function onDragStart(e: DragEvent) {
 }
 
 function onDragEnd() {
-  isDragOver.value = false
+  setDragOver(false)
+}
+
+function setDragOver(value: boolean) {
+  if (isDragOver.value !== value) {
+    isDragOver.value = value
+    emit('drag-over-change', value)
+  }
 }
 
 function onDragOver(e: DragEvent) {
@@ -108,16 +116,16 @@ function onDragOver(e: DragEvent) {
     e.dataTransfer.types.includes('application/x-pantry-photo') ||
     e.dataTransfer.types.includes('Files')
   ) {
-    isDragOver.value = true
+    setDragOver(true)
   }
 }
 
 function onDragLeave() {
-  isDragOver.value = false
+  setDragOver(false)
 }
 
 function onDrop(e: DragEvent) {
-  isDragOver.value = false
+  setDragOver(false)
   if (!e.dataTransfer) return
 
   // External file drop
