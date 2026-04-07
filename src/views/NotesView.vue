@@ -174,18 +174,21 @@ async function commitReorder() {
   await reorder(items)
 }
 
-// Capture-phase listeners
+// Capture-phase listeners — commit the reorder on drop, reset on dragend.
 function onDropCapture() {
+  commitReorder()
+}
+function onDragEndCapture() {
   draggingNoteId.value = null
   dropIndex.value = null
 }
 onMounted(() => {
   wallRef.value?.addEventListener('drop', onDropCapture, true)
-  wallRef.value?.addEventListener('dragend', onDropCapture, true)
+  wallRef.value?.addEventListener('dragend', onDragEndCapture, true)
 })
 onBeforeUnmount(() => {
   wallRef.value?.removeEventListener('drop', onDropCapture, true)
-  wallRef.value?.removeEventListener('dragend', onDropCapture, true)
+  wallRef.value?.removeEventListener('dragend', onDragEndCapture, true)
 })
 
 // ----- Create / Edit -----

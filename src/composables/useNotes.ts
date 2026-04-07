@@ -43,11 +43,12 @@ export function useNotes(houseId: number) {
   }
 
   async function reorder(items: { id: number; sortOrder: number }[]): Promise<void> {
-    await api.reorderNotes(houseId, items)
+    // Apply optimistically so there's no visual jump while the API call is in flight.
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
     notes.value = notes.value
       .map((n) => (map.has(n.id) ? { ...n, sortOrder: map.get(n.id)! } : n))
       .sort((a, b) => a.sortOrder - b.sortOrder)
+    await api.reorderNotes(houseId, items)
   }
 
   return { notes, loading, error, load, create, update, remove, reorder }

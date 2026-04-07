@@ -33,13 +33,13 @@ export function usePhotos(houseId: number) {
   }
 
   const rootPhotos = computed(() =>
-    photos.value.filter((p) => p.folderId === null).sort((a, b) => b.createdAt - a.createdAt),
+    photos.value.filter((p) => p.folderId === null).sort((a, b) => a.sortOrder - b.sortOrder),
   )
 
   function photosInFolder(folderId: number): Photo[] {
     return photos.value
       .filter((p) => p.folderId === folderId)
-      .sort((a, b) => b.createdAt - a.createdAt)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
   }
 
   // ----- Photos -----
@@ -56,8 +56,12 @@ export function usePhotos(houseId: number) {
       const created = await api.uploadPhoto(houseId, file, folderId, null, (progress) => {
         uploads.value = uploads.value.map((u) => (u.id === entry.id ? { ...u, progress } : u))
       })
-      photos.value = [...photos.value, created]
-      return created
+      // Place new photo first by giving it a sortOrder below the current minimum.
+      const siblings = photos.value.filter((p) => p.folderId === (folderId ?? null))
+      const minSort = siblings.length > 0 ? Math.min(...siblings.map((p) => p.sortOrder)) : 0
+      const placed = { ...created, sortOrder: minSort - 1 }
+      photos.value = [...photos.value, placed]
+      return placed
     } finally {
       uploads.value = uploads.value.filter((u) => u.id !== entry.id)
     }
@@ -77,12 +81,12 @@ export function usePhotos(houseId: number) {
   }
 
   async function reorderPhotos(items: { id: number; sortOrder: number }[]): Promise<void> {
-    await api.reorderPhotos(houseId, items)
-    // Apply locally
+    // Apply optimistically so there's no visual jump while the API call is in flight.
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
     photos.value = photos.value
       .map((p) => (map.has(p.id) ? { ...p, sortOrder: map.get(p.id)! } : p))
       .sort((a, b) => a.sortOrder - b.sortOrder)
+    await api.reorderPhotos(houseId, items)
   }
 
   // ----- Folders -----
@@ -109,11 +113,11 @@ export function usePhotos(houseId: number) {
   }
 
   async function reorderFolders(items: { id: number; sortOrder: number }[]): Promise<void> {
-    await api.reorderFolders(houseId, items)
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
     folders.value = folders.value
       .map((f) => (map.has(f.id) ? { ...f, sortOrder: map.get(f.id)! } : f))
       .sort((a, b) => a.sortOrder - b.sortOrder)
+    await api.reorderFolders(houseId, items)
   }
 
   return {
