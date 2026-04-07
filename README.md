@@ -15,6 +15,12 @@ SPDX-License-Identifier: CC0-1.0
 A household management app for Nextcloud — shared checklists, photo boards, and notes, all in one
 place.
 
+## Screenshots
+
+|                                                |                                                |                                                |
+| ---------------------------------------------- | ---------------------------------------------- | ---------------------------------------------- |
+| ![Screenshot 1](screenshots/screenshot-01.png) | ![Screenshot 2](screenshots/screenshot-02.png) | ![Screenshot 3](screenshots/screenshot-03.png) |
+
 ## Features
 
 - **Houses**: Group household members and their shared data. A person can belong to multiple houses
