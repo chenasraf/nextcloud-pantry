@@ -45,6 +45,7 @@ export async function uploadPhoto(
   file: File,
   folderId?: number | null,
   caption?: string | null,
+  onProgress?: (progress: number) => void,
 ): Promise<Photo> {
   const form = new FormData()
   form.append('image', file, file.name)
@@ -54,7 +55,11 @@ export async function uploadPhoto(
   if (caption) {
     form.append('caption', caption)
   }
-  const resp = await ocs.post<Photo>(`/houses/${houseId}/photos`, form)
+  const resp = await ocs.post<Photo>(`/houses/${houseId}/photos`, form, {
+    onUploadProgress: onProgress
+      ? (e) => onProgress(e.total ? Math.round((e.loaded / e.total) * 100) : 0)
+      : undefined,
+  })
   return resp.data
 }
 

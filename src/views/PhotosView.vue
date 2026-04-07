@@ -80,6 +80,10 @@
               @dragover.prevent
               @drop.prevent.stop="onPlaceholderDrop"
             />
+            <div v-else-if="item.type === 'upload'" class="pantry-photos__upload-card">
+              <NcProgressBar :value="item.progress" size="medium" />
+              <span class="pantry-photos__upload-name">{{ item.fileName }}</span>
+            </div>
             <PhotoCard
               v-else
               :photo="item.photo"
@@ -120,6 +124,10 @@
               @dragover.prevent
               @drop.prevent.stop="onPlaceholderDrop"
             />
+            <div v-else-if="item.type === 'upload'" class="pantry-photos__upload-card">
+              <NcProgressBar :value="item.progress" size="medium" />
+              <span class="pantry-photos__upload-name">{{ item.fileName }}</span>
+            </div>
             <PhotoCard
               v-else
               :photo="item.photo"
@@ -230,6 +238,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcProgressBar from '@nextcloud/vue/components/NcProgressBar'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
@@ -241,7 +250,7 @@ import ImageIcon from '@icons/Image.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import FolderPlusIcon from '@icons/FolderPlus.vue'
 import type { Photo, PhotoFolder } from '@/api/types'
-import { usePhotos } from '@/composables/usePhotos'
+import { usePhotos, type UploadEntry } from '@/composables/usePhotos'
 
 const props = defineProps<{ houseId: string; folderId?: string }>()
 const router = useRouter()
@@ -260,6 +269,7 @@ const {
   createFolder,
   updateFolder,
   removeFolder,
+  uploads,
 } = usePhotos(houseIdNum.value)
 
 onMounted(load)
@@ -294,15 +304,31 @@ function navigateToFolder(folderId: number | null) {
 
 // ----- Reorder state -----
 
-type GridItem = { type: 'photo'; key: string; photo: Photo } | { type: 'placeholder'; key: string }
+type GridItem =
+  | { type: 'photo'; key: string; photo: Photo }
+  | { type: 'placeholder'; key: string }
+  | { type: 'upload'; key: string; fileName: string; progress: number }
 
 const draggingPhotoId = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
 
-function buildGridItems(source: Photo[]): GridItem[] {
+function buildGridItems(source: Photo[], activeUploads: UploadEntry[]): GridItem[] {
+  // Upload placeholders go first (newest-first sort means in-progress uploads are at the top).
+  const uploadItems: GridItem[] = activeUploads.map((u) => ({
+    type: 'upload' as const,
+    key: u.id,
+    fileName: u.fileName,
+    progress: u.progress,
+  }))
+
   const dragId = draggingPhotoId.value
   if (dragId === null || dropIndex.value === null) {
-    return source.map((p) => ({ type: 'photo' as const, key: 'p-' + p.id, photo: p }))
+    const photoItems: GridItem[] = source.map((p) => ({
+      type: 'photo' as const,
+      key: 'p-' + p.id,
+      photo: p,
+    }))
+    return [...uploadItems, ...photoItems]
   }
 
   const without = source.filter((p) => p.id !== dragId)
@@ -314,11 +340,18 @@ function buildGridItems(source: Photo[]): GridItem[] {
 
   const clampedIndex = Math.min(dropIndex.value, items.length)
   items.splice(clampedIndex, 0, { type: 'placeholder', key: 'drop-placeholder' })
-  return items
+  return [...uploadItems, ...items]
 }
 
-const rootGridItems = computed(() => buildGridItems(rootPhotos.value))
-const folderGridItems = computed(() => buildGridItems(activeFolderPhotos.value))
+const rootUploads = computed(() => uploads.value.filter((u) => u.folderId === null))
+const folderUploads = computed(() =>
+  uploads.value.filter((u) => u.folderId === activeFolderId.value),
+)
+
+const rootGridItems = computed(() => buildGridItems(rootPhotos.value, rootUploads.value))
+const folderGridItems = computed(() =>
+  buildGridItems(activeFolderPhotos.value, folderUploads.value),
+)
 
 function onPhotoDragStart(photoId: number) {
   draggingPhotoId.value = photoId
@@ -612,6 +645,29 @@ const strings = {
     border: 3px dashed var(--color-primary-element);
     border-radius: var(--border-radius-large, 12px);
     background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
+  }
+
+  &__upload-card {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-large, 12px);
+    background: var(--color-background-dark);
+    padding: 1rem;
+  }
+
+  &__upload-name {
+    font-size: 0.75rem;
+    color: var(--color-text-maxcontrast);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    text-align: center;
   }
 
   &__drop-overlay {

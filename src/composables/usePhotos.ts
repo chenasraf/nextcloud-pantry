@@ -2,11 +2,21 @@ import { computed, ref } from 'vue'
 import * as api from '@/api/photos'
 import type { Photo, PhotoFolder } from '@/api/types'
 
+export interface UploadEntry {
+  id: string
+  fileName: string
+  folderId: number | null
+  progress: number
+}
+
+let uploadSeq = 0
+
 export function usePhotos(houseId: number) {
   const photos = ref<Photo[]>([])
   const folders = ref<PhotoFolder[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const uploads = ref<UploadEntry[]>([])
 
   async function load(): Promise<void> {
     loading.value = true
@@ -22,18 +32,35 @@ export function usePhotos(houseId: number) {
     }
   }
 
-  const rootPhotos = computed(() => photos.value.filter((p) => p.folderId === null))
+  const rootPhotos = computed(() =>
+    photos.value.filter((p) => p.folderId === null).sort((a, b) => b.createdAt - a.createdAt),
+  )
 
   function photosInFolder(folderId: number): Photo[] {
-    return photos.value.filter((p) => p.folderId === folderId)
+    return photos.value
+      .filter((p) => p.folderId === folderId)
+      .sort((a, b) => b.createdAt - a.createdAt)
   }
 
   // ----- Photos -----
 
   async function upload(file: File, folderId?: number | null): Promise<Photo> {
-    const created = await api.uploadPhoto(houseId, file, folderId)
-    photos.value = [...photos.value, created]
-    return created
+    const entry: UploadEntry = {
+      id: `upload-${++uploadSeq}`,
+      fileName: file.name,
+      folderId: folderId ?? null,
+      progress: 0,
+    }
+    uploads.value = [...uploads.value, entry]
+    try {
+      const created = await api.uploadPhoto(houseId, file, folderId, null, (progress) => {
+        uploads.value = uploads.value.map((u) => (u.id === entry.id ? { ...u, progress } : u))
+      })
+      photos.value = [...photos.value, created]
+      return created
+    } finally {
+      uploads.value = uploads.value.filter((u) => u.id !== entry.id)
+    }
   }
 
   async function updatePhoto(
@@ -92,6 +119,7 @@ export function usePhotos(houseId: number) {
   return {
     photos,
     folders,
+    uploads,
     loading,
     error,
     load,

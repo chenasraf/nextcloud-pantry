@@ -127,7 +127,7 @@ describe('usePhotos', () => {
       const file = new File(['data'], 'test.jpg')
       const result = await wall.upload(file, 5)
 
-      expect(mockApi.uploadPhoto).toHaveBeenCalledWith(1, file, 5)
+      expect(mockApi.uploadPhoto).toHaveBeenCalledWith(1, file, 5, null, expect.any(Function))
       expect(result).toEqual(newPhoto)
       expect(wall.photos.value).toHaveLength(1)
       expect(wall.photos.value[0]).toEqual(newPhoto)
