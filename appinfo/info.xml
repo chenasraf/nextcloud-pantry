@@ -32,7 +32,9 @@ All data is scoped to a house; members only see the houses they belong to.
 	<website>https://github.com/chenasraf/nextcloud-pantry</website>
 	<bugs>https://github.com/chenasraf/nextcloud-pantry/issues</bugs>
 	<repository>https://github.com/chenasraf/nextcloud-pantry</repository>
-	<screenshot>https://raw.githubusercontent.com/chenasraf/nextcloud-pantry/refs/heads/master/promo.png</screenshot>
+	<screenshot>https://raw.githubusercontent.com/chenasraf/nextcloud-pantry/refs/heads/master/screenshots/screenshot-01.png</screenshot>
+	<screenshot>https://raw.githubusercontent.com/chenasraf/nextcloud-pantry/refs/heads/master/screenshots/screenshot-02.png</screenshot>
+	<screenshot>https://raw.githubusercontent.com/chenasraf/nextcloud-pantry/refs/heads/master/screenshots/screenshot-03.png</screenshot>
 	<dependencies>
 		<nextcloud min-version="29" max-version="34"/>
 	</dependencies>
