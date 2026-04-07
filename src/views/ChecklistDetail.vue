@@ -66,10 +66,10 @@
           v-for="item in sortedItems"
           :key="item.id"
           class="pantry-item"
-          :class="{ 'pantry-item--bought': item.bought }"
+          :class="{ 'pantry-item--done': item.done }"
         >
           <NcCheckboxRadioSwitch
-            :model-value="item.bought"
+            :model-value="item.done"
             @update:model-value="handleToggle(item.id)"
           >
             <span class="pantry-item__label">
@@ -313,7 +313,7 @@ watch(
 
 const sortedItems = computed(() => {
   return [...items.value].sort((a, b) => {
-    if (a.bought !== b.bought) return a.bought ? 1 : -1
+    if (a.done !== b.done) return a.done ? 1 : -1
     if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
     return a.name.localeCompare(b.name)
   })
@@ -572,7 +572,7 @@ const strings = {
   border-radius: var(--border-radius, 8px);
   background: var(--color-main-background);
 
-  &--bought {
+  &--done {
     opacity: 0.6;
 
     .pantry-item__name {

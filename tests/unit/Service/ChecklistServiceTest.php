@@ -39,9 +39,9 @@ class ChecklistServiceTest extends TestCase {
 		$item->setName($overrides['name'] ?? 'Milk');
 		$item->setCategoryId($overrides['categoryId'] ?? null);
 		$item->setQuantity($overrides['quantity'] ?? null);
-		$item->setBought($overrides['bought'] ?? false);
-		$item->setBoughtAt($overrides['boughtAt'] ?? null);
-		$item->setBoughtBy($overrides['boughtBy'] ?? null);
+		$item->setDone($overrides['done'] ?? false);
+		$item->setDoneAt($overrides['doneAt'] ?? null);
+		$item->setDoneBy($overrides['doneBy'] ?? null);
 		$item->setRrule($overrides['rrule'] ?? null);
 		$item->setRepeatFromCompletion($overrides['repeatFromCompletion'] ?? false);
 		$item->setNextDueAt($overrides['nextDueAt'] ?? null);
@@ -54,17 +54,17 @@ class ChecklistServiceTest extends TestCase {
 	public function testListItemsAutoUnchecksDueRecurring(): void {
 		$now = 2_000_000_000;
 		$dueItem = $this->makeItem([
-			'bought' => true,
-			'boughtAt' => $now - 86400 * 8,
-			'boughtBy' => 'alice',
+			'done' => true,
+			'doneAt' => $now - 86400 * 8,
+			'doneBy' => 'alice',
 			'rrule' => 'FREQ=WEEKLY',
 			'repeatFromCompletion' => true,
 			'nextDueAt' => $now - 10,
 		]);
 		$freshItem = $this->makeItem([
-			'bought' => true,
-			'boughtAt' => $now - 3600,
-			'boughtBy' => 'alice',
+			'done' => true,
+			'doneAt' => $now - 3600,
+			'doneBy' => 'alice',
 			'rrule' => 'FREQ=WEEKLY',
 			'nextDueAt' => $now + 86400 * 3,
 		]);
@@ -74,16 +74,16 @@ class ChecklistServiceTest extends TestCase {
 		$this->itemMapper->expects($this->once())
 			->method('update')
 			->with($this->callback(function (ChecklistItem $i) {
-				return $i->getBought() === false
-					&& $i->getBoughtAt() === null
-					&& $i->getBoughtBy() === null
+				return $i->getDone() === false
+					&& $i->getDoneAt() === null
+					&& $i->getDoneBy() === null
 					&& $i->getNextDueAt() === null;
 			}));
 
 		$result = $this->svc->listItems(1, $now);
 		$this->assertCount(2, $result);
-		$this->assertFalse($result[0]->getBought(), 'Due item should be reopened');
-		$this->assertTrue($result[1]->getBought(), 'Fresh item should stay bought');
+		$this->assertFalse($result[0]->getDone(), 'Due item should be reopened');
+		$this->assertTrue($result[1]->getDone(), 'Fresh item should stay done');
 	}
 
 	public function testToggleItemOnNonRecurringDoesNotSetNextDue(): void {
@@ -92,9 +92,9 @@ class ChecklistServiceTest extends TestCase {
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', 1_000_000_000);
-		$this->assertTrue($toggled->getBought());
-		$this->assertSame('alice', $toggled->getBoughtBy());
-		$this->assertSame(1_000_000_000, $toggled->getBoughtAt());
+		$this->assertTrue($toggled->getDone());
+		$this->assertSame('alice', $toggled->getDoneBy());
+		$this->assertSame(1_000_000_000, $toggled->getDoneAt());
 		$this->assertNull($toggled->getNextDueAt());
 	}
 
@@ -109,7 +109,7 @@ class ChecklistServiceTest extends TestCase {
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
-		$this->assertTrue($toggled->getBought());
+		$this->assertTrue($toggled->getDone());
 		$this->assertSame($now + 7 * 86400, $toggled->getNextDueAt());
 	}
 
@@ -128,15 +128,15 @@ class ChecklistServiceTest extends TestCase {
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
-		$this->assertTrue($toggled->getBought());
+		$this->assertTrue($toggled->getDone());
 		$this->assertSame($expected, $toggled->getNextDueAt());
 	}
 
 	public function testToggleItemCheckingOffClearsEverything(): void {
 		$item = $this->makeItem([
-			'bought' => true,
-			'boughtAt' => 123,
-			'boughtBy' => 'alice',
+			'done' => true,
+			'doneAt' => 123,
+			'doneBy' => 'alice',
 			'rrule' => 'FREQ=WEEKLY',
 			'nextDueAt' => 456,
 		]);
@@ -144,9 +144,9 @@ class ChecklistServiceTest extends TestCase {
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', 999);
-		$this->assertFalse($toggled->getBought());
-		$this->assertNull($toggled->getBoughtAt());
-		$this->assertNull($toggled->getBoughtBy());
+		$this->assertFalse($toggled->getDone());
+		$this->assertNull($toggled->getDoneAt());
+		$this->assertNull($toggled->getDoneBy());
 		$this->assertNull($toggled->getNextDueAt());
 	}
 

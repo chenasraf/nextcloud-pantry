@@ -64,6 +64,12 @@
         >
           {{ strings.notifyItemRecur }}
         </NcCheckboxRadioSwitch>
+        <NcCheckboxRadioSwitch
+          :model-value="notifPrefs.notifyItemDone"
+          @update:model-value="updateNotifPref('notifyItemDone', $event)"
+        >
+          {{ strings.notifyItemDone }}
+        </NcCheckboxRadioSwitch>
       </div>
     </NcAppSettingsSection>
   </NcAppSettingsDialog>
@@ -156,6 +162,7 @@ const notifPrefs = reactive<NotificationPrefs>({
   notifyNoteEdit: true,
   notifyItemAdd: true,
   notifyItemRecur: true,
+  notifyItemDone: true,
 })
 
 async function loadNotifPrefs() {
@@ -203,6 +210,7 @@ const strings = {
   notifyNoteEdit: t('pantry', 'Note edits'),
   notifyItemAdd: t('pantry', 'Checklist items added'),
   notifyItemRecur: t('pantry', 'Recurring items reappearing'),
+  notifyItemDone: t('pantry', 'Checklist items completed'),
 }
 </script>
 

@@ -48,7 +48,7 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
-	 * Find all bought items whose next_due_at has passed.
+	 * Find all done items whose next_due_at has passed.
 	 *
 	 * @return ChecklistItem[]
 	 */
@@ -56,7 +56,26 @@ class ChecklistItemMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('bought', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
+			->where($qb->expr()->eq('done', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->isNotNull('next_due_at'))
+			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)));
+
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Find undone fixed-schedule items whose next_due_at has passed.
+	 * These are items the user never checked off but whose schedule has ticked again.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function findDueFixedScheduleUndone(int $now): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('done', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->eq('repeat_from_completion', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->isNotNull('rrule'))
 			->andWhere($qb->expr()->isNotNull('next_due_at'))
 			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)));
 

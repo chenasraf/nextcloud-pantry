@@ -75,6 +75,9 @@ class PrefsServiceTest extends TestCase {
 				if ($key === 'notify_item_recur_1') {
 					return '0';
 				}
+				if ($key === 'notify_item_done_1') {
+					return '1';
+				}
 				return $default;
 			}
 		);
@@ -86,6 +89,7 @@ class PrefsServiceTest extends TestCase {
 			'notifyNoteEdit' => false,
 			'notifyItemAdd' => true,
 			'notifyItemRecur' => false,
+			'notifyItemDone' => true,
 		], $result);
 	}
 

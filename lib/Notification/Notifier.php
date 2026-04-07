@@ -127,14 +127,75 @@ class Notifier implements INotifier {
 				);
 				break;
 
-			case 'item_recurred':
+			case 'item_done':
 				$notification->setRichSubject(
-					$l->t('"{item}" is back on {list} in {house}'),
+					$l->t('{user} completed "{item}" on {list} in {house}'),
 					[
+						'user' => [
+							'type' => 'user',
+							'id' => $params['userId'] ?? '',
+							'name' => $params['userDisplayName'] ?? '',
+						],
 						'item' => [
 							'type' => 'highlight',
 							'id' => 'item',
 							'name' => $params['itemName'] ?? '',
+						],
+						'list' => [
+							'type' => 'highlight',
+							'id' => 'list',
+							'name' => $params['listName'] ?? '',
+						],
+						'house' => [
+							'type' => 'highlight',
+							'id' => (string)($params['houseId'] ?? ''),
+							'name' => $params['houseName'] ?? '',
+						],
+					]
+				);
+				break;
+
+			case 'item_reminder':
+				$names = $params['itemNames'] ?? [];
+				$count = (int)($params['itemCount'] ?? count($names));
+				$reminderLabel = $count <= 3
+					? implode(', ', $names)
+					: $l->n('%n item', '%n items', $count);
+				$notification->setRichSubject(
+					$l->t('{items} still undone on {list} in {house}'),
+					[
+						'items' => [
+							'type' => 'highlight',
+							'id' => 'items',
+							'name' => $reminderLabel,
+						],
+						'list' => [
+							'type' => 'highlight',
+							'id' => 'list',
+							'name' => $params['listName'] ?? '',
+						],
+						'house' => [
+							'type' => 'highlight',
+							'id' => (string)($params['houseId'] ?? ''),
+							'name' => $params['houseName'] ?? '',
+						],
+					]
+				);
+				break;
+
+			case 'item_recurred':
+				$names = $params['itemNames'] ?? [];
+				$count = (int)($params['itemCount'] ?? count($names));
+				$itemLabel = $count <= 3
+					? implode(', ', $names)
+					: $l->n('%n item', '%n items', $count);
+				$notification->setRichSubject(
+					$l->t('{items} back on {list} in {house}'),
+					[
+						'items' => [
+							'type' => 'highlight',
+							'id' => 'items',
+							'name' => $itemLabel,
 						],
 						'list' => [
 							'type' => 'highlight',

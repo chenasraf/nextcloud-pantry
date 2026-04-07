@@ -47,9 +47,9 @@ export interface ChecklistItem {
   name: string
   categoryId: number | null
   quantity: string | null
-  bought: boolean
-  boughtAt: number | null
-  boughtBy: string | null
+  done: boolean
+  doneAt: number | null
+  doneBy: string | null
   rrule: string | null
   repeatFromCompletion: boolean
   nextDueAt: number | null

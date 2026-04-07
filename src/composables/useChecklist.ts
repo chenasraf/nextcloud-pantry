@@ -77,7 +77,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     // Optimistic flip.
     const prev = items.value.find((i) => i.id === itemId)
     if (prev) {
-      items.value = items.value.map((i) => (i.id === itemId ? { ...i, bought: !i.bought } : i))
+      items.value = items.value.map((i) => (i.id === itemId ? { ...i, done: !i.done } : i))
     }
     try {
       const updated = await api.toggleItem(houseId, listId, itemId)

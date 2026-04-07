@@ -221,12 +221,12 @@ describe('AccountSettingsDialog', () => {
       expect(getNotificationPrefs).toHaveBeenCalledWith(7)
     })
 
-    it('renders five notification checkboxes', async () => {
+    it('renders six notification checkboxes', async () => {
       const wrapper = mountComponent({ open: true, houseId: 1 })
       await flushPromises()
 
       const checkboxes = wrapper.findAll('.nc-checkbox')
-      expect(checkboxes).toHaveLength(5)
+      expect(checkboxes).toHaveLength(6)
     })
 
     it('calls setNotificationPrefs when a checkbox is toggled', async () => {
@@ -236,6 +236,7 @@ describe('AccountSettingsDialog', () => {
         notifyNoteEdit: true,
         notifyItemAdd: true,
         notifyItemRecur: true,
+        notifyItemDone: true,
       })
 
       const wrapper = mountComponent({ open: true, houseId: 3 })

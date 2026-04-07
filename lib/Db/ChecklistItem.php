@@ -18,12 +18,12 @@ use OCP\AppFramework\Db\Entity;
  * @method void setCategoryId(?int $categoryId)
  * @method string|null getQuantity()
  * @method void setQuantity(?string $quantity)
- * @method bool getBought()
- * @method void setBought(bool $bought)
- * @method int|null getBoughtAt()
- * @method void setBoughtAt(?int $boughtAt)
- * @method string|null getBoughtBy()
- * @method void setBoughtBy(?string $boughtBy)
+ * @method bool getDone()
+ * @method void setDone(bool $done)
+ * @method int|null getDoneAt()
+ * @method void setDoneAt(?int $doneAt)
+ * @method string|null getDoneBy()
+ * @method void setDoneBy(?string $doneBy)
  * @method string|null getRrule()
  * @method void setRrule(?string $rrule)
  * @method bool getRepeatFromCompletion()
@@ -44,9 +44,9 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected string $name = '';
 	protected ?int $categoryId = null;
 	protected ?string $quantity = null;
-	protected bool $bought = false;
-	protected ?int $boughtAt = null;
-	protected ?string $boughtBy = null;
+	protected bool $done = false;
+	protected ?int $doneAt = null;
+	protected ?string $doneBy = null;
 	protected ?string $rrule = null;
 	protected bool $repeatFromCompletion = false;
 	protected ?int $nextDueAt = null;
@@ -58,8 +58,8 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	public function __construct() {
 		$this->addType('listId', 'integer');
 		$this->addType('categoryId', 'integer');
-		$this->addType('bought', 'boolean');
-		$this->addType('boughtAt', 'integer');
+		$this->addType('done', 'boolean');
+		$this->addType('doneAt', 'integer');
 		$this->addType('repeatFromCompletion', 'boolean');
 		$this->addType('nextDueAt', 'integer');
 		$this->addType('imageFileId', 'integer');
@@ -70,7 +70,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		// match the initial value, so the magic setter would otherwise never
 		// mark them dirty and the column would be omitted from the INSERT.
 		// fromRow() resets updated fields after hydration, so reads are unaffected.
-		$this->markFieldUpdated('bought');
+		$this->markFieldUpdated('done');
 		$this->markFieldUpdated('repeatFromCompletion');
 	}
 
@@ -81,9 +81,9 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'name' => $this->name,
 			'categoryId' => $this->categoryId,
 			'quantity' => $this->quantity,
-			'bought' => $this->bought,
-			'boughtAt' => $this->boughtAt,
-			'boughtBy' => $this->boughtBy,
+			'done' => $this->done,
+			'doneAt' => $this->doneAt,
+			'doneBy' => $this->doneBy,
 			'rrule' => $this->rrule,
 			'repeatFromCompletion' => $this->repeatFromCompletion,
 			'nextDueAt' => $this->nextDueAt,

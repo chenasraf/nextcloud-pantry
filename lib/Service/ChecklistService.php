@@ -136,12 +136,18 @@ class ChecklistService {
 		$item->setName($name);
 		$item->setCategoryId($this->intOrNull($data['categoryId'] ?? null));
 		$item->setQuantity($this->strOrNull($data['quantity'] ?? null));
-		$item->setBought(false);
-		$item->setBoughtAt(null);
-		$item->setBoughtBy(null);
+		$item->setDone(false);
+		$item->setDoneAt(null);
+		$item->setDoneBy(null);
 		$item->setRrule($rrule);
-		$item->setRepeatFromCompletion(!empty($data['repeatFromCompletion']));
-		$item->setNextDueAt(null);
+		$repeatFromCompletion = !empty($data['repeatFromCompletion']);
+		$item->setRepeatFromCompletion($repeatFromCompletion);
+		// For fixed-schedule items, compute the first due time immediately.
+		if ($rrule !== null && !$repeatFromCompletion) {
+			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
+		} else {
+			$item->setNextDueAt(null);
+		}
 		$item->setImageFileId($this->intOrNull($data['imageFileId'] ?? null));
 		$item->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : 0);
 		$item->setCreatedAt($now);
@@ -172,7 +178,7 @@ class ChecklistService {
 			if ($rrule === null || (is_string($rrule) && trim($rrule) === '')) {
 				$item->setRrule(null);
 				// Clearing recurrence also clears any scheduled re-open.
-				if ($item->getBought()) {
+				if ($item->getDone()) {
 					$item->setNextDueAt(null);
 				}
 			} else {
@@ -187,8 +193,8 @@ class ChecklistService {
 		if (array_key_exists('imageFileId', $patch)) {
 			$item->setImageFileId($this->intOrNull($patch['imageFileId']));
 		}
-		// If already bought and rrule or mode changed, recompute next due.
-		if ($item->getBought() && $item->getRrule() !== null
+		// If already done and rrule or mode changed, recompute next due.
+		if ($item->getDone() && $item->getRrule() !== null
 			&& (array_key_exists('rrule', $patch) || array_key_exists('repeatFromCompletion', $patch))) {
 			$item->setNextDueAt($this->computeNextDueAt($item, time())?->getTimestamp());
 		}
@@ -205,17 +211,17 @@ class ChecklistService {
 		$item = $this->getItem($itemId);
 		$now ??= time();
 
-		if (!$item->getBought()) {
-			$item->setBought(true);
-			$item->setBoughtAt($now);
-			$item->setBoughtBy($uid);
+		if (!$item->getDone()) {
+			$item->setDone(true);
+			$item->setDoneAt($now);
+			$item->setDoneBy($uid);
 			if ($item->getRrule() !== null) {
 				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 			}
 		} else {
-			$item->setBought(false);
-			$item->setBoughtAt(null);
-			$item->setBoughtBy(null);
+			$item->setDone(false);
+			$item->setDoneAt(null);
+			$item->setDoneBy(null);
 			$item->setNextDueAt(null);
 		}
 		$item->setUpdatedAt($now);
@@ -224,7 +230,7 @@ class ChecklistService {
 	}
 
 	/**
-	 * Compute the next due time for an item that was just marked bought.
+	 * Compute the next due time for an item that was just marked done.
 	 *
 	 * - "from completion" mode: interval counts from now — next occurrence = now + one step.
 	 * - "fixed schedule" mode: the schedule is anchored at the item's creation time; next
@@ -254,9 +260,9 @@ class ChecklistService {
 		$now ??= time();
 		$items = $this->itemMapper->findDueRecurring($now);
 		foreach ($items as $item) {
-			$item->setBought(false);
-			$item->setBoughtAt(null);
-			$item->setBoughtBy(null);
+			$item->setDone(false);
+			$item->setDoneAt(null);
+			$item->setDoneBy(null);
 			if ($item->getRepeatFromCompletion()) {
 				// Completion-based: next interval starts when the user checks
 				// the item off again, so clear the schedule for now.
@@ -266,6 +272,26 @@ class ChecklistService {
 				// item keeps cycling even if the user never interacts with it.
 				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 			}
+			$item->setUpdatedAt($now);
+			$this->itemMapper->update($item);
+		}
+		return $items;
+	}
+
+	/**
+	 * Advance fixed-schedule undone items whose next_due_at has passed.
+	 *
+	 * Unlike reopenDueItems(), these items are already undone — nothing to
+	 * reopen. We just bump next_due_at to the next occurrence so the
+	 * background job can re-notify on the next cycle.
+	 *
+	 * @return ChecklistItem[] The items whose schedule was advanced.
+	 */
+	public function advanceDueReminders(?int $now = null): array {
+		$now ??= time();
+		$items = $this->itemMapper->findDueFixedScheduleUndone($now);
+		foreach ($items as $item) {
+			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 			$item->setUpdatedAt($now);
 			$this->itemMapper->update($item);
 		}

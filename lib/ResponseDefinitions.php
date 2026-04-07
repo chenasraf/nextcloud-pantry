@@ -44,9 +44,9 @@ namespace OCA\Pantry;
  *     name: string,
  *     categoryId: int|null,
  *     quantity: string|null,
- *     bought: bool,
- *     boughtAt: int|null,
- *     boughtBy: string|null,
+ *     done: bool,
+ *     doneAt: int|null,
+ *     doneBy: string|null,
  *     rrule: string|null,
  *     repeatFromCompletion: bool,
  *     nextDueAt: int|null,
@@ -79,6 +79,7 @@ namespace OCA\Pantry;
  *     notifyNoteEdit: bool,
  *     notifyItemAdd: bool,
  *     notifyItemRecur: bool,
+ *     notifyItemDone: bool,
  * }
  *
  * @psalm-type PantryPhotoFolder = array{

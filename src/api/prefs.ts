@@ -27,6 +27,7 @@ export interface NotificationPrefs {
   notifyNoteEdit: boolean
   notifyItemAdd: boolean
   notifyItemRecur: boolean
+  notifyItemDone: boolean
 }
 
 export async function getNotificationPrefs(houseId: number): Promise<NotificationPrefs> {
@@ -38,6 +39,7 @@ export async function getNotificationPrefs(houseId: number): Promise<Notificatio
       notifyNoteEdit: true,
       notifyItemAdd: true,
       notifyItemRecur: true,
+      notifyItemDone: true,
     }
   )
 }
@@ -54,6 +56,7 @@ export async function setNotificationPrefs(
       notifyNoteEdit: true,
       notifyItemAdd: true,
       notifyItemRecur: true,
+      notifyItemDone: true,
     }
   )
 }

@@ -194,14 +194,14 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 				'notnull' => false,
 				'length' => 64,
 			]);
-			$table->addColumn('bought', Types::BOOLEAN, [
+			$table->addColumn('done', Types::BOOLEAN, [
 				'notnull' => false,
 			]);
-			$table->addColumn('bought_at', Types::BIGINT, [
+			$table->addColumn('done_at', Types::BIGINT, [
 				'notnull' => false,
 				'length' => 20,
 			]);
-			$table->addColumn('bought_by', Types::STRING, [
+			$table->addColumn('done_by', Types::STRING, [
 				'notnull' => false,
 				'length' => 64,
 			]);

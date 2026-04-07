@@ -142,11 +142,45 @@ class NotifierTest extends TestCase {
 		$this->assertSame($n, $result);
 	}
 
+	public function testItemDoneSetsRichSubject(): void {
+		$n = $this->makeNotification('pantry', 'item_done', [
+			'userId' => 'alice',
+			'userDisplayName' => 'Alice',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Milk',
+			'listName' => 'Groceries',
+		]);
+
+		$n->expects($this->once())->method('setRichSubject');
+		$n->expects($this->once())->method('setParsedSubject');
+
+		$result = $this->notifier->prepare($n, 'en');
+		$this->assertSame($n, $result);
+	}
+
+	public function testItemReminderSetsRichSubject(): void {
+		$n = $this->makeNotification('pantry', 'item_reminder', [
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemNames' => ['Milk'],
+			'itemCount' => 1,
+			'listName' => 'Groceries',
+		]);
+
+		$n->expects($this->once())->method('setRichSubject');
+		$n->expects($this->once())->method('setParsedSubject');
+
+		$result = $this->notifier->prepare($n, 'en');
+		$this->assertSame($n, $result);
+	}
+
 	public function testItemRecurredSetsRichSubject(): void {
 		$n = $this->makeNotification('pantry', 'item_recurred', [
 			'houseId' => 1,
 			'houseName' => 'My House',
-			'itemName' => 'Milk',
+			'itemNames' => ['Milk', 'Eggs'],
+			'itemCount' => 2,
 			'listName' => 'Groceries',
 		]);
 

@@ -19,6 +19,7 @@ class NotificationService {
 	public const PREF_NOTIFY_NOTE_EDIT = 'notify_note_edit';
 	public const PREF_NOTIFY_ITEM_ADD = 'notify_item_add';
 	public const PREF_NOTIFY_ITEM_RECUR = 'notify_item_recur';
+	public const PREF_NOTIFY_ITEM_DONE = 'notify_item_done';
 
 	public function __construct(
 		private INotificationManager $notificationManager,
@@ -88,14 +89,57 @@ class NotificationService {
 		});
 	}
 
-	public function notifyItemRecurred(int $houseId, string $itemName, string $listName): void {
-		// No author to exclude — this is a system event.
-		$this->sendToHouseMembers($houseId, '', 'item_recurred', 'item', self::PREF_NOTIFY_ITEM_RECUR, function () use ($houseId, $itemName, $listName) {
+	public function notifyItemDone(int $houseId, string $authorUid, string $itemName, string $listName): void {
+		$this->sendToHouseMembers($houseId, $authorUid, 'item_done', 'item', self::PREF_NOTIFY_ITEM_DONE, function () use ($houseId, $authorUid, $itemName, $listName) {
+			$house = $this->houseService->get($houseId);
+			$author = $this->userManager->get($authorUid);
+			return [
+				'userId' => $authorUid,
+				'userDisplayName' => $author ? $author->getDisplayName() : $authorUid,
+				'houseId' => $houseId,
+				'houseName' => $house->getName(),
+				'itemName' => $itemName,
+				'listName' => $listName,
+			];
+		});
+	}
+
+	/**
+	 * Notify that undone fixed-schedule items are due again (reminder nudge).
+	 *
+	 * @param string[] $itemNames Names of the items that are still undone.
+	 */
+	public function notifyItemsReminder(int $houseId, array $itemNames, string $listName): void {
+		if (empty($itemNames)) {
+			return;
+		}
+		$this->sendToHouseMembers($houseId, '', 'item_reminder', 'item', self::PREF_NOTIFY_ITEM_RECUR, function () use ($houseId, $itemNames, $listName) {
 			$house = $this->houseService->get($houseId);
 			return [
 				'houseId' => $houseId,
 				'houseName' => $house->getName(),
-				'itemName' => $itemName,
+				'itemNames' => $itemNames,
+				'itemCount' => count($itemNames),
+				'listName' => $listName,
+			];
+		});
+	}
+
+	/**
+	 * @param string[] $itemNames Names of the items that recurred.
+	 */
+	public function notifyItemsRecurred(int $houseId, array $itemNames, string $listName): void {
+		if (empty($itemNames)) {
+			return;
+		}
+		// No author to exclude — this is a system event.
+		$this->sendToHouseMembers($houseId, '', 'item_recurred', 'item', self::PREF_NOTIFY_ITEM_RECUR, function () use ($houseId, $itemNames, $listName) {
+			$house = $this->houseService->get($houseId);
+			return [
+				'houseId' => $houseId,
+				'houseName' => $house->getName(),
+				'itemNames' => $itemNames,
+				'itemCount' => count($itemNames),
 				'listName' => $listName,
 			];
 		});

@@ -450,7 +450,7 @@ const fromCompletionHint = computed<string>(() =>
   fromCompletionLocal.value
     ? t(
         'pantry',
-        'The next occurrence is counted from the moment you tick the item off, so it always comes back a full interval after it was bought.',
+        'The next occurrence is counted from the moment you tick the item off, so it always comes back a full interval after it was completed.',
       )
     : t(
         'pantry',

@@ -208,7 +208,7 @@ final class ChecklistController extends OCSController {
 	 * @param int|null $categoryId Optional category id (must belong to the same house).
 	 * @param string|null $quantity Optional quantity string.
 	 * @param string|null $rrule Optional RFC 5545 RRULE for recurrence.
-	 * @param bool $repeatFromCompletion If true, the next occurrence is measured from when the item is marked bought; if false, the schedule is anchored at item creation.
+	 * @param bool $repeatFromCompletion If true, the next occurrence is measured from when the item is marked done; if false, the schedule is anchored at item creation.
 	 * @param int|null $sortOrder Optional sort order.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
@@ -320,7 +320,7 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
-	 * Toggle an item's bought status
+	 * Toggle an item's done status
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
@@ -343,6 +343,9 @@ final class ChecklistController extends OCSController {
 				throw new NotFoundException('Item does not belong to this list');
 			}
 			$toggled = $this->lists->toggleItem($itemId, $uid);
+			if ($toggled->getDone()) {
+				$this->notifications->notifyItemDone($houseId, $uid, $toggled->getName(), $list->getName());
+			}
 			return new DataResponse($toggled->jsonSerialize());
 		});
 	}
