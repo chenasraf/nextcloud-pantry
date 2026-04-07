@@ -80,7 +80,7 @@
                 :aria-label="strings.viewImage"
                 @click.stop.prevent="openPreview(item)"
               >
-                <img :src="thumbUrl(item.imageFileId)" :alt="item.name" />
+                <img :src="thumbUrl(item)" :alt="item.name" />
               </button>
               <span class="pantry-item__name">{{ item.name }}</span>
             </span>
@@ -173,7 +173,7 @@
             <img
               v-if="editing?.imageFileId"
               class="pantry-form__image-preview"
-              :src="thumbUrl(editing.imageFileId, 96)"
+              :src="thumbUrl(editing, 96)"
               :alt="editing.name"
             />
             <NcButton
@@ -237,11 +237,7 @@
       @update:open="(v) => !v && (previewing = null)"
     >
       <div class="pantry-preview">
-        <img
-          v-if="previewing.imageFileId"
-          :src="largeUrl(previewing.imageFileId)"
-          :alt="previewing.name"
-        />
+        <img v-if="previewing.imageFileId" :src="largeUrl(previewing)" :alt="previewing.name" />
       </div>
     </NcDialog>
   </div>
@@ -256,7 +252,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
-import { generateUrl } from '@nextcloud/router'
+import { itemImagePreviewUrl } from '@/api/images'
 import PageToolbar from '@/components/PageToolbar'
 import PlusIcon from '@icons/Plus.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
@@ -392,14 +388,12 @@ function openPreview(item: ChecklistItem) {
   previewing.value = item
 }
 
-function thumbUrl(fileId: number, size = 64): string {
-  const base = generateUrl('/core/preview')
-  return `${base}?fileId=${fileId}&x=${size}&y=${size}&a=1`
+function thumbUrl(item: ChecklistItem, size = 64): string {
+  return itemImagePreviewUrl(houseIdNum.value, item.imageFileId!, item.imageUploadedBy!, size)
 }
 
-function largeUrl(fileId: number): string {
-  const base = generateUrl('/core/preview')
-  return `${base}?fileId=${fileId}&x=1600&y=1600&a=1`
+function largeUrl(item: ChecklistItem): string {
+  return itemImagePreviewUrl(houseIdNum.value, item.imageFileId!, item.imageUploadedBy!, 1600)
 }
 
 const imageInputRef = ref<HTMLInputElement | null>(null)

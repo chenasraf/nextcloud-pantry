@@ -419,7 +419,7 @@ final class ChecklistController extends OCSController {
 			$original = (string)($data['name'] ?? 'image.jpg');
 			$fileId = $this->images->uploadForUser($uid, $houseId, $original, $bytes);
 
-			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId]);
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId, 'imageUploadedBy' => $uid]);
 			return new DataResponse($updated->jsonSerialize());
 		});
 	}
@@ -447,7 +447,7 @@ final class ChecklistController extends OCSController {
 			if ($item->getListId() !== $listId) {
 				throw new NotFoundException('Item does not belong to this list');
 			}
-			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null]);
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null, 'imageUploadedBy' => null]);
 			return new DataResponse($updated->jsonSerialize());
 		});
 	}

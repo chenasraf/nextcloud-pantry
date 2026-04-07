@@ -7,6 +7,13 @@ import type { Photo, PhotoFolder } from '@/api/types'
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@nextcloud/router', () => ({
   generateUrl: (path: string) => path,
+  generateOcsUrl: (path: string, params: Record<string, unknown>) => {
+    let url = path
+    for (const [key, value] of Object.entries(params)) {
+      url = url.replace(`{${key}}`, String(value))
+    }
+    return url
+  },
 }))
 vi.mock('@icons/Folder.vue', () => createIconMock('FolderIcon'))
 vi.mock('@icons/Pencil.vue', () => createIconMock('PencilIcon'))
@@ -58,14 +65,14 @@ describe('FolderStack', () => {
   describe('rendering', () => {
     it('renders the folder name overlaid at the bottom', () => {
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder({ name: 'My Folder' }), photos: [] },
+        props: { houseId: 1, folder: makeFolder({ name: 'My Folder' }), photos: [] },
       })
       expect(wrapper.find('.folder-stack__label').text()).toBe('My Folder')
     })
 
     it('shows empty icon when no photos', () => {
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos: [] },
+        props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       expect(wrapper.find('.folder-stack__empty').exists()).toBe(true)
       expect(wrapper.findAll('.folder-stack__photo')).toHaveLength(0)
@@ -74,7 +81,7 @@ describe('FolderStack', () => {
     it('shows up to 5 photo thumbnails', () => {
       const photos = Array.from({ length: 7 }, (_, i) => makePhoto(i + 1, 1))
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos },
+        props: { houseId: 1, folder: makeFolder(), photos },
       })
       expect(wrapper.findAll('.folder-stack__photo')).toHaveLength(5)
     })
@@ -82,7 +89,7 @@ describe('FolderStack', () => {
     it('shows all photos when 5 or fewer', () => {
       const photos = Array.from({ length: 3 }, (_, i) => makePhoto(i + 1, 1))
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos },
+        props: { houseId: 1, folder: makeFolder(), photos },
       })
       expect(wrapper.findAll('.folder-stack__photo')).toHaveLength(3)
     })
@@ -90,14 +97,14 @@ describe('FolderStack', () => {
     it('shows photo count badge', () => {
       const photos = [makePhoto(1, 1), makePhoto(2, 1)]
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos },
+        props: { houseId: 1, folder: makeFolder(), photos },
       })
       expect(wrapper.find('.folder-stack__count').text()).toBe('2')
     })
 
     it('does not show count badge when empty', () => {
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos: [] },
+        props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       expect(wrapper.find('.folder-stack__count').exists()).toBe(false)
     })
@@ -105,7 +112,7 @@ describe('FolderStack', () => {
     it('applies unique rotation transforms to stacked photos', () => {
       const photos = [makePhoto(1, 1), makePhoto(2, 1), makePhoto(3, 1)]
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos },
+        props: { houseId: 1, folder: makeFolder(), photos },
       })
       const imgs = wrapper.findAll('.folder-stack__photo')
       const transforms = imgs.map((img) => img.attributes('style'))
@@ -115,7 +122,7 @@ describe('FolderStack', () => {
 
     it('is draggable', () => {
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos: [] },
+        props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       expect(wrapper.find('.folder-stack').attributes('draggable')).toBe('true')
     })
@@ -124,7 +131,7 @@ describe('FolderStack', () => {
   describe('actions', () => {
     it('has rename and delete actions', () => {
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos: [] },
+        props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
       expect(texts).toContain('Rename')
@@ -151,7 +158,7 @@ describe('FolderStack', () => {
 
     it('does not emit open when actions wrapper is clicked', async () => {
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos: [] },
+        props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       await wrapper.find('.folder-stack__actions').trigger('click')
       expect(wrapper.emitted('open')).toBeFalsy()
@@ -169,7 +176,7 @@ describe('FolderStack', () => {
 
     it('shows drag-over style on dragover with photo data', async () => {
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos: [] },
+        props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       await wrapper.find('.folder-stack').trigger('dragover', {
         dataTransfer: { types: ['application/x-pantry-photo'] },
@@ -179,7 +186,7 @@ describe('FolderStack', () => {
 
     it('removes drag-over style on dragleave', async () => {
       const wrapper = mount(FolderStack, {
-        props: { folder: makeFolder(), photos: [] },
+        props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       await wrapper.find('.folder-stack').trigger('dragover', {
         dataTransfer: { types: ['application/x-pantry-photo'] },

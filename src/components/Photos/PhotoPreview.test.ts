@@ -7,6 +7,13 @@ import type { Photo } from '@/api/types'
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@nextcloud/router', () => ({
   generateUrl: (path: string) => path,
+  generateOcsUrl: (path: string, params: Record<string, unknown>) => {
+    let url = path
+    for (const [key, value] of Object.entries(params)) {
+      url = url.replace(`{${key}}`, String(value))
+    }
+    return url
+  },
 }))
 
 vi.mock('@nextcloud/vue/components/NcDialog', () => ({
@@ -41,30 +48,29 @@ function makePhoto(overrides: Partial<Photo> = {}): Photo {
   }
 }
 
+function mountPreview(overrides: Partial<Photo> = {}) {
+  return mount(PhotoPreview, {
+    props: { open: true, photo: makePhoto(overrides), houseId: 1 },
+  })
+}
+
 describe('PhotoPreview', () => {
   describe('rendering', () => {
     it('renders a large preview image', () => {
-      const wrapper = mount(PhotoPreview, {
-        props: { open: true, photo: makePhoto() },
-      })
+      const wrapper = mountPreview()
       const img = wrapper.find('.photo-preview__img')
       expect(img.exists()).toBe(true)
-      expect(img.attributes('src')).toContain('fileId=42')
-      expect(img.attributes('src')).toContain('x=1600')
-      expect(img.attributes('src')).toContain('y=1600')
+      expect(img.attributes('src')).toContain('photos/1/preview')
+      expect(img.attributes('src')).toContain('size=1600')
     })
 
-    it('renders with different file IDs', () => {
-      const wrapper = mount(PhotoPreview, {
-        props: { open: true, photo: makePhoto({ fileId: 99 }) },
-      })
-      expect(wrapper.find('.photo-preview__img').attributes('src')).toContain('fileId=99')
+    it('renders with different photo IDs', () => {
+      const wrapper = mountPreview({ id: 99 })
+      expect(wrapper.find('.photo-preview__img').attributes('src')).toContain('photos/99/preview')
     })
 
     it('opens dialog in large size', () => {
-      const wrapper = mount(PhotoPreview, {
-        props: { open: true, photo: makePhoto() },
-      })
+      const wrapper = mountPreview()
       const dialog = wrapper.findComponent({ name: 'NcDialog' })
       expect(dialog.props('size')).toBe('large')
     })
@@ -72,17 +78,13 @@ describe('PhotoPreview', () => {
 
   describe('title', () => {
     it('uses caption as dialog title when available', () => {
-      const wrapper = mount(PhotoPreview, {
-        props: { open: true, photo: makePhoto({ caption: 'My Photo' }) },
-      })
+      const wrapper = mountPreview({ caption: 'My Photo' })
       const dialog = wrapper.findComponent({ name: 'NcDialog' })
       expect(dialog.props('name')).toBe('My Photo')
     })
 
     it('uses fallback title when no caption', () => {
-      const wrapper = mount(PhotoPreview, {
-        props: { open: true, photo: makePhoto() },
-      })
+      const wrapper = mountPreview()
       const dialog = wrapper.findComponent({ name: 'NcDialog' })
       expect(dialog.props('name')).toBe('Photo preview')
     })
@@ -90,17 +92,13 @@ describe('PhotoPreview', () => {
 
   describe('actions', () => {
     it('has a close button', () => {
-      const wrapper = mount(PhotoPreview, {
-        props: { open: true, photo: makePhoto() },
-      })
+      const wrapper = mountPreview()
       const button = wrapper.find('.nc-button')
       expect(button.text()).toBe('Close')
     })
 
     it('emits update:open false when close is clicked', async () => {
-      const wrapper = mount(PhotoPreview, {
-        props: { open: true, photo: makePhoto() },
-      })
+      const wrapper = mountPreview()
       await wrapper.find('.nc-button').trigger('click')
       expect(wrapper.emitted('update:open')).toBeTruthy()
       expect(wrapper.emitted('update:open')![0]).toEqual([false])

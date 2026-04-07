@@ -7,7 +7,7 @@
     @update:open="$emit('update:open', $event)"
   >
     <div class="photo-preview">
-      <img :src="largeUrl(photo.fileId)" :alt="photo.caption ?? ''" class="photo-preview__img" />
+      <img :src="largeUrl(photo.id)" :alt="photo.caption ?? ''" class="photo-preview__img" />
     </div>
     <template #actions>
       <NcButton @click="$emit('update:open', false)">{{ strings.close }}</NcButton>
@@ -16,24 +16,24 @@
 </template>
 
 <script setup lang="ts">
-import { generateUrl } from '@nextcloud/router'
 import { t } from '@nextcloud/l10n'
+import { photoPreviewUrl } from '@/api/images'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import type { Photo } from '@/api/types'
 
-defineProps<{
+const props = defineProps<{
   open: boolean
   photo: Photo
+  houseId: number
 }>()
 
 defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-function largeUrl(fileId: number): string {
-  const base = generateUrl('/core/preview')
-  return `${base}?fileId=${fileId}&x=1600&y=1600&a=1`
+function largeUrl(photoId: number): string {
+  return photoPreviewUrl(props.houseId, photoId, 1600)
 }
 
 const strings = {

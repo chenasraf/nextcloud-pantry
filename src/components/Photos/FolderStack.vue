@@ -14,7 +14,7 @@
       <img
         v-for="(photo, i) in stackPhotos"
         :key="photo.id"
-        :src="thumbUrl(photo.fileId)"
+        :src="thumbUrl(photo.id)"
         :alt="photo.caption ?? ''"
         class="folder-stack__photo"
         :style="photoStyle(i)"
@@ -42,8 +42,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { generateUrl } from '@nextcloud/router'
 import { t } from '@nextcloud/l10n'
+import { photoPreviewUrl } from '@/api/images'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import FolderIcon from '@icons/Folder.vue'
@@ -54,6 +54,7 @@ import type { Photo, PhotoFolder } from '@/api/types'
 const props = defineProps<{
   folder: PhotoFolder
   photos: Photo[]
+  houseId: number
 }>()
 
 const emit = defineEmits<{
@@ -88,9 +89,8 @@ function photoStyle(index: number) {
   }
 }
 
-function thumbUrl(fileId: number): string {
-  const base = generateUrl('/core/preview')
-  return `${base}?fileId=${fileId}&x=120&y=120&a=1`
+function thumbUrl(photoId: number): string {
+  return photoPreviewUrl(props.houseId, photoId, 120)
 }
 
 function onDragStart(e: DragEvent) {

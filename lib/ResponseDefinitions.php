@@ -51,6 +51,7 @@ namespace OCA\Pantry;
  *     repeatFromCompletion: bool,
  *     nextDueAt: int|null,
  *     imageFileId: int|null,
+ *     imageUploadedBy: string|null,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,

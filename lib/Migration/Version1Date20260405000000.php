@@ -220,6 +220,10 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 				'notnull' => false,
 				'length' => 20,
 			]);
+			$table->addColumn('image_uploaded_by', Types::STRING, [
+				'notnull' => false,
+				'length' => 64,
+			]);
 			$table->addColumn('sort_order', Types::INTEGER, [
 				'notnull' => true,
 				'default' => 0,

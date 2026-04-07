@@ -54,6 +54,7 @@ export interface ChecklistItem {
   repeatFromCompletion: boolean
   nextDueAt: number | null
   imageFileId: number | null
+  imageUploadedBy: string | null
   sortOrder: number
   createdAt: number
   updatedAt: number

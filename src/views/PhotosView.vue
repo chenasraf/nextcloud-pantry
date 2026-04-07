@@ -65,6 +65,7 @@
             :key="'f-' + folder.id"
             :folder="folder"
             :photos="photosInFolder(folder.id)"
+            :house-id="houseIdNum"
             @open="(f) => navigateToFolder(f.id)"
             @rename="startRenameFolder(folder)"
             @delete="confirmDeleteFolder(folder)"
@@ -82,6 +83,7 @@
             <PhotoCard
               v-else
               :photo="item.photo"
+              :house-id="houseIdNum"
               @preview="openPreview"
               @edit="startEditPhoto"
               @delete="confirmDeletePhoto"
@@ -121,6 +123,7 @@
             <PhotoCard
               v-else
               :photo="item.photo"
+              :house-id="houseIdNum"
               @preview="openPreview"
               @edit="startEditPhoto"
               @delete="confirmDeletePhoto"
@@ -148,6 +151,7 @@
       v-if="previewing"
       :open="!!previewing"
       :photo="previewing"
+      :house-id="houseIdNum"
       @update:open="(v) => !v && (previewing = null)"
     />
 

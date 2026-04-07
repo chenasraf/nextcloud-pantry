@@ -8,7 +8,7 @@
     @dragover.prevent="onDragOver"
     @click="$emit('preview', photo)"
   >
-    <img :src="thumbUrl(photo.fileId)" :alt="photo.caption ?? ''" class="photo-card__img" />
+    <img :src="thumbUrl(photo.id)" :alt="photo.caption ?? ''" class="photo-card__img" />
     <div class="photo-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
         <NcActionButton @click.stop="$emit('edit', photo)">
@@ -31,8 +31,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { generateUrl } from '@nextcloud/router'
 import { t } from '@nextcloud/l10n'
+import { photoPreviewUrl } from '@/api/images'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import PencilIcon from '@icons/Pencil.vue'
@@ -40,7 +40,7 @@ import DeleteIcon from '@icons/Delete.vue'
 import ArrowUpIcon from '@icons/ArrowUp.vue'
 import type { Photo } from '@/api/types'
 
-const props = defineProps<{ photo: Photo }>()
+const props = defineProps<{ photo: Photo; houseId: number }>()
 const emit = defineEmits<{
   preview: [photo: Photo]
   edit: [photo: Photo]
@@ -52,9 +52,8 @@ const emit = defineEmits<{
 
 const isDragging = ref(false)
 
-function thumbUrl(fileId: number): string {
-  const base = generateUrl('/core/preview')
-  return `${base}?fileId=${fileId}&x=300&y=300&a=1`
+function thumbUrl(photoId: number): string {
+  return photoPreviewUrl(props.houseId, photoId, 300)
 }
 
 function onDragStart(e: DragEvent) {

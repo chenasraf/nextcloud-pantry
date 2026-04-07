@@ -193,6 +193,10 @@ class ChecklistService {
 		if (array_key_exists('imageFileId', $patch)) {
 			$item->setImageFileId($this->intOrNull($patch['imageFileId']));
 		}
+		if (array_key_exists('imageUploadedBy', $patch)) {
+			$v = $patch['imageUploadedBy'];
+			$item->setImageUploadedBy(is_string($v) && $v !== '' ? $v : null);
+		}
 		// If already done and rrule or mode changed, recompute next due.
 		if ($item->getDone() && $item->getRrule() !== null
 			&& (array_key_exists('rrule', $patch) || array_key_exists('repeatFromCompletion', $patch))) {
