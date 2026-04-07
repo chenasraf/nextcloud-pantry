@@ -120,7 +120,7 @@ final class PhotoController extends OCSController {
 	/**
 	 * Delete a photo folder
 	 *
-	 * Photos in this folder are moved to the wall root.
+	 * Photos in this folder are moved to the board root.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $folderId Folder id.

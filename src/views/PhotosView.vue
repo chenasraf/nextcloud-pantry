@@ -1,11 +1,11 @@
 <template>
   <div
-    ref="wallRef"
+    ref="boardRef"
     class="pantry-photos"
-    @dragenter.prevent="onWallDragEnter"
+    @dragenter.prevent="onBoardDragEnter"
     @dragover.prevent
-    @dragleave="onWallDragLeave"
-    @drop.prevent="onWallDrop"
+    @dragleave="onBoardDragLeave"
+    @drop.prevent="onBoardDrop"
   >
     <PageToolbar :title="activeFolderId ? activeFolder?.name : strings.title">
       <template v-if="activeFolderId" #before-title>
@@ -405,7 +405,7 @@ async function commitReorder() {
 const previewing = ref<Photo | null>(null)
 const isFileDragOver = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const wallRef = ref<HTMLElement | null>(null)
+const boardRef = ref<HTMLElement | null>(null)
 
 // Capture-phase listeners for drag state management
 function onDropCapture() {
@@ -417,12 +417,12 @@ function onDragEndCapture() {
   dropIndex.value = null
 }
 onMounted(() => {
-  wallRef.value?.addEventListener('drop', onDropCapture, true)
-  wallRef.value?.addEventListener('dragend', onDragEndCapture, true)
+  boardRef.value?.addEventListener('drop', onDropCapture, true)
+  boardRef.value?.addEventListener('dragend', onDragEndCapture, true)
 })
 onBeforeUnmount(() => {
-  wallRef.value?.removeEventListener('drop', onDropCapture, true)
-  wallRef.value?.removeEventListener('dragend', onDragEndCapture, true)
+  boardRef.value?.removeEventListener('drop', onDropCapture, true)
+  boardRef.value?.removeEventListener('dragend', onDragEndCapture, true)
 })
 
 // Folder dialog
@@ -435,7 +435,7 @@ const deletingFolder = ref<PhotoFolder | null>(null)
 const deleteFolderBody = computed(() =>
   t(
     'pantry',
-    'Are you sure you want to delete the folder "{name}"? Photos will be moved to the wall.',
+    'Are you sure you want to delete the folder "{name}"? Photos will be moved to the board.',
     { name: deletingFolder.value?.name ?? '' },
   ),
 )
@@ -468,14 +468,14 @@ function onFolderDragOverChange(isOver: boolean) {
   }
 }
 
-function onWallDragEnter(e: DragEvent) {
+function onBoardDragEnter(e: DragEvent) {
   dragCounter++
   if (e.dataTransfer?.types.includes('Files') && !folderHasDrag.value) {
     isFileDragOver.value = true
   }
 }
 
-function onWallDragLeave() {
+function onBoardDragLeave() {
   dragCounter--
   if (dragCounter <= 0) {
     dragCounter = 0
@@ -483,7 +483,7 @@ function onWallDragLeave() {
   }
 }
 
-async function onWallDrop(e: DragEvent) {
+async function onBoardDrop(e: DragEvent) {
   isFileDragOver.value = false
   dragCounter = 0
   if (!e.dataTransfer) return

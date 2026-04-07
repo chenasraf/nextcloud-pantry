@@ -57,24 +57,24 @@ describe('usePhotos', () => {
       mockApi.listPhotos.mockResolvedValue(photos)
       mockApi.listFolders.mockResolvedValue(folders)
 
-      const wall = usePhotos(1)
-      await wall.load()
+      const board = usePhotos(1)
+      await board.load()
 
-      expect(wall.photos.value).toEqual(photos)
-      expect(wall.folders.value).toEqual(folders)
-      expect(wall.loading.value).toBe(false)
-      expect(wall.error.value).toBeNull()
+      expect(board.photos.value).toEqual(photos)
+      expect(board.folders.value).toEqual(folders)
+      expect(board.loading.value).toBe(false)
+      expect(board.error.value).toBeNull()
     })
 
     it('sets error on failure', async () => {
       mockApi.listPhotos.mockRejectedValue(new Error('Network error'))
       mockApi.listFolders.mockResolvedValue([])
 
-      const wall = usePhotos(1)
-      await wall.load()
+      const board = usePhotos(1)
+      await board.load()
 
-      expect(wall.error.value).toBe('Network error')
-      expect(wall.loading.value).toBe(false)
+      expect(board.error.value).toBe('Network error')
+      expect(board.loading.value).toBe(false)
     })
   })
 
@@ -87,11 +87,11 @@ describe('usePhotos', () => {
       ])
       mockApi.listFolders.mockResolvedValue([])
 
-      const wall = usePhotos(1)
-      await wall.load()
+      const board = usePhotos(1)
+      await board.load()
 
-      expect(wall.rootPhotos.value).toHaveLength(2)
-      expect(wall.rootPhotos.value.map((p) => p.id)).toEqual([1, 3])
+      expect(board.rootPhotos.value).toHaveLength(2)
+      expect(board.rootPhotos.value.map((p) => p.id)).toEqual([1, 3])
     })
   })
 
@@ -105,13 +105,13 @@ describe('usePhotos', () => {
       ])
       mockApi.listFolders.mockResolvedValue([])
 
-      const wall = usePhotos(1)
-      await wall.load()
+      const board = usePhotos(1)
+      await board.load()
 
-      expect(wall.photosInFolder(5)).toHaveLength(2)
-      expect(wall.photosInFolder(5).map((p) => p.id)).toEqual([2, 3])
-      expect(wall.photosInFolder(7)).toHaveLength(1)
-      expect(wall.photosInFolder(99)).toHaveLength(0)
+      expect(board.photosInFolder(5)).toHaveLength(2)
+      expect(board.photosInFolder(5).map((p) => p.id)).toEqual([2, 3])
+      expect(board.photosInFolder(7)).toHaveLength(1)
+      expect(board.photosInFolder(99)).toHaveLength(0)
     })
   })
 
@@ -122,15 +122,15 @@ describe('usePhotos', () => {
       const newPhoto = makePhoto({ id: 10, fileId: 100 })
       mockApi.uploadPhoto.mockResolvedValue(newPhoto)
 
-      const wall = usePhotos(1)
-      await wall.load()
+      const board = usePhotos(1)
+      await board.load()
       const file = new File(['data'], 'test.jpg')
-      const result = await wall.upload(file, 5)
+      const result = await board.upload(file, 5)
 
       expect(mockApi.uploadPhoto).toHaveBeenCalledWith(1, file, 5, null, expect.any(Function))
       expect(result.id).toBe(newPhoto.id)
-      expect(wall.photos.value).toHaveLength(1)
-      expect(wall.photos.value[0].id).toBe(newPhoto.id)
+      expect(board.photos.value).toHaveLength(1)
+      expect(board.photos.value[0].id).toBe(newPhoto.id)
     })
   })
 
@@ -142,11 +142,11 @@ describe('usePhotos', () => {
       mockApi.listFolders.mockResolvedValue([])
       mockApi.updatePhoto.mockResolvedValue(updated)
 
-      const wall = usePhotos(1)
-      await wall.load()
-      await wall.updatePhoto(1, { caption: 'New' })
+      const board = usePhotos(1)
+      await board.load()
+      await board.updatePhoto(1, { caption: 'New' })
 
-      expect(wall.photos.value[0].caption).toBe('New')
+      expect(board.photos.value[0].caption).toBe('New')
     })
   })
 
@@ -156,12 +156,12 @@ describe('usePhotos', () => {
       mockApi.listFolders.mockResolvedValue([])
       mockApi.deletePhoto.mockResolvedValue(undefined)
 
-      const wall = usePhotos(1)
-      await wall.load()
-      await wall.removePhoto(1)
+      const board = usePhotos(1)
+      await board.load()
+      await board.removePhoto(1)
 
-      expect(wall.photos.value).toHaveLength(1)
-      expect(wall.photos.value[0].id).toBe(2)
+      expect(board.photos.value).toHaveLength(1)
+      expect(board.photos.value[0].id).toBe(2)
     })
   })
 
@@ -174,15 +174,15 @@ describe('usePhotos', () => {
       mockApi.listFolders.mockResolvedValue([])
       mockApi.reorderPhotos.mockResolvedValue(undefined)
 
-      const wall = usePhotos(1)
-      await wall.load()
-      await wall.reorderPhotos([
+      const board = usePhotos(1)
+      await board.load()
+      await board.reorderPhotos([
         { id: 2, sortOrder: 0 },
         { id: 1, sortOrder: 1 },
       ])
 
-      expect(wall.photos.value[0].id).toBe(2)
-      expect(wall.photos.value[1].id).toBe(1)
+      expect(board.photos.value[0].id).toBe(2)
+      expect(board.photos.value[1].id).toBe(1)
     })
   })
 
@@ -193,13 +193,13 @@ describe('usePhotos', () => {
       const newFolder = makeFolder({ id: 10, name: 'New' })
       mockApi.createFolder.mockResolvedValue(newFolder)
 
-      const wall = usePhotos(1)
-      await wall.load()
-      const result = await wall.createFolder('New')
+      const board = usePhotos(1)
+      await board.load()
+      const result = await board.createFolder('New')
 
       expect(mockApi.createFolder).toHaveBeenCalledWith(1, 'New')
       expect(result).toEqual(newFolder)
-      expect(wall.folders.value).toHaveLength(1)
+      expect(board.folders.value).toHaveLength(1)
     })
   })
 
@@ -211,11 +211,11 @@ describe('usePhotos', () => {
       mockApi.listFolders.mockResolvedValue([original])
       mockApi.updateFolder.mockResolvedValue(updated)
 
-      const wall = usePhotos(1)
-      await wall.load()
-      await wall.updateFolder(1, { name: 'New' })
+      const board = usePhotos(1)
+      await board.load()
+      await board.updateFolder(1, { name: 'New' })
 
-      expect(wall.folders.value[0].name).toBe('New')
+      expect(board.folders.value[0].name).toBe('New')
     })
   })
 
@@ -228,14 +228,14 @@ describe('usePhotos', () => {
       mockApi.listFolders.mockResolvedValue([makeFolder({ id: 5 })])
       mockApi.deleteFolder.mockResolvedValue(undefined)
 
-      const wall = usePhotos(1)
-      await wall.load()
-      await wall.removeFolder(5)
+      const board = usePhotos(1)
+      await board.load()
+      await board.removeFolder(5)
 
-      expect(wall.folders.value).toHaveLength(0)
+      expect(board.folders.value).toHaveLength(0)
       // Photo that was in folder 5 should now have folderId null
-      expect(wall.photos.value[0].folderId).toBeNull()
-      expect(wall.photos.value[1].folderId).toBeNull()
+      expect(board.photos.value[0].folderId).toBeNull()
+      expect(board.photos.value[1].folderId).toBeNull()
     })
   })
 
@@ -248,15 +248,15 @@ describe('usePhotos', () => {
       ])
       mockApi.reorderFolders.mockResolvedValue(undefined)
 
-      const wall = usePhotos(1)
-      await wall.load()
-      await wall.reorderFolders([
+      const board = usePhotos(1)
+      await board.load()
+      await board.reorderFolders([
         { id: 2, sortOrder: 0 },
         { id: 1, sortOrder: 1 },
       ])
 
-      expect(wall.folders.value[0].id).toBe(2)
-      expect(wall.folders.value[1].id).toBe(1)
+      expect(board.folders.value[0].id).toBe(2)
+      expect(board.folders.value[1].id).toBe(1)
     })
   })
 })

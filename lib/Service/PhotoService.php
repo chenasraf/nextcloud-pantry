@@ -74,7 +74,7 @@ class PhotoService {
 
 	public function deleteFolder(int $folderId): void {
 		$folder = $this->getFolder($folderId);
-		// Move all photos in this folder to the wall root
+		// Move all photos in this folder to the board root
 		$this->photoMapper->moveToRoot($folderId);
 		$this->folderMapper->delete($folder);
 	}

@@ -12,15 +12,21 @@
     <div class="photo-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
         <NcActionButton @click.stop="$emit('edit', photo)">
-          <template #icon><PencilIcon :size="20" /></template>
+          <template #icon>
+            <PencilIcon :size="20" />
+          </template>
           {{ strings.edit }}
         </NcActionButton>
         <NcActionButton v-if="photo.folderId !== null" @click.stop="$emit('move-to-root', photo)">
-          <template #icon><ArrowUpIcon :size="20" /></template>
-          {{ strings.moveToWall }}
+          <template #icon>
+            <ArrowUpIcon :size="20" />
+          </template>
+          {{ strings.moveToBoard }}
         </NcActionButton>
         <NcActionButton @click.stop="$emit('delete', photo)">
-          <template #icon><DeleteIcon :size="20" /></template>
+          <template #icon>
+            <DeleteIcon :size="20" />
+          </template>
           {{ strings.delete }}
         </NcActionButton>
       </NcActions>
@@ -80,7 +86,7 @@ const strings = {
   actions: t('pantry', 'Photo actions'),
   edit: t('pantry', 'Edit'),
   delete: t('pantry', 'Delete'),
-  moveToWall: t('pantry', 'Move to wall'),
+  moveToBoard: t('pantry', 'Move to board'),
 }
 </script>
 

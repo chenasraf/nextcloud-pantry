@@ -4996,7 +4996,7 @@
             "delete": {
                 "operationId": "photo-delete-folder",
                 "summary": "Delete a photo folder",
-                "description": "Photos in this folder are moved to the wall root.",
+                "description": "Photos in this folder are moved to the board root.",
                 "tags": [
                     "photo"
                 ],

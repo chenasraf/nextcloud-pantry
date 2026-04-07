@@ -100,16 +100,16 @@ describe('PhotoCard', () => {
       expect(texts).toContain('Delete')
     })
 
-    it('shows "Move to wall" action when photo is in a folder', () => {
+    it('shows "Move to board" action when photo is in a folder', () => {
       const wrapper = mountCard({ folderId: 5 })
       const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
-      expect(texts).toContain('Move to wall')
+      expect(texts).toContain('Move to board')
     })
 
-    it('hides "Move to wall" action when photo is at root', () => {
+    it('hides "Move to board" action when photo is at root', () => {
       const wrapper = mountCard({ folderId: null })
       const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
-      expect(texts).not.toContain('Move to wall')
+      expect(texts).not.toContain('Move to board')
     })
   })
 
@@ -140,10 +140,12 @@ describe('PhotoCard', () => {
       expect(wrapper.emitted('delete')![0]).toEqual([photo])
     })
 
-    it('emits move-to-root when "Move to wall" is clicked', async () => {
+    it('emits move-to-root when "Move to board" is clicked', async () => {
       const photo = makePhoto({ folderId: 5 })
       const wrapper = mount(PhotoCard, { props: { photo, houseId: 1 } })
-      const moveBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Move to wall')!
+      const moveBtn = wrapper
+        .findAll('.nc-action-button')
+        .find((b) => b.text() === 'Move to board')!
       await moveBtn.trigger('click')
       expect(wrapper.emitted('move-to-root')).toBeTruthy()
       expect(wrapper.emitted('move-to-root')![0]).toEqual([photo])
