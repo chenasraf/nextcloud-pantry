@@ -20,6 +20,7 @@ use OCP\Notification\IManager as INotificationManager;
 use OCP\Notification\INotification;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 class NotificationServiceTest extends TestCase {
 	/** @var INotificationManager&MockObject */
@@ -51,6 +52,7 @@ class NotificationServiceTest extends TestCase {
 			$this->prefs,
 			$this->urlGenerator,
 			$this->userManager,
+			$this->createMock(LoggerInterface::class),
 		);
 
 		$this->urlGenerator->method('linkToRouteAbsolute')->willReturn('https://example.com/apps/pantry/');
