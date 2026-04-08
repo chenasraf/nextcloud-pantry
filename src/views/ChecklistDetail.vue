@@ -127,6 +127,11 @@
             </span>
           </div>
           <div class="pantry-item__actions">
+            <NcButton variant="tertiary" :aria-label="strings.viewItem" @click="openView(item)">
+              <template #icon>
+                <EyeIcon :size="18" />
+              </template>
+            </NcButton>
             <NcActions :aria-label="strings.itemActions">
               <NcActionButton @click="startEdit(item)">
                 <template #icon>
@@ -258,6 +263,74 @@
     />
 
     <NcDialog
+      v-if="viewing"
+      :name="viewing.name"
+      :open="!!viewing"
+      close-on-click-outside
+      size="normal"
+      @update:open="(v) => !v && (viewing = null)"
+    >
+      <div class="pantry-view">
+        <button
+          v-if="viewing.imageFileId"
+          type="button"
+          class="pantry-view__image-btn"
+          :aria-label="strings.viewImage"
+          @click="previewing = viewing"
+        >
+          <img class="pantry-view__image" :src="largeUrl(viewing)" :alt="viewing.name" />
+        </button>
+
+        <div v-if="viewing.description" class="pantry-view__description">
+          <NcRichText
+            :text="viewing.description"
+            :use-markdown="true"
+            :use-extended-markdown="true"
+          />
+        </div>
+
+        <div class="pantry-view__details">
+          <div v-if="viewing.quantity" class="pantry-view__row">
+            <span class="pantry-view__label">{{ strings.quantityLabel }}:</span>
+            <span>&times; {{ viewing.quantity }}</span>
+          </div>
+          <div v-if="categoryFor(viewing.categoryId)" class="pantry-view__row">
+            <span class="pantry-view__label">{{ strings.categoryLabel }}:</span>
+            <span
+              class="pantry-item__category"
+              :style="{ color: categoryFor(viewing.categoryId)!.color }"
+            >
+              <component
+                :is="categoryIconComponent(categoryFor(viewing.categoryId)!.icon)"
+                :size="14"
+              />
+              {{ categoryFor(viewing.categoryId)!.name }}
+            </span>
+          </div>
+          <div v-if="viewing.rrule" class="pantry-view__row">
+            <span class="pantry-view__label">{{ strings.recurrenceLabel }}:</span>
+            <span class="pantry-item__recurrence">
+              <RepeatIcon :size="14" />
+              {{ formatRrule(viewing.rrule) }}
+            </span>
+          </div>
+          <div v-if="viewing.done" class="pantry-view__row">
+            <span class="pantry-view__label">{{ strings.status }}:</span>
+            <span>{{ strings.done }}</span>
+          </div>
+        </div>
+      </div>
+      <template #actions>
+        <NcButton variant="tertiary" @click="viewToEdit">
+          <template #icon>
+            <PencilIcon :size="20" />
+          </template>
+          {{ strings.editItem }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <NcDialog
       v-if="previewing"
       :name="previewing.name"
       :open="!!previewing"
@@ -289,6 +362,7 @@ import PlusIcon from '@icons/Plus.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PencilIcon from '@icons/Pencil.vue'
+import EyeIcon from '@icons/Eye.vue'
 import RepeatIcon from '@icons/Repeat.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
@@ -297,6 +371,7 @@ import UploadIcon from '@icons/Upload.vue'
 import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
 import { categoryIconComponent } from '@/components/CategoryPicker'
+import NcRichText from '@nextcloud/vue/components/NcRichText'
 import { useChecklistItems } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { getList } from '@/api/lists'
@@ -424,7 +499,20 @@ async function submitEdit() {
   }
 }
 
+const viewing = ref<ChecklistItem | null>(null)
 const previewing = ref<ChecklistItem | null>(null)
+
+function openView(item: ChecklistItem) {
+  viewing.value = item
+}
+
+function viewToEdit() {
+  if (!viewing.value) return
+  const item = viewing.value
+  viewing.value = null
+  startEdit(item)
+}
+
 function openPreview(item: ChecklistItem) {
   previewing.value = item
 }
@@ -498,8 +586,12 @@ const strings = {
   descriptionPlaceholder: t('pantry', 'Add a description …'),
   descriptionToggle: t('pantry', 'Toggle description'),
   itemActions: t('pantry', 'Item actions'),
+  viewItem: t('pantry', 'View item'),
   editItem: t('pantry', 'Edit item'),
   editDialogTitle: t('pantry', 'Edit item'),
+  recurrenceLabel: t('pantry', 'Recurrence'),
+  status: t('pantry', 'Status'),
+  done: t('pantry', 'Done'),
   imageLabel: t('pantry', 'Image'),
   uploadImage: t('pantry', 'Upload image'),
   replaceImage: t('pantry', 'Replace image'),
@@ -596,6 +688,58 @@ const strings = {
 
   &__image-input {
     display: none;
+  }
+}
+
+.pantry-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__image-btn {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+    border-radius: var(--border-radius, 8px);
+    overflow: hidden;
+  }
+
+  &__image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    display: block;
+    border-radius: var(--border-radius, 8px);
+  }
+
+  &__description {
+    line-height: 1.6;
+    font-size: 0.95rem;
+
+    :deep(*) {
+      color: inherit;
+    }
+  }
+
+  &__details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  &__label {
+    color: var(--color-text-maxcontrast);
+    font-weight: 500;
   }
 }
 
