@@ -107,7 +107,9 @@
             </span>
           </NcCheckboxRadioSwitch>
           <div class="pantry-item__meta">
-            <span v-if="item.quantity" class="pantry-item__quantity">{{ item.quantity }}</span>
+            <span v-if="item.quantity" class="pantry-item__quantity"
+              >&times; {{ item.quantity }}</span
+            >
             <span
               v-if="categoryFor(item.categoryId)"
               class="pantry-item__category"
@@ -125,20 +127,20 @@
             </span>
           </div>
           <div class="pantry-item__actions">
-            <NcButton variant="tertiary" :aria-label="strings.editItem" @click="startEdit(item)">
-              <template #icon>
-                <PencilIcon :size="18" />
-              </template>
-            </NcButton>
-            <NcButton
-              variant="tertiary"
-              :aria-label="strings.removeItem"
-              @click="handleRemove(item.id)"
-            >
-              <template #icon>
-                <DeleteIcon :size="18" />
-              </template>
-            </NcButton>
+            <NcActions :aria-label="strings.itemActions">
+              <NcActionButton @click="startEdit(item)">
+                <template #icon>
+                  <PencilIcon :size="20" />
+                </template>
+                {{ strings.editItem }}
+              </NcActionButton>
+              <NcActionButton @click="handleRemove(item.id)">
+                <template #icon>
+                  <DeleteIcon :size="20" />
+                </template>
+                {{ strings.removeItem }}
+              </NcActionButton>
+            </NcActions>
           </div>
         </li>
       </ul>
@@ -279,6 +281,8 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcActions from '@nextcloud/vue/components/NcActions'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import { itemImagePreviewUrl } from '@/api/images'
 import PageToolbar from '@/components/PageToolbar'
 import PlusIcon from '@icons/Plus.vue'
@@ -493,6 +497,7 @@ const strings = {
   descriptionLabel: t('pantry', 'Description'),
   descriptionPlaceholder: t('pantry', 'Add a description …'),
   descriptionToggle: t('pantry', 'Toggle description'),
+  itemActions: t('pantry', 'Item actions'),
   editItem: t('pantry', 'Edit item'),
   editDialogTitle: t('pantry', 'Edit item'),
   imageLabel: t('pantry', 'Image'),
@@ -617,6 +622,26 @@ const strings = {
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius, 8px);
   background: var(--color-main-background);
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'check actions'
+      'meta  meta';
+    gap: 0.25rem 0.5rem;
+
+    :deep(.checkbox-radio-switch) {
+      grid-area: check;
+    }
+
+    .pantry-item__actions {
+      grid-area: actions;
+    }
+
+    .pantry-item__meta {
+      grid-area: meta;
+    }
+  }
 
   &--done {
     opacity: 0.6;
