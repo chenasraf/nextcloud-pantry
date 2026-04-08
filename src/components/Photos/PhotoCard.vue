@@ -2,6 +2,7 @@
   <div
     class="photo-card"
     :class="{ 'photo-card--dragging': isDragging }"
+    :data-drag-id="photo.id"
     draggable="true"
     @dragstart="onDragStart"
     @dragend="onDragEnd"

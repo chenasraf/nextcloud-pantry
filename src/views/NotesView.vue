@@ -88,6 +88,7 @@ import PlusIcon from '@icons/Plus.vue'
 import NoteIcon from '@icons/Note.vue'
 import type { Note } from '@/api/types'
 import { useNotes } from '@/composables/useNotes'
+import { useTouchReorder } from '@/composables/useTouchReorder'
 
 const props = defineProps<{ houseId: string }>()
 
@@ -132,7 +133,7 @@ function onDragStart(noteId: number) {
   dropIndex.value = null
 }
 
-function onReorderOver(hoveredNoteId: number, e: MouseEvent) {
+function computeDropIndex(hoveredNoteId: number, clientX: number, target: HTMLElement | null) {
   const dragId = draggingNoteId.value
   if (!dragId || dragId === hoveredNoteId) return
 
@@ -140,14 +141,17 @@ function onReorderOver(hoveredNoteId: number, e: MouseEvent) {
   const idx = without.findIndex((n) => n.id === hoveredNoteId)
   if (idx === -1) return
 
-  const target = e.currentTarget as HTMLElement | null
   if (target) {
     const rect = target.getBoundingClientRect()
-    const past = e.clientX > rect.left + rect.width / 2
+    const past = clientX > rect.left + rect.width / 2
     dropIndex.value = past ? idx + 1 : idx
   } else {
     dropIndex.value = idx
   }
+}
+
+function onReorderOver(hoveredNoteId: number, e: MouseEvent) {
+  computeDropIndex(hoveredNoteId, e.clientX, e.currentTarget as HTMLElement | null)
 }
 
 function onPlaceholderDrop() {
@@ -189,6 +193,20 @@ onMounted(() => {
 onBeforeUnmount(() => {
   wallRef.value?.removeEventListener('drop', onDropCapture, true)
   wallRef.value?.removeEventListener('dragend', onDragEndCapture, true)
+})
+
+// ----- Touch reorder -----
+useTouchReorder(wallRef, {
+  onDragStart: onDragStart,
+  onReorderOver(hoveredId, clientX) {
+    const el = wallRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+    computeDropIndex(hoveredId, clientX, el)
+  },
+  onDrop: commitReorder,
+  onCancel() {
+    draggingNoteId.value = null
+    dropIndex.value = null
+  },
 })
 
 // ----- Create / Edit -----

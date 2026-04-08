@@ -251,6 +251,7 @@ import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import FolderPlusIcon from '@icons/FolderPlus.vue'
 import type { Photo, PhotoFolder } from '@/api/types'
 import { usePhotos, type UploadEntry } from '@/composables/usePhotos'
+import { useTouchReorder } from '@/composables/useTouchReorder'
 
 const props = defineProps<{ houseId: string; folderId?: string }>()
 const router = useRouter()
@@ -358,7 +359,12 @@ function onPhotoDragStart(photoId: number) {
   dropIndex.value = null
 }
 
-function onReorderOver(hoveredPhotoId: number, source: Photo[], e: MouseEvent) {
+function computePhotoDropIndex(
+  hoveredPhotoId: number,
+  source: Photo[],
+  clientX: number,
+  target: HTMLElement | null,
+) {
   const dragId = draggingPhotoId.value
   if (!dragId || dragId === hoveredPhotoId) return
 
@@ -366,15 +372,17 @@ function onReorderOver(hoveredPhotoId: number, source: Photo[], e: MouseEvent) {
   const idx = without.findIndex((p) => p.id === hoveredPhotoId)
   if (idx === -1) return
 
-  // Determine if cursor is in the left or right half of the hovered card
-  const target = e.currentTarget as HTMLElement | null
   if (target) {
     const rect = target.getBoundingClientRect()
-    const past = e.clientX > rect.left + rect.width / 2
+    const past = clientX > rect.left + rect.width / 2
     dropIndex.value = past ? idx + 1 : idx
   } else {
     dropIndex.value = idx
   }
+}
+
+function onReorderOver(hoveredPhotoId: number, source: Photo[], e: MouseEvent) {
+  computePhotoDropIndex(hoveredPhotoId, source, e.clientX, e.currentTarget as HTMLElement | null)
 }
 
 function onPlaceholderDrop() {
@@ -423,6 +431,21 @@ onMounted(() => {
 onBeforeUnmount(() => {
   boardRef.value?.removeEventListener('drop', onDropCapture, true)
   boardRef.value?.removeEventListener('dragend', onDragEndCapture, true)
+})
+
+// ----- Touch reorder -----
+useTouchReorder(boardRef, {
+  onDragStart: onPhotoDragStart,
+  onReorderOver(hoveredId, clientX) {
+    const source = activeFolderId.value ? activeFolderPhotos.value : rootPhotos.value
+    const el = boardRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+    computePhotoDropIndex(hoveredId, source, clientX, el)
+  },
+  onDrop: commitReorder,
+  onCancel() {
+    draggingPhotoId.value = null
+    dropIndex.value = null
+  },
 })
 
 // Folder dialog

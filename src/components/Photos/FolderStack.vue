@@ -2,6 +2,7 @@
   <div
     class="folder-stack"
     :class="{ 'folder-stack--drag-over': isDragOver }"
+    :data-drag-id="'folder-' + folder.id"
     draggable="true"
     @dragstart="onDragStart"
     @dragend="onDragEnd"

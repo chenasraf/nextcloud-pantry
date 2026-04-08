@@ -3,6 +3,7 @@
     class="note-card"
     :class="{ 'note-card--dragging': isDragging }"
     :style="cardStyle"
+    :data-drag-id="note.id"
     draggable="true"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
