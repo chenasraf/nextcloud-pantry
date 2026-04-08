@@ -142,6 +142,12 @@ const strings = {
     opacity: 1;
   }
 
+  @media (hover: none) {
+    .photo-card__actions {
+      opacity: 1;
+    }
+  }
+
   &__caption {
     position: absolute;
     bottom: 0;

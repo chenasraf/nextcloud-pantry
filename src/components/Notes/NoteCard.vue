@@ -125,6 +125,12 @@ const strings = {
     opacity: 1;
   }
 
+  @media (hover: none) {
+    .note-card__actions {
+      opacity: 1;
+    }
+  }
+
   &__title {
     margin: 0 0 0.5rem 0;
     font-size: 1rem;

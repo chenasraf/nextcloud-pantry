@@ -257,5 +257,11 @@ const strings = {
   &:hover &__actions {
     opacity: 1;
   }
+
+  @media (hover: none) {
+    .folder-stack__actions {
+      opacity: 1;
+    }
+  }
 }
 </style>
