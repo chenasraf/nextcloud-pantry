@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.2.0...v0.3.0) (2026-04-08)
+
+
+### Features
+
+* allow multiple selection for photos/notes ([64aea12](https://github.com/chenasraf/nextcloud-pantry/commit/64aea12903737c8f0f172d159f6760c0ef7ad92e))
+
+
+### Bug Fixes
+
+* drag-reorder on mobile ([7985915](https://github.com/chenasraf/nextcloud-pantry/commit/79859153edcdaed039b982992d0a9d03f4247d45))
+
 ## [0.2.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.1.1...v0.2.0) (2026-04-08)
 
 
