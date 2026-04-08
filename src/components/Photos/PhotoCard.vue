@@ -1,7 +1,7 @@
 <template>
   <div
     class="photo-card"
-    :class="{ 'photo-card--dragging': isDragging }"
+    :class="{ 'photo-card--dragging': isDragging, 'photo-card--selected': selected }"
     :data-drag-id="photo.id"
     draggable="true"
     @dragstart="onDragStart"
@@ -10,6 +10,12 @@
     @click="$emit('preview', photo)"
   >
     <img :src="thumbUrl(photo.id)" :alt="photo.caption ?? ''" class="photo-card__img" />
+    <div class="photo-card__select" @click.stop>
+      <NcCheckboxRadioSwitch
+        :model-value="selected"
+        @update:model-value="$emit('select', photo.id)"
+      />
+    </div>
     <div class="photo-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
         <NcActionButton @click.stop="$emit('edit', photo)">
@@ -42,14 +48,15 @@ import { t } from '@nextcloud/l10n'
 import { photoPreviewUrl } from '@/api/images'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import ArrowUpIcon from '@icons/ArrowUp.vue'
 import type { Photo } from '@/api/types'
 
 const props = withDefaults(
-  defineProps<{ photo: Photo; houseId: number; reorderEnabled?: boolean }>(),
-  { reorderEnabled: true },
+  defineProps<{ photo: Photo; houseId: number; reorderEnabled?: boolean; selected?: boolean }>(),
+  { reorderEnabled: true, selected: false },
 )
 const emit = defineEmits<{
   preview: [photo: Photo]
@@ -58,6 +65,7 @@ const emit = defineEmits<{
   'move-to-root': [photo: Photo]
   'drag-start': [photoId: number]
   'reorder-over': [photoId: number, event: MouseEvent]
+  select: [photoId: number]
 }>()
 
 const isDragging = ref(false)
@@ -105,8 +113,9 @@ const strings = {
   cursor: grab;
   aspect-ratio: 1;
   transition:
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    outline-color 0.2s ease;
 
   &:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
@@ -133,13 +142,53 @@ const strings = {
     cursor: inherit;
   }
 
+  &--selected {
+    outline: 3px solid var(--color-primary-element);
+    outline-offset: -3px;
+  }
+
+  &__select {
+    position: absolute;
+    top: 0.25rem;
+    inset-inline-start: 0.25rem;
+    z-index: 2;
+    opacity: 0;
+    transition:
+      opacity 0.2s ease,
+      background 0.2s ease;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 99px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    :deep(.checkbox-radio-switch__content) {
+      transition:
+        color 0.2s ease,
+        opacity 0.2s ease,
+        border-radius 0.2s ease;
+    }
+  }
+
+  &--selected &__select,
+  &:hover &__select {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .photo-card__select {
+      opacity: 1;
+    }
+  }
+
   &__actions {
     position: absolute;
     top: 0.25rem;
     inset-inline-end: 0.25rem;
     z-index: 1;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.2s ease;
     background: rgba(0, 0, 0, 0.45);
     border-radius: 99px;
   }

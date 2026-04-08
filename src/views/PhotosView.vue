@@ -59,6 +59,20 @@
         <p>{{ strings.dropToUpload }}</p>
       </div>
 
+      <!-- Selection bar -->
+      <div v-if="selectedPhotoIds.size > 0" class="pantry-selection-bar">
+        <span>{{ photoSelectionLabel }}</span>
+        <NcButton @click="showMoveToFolderDialog = true">
+          <template #icon><FolderMoveIcon :size="20" /></template>
+          {{ strings.moveToFolder }}
+        </NcButton>
+        <NcButton variant="error" @click="confirmBulkDeletePhotos">
+          <template #icon><DeleteIcon :size="20" /></template>
+          {{ strings.delete }}
+        </NcButton>
+        <NcButton @click="selectedPhotoIds.clear()">{{ strings.clearSelection }}</NcButton>
+      </div>
+
       <div v-if="loading" class="pantry-center">
         <NcLoadingIcon :size="36" />
       </div>
@@ -124,12 +138,14 @@
               :photo="item.photo"
               :house-id="houseIdNum"
               :reorder-enabled="isCustomSort"
+              :selected="selectedPhotoIds.has(item.photo.id)"
               @preview="openPreview"
               @edit="startEditPhoto"
               @delete="confirmDeletePhoto"
               @move-to-root="movePhotoToRoot"
               @drag-start="onPhotoDragStart"
               @reorder-over="(id, e) => onReorderOver(id, rootPhotos, e)"
+              @select="togglePhotoSelection"
             />
           </template>
         </div>
@@ -169,12 +185,14 @@
               :photo="item.photo"
               :house-id="houseIdNum"
               :reorder-enabled="isCustomSort"
+              :selected="selectedPhotoIds.has(item.photo.id)"
               @preview="openPreview"
               @edit="startEditPhoto"
               @delete="confirmDeletePhoto"
               @move-to-root="movePhotoToRoot"
               @drag-start="onPhotoDragStart"
               @reorder-over="(id, e) => onReorderOver(id, activeFolderPhotos, e)"
+              @select="togglePhotoSelection"
             />
           </template>
         </div>
@@ -293,13 +311,66 @@
         </NcButton>
       </template>
     </NcDialog>
+
+    <!-- Bulk delete photos confirm -->
+    <NcDialog
+      v-if="bulkDeletingPhotos"
+      :name="strings.deletePhotoTitle"
+      :open="bulkDeletingPhotos"
+      close-on-click-outside
+      @update:open="(v) => !v && (bulkDeletingPhotos = false)"
+    >
+      <p>{{ bulkDeletePhotosBody }}</p>
+      <template #actions>
+        <NcButton @click="bulkDeletingPhotos = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" @click="submitBulkDeletePhotos">{{ strings.delete }}</NcButton>
+      </template>
+    </NcDialog>
+
+    <!-- Move to folder dialog -->
+    <NcDialog
+      v-if="showMoveToFolderDialog"
+      :name="strings.moveToFolderTitle"
+      :open="showMoveToFolderDialog"
+      close-on-click-outside
+      @update:open="(v) => !v && (showMoveToFolderDialog = false)"
+    >
+      <div class="pantry-move-folder-list">
+        <NcButton v-if="activeFolderId" wide @click="submitMoveToFolder(0)">
+          <template #icon><ImageIcon :size="20" /></template>
+          {{ strings.board }}
+        </NcButton>
+        <NcButton
+          v-for="f in folders"
+          :key="f.id"
+          wide
+          :disabled="f.id === activeFolderId"
+          @click="submitMoveToFolder(f.id)"
+        >
+          <template #icon><FolderIcon :size="20" /></template>
+          {{ f.name }}
+        </NcButton>
+        <NcButton wide @click="createFolderAndMove">
+          <template #icon><FolderPlusIcon :size="20" /></template>
+          {{ strings.newFolder }}
+        </NcButton>
+      </div>
+    </NcDialog>
+
+    <!-- Create folder for move -->
+    <FolderDialog
+      v-if="creatingFolderForMove"
+      :open="creatingFolderForMove"
+      @update:open="(v) => !v && (creatingFolderForMove = false)"
+      @save="submitCreateFolderAndMove"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcProgressBar from '@nextcloud/vue/components/NcProgressBar'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -316,6 +387,9 @@ import { PhotoCard, FolderStack, FolderDialog, PhotoPreview } from '@/components
 import UploadIcon from '@icons/Upload.vue'
 import ImageIcon from '@icons/Image.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
+import DeleteIcon from '@icons/Delete.vue'
+import FolderIcon from '@icons/Folder.vue'
+import FolderMoveIcon from '@icons/FolderMove.vue'
 import FolderPlusIcon from '@icons/FolderPlus.vue'
 import SortIcon from '@icons/Sort.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
@@ -758,6 +832,75 @@ async function submitDeleteFolder() {
   deletingFolder.value = null
 }
 
+// ----- Selection -----
+
+const selectedPhotoIds = ref(new Set<number>())
+const photoSelectionLabel = computed(() =>
+  n('pantry', '%n photo selected', '%n photos selected', selectedPhotoIds.value.size),
+)
+
+function togglePhotoSelection(photoId: number) {
+  const next = new Set(selectedPhotoIds.value)
+  if (next.has(photoId)) {
+    next.delete(photoId)
+  } else {
+    next.add(photoId)
+  }
+  selectedPhotoIds.value = next
+}
+
+// Bulk delete
+const bulkDeletingPhotos = ref(false)
+const bulkDeletePhotosBody = computed(() =>
+  n(
+    'pantry',
+    'Are you sure you want to delete %n photo? The file will also be removed.',
+    'Are you sure you want to delete %n photos? The files will also be removed.',
+    selectedPhotoIds.value.size,
+  ),
+)
+
+function confirmBulkDeletePhotos() {
+  bulkDeletingPhotos.value = true
+}
+
+async function submitBulkDeletePhotos() {
+  const ids = [...selectedPhotoIds.value]
+  for (const id of ids) {
+    await removePhoto(id)
+  }
+  selectedPhotoIds.value = new Set()
+  bulkDeletingPhotos.value = false
+}
+
+// Move to folder
+const showMoveToFolderDialog = ref(false)
+const creatingFolderForMove = ref(false)
+
+async function submitMoveToFolder(folderId: number) {
+  const ids = [...selectedPhotoIds.value]
+  for (const id of ids) {
+    await updatePhoto(id, { folderId })
+  }
+  selectedPhotoIds.value = new Set()
+  showMoveToFolderDialog.value = false
+}
+
+function createFolderAndMove() {
+  showMoveToFolderDialog.value = false
+  creatingFolderForMove.value = true
+}
+
+async function submitCreateFolderAndMove(name: string) {
+  const folder = await createFolder(name)
+  creatingFolderForMove.value = false
+  const ids = [...selectedPhotoIds.value]
+  for (const id of ids) {
+    await updatePhoto(id, { folderId: folder.id })
+  }
+  selectedPhotoIds.value = new Set()
+}
+
 const strings = {
   title: t('pantry', 'Photo board'),
   upload: t('pantry', 'Upload'),
@@ -783,6 +926,10 @@ const strings = {
   deleteFolderDeleteHint: t('pantry', 'All photos and their files will be permanently deleted.'),
   sortLabel: t('pantry', 'Sort order'),
   foldersFirst: t('pantry', 'Folders first'),
+  clearSelection: t('pantry', 'Clear selection'),
+  moveToFolder: t('pantry', 'Move to folder'),
+  moveToFolderTitle: t('pantry', 'Move to folder'),
+  board: t('pantry', 'Board (root)'),
 }
 </script>
 
@@ -866,6 +1013,28 @@ const strings = {
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
+}
+
+.pantry-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  margin: 0 1rem 0.75rem;
+  background: var(--color-primary-element-light);
+  border-radius: var(--border-radius-large, 12px);
+  font-weight: 500;
+
+  span:first-child {
+    flex: 1;
+  }
+}
+
+.pantry-move-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
 }
 
 .pantry-sort-active {

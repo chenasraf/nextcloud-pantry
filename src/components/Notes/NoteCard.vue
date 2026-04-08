@@ -1,7 +1,7 @@
 <template>
   <div
     class="note-card"
-    :class="{ 'note-card--dragging': isDragging }"
+    :class="{ 'note-card--dragging': isDragging, 'note-card--selected': selected }"
     :style="cardStyle"
     :data-drag-id="note.id"
     :draggable="draggableEnabled ? 'true' : 'false'"
@@ -10,6 +10,12 @@
     @dragover.prevent="onDragOver"
     @click="$emit('edit', note)"
   >
+    <div class="note-card__select" @click.stop>
+      <NcCheckboxRadioSwitch
+        :model-value="selected"
+        @update:model-value="$emit('select', note.id)"
+      />
+    </div>
     <div class="note-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
         <NcActionButton @click.stop="$emit('delete', note)">
@@ -30,19 +36,22 @@ import { computed, ref } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
 import DeleteIcon from '@icons/Delete.vue'
 import { contrastColor } from './noteColors'
 import type { Note } from '@/api/types'
 
-const props = withDefaults(defineProps<{ note: Note; draggableEnabled?: boolean }>(), {
-  draggableEnabled: true,
-})
+const props = withDefaults(
+  defineProps<{ note: Note; draggableEnabled?: boolean; selected?: boolean }>(),
+  { draggableEnabled: true, selected: false },
+)
 const emit = defineEmits<{
   edit: [note: Note]
   delete: [note: Note]
   'drag-start': [noteId: number]
   'reorder-over': [noteId: number, event: MouseEvent]
+  select: [noteId: number]
 }>()
 
 const isDragging = ref(false)
@@ -89,8 +98,9 @@ const strings = {
   color: var(--note-fg, inherit);
   border: 1px solid var(--color-border);
   transition:
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    outline-color 0.2s ease;
   min-height: 80px;
   max-height: 240px;
   display: flex;
@@ -112,13 +122,53 @@ const strings = {
     cursor: grabbing;
   }
 
+  &--selected {
+    outline: 3px solid var(--color-primary-element);
+    outline-offset: -3px;
+  }
+
+  &__select {
+    position: absolute;
+    top: 0.25rem;
+    inset-inline-start: 0.25rem;
+    z-index: 2;
+    opacity: 0;
+    transition:
+      opacity 0.2s ease,
+      background 0.2s ease;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 99px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    :deep(.checkbox-radio-switch__content) {
+      transition:
+        color 0.2s ease,
+        opacity 0.2s ease,
+        border-radius 0.2s ease;
+    }
+  }
+
+  &--selected &__select,
+  &:hover &__select {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .note-card__select {
+      opacity: 1;
+    }
+  }
+
   &__actions {
     position: absolute;
     top: 0.25rem;
     inset-inline-end: 0.25rem;
     z-index: 1;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.2s ease;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 99px;
   }

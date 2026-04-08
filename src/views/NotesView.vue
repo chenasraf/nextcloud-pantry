@@ -46,25 +46,39 @@
         </template>
       </NcEmptyContent>
 
-      <div v-else class="pantry-notes__grid">
-        <template v-for="item in gridItems" :key="item.key">
-          <div
-            v-if="item.type === 'placeholder'"
-            class="pantry-notes__placeholder"
-            @dragover.prevent
-            @drop.prevent.stop="onPlaceholderDrop"
-          />
-          <NoteCard
-            v-else
-            :note="item.note"
-            :draggable-enabled="isCustomSort"
-            @edit="openEditDialog"
-            @delete="confirmDelete"
-            @drag-start="onDragStart"
-            @reorder-over="onReorderOver"
-          />
-        </template>
-      </div>
+      <template v-else>
+        <!-- Selection bar -->
+        <div v-if="selectedNoteIds.size > 0" class="pantry-selection-bar">
+          <span>{{ selectionLabel }}</span>
+          <NcButton variant="error" @click="confirmBulkDelete">
+            <template #icon><DeleteIcon :size="20" /></template>
+            {{ strings.delete }}
+          </NcButton>
+          <NcButton @click="selectedNoteIds.clear()">{{ strings.clearSelection }}</NcButton>
+        </div>
+
+        <div class="pantry-notes__grid">
+          <template v-for="item in gridItems" :key="item.key">
+            <div
+              v-if="item.type === 'placeholder'"
+              class="pantry-notes__placeholder"
+              @dragover.prevent
+              @drop.prevent.stop="onPlaceholderDrop"
+            />
+            <NoteCard
+              v-else
+              :note="item.note"
+              :draggable-enabled="isCustomSort"
+              :selected="selectedNoteIds.has(item.note.id)"
+              @edit="openEditDialog"
+              @delete="confirmDelete"
+              @drag-start="onDragStart"
+              @reorder-over="onReorderOver"
+              @select="toggleNoteSelection"
+            />
+          </template>
+        </div>
+      </template>
     </div>
 
     <!-- Create/Edit dialog -->
@@ -90,12 +104,27 @@
         <NcButton variant="error" @click="submitDelete">{{ strings.delete }}</NcButton>
       </template>
     </NcDialog>
+
+    <!-- Bulk delete confirm -->
+    <NcDialog
+      v-if="bulkDeleting"
+      :name="strings.deleteTitle"
+      :open="bulkDeleting"
+      close-on-click-outside
+      @update:open="(v) => !v && (bulkDeleting = false)"
+    >
+      <p>{{ bulkDeleteBody }}</p>
+      <template #actions>
+        <NcButton @click="bulkDeleting = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" @click="submitBulkDelete">{{ strings.delete }}</NcButton>
+      </template>
+    </NcDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -106,6 +135,7 @@ import PageToolbar from '@/components/PageToolbar'
 import { NoteCard, NoteDialog } from '@/components/Notes'
 import PlusIcon from '@icons/Plus.vue'
 import NoteIcon from '@icons/Note.vue'
+import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
@@ -313,6 +343,47 @@ async function submitDialog(data: { title: string; content: string; color: strin
   }
 }
 
+// ----- Selection -----
+
+const selectedNoteIds = ref(new Set<number>())
+const selectionLabel = computed(() =>
+  n('pantry', '%n item selected', '%n items selected', selectedNoteIds.value.size),
+)
+
+function toggleNoteSelection(noteId: number) {
+  const next = new Set(selectedNoteIds.value)
+  if (next.has(noteId)) {
+    next.delete(noteId)
+  } else {
+    next.add(noteId)
+  }
+  selectedNoteIds.value = next
+}
+
+const bulkDeleting = ref(false)
+
+const bulkDeleteBody = computed(() =>
+  n(
+    'pantry',
+    'Are you sure you want to delete %n note?',
+    'Are you sure you want to delete %n notes?',
+    selectedNoteIds.value.size,
+  ),
+)
+
+function confirmBulkDelete() {
+  bulkDeleting.value = true
+}
+
+async function submitBulkDelete() {
+  const ids = [...selectedNoteIds.value]
+  for (const id of ids) {
+    await remove(id)
+  }
+  selectedNoteIds.value = new Set()
+  bulkDeleting.value = false
+}
+
 // ----- Delete -----
 
 const deletingNote = ref<Note | null>(null)
@@ -341,6 +412,7 @@ const strings = {
   emptyBody: t('pantry', 'Create your first note to start sharing reminders with your household.'),
   deleteTitle: t('pantry', 'Delete note'),
   sortLabel: t('pantry', 'Sort order'),
+  clearSelection: t('pantry', 'Clear selection'),
 }
 </script>
 
@@ -373,6 +445,21 @@ const strings = {
   display: flex;
   justify-content: center;
   padding: 2rem;
+}
+
+.pantry-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  margin: 0 1rem 0.75rem;
+  background: var(--color-primary-element-light);
+  border-radius: var(--border-radius-large, 12px);
+  font-weight: 500;
+
+  span:first-child {
+    flex: 1;
+  }
 }
 
 .pantry-sort-active {

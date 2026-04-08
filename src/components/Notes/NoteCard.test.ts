@@ -20,6 +20,14 @@ vi.mock('@nextcloud/vue/components/NcActionButton', () => ({
     template: '<button class="nc-action-button"><slot name="icon" /><slot /></button>',
   },
 }))
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template:
+      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', !modelValue)" /><slot /></label>',
+    props: ['modelValue'],
+  },
+}))
 vi.mock('@nextcloud/vue/components/NcRichText', () => ({
   default: {
     name: 'NcRichText',
