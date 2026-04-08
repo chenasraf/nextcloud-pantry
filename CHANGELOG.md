@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.1.1...v0.2.0) (2026-04-08)
+
+
+### Features
+
+* add checklist item view modal ([8ae50c9](https://github.com/chenasraf/nextcloud-pantry/commit/8ae50c9743197a13809a39c258e63e20c88bc9ce))
+* list item description ([e7e9469](https://github.com/chenasraf/nextcloud-pantry/commit/e7e9469a634534f2db7c7dbfbc751ec19f0bfe9b))
+* photos/notes preset sorting options ([86a8bd3](https://github.com/chenasraf/nextcloud-pantry/commit/86a8bd3567cb7fc0492c5baeebe0893ae5b64f8a))
+* support checklist item sorting/reordering ([4384b29](https://github.com/chenasraf/nextcloud-pantry/commit/4384b291e5bec2e71e3ecddeca8d4dbb99cdac9b))
+* support deleting photo folders with content ([a2d1333](https://github.com/chenasraf/nextcloud-pantry/commit/a2d133386cdeb0e2b437a02d8487cafced875052))
+* support reordering photos/notes on mobile ([f417483](https://github.com/chenasraf/nextcloud-pantry/commit/f4174831bfbb888adcc9f5991ed9d7a9d9a3fff1))
+
+
+### Bug Fixes
+
+* checklist item layout ([219997d](https://github.com/chenasraf/nextcloud-pantry/commit/219997d591549466903bc3496e9ccc25e1e8697f))
+* progress for first image upload ([f7291bc](https://github.com/chenasraf/nextcloud-pantry/commit/f7291bc4f68b61244725b1d256a17e0da0673e6f))
+* show action buttons on mobile ([c7f1b6d](https://github.com/chenasraf/nextcloud-pantry/commit/c7f1b6d076bfaffefb9ca0da046806d4f0090131))
+* upload list item image only after save ([978a8ff](https://github.com/chenasraf/nextcloud-pantry/commit/978a8ff4bb4011ff23fcdd0159ac3df655e66670))
+
 ## [0.1.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.1.0...v0.1.1) (2026-04-07)
 
 
