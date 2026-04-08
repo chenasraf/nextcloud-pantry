@@ -39,12 +39,33 @@
           </template>
           {{ newRrule ? strings.recurrenceSet : strings.recurrenceButton }}
         </NcButton>
+        <NcButton
+          variant="tertiary"
+          :aria-label="strings.descriptionToggle"
+          @click="showNewDescription = !showNewDescription"
+        >
+          <template #icon>
+            <ChevronDownIcon
+              :size="20"
+              class="pantry-detail__chevron"
+              :class="{ 'pantry-detail__chevron--open': showNewDescription }"
+            />
+          </template>
+        </NcButton>
         <NcButton type="submit" variant="primary" :disabled="!newName.trim() || adding">
           <template #icon>
             <PlusIcon :size="20" />
           </template>
           {{ strings.add }}
         </NcButton>
+        <AutoResizeTextarea
+          v-if="showNewDescription"
+          v-model="newDescription"
+          :label="strings.descriptionLabel"
+          :placeholder="strings.descriptionPlaceholder"
+          class="pantry-detail__add-description"
+          autocomplete="off"
+        />
       </form>
 
       <div v-if="loading" class="pantry-center">
@@ -146,6 +167,12 @@
           v-model="editName"
           :label="strings.newItemLabel"
           :placeholder="strings.newItemPlaceholder"
+          autocomplete="off"
+        />
+        <AutoResizeTextarea
+          v-model="editDescription"
+          :label="strings.descriptionLabel"
+          :placeholder="strings.descriptionPlaceholder"
           autocomplete="off"
         />
         <NcTextField
@@ -259,6 +286,8 @@ import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import RepeatIcon from '@icons/Repeat.vue'
+import ChevronDownIcon from '@icons/ChevronDown.vue'
+import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker'
 import UploadIcon from '@icons/Upload.vue'
 import RecurrenceEditor from '@/components/RecurrenceEditor'
@@ -285,8 +314,10 @@ function categoryFor(id: number | null) {
 }
 
 const newName = ref('')
+const newDescription = ref('')
 const newQuantity = ref('')
 const newCategoryId = ref<number | null>(null)
+const showNewDescription = ref(false)
 const newRrule = ref<string | null>(null)
 const newRepeatFromCompletion = ref<boolean>(false)
 const adding = ref(false)
@@ -322,16 +353,19 @@ async function submitAdd() {
   try {
     await add({
       name,
+      description: newDescription.value.trim() || null,
       quantity: newQuantity.value.trim() || null,
       categoryId: newCategoryId.value,
       rrule: newRrule.value,
       repeatFromCompletion: newRepeatFromCompletion.value,
     })
     newName.value = ''
+    newDescription.value = ''
     newQuantity.value = ''
     newCategoryId.value = null
     newRrule.value = null
     newRepeatFromCompletion.value = false
+    showNewDescription.value = false
   } finally {
     adding.value = false
   }
@@ -347,6 +381,7 @@ async function handleRemove(itemId: number) {
 
 const editing = ref<ChecklistItem | null>(null)
 const editName = ref('')
+const editDescription = ref('')
 const editQuantity = ref('')
 const editCategoryId = ref<number | null>(null)
 const editRrule = ref<string | null>(null)
@@ -357,6 +392,7 @@ const savingEdit = ref(false)
 function startEdit(item: ChecklistItem) {
   editing.value = item
   editName.value = item.name
+  editDescription.value = item.description ?? ''
   editQuantity.value = item.quantity ?? ''
   editCategoryId.value = item.categoryId ?? null
   editRrule.value = item.rrule ?? null
@@ -372,6 +408,7 @@ async function submitEdit() {
   try {
     await update(target.id, {
       name,
+      description: editDescription.value.trim() || null,
       quantity: editQuantity.value.trim() || null,
       categoryId: editCategoryId.value,
       rrule: editRrule.value,
@@ -453,6 +490,9 @@ const strings = {
   categoryPlaceholder: t('pantry', 'Category'),
   recurrenceButton: t('pantry', 'Repeat …'),
   recurrenceSet: t('pantry', 'Repeat: set'),
+  descriptionLabel: t('pantry', 'Description'),
+  descriptionPlaceholder: t('pantry', 'Add a description …'),
+  descriptionToggle: t('pantry', 'Toggle description'),
   editItem: t('pantry', 'Edit item'),
   editDialogTitle: t('pantry', 'Edit item'),
   imageLabel: t('pantry', 'Image'),
@@ -475,7 +515,7 @@ const strings = {
 
   &__add {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto auto;
+    grid-template-columns: 2fr 1fr 1fr auto auto auto;
     gap: 0.75rem;
     align-items: end;
     margin-bottom: 1.5rem;
@@ -486,6 +526,18 @@ const strings = {
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__add-description {
+    grid-column: 1 / -1;
+  }
+
+  &__chevron {
+    transition: transform 0.2s ease;
+
+    &--open {
+      transform: rotate(180deg);
     }
   }
 }

@@ -205,6 +205,7 @@ final class ChecklistController extends OCSController {
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
 	 * @param string $name Item name.
+	 * @param string|null $description Optional description.
 	 * @param int|null $categoryId Optional category id (must belong to the same house).
 	 * @param string|null $quantity Optional quantity string.
 	 * @param string|null $rrule Optional RFC 5545 RRULE for recurrence.
@@ -221,13 +222,14 @@ final class ChecklistController extends OCSController {
 		int $houseId,
 		int $listId,
 		string $name,
+		?string $description = null,
 		?int $categoryId = null,
 		?string $quantity = null,
 		?string $rrule = null,
 		bool $repeatFromCompletion = false,
 		?int $sortOrder = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $categoryId, $quantity, $rrule, $repeatFromCompletion, $sortOrder): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $sortOrder): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$list = $this->lists->getList($listId);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
@@ -236,6 +238,7 @@ final class ChecklistController extends OCSController {
 			}
 			$item = $this->lists->addItem($listId, [
 				'name' => $name,
+				'description' => $description,
 				'categoryId' => $categoryId,
 				'quantity' => $quantity,
 				'rrule' => $rrule,
@@ -254,6 +257,7 @@ final class ChecklistController extends OCSController {
 	 * @param int $listId List id.
 	 * @param int $itemId Item id.
 	 * @param string|null $name New name.
+	 * @param string|null $description New description (empty string clears).
 	 * @param int|null $categoryId New category id (0 or negative clears).
 	 * @param string|null $quantity New quantity (empty string clears).
 	 * @param string|null $rrule New RRULE (empty string clears).
@@ -272,6 +276,7 @@ final class ChecklistController extends OCSController {
 		int $listId,
 		int $itemId,
 		?string $name = null,
+		?string $description = null,
 		?int $categoryId = null,
 		?string $quantity = null,
 		?string $rrule = null,
@@ -279,7 +284,7 @@ final class ChecklistController extends OCSController {
 		?int $imageFileId = null,
 		?int $sortOrder = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $categoryId, $quantity, $rrule, $repeatFromCompletion, $imageFileId, $sortOrder): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $imageFileId, $sortOrder): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$item = $this->lists->getItem($itemId);
 			$list = $this->lists->getList($item->getListId());
@@ -290,6 +295,9 @@ final class ChecklistController extends OCSController {
 			$patch = [];
 			if ($name !== null) {
 				$patch['name'] = $name;
+			}
+			if ($description !== null) {
+				$patch['description'] = $description;
 			}
 			if ($categoryId !== null) {
 				if ($categoryId > 0) {

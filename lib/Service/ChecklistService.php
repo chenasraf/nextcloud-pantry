@@ -134,6 +134,7 @@ class ChecklistService {
 		$item = new ChecklistItem();
 		$item->setListId($listId);
 		$item->setName($name);
+		$item->setDescription($this->strOrNull($data['description'] ?? null));
 		$item->setCategoryId($this->intOrNull($data['categoryId'] ?? null));
 		$item->setQuantity($this->strOrNull($data['quantity'] ?? null));
 		$item->setDone(false);
@@ -166,6 +167,9 @@ class ChecklistService {
 				throw new \InvalidArgumentException('Item name cannot be empty');
 			}
 			$item->setName($name);
+		}
+		if (array_key_exists('description', $patch)) {
+			$item->setDescription($this->strOrNull($patch['description']));
 		}
 		if (array_key_exists('categoryId', $patch)) {
 			$item->setCategoryId($this->intOrNull($patch['categoryId']));

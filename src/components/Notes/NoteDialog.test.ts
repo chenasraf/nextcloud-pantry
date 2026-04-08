@@ -23,14 +23,19 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
     props: ['variant', 'form', 'type', 'disabled', 'ariaLabel'],
   },
 }))
-// NcTextField no longer used in NoteDialog (title uses a plain <input>)
-vi.mock('@nextcloud/vue/components/NcTextArea', () => ({
-  default: {
-    name: 'NcTextArea',
+vi.mock('@/components/AutoResizeTextarea', () => ({
+  AutoResizeTextarea: {
+    name: 'AutoResizeTextarea',
     template:
       '<textarea class="nc-text-area" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-    props: ['modelValue', 'label', 'placeholder', 'resize', 'rows'],
+    props: ['modelValue', 'label', 'placeholder', 'maxHeight', 'rows'],
     emits: ['update:modelValue'],
+    methods: {
+      getTextareaEl() {
+        return this.$el?.tagName === 'TEXTAREA' ? this.$el : this.$el?.querySelector('textarea')
+      },
+      resize() {},
+    },
   },
 }))
 vi.mock('@nextcloud/vue/components/NcRichText', () => ({

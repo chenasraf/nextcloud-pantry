@@ -1785,6 +1785,12 @@
                                         "type": "string",
                                         "description": "Item name."
                                     },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Optional description."
+                                    },
                                     "categoryId": {
                                         "type": "integer",
                                         "format": "int64",
@@ -1942,6 +1948,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New name."
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New description (empty string clears)."
                                     },
                                     "categoryId": {
                                         "type": "integer",

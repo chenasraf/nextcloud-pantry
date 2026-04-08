@@ -186,6 +186,9 @@ class Version1Date20260405000000 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 255,
 			]);
+			$table->addColumn('description', Types::TEXT, [
+				'notnull' => false,
+			]);
 			$table->addColumn('category_id', Types::BIGINT, [
 				'notnull' => false,
 				'length' => 20,

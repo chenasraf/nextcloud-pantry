@@ -14,6 +14,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setListId(int $listId)
  * @method string getName()
  * @method void setName(string $name)
+ * @method string|null getDescription()
+ * @method void setDescription(?string $description)
  * @method int|null getCategoryId()
  * @method void setCategoryId(?int $categoryId)
  * @method string|null getQuantity()
@@ -44,6 +46,7 @@ use OCP\AppFramework\Db\Entity;
 class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $listId = 0;
 	protected string $name = '';
+	protected ?string $description = null;
 	protected ?int $categoryId = null;
 	protected ?string $quantity = null;
 	protected bool $done = false;
@@ -82,6 +85,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'id' => $this->id,
 			'listId' => $this->listId,
 			'name' => $this->name,
+			'description' => $this->description,
 			'categoryId' => $this->categoryId,
 			'quantity' => $this->quantity,
 			'done' => $this->done,

@@ -21,13 +21,13 @@
       </h2>
 
       <!-- Content -->
-      <NcTextArea
+      <AutoResizeTextarea
         v-if="editing"
         ref="contentInputRef"
         v-model="contentValue"
         :placeholder="strings.contentPlaceholder"
-        resize="none"
-        rows="3"
+        :max-height="MAX_TEXTAREA_HEIGHT"
+        :rows="3"
         class="note-dialog__content-input"
         autocomplete="off"
       />
@@ -83,8 +83,8 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
+import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
 import { contrastColor, noteColorOptions } from './noteColors'
@@ -106,7 +106,7 @@ const colorValue = ref('')
 const editing = ref(false)
 const dialogRef = ref<InstanceType<typeof NcDialog> | null>(null)
 const titleInputRef = ref<HTMLInputElement | null>(null)
-const contentInputRef = ref<InstanceType<typeof NcTextArea> | null>(null)
+const contentInputRef = ref<InstanceType<typeof AutoResizeTextarea> | null>(null)
 const renderedContentRef = ref<HTMLElement | null>(null)
 
 const MAX_TEXTAREA_HEIGHT = 400
@@ -236,27 +236,6 @@ function toggleColor(c: string) {
   }
 }
 
-// ----- Auto-resize textarea -----
-
-function getTextarea(): HTMLTextAreaElement | null {
-  const el = contentInputRef.value?.$el as HTMLElement | undefined
-  return el?.querySelector('textarea') ?? null
-}
-
-function autoResizeTextarea() {
-  const ta = getTextarea()
-  if (!ta) return
-  ta.style.height = 'auto'
-  ta.style.height = Math.min(ta.scrollHeight, MAX_TEXTAREA_HEIGHT) + 'px'
-  ta.style.overflowY = ta.scrollHeight > MAX_TEXTAREA_HEIGHT ? 'auto' : 'hidden'
-}
-
-watch(contentValue, () => {
-  if (editing.value) {
-    nextTick(autoResizeTextarea)
-  }
-})
-
 // ----- Edit mode -----
 
 function toggleEditing() {
@@ -279,15 +258,13 @@ function startEditing(focus?: 'title' | 'content') {
       if (focus === 'title') {
         titleInputRef.value?.focus()
       } else {
-        const el = contentInputRef.value?.$el as HTMLElement | undefined
-        const ta = el?.querySelector('textarea') as HTMLElement | null
-        ta?.focus()
+        contentInputRef.value?.getTextareaEl()?.focus()
       }
     })
   }
   // Size textarea to match rendered content
   nextTick(() => {
-    const ta = getTextarea()
+    const ta = contentInputRef.value?.getTextareaEl()
     if (!ta) return
     const targetHeight = Math.max(renderedHeight, ta.scrollHeight, 80)
     ta.style.height = Math.min(targetHeight, MAX_TEXTAREA_HEIGHT) + 'px'

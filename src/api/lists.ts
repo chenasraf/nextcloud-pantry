@@ -45,6 +45,7 @@ export async function listItems(houseId: number, listId: number): Promise<Checkl
 
 export interface ItemInput {
   name: string
+  description?: string | null
   categoryId?: number | null
   quantity?: string | null
   rrule?: string | null

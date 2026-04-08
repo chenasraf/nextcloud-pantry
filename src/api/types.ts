@@ -45,6 +45,7 @@ export interface ChecklistItem {
   id: number
   listId: number
   name: string
+  description: string | null
   categoryId: number | null
   quantity: string | null
   done: boolean
