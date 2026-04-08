@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 
 export interface TouchReorderCallbacks {
   onDragStart: (_id: number) => void
@@ -7,7 +7,7 @@ export interface TouchReorderCallbacks {
   onCancel: () => void
 }
 
-const LONG_PRESS_MS = 300
+const LONG_PRESS_MS = 400
 const MOVE_THRESHOLD = 8
 const SCROLL_EDGE = 40
 const SCROLL_SPEED = 8
@@ -120,6 +120,13 @@ export function useTouchReorder(
     dragId = null
   }
 
+  // Suppress the browser context menu while a long-press drag is pending or active.
+  function onContextMenu(e: Event) {
+    if (longPressTimer || isTouchDragging.value) {
+      e.preventDefault()
+    }
+  }
+
   function onTouchStart(e: TouchEvent) {
     if (enabled && !enabled.value) return
     const touch = e.touches[0]
@@ -161,8 +168,9 @@ export function useTouchReorder(
       return
     }
 
-    // We're dragging — prevent scroll
+    // We're dragging — prevent scroll and default behaviour
     e.preventDefault()
+    e.stopPropagation()
 
     moveGhost(touch.clientX, touch.clientY)
     autoScroll(touch.clientY)
@@ -176,35 +184,55 @@ export function useTouchReorder(
     }
   }
 
-  function onTouchEnd() {
+  function onTouchEnd(e: TouchEvent) {
     clearLongPress()
     stopAutoScroll()
     removeGhost()
 
     if (isTouchDragging.value) {
+      // Prevent the browser from synthesising a click / mousedown after the drag.
+      e.preventDefault()
       isTouchDragging.value = false
       callbacks.onDrop()
     }
     dragId = null
   }
 
-  onMounted(() => {
-    const el = containerRef.value
-    if (!el) return
+  function bind(el: HTMLElement) {
     el.addEventListener('touchstart', onTouchStart, { passive: false })
     el.addEventListener('touchmove', onTouchMove, { passive: false })
-    el.addEventListener('touchend', onTouchEnd)
+    el.addEventListener('touchend', onTouchEnd, { passive: false })
     el.addEventListener('touchcancel', cancelDrag)
-  })
+    el.addEventListener('contextmenu', onContextMenu)
+  }
 
-  onBeforeUnmount(() => {
-    cancelDrag()
-    const el = containerRef.value
-    if (!el) return
+  function unbind(el: HTMLElement) {
     el.removeEventListener('touchstart', onTouchStart)
     el.removeEventListener('touchmove', onTouchMove)
     el.removeEventListener('touchend', onTouchEnd)
     el.removeEventListener('touchcancel', cancelDrag)
+    el.removeEventListener('contextmenu', onContextMenu)
+  }
+
+  // Re-bind when the container ref changes (e.g. v-if toggling the element).
+  let boundEl: HTMLElement | null = null
+  function syncBinding() {
+    const el = containerRef.value
+    if (el === boundEl) return
+    if (boundEl) unbind(boundEl)
+    boundEl = el
+    if (el) bind(el)
+  }
+
+  onMounted(syncBinding)
+  watch(containerRef, syncBinding)
+
+  onBeforeUnmount(() => {
+    cancelDrag()
+    if (boundEl) {
+      unbind(boundEl)
+      boundEl = null
+    }
   })
 
   return { isTouchDragging }
