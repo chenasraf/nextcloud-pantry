@@ -46,29 +46,18 @@
         <span class="edit-item-form__label">{{ strings.imageLabel }}</span>
         <div class="edit-item-form__image-row">
           <img
-            v-if="item.imageFileId"
+            v-if="previewImageUrl"
             class="edit-item-form__image-preview"
-            :src="thumbUrl"
+            :src="previewImageUrl"
             :alt="item.name"
           />
-          <NcButton
-            variant="tertiary"
-            type="button"
-            :disabled="uploadingImage"
-            @click="triggerImagePick"
-          >
+          <NcButton variant="tertiary" type="button" @click="triggerImagePick">
             <template #icon>
               <UploadIcon :size="20" />
             </template>
-            {{ item.imageFileId ? strings.replaceImage : strings.uploadImage }}
+            {{ hasImage ? strings.replaceImage : strings.uploadImage }}
           </NcButton>
-          <NcButton
-            v-if="item.imageFileId"
-            variant="tertiary"
-            type="button"
-            :disabled="uploadingImage"
-            @click="$emit('clear-image', item.id)"
-          >
+          <NcButton v-if="hasImage" variant="tertiary" type="button" @click="clearPendingImage">
             <template #icon>
               <DeleteIcon :size="20" />
             </template>
@@ -106,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -126,14 +115,11 @@ const props = defineProps<{
   item: ChecklistItem
   houseId: number
   saving: boolean
-  uploadingImage: boolean
 }>()
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [itemId: number, patch: Partial<ItemInput>]
-  'upload-image': [itemId: number, file: File]
-  'clear-image': [itemId: number]
+  save: [itemId: number, patch: Partial<ItemInput>, pendingImage: File | null, clearImage: boolean]
 }>()
 
 const editName = ref('')
@@ -145,11 +131,39 @@ const editRepeatFromCompletion = ref(false)
 const showRecurrenceEditor = ref(false)
 const imageInputRef = ref<HTMLInputElement | null>(null)
 
-const thumbUrl = computed(() =>
+const pendingImageFile = ref<File | null>(null)
+const pendingImageObjectUrl = ref<string | null>(null)
+const pendingClearImage = ref(false)
+
+const serverThumbUrl = computed(() =>
   props.item.imageFileId
     ? itemImagePreviewUrl(props.houseId, props.item.imageFileId!, props.item.imageUploadedBy!, 96)
-    : '',
+    : null,
 )
+
+const hasImage = computed(() => {
+  if (pendingClearImage.value) return !!pendingImageFile.value
+  return !!pendingImageFile.value || !!props.item.imageFileId
+})
+
+const previewImageUrl = computed(() => {
+  if (pendingImageObjectUrl.value) return pendingImageObjectUrl.value
+  if (pendingClearImage.value) return null
+  return serverThumbUrl.value
+})
+
+function revokeObjectUrl() {
+  if (pendingImageObjectUrl.value) {
+    URL.revokeObjectURL(pendingImageObjectUrl.value)
+    pendingImageObjectUrl.value = null
+  }
+}
+
+function resetImageState() {
+  revokeObjectUrl()
+  pendingImageFile.value = null
+  pendingClearImage.value = false
+}
 
 watch(
   () => props.open,
@@ -161,22 +175,31 @@ watch(
       editCategoryId.value = props.item.categoryId ?? null
       editRrule.value = props.item.rrule ?? null
       editRepeatFromCompletion.value = props.item.repeatFromCompletion ?? false
+      resetImageState()
     }
   },
   { immediate: true },
 )
 
+onBeforeUnmount(revokeObjectUrl)
+
 function submitEdit() {
   const name = editName.value.trim()
   if (!name) return
-  emit('save', props.item.id, {
-    name,
-    description: editDescription.value.trim() || null,
-    quantity: editQuantity.value.trim() || null,
-    categoryId: editCategoryId.value,
-    rrule: editRrule.value,
-    repeatFromCompletion: editRepeatFromCompletion.value,
-  })
+  emit(
+    'save',
+    props.item.id,
+    {
+      name,
+      description: editDescription.value.trim() || null,
+      quantity: editQuantity.value.trim() || null,
+      categoryId: editCategoryId.value,
+      rrule: editRrule.value,
+      repeatFromCompletion: editRepeatFromCompletion.value,
+    },
+    pendingImageFile.value,
+    pendingClearImage.value,
+  )
 }
 
 function triggerImagePick() {
@@ -187,8 +210,17 @@ function onImagePicked(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  emit('upload-image', props.item.id, file)
+  revokeObjectUrl()
+  pendingImageFile.value = file
+  pendingImageObjectUrl.value = URL.createObjectURL(file)
+  pendingClearImage.value = false
   input.value = ''
+}
+
+function clearPendingImage() {
+  revokeObjectUrl()
+  pendingImageFile.value = null
+  pendingClearImage.value = true
 }
 
 const strings = {

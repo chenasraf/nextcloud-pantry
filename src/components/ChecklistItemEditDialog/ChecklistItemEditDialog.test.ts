@@ -98,14 +98,12 @@ const defaultProps = {
   item: makeItem(),
   houseId: 10,
   saving: false,
-  uploadingImage: false,
 }
 
 describe('ChecklistItemEditDialog', () => {
   it('renders edit form with item values pre-filled', () => {
     const wrapper = mount(ChecklistItemEditDialog, { props: defaultProps })
     const textFields = wrapper.findAll('.nc-text-field')
-    // First text field is name, second is quantity
     expect((textFields[0].element as HTMLInputElement).value).toBe('Milk')
     expect((wrapper.find('.nc-text-area').element as HTMLTextAreaElement).value).toBe('Whole milk')
     expect((textFields[1].element as HTMLInputElement).value).toBe('2 L')
@@ -115,8 +113,7 @@ describe('ChecklistItemEditDialog', () => {
     const wrapper = mount(ChecklistItemEditDialog, {
       props: { ...defaultProps, item: makeItem({ name: '' }) },
     })
-    const buttons = wrapper.findAll('.nc-button')
-    const saveButton = buttons.find((b) => b.text() === 'Save')!
+    const saveButton = wrapper.findAll('.nc-button').find((b) => b.text() === 'Save')!
     expect(saveButton.attributes('disabled')).toBeDefined()
   })
 
@@ -124,33 +121,37 @@ describe('ChecklistItemEditDialog', () => {
     const wrapper = mount(ChecklistItemEditDialog, {
       props: { ...defaultProps, saving: true },
     })
-    const buttons = wrapper.findAll('.nc-button')
-    const saveButton = buttons.find((b) => b.text() === 'Save')!
+    const saveButton = wrapper.findAll('.nc-button').find((b) => b.text() === 'Save')!
     expect(saveButton.attributes('disabled')).toBeDefined()
   })
 
-  it("emits 'save' with itemId and patch on submit", async () => {
+  it('emits save with patch, null image, and no clear on submit', async () => {
     const wrapper = mount(ChecklistItemEditDialog, { props: defaultProps })
     await wrapper.find('#pantry-edit-item-form').trigger('submit')
     expect(wrapper.emitted('save')).toBeTruthy()
-    const [itemId, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
+    const [itemId, patch, pendingImage, clearImage] = wrapper.emitted('save')![0] as [
+      number,
+      Record<string, unknown>,
+      File | null,
+      boolean,
+    ]
     expect(itemId).toBe(42)
     expect(patch.name).toBe('Milk')
     expect(patch.description).toBe('Whole milk')
     expect(patch.quantity).toBe('2 L')
-    expect(patch.categoryId).toBe(3)
+    expect(pendingImage).toBeNull()
+    expect(clearImage).toBe(false)
   })
 
-  it("emits 'update:open' false on cancel click", async () => {
+  it('emits update:open false on cancel click', async () => {
     const wrapper = mount(ChecklistItemEditDialog, { props: defaultProps })
-    const buttons = wrapper.findAll('.nc-button')
-    const cancelButton = buttons.find((b) => b.text() === 'Cancel')!
+    const cancelButton = wrapper.findAll('.nc-button').find((b) => b.text() === 'Cancel')!
     await cancelButton.trigger('click')
     expect(wrapper.emitted('update:open')).toBeTruthy()
     expect(wrapper.emitted('update:open')![0]).toEqual([false])
   })
 
-  it('shows image preview when item has imageFileId', () => {
+  it('shows server image preview when item has imageFileId', () => {
     const wrapper = mount(ChecklistItemEditDialog, {
       props: {
         ...defaultProps,
@@ -167,17 +168,27 @@ describe('ChecklistItemEditDialog', () => {
     expect(wrapper.find('.edit-item-form__image-preview').exists()).toBe(false)
   })
 
-  it("emits 'clear-image' when remove image clicked", async () => {
+  it('hides image after clicking remove and emits clearImage true on save', async () => {
     const wrapper = mount(ChecklistItemEditDialog, {
       props: {
         ...defaultProps,
         item: makeItem({ imageFileId: 99, imageUploadedBy: 'admin' }),
       },
     })
+    expect(wrapper.find('.edit-item-form__image-preview').exists()).toBe(true)
     const removeButton = wrapper.findAll('.nc-button').find((b) => b.text() === 'Remove image')!
     await removeButton.trigger('click')
-    expect(wrapper.emitted('clear-image')).toBeTruthy()
-    expect(wrapper.emitted('clear-image')![0]).toEqual([42])
+    expect(wrapper.find('.edit-item-form__image-preview').exists()).toBe(false)
+
+    await wrapper.find('#pantry-edit-item-form').trigger('submit')
+    const [, , pendingImage, clearImage] = wrapper.emitted('save')![0] as [
+      number,
+      Record<string, unknown>,
+      File | null,
+      boolean,
+    ]
+    expect(pendingImage).toBeNull()
+    expect(clearImage).toBe(true)
   })
 
   it('shows description field', () => {

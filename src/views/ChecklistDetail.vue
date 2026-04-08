@@ -53,11 +53,8 @@
       :item="editing"
       :house-id="houseIdNum"
       :saving="savingEdit"
-      :uploading-image="uploadingImage"
       @update:open="(v) => !v && (editing = null)"
       @save="handleSaveEdit"
-      @upload-image="handleUploadImage"
-      @clear-image="handleClearImage"
     />
 
     <ChecklistItemViewDialog
@@ -169,41 +166,28 @@ async function handleRemove(itemId: number) {
 
 const editing = ref<ChecklistItem | null>(null)
 const savingEdit = ref(false)
-const uploadingImage = ref(false)
 
 function startEdit(item: ChecklistItem) {
   editing.value = item
 }
 
-async function handleSaveEdit(itemId: number, patch: Partial<ItemInput>) {
+async function handleSaveEdit(
+  itemId: number,
+  patch: Partial<ItemInput>,
+  pendingImage: File | null,
+  shouldClearImage: boolean,
+) {
   savingEdit.value = true
   try {
     await update(itemId, patch)
+    if (pendingImage) {
+      await uploadImage(itemId, pendingImage)
+    } else if (shouldClearImage) {
+      await clearImage(itemId)
+    }
     editing.value = null
   } finally {
     savingEdit.value = false
-  }
-}
-
-async function handleUploadImage(itemId: number, file: File) {
-  uploadingImage.value = true
-  try {
-    await uploadImage(itemId, file)
-    const refreshed = items.value.find((i) => i.id === editing.value?.id)
-    if (refreshed) editing.value = refreshed
-  } finally {
-    uploadingImage.value = false
-  }
-}
-
-async function handleClearImage(itemId: number) {
-  uploadingImage.value = true
-  try {
-    await clearImage(itemId)
-    const refreshed = items.value.find((i) => i.id === editing.value?.id)
-    if (refreshed) editing.value = refreshed
-  } finally {
-    uploadingImage.value = false
   }
 }
 
