@@ -243,9 +243,13 @@ test: composer
 	fi; \
 	echo "\x1b[32mUsing Nextcloud root: $$NC_ROOT\x1b[0m"; \
 	NEXTCLOUD_ROOT="$$NC_ROOT" $(CURDIR)/vendor/phpunit/phpunit/phpunit -c tests/phpunit.xml; \
+	UNIT_EXIT=$$?; \
+	INTEG_EXIT=0; \
 	if [ -f tests/phpunit.integration.xml ]; then \
 		NEXTCLOUD_ROOT="$$NC_ROOT" $(CURDIR)/vendor/phpunit/phpunit/phpunit -c tests/phpunit.integration.xml; \
-	fi
+		INTEG_EXIT=$$?; \
+	fi; \
+	exit $$((UNIT_EXIT + INTEG_EXIT))
 
 # test-docker:
 #  - Run PHP unit tests inside a Nextcloud Docker container
