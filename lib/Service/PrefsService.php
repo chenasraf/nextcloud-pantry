@@ -107,6 +107,28 @@ class PrefsService {
 		return $sort;
 	}
 
+	// ----- Checklist item sort preferences -----
+
+	private const KEY_CHECKLIST_ITEM_SORT = 'checklist_item_sort';
+
+	public function getChecklistItemSort(string $uid, int $houseId): string {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_CHECKLIST_ITEM_SORT . '_' . $houseId,
+			'custom',
+		);
+	}
+
+	public function setChecklistItemSort(string $uid, int $houseId, string $sort): string {
+		$allowed = ['custom', 'newest', 'oldest', 'name_asc', 'name_desc'];
+		if (!in_array($sort, $allowed, true)) {
+			$sort = 'custom';
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_CHECKLIST_ITEM_SORT . '_' . $houseId, $sort);
+		return $sort;
+	}
+
 	// ----- Notification preferences -----
 
 	public function getNotificationPref(string $uid, int $houseId, string $prefKey): bool {

@@ -38,8 +38,14 @@ export async function deleteList(houseId: number, listId: number): Promise<void>
   await ocs.delete(`/houses/${houseId}/lists/${listId}`)
 }
 
-export async function listItems(houseId: number, listId: number): Promise<ChecklistItem[]> {
-  const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/lists/${listId}/items`)
+export async function listItems(
+  houseId: number,
+  listId: number,
+  sortBy?: string,
+): Promise<ChecklistItem[]> {
+  const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/lists/${listId}/items`, {
+    params: sortBy ? { sortBy } : undefined,
+  })
   return resp.data ?? []
 }
 
@@ -88,6 +94,14 @@ export async function toggleItem(
 
 export async function deleteItem(houseId: number, listId: number, itemId: number): Promise<void> {
   await ocs.delete(`/houses/${houseId}/lists/${listId}/items/${itemId}`)
+}
+
+export async function reorderItems(
+  houseId: number,
+  listId: number,
+  items: { id: number; sortOrder: number }[],
+): Promise<void> {
+  await ocs.post(`/houses/${houseId}/lists/${listId}/items/reorder`, { items })
 }
 
 export async function uploadItemImage(

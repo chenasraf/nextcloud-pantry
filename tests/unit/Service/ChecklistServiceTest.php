@@ -80,7 +80,7 @@ class ChecklistServiceTest extends TestCase {
 					&& $i->getNextDueAt() === null;
 			}));
 
-		$result = $this->svc->listItems(1, $now);
+		$result = $this->svc->listItems(1, 'custom', $now);
 		$this->assertCount(2, $result);
 		$this->assertFalse($result[0]->getDone(), 'Due item should be reopened');
 		$this->assertTrue($result[1]->getDone(), 'Fresh item should stay done');

@@ -100,10 +100,10 @@ class ChecklistService {
 	 *
 	 * @return ChecklistItem[]
 	 */
-	public function listItems(int $listId, ?int $now = null): array {
+	public function listItems(int $listId, string $sortBy = 'custom', ?int $now = null): array {
 		// Eagerly reopen any due recurring items in this list before returning.
 		$this->reopenDueItems($now);
-		return $this->itemMapper->findByList($listId);
+		return $this->itemMapper->findByList($listId, $sortBy);
 	}
 
 	public function getItem(int $itemId): ChecklistItem {
@@ -213,6 +213,33 @@ class ChecklistService {
 		$item->setUpdatedAt(time());
 		$this->itemMapper->update($item);
 		return $item;
+	}
+
+	/**
+	 * Batch reorder items within a list.
+	 *
+	 * @param int $listId List id.
+	 * @param array<array{id: int, sortOrder: int}> $items Reorder entries.
+	 */
+	public function reorderItems(int $listId, array $items): void {
+		foreach ($items as $entry) {
+			$id = (int)($entry['id'] ?? 0);
+			$sortOrder = (int)($entry['sortOrder'] ?? 0);
+			if ($id <= 0) {
+				continue;
+			}
+			try {
+				$item = $this->itemMapper->findById($id);
+			} catch (DoesNotExistException) {
+				continue;
+			}
+			if ($item->getListId() !== $listId) {
+				continue;
+			}
+			$item->setSortOrder($sortOrder);
+			$item->setUpdatedAt(time());
+			$this->itemMapper->update($item);
+		}
 	}
 
 	public function toggleItem(int $itemId, string $uid, ?int $now = null): ChecklistItem {

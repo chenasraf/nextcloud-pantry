@@ -214,4 +214,74 @@ describe('ChecklistItemRow', () => {
       expect(wrapper.emitted('preview')![0]).toEqual([item])
     })
   })
+
+  describe('reorderEnabled', () => {
+    it('is not draggable by default', () => {
+      const wrapper = mount(ChecklistItemRow, { props: defaultProps })
+      expect(wrapper.find('.checklist-row').attributes('draggable')).toBe('false')
+    })
+
+    it('is draggable when reorderEnabled is true', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, reorderEnabled: true },
+      })
+      expect(wrapper.find('.checklist-row').attributes('draggable')).toBe('true')
+    })
+
+    it('emits drag-start on dragstart when reorderEnabled', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ id: 7 }), reorderEnabled: true },
+      })
+      await wrapper.find('.checklist-row').trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(wrapper.emitted('drag-start')).toBeTruthy()
+      expect(wrapper.emitted('drag-start')![0]).toEqual([7])
+    })
+
+    it('does not emit drag-start when reorderEnabled is false', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ id: 7 }), reorderEnabled: false },
+      })
+      await wrapper.find('.checklist-row').trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(wrapper.emitted('drag-start')).toBeFalsy()
+    })
+
+    it('emits reorder-over on dragover when reorderEnabled', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ id: 2 }), reorderEnabled: true },
+      })
+      await wrapper.find('.checklist-row').trigger('dragover', {
+        dataTransfer: { types: ['application/x-pantry-checklist-item'] },
+      })
+      expect(wrapper.emitted('reorder-over')).toBeTruthy()
+    })
+
+    it('does not emit reorder-over when reorderEnabled is false', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, reorderEnabled: false },
+      })
+      await wrapper.find('.checklist-row').trigger('dragover', {
+        dataTransfer: { types: ['application/x-pantry-checklist-item'] },
+      })
+      expect(wrapper.emitted('reorder-over')).toBeFalsy()
+    })
+
+    it('applies dragging class on dragstart and removes on dragend', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, reorderEnabled: true },
+      })
+      const row = wrapper.find('.checklist-row')
+
+      await row.trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(row.classes()).toContain('checklist-row--dragging')
+
+      await row.trigger('dragend')
+      expect(row.classes()).not.toContain('checklist-row--dragging')
+    })
+  })
 })

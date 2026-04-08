@@ -1,5 +1,13 @@
 <template>
-  <li class="checklist-row" :class="{ 'checklist-row--done': item.done }">
+  <li
+    class="checklist-row"
+    :class="{ 'checklist-row--done': item.done, 'checklist-row--dragging': isDragging }"
+    :data-drag-id="item.id"
+    :draggable="reorderEnabled ? 'true' : 'false'"
+    @dragstart="onDragStart"
+    @dragend="onDragEnd"
+    @dragover.prevent="onDragOver"
+  >
     <NcCheckboxRadioSwitch :model-value="item.done" @update:model-value="$emit('toggle', item.id)">
       <span class="checklist-row__label">
         <button
@@ -50,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -65,19 +73,45 @@ import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule } from '@/utils/rrule'
 import type { ChecklistItem, Category } from '@/api/types'
 
-const props = defineProps<{
-  item: ChecklistItem
-  category: Category | null
-  houseId: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    item: ChecklistItem
+    category: Category | null
+    houseId: number
+    reorderEnabled?: boolean
+  }>(),
+  { reorderEnabled: false },
+)
 
-defineEmits<{
+const emit = defineEmits<{
   toggle: [id: number]
   view: [item: ChecklistItem]
   edit: [item: ChecklistItem]
   remove: [id: number]
   preview: [item: ChecklistItem]
+  'drag-start': [itemId: number]
+  'reorder-over': [itemId: number, event: MouseEvent]
 }>()
+
+const isDragging = ref(false)
+
+function onDragStart(e: DragEvent) {
+  if (!props.reorderEnabled || !e.dataTransfer) return
+  isDragging.value = true
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('application/x-pantry-checklist-item', String(props.item.id))
+  emit('drag-start', props.item.id)
+}
+
+function onDragEnd() {
+  isDragging.value = false
+}
+
+function onDragOver(e: DragEvent) {
+  if (!props.reorderEnabled) return
+  if (!e.dataTransfer?.types.includes('application/x-pantry-checklist-item')) return
+  emit('reorder-over', props.item.id, e)
+}
 
 const thumbUrl = computed(() =>
   props.item.imageFileId
@@ -130,6 +164,20 @@ const strings = {
 
     .checklist-row__name {
       text-decoration: line-through;
+    }
+  }
+
+  &--dragging {
+    opacity: 0.35;
+    transform: scale(0.98);
+    pointer-events: none;
+  }
+
+  &[draggable='true'] {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
     }
   }
 

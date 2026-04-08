@@ -24,13 +24,32 @@ class ChecklistItemMapper extends QBMapper {
 	/**
 	 * @return ChecklistItem[]
 	 */
-	public function findByList(int $listId): array {
+	public function findByList(int $listId, string $sortBy = 'custom'): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
-			->orderBy('sort_order', 'ASC')
-			->addOrderBy('created_at', 'ASC');
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+
+		switch ($sortBy) {
+			case 'newest':
+				$qb->orderBy('created_at', 'DESC');
+				break;
+			case 'oldest':
+				$qb->orderBy('created_at', 'ASC');
+				break;
+			case 'name_asc':
+				$qb->orderBy('name', 'ASC')
+					->addOrderBy('created_at', 'ASC');
+				break;
+			case 'name_desc':
+				$qb->orderBy('name', 'DESC')
+					->addOrderBy('created_at', 'ASC');
+				break;
+			default: // custom
+				$qb->orderBy('sort_order', 'ASC')
+					->addOrderBy('created_at', 'ASC');
+				break;
+		}
 
 		return $this->findEntities($qb);
 	}

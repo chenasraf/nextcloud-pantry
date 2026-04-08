@@ -178,6 +178,7 @@ final class ChecklistController extends OCSController {
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
+	 * @param string $sortBy Sort mode (custom, newest, oldest, name_asc, name_desc).
 	 * @param int<1, 1000> $limit Maximum number of items to return.
 	 * @param int<0, max> $offset Number of items to skip.
 	 *
@@ -187,12 +188,12 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/items')]
 	#[NoAdminRequired]
-	public function indexItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $limit, $offset): DataResponse {
+	public function indexItems(int $houseId, int $listId, string $sortBy = 'custom', int $limit = 200, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $sortBy, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$list = $this->lists->getList($listId);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$all = $this->lists->listItems($listId);
+			$all = $this->lists->listItems($listId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
 			return new DataResponse($items);
@@ -381,6 +382,29 @@ final class ChecklistController extends OCSController {
 				throw new NotFoundException('Item does not belong to this list');
 			}
 			$this->lists->deleteItem($itemId);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Batch reorder items in a list
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param list<array{id: int, sortOrder: int}> $items Reorder entries.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Items reordered
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/reorder')]
+	#[NoAdminRequired]
+	public function reorderItems(int $houseId, int $listId, array $items = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $items): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$this->lists->reorderItems($listId, $items);
 			return new DataResponse(['success' => true]);
 		});
 	}

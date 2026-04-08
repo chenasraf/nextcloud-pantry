@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import * as api from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
+import type { ChecklistItemSort } from '@/api/prefs'
 
 export function useChecklists(houseId: number) {
   const lists = ref<Checklist[]>([])
@@ -49,12 +50,14 @@ export function useChecklistItems(houseId: number, listId: number) {
   const items = ref<ChecklistItem[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const sortBy = ref<ChecklistItemSort>('custom')
 
-  async function load(): Promise<void> {
+  async function load(sort?: ChecklistItemSort): Promise<void> {
     loading.value = true
     error.value = null
+    const s = sort ?? sortBy.value
     try {
-      items.value = await api.listItems(houseId, listId)
+      items.value = await api.listItems(houseId, listId, s)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -91,6 +94,14 @@ export function useChecklistItems(houseId: number, listId: number) {
     }
   }
 
+  async function reorderItems(reorderEntries: { id: number; sortOrder: number }[]): Promise<void> {
+    const map = new Map(reorderEntries.map((i) => [i.id, i.sortOrder]))
+    items.value = items.value
+      .map((i) => (map.has(i.id) ? { ...i, sortOrder: map.get(i.id)! } : i))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+    await api.reorderItems(houseId, listId, reorderEntries)
+  }
+
   async function remove(itemId: number): Promise<void> {
     await api.deleteItem(houseId, listId, itemId)
     items.value = items.value.filter((i) => i.id !== itemId)
@@ -106,5 +117,18 @@ export function useChecklistItems(houseId: number, listId: number) {
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
-  return { items, loading, error, load, add, update, toggle, remove, uploadImage, clearImage }
+  return {
+    items,
+    loading,
+    error,
+    sortBy,
+    load,
+    add,
+    update,
+    toggle,
+    reorderItems,
+    remove,
+    uploadImage,
+    clearImage,
+  }
 }

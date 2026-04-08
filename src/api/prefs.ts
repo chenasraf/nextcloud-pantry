@@ -52,6 +52,26 @@ export async function setNoteSort(houseId: number, sort: NoteSort): Promise<{ so
   return resp.data ?? { sort }
 }
 
+export type ChecklistItemSort = 'custom' | 'newest' | 'oldest' | 'name_asc' | 'name_desc'
+
+export async function getChecklistItemSort(houseId: number): Promise<{ sort: ChecklistItemSort }> {
+  const resp = await ocs.get<{ sort: ChecklistItemSort }>(
+    `/houses/${houseId}/prefs/checklist-item-sort`,
+  )
+  return resp.data ?? { sort: 'custom' }
+}
+
+export async function setChecklistItemSort(
+  houseId: number,
+  sort: ChecklistItemSort,
+): Promise<{ sort: ChecklistItemSort }> {
+  const resp = await ocs.put<{ sort: ChecklistItemSort }>(
+    `/houses/${houseId}/prefs/checklist-item-sort`,
+    { sort },
+  )
+  return resp.data ?? { sort }
+}
+
 export interface NotificationPrefs {
   notifyPhoto: boolean
   notifyNoteCreate: boolean

@@ -220,6 +220,48 @@ final class PrefsController extends OCSController {
 	}
 
 	/**
+	 * Get checklist item sort preference for a house
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{sort: string}, array{}>
+	 *
+	 * 200: Sort preference returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/checklist-item-sort')]
+	#[NoAdminRequired]
+	public function getChecklistItemSort(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			return new DataResponse([
+				'sort' => $this->prefs->getChecklistItemSort($uid, $houseId),
+			]);
+		});
+	}
+
+	/**
+	 * Set checklist item sort preference for a house
+	 *
+	 * @param int $houseId House id.
+	 * @param string $sort Sort mode.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{sort: string}, array{}>
+	 *
+	 * 200: Sort preference updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/checklist-item-sort')]
+	#[NoAdminRequired]
+	public function setChecklistItemSort(int $houseId, string $sort): DataResponse {
+		return $this->runAction(function () use ($houseId, $sort): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$stored = $this->prefs->setChecklistItemSort($uid, $houseId, $sort);
+			return new DataResponse(['sort' => $stored]);
+		});
+	}
+
+	/**
 	 * Get notification preferences for a house
 	 *
 	 * @param int $houseId House id.
