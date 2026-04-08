@@ -15,60 +15,9 @@
     </PageToolbar>
 
     <div class="pantry-detail__body">
-      <form class="pantry-detail__add" autocomplete="off" @submit.prevent="submitAdd">
-        <NcTextField
-          v-model="newName"
-          :label="strings.newItemLabel"
-          :placeholder="strings.newItemPlaceholder"
-          autocomplete="off"
-        />
-        <NcTextField
-          v-model="newQuantity"
-          :label="strings.quantityLabel"
-          :placeholder="strings.quantityPlaceholder"
-          autocomplete="off"
-        />
-        <CategoryPicker
-          v-model="newCategoryId"
-          :house-id="houseIdNum"
-          :placeholder="strings.categoryPlaceholder"
-        />
-        <NcButton variant="tertiary" @click="showRecurrenceEditor = true">
-          <template #icon>
-            <RepeatIcon :size="20" />
-          </template>
-          {{ newRrule ? strings.recurrenceSet : strings.recurrenceButton }}
-        </NcButton>
-        <NcButton
-          variant="tertiary"
-          :aria-label="strings.descriptionToggle"
-          @click="showNewDescription = !showNewDescription"
-        >
-          <template #icon>
-            <ChevronDownIcon
-              :size="20"
-              class="pantry-detail__chevron"
-              :class="{ 'pantry-detail__chevron--open': showNewDescription }"
-            />
-          </template>
-        </NcButton>
-        <NcButton type="submit" variant="primary" :disabled="!newName.trim() || adding">
-          <template #icon>
-            <PlusIcon :size="20" />
-          </template>
-          {{ strings.add }}
-        </NcButton>
-        <AutoResizeTextarea
-          v-if="showNewDescription"
-          v-model="newDescription"
-          :label="strings.descriptionLabel"
-          :placeholder="strings.descriptionPlaceholder"
-          class="pantry-detail__add-description"
-          autocomplete="off"
-        />
-      </form>
+      <ChecklistAddForm :house-id="houseIdNum" :adding="adding" @add="handleAdd" />
 
-      <div v-if="loading" class="pantry-center">
+      <div v-if="loading" class="pantry-detail__center">
         <NcLoadingIcon :size="36" />
       </div>
 
@@ -82,266 +31,53 @@
         </template>
       </NcEmptyContent>
 
-      <ul v-else class="pantry-items">
-        <li
+      <ul v-else class="pantry-detail__items">
+        <ChecklistItemRow
           v-for="item in sortedItems"
           :key="item.id"
-          class="pantry-item"
-          :class="{ 'pantry-item--done': item.done }"
-        >
-          <NcCheckboxRadioSwitch
-            :model-value="item.done"
-            @update:model-value="handleToggle(item.id)"
-          >
-            <span class="pantry-item__label">
-              <button
-                v-if="item.imageFileId"
-                type="button"
-                class="pantry-item__thumb"
-                :aria-label="strings.viewImage"
-                @click.stop.prevent="openPreview(item)"
-              >
-                <img :src="thumbUrl(item)" :alt="item.name" />
-              </button>
-              <span class="pantry-item__name">{{ item.name }}</span>
-            </span>
-          </NcCheckboxRadioSwitch>
-          <div class="pantry-item__meta">
-            <span v-if="item.quantity" class="pantry-item__quantity"
-              >&times; {{ item.quantity }}</span
-            >
-            <span
-              v-if="categoryFor(item.categoryId)"
-              class="pantry-item__category"
-              :style="{ color: categoryFor(item.categoryId)!.color }"
-            >
-              <component
-                :is="categoryIconComponent(categoryFor(item.categoryId)!.icon)"
-                :size="14"
-              />
-              {{ categoryFor(item.categoryId)!.name }}
-            </span>
-            <span v-if="item.rrule" class="pantry-item__recurrence" :title="item.rrule">
-              <RepeatIcon :size="14" />
-              {{ formatRrule(item.rrule) }}
-            </span>
-          </div>
-          <div class="pantry-item__actions">
-            <NcButton variant="tertiary" :aria-label="strings.viewItem" @click="openView(item)">
-              <template #icon>
-                <EyeIcon :size="18" />
-              </template>
-            </NcButton>
-            <NcActions :aria-label="strings.itemActions">
-              <NcActionButton @click="startEdit(item)">
-                <template #icon>
-                  <PencilIcon :size="20" />
-                </template>
-                {{ strings.editItem }}
-              </NcActionButton>
-              <NcActionButton @click="handleRemove(item.id)">
-                <template #icon>
-                  <DeleteIcon :size="20" />
-                </template>
-                {{ strings.removeItem }}
-              </NcActionButton>
-            </NcActions>
-          </div>
-        </li>
+          :item="item"
+          :category="categoryFor(item.categoryId)"
+          :house-id="houseIdNum"
+          @toggle="handleToggle"
+          @view="openView"
+          @edit="startEdit"
+          @remove="handleRemove"
+          @preview="openPreview"
+        />
       </ul>
     </div>
 
-    <RecurrenceEditor
-      v-model:open="showRecurrenceEditor"
-      v-model="newRrule"
-      v-model:from-completion="newRepeatFromCompletion"
-    />
-
-    <NcDialog
+    <ChecklistItemEditDialog
       v-if="editing"
-      :name="strings.editDialogTitle"
       :open="!!editing"
-      close-on-click-outside
+      :item="editing"
+      :house-id="houseIdNum"
+      :saving="savingEdit"
+      :uploading-image="uploadingImage"
       @update:open="(v) => !v && (editing = null)"
-    >
-      <form
-        id="pantry-edit-item-form"
-        class="pantry-form"
-        autocomplete="off"
-        @submit.prevent="submitEdit"
-      >
-        <NcTextField
-          v-model="editName"
-          :label="strings.newItemLabel"
-          :placeholder="strings.newItemPlaceholder"
-          autocomplete="off"
-        />
-        <AutoResizeTextarea
-          v-model="editDescription"
-          :label="strings.descriptionLabel"
-          :placeholder="strings.descriptionPlaceholder"
-          autocomplete="off"
-        />
-        <NcTextField
-          v-model="editQuantity"
-          :label="strings.quantityLabel"
-          :placeholder="strings.quantityPlaceholder"
-          autocomplete="off"
-        />
-        <CategoryPicker
-          v-model="editCategoryId"
-          :house-id="houseIdNum"
-          :label="strings.categoryLabel"
-          :placeholder="strings.categoryPlaceholder"
-        />
-        <NcButton variant="tertiary" type="button" @click="showEditRecurrenceEditor = true">
-          <template #icon>
-            <RepeatIcon :size="20" />
-          </template>
-          {{ editRrule ? strings.recurrenceSet : strings.recurrenceButton }}
-        </NcButton>
-
-        <div class="pantry-form__image">
-          <span class="pantry-form__label">{{ strings.imageLabel }}</span>
-          <div class="pantry-form__image-row">
-            <img
-              v-if="editing?.imageFileId"
-              class="pantry-form__image-preview"
-              :src="thumbUrl(editing, 96)"
-              :alt="editing.name"
-            />
-            <NcButton
-              variant="tertiary"
-              type="button"
-              :disabled="uploadingImage"
-              @click="triggerImagePick"
-            >
-              <template #icon>
-                <UploadIcon :size="20" />
-              </template>
-              {{ editing?.imageFileId ? strings.replaceImage : strings.uploadImage }}
-            </NcButton>
-            <NcButton
-              v-if="editing?.imageFileId"
-              variant="tertiary"
-              type="button"
-              :disabled="uploadingImage"
-              @click="removeImage"
-            >
-              <template #icon>
-                <DeleteIcon :size="20" />
-              </template>
-              {{ strings.removeImage }}
-            </NcButton>
-            <input
-              ref="imageInputRef"
-              type="file"
-              accept="image/*"
-              class="pantry-form__image-input"
-              @change="onImagePicked"
-            />
-          </div>
-        </div>
-      </form>
-      <template #actions>
-        <NcButton @click="editing = null">{{ strings.cancel }}</NcButton>
-        <NcButton
-          form="pantry-edit-item-form"
-          type="submit"
-          variant="primary"
-          :disabled="!editName.trim() || savingEdit"
-        >
-          {{ strings.save }}
-        </NcButton>
-      </template>
-    </NcDialog>
-
-    <RecurrenceEditor
-      v-model:open="showEditRecurrenceEditor"
-      v-model="editRrule"
-      v-model:from-completion="editRepeatFromCompletion"
+      @save="handleSaveEdit"
+      @upload-image="handleUploadImage"
+      @clear-image="handleClearImage"
     />
 
-    <NcDialog
+    <ChecklistItemViewDialog
       v-if="viewing"
-      :name="viewing.name"
       :open="!!viewing"
-      close-on-click-outside
-      size="normal"
+      :item="viewing"
+      :category="categoryFor(viewing.categoryId)"
+      :house-id="houseIdNum"
       @update:open="(v) => !v && (viewing = null)"
-    >
-      <div class="pantry-view">
-        <button
-          v-if="viewing.imageFileId"
-          type="button"
-          class="pantry-view__image-btn"
-          :aria-label="strings.viewImage"
-          @click="previewing = viewing"
-        >
-          <img class="pantry-view__image" :src="largeUrl(viewing)" :alt="viewing.name" />
-        </button>
+      @edit="viewToEdit"
+      @preview="openPreview"
+    />
 
-        <div v-if="viewing.description" class="pantry-view__description">
-          <NcRichText
-            :text="viewing.description"
-            :use-markdown="true"
-            :use-extended-markdown="true"
-          />
-        </div>
-
-        <div class="pantry-view__details">
-          <div v-if="viewing.quantity" class="pantry-view__row">
-            <span class="pantry-view__label">{{ strings.quantityLabel }}:</span>
-            <span>&times; {{ viewing.quantity }}</span>
-          </div>
-          <div v-if="categoryFor(viewing.categoryId)" class="pantry-view__row">
-            <span class="pantry-view__label">{{ strings.categoryLabel }}:</span>
-            <span
-              class="pantry-item__category"
-              :style="{ color: categoryFor(viewing.categoryId)!.color }"
-            >
-              <component
-                :is="categoryIconComponent(categoryFor(viewing.categoryId)!.icon)"
-                :size="14"
-              />
-              {{ categoryFor(viewing.categoryId)!.name }}
-            </span>
-          </div>
-          <div v-if="viewing.rrule" class="pantry-view__row">
-            <span class="pantry-view__label">{{ strings.recurrenceLabel }}:</span>
-            <span class="pantry-item__recurrence">
-              <RepeatIcon :size="14" />
-              {{ formatRrule(viewing.rrule) }}
-            </span>
-          </div>
-          <div v-if="viewing.done" class="pantry-view__row">
-            <span class="pantry-view__label">{{ strings.status }}:</span>
-            <span>{{ strings.done }}</span>
-          </div>
-        </div>
-      </div>
-      <template #actions>
-        <NcButton variant="tertiary" @click="viewToEdit">
-          <template #icon>
-            <PencilIcon :size="20" />
-          </template>
-          {{ strings.editItem }}
-        </NcButton>
-      </template>
-    </NcDialog>
-
-    <NcDialog
+    <ChecklistImagePreview
       v-if="previewing"
-      :name="previewing.name"
       :open="!!previewing"
-      close-on-click-outside
-      size="large"
+      :item="previewing"
+      :house-id="houseIdNum"
       @update:open="(v) => !v && (previewing = null)"
-    >
-      <div class="pantry-preview">
-        <img v-if="previewing.imageFileId" :src="largeUrl(previewing)" :alt="previewing.name" />
-      </div>
-    </NcDialog>
+    />
   </div>
 </template>
 
@@ -349,34 +85,21 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
-import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
-import NcActions from '@nextcloud/vue/components/NcActions'
-import NcActionButton from '@nextcloud/vue/components/NcActionButton'
-import { itemImagePreviewUrl } from '@/api/images'
-import PageToolbar from '@/components/PageToolbar'
-import PlusIcon from '@icons/Plus.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
-import DeleteIcon from '@icons/Delete.vue'
-import PencilIcon from '@icons/Pencil.vue'
-import EyeIcon from '@icons/Eye.vue'
-import RepeatIcon from '@icons/Repeat.vue'
-import ChevronDownIcon from '@icons/ChevronDown.vue'
-import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
+import PageToolbar from '@/components/PageToolbar'
+import { ChecklistAddForm } from '@/components/ChecklistAddForm'
+import { ChecklistItemRow } from '@/components/ChecklistItemRow'
+import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
+import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
+import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker'
-import UploadIcon from '@icons/Upload.vue'
-import RecurrenceEditor from '@/components/RecurrenceEditor'
-import CategoryPicker from '@/components/CategoryPicker'
-import { categoryIconComponent } from '@/components/CategoryPicker'
-import NcRichText from '@nextcloud/vue/components/NcRichText'
 import { useChecklistItems } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { getList } from '@/api/lists'
+import type { ItemInput } from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
-import { RRule } from 'rrule'
 
 const props = defineProps<{ houseId: string; listId: string }>()
 
@@ -392,15 +115,7 @@ function categoryFor(id: number | null) {
   return categories.findById(id) ?? null
 }
 
-const newName = ref('')
-const newDescription = ref('')
-const newQuantity = ref('')
-const newCategoryId = ref<number | null>(null)
-const showNewDescription = ref(false)
-const newRrule = ref<string | null>(null)
-const newRepeatFromCompletion = ref<boolean>(false)
-const adding = ref(false)
-const showRecurrenceEditor = ref(false)
+// ----- Loading -----
 
 async function loadList() {
   list.value = await getList(houseIdNum.value, listIdNum.value)
@@ -417,6 +132,8 @@ watch(
   },
 )
 
+// ----- Sorting -----
+
 const sortedItems = computed(() => {
   return [...items.value].sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1
@@ -425,30 +142,20 @@ const sortedItems = computed(() => {
   })
 })
 
-async function submitAdd() {
-  const name = newName.value.trim()
-  if (!name) return
+// ----- Add -----
+
+const adding = ref(false)
+
+async function handleAdd(input: ItemInput) {
   adding.value = true
   try {
-    await add({
-      name,
-      description: newDescription.value.trim() || null,
-      quantity: newQuantity.value.trim() || null,
-      categoryId: newCategoryId.value,
-      rrule: newRrule.value,
-      repeatFromCompletion: newRepeatFromCompletion.value,
-    })
-    newName.value = ''
-    newDescription.value = ''
-    newQuantity.value = ''
-    newCategoryId.value = null
-    newRrule.value = null
-    newRepeatFromCompletion.value = false
-    showNewDescription.value = false
+    await add(input)
   } finally {
     adding.value = false
   }
 }
+
+// ----- Toggle / Remove -----
 
 async function handleToggle(itemId: number) {
   await toggle(itemId)
@@ -458,46 +165,49 @@ async function handleRemove(itemId: number) {
   await remove(itemId)
 }
 
+// ----- Edit -----
+
 const editing = ref<ChecklistItem | null>(null)
-const editName = ref('')
-const editDescription = ref('')
-const editQuantity = ref('')
-const editCategoryId = ref<number | null>(null)
-const editRrule = ref<string | null>(null)
-const editRepeatFromCompletion = ref<boolean>(false)
-const showEditRecurrenceEditor = ref(false)
 const savingEdit = ref(false)
+const uploadingImage = ref(false)
 
 function startEdit(item: ChecklistItem) {
   editing.value = item
-  editName.value = item.name
-  editDescription.value = item.description ?? ''
-  editQuantity.value = item.quantity ?? ''
-  editCategoryId.value = item.categoryId ?? null
-  editRrule.value = item.rrule ?? null
-  editRepeatFromCompletion.value = item.repeatFromCompletion ?? false
 }
 
-async function submitEdit() {
-  const target = editing.value
-  if (!target) return
-  const name = editName.value.trim()
-  if (!name) return
+async function handleSaveEdit(itemId: number, patch: Partial<ItemInput>) {
   savingEdit.value = true
   try {
-    await update(target.id, {
-      name,
-      description: editDescription.value.trim() || null,
-      quantity: editQuantity.value.trim() || null,
-      categoryId: editCategoryId.value,
-      rrule: editRrule.value,
-      repeatFromCompletion: editRepeatFromCompletion.value,
-    })
+    await update(itemId, patch)
     editing.value = null
   } finally {
     savingEdit.value = false
   }
 }
+
+async function handleUploadImage(itemId: number, file: File) {
+  uploadingImage.value = true
+  try {
+    await uploadImage(itemId, file)
+    const refreshed = items.value.find((i) => i.id === editing.value?.id)
+    if (refreshed) editing.value = refreshed
+  } finally {
+    uploadingImage.value = false
+  }
+}
+
+async function handleClearImage(itemId: number) {
+  uploadingImage.value = true
+  try {
+    await clearImage(itemId)
+    const refreshed = items.value.find((i) => i.id === editing.value?.id)
+    if (refreshed) editing.value = refreshed
+  } finally {
+    uploadingImage.value = false
+  }
+}
+
+// ----- View / Preview -----
 
 const viewing = ref<ChecklistItem | null>(null)
 const previewing = ref<ChecklistItem | null>(null)
@@ -506,9 +216,7 @@ function openView(item: ChecklistItem) {
   viewing.value = item
 }
 
-function viewToEdit() {
-  if (!viewing.value) return
-  const item = viewing.value
+function viewToEdit(item: ChecklistItem) {
   viewing.value = null
   startEdit(item)
 }
@@ -517,87 +225,8 @@ function openPreview(item: ChecklistItem) {
   previewing.value = item
 }
 
-function thumbUrl(item: ChecklistItem, size = 64): string {
-  return itemImagePreviewUrl(houseIdNum.value, item.imageFileId!, item.imageUploadedBy!, size)
-}
-
-function largeUrl(item: ChecklistItem): string {
-  return itemImagePreviewUrl(houseIdNum.value, item.imageFileId!, item.imageUploadedBy!, 1600)
-}
-
-const imageInputRef = ref<HTMLInputElement | null>(null)
-const uploadingImage = ref(false)
-
-function triggerImagePick() {
-  imageInputRef.value?.click()
-}
-
-async function onImagePicked(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file || !editing.value) return
-  uploadingImage.value = true
-  try {
-    await uploadImage(editing.value.id, file)
-    // Refresh the local editing ref with the updated item so the preview appears.
-    const refreshed = items.value.find((i) => i.id === editing.value?.id)
-    if (refreshed) editing.value = refreshed
-  } finally {
-    uploadingImage.value = false
-    input.value = ''
-  }
-}
-
-async function removeImage() {
-  if (!editing.value) return
-  uploadingImage.value = true
-  try {
-    await clearImage(editing.value.id)
-    const refreshed = items.value.find((i) => i.id === editing.value?.id)
-    if (refreshed) editing.value = refreshed
-  } finally {
-    uploadingImage.value = false
-  }
-}
-
-function formatRrule(rrule: string): string {
-  try {
-    const rule = RRule.fromString('RRULE:' + rrule.replace(/^RRULE:/i, ''))
-    return rule.toText()
-  } catch {
-    return rrule
-  }
-}
-
 const strings = {
   back: t('pantry', 'Back to lists'),
-  add: t('pantry', 'Add'),
-  save: t('pantry', 'Save'),
-  cancel: t('pantry', 'Cancel'),
-  newItemLabel: t('pantry', 'Item name'),
-  newItemPlaceholder: t('pantry', 'e.g. Milk'),
-  quantityLabel: t('pantry', 'Quantity'),
-  quantityPlaceholder: t('pantry', 'e.g. 2 L'),
-  categoryLabel: t('pantry', 'Category'),
-  categoryPlaceholder: t('pantry', 'Category'),
-  recurrenceButton: t('pantry', 'Repeat …'),
-  recurrenceSet: t('pantry', 'Repeat: set'),
-  descriptionLabel: t('pantry', 'Description'),
-  descriptionPlaceholder: t('pantry', 'Add a description …'),
-  descriptionToggle: t('pantry', 'Toggle description'),
-  itemActions: t('pantry', 'Item actions'),
-  viewItem: t('pantry', 'View item'),
-  editItem: t('pantry', 'Edit item'),
-  editDialogTitle: t('pantry', 'Edit item'),
-  recurrenceLabel: t('pantry', 'Recurrence'),
-  status: t('pantry', 'Status'),
-  done: t('pantry', 'Done'),
-  imageLabel: t('pantry', 'Image'),
-  uploadImage: t('pantry', 'Upload image'),
-  replaceImage: t('pantry', 'Replace image'),
-  removeImage: t('pantry', 'Remove image'),
-  viewImage: t('pantry', 'View image'),
-  removeItem: t('pantry', 'Remove item'),
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
 }
@@ -610,257 +239,19 @@ const strings = {
     margin: 0 auto;
   }
 
-  &__add {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto auto auto;
-    gap: 0.75rem;
-    align-items: end;
-    margin-bottom: 1.5rem;
-
-    :deep(.v-select.select) {
-      margin-bottom: 0;
-    }
-
-    @media (max-width: 900px) {
-      grid-template-columns: 1fr 1fr;
-    }
+  &__center {
+    display: flex;
+    justify-content: center;
+    padding: 2rem;
   }
 
-  &__add-description {
-    grid-column: 1 / -1;
-  }
-
-  &__chevron {
-    transition: transform 0.2s ease;
-
-    &--open {
-      transform: rotate(180deg);
-    }
-  }
-}
-
-.pantry-center {
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.pantry-items {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.pantry-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 0.5rem 0;
-
-  &__image {
+  &__items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  &__label {
-    font-size: 0.85rem;
-    color: var(--color-text-maxcontrast);
-  }
-
-  &__image-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  &__image-preview {
-    width: 72px;
-    height: 72px;
-    object-fit: cover;
-    border-radius: var(--border-radius, 6px);
-    border: 1px solid var(--color-border);
-  }
-
-  &__image-input {
-    display: none;
-  }
-}
-
-.pantry-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-
-  &__image-btn {
-    display: block;
-    width: 100%;
-    padding: 0;
-    border: 0;
-    background: none;
-    cursor: zoom-in;
-    border-radius: var(--border-radius, 8px);
-    overflow: hidden;
-  }
-
-  &__image {
-    width: 100%;
-    max-height: 300px;
-    object-fit: cover;
-    display: block;
-    border-radius: var(--border-radius, 8px);
-  }
-
-  &__description {
-    line-height: 1.6;
-    font-size: 0.95rem;
-
-    :deep(*) {
-      color: inherit;
-    }
-  }
-
-  &__details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  &__row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-  }
-
-  &__label {
-    color: var(--color-text-maxcontrast);
-    font-weight: 500;
-  }
-}
-
-.pantry-preview {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0.5rem;
-
-  img {
-    max-width: 100%;
-    max-height: 80vh;
-    object-fit: contain;
-    border-radius: var(--border-radius, 8px);
-  }
-}
-
-.pantry-item {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius, 8px);
-  background: var(--color-main-background);
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      'check actions'
-      'meta  meta';
-    gap: 0.25rem 0.5rem;
-
-    :deep(.checkbox-radio-switch) {
-      grid-area: check;
-    }
-
-    .pantry-item__actions {
-      grid-area: actions;
-    }
-
-    .pantry-item__meta {
-      grid-area: meta;
-    }
-  }
-
-  &--done {
-    opacity: 0.6;
-
-    .pantry-item__name {
-      text-decoration: line-through;
-    }
-  }
-
-  :deep(.checkbox-content__icon) {
-    margin-block: auto !important;
-  }
-
-  :deep(.checkbox-radio-switch__content) {
-    width: 100%;
-    max-width: unset;
-  }
-
-  &__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-  }
-
-  &__thumb {
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius, 6px);
-    background: var(--color-background-hover);
-    cursor: zoom-in;
-    overflow: hidden;
-    flex-shrink: 0;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--color-primary-element);
-    }
-  }
-
-  &__name {
-    font-weight: 500;
-  }
-
-  &__meta {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    color: var(--color-text-maxcontrast);
-    font-size: 0.85rem;
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
     gap: 0.25rem;
-  }
-
-  &__quantity,
-  &__category,
-  &__recurrence {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--color-background-hover);
   }
 }
 </style>
