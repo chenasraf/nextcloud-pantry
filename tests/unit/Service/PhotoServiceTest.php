@@ -12,6 +12,7 @@ use OCA\Pantry\Db\PhotoFolder;
 use OCA\Pantry\Db\PhotoFolderMapper;
 use OCA\Pantry\Db\PhotoMapper;
 use OCA\Pantry\Exception\NotFoundException;
+use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\PhotoService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -22,14 +23,18 @@ class PhotoServiceTest extends TestCase {
 	private PhotoMapper $photoMapper;
 	/** @var PhotoFolderMapper&MockObject */
 	private PhotoFolderMapper $folderMapper;
+	/** @var ImageService&MockObject */
+	private ImageService $imageService;
 	private PhotoService $svc;
 
 	protected function setUp(): void {
 		$this->photoMapper = $this->createMock(PhotoMapper::class);
 		$this->folderMapper = $this->createMock(PhotoFolderMapper::class);
+		$this->imageService = $this->createMock(ImageService::class);
 		$this->svc = new PhotoService(
 			$this->photoMapper,
 			$this->folderMapper,
+			$this->imageService,
 		);
 	}
 

@@ -114,11 +114,16 @@ export function usePhotos(houseId: number) {
     folders.value = folders.value.map((f) => (f.id === folderId ? updated : f))
   }
 
-  async function removeFolder(folderId: number): Promise<void> {
-    await api.deleteFolder(houseId, folderId)
+  async function removeFolder(folderId: number, deleteContents = false): Promise<void> {
+    await api.deleteFolder(houseId, folderId, deleteContents)
     folders.value = folders.value.filter((f) => f.id !== folderId)
-    // Photos in the deleted folder move to root
-    photos.value = photos.value.map((p) => (p.folderId === folderId ? { ...p, folderId: null } : p))
+    if (deleteContents) {
+      photos.value = photos.value.filter((p) => p.folderId !== folderId)
+    } else {
+      photos.value = photos.value.map((p) =>
+        p.folderId === folderId ? { ...p, folderId: null } : p,
+      )
+    }
   }
 
   async function reorderFolders(items: { id: number; sortOrder: number }[]): Promise<void> {

@@ -57,6 +57,24 @@ class ImageService {
 		return $file->getId();
 	}
 
+	/**
+	 * Delete a file by its Nextcloud file id.
+	 *
+	 * Silently does nothing if the file does not exist or is not accessible.
+	 */
+	public function deleteFile(int $fileId, string $uid): void {
+		$userFolder = $this->rootFolder->getUserFolder($uid);
+		$nodes = $userFolder->getById($fileId);
+		foreach ($nodes as $node) {
+			try {
+				$node->delete();
+			} catch (\Throwable) {
+				// Best-effort — file may have been removed already.
+			}
+			break; // Only need to delete once.
+		}
+	}
+
 	private function resolvePhotoFolder(string $uid, int $houseId): Folder {
 		$base = $this->resolveBaseFolder($uid, $houseId);
 		return $this->getOrCreateSubFolder($base, self::PHOTOS_SUBDIR);

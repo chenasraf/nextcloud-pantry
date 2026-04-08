@@ -262,9 +262,35 @@
       @update:open="(v) => !v && (deletingFolder = null)"
     >
       <p>{{ deleteFolderBody }}</p>
+      <div class="pantry-delete-folder-options">
+        <NcCheckboxRadioSwitch
+          v-model="deleteFolderMode"
+          value="keep"
+          name="delete-folder-mode"
+          type="radio"
+        >
+          {{ strings.deleteFolderKeepLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="pantry-delete-folder-options__hint">
+          {{ strings.deleteFolderKeepHint }}
+        </p>
+        <NcCheckboxRadioSwitch
+          v-model="deleteFolderMode"
+          value="delete"
+          name="delete-folder-mode"
+          type="radio"
+        >
+          {{ strings.deleteFolderDeleteLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="pantry-delete-folder-options__hint">
+          {{ strings.deleteFolderDeleteHint }}
+        </p>
+      </div>
       <template #actions>
         <NcButton @click="deletingFolder = null">{{ strings.cancel }}</NcButton>
-        <NcButton variant="error" @click="submitDeleteFolder">{{ strings.delete }}</NcButton>
+        <NcButton variant="error" @click="submitDeleteFolder">
+          {{ strings.delete }}
+        </NcButton>
       </template>
     </NcDialog>
   </div>
@@ -280,6 +306,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
@@ -563,11 +590,9 @@ const renamingFolder = ref<PhotoFolder | null>(null)
 const deletingPhoto = ref<Photo | null>(null)
 const deletingFolder = ref<PhotoFolder | null>(null)
 const deleteFolderBody = computed(() =>
-  t(
-    'pantry',
-    'Are you sure you want to delete the folder "{name}"? Photos will be moved to the board.',
-    { name: deletingFolder.value?.name ?? '' },
-  ),
+  t('pantry', 'What would you like to do with the folder "{name}"?', {
+    name: deletingFolder.value?.name ?? '',
+  }),
 )
 
 // ----- Upload -----
@@ -720,13 +745,16 @@ async function submitFolderDialog(name: string) {
   }
 }
 
+const deleteFolderMode = ref<'keep' | 'delete'>('keep')
+
 function confirmDeleteFolder(folder: PhotoFolder) {
   deletingFolder.value = folder
+  deleteFolderMode.value = 'keep'
 }
 
 async function submitDeleteFolder() {
   if (!deletingFolder.value) return
-  await removeFolder(deletingFolder.value.id)
+  await removeFolder(deletingFolder.value.id, deleteFolderMode.value === 'delete')
   deletingFolder.value = null
 }
 
@@ -749,6 +777,10 @@ const strings = {
   deletePhotoTitle: t('pantry', 'Delete photo'),
   deletePhotoBody: t('pantry', 'Are you sure you want to delete this photo?'),
   deleteFolderTitle: t('pantry', 'Delete folder'),
+  deleteFolderKeepLabel: t('pantry', 'Delete folder only'),
+  deleteFolderKeepHint: t('pantry', 'Photos will be moved to the board root.'),
+  deleteFolderDeleteLabel: t('pantry', 'Delete folder and all photos'),
+  deleteFolderDeleteHint: t('pantry', 'All photos and their files will be permanently deleted.'),
   sortLabel: t('pantry', 'Sort order'),
   foldersFirst: t('pantry', 'Folders first'),
 }
@@ -838,5 +870,15 @@ const strings = {
 
 .pantry-sort-active {
   font-weight: 600;
+}
+
+.pantry-delete-folder-options {
+  margin-top: 0.75rem;
+
+  &__hint {
+    margin: 0 0 0.75rem 1.75rem;
+    font-size: 0.85rem;
+    color: var(--color-text-maxcontrast);
+  }
 }
 </style>

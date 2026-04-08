@@ -121,10 +121,12 @@ final class PhotoController extends OCSController {
 	/**
 	 * Delete a photo folder
 	 *
-	 * Photos in this folder are moved to the board root.
+	 * When deleteContents is false (default), photos are moved to the board root.
+	 * When true, the folder and all its photos (including files) are permanently deleted.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $folderId Folder id.
+	 * @param bool $deleteContents Whether to also delete photos inside the folder.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
 	 *
@@ -132,12 +134,13 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/folders/{folderId}')]
 	#[NoAdminRequired]
-	public function deleteFolder(int $houseId, int $folderId): DataResponse {
-		return $this->runAction(function () use ($houseId, $folderId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+	public function deleteFolder(int $houseId, int $folderId, bool $deleteContents = false): DataResponse {
+		return $this->runAction(function () use ($houseId, $folderId, $deleteContents): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getFolder($folderId);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Folder');
-			$this->photos->deleteFolder($folderId);
+			$this->photos->deleteFolder($folderId, $deleteContents, $uid);
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -287,10 +290,11 @@ final class PhotoController extends OCSController {
 	#[NoAdminRequired]
 	public function deletePhoto(int $houseId, int $photoId): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getPhoto($photoId);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
-			$this->photos->deletePhoto($photoId);
+			$this->photos->deletePhoto($photoId, $uid);
 			return new DataResponse(['success' => true]);
 		});
 	}

@@ -220,7 +220,7 @@ describe('usePhotos', () => {
   })
 
   describe('removeFolder', () => {
-    it('removes folder and moves its photos to root', async () => {
+    it('removes folder and moves its photos to root by default', async () => {
       mockApi.listPhotos.mockResolvedValue([
         makePhoto({ id: 1, folderId: 5 }),
         makePhoto({ id: 2, folderId: null }),
@@ -233,9 +233,28 @@ describe('usePhotos', () => {
       await board.removeFolder(5)
 
       expect(board.folders.value).toHaveLength(0)
-      // Photo that was in folder 5 should now have folderId null
       expect(board.photos.value[0].folderId).toBeNull()
       expect(board.photos.value[1].folderId).toBeNull()
+      expect(mockApi.deleteFolder).toHaveBeenCalledWith(1, 5, false)
+    })
+
+    it('removes folder and deletes photos when deleteContents is true', async () => {
+      mockApi.listPhotos.mockResolvedValue([
+        makePhoto({ id: 1, folderId: 5 }),
+        makePhoto({ id: 2, folderId: null }),
+        makePhoto({ id: 3, folderId: 5 }),
+      ])
+      mockApi.listFolders.mockResolvedValue([makeFolder({ id: 5 })])
+      mockApi.deleteFolder.mockResolvedValue(undefined)
+
+      const board = usePhotos(1)
+      await board.load()
+      await board.removeFolder(5, true)
+
+      expect(board.folders.value).toHaveLength(0)
+      expect(board.photos.value).toHaveLength(1)
+      expect(board.photos.value[0].id).toBe(2)
+      expect(mockApi.deleteFolder).toHaveBeenCalledWith(1, 5, true)
     })
   })
 

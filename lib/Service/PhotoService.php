@@ -18,6 +18,7 @@ class PhotoService {
 	public function __construct(
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $folderMapper,
+		private ImageService $images,
 	) {
 	}
 
@@ -72,10 +73,20 @@ class PhotoService {
 		return $folder;
 	}
 
-	public function deleteFolder(int $folderId): void {
+	public function deleteFolder(int $folderId, bool $deleteContents = false, ?string $uid = null): void {
 		$folder = $this->getFolder($folderId);
-		// Move all photos in this folder to the board root
-		$this->photoMapper->moveToRoot($folderId);
+		if ($deleteContents) {
+			$photos = $this->photoMapper->findByFolder($folderId);
+			foreach ($photos as $photo) {
+				if ($uid !== null) {
+					$this->images->deleteFile($photo->getFileId(), $uid);
+				}
+				$this->photoMapper->delete($photo);
+			}
+		} else {
+			// Move all photos in this folder to the board root
+			$this->photoMapper->moveToRoot($folderId);
+		}
 		$this->folderMapper->delete($folder);
 	}
 
@@ -163,8 +174,11 @@ class PhotoService {
 		return $photo;
 	}
 
-	public function deletePhoto(int $photoId): void {
+	public function deletePhoto(int $photoId, ?string $uid = null): void {
 		$photo = $this->getPhoto($photoId);
+		if ($uid !== null) {
+			$this->images->deleteFile($photo->getFileId(), $uid);
+		}
 		$this->photoMapper->delete($photo);
 	}
 

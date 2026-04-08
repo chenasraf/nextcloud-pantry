@@ -5178,7 +5178,7 @@
             "delete": {
                 "operationId": "photo-delete-folder",
                 "summary": "Delete a photo folder",
-                "description": "Photos in this folder are moved to the board root.",
+                "description": "When deleteContents is false (default), photos are moved to the board root. When true, the folder and all its photos (including files) are permanently deleted.",
                 "tags": [
                     "photo"
                 ],
@@ -5209,6 +5209,15 @@
                         "schema": {
                             "type": "integer",
                             "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "deleteContents",
+                        "in": "query",
+                        "description": "Whether to also delete photos inside the folder.",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
                         }
                     },
                     {

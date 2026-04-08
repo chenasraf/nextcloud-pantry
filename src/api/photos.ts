@@ -24,8 +24,14 @@ export async function updateFolder(
   return resp.data
 }
 
-export async function deleteFolder(houseId: number, folderId: number): Promise<void> {
-  await ocs.delete(`/houses/${houseId}/photos/folders/${folderId}`)
+export async function deleteFolder(
+  houseId: number,
+  folderId: number,
+  deleteContents = false,
+): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/photos/folders/${folderId}`, {
+    params: deleteContents ? { deleteContents: true } : undefined,
+  })
 }
 
 export async function reorderFolders(
