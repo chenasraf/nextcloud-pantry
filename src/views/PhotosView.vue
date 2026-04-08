@@ -45,7 +45,7 @@
       <!-- Root view -->
       <template v-else-if="!activeFolderId">
         <NcEmptyContent
-          v-if="folders.length === 0 && rootPhotos.length === 0"
+          v-if="folders.length === 0 && rootPhotos.length === 0 && rootUploads.length === 0"
           :name="strings.emptyTitle"
           :description="strings.emptyBody"
         >
@@ -102,7 +102,7 @@
       <!-- Folder view -->
       <template v-else>
         <NcEmptyContent
-          v-if="activeFolderPhotos.length === 0"
+          v-if="activeFolderPhotos.length === 0 && folderUploads.length === 0"
           :name="strings.folderEmpty"
           :description="strings.folderEmptyBody"
         >
