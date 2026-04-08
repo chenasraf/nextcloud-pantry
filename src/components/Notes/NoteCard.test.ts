@@ -155,4 +155,38 @@ describe('NoteCard', () => {
       expect(card.classes()).not.toContain('note-card--dragging')
     })
   })
+
+  describe('draggableEnabled', () => {
+    it('is draggable by default', () => {
+      const wrapper = mount(NoteCard, { props: { note: makeNote() } })
+      expect(wrapper.find('.note-card').attributes('draggable')).toBe('true')
+    })
+
+    it('is not draggable when draggableEnabled is false', () => {
+      const wrapper = mount(NoteCard, {
+        props: { note: makeNote(), draggableEnabled: false },
+      })
+      expect(wrapper.find('.note-card').attributes('draggable')).toBe('false')
+    })
+
+    it('does not emit drag-start when draggableEnabled is false', async () => {
+      const wrapper = mount(NoteCard, {
+        props: { note: makeNote({ id: 7 }), draggableEnabled: false },
+      })
+      await wrapper.find('.note-card').trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(wrapper.emitted('drag-start')).toBeFalsy()
+    })
+
+    it('does not apply dragging class when draggableEnabled is false', async () => {
+      const wrapper = mount(NoteCard, {
+        props: { note: makeNote(), draggableEnabled: false },
+      })
+      await wrapper.find('.note-card').trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(wrapper.find('.note-card').classes()).not.toContain('note-card--dragging')
+    })
+  })
 })

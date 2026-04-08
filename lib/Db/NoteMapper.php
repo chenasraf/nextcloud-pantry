@@ -24,15 +24,37 @@ class NoteMapper extends QBMapper {
 	/**
 	 * @return Note[]
 	 */
-	public function findByHouse(int $houseId): array {
+	public function findByHouse(int $houseId, string $sortBy = 'custom'): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->orderBy('sort_order', 'ASC')
-			->addOrderBy('created_at', 'DESC');
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+		$this->applySort($qb, $sortBy);
 
 		return $this->findEntities($qb);
+	}
+
+	private function applySort(IQueryBuilder $qb, string $sortBy): void {
+		switch ($sortBy) {
+			case 'newest':
+				$qb->orderBy('created_at', 'DESC');
+				break;
+			case 'oldest':
+				$qb->orderBy('created_at', 'ASC');
+				break;
+			case 'title_asc':
+				$qb->orderBy('title', 'ASC')
+					->addOrderBy('created_at', 'DESC');
+				break;
+			case 'title_desc':
+				$qb->orderBy('title', 'DESC')
+					->addOrderBy('created_at', 'DESC');
+				break;
+			default: // custom
+				$qb->orderBy('sort_order', 'ASC')
+					->addOrderBy('created_at', 'DESC');
+				break;
+		}
 	}
 
 	/**

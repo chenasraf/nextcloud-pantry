@@ -1,17 +1,20 @@
 import { ref } from 'vue'
 import * as api from '@/api/notes'
 import type { Note } from '@/api/types'
+import type { NoteSort } from '@/api/prefs'
 
 export function useNotes(houseId: number) {
   const notes = ref<Note[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const sortBy = ref<NoteSort>('custom')
 
-  async function load(): Promise<void> {
+  async function load(sort?: NoteSort): Promise<void> {
     loading.value = true
     error.value = null
+    const s = sort ?? sortBy.value
     try {
-      notes.value = await api.listNotes(houseId)
+      notes.value = await api.listNotes(houseId, s)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -51,5 +54,5 @@ export function useNotes(houseId: number) {
     await api.reorderNotes(houseId, items)
   }
 
-  return { notes, loading, error, load, create, update, remove, reorder }
+  return { notes, loading, error, sortBy, load, create, update, remove, reorder }
 }

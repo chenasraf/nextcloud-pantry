@@ -24,13 +24,12 @@ class PhotoMapper extends QBMapper {
 	/**
 	 * @return Photo[]
 	 */
-	public function findByHouse(int $houseId): array {
+	public function findByHouse(int $houseId, string $sortBy = 'custom'): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->orderBy('sort_order', 'ASC')
-			->addOrderBy('created_at', 'DESC');
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+		$this->applySort($qb, $sortBy);
 
 		return $this->findEntities($qb);
 	}
@@ -38,13 +37,12 @@ class PhotoMapper extends QBMapper {
 	/**
 	 * @return Photo[]
 	 */
-	public function findByFolder(int $folderId): array {
+	public function findByFolder(int $folderId, string $sortBy = 'custom'): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('folder_id', $qb->createNamedParameter($folderId, IQueryBuilder::PARAM_INT)))
-			->orderBy('sort_order', 'ASC')
-			->addOrderBy('created_at', 'DESC');
+			->where($qb->expr()->eq('folder_id', $qb->createNamedParameter($folderId, IQueryBuilder::PARAM_INT)));
+		$this->applySort($qb, $sortBy);
 
 		return $this->findEntities($qb);
 	}
@@ -52,16 +50,38 @@ class PhotoMapper extends QBMapper {
 	/**
 	 * @return Photo[]
 	 */
-	public function findRootByHouse(int $houseId): array {
+	public function findRootByHouse(int $houseId, string $sortBy = 'custom'): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('folder_id'))
-			->orderBy('sort_order', 'ASC')
-			->addOrderBy('created_at', 'DESC');
+			->andWhere($qb->expr()->isNull('folder_id'));
+		$this->applySort($qb, $sortBy);
 
 		return $this->findEntities($qb);
+	}
+
+	private function applySort(IQueryBuilder $qb, string $sortBy): void {
+		switch ($sortBy) {
+			case 'newest':
+				$qb->orderBy('created_at', 'DESC');
+				break;
+			case 'oldest':
+				$qb->orderBy('created_at', 'ASC');
+				break;
+			case 'description_asc':
+				$qb->orderBy('caption', 'ASC')
+					->addOrderBy('created_at', 'DESC');
+				break;
+			case 'description_desc':
+				$qb->orderBy('caption', 'DESC')
+					->addOrderBy('created_at', 'DESC');
+				break;
+			default: // custom
+				$qb->orderBy('sort_order', 'ASC')
+					->addOrderBy('created_at', 'DESC');
+				break;
+		}
 	}
 
 	/**

@@ -22,6 +22,7 @@ const SCROLL_SPEED = 8
 export function useTouchReorder(
   containerRef: Ref<HTMLElement | null>,
   callbacks: TouchReorderCallbacks,
+  enabled?: Ref<boolean>,
 ) {
   const isTouchDragging = ref(false)
 
@@ -120,6 +121,7 @@ export function useTouchReorder(
   }
 
   function onTouchStart(e: TouchEvent) {
+    if (enabled && !enabled.value) return
     const touch = e.touches[0]
     if (!touch) return
 

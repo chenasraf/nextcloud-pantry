@@ -16,6 +16,27 @@
         </NcButton>
       </template>
       <template #actions>
+        <NcActions :aria-label="strings.sortLabel" type="tertiary">
+          <template #icon>
+            <SortIcon :size="20" />
+          </template>
+          <NcActionCheckbox :checked="foldersFirst" @update:checked="toggleFoldersFirst">
+            {{ strings.foldersFirst }}
+          </NcActionCheckbox>
+          <NcActionSeparator />
+          <NcActionButton
+            v-for="opt in photoSortOptions"
+            :key="opt.value"
+            :class="{ 'pantry-sort-active': sortPrefs.sort === opt.value }"
+            @click="changePhotoSort(opt.value)"
+          >
+            <template #icon>
+              <RadioboxMarkedIcon v-if="sortPrefs.sort === opt.value" :size="20" />
+              <RadioboxBlankIcon v-else :size="20" />
+            </template>
+            {{ opt.label }}
+          </NcActionButton>
+        </NcActions>
         <NcButton v-if="!activeFolderId" @click="showFolderDialog = true">
           <template #icon>
             <FolderPlusIcon :size="20" />
@@ -60,20 +81,22 @@
         </NcEmptyContent>
 
         <div v-else class="pantry-photos__grid">
-          <FolderStack
-            v-for="folder in folders"
-            :key="'f-' + folder.id"
-            :folder="folder"
-            :photos="photosInFolder(folder.id)"
-            :house-id="houseIdNum"
-            @open="(f) => navigateToFolder(f.id)"
-            @rename="startRenameFolder(folder)"
-            @delete="confirmDeleteFolder(folder)"
-            @drop-photo="onDropPhotoToFolder"
-            @drop-files="onDropFilesToFolder"
-            @drag-over-change="onFolderDragOverChange"
-          />
-          <template v-for="(item, i) in rootGridItems" :key="item.key">
+          <template v-if="foldersFirst">
+            <FolderStack
+              v-for="folder in folders"
+              :key="'f-' + folder.id"
+              :folder="folder"
+              :photos="photosInFolder(folder.id)"
+              :house-id="houseIdNum"
+              @open="(f) => navigateToFolder(f.id)"
+              @rename="startRenameFolder(folder)"
+              @delete="confirmDeleteFolder(folder)"
+              @drop-photo="onDropPhotoToFolder"
+              @drop-files="onDropFilesToFolder"
+              @drag-over-change="onFolderDragOverChange"
+            />
+          </template>
+          <template v-for="item in rootGridItems" :key="item.key">
             <div
               v-if="item.type === 'placeholder'"
               class="pantry-photos__placeholder"
@@ -84,10 +107,23 @@
               <NcProgressBar :value="item.progress" size="medium" />
               <span class="pantry-photos__upload-name">{{ item.fileName }}</span>
             </div>
+            <FolderStack
+              v-else-if="item.type === 'folder'"
+              :folder="item.folder"
+              :photos="photosInFolder(item.folder.id)"
+              :house-id="houseIdNum"
+              @open="(f) => navigateToFolder(f.id)"
+              @rename="startRenameFolder(item.folder)"
+              @delete="confirmDeleteFolder(item.folder)"
+              @drop-photo="onDropPhotoToFolder"
+              @drop-files="onDropFilesToFolder"
+              @drag-over-change="onFolderDragOverChange"
+            />
             <PhotoCard
               v-else
               :photo="item.photo"
               :house-id="houseIdNum"
+              :reorder-enabled="isCustomSort"
               @preview="openPreview"
               @edit="startEditPhoto"
               @delete="confirmDeletePhoto"
@@ -129,9 +165,10 @@
               <span class="pantry-photos__upload-name">{{ item.fileName }}</span>
             </div>
             <PhotoCard
-              v-else
+              v-else-if="item.type === 'photo'"
               :photo="item.photo"
               :house-id="houseIdNum"
+              :reorder-enabled="isCustomSort"
               @preview="openPreview"
               @edit="startEditPhoto"
               @delete="confirmDeletePhoto"
@@ -234,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -243,13 +280,22 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import NcActions from '@nextcloud/vue/components/NcActions'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
+import NcActionSeparator from '@nextcloud/vue/components/NcActionSeparator'
 import PageToolbar from '@/components/PageToolbar'
 import { PhotoCard, FolderStack, FolderDialog, PhotoPreview } from '@/components/Photos'
 import UploadIcon from '@icons/Upload.vue'
 import ImageIcon from '@icons/Image.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import FolderPlusIcon from '@icons/FolderPlus.vue'
+import SortIcon from '@icons/Sort.vue'
+import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
+import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import type { Photo, PhotoFolder } from '@/api/types'
+import type { PhotoSort, PhotoSortPrefs } from '@/api/prefs'
+import { getPhotoSort, setPhotoSort } from '@/api/prefs'
 import { usePhotos, type UploadEntry } from '@/composables/usePhotos'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 
@@ -271,12 +317,52 @@ const {
   updateFolder,
   removeFolder,
   uploads,
+  sortBy,
 } = usePhotos(houseIdNum.value)
 
-onMounted(load)
+// ----- Sort -----
+
+const sortPrefs = reactive<PhotoSortPrefs>({ sort: 'custom', foldersFirst: true })
+const foldersFirst = computed(() => sortPrefs.foldersFirst)
+const isCustomSort = computed(() => sortPrefs.sort === 'custom')
+
+const photoSortOptions: { value: PhotoSort; label: string }[] = [
+  { value: 'newest', label: t('pantry', 'Newest first') },
+  { value: 'oldest', label: t('pantry', 'Oldest first') },
+  { value: 'description_asc', label: t('pantry', 'By description A\u2013Z') },
+  { value: 'description_desc', label: t('pantry', 'By description Z\u2013A') },
+  { value: 'custom', label: t('pantry', 'Custom') },
+]
+
+async function loadSortPrefs() {
+  const prefs = await getPhotoSort(houseIdNum.value)
+  sortPrefs.sort = prefs.sort
+  sortPrefs.foldersFirst = prefs.foldersFirst
+  sortBy.value = prefs.sort
+}
+
+async function changePhotoSort(value: PhotoSort) {
+  sortPrefs.sort = value
+  sortBy.value = value
+  await setPhotoSort(houseIdNum.value, { sort: value })
+  await load(value)
+}
+
+async function toggleFoldersFirst(value: boolean) {
+  sortPrefs.foldersFirst = value
+  await setPhotoSort(houseIdNum.value, { foldersFirst: value })
+}
+
+onMounted(async () => {
+  await loadSortPrefs()
+  await load()
+})
 watch(
   () => props.houseId,
-  () => load(),
+  async () => {
+    await loadSortPrefs()
+    await load()
+  },
 )
 
 // ----- State -----
@@ -307,13 +393,18 @@ function navigateToFolder(folderId: number | null) {
 
 type GridItem =
   | { type: 'photo'; key: string; photo: Photo }
+  | { type: 'folder'; key: string; folder: PhotoFolder }
   | { type: 'placeholder'; key: string }
   | { type: 'upload'; key: string; fileName: string; progress: number }
 
 const draggingPhotoId = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
 
-function buildGridItems(source: Photo[], activeUploads: UploadEntry[]): GridItem[] {
+function buildGridItems(
+  source: Photo[],
+  activeUploads: UploadEntry[],
+  mixedFolders?: PhotoFolder[],
+): GridItem[] {
   // Upload placeholders go first (newest-first sort means in-progress uploads are at the top).
   const uploadItems: GridItem[] = activeUploads.map((u) => ({
     type: 'upload' as const,
@@ -322,14 +413,20 @@ function buildGridItems(source: Photo[], activeUploads: UploadEntry[]): GridItem
     progress: u.progress,
   }))
 
+  const folderItems: GridItem[] = (mixedFolders ?? []).map((f) => ({
+    type: 'folder' as const,
+    key: 'f-' + f.id,
+    folder: f,
+  }))
+
   const dragId = draggingPhotoId.value
-  if (dragId === null || dropIndex.value === null) {
+  if (dragId === null || dropIndex.value === null || !isCustomSort.value) {
     const photoItems: GridItem[] = source.map((p) => ({
       type: 'photo' as const,
       key: 'p-' + p.id,
       photo: p,
     }))
-    return [...uploadItems, ...photoItems]
+    return [...uploadItems, ...folderItems, ...photoItems]
   }
 
   const without = source.filter((p) => p.id !== dragId)
@@ -341,7 +438,7 @@ function buildGridItems(source: Photo[], activeUploads: UploadEntry[]): GridItem
 
   const clampedIndex = Math.min(dropIndex.value, items.length)
   items.splice(clampedIndex, 0, { type: 'placeholder', key: 'drop-placeholder' })
-  return [...uploadItems, ...items]
+  return [...uploadItems, ...folderItems, ...items]
 }
 
 const rootUploads = computed(() => uploads.value.filter((u) => u.folderId === null))
@@ -349,7 +446,13 @@ const folderUploads = computed(() =>
   uploads.value.filter((u) => u.folderId === activeFolderId.value),
 )
 
-const rootGridItems = computed(() => buildGridItems(rootPhotos.value, rootUploads.value))
+const rootGridItems = computed(() =>
+  buildGridItems(
+    rootPhotos.value,
+    rootUploads.value,
+    foldersFirst.value ? undefined : folders.value,
+  ),
+)
 const folderGridItems = computed(() =>
   buildGridItems(activeFolderPhotos.value, folderUploads.value),
 )
@@ -434,19 +537,23 @@ onBeforeUnmount(() => {
 })
 
 // ----- Touch reorder -----
-useTouchReorder(boardRef, {
-  onDragStart: onPhotoDragStart,
-  onReorderOver(hoveredId, clientX) {
-    const source = activeFolderId.value ? activeFolderPhotos.value : rootPhotos.value
-    const el = boardRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
-    computePhotoDropIndex(hoveredId, source, clientX, el)
+useTouchReorder(
+  boardRef,
+  {
+    onDragStart: onPhotoDragStart,
+    onReorderOver(hoveredId, clientX) {
+      const source = activeFolderId.value ? activeFolderPhotos.value : rootPhotos.value
+      const el = boardRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+      computePhotoDropIndex(hoveredId, source, clientX, el)
+    },
+    onDrop: commitReorder,
+    onCancel() {
+      draggingPhotoId.value = null
+      dropIndex.value = null
+    },
   },
-  onDrop: commitReorder,
-  onCancel() {
-    draggingPhotoId.value = null
-    dropIndex.value = null
-  },
-})
+  isCustomSort,
+)
 
 // Folder dialog
 const showFolderDialog = ref(false)
@@ -642,6 +749,8 @@ const strings = {
   deletePhotoTitle: t('pantry', 'Delete photo'),
   deletePhotoBody: t('pantry', 'Are you sure you want to delete this photo?'),
   deleteFolderTitle: t('pantry', 'Delete folder'),
+  sortLabel: t('pantry', 'Sort order'),
+  foldersFirst: t('pantry', 'Folders first'),
 }
 </script>
 
@@ -725,5 +834,9 @@ const strings = {
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
+}
+
+.pantry-sort-active {
+  font-weight: 600;
 }
 </style>

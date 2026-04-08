@@ -47,7 +47,10 @@ import DeleteIcon from '@icons/Delete.vue'
 import ArrowUpIcon from '@icons/ArrowUp.vue'
 import type { Photo } from '@/api/types'
 
-const props = defineProps<{ photo: Photo; houseId: number }>()
+const props = withDefaults(
+  defineProps<{ photo: Photo; houseId: number; reorderEnabled?: boolean }>(),
+  { reorderEnabled: true },
+)
 const emit = defineEmits<{
   preview: [photo: Photo]
   edit: [photo: Photo]
@@ -71,7 +74,9 @@ function onDragStart(e: DragEvent) {
     'application/x-pantry-photo',
     JSON.stringify({ id: props.photo.id, folderId: props.photo.folderId }),
   )
-  emit('drag-start', props.photo.id)
+  if (props.reorderEnabled) {
+    emit('drag-start', props.photo.id)
+  }
 }
 
 function onDragEnd() {
@@ -79,6 +84,7 @@ function onDragEnd() {
 }
 
 function onDragOver(e: DragEvent) {
+  if (!props.reorderEnabled) return
   if (!e.dataTransfer?.types.includes('application/x-pantry-photo')) return
   emit('reorder-over', props.photo.id, e)
 }

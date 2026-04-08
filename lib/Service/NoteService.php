@@ -21,8 +21,8 @@ class NoteService {
 	/**
 	 * @return Note[]
 	 */
-	public function listNotes(int $houseId): array {
-		return $this->noteMapper->findByHouse($houseId);
+	public function listNotes(int $houseId, string $sortBy = 'custom'): array {
+		return $this->noteMapper->findByHouse($houseId, $sortBy);
 	}
 
 	public function getNote(int $noteId): Note {

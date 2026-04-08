@@ -21,6 +21,37 @@ export async function setImageFolder(houseId: number, folder: string): Promise<s
   return resp.data?.folder ?? folder
 }
 
+export type PhotoSort = 'custom' | 'newest' | 'oldest' | 'description_asc' | 'description_desc'
+export type NoteSort = 'custom' | 'newest' | 'oldest' | 'title_asc' | 'title_desc'
+
+export interface PhotoSortPrefs {
+  sort: PhotoSort
+  foldersFirst: boolean
+}
+
+export async function getPhotoSort(houseId: number): Promise<PhotoSortPrefs> {
+  const resp = await ocs.get<PhotoSortPrefs>(`/houses/${houseId}/prefs/photo-sort`)
+  return resp.data ?? { sort: 'custom', foldersFirst: true }
+}
+
+export async function setPhotoSort(
+  houseId: number,
+  prefs: Partial<PhotoSortPrefs>,
+): Promise<PhotoSortPrefs> {
+  const resp = await ocs.put<PhotoSortPrefs>(`/houses/${houseId}/prefs/photo-sort`, prefs)
+  return resp.data ?? { sort: 'custom', foldersFirst: true }
+}
+
+export async function getNoteSort(houseId: number): Promise<{ sort: NoteSort }> {
+  const resp = await ocs.get<{ sort: NoteSort }>(`/houses/${houseId}/prefs/note-sort`)
+  return resp.data ?? { sort: 'custom' }
+}
+
+export async function setNoteSort(houseId: number, sort: NoteSort): Promise<{ sort: NoteSort }> {
+  const resp = await ocs.put<{ sort: NoteSort }>(`/houses/${houseId}/prefs/note-sort`, { sort })
+  return resp.data ?? { sort }
+}
+
 export interface NotificationPrefs {
   notifyPhoto: boolean
   notifyNoteCreate: boolean

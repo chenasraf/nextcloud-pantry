@@ -126,6 +126,100 @@ final class PrefsController extends OCSController {
 	}
 
 	/**
+	 * Get photo sort preference for a house
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{sort: string, foldersFirst: bool}, array{}>
+	 *
+	 * 200: Sort preference returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/photo-sort')]
+	#[NoAdminRequired]
+	public function getPhotoSort(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			return new DataResponse([
+				'sort' => $this->prefs->getPhotoSort($uid, $houseId),
+				'foldersFirst' => $this->prefs->getPhotoFoldersFirst($uid, $houseId),
+			]);
+		});
+	}
+
+	/**
+	 * Set photo sort preference for a house
+	 *
+	 * @param int $houseId House id.
+	 * @param string|null $sort Sort mode.
+	 * @param bool|null $foldersFirst Whether folders appear first.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{sort: string, foldersFirst: bool}, array{}>
+	 *
+	 * 200: Sort preference updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/photo-sort')]
+	#[NoAdminRequired]
+	public function setPhotoSort(int $houseId, ?string $sort = null, ?bool $foldersFirst = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $sort, $foldersFirst): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			if ($sort !== null) {
+				$this->prefs->setPhotoSort($uid, $houseId, $sort);
+			}
+			if ($foldersFirst !== null) {
+				$this->prefs->setPhotoFoldersFirst($uid, $houseId, $foldersFirst);
+			}
+			return new DataResponse([
+				'sort' => $this->prefs->getPhotoSort($uid, $houseId),
+				'foldersFirst' => $this->prefs->getPhotoFoldersFirst($uid, $houseId),
+			]);
+		});
+	}
+
+	/**
+	 * Get note sort preference for a house
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{sort: string}, array{}>
+	 *
+	 * 200: Sort preference returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/note-sort')]
+	#[NoAdminRequired]
+	public function getNoteSort(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			return new DataResponse([
+				'sort' => $this->prefs->getNoteSort($uid, $houseId),
+			]);
+		});
+	}
+
+	/**
+	 * Set note sort preference for a house
+	 *
+	 * @param int $houseId House id.
+	 * @param string $sort Sort mode.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{sort: string}, array{}>
+	 *
+	 * 200: Sort preference updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/note-sort')]
+	#[NoAdminRequired]
+	public function setNoteSort(int $houseId, string $sort): DataResponse {
+		return $this->runAction(function () use ($houseId, $sort): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$stored = $this->prefs->setNoteSort($uid, $houseId, $sort);
+			return new DataResponse(['sort' => $stored]);
+		});
+	}
+
+	/**
 	 * Get notification preferences for a house
 	 *
 	 * @param int $houseId House id.

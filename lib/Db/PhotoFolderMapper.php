@@ -24,13 +24,32 @@ class PhotoFolderMapper extends QBMapper {
 	/**
 	 * @return PhotoFolder[]
 	 */
-	public function findByHouse(int $houseId): array {
+	public function findByHouse(int $houseId, string $sortBy = 'custom'): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->orderBy('sort_order', 'ASC')
-			->addOrderBy('name', 'ASC');
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+
+		switch ($sortBy) {
+			case 'newest':
+				$qb->orderBy('created_at', 'DESC');
+				break;
+			case 'oldest':
+				$qb->orderBy('created_at', 'ASC');
+				break;
+			case 'description_asc':
+				$qb->orderBy('name', 'ASC')
+					->addOrderBy('created_at', 'DESC');
+				break;
+			case 'description_desc':
+				$qb->orderBy('name', 'DESC')
+					->addOrderBy('created_at', 'DESC');
+				break;
+			default: // custom
+				$qb->orderBy('sort_order', 'ASC')
+					->addOrderBy('name', 'ASC');
+				break;
+		}
 
 		return $this->findEntities($qb);
 	}

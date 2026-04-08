@@ -1,8 +1,10 @@
 import { ocs } from '@/axios'
 import type { Note } from './types'
 
-export async function listNotes(houseId: number): Promise<Note[]> {
-  const resp = await ocs.get<Note[]>(`/houses/${houseId}/notes`)
+export async function listNotes(houseId: number, sortBy?: string): Promise<Note[]> {
+  const resp = await ocs.get<Note[]>(`/houses/${houseId}/notes`, {
+    params: sortBy ? { sortBy } : undefined,
+  })
   return resp.data ?? []
 }
 

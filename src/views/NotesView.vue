@@ -2,6 +2,23 @@
   <div ref="wallRef" class="pantry-notes">
     <PageToolbar :title="strings.title">
       <template #actions>
+        <NcActions :aria-label="strings.sortLabel" type="tertiary">
+          <template #icon>
+            <SortIcon :size="20" />
+          </template>
+          <NcActionButton
+            v-for="opt in noteSortOptions"
+            :key="opt.value"
+            :class="{ 'pantry-sort-active': currentSort === opt.value }"
+            @click="changeNoteSort(opt.value)"
+          >
+            <template #icon>
+              <RadioboxMarkedIcon v-if="currentSort === opt.value" :size="20" />
+              <RadioboxBlankIcon v-else :size="20" />
+            </template>
+            {{ opt.label }}
+          </NcActionButton>
+        </NcActions>
         <NcButton variant="primary" @click="openCreateDialog">
           <template #icon><PlusIcon :size="20" /></template>
           {{ strings.newNote }}
@@ -40,6 +57,7 @@
           <NoteCard
             v-else
             :note="item.note"
+            :draggable-enabled="isCustomSort"
             @edit="openEditDialog"
             @delete="confirmDelete"
             @drag-start="onDragStart"
@@ -82,23 +100,62 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcActions from '@nextcloud/vue/components/NcActions'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import PageToolbar from '@/components/PageToolbar'
 import { NoteCard, NoteDialog } from '@/components/Notes'
 import PlusIcon from '@icons/Plus.vue'
 import NoteIcon from '@icons/Note.vue'
+import SortIcon from '@icons/Sort.vue'
+import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
+import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import type { Note } from '@/api/types'
+import type { NoteSort } from '@/api/prefs'
+import { getNoteSort, setNoteSort } from '@/api/prefs'
 import { useNotes } from '@/composables/useNotes'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 
 const props = defineProps<{ houseId: string }>()
 
 const houseIdNum = computed(() => Number(props.houseId))
-const { notes, loading, load, create, update, remove, reorder } = useNotes(houseIdNum.value)
+const { notes, loading, load, create, update, remove, reorder, sortBy } = useNotes(houseIdNum.value)
 
-onMounted(load)
+// ----- Sort -----
+
+const currentSort = ref<NoteSort>('custom')
+const isCustomSort = computed(() => currentSort.value === 'custom')
+
+const noteSortOptions: { value: NoteSort; label: string }[] = [
+  { value: 'newest', label: t('pantry', 'Newest first') },
+  { value: 'oldest', label: t('pantry', 'Oldest first') },
+  { value: 'title_asc', label: t('pantry', 'Title A\u2013Z') },
+  { value: 'title_desc', label: t('pantry', 'Title Z\u2013A') },
+  { value: 'custom', label: t('pantry', 'Custom') },
+]
+
+async function loadSortPref() {
+  const prefs = await getNoteSort(houseIdNum.value)
+  currentSort.value = prefs.sort
+  sortBy.value = prefs.sort
+}
+
+async function changeNoteSort(value: NoteSort) {
+  currentSort.value = value
+  sortBy.value = value
+  await setNoteSort(houseIdNum.value, value)
+  await load(value)
+}
+
+onMounted(async () => {
+  await loadSortPref()
+  await load()
+})
 watch(
   () => props.houseId,
-  () => load(),
+  async () => {
+    await loadSortPref()
+    await load()
+  },
 )
 
 // ----- Reorder -----
@@ -196,18 +253,22 @@ onBeforeUnmount(() => {
 })
 
 // ----- Touch reorder -----
-useTouchReorder(wallRef, {
-  onDragStart: onDragStart,
-  onReorderOver(hoveredId, clientX) {
-    const el = wallRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
-    computeDropIndex(hoveredId, clientX, el)
+useTouchReorder(
+  wallRef,
+  {
+    onDragStart: onDragStart,
+    onReorderOver(hoveredId, clientX) {
+      const el = wallRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+      computeDropIndex(hoveredId, clientX, el)
+    },
+    onDrop: commitReorder,
+    onCancel() {
+      draggingNoteId.value = null
+      dropIndex.value = null
+    },
   },
-  onDrop: commitReorder,
-  onCancel() {
-    draggingNoteId.value = null
-    dropIndex.value = null
-  },
-})
+  isCustomSort,
+)
 
 // ----- Create / Edit -----
 
@@ -279,6 +340,7 @@ const strings = {
   emptyTitle: t('pantry', 'No notes yet'),
   emptyBody: t('pantry', 'Create your first note to start sharing reminders with your household.'),
   deleteTitle: t('pantry', 'Delete note'),
+  sortLabel: t('pantry', 'Sort order'),
 }
 </script>
 
@@ -311,5 +373,9 @@ const strings = {
   display: flex;
   justify-content: center;
   padding: 2rem;
+}
+
+.pantry-sort-active {
+  font-weight: 600;
 }
 </style>

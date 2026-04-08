@@ -43,6 +43,7 @@ final class NoteController extends OCSController {
 	 * List all notes in a house
 	 *
 	 * @param int $houseId House id.
+	 * @param string $sortBy Sort mode (custom, newest, oldest, title_asc, title_desc).
 	 * @param int<1, 500> $limit Maximum number of notes to return.
 	 * @param int<0, max> $offset Number of notes to skip.
 	 *
@@ -52,10 +53,10 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/notes')]
 	#[NoAdminRequired]
-	public function indexNotes(int $houseId, int $limit = 100, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+	public function indexNotes(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$all = $this->notes->listNotes($houseId);
+			$all = $this->notes->listNotes($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			return new DataResponse(array_map(fn ($n) => $n->jsonSerialize(), $sliced));
 		});

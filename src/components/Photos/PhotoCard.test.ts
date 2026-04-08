@@ -50,8 +50,8 @@ function makePhoto(overrides: Partial<Photo> = {}): Photo {
   }
 }
 
-function mountCard(overrides: Partial<Photo> = {}) {
-  return mount(PhotoCard, { props: { photo: makePhoto(overrides), houseId: 1 } })
+function mountCard(overrides: Partial<Photo> = {}, reorderEnabled = true) {
+  return mount(PhotoCard, { props: { photo: makePhoto(overrides), houseId: 1, reorderEnabled } })
 }
 
 describe('PhotoCard', () => {
@@ -178,6 +178,49 @@ describe('PhotoCard', () => {
 
       await card.trigger('dragend')
       expect(card.classes()).not.toContain('photo-card--dragging')
+    })
+  })
+
+  describe('reorderEnabled', () => {
+    it('is draggable even when reorder is disabled', () => {
+      const wrapper = mountCard({}, false)
+      expect(wrapper.find('.photo-card').attributes('draggable')).toBe('true')
+    })
+
+    it('does not emit drag-start when reorder is disabled', async () => {
+      const wrapper = mountCard({ id: 7 }, false)
+      await wrapper.find('.photo-card').trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(wrapper.emitted('drag-start')).toBeFalsy()
+    })
+
+    it('still sets drag data when reorder is disabled (for folder drops)', async () => {
+      const setData = vi.fn()
+      const wrapper = mountCard({ id: 3, folderId: null }, false)
+      await wrapper.find('.photo-card').trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData },
+      })
+      expect(setData).toHaveBeenCalledWith(
+        'application/x-pantry-photo',
+        JSON.stringify({ id: 3, folderId: null }),
+      )
+    })
+
+    it('does not emit reorder-over when reorder is disabled', async () => {
+      const wrapper = mountCard({}, false)
+      await wrapper.find('.photo-card').trigger('dragover', {
+        dataTransfer: { types: ['application/x-pantry-photo'] },
+      })
+      expect(wrapper.emitted('reorder-over')).toBeFalsy()
+    })
+
+    it('emits reorder-over when reorder is enabled', async () => {
+      const wrapper = mountCard({ id: 2 }, true)
+      await wrapper.find('.photo-card').trigger('dragover', {
+        dataTransfer: { types: ['application/x-pantry-photo'] },
+      })
+      expect(wrapper.emitted('reorder-over')).toBeTruthy()
     })
   })
 })

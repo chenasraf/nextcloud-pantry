@@ -26,8 +26,8 @@ class PhotoService {
 	/**
 	 * @return PhotoFolder[]
 	 */
-	public function listFolders(int $houseId): array {
-		return $this->folderMapper->findByHouse($houseId);
+	public function listFolders(int $houseId, string $sortBy = 'custom'): array {
+		return $this->folderMapper->findByHouse($houseId, $sortBy);
 	}
 
 	public function getFolder(int $folderId): PhotoFolder {
@@ -110,15 +110,15 @@ class PhotoService {
 	/**
 	 * @return Photo[]
 	 */
-	public function listPhotos(int $houseId): array {
-		return $this->photoMapper->findByHouse($houseId);
+	public function listPhotos(int $houseId, string $sortBy = 'custom'): array {
+		return $this->photoMapper->findByHouse($houseId, $sortBy);
 	}
 
 	/**
 	 * @return Photo[]
 	 */
-	public function listPhotosByFolder(int $folderId): array {
-		return $this->photoMapper->findByFolder($folderId);
+	public function listPhotosByFolder(int $folderId, string $sortBy = 'custom'): array {
+		return $this->photoMapper->findByFolder($folderId, $sortBy);
 	}
 
 	public function getPhoto(int $photoId): Photo {

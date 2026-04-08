@@ -48,6 +48,7 @@ final class PhotoController extends OCSController {
 	 * List all photo folders in a house
 	 *
 	 * @param int $houseId House id.
+	 * @param string $sortBy Sort mode (custom, newest, oldest, description_asc, description_desc).
 	 * @param int<1, 500> $limit Maximum number of folders to return.
 	 * @param int<0, max> $offset Number of folders to skip.
 	 *
@@ -57,10 +58,10 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/photos/folders')]
 	#[NoAdminRequired]
-	public function indexFolders(int $houseId, int $limit = 100, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+	public function indexFolders(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$all = $this->photos->listFolders($houseId);
+			$all = $this->photos->listFolders($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			return new DataResponse(array_map(fn ($f) => $f->jsonSerialize(), $sliced));
 		});
@@ -167,6 +168,7 @@ final class PhotoController extends OCSController {
 	 * List all photos in a house
 	 *
 	 * @param int $houseId House id.
+	 * @param string $sortBy Sort mode (custom, newest, oldest, description_asc, description_desc).
 	 * @param int<1, 1000> $limit Maximum number of photos to return.
 	 * @param int<0, max> $offset Number of photos to skip.
 	 *
@@ -176,10 +178,10 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/photos')]
 	#[NoAdminRequired]
-	public function indexPhotos(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+	public function indexPhotos(int $houseId, string $sortBy = 'custom', int $limit = 200, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$all = $this->photos->listPhotos($houseId);
+			$all = $this->photos->listPhotos($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			return new DataResponse(array_map(fn ($p) => $p->jsonSerialize(), $sliced));
 		});

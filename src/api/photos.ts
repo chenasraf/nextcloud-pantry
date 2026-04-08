@@ -3,8 +3,10 @@ import type { Photo, PhotoFolder } from './types'
 
 // ----- Folders -----
 
-export async function listFolders(houseId: number): Promise<PhotoFolder[]> {
-  const resp = await ocs.get<PhotoFolder[]>(`/houses/${houseId}/photos/folders`)
+export async function listFolders(houseId: number, sortBy?: string): Promise<PhotoFolder[]> {
+  const resp = await ocs.get<PhotoFolder[]>(`/houses/${houseId}/photos/folders`, {
+    params: sortBy ? { sortBy } : undefined,
+  })
   return resp.data ?? []
 }
 
@@ -35,8 +37,10 @@ export async function reorderFolders(
 
 // ----- Photos -----
 
-export async function listPhotos(houseId: number): Promise<Photo[]> {
-  const resp = await ocs.get<Photo[]>(`/houses/${houseId}/photos`)
+export async function listPhotos(houseId: number, sortBy?: string): Promise<Photo[]> {
+  const resp = await ocs.get<Photo[]>(`/houses/${houseId}/photos`, {
+    params: sortBy ? { sortBy } : undefined,
+  })
   return resp.data ?? []
 }
 

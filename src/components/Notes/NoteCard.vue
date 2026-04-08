@@ -4,7 +4,7 @@
     :class="{ 'note-card--dragging': isDragging }"
     :style="cardStyle"
     :data-drag-id="note.id"
-    draggable="true"
+    :draggable="draggableEnabled ? 'true' : 'false'"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
@@ -35,7 +35,9 @@ import DeleteIcon from '@icons/Delete.vue'
 import { contrastColor } from './noteColors'
 import type { Note } from '@/api/types'
 
-const props = defineProps<{ note: Note }>()
+const props = withDefaults(defineProps<{ note: Note; draggableEnabled?: boolean }>(), {
+  draggableEnabled: true,
+})
 const emit = defineEmits<{
   edit: [note: Note]
   delete: [note: Note]
@@ -54,7 +56,7 @@ const cardStyle = computed(() => {
 })
 
 function onDragStart(e: DragEvent) {
-  if (!e.dataTransfer) return
+  if (!props.draggableEnabled || !e.dataTransfer) return
   isDragging.value = true
   e.dataTransfer.effectAllowed = 'move'
   e.dataTransfer.setData('application/x-pantry-note', String(props.note.id))

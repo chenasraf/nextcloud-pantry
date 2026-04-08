@@ -259,4 +259,79 @@ describe('usePhotos', () => {
       expect(board.folders.value[1].id).toBe(1)
     })
   })
+
+  describe('sortBy', () => {
+    it('defaults to custom', () => {
+      const board = usePhotos(1)
+      expect(board.sortBy.value).toBe('custom')
+    })
+
+    it('passes sortBy value to listPhotos and listFolders', async () => {
+      mockApi.listPhotos.mockResolvedValue([])
+      mockApi.listFolders.mockResolvedValue([])
+
+      const board = usePhotos(1)
+      board.sortBy.value = 'newest'
+      await board.load()
+
+      expect(mockApi.listPhotos).toHaveBeenCalledWith(1, 'newest')
+      expect(mockApi.listFolders).toHaveBeenCalledWith(1, 'newest')
+    })
+
+    it('uses sort argument when provided to load()', async () => {
+      mockApi.listPhotos.mockResolvedValue([])
+      mockApi.listFolders.mockResolvedValue([])
+
+      const board = usePhotos(1)
+      board.sortBy.value = 'custom'
+      await board.load('description_asc')
+
+      expect(mockApi.listPhotos).toHaveBeenCalledWith(1, 'description_asc')
+      expect(mockApi.listFolders).toHaveBeenCalledWith(1, 'description_asc')
+    })
+
+    it('rootPhotos sorts by sortOrder in custom mode', async () => {
+      mockApi.listPhotos.mockResolvedValue([
+        makePhoto({ id: 1, folderId: null, sortOrder: 2 }),
+        makePhoto({ id: 2, folderId: null, sortOrder: 0 }),
+        makePhoto({ id: 3, folderId: null, sortOrder: 1 }),
+      ])
+      mockApi.listFolders.mockResolvedValue([])
+
+      const board = usePhotos(1)
+      await board.load()
+
+      expect(board.rootPhotos.value.map((p) => p.id)).toEqual([2, 3, 1])
+    })
+
+    it('rootPhotos preserves server order in non-custom mode', async () => {
+      mockApi.listPhotos.mockResolvedValue([
+        makePhoto({ id: 3, folderId: null, sortOrder: 2 }),
+        makePhoto({ id: 1, folderId: null, sortOrder: 0 }),
+        makePhoto({ id: 2, folderId: null, sortOrder: 1 }),
+      ])
+      mockApi.listFolders.mockResolvedValue([])
+
+      const board = usePhotos(1)
+      board.sortBy.value = 'newest'
+      await board.load()
+
+      // Should preserve the array order from the server
+      expect(board.rootPhotos.value.map((p) => p.id)).toEqual([3, 1, 2])
+    })
+
+    it('photosInFolder preserves server order in non-custom mode', async () => {
+      mockApi.listPhotos.mockResolvedValue([
+        makePhoto({ id: 3, folderId: 5, sortOrder: 2 }),
+        makePhoto({ id: 1, folderId: 5, sortOrder: 0 }),
+      ])
+      mockApi.listFolders.mockResolvedValue([])
+
+      const board = usePhotos(1)
+      board.sortBy.value = 'oldest'
+      await board.load()
+
+      expect(board.photosInFolder(5).map((p) => p.id)).toEqual([3, 1])
+    })
+  })
 })

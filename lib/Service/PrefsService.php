@@ -52,6 +52,61 @@ class PrefsService {
 		return $normalized;
 	}
 
+	// ----- Sort preferences -----
+
+	private const KEY_PHOTO_SORT = 'photo_sort';
+	private const KEY_NOTE_SORT = 'note_sort';
+
+	public function getPhotoSort(string $uid, int $houseId): string {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_PHOTO_SORT . '_' . $houseId,
+			'custom',
+		);
+	}
+
+	public function setPhotoSort(string $uid, int $houseId, string $sort): string {
+		$allowed = ['custom', 'newest', 'oldest', 'description_asc', 'description_desc'];
+		if (!in_array($sort, $allowed, true)) {
+			$sort = 'custom';
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_PHOTO_SORT . '_' . $houseId, $sort);
+		return $sort;
+	}
+
+	public function getPhotoFoldersFirst(string $uid, int $houseId): bool {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			'photo_folders_first_' . $houseId,
+			'1',
+		) === '1';
+	}
+
+	public function setPhotoFoldersFirst(string $uid, int $houseId, bool $value): bool {
+		$this->config->setUserValue($uid, Application::APP_ID, 'photo_folders_first_' . $houseId, $value ? '1' : '0');
+		return $value;
+	}
+
+	public function getNoteSort(string $uid, int $houseId): string {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_NOTE_SORT . '_' . $houseId,
+			'custom',
+		);
+	}
+
+	public function setNoteSort(string $uid, int $houseId, string $sort): string {
+		$allowed = ['custom', 'newest', 'oldest', 'title_asc', 'title_desc'];
+		if (!in_array($sort, $allowed, true)) {
+			$sort = 'custom';
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_NOTE_SORT . '_' . $houseId, $sort);
+		return $sort;
+	}
+
 	// ----- Notification preferences -----
 
 	public function getNotificationPref(string $uid, int $houseId, string $prefKey): bool {

@@ -121,4 +121,40 @@ describe('useNotes', () => {
       expect(wall.notes.value[1].id).toBe(1)
     })
   })
+
+  describe('sortBy', () => {
+    it('defaults to custom', () => {
+      const wall = useNotes(1)
+      expect(wall.sortBy.value).toBe('custom')
+    })
+
+    it('passes sortBy value to listNotes', async () => {
+      mockApi.listNotes.mockResolvedValue([])
+
+      const wall = useNotes(1)
+      wall.sortBy.value = 'newest'
+      await wall.load()
+
+      expect(mockApi.listNotes).toHaveBeenCalledWith(1, 'newest')
+    })
+
+    it('uses sort argument when provided to load()', async () => {
+      mockApi.listNotes.mockResolvedValue([])
+
+      const wall = useNotes(1)
+      wall.sortBy.value = 'custom'
+      await wall.load('title_asc')
+
+      expect(mockApi.listNotes).toHaveBeenCalledWith(1, 'title_asc')
+    })
+
+    it('uses default custom sort when no argument given', async () => {
+      mockApi.listNotes.mockResolvedValue([])
+
+      const wall = useNotes(1)
+      await wall.load()
+
+      expect(mockApi.listNotes).toHaveBeenCalledWith(1, 'custom')
+    })
+  })
 })

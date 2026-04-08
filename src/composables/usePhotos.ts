@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import * as api from '@/api/photos'
 import type { Photo, PhotoFolder } from '@/api/types'
+import type { PhotoSort } from '@/api/prefs'
 
 export interface UploadEntry {
   id: string
@@ -17,12 +18,14 @@ export function usePhotos(houseId: number) {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const uploads = ref<UploadEntry[]>([])
+  const sortBy = ref<PhotoSort>('custom')
 
-  async function load(): Promise<void> {
+  async function load(sort?: PhotoSort): Promise<void> {
     loading.value = true
     error.value = null
+    const s = sort ?? sortBy.value
     try {
-      const [p, f] = await Promise.all([api.listPhotos(houseId), api.listFolders(houseId)])
+      const [p, f] = await Promise.all([api.listPhotos(houseId, s), api.listFolders(houseId, s)])
       photos.value = p
       folders.value = f
     } catch (e) {
@@ -32,14 +35,20 @@ export function usePhotos(houseId: number) {
     }
   }
 
-  const rootPhotos = computed(() =>
-    photos.value.filter((p) => p.folderId === null).sort((a, b) => a.sortOrder - b.sortOrder),
-  )
+  const rootPhotos = computed(() => {
+    const filtered = photos.value.filter((p) => p.folderId === null)
+    if (sortBy.value === 'custom') {
+      return filtered.sort((a, b) => a.sortOrder - b.sortOrder)
+    }
+    return filtered
+  })
 
   function photosInFolder(folderId: number): Photo[] {
-    return photos.value
-      .filter((p) => p.folderId === folderId)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
+    const filtered = photos.value.filter((p) => p.folderId === folderId)
+    if (sortBy.value === 'custom') {
+      return filtered.sort((a, b) => a.sortOrder - b.sortOrder)
+    }
+    return filtered
   }
 
   // ----- Photos -----
@@ -126,6 +135,7 @@ export function usePhotos(houseId: number) {
     uploads,
     loading,
     error,
+    sortBy,
     load,
     rootPhotos,
     photosInFolder,
