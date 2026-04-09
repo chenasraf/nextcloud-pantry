@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.3.0...v0.3.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* respect user's first weekday in repeat modal ([735f60d](https://github.com/chenasraf/nextcloud-pantry/commit/735f60d226f8d43742fc3be3e707bb62ac28f605))
+
 ## [0.3.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.2.0...v0.3.0) (2026-04-08)
 
 
