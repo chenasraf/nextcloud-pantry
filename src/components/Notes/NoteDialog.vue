@@ -47,6 +47,14 @@
       <div class="note-dialog__color">
         <div class="note-dialog__swatches">
           <button
+            type="button"
+            class="note-dialog__swatch note-dialog__swatch--none"
+            :class="{ 'note-dialog__swatch--active': colorValue === '' }"
+            :style="{ borderColor: colorValue === '' ? 'var(--color-main-text)' : 'transparent' }"
+            :aria-label="strings.noColor"
+            @click="toggleColor('')"
+          />
+          <button
             v-for="c in colorOptions"
             :key="c"
             type="button"
@@ -299,6 +307,7 @@ const strings = {
   view: t('pantry', 'Preview'),
   untitled: t('pantry', 'Untitled note'),
   noContent: t('pantry', 'Click to add content …'),
+  noColor: t('pantry', 'Default (no color)'),
 }
 </script>
 
@@ -415,6 +424,19 @@ const strings = {
 
     &--active {
       transform: scale(1.15);
+    }
+
+    &--none {
+      background: var(--color-background-hover);
+      // Diagonal line to indicate "no color"
+      background-image: linear-gradient(
+        135deg,
+        transparent 40%,
+        var(--color-error, #e00) 40%,
+        var(--color-error, #e00) 60%,
+        transparent 60%
+      );
+      background-size: 100% 100%;
     }
   }
 }

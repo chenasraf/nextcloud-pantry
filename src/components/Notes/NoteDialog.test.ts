@@ -269,22 +269,31 @@ describe('NoteDialog', () => {
   })
 
   describe('color swatches', () => {
-    it('renders 16 swatches in both modes', () => {
+    it('renders 17 swatches (no-color + 16 colors)', () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote() },
       })
-      expect(wrapper.findAll('.note-dialog__swatch')).toHaveLength(16)
+      expect(wrapper.findAll('.note-dialog__swatch')).toHaveLength(17)
+    })
+
+    it('has no-color swatch active by default when note has no color', () => {
+      const wrapper = mount(NoteDialog, {
+        props: { open: true, note: makeNote({ color: null }) },
+      })
+      const noColor = wrapper.find('.note-dialog__swatch--none')
+      expect(noColor.classes()).toContain('note-dialog__swatch--active')
     })
 
     it('toggles color on swatch click', async () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote({ color: null }) },
       })
-      const swatch = wrapper.find('.note-dialog__swatch')
-      await swatch.trigger('click')
-      expect(swatch.classes()).toContain('note-dialog__swatch--active')
-      await swatch.trigger('click')
-      expect(swatch.classes()).not.toContain('note-dialog__swatch--active')
+      // Click a color swatch (skip the first "no color" swatch)
+      const colorSwatch = wrapper.findAll('.note-dialog__swatch').at(1)!
+      await colorSwatch.trigger('click')
+      expect(colorSwatch.classes()).toContain('note-dialog__swatch--active')
+      await colorSwatch.trigger('click')
+      expect(colorSwatch.classes()).not.toContain('note-dialog__swatch--active')
     })
 
     it('saves immediately on color change for existing notes', async () => {
@@ -328,7 +337,7 @@ describe('NoteDialog', () => {
       // Should be in view mode
       expect(wrapper.find('.nc-text-area').exists()).toBe(false)
       // Swatches still visible
-      expect(wrapper.findAll('.note-dialog__swatch')).toHaveLength(16)
+      expect(wrapper.findAll('.note-dialog__swatch')).toHaveLength(17)
     })
   })
 })
