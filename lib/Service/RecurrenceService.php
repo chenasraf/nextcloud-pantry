@@ -33,19 +33,34 @@ class RecurrenceService {
 	/**
 	 * Compute the next occurrence strictly after $from.
 	 *
-	 * The iterator's semantics are: the first item equals DTSTART; subsequent items are
-	 * successive occurrences per the rule. We seed with DTSTART = $from and advance once.
+	 * Used for "repeat from completion" mode.
+	 *
+	 * When the rule contains BYDAY/BYMONTHDAY constraints, the simple approach
+	 * of seeding DTSTART=$from and calling next() once can skip the very next
+	 * matching day (e.g. BYDAY=TH seeded on Wednesday yields next week's
+	 * Thursday instead of tomorrow). In that case we anchor the series in the
+	 * past and scan forward to find the first occurrence after $from.
 	 */
 	public function computeNextOccurrence(string $rrule, \DateTimeImmutable $from): ?\DateTimeImmutable {
 		$normalized = $this->normalize($rrule);
 		$this->preflight($normalized);
+
+		$hasByDay = preg_match('/(?:^|;)(?:BYDAY|BYMONTHDAY)=/i', $normalized);
+		if ($hasByDay) {
+			// Anchor far enough in the past that the weekly/monthly cycle
+			// covers every possible target day. Using $from minus the
+			// interval period ensures the first matching day after $from
+			// is found without cycle-alignment issues.
+			$anchor = $from->modify('-1 year');
+			return $this->nextOccurrenceAfter($normalized, $anchor, $from);
+		}
+
+		// Simple interval rule (no day constraints): seed at $from, advance once.
 		try {
 			$iter = new RRuleIterator($normalized, $from);
 		} catch (InvalidDataException $e) {
 			throw new \InvalidArgumentException('Invalid RRULE: ' . $e->getMessage(), 0, $e);
 		}
-
-		// First call yields DTSTART itself. Advance to the next one.
 		$iter->next();
 		if (!$iter->valid()) {
 			return null;
