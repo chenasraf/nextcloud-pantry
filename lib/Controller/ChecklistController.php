@@ -412,8 +412,8 @@ final class ChecklistController extends OCSController {
 	/**
 	 * Upload an image for an item
 	 *
-	 * Uploads the request body as an image into the user's configured pantry
-	 * image folder and attaches it to the item.
+	 * Expects a multipart/form-data request with the image file in a field
+	 * named **image**.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId List id.

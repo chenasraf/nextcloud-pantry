@@ -193,6 +193,10 @@ final class PhotoController extends OCSController {
 	/**
 	 * Upload a photo
 	 *
+	 * Expects a multipart/form-data request with the image file in a field
+	 * named **image**. The optional folderId and caption may be sent as
+	 * additional form fields.
+	 *
 	 * @param int $houseId House id.
 	 * @param int|null $folderId Optional folder id to place the photo in.
 	 * @param string|null $caption Optional caption.

@@ -8,9 +8,19 @@ export interface UserPrefs {
   firstDayOfWeek: number
 }
 
-export async function getUserPrefs(): Promise<UserPrefs> {
-  const resp = await ocs.get<UserPrefs>('/prefs')
-  return resp.data ?? { lastHouseId: null, firstDayOfWeek: 1 }
+let userPrefsInflight: Promise<UserPrefs> | null = null
+
+export function getUserPrefs(): Promise<UserPrefs> {
+  if (userPrefsInflight) return userPrefsInflight
+
+  userPrefsInflight = ocs
+    .get<UserPrefs>('/prefs')
+    .then((resp) => resp.data ?? { lastHouseId: null, firstDayOfWeek: 1 })
+    .finally(() => {
+      userPrefsInflight = null
+    })
+
+  return userPrefsInflight
 }
 
 export async function setUserPrefs(patch: Partial<UserPrefs>): Promise<UserPrefs> {
@@ -70,15 +80,27 @@ const housePrefsDefaults: HousePrefs = {
   notifyItemDone: true,
 }
 
-export async function getHousePrefs(houseId: number): Promise<HousePrefs> {
-  const resp = await ocs.get<HousePrefs>(`/houses/${houseId}/prefs`)
-  return { ...housePrefsDefaults, ...resp.data }
+// Deduplicate concurrent getHousePrefs calls for the same house.
+const housePrefsInflight = new Map<number, Promise<HousePrefs>>()
+
+export function getHousePrefs(houseId: number): Promise<HousePrefs> {
+  const existing = housePrefsInflight.get(houseId)
+  if (existing) return existing
+
+  const promise = ocs
+    .get<HousePrefs>(`/houses/${houseId}/prefs`)
+    .then((resp) => ({ ...housePrefsDefaults, ...resp.data }))
+    .finally(() => housePrefsInflight.delete(houseId))
+
+  housePrefsInflight.set(houseId, promise)
+  return promise
 }
 
 export async function setHousePrefs(
   houseId: number,
   patch: Partial<HousePrefs>,
 ): Promise<HousePrefs> {
+  housePrefsInflight.delete(houseId)
   const resp = await ocs.put<HousePrefs>(`/houses/${houseId}/prefs`, patch)
   return { ...housePrefsDefaults, ...resp.data }
 }

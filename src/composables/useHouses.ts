@@ -7,20 +7,31 @@ const loaded = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-async function load(force = false): Promise<House[]> {
-  if (loaded.value && !force) return houses.value
+let inflight: Promise<House[]> | null = null
+
+function load(force = false): Promise<House[]> {
+  if (loaded.value && !force) return Promise.resolve(houses.value)
+  if (inflight && !force) return inflight
+
   loading.value = true
   error.value = null
-  try {
-    houses.value = await api.listHouses()
-    loaded.value = true
-  } catch (e) {
-    error.value = (e as Error).message
-    throw e
-  } finally {
-    loading.value = false
-  }
-  return houses.value
+  inflight = api
+    .listHouses()
+    .then((result) => {
+      houses.value = result
+      loaded.value = true
+      return result
+    })
+    .catch((e) => {
+      error.value = (e as Error).message
+      throw e
+    })
+    .finally(() => {
+      loading.value = false
+      inflight = null
+    })
+
+  return inflight
 }
 
 async function create(name: string, description?: string | null): Promise<House> {

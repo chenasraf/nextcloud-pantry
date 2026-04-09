@@ -2509,7 +2509,7 @@
             "post": {
                 "operationId": "checklist-upload-item-image",
                 "summary": "Upload an image for an item",
-                "description": "Uploads the request body as an image into the user's configured pantry image folder and attaches it to the item.",
+                "description": "Expects a multipart/form-data request with the image file in a field named **image**.",
                 "tags": [
                     "checklist"
                 ],
@@ -5576,6 +5576,7 @@
             "post": {
                 "operationId": "photo-upload-photo",
                 "summary": "Upload a photo",
+                "description": "Expects a multipart/form-data request with the image file in a field named **image**. The optional folderId and caption may be sent as additional form fields.",
                 "tags": [
                     "photo"
                 ],
