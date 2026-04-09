@@ -70,11 +70,17 @@ namespace OCA\Pantry;
  *
  * @psalm-type PantrySuccess = array{success: true}
  *
- * @psalm-type PantryLastHouse = array{houseId: int|null}
+ * @psalm-type PantryUserPrefs = array{
+ *     lastHouseId: int|null,
+ *     firstDayOfWeek: int,
+ * }
  *
- * @psalm-type PantryImageFolder = array{folder: string}
- *
- * @psalm-type PantryNotificationPrefs = array{
+ * @psalm-type PantryHousePrefs = array{
+ *     imageFolder: string,
+ *     photoSort: string,
+ *     photoFoldersFirst: bool,
+ *     noteSort: string,
+ *     checklistItemSort: string,
  *     notifyPhoto: bool,
  *     notifyNoteCreate: bool,
  *     notifyNoteEdit: bool,

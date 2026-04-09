@@ -10,17 +10,22 @@ namespace OCA\Pantry\Tests\Unit\Service;
 use OCA\Pantry\AppInfo\Application;
 use OCA\Pantry\Service\PrefsService;
 use OCP\IConfig;
+use OCP\IL10N;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class PrefsServiceTest extends TestCase {
 	/** @var IConfig&MockObject */
 	private IConfig $config;
+	/** @var IL10N&MockObject */
+	private IL10N $l;
 	private PrefsService $svc;
 
 	protected function setUp(): void {
 		$this->config = $this->createMock(IConfig::class);
-		$this->svc = new PrefsService($this->config);
+		$this->l = $this->createMock(IL10N::class);
+		$this->l->method('l')->willReturn('1'); // Monday fallback
+		$this->svc = new PrefsService($this->config, $this->l);
 	}
 
 	// ----- Notification preferences -----

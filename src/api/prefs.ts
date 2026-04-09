@@ -1,75 +1,42 @@
 import { ocs } from '@/axios'
 
+// ----- User-level prefs (not per-house) -----
+
+export interface UserPrefs {
+  lastHouseId: number | null
+  /** 0 = Sunday, 1 = Monday, …, 6 = Saturday. Read-only from server. */
+  firstDayOfWeek: number
+}
+
+export async function getUserPrefs(): Promise<UserPrefs> {
+  const resp = await ocs.get<UserPrefs>('/prefs')
+  return resp.data ?? { lastHouseId: null, firstDayOfWeek: 1 }
+}
+
+export async function setUserPrefs(patch: Partial<UserPrefs>): Promise<UserPrefs> {
+  const resp = await ocs.put<UserPrefs>('/prefs', patch)
+  return resp.data ?? { lastHouseId: null, firstDayOfWeek: 1 }
+}
+
+// Convenience wrappers (used widely, keep the simple API)
 export async function getLastHouse(): Promise<number | null> {
-  const resp = await ocs.get<{ houseId: number | null }>('/prefs/last-house')
-  return resp.data?.houseId ?? null
+  const prefs = await getUserPrefs()
+  return prefs.lastHouseId
 }
 
 export async function setLastHouse(houseId: number | null): Promise<void> {
-  await ocs.put('/prefs/last-house', { houseId })
+  await setUserPrefs({ lastHouseId: houseId })
 }
 
-export async function getImageFolder(houseId: number): Promise<string> {
-  const resp = await ocs.get<{ folder: string }>(`/houses/${houseId}/prefs/image-folder`)
-  return resp.data?.folder ?? '/Pantry'
-}
-
-export async function setImageFolder(houseId: number, folder: string): Promise<string> {
-  const resp = await ocs.put<{ folder: string }>(`/houses/${houseId}/prefs/image-folder`, {
-    folder,
-  })
-  return resp.data?.folder ?? folder
-}
+// ----- Per-house prefs -----
 
 export type PhotoSort = 'custom' | 'newest' | 'oldest' | 'description_asc' | 'description_desc'
 export type NoteSort = 'custom' | 'newest' | 'oldest' | 'title_asc' | 'title_desc'
+export type ChecklistItemSort = 'custom' | 'newest' | 'oldest' | 'name_asc' | 'name_desc'
 
 export interface PhotoSortPrefs {
   sort: PhotoSort
   foldersFirst: boolean
-}
-
-export async function getPhotoSort(houseId: number): Promise<PhotoSortPrefs> {
-  const resp = await ocs.get<PhotoSortPrefs>(`/houses/${houseId}/prefs/photo-sort`)
-  return resp.data ?? { sort: 'custom', foldersFirst: true }
-}
-
-export async function setPhotoSort(
-  houseId: number,
-  prefs: Partial<PhotoSortPrefs>,
-): Promise<PhotoSortPrefs> {
-  const resp = await ocs.put<PhotoSortPrefs>(`/houses/${houseId}/prefs/photo-sort`, prefs)
-  return resp.data ?? { sort: 'custom', foldersFirst: true }
-}
-
-export async function getNoteSort(houseId: number): Promise<{ sort: NoteSort }> {
-  const resp = await ocs.get<{ sort: NoteSort }>(`/houses/${houseId}/prefs/note-sort`)
-  return resp.data ?? { sort: 'custom' }
-}
-
-export async function setNoteSort(houseId: number, sort: NoteSort): Promise<{ sort: NoteSort }> {
-  const resp = await ocs.put<{ sort: NoteSort }>(`/houses/${houseId}/prefs/note-sort`, { sort })
-  return resp.data ?? { sort }
-}
-
-export type ChecklistItemSort = 'custom' | 'newest' | 'oldest' | 'name_asc' | 'name_desc'
-
-export async function getChecklistItemSort(houseId: number): Promise<{ sort: ChecklistItemSort }> {
-  const resp = await ocs.get<{ sort: ChecklistItemSort }>(
-    `/houses/${houseId}/prefs/checklist-item-sort`,
-  )
-  return resp.data ?? { sort: 'custom' }
-}
-
-export async function setChecklistItemSort(
-  houseId: number,
-  sort: ChecklistItemSort,
-): Promise<{ sort: ChecklistItemSort }> {
-  const resp = await ocs.put<{ sort: ChecklistItemSort }>(
-    `/houses/${houseId}/prefs/checklist-item-sort`,
-    { sort },
-  )
-  return resp.data ?? { sort }
 }
 
 export interface NotificationPrefs {
@@ -81,33 +48,115 @@ export interface NotificationPrefs {
   notifyItemDone: boolean
 }
 
+export interface HousePrefs extends NotificationPrefs {
+  imageFolder: string
+  photoSort: PhotoSort
+  photoFoldersFirst: boolean
+  noteSort: NoteSort
+  checklistItemSort: ChecklistItemSort
+}
+
+const housePrefsDefaults: HousePrefs = {
+  imageFolder: '/Pantry',
+  photoSort: 'custom',
+  photoFoldersFirst: true,
+  noteSort: 'custom',
+  checklistItemSort: 'custom',
+  notifyPhoto: true,
+  notifyNoteCreate: true,
+  notifyNoteEdit: true,
+  notifyItemAdd: true,
+  notifyItemRecur: true,
+  notifyItemDone: true,
+}
+
+export async function getHousePrefs(houseId: number): Promise<HousePrefs> {
+  const resp = await ocs.get<HousePrefs>(`/houses/${houseId}/prefs`)
+  return { ...housePrefsDefaults, ...resp.data }
+}
+
+export async function setHousePrefs(
+  houseId: number,
+  patch: Partial<HousePrefs>,
+): Promise<HousePrefs> {
+  const resp = await ocs.put<HousePrefs>(`/houses/${houseId}/prefs`, patch)
+  return { ...housePrefsDefaults, ...resp.data }
+}
+
+// ----- Convenience wrappers for individual prefs -----
+
+export async function getPhotoSort(houseId: number): Promise<PhotoSortPrefs> {
+  const p = await getHousePrefs(houseId)
+  return { sort: p.photoSort, foldersFirst: p.photoFoldersFirst }
+}
+
+export async function setPhotoSort(
+  houseId: number,
+  prefs: Partial<PhotoSortPrefs>,
+): Promise<PhotoSortPrefs> {
+  const patch: Partial<HousePrefs> = {}
+  if (prefs.sort !== undefined) patch.photoSort = prefs.sort
+  if (prefs.foldersFirst !== undefined) patch.photoFoldersFirst = prefs.foldersFirst
+  const p = await setHousePrefs(houseId, patch)
+  return { sort: p.photoSort, foldersFirst: p.photoFoldersFirst }
+}
+
+export async function getNoteSort(houseId: number): Promise<{ sort: NoteSort }> {
+  const p = await getHousePrefs(houseId)
+  return { sort: p.noteSort }
+}
+
+export async function setNoteSort(houseId: number, sort: NoteSort): Promise<{ sort: NoteSort }> {
+  const p = await setHousePrefs(houseId, { noteSort: sort })
+  return { sort: p.noteSort }
+}
+
+export async function getChecklistItemSort(houseId: number): Promise<{ sort: ChecklistItemSort }> {
+  const p = await getHousePrefs(houseId)
+  return { sort: p.checklistItemSort }
+}
+
+export async function setChecklistItemSort(
+  houseId: number,
+  sort: ChecklistItemSort,
+): Promise<{ sort: ChecklistItemSort }> {
+  const p = await setHousePrefs(houseId, { checklistItemSort: sort })
+  return { sort: p.checklistItemSort }
+}
+
+export async function getImageFolder(houseId: number): Promise<string> {
+  const p = await getHousePrefs(houseId)
+  return p.imageFolder
+}
+
+export async function setImageFolder(houseId: number, folder: string): Promise<string> {
+  const p = await setHousePrefs(houseId, { imageFolder: folder })
+  return p.imageFolder
+}
+
 export async function getNotificationPrefs(houseId: number): Promise<NotificationPrefs> {
-  const resp = await ocs.get<NotificationPrefs>(`/houses/${houseId}/prefs/notifications`)
-  return (
-    resp.data ?? {
-      notifyPhoto: true,
-      notifyNoteCreate: true,
-      notifyNoteEdit: true,
-      notifyItemAdd: true,
-      notifyItemRecur: true,
-      notifyItemDone: true,
-    }
-  )
+  const p = await getHousePrefs(houseId)
+  return {
+    notifyPhoto: p.notifyPhoto,
+    notifyNoteCreate: p.notifyNoteCreate,
+    notifyNoteEdit: p.notifyNoteEdit,
+    notifyItemAdd: p.notifyItemAdd,
+    notifyItemRecur: p.notifyItemRecur,
+    notifyItemDone: p.notifyItemDone,
+  }
 }
 
 export async function setNotificationPrefs(
   houseId: number,
   prefs: Partial<NotificationPrefs>,
 ): Promise<NotificationPrefs> {
-  const resp = await ocs.put<NotificationPrefs>(`/houses/${houseId}/prefs/notifications`, prefs)
-  return (
-    resp.data ?? {
-      notifyPhoto: true,
-      notifyNoteCreate: true,
-      notifyNoteEdit: true,
-      notifyItemAdd: true,
-      notifyItemRecur: true,
-      notifyItemDone: true,
-    }
-  )
+  const p = await setHousePrefs(houseId, prefs)
+  return {
+    notifyPhoto: p.notifyPhoto,
+    notifyNoteCreate: p.notifyNoteCreate,
+    notifyNoteEdit: p.notifyNoteEdit,
+    notifyItemAdd: p.notifyItemAdd,
+    notifyItemRecur: p.notifyItemRecur,
+    notifyItemDone: p.notifyItemDone,
+  }
 }

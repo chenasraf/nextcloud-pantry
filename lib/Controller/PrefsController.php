@@ -20,9 +20,8 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * @psalm-import-type PantryLastHouse from ResponseDefinitions
- * @psalm-import-type PantryImageFolder from ResponseDefinitions
- * @psalm-import-type PantryNotificationPrefs from ResponseDefinitions
+ * @psalm-import-type PantryUserPrefs from ResponseDefinitions
+ * @psalm-import-type PantryHousePrefs from ResponseDefinitions
  */
 final class PrefsController extends OCSController {
 	use TranslatesDomainExceptions;
@@ -38,252 +37,90 @@ final class PrefsController extends OCSController {
 	}
 
 	/**
-	 * Get the current user's last-used house id
+	 * Get all user-level preferences (not scoped to a house)
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryLastHouse, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>
 	 *
-	 * 200: Last house returned
+	 * 200: Prefs returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/prefs/last-house')]
+	#[ApiRoute(verb: 'GET', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function getLastHouse(): DataResponse {
+	public function getUserPrefs(): DataResponse {
 		return $this->runAction(function (): DataResponse {
 			$uid = $this->requireUid();
-			$houseId = $this->prefs->getLastHouseId($uid);
+			$prefs = $this->prefs->getAllUserPrefs($uid);
 			// If the saved house is no longer accessible, forget it.
+			$houseId = $prefs['lastHouseId'] ?? null;
 			if ($houseId !== null) {
 				try {
 					$this->auth->requireMember($houseId, $uid);
 				} catch (ForbiddenException) {
 					$this->prefs->setLastHouseId($uid, null);
-					$houseId = null;
+					$prefs['lastHouseId'] = null;
 				}
 			}
-			return new DataResponse(['houseId' => $houseId]);
+			return new DataResponse($prefs);
 		});
 	}
 
 	/**
-	 * Set the current user's last-used house id
+	 * Update user-level preferences
 	 *
-	 * @param int|null $houseId House id, or null to clear.
+	 * @param int|null $lastHouseId Last-used house id, or null to clear.
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryLastHouse, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>
 	 *
-	 * 200: Last house updated
+	 * 200: Prefs updated
 	 */
-	#[ApiRoute(verb: 'PUT', url: '/api/prefs/last-house')]
+	#[ApiRoute(verb: 'PUT', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function setLastHouse(?int $houseId = null): DataResponse {
-		return $this->runAction(function () use ($houseId): DataResponse {
+	public function setUserPrefs(?int $lastHouseId = null): DataResponse {
+		return $this->runAction(function () use ($lastHouseId): DataResponse {
 			$uid = $this->requireUid();
-			if ($houseId !== null) {
-				$this->auth->requireMember($houseId, $uid);
+			$patch = [];
+			if ($lastHouseId !== null) {
+				$this->auth->requireMember($lastHouseId, $uid);
+				$patch['lastHouseId'] = $lastHouseId;
+			} else {
+				// Explicit null means clear
+				$patch['lastHouseId'] = null;
 			}
-			$this->prefs->setLastHouseId($uid, $houseId);
-			return new DataResponse(['houseId' => $houseId]);
+			$this->prefs->setUserPrefs($uid, $patch);
+			return new DataResponse($this->prefs->getAllUserPrefs($uid));
 		});
 	}
 
 	/**
-	 * Get the user's preferred image upload folder for a house
+	 * Get all per-house preferences for the current user
 	 *
 	 * @param int $houseId House id.
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryImageFolder, array{}>
-	 *
-	 * 200: Folder returned
-	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/image-folder')]
-	#[NoAdminRequired]
-	public function getImageFolder(int $houseId): DataResponse {
-		return $this->runAction(function () use ($houseId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			return new DataResponse(['folder' => $this->prefs->getImageFolder($uid, $houseId)]);
-		});
-	}
-
-	/**
-	 * Set the user's preferred image upload folder for a house
-	 *
-	 * @param int $houseId House id.
-	 * @param string $folder Absolute path within the user's files.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryImageFolder, array{}>
-	 *
-	 * 200: Folder updated
-	 */
-	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/image-folder')]
-	#[NoAdminRequired]
-	public function setImageFolder(int $houseId, string $folder): DataResponse {
-		return $this->runAction(function () use ($houseId, $folder): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$stored = $this->prefs->setImageFolder($uid, $houseId, $folder);
-			return new DataResponse(['folder' => $stored]);
-		});
-	}
-
-	/**
-	 * Get photo sort preference for a house
-	 *
-	 * @param int $houseId House id.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, array{sort: string, foldersFirst: bool}, array{}>
-	 *
-	 * 200: Sort preference returned
-	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/photo-sort')]
-	#[NoAdminRequired]
-	public function getPhotoSort(int $houseId): DataResponse {
-		return $this->runAction(function () use ($houseId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			return new DataResponse([
-				'sort' => $this->prefs->getPhotoSort($uid, $houseId),
-				'foldersFirst' => $this->prefs->getPhotoFoldersFirst($uid, $houseId),
-			]);
-		});
-	}
-
-	/**
-	 * Set photo sort preference for a house
-	 *
-	 * @param int $houseId House id.
-	 * @param string|null $sort Sort mode.
-	 * @param bool|null $foldersFirst Whether folders appear first.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, array{sort: string, foldersFirst: bool}, array{}>
-	 *
-	 * 200: Sort preference updated
-	 */
-	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/photo-sort')]
-	#[NoAdminRequired]
-	public function setPhotoSort(int $houseId, ?string $sort = null, ?bool $foldersFirst = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $sort, $foldersFirst): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			if ($sort !== null) {
-				$this->prefs->setPhotoSort($uid, $houseId, $sort);
-			}
-			if ($foldersFirst !== null) {
-				$this->prefs->setPhotoFoldersFirst($uid, $houseId, $foldersFirst);
-			}
-			return new DataResponse([
-				'sort' => $this->prefs->getPhotoSort($uid, $houseId),
-				'foldersFirst' => $this->prefs->getPhotoFoldersFirst($uid, $houseId),
-			]);
-		});
-	}
-
-	/**
-	 * Get note sort preference for a house
-	 *
-	 * @param int $houseId House id.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, array{sort: string}, array{}>
-	 *
-	 * 200: Sort preference returned
-	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/note-sort')]
-	#[NoAdminRequired]
-	public function getNoteSort(int $houseId): DataResponse {
-		return $this->runAction(function () use ($houseId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			return new DataResponse([
-				'sort' => $this->prefs->getNoteSort($uid, $houseId),
-			]);
-		});
-	}
-
-	/**
-	 * Set note sort preference for a house
-	 *
-	 * @param int $houseId House id.
-	 * @param string $sort Sort mode.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, array{sort: string}, array{}>
-	 *
-	 * 200: Sort preference updated
-	 */
-	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/note-sort')]
-	#[NoAdminRequired]
-	public function setNoteSort(int $houseId, string $sort): DataResponse {
-		return $this->runAction(function () use ($houseId, $sort): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$stored = $this->prefs->setNoteSort($uid, $houseId, $sort);
-			return new DataResponse(['sort' => $stored]);
-		});
-	}
-
-	/**
-	 * Get checklist item sort preference for a house
-	 *
-	 * @param int $houseId House id.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, array{sort: string}, array{}>
-	 *
-	 * 200: Sort preference returned
-	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/checklist-item-sort')]
-	#[NoAdminRequired]
-	public function getChecklistItemSort(int $houseId): DataResponse {
-		return $this->runAction(function () use ($houseId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			return new DataResponse([
-				'sort' => $this->prefs->getChecklistItemSort($uid, $houseId),
-			]);
-		});
-	}
-
-	/**
-	 * Set checklist item sort preference for a house
-	 *
-	 * @param int $houseId House id.
-	 * @param string $sort Sort mode.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, array{sort: string}, array{}>
-	 *
-	 * 200: Sort preference updated
-	 */
-	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/checklist-item-sort')]
-	#[NoAdminRequired]
-	public function setChecklistItemSort(int $houseId, string $sort): DataResponse {
-		return $this->runAction(function () use ($houseId, $sort): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$stored = $this->prefs->setChecklistItemSort($uid, $houseId, $sort);
-			return new DataResponse(['sort' => $stored]);
-		});
-	}
-
-	/**
-	 * Get notification preferences for a house
-	 *
-	 * @param int $houseId House id.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryNotificationPrefs, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryHousePrefs, array{}>
 	 *
 	 * 200: Prefs returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs/notifications')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/prefs')]
 	#[NoAdminRequired]
-	public function getNotificationPrefs(int $houseId): DataResponse {
+	public function getHousePrefs(int $houseId): DataResponse {
 		return $this->runAction(function () use ($houseId): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			return new DataResponse($this->prefs->getNotificationPrefs($uid, $houseId));
+			return new DataResponse($this->prefs->getAllHousePrefs($uid, $houseId));
 		});
 	}
 
 	/**
-	 * Update notification preferences for a house
+	 * Update per-house preferences for the current user
+	 *
+	 * Only the fields present in the request body are updated; omitted fields
+	 * are left unchanged.
 	 *
 	 * @param int $houseId House id.
+	 * @param string|null $imageFolder Image upload folder path.
+	 * @param string|null $photoSort Photo sort mode.
+	 * @param bool|null $photoFoldersFirst Whether folders appear first in photo board.
+	 * @param string|null $noteSort Note sort mode.
+	 * @param string|null $checklistItemSort Checklist item sort mode.
 	 * @param bool|null $notifyPhoto Photo upload notifications.
 	 * @param bool|null $notifyNoteCreate Note creation notifications.
 	 * @param bool|null $notifyNoteEdit Note edit notifications.
@@ -291,35 +128,44 @@ final class PrefsController extends OCSController {
 	 * @param bool|null $notifyItemRecur Recurring item reappeared notifications.
 	 * @param bool|null $notifyItemDone Item completed notifications.
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryNotificationPrefs, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryHousePrefs, array{}>
 	 *
 	 * 200: Prefs updated
 	 */
-	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs/notifications')]
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/prefs')]
 	#[NoAdminRequired]
-	public function setNotificationPrefs(int $houseId, ?bool $notifyPhoto = null, ?bool $notifyNoteCreate = null, ?bool $notifyNoteEdit = null, ?bool $notifyItemAdd = null, ?bool $notifyItemRecur = null, ?bool $notifyItemDone = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+	public function setHousePrefs(
+		int $houseId,
+		?string $imageFolder = null,
+		?string $photoSort = null,
+		?bool $photoFoldersFirst = null,
+		?string $noteSort = null,
+		?string $checklistItemSort = null,
+		?bool $notifyPhoto = null,
+		?bool $notifyNoteCreate = null,
+		?bool $notifyNoteEdit = null,
+		?bool $notifyItemAdd = null,
+		?bool $notifyItemRecur = null,
+		?bool $notifyItemDone = null,
+	): DataResponse {
+		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			if ($notifyPhoto !== null) {
-				$this->prefs->setNotificationPref($uid, $houseId, 'notify_photo', $notifyPhoto);
-			}
-			if ($notifyNoteCreate !== null) {
-				$this->prefs->setNotificationPref($uid, $houseId, 'notify_note_create', $notifyNoteCreate);
-			}
-			if ($notifyNoteEdit !== null) {
-				$this->prefs->setNotificationPref($uid, $houseId, 'notify_note_edit', $notifyNoteEdit);
-			}
-			if ($notifyItemAdd !== null) {
-				$this->prefs->setNotificationPref($uid, $houseId, 'notify_item_add', $notifyItemAdd);
-			}
-			if ($notifyItemRecur !== null) {
-				$this->prefs->setNotificationPref($uid, $houseId, 'notify_item_recur', $notifyItemRecur);
-			}
-			if ($notifyItemDone !== null) {
-				$this->prefs->setNotificationPref($uid, $houseId, 'notify_item_done', $notifyItemDone);
-			}
-			return new DataResponse($this->prefs->getNotificationPrefs($uid, $houseId));
+			$patch = array_filter([
+				'imageFolder' => $imageFolder,
+				'photoSort' => $photoSort,
+				'photoFoldersFirst' => $photoFoldersFirst,
+				'noteSort' => $noteSort,
+				'checklistItemSort' => $checklistItemSort,
+				'notifyPhoto' => $notifyPhoto,
+				'notifyNoteCreate' => $notifyNoteCreate,
+				'notifyNoteEdit' => $notifyNoteEdit,
+				'notifyItemAdd' => $notifyItemAdd,
+				'notifyItemRecur' => $notifyItemRecur,
+				'notifyItemDone' => $notifyItemDone,
+			], fn ($v) => $v !== null);
+			$this->prefs->setHousePrefs($uid, $houseId, $patch);
+			return new DataResponse($this->prefs->getAllHousePrefs($uid, $houseId));
 		});
 	}
 

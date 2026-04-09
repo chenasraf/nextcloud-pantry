@@ -103,27 +103,54 @@
                     }
                 }
             },
-            "ImageFolder": {
+            "HousePrefs": {
                 "type": "object",
                 "required": [
-                    "folder"
+                    "imageFolder",
+                    "photoSort",
+                    "photoFoldersFirst",
+                    "noteSort",
+                    "checklistItemSort",
+                    "notifyPhoto",
+                    "notifyNoteCreate",
+                    "notifyNoteEdit",
+                    "notifyItemAdd",
+                    "notifyItemRecur",
+                    "notifyItemDone"
                 ],
                 "properties": {
-                    "folder": {
+                    "imageFolder": {
                         "type": "string"
-                    }
-                }
-            },
-            "LastHouse": {
-                "type": "object",
-                "required": [
-                    "houseId"
-                ],
-                "properties": {
-                    "houseId": {
-                        "type": "integer",
-                        "format": "int64",
-                        "nullable": true
+                    },
+                    "photoSort": {
+                        "type": "string"
+                    },
+                    "photoFoldersFirst": {
+                        "type": "boolean"
+                    },
+                    "noteSort": {
+                        "type": "string"
+                    },
+                    "checklistItemSort": {
+                        "type": "string"
+                    },
+                    "notifyPhoto": {
+                        "type": "boolean"
+                    },
+                    "notifyNoteCreate": {
+                        "type": "boolean"
+                    },
+                    "notifyNoteEdit": {
+                        "type": "boolean"
+                    },
+                    "notifyItemAdd": {
+                        "type": "boolean"
+                    },
+                    "notifyItemRecur": {
+                        "type": "boolean"
+                    },
+                    "notifyItemDone": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -344,37 +371,6 @@
                     }
                 }
             },
-            "NotificationPrefs": {
-                "type": "object",
-                "required": [
-                    "notifyPhoto",
-                    "notifyNoteCreate",
-                    "notifyNoteEdit",
-                    "notifyItemAdd",
-                    "notifyItemRecur",
-                    "notifyItemDone"
-                ],
-                "properties": {
-                    "notifyPhoto": {
-                        "type": "boolean"
-                    },
-                    "notifyNoteCreate": {
-                        "type": "boolean"
-                    },
-                    "notifyNoteEdit": {
-                        "type": "boolean"
-                    },
-                    "notifyItemAdd": {
-                        "type": "boolean"
-                    },
-                    "notifyItemRecur": {
-                        "type": "boolean"
-                    },
-                    "notifyItemDone": {
-                        "type": "boolean"
-                    }
-                }
-            },
             "OCSMeta": {
                 "type": "object",
                 "required": [
@@ -498,6 +494,24 @@
                         "enum": [
                             true
                         ]
+                    }
+                }
+            },
+            "UserPrefs": {
+                "type": "object",
+                "required": [
+                    "lastHouseId",
+                    "firstDayOfWeek"
+                ],
+                "properties": {
+                    "lastHouseId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "firstDayOfWeek": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             }
@@ -6063,10 +6077,10 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/prefs/last-house": {
+        "/ocs/v2.php/apps/pantry/api/prefs": {
             "get": {
-                "operationId": "prefs-get-last-house",
-                "summary": "Get the current user's last-used house id",
+                "operationId": "prefs-get-user-prefs",
+                "summary": "Get all user-level preferences (not scoped to a house)",
                 "tags": [
                     "prefs"
                 ],
@@ -6092,7 +6106,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Last house returned",
+                        "description": "Prefs returned",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6112,7 +6126,7 @@
                                                     "$ref": "#/components/schemas/OCSMeta"
                                                 },
                                                 "data": {
-                                                    "$ref": "#/components/schemas/LastHouse"
+                                                    "$ref": "#/components/schemas/UserPrefs"
                                                 }
                                             }
                                         }
@@ -6152,8 +6166,8 @@
                 }
             },
             "put": {
-                "operationId": "prefs-set-last-house",
-                "summary": "Set the current user's last-used house id",
+                "operationId": "prefs-set-user-prefs",
+                "summary": "Update user-level preferences",
                 "tags": [
                     "prefs"
                 ],
@@ -6172,12 +6186,12 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
-                                    "houseId": {
+                                    "lastHouseId": {
                                         "type": "integer",
                                         "format": "int64",
                                         "nullable": true,
                                         "default": null,
-                                        "description": "House id, or null to clear."
+                                        "description": "Last-used house id, or null to clear."
                                     }
                                 }
                             }
@@ -6198,7 +6212,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Last house updated",
+                        "description": "Prefs updated",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6218,7 +6232,7 @@
                                                     "$ref": "#/components/schemas/OCSMeta"
                                                 },
                                                 "data": {
-                                                    "$ref": "#/components/schemas/LastHouse"
+                                                    "$ref": "#/components/schemas/UserPrefs"
                                                 }
                                             }
                                         }
@@ -6258,931 +6272,10 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/prefs/image-folder": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/prefs": {
             "get": {
-                "operationId": "prefs-get-image-folder",
-                "summary": "Get the user's preferred image upload folder for a house",
-                "tags": [
-                    "prefs"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
-                    },
-                    {
-                        "basic_auth": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "houseId",
-                        "in": "path",
-                        "description": "House id.",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
-                        "schema": {
-                            "type": "boolean",
-                            "default": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Folder returned",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "$ref": "#/components/schemas/ImageFolder"
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Current user is not logged in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "operationId": "prefs-set-image-folder",
-                "summary": "Set the user's preferred image upload folder for a house",
-                "tags": [
-                    "prefs"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
-                    },
-                    {
-                        "basic_auth": []
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": [
-                                    "folder"
-                                ],
-                                "properties": {
-                                    "folder": {
-                                        "type": "string",
-                                        "description": "Absolute path within the user's files."
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "parameters": [
-                    {
-                        "name": "houseId",
-                        "in": "path",
-                        "description": "House id.",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
-                        "schema": {
-                            "type": "boolean",
-                            "default": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Folder updated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "$ref": "#/components/schemas/ImageFolder"
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Current user is not logged in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/prefs/photo-sort": {
-            "get": {
-                "operationId": "prefs-get-photo-sort",
-                "summary": "Get photo sort preference for a house",
-                "tags": [
-                    "prefs"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
-                    },
-                    {
-                        "basic_auth": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "houseId",
-                        "in": "path",
-                        "description": "House id.",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
-                        "schema": {
-                            "type": "boolean",
-                            "default": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sort preference returned",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "sort",
-                                                        "foldersFirst"
-                                                    ],
-                                                    "properties": {
-                                                        "sort": {
-                                                            "type": "string"
-                                                        },
-                                                        "foldersFirst": {
-                                                            "type": "boolean"
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Current user is not logged in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "operationId": "prefs-set-photo-sort",
-                "summary": "Set photo sort preference for a house",
-                "tags": [
-                    "prefs"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
-                    },
-                    {
-                        "basic_auth": []
-                    }
-                ],
-                "requestBody": {
-                    "required": false,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "sort": {
-                                        "type": "string",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "Sort mode."
-                                    },
-                                    "foldersFirst": {
-                                        "type": "boolean",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "Whether folders appear first."
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "parameters": [
-                    {
-                        "name": "houseId",
-                        "in": "path",
-                        "description": "House id.",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
-                        "schema": {
-                            "type": "boolean",
-                            "default": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sort preference updated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "sort",
-                                                        "foldersFirst"
-                                                    ],
-                                                    "properties": {
-                                                        "sort": {
-                                                            "type": "string"
-                                                        },
-                                                        "foldersFirst": {
-                                                            "type": "boolean"
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Current user is not logged in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/prefs/note-sort": {
-            "get": {
-                "operationId": "prefs-get-note-sort",
-                "summary": "Get note sort preference for a house",
-                "tags": [
-                    "prefs"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
-                    },
-                    {
-                        "basic_auth": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "houseId",
-                        "in": "path",
-                        "description": "House id.",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
-                        "schema": {
-                            "type": "boolean",
-                            "default": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sort preference returned",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "sort"
-                                                    ],
-                                                    "properties": {
-                                                        "sort": {
-                                                            "type": "string"
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Current user is not logged in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "operationId": "prefs-set-note-sort",
-                "summary": "Set note sort preference for a house",
-                "tags": [
-                    "prefs"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
-                    },
-                    {
-                        "basic_auth": []
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": [
-                                    "sort"
-                                ],
-                                "properties": {
-                                    "sort": {
-                                        "type": "string",
-                                        "description": "Sort mode."
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "parameters": [
-                    {
-                        "name": "houseId",
-                        "in": "path",
-                        "description": "House id.",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
-                        "schema": {
-                            "type": "boolean",
-                            "default": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sort preference updated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "sort"
-                                                    ],
-                                                    "properties": {
-                                                        "sort": {
-                                                            "type": "string"
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Current user is not logged in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/prefs/checklist-item-sort": {
-            "get": {
-                "operationId": "prefs-get-checklist-item-sort",
-                "summary": "Get checklist item sort preference for a house",
-                "tags": [
-                    "prefs"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
-                    },
-                    {
-                        "basic_auth": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "houseId",
-                        "in": "path",
-                        "description": "House id.",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
-                        "schema": {
-                            "type": "boolean",
-                            "default": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sort preference returned",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "sort"
-                                                    ],
-                                                    "properties": {
-                                                        "sort": {
-                                                            "type": "string"
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Current user is not logged in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "operationId": "prefs-set-checklist-item-sort",
-                "summary": "Set checklist item sort preference for a house",
-                "tags": [
-                    "prefs"
-                ],
-                "security": [
-                    {
-                        "bearer_auth": []
-                    },
-                    {
-                        "basic_auth": []
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": [
-                                    "sort"
-                                ],
-                                "properties": {
-                                    "sort": {
-                                        "type": "string",
-                                        "description": "Sort mode."
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "parameters": [
-                    {
-                        "name": "houseId",
-                        "in": "path",
-                        "description": "House id.",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    {
-                        "name": "OCS-APIRequest",
-                        "in": "header",
-                        "description": "Required to be true for the API request to pass",
-                        "required": true,
-                        "schema": {
-                            "type": "boolean",
-                            "default": true
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sort preference updated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "sort"
-                                                    ],
-                                                    "properties": {
-                                                        "sort": {
-                                                            "type": "string"
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Current user is not logged in",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "ocs"
-                                    ],
-                                    "properties": {
-                                        "ocs": {
-                                            "type": "object",
-                                            "required": [
-                                                "meta",
-                                                "data"
-                                            ],
-                                            "properties": {
-                                                "meta": {
-                                                    "$ref": "#/components/schemas/OCSMeta"
-                                                },
-                                                "data": {}
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/prefs/notifications": {
-            "get": {
-                "operationId": "prefs-get-notification-prefs",
-                "summary": "Get notification preferences for a house",
+                "operationId": "prefs-get-house-prefs",
+                "summary": "Get all per-house preferences for the current user",
                 "tags": [
                     "prefs"
                 ],
@@ -7238,7 +6331,7 @@
                                                     "$ref": "#/components/schemas/OCSMeta"
                                                 },
                                                 "data": {
-                                                    "$ref": "#/components/schemas/NotificationPrefs"
+                                                    "$ref": "#/components/schemas/HousePrefs"
                                                 }
                                             }
                                         }
@@ -7278,8 +6371,9 @@
                 }
             },
             "put": {
-                "operationId": "prefs-set-notification-prefs",
-                "summary": "Update notification preferences for a house",
+                "operationId": "prefs-set-house-prefs",
+                "summary": "Update per-house preferences for the current user",
+                "description": "Only the fields present in the request body are updated; omitted fields are left unchanged.",
                 "tags": [
                     "prefs"
                 ],
@@ -7298,6 +6392,36 @@
                             "schema": {
                                 "type": "object",
                                 "properties": {
+                                    "imageFolder": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Image upload folder path."
+                                    },
+                                    "photoSort": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Photo sort mode."
+                                    },
+                                    "photoFoldersFirst": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether folders appear first in photo board."
+                                    },
+                                    "noteSort": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Note sort mode."
+                                    },
+                                    "checklistItemSort": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Checklist item sort mode."
+                                    },
                                     "notifyPhoto": {
                                         "type": "boolean",
                                         "nullable": true,
@@ -7383,7 +6507,7 @@
                                                     "$ref": "#/components/schemas/OCSMeta"
                                                 },
                                                 "data": {
-                                                    "$ref": "#/components/schemas/NotificationPrefs"
+                                                    "$ref": "#/components/schemas/HousePrefs"
                                                 }
                                             }
                                         }
