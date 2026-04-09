@@ -32,6 +32,12 @@ export const nextcloudL10nMock = {
   n: (_app: string, singular: string, plural: string, count: number) => {
     return count === 1 ? singular : plural
   },
+  getFirstDay: () => 1, // Monday
+  getDayNamesShort: () => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  getDayNames: () => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  getDayNamesMin: () => ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  getCanonicalLocale: () => 'en',
+  getLanguage: () => 'en',
 }
 
 /**

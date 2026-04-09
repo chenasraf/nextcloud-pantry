@@ -176,6 +176,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import RepeatIcon from '@icons/Repeat.vue'
+import { getFirstDay, getDayNamesShort } from '@nextcloud/l10n'
 import { Frequency, RRule, Weekday } from 'rrule'
 
 // ---------- Types ----------
@@ -221,15 +222,30 @@ const error = ref<string | null>(null)
 
 const intervalId = `pantry-interval-${Math.random().toString(36).slice(2, 8)}`
 
-const weekdays = computed(() => [
-  { value: 0, short: t('pantry', 'Mo') },
-  { value: 1, short: t('pantry', 'Tu') },
-  { value: 2, short: t('pantry', 'We') },
-  { value: 3, short: t('pantry', 'Th') },
-  { value: 4, short: t('pantry', 'Fr') },
-  { value: 5, short: t('pantry', 'Sa') },
-  { value: 6, short: t('pantry', 'Su') },
-])
+// Build a locale-aware weekday list starting from the user's first day.
+// rrule.js values: 0=Mo, 1=Tu, 2=We, 3=Th, 4=Fr, 5=Sa, 6=Su
+// JS/Nextcloud getFirstDay(): 0=Su, 1=Mo, 2=Tu, …, 6=Sa
+// getDayNamesShort(): index 0=Su, 1=Mo, …, 6=Sa
+const weekdays = computed(() => {
+  const shortNames = getDayNamesShort()
+  // Canonical order: rrule value → JS weekday index
+  // rrule 0=Mo → JS 1, rrule 1=Tu → JS 2, …, rrule 6=Su → JS 0
+  const allDays = [
+    { value: 0, short: shortNames[1] ?? 'Mo' }, // Monday
+    { value: 1, short: shortNames[2] ?? 'Tu' }, // Tuesday
+    { value: 2, short: shortNames[3] ?? 'We' }, // Wednesday
+    { value: 3, short: shortNames[4] ?? 'Th' }, // Thursday
+    { value: 4, short: shortNames[5] ?? 'Fr' }, // Friday
+    { value: 5, short: shortNames[6] ?? 'Sa' }, // Saturday
+    { value: 6, short: shortNames[0] ?? 'Su' }, // Sunday
+  ]
+  // Rotate so the user's first day comes first.
+  // Convert JS firstDay (0=Su) to rrule index: Su→6, Mo→0, Tu→1, …, Sa→5
+  const jsFirst = getFirstDay() // 0=Su, 1=Mo, …
+  const rruleFirst = jsFirst === 0 ? 6 : jsFirst - 1
+  const startIdx = allDays.findIndex((d) => d.value === rruleFirst)
+  return [...allDays.slice(startIdx), ...allDays.slice(0, startIdx)]
+})
 
 const hasExisting = computed(() => !!props.modelValue)
 
