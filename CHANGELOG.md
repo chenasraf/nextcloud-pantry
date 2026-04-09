@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2](https://github.com/chenasraf/nextcloud-pantry/compare/v0.3.1...v0.3.2) (2026-04-09)
+
+
+### Bug Fixes
+
+* add missing no-color option to note colors ([48ff8a6](https://github.com/chenasraf/nextcloud-pantry/commit/48ff8a67d78893e1ca1d441811dd67001befb679))
+* dedupe api calls ([1f69077](https://github.com/chenasraf/nextcloud-pantry/commit/1f69077b8f8d8fd167647ff94eb7978bb99c4e1b))
+
 ## [0.3.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.3.0...v0.3.1) (2026-04-09)
 
 
