@@ -13,29 +13,6 @@ use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 class CategoryService {
-	/** Palette of supported icon keys, mirrored on the frontend. */
-	private const ICON_KEYS = [
-		'tag',
-		'food',
-		'fruit',
-		'vegetable',
-		'bakery',
-		'dairy',
-		'meat',
-		'fish',
-		'snacks',
-		'cookie',
-		'drinks',
-		'coffee',
-		'frozen',
-		'household',
-		'pets',
-		'baby',
-		'home',
-		'leaf',
-		'pizza',
-	];
-
 	public function __construct(
 		private CategoryMapper $mapper,
 	) {
@@ -133,7 +110,7 @@ class CategoryService {
 
 	private function normalizeIcon(string $icon): string {
 		$icon = strtolower(trim($icon));
-		if (!in_array($icon, self::ICON_KEYS, true)) {
+		if (!in_array($icon, ConstantsService::CATEGORY_ICON_KEYS, true)) {
 			throw new \InvalidArgumentException('Unsupported category icon: ' . $icon);
 		}
 		return $icon;

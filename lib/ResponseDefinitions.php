@@ -32,7 +32,7 @@ namespace OCA\Pantry;
  *     houseId: int,
  *     name: string,
  *     description: string|null,
- *     icon: string,
+ *     icon: PantryChecklistIcon,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,
@@ -57,12 +57,20 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  * }
  *
+ * @psalm-type PantryCategoryIcon = 'tag'|'food'|'fruit'|'vegetable'|'bakery'|'dairy'|'meat'|'fish'|'snacks'|'cookie'|'drinks'|'coffee'|'frozen'|'household'|'pets'|'baby'|'home'|'leaf'|'pizza'
+ *
+ * @psalm-type PantryCategoryColor = '#ef4444'|'#f97316'|'#eab308'|'#22c55e'|'#14b8a6'|'#0ea5e9'|'#6366f1'|'#a855f7'|'#ec4899'|'#78716c'
+ *
+ * @psalm-type PantryChecklistIcon = 'clipboard-check'|'clipboard-list'|'format-list-checks'|'cart'|'basket'|'star'|'heart'|'home'|'calendar'|'bell'|'flag'|'bookmark'|'pin'|'map-marker'|'briefcase'|'wrench'|'silverware'|'coffee'|'gift'|'book'|'school'|'palette'|'camera'|'music'|'gamepad'|'run'|'dumbbell'|'pill'|'paw'|'flower'|'tree'|'broom'|'lightbulb'|'package'|'car'|'bike'|'beach'|'tag'
+ *
+ * @psalm-type PantryNoteColor = '#f44336'|'#e91e63'|'#9c27b0'|'#673ab7'|'#3f51b5'|'#2196f3'|'#03a9f4'|'#00bcd4'|'#009688'|'#4caf50'|'#8bc34a'|'#cddc39'|'#ffeb3b'|'#ffc107'|'#ff9800'|'#ff5722'
+ *
  * @psalm-type PantryCategory = array{
  *     id: int,
  *     houseId: int,
  *     name: string,
- *     icon: string,
- *     color: string,
+ *     icon: PantryCategoryIcon,
+ *     color: PantryCategoryColor,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,
@@ -103,7 +111,7 @@ namespace OCA\Pantry;
  *     houseId: int,
  *     title: string,
  *     content: string|null,
- *     color: string|null,
+ *     color: PantryNoteColor|null,
  *     createdBy: string,
  *     sortOrder: int,
  *     createdAt: int,
