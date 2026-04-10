@@ -24,8 +24,8 @@
         </NcActionButton>
       </NcActions>
     </div>
-    <h3 class="note-card__title">{{ note.title }}</h3>
-    <div v-if="note.content" class="note-card__content">
+    <h3 class="note-card__title" dir="auto">{{ note.title }}</h3>
+    <div v-if="note.content" class="note-card__content" dir="auto">
       <NcRichText :text="note.content" :use-markdown="true" :use-extended-markdown="true" />
     </div>
   </div>

@@ -15,8 +15,9 @@
         v-model="titleValue"
         :placeholder="strings.titlePlaceholder"
         class="note-dialog__title-input"
+        dir="auto"
       />
-      <h2 v-else class="note-dialog__title-text" @click="startEditing('title')">
+      <h2 v-else class="note-dialog__title-text" dir="auto" @click="startEditing('title')">
         {{ titleValue || strings.untitled }}
       </h2>
 
@@ -29,12 +30,14 @@
         :max-height="MAX_TEXTAREA_HEIGHT"
         :rows="3"
         class="note-dialog__content-input"
+        dir="auto"
         autocomplete="off"
       />
       <div
         v-else
         ref="renderedContentRef"
         class="note-dialog__content"
+        dir="auto"
         @click="startEditing('content')"
       >
         <div v-if="contentValue" class="note-dialog__rendered">
@@ -324,6 +327,9 @@ const strings = {
     font-size: 1.3rem;
     font-weight: 600;
     margin: 0;
+    // Reserve space on the right edge so the title (especially RTL-aligned
+    // text) doesn't collide with the dialog close button.
+    padding-right: var(--default-clickable-area, 44px);
     cursor: text;
     line-height: 1.3;
     text-align: start;
@@ -348,9 +354,12 @@ const strings = {
     box-shadow: none !important;
     background: transparent !important;
     color: inherit !important;
-    padding: 0 !important;
+    // Reserve space on the right edge so the close button doesn't overlap
+    // the text — needed especially when the input content is RTL.
+    padding: 0 var(--default-clickable-area, 44px) 0 0 !important;
     margin: 0 !important;
     font-family: inherit !important;
+    box-sizing: border-box !important;
   }
 
   &__title-input::placeholder {
@@ -428,12 +437,13 @@ const strings = {
 
     &--none {
       background: var(--color-background-hover);
-      // Diagonal line to indicate "no color"
+      // Diagonal red line to indicate "no color" (uses a fixed pure red so it
+      // stays visible in both light and dark themes).
       background-image: linear-gradient(
         135deg,
         transparent 40%,
-        var(--color-error, #e00) 40%,
-        var(--color-error, #e00) 60%,
+        #ff0000 40%,
+        #ff0000 60%,
         transparent 60%
       );
       background-size: 100% 100%;
