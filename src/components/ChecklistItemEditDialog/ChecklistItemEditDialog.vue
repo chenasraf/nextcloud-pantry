@@ -191,8 +191,8 @@ function submitEdit() {
     props.item.id,
     {
       name,
-      description: editDescription.value.trim() || null,
-      quantity: editQuantity.value.trim() || null,
+      description: editDescription.value.trim(),
+      quantity: editQuantity.value.trim(),
       categoryId: editCategoryId.value,
       rrule: editRrule.value,
       repeatFromCompletion: editRepeatFromCompletion.value,

@@ -204,7 +204,7 @@ async function saveGeneral() {
   try {
     await update(id, {
       name: name.value.trim(),
-      description: description.value.trim() || null,
+      description: description.value.trim(),
     })
     await refresh()
   } finally {

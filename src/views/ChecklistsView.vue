@@ -270,7 +270,7 @@ async function submitEdit() {
   if (!name) return
   await update(target.id, {
     name,
-    description: editDescription.value.trim() || null,
+    description: editDescription.value.trim(),
     icon: editIcon.value,
   })
   editing.value = null
