@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.3.2...v0.4.0) (2026-04-10)
+
+
+### Features
+
+* improve note rtl support ([65077bb](https://github.com/chenasraf/nextcloud-pantry/commit/65077bb1d14c5878edbdf8298bbba52c3e8fb16e))
+* manage categories button/modal ([26ef3dd](https://github.com/chenasraf/nextcloud-pantry/commit/26ef3dd8882673ceba8c96e99ff56333d0b0184a))
+
+
+### Bug Fixes
+
+* allow clearing form values ([40172cc](https://github.com/chenasraf/nextcloud-pantry/commit/40172cc0ec4a2eca8b9868ffb690bf5447a5c148))
+* recurrence on repeat_from_completion next due date calculation ([a4b93cb](https://github.com/chenasraf/nextcloud-pantry/commit/a4b93cb7686ddc462ca7c08e7e7d44c7c84c109c))
+
 ## [0.3.2](https://github.com/chenasraf/nextcloud-pantry/compare/v0.3.1...v0.3.2) (2026-04-09)
 
 
