@@ -2,6 +2,12 @@
   <div class="pantry-lists">
     <PageToolbar :title="strings.title">
       <template #actions>
+        <NcButton variant="primary" @click="showCategoryManager = true">
+          <template #icon>
+            <TagIcon :size="20" />
+          </template>
+          {{ strings.manageCategories }}
+        </NcButton>
         <NcButton variant="primary" @click="showCreate = true">
           <template #icon>
             <PlusIcon :size="20" />
@@ -177,6 +183,12 @@
         <NcButton variant="error" @click="submitDelete">{{ strings.delete }}</NcButton>
       </template>
     </NcDialog>
+
+    <CategoryManagerDialog
+      :open="showCategoryManager"
+      :house-id="houseIdNum"
+      @update:open="showCategoryManager = $event"
+    />
   </div>
 </template>
 
@@ -192,7 +204,9 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import PageToolbar from '@/components/PageToolbar'
+import { CategoryManagerDialog } from '@/components/CategoryManager'
 import PlusIcon from '@icons/Plus.vue'
+import TagIcon from '@icons/Tag.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
@@ -215,6 +229,8 @@ watch(
   () => props.houseId,
   () => load(),
 )
+
+const showCategoryManager = ref(false)
 
 const showCreate = ref(false)
 const newName = ref('')
@@ -283,6 +299,7 @@ async function submitDelete() {
 const strings = {
   title: t('pantry', 'Checklists'),
   newList: t('pantry', 'New list'),
+  manageCategories: t('pantry', 'Manage categories'),
   create: t('pantry', 'Create'),
   save: t('pantry', 'Save'),
   cancel: t('pantry', 'Cancel'),

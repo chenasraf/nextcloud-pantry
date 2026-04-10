@@ -12,7 +12,7 @@ module.exports = [
   ...tseslint.config(eslint.configs.recommended, ...tseslint.configs.recommended),
   {
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },

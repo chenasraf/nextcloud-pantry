@@ -30,6 +30,12 @@
             {{ opt.label }}
           </NcActionButton>
         </NcActions>
+        <NcButton variant="primary" @click="showCategoryManager = true">
+          <template #icon>
+            <TagIcon :size="20" />
+          </template>
+          {{ strings.manageCategories }}
+        </NcButton>
       </template>
     </PageToolbar>
 
@@ -123,6 +129,12 @@
       :house-id="houseIdNum"
       @update:open="(v) => !v && (previewing = null)"
     />
+
+    <CategoryManagerDialog
+      :open="showCategoryManager"
+      :house-id="houseIdNum"
+      @update:open="showCategoryManager = $event"
+    />
   </div>
 </template>
 
@@ -138,12 +150,14 @@ import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import SortIcon from '@icons/Sort.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
+import TagIcon from '@icons/Tag.vue'
 import PageToolbar from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
+import { CategoryManagerDialog } from '@/components/CategoryManager'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker'
 import { useChecklistItems } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
@@ -419,12 +433,17 @@ function openPreview(item: ChecklistItem) {
   previewing.value = item
 }
 
+// ----- Category manager -----
+
+const showCategoryManager = ref(false)
+
 const strings = {
   back: t('pantry', 'Back to lists'),
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
   sortLabel: t('pantry', 'Sort order'),
   doneTitle: t('pantry', 'Done'),
+  manageCategories: t('pantry', 'Manage categories'),
 }
 </script>
 

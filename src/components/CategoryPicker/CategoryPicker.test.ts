@@ -60,6 +60,17 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
     props: ['variant', 'disabled', 'type'],
   },
 }))
+// Mock the shared CategoryFormDialog with a minimal stub — tests verify
+// interaction via its props/events, not its internal markup.
+vi.mock('@/components/CategoryManager/CategoryFormDialog.vue', () => ({
+  default: {
+    name: 'CategoryFormDialog',
+    template:
+      '<div v-if="open" class="mock-cat-form-dialog"><slot /><span class="error" v-if="error">{{ error }}</span></div>',
+    props: ['open', 'category', 'saving', 'error'],
+    emits: ['update:open', 'save'],
+  },
+}))
 
 // Mock useCategories composable
 const mockItems = ref<Category[]>([])
@@ -223,63 +234,17 @@ describe('CategoryPicker', () => {
         global: {},
       })
 
-      // Dialog should not be visible initially
-      expect(wrapper.findComponent({ name: 'NcDialog' }).exists()).toBe(false)
-
-      // Simulate selecting the create option
-      const select = wrapper.findComponent({ name: 'NcSelect' })
-      select.vm.$emit('option:selected', { label: 'Create new category …', create: true })
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.findComponent({ name: 'NcDialog' }).exists()).toBe(true)
-    })
-
-    it('create form has name field, icon grid, and color swatches', async () => {
-      const wrapper = mount(CategoryPicker, {
-        props: { houseId: 10, modelValue: null },
-        global: {},
-      })
-
-      // Open the create dialog
-      const select = wrapper.findComponent({ name: 'NcSelect' })
-      select.vm.$emit('option:selected', { label: 'Create new category …', create: true })
-      await wrapper.vm.$nextTick()
-
-      // Name text field
-      expect(wrapper.findComponent({ name: 'NcTextField' }).exists()).toBe(true)
-
-      // Icon grid
-      const iconGrid = wrapper.find('.pantry-create-cat__icon-grid')
-      expect(iconGrid.exists()).toBe(true)
-      const iconButtons = wrapper.findAll('.pantry-create-cat__icon-button')
-      expect(iconButtons.length).toBe(19) // 19 icons in CATEGORY_ICONS
-
-      // Color swatches
-      const colorGrid = wrapper.find('.pantry-create-cat__color-grid')
-      expect(colorGrid.exists()).toBe(true)
-      const colorSwatches = wrapper.findAll('.pantry-create-cat__color-swatch')
-      expect(colorSwatches.length).toBe(10) // 10 colors in CATEGORY_COLORS
-    })
-
-    it('shows create and cancel buttons in dialog actions', async () => {
-      const wrapper = mount(CategoryPicker, {
-        props: { houseId: 10, modelValue: null },
-        global: {},
-      })
+      // Dialog not visible initially
+      expect(wrapper.findComponent({ name: 'CategoryFormDialog' }).props('open')).toBe(false)
 
       const select = wrapper.findComponent({ name: 'NcSelect' })
       select.vm.$emit('option:selected', { label: 'Create new category …', create: true })
       await wrapper.vm.$nextTick()
 
-      const buttons = wrapper.findAllComponents({ name: 'NcButton' })
-      // Cancel button + Create button (inside dialog actions)
-      expect(buttons.length).toBeGreaterThanOrEqual(2)
-      const buttonTexts = buttons.map((b) => b.text())
-      expect(buttonTexts).toContain('Cancel')
-      expect(buttonTexts).toContain('Create')
+      expect(wrapper.findComponent({ name: 'CategoryFormDialog' }).props('open')).toBe(true)
     })
 
-    it('emits update:modelValue with created category id after creation', async () => {
+    it('emits update:modelValue with created category id after save event', async () => {
       const createdCategory = makeCategory({ id: 42, name: 'New Cat' })
       mockCreate.mockResolvedValueOnce(createdCategory)
 
@@ -288,21 +253,15 @@ describe('CategoryPicker', () => {
         global: {},
       })
 
-      // Open create dialog
+      // Open dialog
       const select = wrapper.findComponent({ name: 'NcSelect' })
       select.vm.$emit('option:selected', { label: 'Create new category …', create: true })
       await wrapper.vm.$nextTick()
 
-      // Set name via the component's internal state
-      const vm = wrapper.vm as unknown as { newName: string }
-      vm.newName = 'New Cat'
-      await wrapper.vm.$nextTick()
+      // Trigger save from the CategoryFormDialog
+      const formDialog = wrapper.findComponent({ name: 'CategoryFormDialog' })
+      formDialog.vm.$emit('save', { name: 'New Cat', icon: 'tag', color: '#ef4444' })
 
-      // Submit the form
-      const form = wrapper.find('.pantry-create-cat')
-      await form.trigger('submit')
-
-      // Wait for async create to resolve
       await vi.waitFor(() => {
         expect(wrapper.emitted('update:modelValue')).toBeTruthy()
       })
@@ -311,7 +270,7 @@ describe('CategoryPicker', () => {
       expect(emitted[emitted.length - 1]).toEqual([42])
     })
 
-    it('calls create with name, icon, and color', async () => {
+    it('calls create with name, icon, and color from the save event', async () => {
       const createdCategory = makeCategory({ id: 50, name: 'Snacks' })
       mockCreate.mockResolvedValueOnce(createdCategory)
 
@@ -320,21 +279,12 @@ describe('CategoryPicker', () => {
         global: {},
       })
 
-      // Open create dialog
       const select = wrapper.findComponent({ name: 'NcSelect' })
       select.vm.$emit('option:selected', { label: 'Create new category …', create: true })
       await wrapper.vm.$nextTick()
 
-      // Set the name
-      const vm = wrapper.vm as unknown as { newName: string; newIcon: string; newColor: string }
-      vm.newName = 'Snacks'
-      vm.newIcon = 'snacks'
-      vm.newColor = '#ef4444'
-      await wrapper.vm.$nextTick()
-
-      // Submit
-      const form = wrapper.find('.pantry-create-cat')
-      await form.trigger('submit')
+      const formDialog = wrapper.findComponent({ name: 'CategoryFormDialog' })
+      formDialog.vm.$emit('save', { name: 'Snacks', icon: 'snacks', color: '#ef4444' })
 
       await vi.waitFor(() => {
         expect(mockCreate).toHaveBeenCalled()
@@ -347,7 +297,7 @@ describe('CategoryPicker', () => {
       })
     })
 
-    it('shows error when create fails', async () => {
+    it('passes error prop to CategoryFormDialog when create fails', async () => {
       mockCreate.mockRejectedValueOnce(new Error('Server error'))
 
       const wrapper = mount(CategoryPicker, {
@@ -355,23 +305,18 @@ describe('CategoryPicker', () => {
         global: {},
       })
 
-      // Open create dialog
       const select = wrapper.findComponent({ name: 'NcSelect' })
       select.vm.$emit('option:selected', { label: 'Create new category …', create: true })
       await wrapper.vm.$nextTick()
 
-      const vm = wrapper.vm as unknown as { newName: string }
-      vm.newName = 'Test'
-      await wrapper.vm.$nextTick()
-
-      const form = wrapper.find('.pantry-create-cat')
-      await form.trigger('submit')
+      const formDialog = wrapper.findComponent({ name: 'CategoryFormDialog' })
+      formDialog.vm.$emit('save', { name: 'Test', icon: 'tag', color: '#ef4444' })
 
       await vi.waitFor(() => {
-        expect(wrapper.find('.pantry-create-cat__error').exists()).toBe(true)
+        expect(wrapper.findComponent({ name: 'CategoryFormDialog' }).props('error')).toBe(
+          'Server error',
+        )
       })
-
-      expect(wrapper.find('.pantry-create-cat__error').text()).toBe('Server error')
     })
   })
 

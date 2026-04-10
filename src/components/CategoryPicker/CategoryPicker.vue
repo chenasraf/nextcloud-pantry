@@ -43,64 +43,13 @@
       </template>
     </NcSelect>
 
-    <NcDialog
-      v-if="showCreate"
-      :name="strings.createTitle"
+    <CategoryFormDialog
       :open="showCreate"
-      close-on-click-outside
+      :saving="saving"
+      :error="createError"
       @update:open="showCreate = $event"
-    >
-      <form class="pantry-create-cat" autocomplete="off" @submit.prevent="submitCreate">
-        <NcTextField
-          v-model="newName"
-          :label="strings.nameLabel"
-          :placeholder="strings.namePlaceholder"
-          autocomplete="off"
-        />
-
-        <div>
-          <label class="pantry-create-cat__sub">{{ strings.iconLabel }}</label>
-          <div class="pantry-create-cat__icon-grid">
-            <button
-              v-for="opt in CATEGORY_ICONS"
-              :key="opt.key"
-              type="button"
-              class="pantry-create-cat__icon-button"
-              :class="{ 'pantry-create-cat__icon-button--active': newIcon === opt.key }"
-              :title="opt.label"
-              :style="{ color: newColor }"
-              @click="newIcon = opt.key"
-            >
-              <component :is="opt.component" :size="20" />
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label class="pantry-create-cat__sub">{{ strings.colorLabel }}</label>
-          <div class="pantry-create-cat__color-grid">
-            <button
-              v-for="c in CATEGORY_COLORS"
-              :key="c"
-              type="button"
-              class="pantry-create-cat__color-swatch"
-              :class="{ 'pantry-create-cat__color-swatch--active': newColor === c }"
-              :style="{ backgroundColor: c }"
-              :aria-label="c"
-              @click="newColor = c"
-            />
-          </div>
-        </div>
-
-        <p v-if="createError" class="pantry-create-cat__error">{{ createError }}</p>
-      </form>
-      <template #actions>
-        <NcButton @click="showCreate = false">{{ strings.cancel }}</NcButton>
-        <NcButton variant="primary" :disabled="saving || !newName.trim()" @click="submitCreate">
-          {{ saving ? strings.saving : strings.create }}
-        </NcButton>
-      </template>
-    </NcDialog>
+      @save="submitCreate"
+    />
   </div>
 </template>
 
@@ -108,17 +57,10 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
-import NcButton from '@nextcloud/vue/components/NcButton'
 import PlusIcon from '@icons/Plus.vue'
 import { useCategories } from '@/composables/useCategories'
-import {
-  CATEGORY_COLORS,
-  CATEGORY_ICONS,
-  DEFAULT_CATEGORY_ICON_KEY,
-  categoryIconComponent,
-} from './categoryIcons'
+import { categoryIconComponent } from './categoryIcons'
+import CategoryFormDialog from '@/components/CategoryManager/CategoryFormDialog.vue'
 import type { Category } from '@/api/types'
 
 const props = defineProps<{
@@ -190,33 +132,21 @@ function onSelect(opt: SelectOption | SelectOption[] | null): void {
 
 // ----- create dialog -----
 const showCreate = ref(false)
-const newName = ref('')
-const newIcon = ref<string>(DEFAULT_CATEGORY_ICON_KEY)
-const newColor = ref<string>(CATEGORY_COLORS[3]!)
 const saving = ref(false)
 const createError = ref<string | null>(null)
 
 function openCreate() {
   // Reset the NcSelect so it doesn't stay on the "Create new …" ghost option.
   selected.value = selected.value?.category ? selected.value : null
-  newName.value = ''
-  newIcon.value = DEFAULT_CATEGORY_ICON_KEY
-  newColor.value = CATEGORY_COLORS[3]!
   createError.value = null
   showCreate.value = true
 }
 
-async function submitCreate() {
-  const name = newName.value.trim()
-  if (!name) return
+async function submitCreate(data: { name: string; icon: string; color: string }) {
   saving.value = true
   createError.value = null
   try {
-    const created = await create({
-      name,
-      icon: newIcon.value,
-      color: newColor.value,
-    })
+    const created = await create(data)
     emit('update:modelValue', created.id)
     showCreate.value = false
   } catch (e) {
@@ -232,14 +162,6 @@ function iconFor(key: string) {
 
 const strings = {
   placeholder: t('pantry', 'Pick a category'),
-  createTitle: t('pantry', 'New category'),
-  nameLabel: t('pantry', 'Name'),
-  namePlaceholder: t('pantry', 'e.g. Produce, Dairy'),
-  iconLabel: t('pantry', 'Icon'),
-  colorLabel: t('pantry', 'Color'),
-  create: t('pantry', 'Create'),
-  saving: t('pantry', 'Saving …'),
-  cancel: t('pantry', 'Cancel'),
 }
 </script>
 
@@ -277,84 +199,6 @@ const strings = {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-}
-
-.pantry-create-cat {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 0.5rem 0;
-  min-width: 340px;
-
-  &__sub {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--color-text-maxcontrast);
-    margin-bottom: 0.35rem;
-  }
-
-  &__icon-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
-    gap: 0.35rem;
-  }
-
-  &__icon-button {
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius, 8px);
-    background: var(--color-main-background);
-    cursor: pointer;
-    transition: all 0.15s ease;
-
-    &:hover {
-      background: var(--color-background-hover);
-    }
-
-    &--active {
-      border-color: currentColor;
-      box-shadow: 0 0 0 2px currentColor;
-    }
-  }
-
-  &__color-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-  }
-
-  &__color-swatch {
-    width: 28px;
-    height: 28px;
-    border-radius: 999px;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: transform 0.15s ease;
-
-    &:hover {
-      transform: scale(1.08);
-    }
-
-    &--active {
-      border-color: var(--color-main-text);
-      transform: scale(1.1);
-    }
-  }
-
-  &__error {
-    margin: 0;
-    color: var(--color-error);
-  }
-}
-
-@media (max-width: 500px) {
-  .pantry-create-cat {
-    min-width: 0;
   }
 }
 </style>
