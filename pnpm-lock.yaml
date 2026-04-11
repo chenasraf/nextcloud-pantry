@@ -53,7 +53,7 @@ importers:
         version: 8.4.2(@babel/core@7.26.0)(@babel/eslint-parser@7.25.9(@babel/core@7.26.0)(eslint@10.2.0))(@nextcloud/eslint-plugin@2.2.1(eslint@10.2.0))(@vue/eslint-config-typescript@13.0.0(eslint-plugin-vue@9.32.0(eslint@10.2.0))(eslint@10.2.0)(typescript@6.0.2))(eslint-config-standard@17.1.0(eslint-plugin-import@2.31.0)(eslint-plugin-n@16.6.2(eslint@10.2.0))(eslint-plugin-promise@6.6.0(eslint@10.2.0))(eslint@10.2.0))(eslint-import-resolver-exports@1.0.0-beta.5(eslint-plugin-import@2.31.0)(eslint@10.2.0))(eslint-import-resolver-typescript@3.6.3)(eslint-plugin-import@2.31.0)(eslint-plugin-jsdoc@46.10.1(eslint@10.2.0))(eslint-plugin-n@16.6.2(eslint@10.2.0))(eslint-plugin-promise@6.6.0(eslint@10.2.0))(eslint-plugin-vue@9.32.0(eslint@10.2.0))(eslint@10.2.0)(typescript@6.0.2)
       '@nextcloud/stylelint-config':
         specifier: ^3.2.1
-        version: 3.2.1(stylelint-config-recommended-scss@13.1.0(postcss@8.5.8)(stylelint@16.11.0(typescript@6.0.2)))(stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.2)))(stylelint@16.11.0(typescript@6.0.2))
+        version: 3.2.1(stylelint-config-recommended-scss@13.1.0(postcss@8.5.9)(stylelint@16.11.0(typescript@6.0.2)))(stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.2)))(stylelint@16.11.0(typescript@6.0.2))
       '@vitejs/plugin-vue':
         specifier: ^6.0.5
         version: 6.0.5(vite@8.0.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.2)(esbuild@0.27.7)(sass-embedded@1.99.0)(sass@1.99.0)(yaml@2.8.3))(vue@3.5.32(typescript@6.0.2))
@@ -73,8 +73,8 @@ importers:
         specifier: ^1.12.5
         version: 1.13.6
       prettier:
-        specifier: ^3.8.1
-        version: 3.8.1
+        specifier: ^3.8.2
+        version: 3.8.2
       rollup-plugin-visualizer:
         specifier: ^7.0.1
         version: 7.0.1(rolldown@1.0.0-rc.12(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2))(rollup@4.60.1)
@@ -1789,6 +1789,10 @@ packages:
     resolution: {integrity: sha512-oKlSFMcMwpUg2ednkhQ454wfWiU/ul3CkJe/PEHcTKuiX6RpbehUiFMXu13HalGZxfUwCQzZG747YXBn1im9ww==}
     engines: {node: '>= 0.4'}
 
+  call-bind@1.0.9:
+    resolution: {integrity: sha512-a/hy+pNsFUTR+Iz8TCJvXudKVLAnz/DyeSUo10I5yvFDQJBFU2s9uqQpoSrJlroHUKoKqzg+epxyP9lqFdzfBQ==}
+    engines: {node: '>= 0.4'}
+
   call-bound@1.0.4:
     resolution: {integrity: sha512-+ys997U96po4Kx/ABpBCqhA9EuxJaQWDQg7295H4hBphv3IZg0boBKuwYpt4YXp6MZ5AmZQnU/tyMTlRpaSejg==}
     engines: {node: '>= 0.4'}
@@ -2134,8 +2138,8 @@ packages:
   error-ex@1.3.4:
     resolution: {integrity: sha512-sqQamAnR14VgCr1A618A3sGrygcpK+HEbenA/HiEAkkUwcZIIB/tgWqHFxWgOyDh4nB4JCRimh79dR5Ywc9MDQ==}
 
-  es-abstract@1.24.1:
-    resolution: {integrity: sha512-zHXBLhP+QehSSbsS9Pt23Gg964240DPd6QCf8WpkqEXxQ7fhdZzYsocOr5u7apWonsS5EjZDmTF+/slGMyasvw==}
+  es-abstract@1.24.2:
+    resolution: {integrity: sha512-2FpH9Q5i2RRwyEP1AylXe6nYLR5OhaJTZwmlcP0dL/+JCbgg7yyEo/sEK6HeGZRf3dFpWwThaRHVApXSkW3xeg==}
     engines: {node: '>= 0.4'}
 
   es-define-property@1.0.1:
@@ -3579,6 +3583,10 @@ packages:
     resolution: {integrity: sha512-OW/rX8O/jXnm82Ey1k44pObPtdblfiuWnrd8X7GJ7emImCOstunGbXUpp7HdBrFQX6rJzn3sPT397Wp5aCwCHg==}
     engines: {node: ^10 || ^12 || >=14}
 
+  postcss@8.5.9:
+    resolution: {integrity: sha512-7a70Nsot+EMX9fFU3064K/kdHWZqGVY+BADLyXc8Dfv+mTLLVl6JzJpPaCZ2kQL9gIJvKXSLMHhqdRRjwQeFtw==}
+    engines: {node: ^10 || ^12 || >=14}
+
   powershell-utils@0.1.0:
     resolution: {integrity: sha512-dM0jVuXJPsDN6DvRpea484tCUaMiXWjuCn++HGTqUWzGDjv5tZkEZldAJ/UMlqRYGFrD/etByo4/xOuC/snX2A==}
     engines: {node: '>=20'}
@@ -3587,8 +3595,8 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  prettier@3.8.1:
-    resolution: {integrity: sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==}
+  prettier@3.8.2:
+    resolution: {integrity: sha512-8c3mgTe0ASwWAJK+78dpviD+A8EqhndQPUBpNUIPt6+xWlIigCwfN01lWr9MAede4uqXGTEKeQWTvzb3vjia0Q==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -5342,10 +5350,10 @@ snapshots:
     optionalDependencies:
       '@nextcloud/files': 4.0.0
 
-  '@nextcloud/stylelint-config@3.2.1(stylelint-config-recommended-scss@13.1.0(postcss@8.5.8)(stylelint@16.11.0(typescript@6.0.2)))(stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.2)))(stylelint@16.11.0(typescript@6.0.2))':
+  '@nextcloud/stylelint-config@3.2.1(stylelint-config-recommended-scss@13.1.0(postcss@8.5.9)(stylelint@16.11.0(typescript@6.0.2)))(stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.2)))(stylelint@16.11.0(typescript@6.0.2))':
     dependencies:
       stylelint: 16.11.0(typescript@6.0.2)
-      stylelint-config-recommended-scss: 13.1.0(postcss@8.5.8)(stylelint@16.11.0(typescript@6.0.2))
+      stylelint-config-recommended-scss: 13.1.0(postcss@8.5.9)(stylelint@16.11.0(typescript@6.0.2))
       stylelint-config-recommended-vue: 1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.2))
       stylelint-use-logical: 2.1.3(stylelint@16.11.0(typescript@6.0.2))
 
@@ -6232,10 +6240,10 @@ snapshots:
 
   array-includes@3.1.9:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
       es-object-atoms: 1.1.1
       get-intrinsic: 1.3.0
       is-string: 1.1.1
@@ -6245,34 +6253,34 @@ snapshots:
 
   array.prototype.findlastindex@1.2.6:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
       es-errors: 1.3.0
       es-object-atoms: 1.1.1
       es-shim-unscopables: 1.1.0
 
   array.prototype.flat@1.3.3:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
       es-shim-unscopables: 1.1.0
 
   array.prototype.flatmap@1.3.3:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
       es-shim-unscopables: 1.1.0
 
   arraybuffer.prototype.slice@1.0.4:
     dependencies:
       array-buffer-byte-length: 1.0.2
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
       is-array-buffer: 3.0.5
@@ -6452,6 +6460,13 @@ snapshots:
       function-bind: 1.1.2
 
   call-bind@1.0.8:
+    dependencies:
+      call-bind-apply-helpers: 1.0.2
+      es-define-property: 1.0.1
+      get-intrinsic: 1.3.0
+      set-function-length: 1.2.2
+
+  call-bind@1.0.9:
     dependencies:
       call-bind-apply-helpers: 1.0.2
       es-define-property: 1.0.1
@@ -6794,12 +6809,12 @@ snapshots:
     dependencies:
       is-arrayish: 0.2.1
 
-  es-abstract@1.24.1:
+  es-abstract@1.24.2:
     dependencies:
       array-buffer-byte-length: 1.0.2
       arraybuffer.prototype.slice: 1.0.4
       available-typed-arrays: 1.0.7
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       data-view-buffer: 1.0.2
       data-view-byte-length: 1.0.2
@@ -7317,7 +7332,7 @@ snapshots:
 
   function.prototype.name@1.1.8:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       define-properties: 1.2.1
       functions-have-names: 1.2.3
@@ -7573,7 +7588,7 @@ snapshots:
 
   is-array-buffer@3.0.5:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       get-intrinsic: 1.3.0
 
@@ -8344,27 +8359,27 @@ snapshots:
 
   object.entries@1.1.9:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
 
   object.fromentries@2.0.8:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
       es-object-atoms: 1.1.1
 
   object.groupby@1.0.3:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
 
   object.values@1.2.1:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
@@ -8509,24 +8524,24 @@ snapshots:
     dependencies:
       htmlparser2: 8.0.2
       js-tokens: 9.0.1
-      postcss: 8.5.8
-      postcss-safe-parser: 6.0.0(postcss@8.5.8)
+      postcss: 8.5.9
+      postcss-safe-parser: 6.0.0(postcss@8.5.9)
 
   postcss-media-query-parser@0.2.3: {}
 
   postcss-resolve-nested-selector@0.1.6: {}
 
-  postcss-safe-parser@6.0.0(postcss@8.5.8):
+  postcss-safe-parser@6.0.0(postcss@8.5.9):
     dependencies:
-      postcss: 8.5.8
+      postcss: 8.5.9
 
-  postcss-safe-parser@7.0.1(postcss@8.5.8):
+  postcss-safe-parser@7.0.1(postcss@8.5.9):
     dependencies:
-      postcss: 8.5.8
+      postcss: 8.5.9
 
-  postcss-scss@4.0.9(postcss@8.5.8):
+  postcss-scss@4.0.9(postcss@8.5.9):
     dependencies:
-      postcss: 8.5.8
+      postcss: 8.5.9
 
   postcss-selector-parser@6.1.2:
     dependencies:
@@ -8546,11 +8561,17 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
+  postcss@8.5.9:
+    dependencies:
+      nanoid: 3.3.11
+      picocolors: 1.1.1
+      source-map-js: 1.2.1
+
   powershell-utils@0.1.0: {}
 
   prelude-ls@1.2.1: {}
 
-  prettier@3.8.1: {}
+  prettier@3.8.2: {}
 
   process-nextick-args@2.0.1: {}
 
@@ -8618,9 +8639,9 @@ snapshots:
 
   reflect.getprototypeof@1.0.10:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
       es-errors: 1.3.0
       es-object-atoms: 1.1.1
       get-intrinsic: 1.3.0
@@ -8629,7 +8650,7 @@ snapshots:
 
   regexp.prototype.flags@1.5.4:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       define-properties: 1.2.1
       es-errors: 1.3.0
       get-proto: 1.0.1
@@ -8845,7 +8866,7 @@ snapshots:
 
   safe-array-concat@1.1.3:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       get-intrinsic: 1.3.0
       has-symbols: 1.1.0
@@ -9138,24 +9159,24 @@ snapshots:
 
   string.prototype.trim@1.2.10:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       define-data-property: 1.1.4
       define-properties: 1.2.1
-      es-abstract: 1.24.1
+      es-abstract: 1.24.2
       es-object-atoms: 1.1.1
       has-property-descriptors: 1.0.2
 
   string.prototype.trimend@1.0.9:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
 
   string.prototype.trimstart@1.0.8:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
 
@@ -9207,14 +9228,14 @@ snapshots:
       postcss-html: 1.7.0
       stylelint: 16.11.0(typescript@6.0.2)
 
-  stylelint-config-recommended-scss@13.1.0(postcss@8.5.8)(stylelint@16.11.0(typescript@6.0.2)):
+  stylelint-config-recommended-scss@13.1.0(postcss@8.5.9)(stylelint@16.11.0(typescript@6.0.2)):
     dependencies:
-      postcss-scss: 4.0.9(postcss@8.5.8)
+      postcss-scss: 4.0.9(postcss@8.5.9)
       stylelint: 16.11.0(typescript@6.0.2)
       stylelint-config-recommended: 13.0.0(stylelint@16.11.0(typescript@6.0.2))
       stylelint-scss: 5.3.2(stylelint@16.11.0(typescript@6.0.2))
     optionalDependencies:
-      postcss: 8.5.8
+      postcss: 8.5.9
 
   stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.2)):
     dependencies:
@@ -9274,9 +9295,9 @@ snapshots:
       micromatch: 4.0.8
       normalize-path: 3.0.0
       picocolors: 1.1.1
-      postcss: 8.5.8
+      postcss: 8.5.9
       postcss-resolve-nested-selector: 0.1.6
-      postcss-safe-parser: 7.0.1(postcss@8.5.8)
+      postcss-safe-parser: 7.0.1(postcss@8.5.9)
       postcss-selector-parser: 7.1.1
       postcss-value-parser: 4.2.0
       resolve-from: 5.0.0
@@ -9394,7 +9415,7 @@ snapshots:
 
   typed-array-byte-length@1.0.3:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       for-each: 0.3.5
       gopd: 1.2.0
       has-proto: 1.2.0
@@ -9403,7 +9424,7 @@ snapshots:
   typed-array-byte-offset@1.0.4:
     dependencies:
       available-typed-arrays: 1.0.7
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       for-each: 0.3.5
       gopd: 1.2.0
       has-proto: 1.2.0
@@ -9412,7 +9433,7 @@ snapshots:
 
   typed-array-length@1.0.7:
     dependencies:
-      call-bind: 1.0.8
+      call-bind: 1.0.9
       for-each: 0.3.5
       gopd: 1.2.0
       is-typed-array: 1.1.15
