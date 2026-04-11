@@ -13,6 +13,7 @@ use OCA\Pantry\Db\HouseMemberMapper;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PrefsService;
+use OCP\IConfig;
 use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -35,6 +36,8 @@ class NotificationServiceTest extends TestCase {
 	private IURLGenerator $urlGenerator;
 	/** @var IUserManager&MockObject */
 	private IUserManager $userManager;
+	/** @var IConfig&MockObject */
+	private IConfig $config;
 	private NotificationService $svc;
 
 	protected function setUp(): void {
@@ -44,6 +47,9 @@ class NotificationServiceTest extends TestCase {
 		$this->prefs = $this->createMock(PrefsService::class);
 		$this->urlGenerator = $this->createMock(IURLGenerator::class);
 		$this->userManager = $this->createMock(IUserManager::class);
+		$this->config = $this->createMock(IConfig::class);
+		// Default: no stored accumulator state (fresh group each call).
+		$this->config->method('getUserValue')->willReturn('');
 
 		$this->svc = new NotificationService(
 			$this->notifManager,
@@ -52,6 +58,7 @@ class NotificationServiceTest extends TestCase {
 			$this->prefs,
 			$this->urlGenerator,
 			$this->userManager,
+			$this->config,
 			$this->createMock(LoggerInterface::class),
 		);
 
