@@ -1783,7 +1783,7 @@
                     {
                         "name": "sortBy",
                         "in": "query",
-                        "description": "Sort mode (custom, newest, oldest, name_asc, name_desc).",
+                        "description": "Sort mode (custom, newest, oldest, name_asc, name_desc, category).",
                         "schema": {
                             "type": "string",
                             "default": "custom"

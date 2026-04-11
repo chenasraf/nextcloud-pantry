@@ -42,7 +42,13 @@ export async function setLastHouse(houseId: number | null): Promise<void> {
 
 export type PhotoSort = 'custom' | 'newest' | 'oldest' | 'description_asc' | 'description_desc'
 export type NoteSort = 'custom' | 'newest' | 'oldest' | 'title_asc' | 'title_desc'
-export type ChecklistItemSort = 'custom' | 'newest' | 'oldest' | 'name_asc' | 'name_desc'
+export type ChecklistItemSort =
+  | 'custom'
+  | 'newest'
+  | 'oldest'
+  | 'name_asc'
+  | 'name_desc'
+  | 'category'
 
 export interface PhotoSortPrefs {
   sort: PhotoSort

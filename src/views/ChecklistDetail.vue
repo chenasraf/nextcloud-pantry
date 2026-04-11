@@ -202,6 +202,7 @@ const itemSortOptions: { value: ChecklistItemSort; label: string }[] = [
   { value: 'oldest', label: t('pantry', 'Oldest first') },
   { value: 'name_asc', label: t('pantry', 'Name A\u2013Z') },
   { value: 'name_desc', label: t('pantry', 'Name Z\u2013A') },
+  { value: 'category', label: t('pantry', 'Category') },
   { value: 'custom', label: t('pantry', 'Custom') },
 ]
 

@@ -178,7 +178,7 @@ final class ChecklistController extends OCSController {
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
-	 * @param string $sortBy Sort mode (custom, newest, oldest, name_asc, name_desc).
+	 * @param string $sortBy Sort mode (custom, newest, oldest, name_asc, name_desc, category).
 	 * @param int<1, 1000> $limit Maximum number of items to return.
 	 * @param int<0, max> $offset Number of items to skip.
 	 *

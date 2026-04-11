@@ -26,8 +26,35 @@ class ChecklistItemMapper extends QBMapper {
 	 */
 	public function findByList(int $listId, string $sortBy = 'custom'): array {
 		$qb = $this->db->getQueryBuilder();
+		$items = $this->getTableName();
+
+		if ($sortBy === 'category') {
+			// Left-join the categories table so items with no category still appear.
+			// Uncategorized items are grouped separately (sort_uncategorized = 1)
+			// so they appear after all categorized items regardless of DB null ordering.
+			$categories = Application::tableName('categories');
+			$qb->select($items . '.*')
+				->selectAlias(
+					$qb->createFunction('CASE WHEN ' . $items . '.category_id IS NULL THEN 1 ELSE 0 END'),
+					'sort_uncategorized',
+				)
+				->from($items)
+				->leftJoin(
+					$items,
+					$categories,
+					'c',
+					$qb->expr()->eq($items . '.category_id', 'c.id'),
+				)
+				->where($qb->expr()->eq($items . '.list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+				->orderBy('sort_uncategorized', 'ASC')
+				->addOrderBy('c.name', 'ASC')
+				->addOrderBy($items . '.name', 'ASC')
+				->addOrderBy($items . '.created_at', 'ASC');
+			return $this->findEntities($qb);
+		}
+
 		$qb->select('*')
-			->from($this->getTableName())
+			->from($items)
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
 
 		switch ($sortBy) {

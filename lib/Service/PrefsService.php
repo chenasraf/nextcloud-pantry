@@ -153,7 +153,7 @@ class PrefsService {
 	}
 
 	public function setChecklistItemSort(string $uid, int $houseId, string $sort): string {
-		$allowed = ['custom', 'newest', 'oldest', 'name_asc', 'name_desc'];
+		$allowed = ['custom', 'newest', 'oldest', 'name_asc', 'name_desc', 'category'];
 		if (!in_array($sort, $allowed, true)) {
 			$sort = 'custom';
 		}
