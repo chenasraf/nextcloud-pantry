@@ -58,9 +58,15 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
   }
 }
 
+// Each test uses a unique houseId so module-level shared state doesn't leak
+// between tests. That is also what the production sharing guarantees — same
+// houseId → same state, different houseId → independent state.
+let houseCounter = 100
+
 describe('useChecklists', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    houseCounter++
   })
 
   describe('load', () => {
@@ -68,7 +74,7 @@ describe('useChecklists', () => {
       const lists = [makeList({ id: 1 }), makeList({ id: 2 })]
       mockApi.listLists.mockResolvedValue(lists)
 
-      const c = useChecklists(1)
+      const c = useChecklists(houseCounter)
       await c.load()
 
       expect(c.lists.value).toEqual(lists)
@@ -79,10 +85,20 @@ describe('useChecklists', () => {
     it('sets error on failure', async () => {
       mockApi.listLists.mockRejectedValue(new Error('fail'))
 
-      const c = useChecklists(1)
+      const c = useChecklists(houseCounter)
       await c.load()
 
       expect(c.error.value).toBe('fail')
+    })
+
+    it('deduplicates concurrent calls for the same house', async () => {
+      mockApi.listLists.mockResolvedValue([makeList({ id: 1 })])
+
+      const c = useChecklists(houseCounter)
+      const [a, b] = await Promise.all([c.load(), c.load()])
+
+      expect(a).toEqual(b)
+      expect(mockApi.listLists).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -92,13 +108,28 @@ describe('useChecklists', () => {
       const newList = makeList({ id: 10 })
       mockApi.createList.mockResolvedValue(newList)
 
-      const c = useChecklists(1)
+      const c = useChecklists(houseCounter)
       await c.load()
       const result = await c.create('New', 'desc', 'cart')
 
-      expect(mockApi.createList).toHaveBeenCalledWith(1, 'New', 'desc', 'cart')
+      expect(mockApi.createList).toHaveBeenCalledWith(houseCounter, 'New', 'desc', 'cart')
       expect(result).toEqual(newList)
       expect(c.lists.value).toHaveLength(1)
+    })
+  })
+
+  describe('update', () => {
+    it('replaces the updated list in state', async () => {
+      const original = makeList({ id: 1, name: 'Old' })
+      const updated = makeList({ id: 1, name: 'New' })
+      mockApi.listLists.mockResolvedValue([original])
+      mockApi.updateList.mockResolvedValue(updated)
+
+      const c = useChecklists(houseCounter)
+      await c.load()
+      await c.update(1, { name: 'New' })
+
+      expect(c.lists.value[0].name).toBe('New')
     })
   })
 
@@ -107,12 +138,63 @@ describe('useChecklists', () => {
       mockApi.listLists.mockResolvedValue([makeList({ id: 1 }), makeList({ id: 2 })])
       mockApi.deleteList.mockResolvedValue(undefined)
 
-      const c = useChecklists(1)
+      const c = useChecklists(houseCounter)
       await c.load()
       await c.remove(1)
 
       expect(c.lists.value).toHaveLength(1)
       expect(c.lists.value[0].id).toBe(2)
+    })
+  })
+
+  describe('shared state', () => {
+    it('two callers for the same house share the same lists ref', async () => {
+      const lists = [makeList({ id: 1 }), makeList({ id: 2 })]
+      mockApi.listLists.mockResolvedValue(lists)
+
+      const houseId = houseCounter
+      const a = useChecklists(houseId)
+      const b = useChecklists(houseId)
+
+      await a.load()
+
+      // Both consumers see the loaded lists even though only `a` triggered load.
+      expect(a.lists.value).toEqual(lists)
+      expect(b.lists.value).toEqual(lists)
+      // And they reference the exact same ref instance.
+      expect(a.lists).toBe(b.lists)
+    })
+
+    it('propagates create across consumers for the same house', async () => {
+      mockApi.listLists.mockResolvedValue([])
+      const newList = makeList({ id: 10, name: 'Shared' })
+      mockApi.createList.mockResolvedValue(newList)
+
+      const houseId = houseCounter
+      const a = useChecklists(houseId)
+      const b = useChecklists(houseId)
+
+      await a.load()
+      await a.create('Shared')
+
+      expect(b.lists.value).toHaveLength(1)
+      expect(b.lists.value[0].id).toBe(10)
+    })
+
+    it('different house ids have independent state', async () => {
+      mockApi.listLists.mockImplementation((id: number) =>
+        Promise.resolve([makeList({ id: id * 100 })]),
+      )
+
+      const a = useChecklists(houseCounter)
+      houseCounter++
+      const b = useChecklists(houseCounter)
+
+      await a.load()
+      await b.load()
+
+      expect(a.lists.value).not.toEqual(b.lists.value)
+      expect(a.lists.value[0].id).not.toBe(b.lists.value[0].id)
     })
   })
 })

@@ -9,11 +9,28 @@
         <NcAppNavigationItem
           :name="strings.lists"
           :to="{ name: 'lists', params: { houseId: String(currentHouseId) } }"
-          :active="isNavActive(['lists', 'list-detail', 'list-'])"
+          :active="route.name === 'lists'"
+          :allow-collapse="true"
+          :open="listsExpanded"
+          @update:open="listsExpanded = $event"
         >
           <template #icon>
             <ClipboardCheckIcon :size="20" />
           </template>
+          <NcAppNavigationItem
+            v-for="list in checklists"
+            :key="list.id"
+            :name="list.name"
+            :to="{
+              name: 'list-detail',
+              params: { houseId: String(currentHouseId), listId: String(list.id) },
+            }"
+            :active="currentListId === list.id"
+          >
+            <template #icon>
+              <component :is="checklistIconComponent(list.icon)" :size="18" />
+            </template>
+          </NcAppNavigationItem>
         </NcAppNavigationItem>
 
         <NcAppNavigationItem
@@ -173,6 +190,8 @@ import ChevronDownIcon from '@icons/ChevronDown.vue'
 import CheckIcon from '@icons/Check.vue'
 import PlusIcon from '@icons/Plus.vue'
 import { useHouses } from '@/composables/useHouses'
+import { useChecklists } from '@/composables/useChecklist'
+import { checklistIconComponent } from '@/components/ChecklistIconPicker'
 import HouseSettingsDialog from '@/components/HouseSettingsDialog'
 import AccountSettingsDialog from '@/components/AccountSettingsDialog'
 
@@ -187,8 +206,33 @@ const currentHouseId = computed<number | null>(() => {
   return Number.isFinite(id) ? id : null
 })
 
+const currentListId = computed<number | null>(() => {
+  const raw = route.params.listId
+  if (!raw) return null
+  const id = Number(Array.isArray(raw) ? raw[0] : raw)
+  return Number.isFinite(id) ? id : null
+})
+
 const house = computed(() =>
   currentHouseId.value !== null ? findById(currentHouseId.value) : undefined,
+)
+
+// Checklists for the sidebar sub-items. The composable shares per-house
+// state, so creates/updates/deletes from other views are reflected here.
+const listsExpanded = ref(true)
+const checklists = computed(() => {
+  const id = currentHouseId.value
+  if (id === null) return []
+  return useChecklists(id).lists.value
+})
+
+watch(
+  currentHouseId,
+  (id) => {
+    if (id === null) return
+    void useChecklists(id).load()
+  },
+  { immediate: true },
 )
 /**
  * Prefix-based route matcher for sidebar items. An item is active when the

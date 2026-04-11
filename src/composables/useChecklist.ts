@@ -1,23 +1,54 @@
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import * as api from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
 import type { ChecklistItemSort } from '@/api/prefs'
 
-export function useChecklists(houseId: number) {
-  const lists = ref<Checklist[]>([])
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+// Per-house state shared across all callers so sidebar and views stay in sync.
+interface HouseChecklistState {
+  lists: Ref<Checklist[]>
+  loading: Ref<boolean>
+  error: Ref<string | null>
+  inflight: Promise<Checklist[]> | null
+}
+const houseStates = new Map<number, HouseChecklistState>()
 
-  async function load(): Promise<void> {
+function getState(houseId: number): HouseChecklistState {
+  let s = houseStates.get(houseId)
+  if (!s) {
+    s = {
+      lists: ref<Checklist[]>([]),
+      loading: ref(false),
+      error: ref<string | null>(null),
+      inflight: null,
+    }
+    houseStates.set(houseId, s)
+  }
+  return s
+}
+
+export function useChecklists(houseId: number) {
+  const state = getState(houseId)
+  const { lists, loading, error } = state
+
+  function load(force = false): Promise<Checklist[]> {
+    if (state.inflight && !force) return state.inflight
     loading.value = true
     error.value = null
-    try {
-      lists.value = await api.listLists(houseId)
-    } catch (e) {
-      error.value = (e as Error).message
-    } finally {
-      loading.value = false
-    }
+    state.inflight = api
+      .listLists(houseId)
+      .then((result) => {
+        lists.value = result
+        return result
+      })
+      .catch((e) => {
+        error.value = (e as Error).message
+        return lists.value
+      })
+      .finally(() => {
+        loading.value = false
+        state.inflight = null
+      })
+    return state.inflight
   }
 
   async function create(
