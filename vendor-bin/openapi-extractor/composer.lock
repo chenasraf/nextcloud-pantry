@@ -86,12 +86,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/nextcloud/openapi-extractor.git",
-                "reference": "bec6a67aec6175139beb1ec1c1bf9aa65cc8c007"
+                "reference": "259e773f753907c057aa58be8bae889b716a74c9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nextcloud/openapi-extractor/zipball/bec6a67aec6175139beb1ec1c1bf9aa65cc8c007",
-                "reference": "bec6a67aec6175139beb1ec1c1bf9aa65cc8c007",
+                "url": "https://api.github.com/repos/nextcloud/openapi-extractor/zipball/259e773f753907c057aa58be8bae889b716a74c9",
+                "reference": "259e773f753907c057aa58be8bae889b716a74c9",
                 "shasum": ""
             },
             "require": {
@@ -142,7 +142,7 @@
                 "source": "https://github.com/nextcloud/openapi-extractor/tree/main",
                 "issues": "https://github.com/nextcloud/openapi-extractor/issues"
             },
-            "time": "2026-04-05T03:37:25+00:00"
+            "time": "2026-04-11T01:56:10+00:00"
         },
         {
             "name": "nikic/php-parser",
