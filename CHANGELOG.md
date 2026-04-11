@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.5.0...v0.5.1) (2026-04-11)
+
+
+### Bug Fixes
+
+* list items sorting by category ([ba42fc2](https://github.com/chenasraf/nextcloud-pantry/commit/ba42fc2bc9c3a0495b9eb645b56bb349ff4c30d5))
+
 ## [0.5.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.4.0...v0.5.0) (2026-04-11)
 
 
