@@ -83,19 +83,29 @@
         </ul>
         <template v-if="checkedItems.length > 0">
           <h3 class="pantry-detail__section-title">{{ strings.doneTitle }}</h3>
-          <ul class="pantry-detail__items pantry-detail__items--done">
-            <ChecklistItemRow
-              v-for="item in checkedItems"
-              :key="item.id"
-              :item="item"
-              :category="categoryFor(item.categoryId)"
-              :house-id="houseIdNum"
-              @toggle="handleToggle"
-              @view="openView"
-              @edit="startEdit"
-              @remove="handleRemove"
-              @preview="openPreview"
-            />
+          <ul ref="checkedListRef" class="pantry-detail__items pantry-detail__items--done">
+            <template v-for="gi in checkedGridItems" :key="gi.key">
+              <li
+                v-if="gi.type === 'placeholder'"
+                class="pantry-detail__placeholder"
+                @dragover.prevent
+                @drop.prevent.stop="onPlaceholderDrop"
+              />
+              <ChecklistItemRow
+                v-else
+                :item="gi.item"
+                :category="categoryFor(gi.item.categoryId)"
+                :house-id="houseIdNum"
+                :reorder-enabled="isCustomSort"
+                @toggle="handleToggle"
+                @view="openView"
+                @edit="startEdit"
+                @remove="handleRemove"
+                @preview="openPreview"
+                @drag-start="onItemDragStart"
+                @reorder-over="onReorderOver"
+              />
+            </template>
           </ul>
         </template>
       </template>
@@ -251,20 +261,33 @@ const isCustomSort = computed(() => currentSort.value === 'custom')
 const uncheckedItems = computed(() => sortWithinPartition(items.value.filter((i) => !i.done)))
 const checkedItems = computed(() => sortWithinPartition(items.value.filter((i) => i.done)))
 
-// ----- Drag/drop reorder (unchecked partition only, custom sort) -----
+// ----- Drag/drop reorder (custom sort, per partition) -----
 
 type ListGridItem =
   | { type: 'item'; key: string; item: ChecklistItem }
   | { type: 'placeholder'; key: string }
 
+type Partition = 'unchecked' | 'checked'
+
 const draggingItemId = ref<number | null>(null)
+const draggingPartition = ref<Partition | null>(null)
 const dropIndex = ref<number | null>(null)
 const uncheckedListRef = ref<HTMLElement | null>(null)
+const checkedListRef = ref<HTMLElement | null>(null)
 
-const uncheckedGridItems = computed<ListGridItem[]>(() => {
-  const source = uncheckedItems.value
+function partitionItems(p: Partition): ChecklistItem[] {
+  return p === 'unchecked' ? uncheckedItems.value : checkedItems.value
+}
+
+function buildGridItems(p: Partition): ListGridItem[] {
+  const source = partitionItems(p)
   const dragId = draggingItemId.value
-  if (!isCustomSort.value || dragId === null || dropIndex.value === null) {
+  if (
+    !isCustomSort.value ||
+    dragId === null ||
+    dropIndex.value === null ||
+    draggingPartition.value !== p
+  ) {
     return source.map((i) => ({ type: 'item' as const, key: 'i-' + i.id, item: i }))
   }
   const without = source.filter((i) => i.id !== dragId)
@@ -276,10 +299,20 @@ const uncheckedGridItems = computed<ListGridItem[]>(() => {
   const clamped = Math.min(dropIndex.value, items.length)
   items.splice(clamped, 0, { type: 'placeholder', key: 'drop-placeholder' })
   return items
-})
+}
+
+const uncheckedGridItems = computed<ListGridItem[]>(() => buildGridItems('unchecked'))
+const checkedGridItems = computed<ListGridItem[]>(() => buildGridItems('checked'))
+
+function findPartitionOf(itemId: number): Partition | null {
+  if (uncheckedItems.value.some((i) => i.id === itemId)) return 'unchecked'
+  if (checkedItems.value.some((i) => i.id === itemId)) return 'checked'
+  return null
+}
 
 function onItemDragStart(itemId: number) {
   draggingItemId.value = itemId
+  draggingPartition.value = findPartitionOf(itemId)
   dropIndex.value = null
 }
 
@@ -287,7 +320,12 @@ function computeItemDropIndex(hoveredItemId: number, clientY: number, target: HT
   const dragId = draggingItemId.value
   if (!dragId || dragId === hoveredItemId) return
 
-  const without = uncheckedItems.value.filter((i) => i.id !== dragId)
+  const partition = draggingPartition.value
+  if (!partition) return
+
+  // Only allow reordering within the same partition.
+  const source = partitionItems(partition)
+  const without = source.filter((i) => i.id !== dragId)
   const idx = without.findIndex((i) => i.id === hoveredItemId)
   if (idx === -1) return
 
@@ -311,12 +349,17 @@ function onPlaceholderDrop() {
 async function commitReorder() {
   const dragId = draggingItemId.value
   const idx = dropIndex.value
+  const partition = draggingPartition.value
   draggingItemId.value = null
+  draggingPartition.value = null
   dropIndex.value = null
 
-  if (dragId === null || idx === null) return
+  if (dragId === null || idx === null || !partition) return
 
-  const source = uncheckedItems.value
+  // Reorder within the dragged partition, then merge with the other partition
+  // (preserving its relative order) so the API receives a complete sort order
+  // for all items in the list.
+  const source = partitionItems(partition)
   const dragged = source.find((i) => i.id === dragId)
   if (!dragged) return
 
@@ -325,28 +368,45 @@ async function commitReorder() {
   const reordered = [...without]
   reordered.splice(clamped, 0, dragged)
 
-  const entries = reordered.map((i, idx) => ({ id: i.id, sortOrder: idx }))
+  const otherPartition: Partition = partition === 'unchecked' ? 'checked' : 'unchecked'
+  const other = partitionItems(otherPartition)
+
+  // Unchecked items always come first in the sortOrder sequence.
+  const finalOrder = partition === 'unchecked' ? [...reordered, ...other] : [...other, ...reordered]
+
+  const entries = finalOrder.map((i, n) => ({ id: i.id, sortOrder: n }))
   await reorderItems(entries)
 }
 
-// Capture-phase listeners
+// Capture-phase listeners — attached to both partition lists.
 function onDropCapture() {
   commitReorder()
 }
 function onDragEndCapture() {
   draggingItemId.value = null
+  draggingPartition.value = null
   dropIndex.value = null
 }
+function bindDragListeners(el: HTMLElement | null) {
+  if (!el) return
+  el.addEventListener('drop', onDropCapture, true)
+  el.addEventListener('dragend', onDragEndCapture, true)
+}
+function unbindDragListeners(el: HTMLElement | null) {
+  if (!el) return
+  el.removeEventListener('drop', onDropCapture, true)
+  el.removeEventListener('dragend', onDragEndCapture, true)
+}
 onMounted(() => {
-  uncheckedListRef.value?.addEventListener('drop', onDropCapture, true)
-  uncheckedListRef.value?.addEventListener('dragend', onDragEndCapture, true)
+  bindDragListeners(uncheckedListRef.value)
+  bindDragListeners(checkedListRef.value)
 })
 onBeforeUnmount(() => {
-  uncheckedListRef.value?.removeEventListener('drop', onDropCapture, true)
-  uncheckedListRef.value?.removeEventListener('dragend', onDragEndCapture, true)
+  unbindDragListeners(uncheckedListRef.value)
+  unbindDragListeners(checkedListRef.value)
 })
 
-// Touch reorder
+// Touch reorder — one composable instance per partition list.
 useTouchReorder(
   uncheckedListRef,
   {
@@ -358,6 +418,25 @@ useTouchReorder(
     onDrop: commitReorder,
     onCancel() {
       draggingItemId.value = null
+      draggingPartition.value = null
+      dropIndex.value = null
+    },
+  },
+  isCustomSort,
+)
+
+useTouchReorder(
+  checkedListRef,
+  {
+    onDragStart: onItemDragStart,
+    onReorderOver(hoveredId, _clientX, clientY) {
+      const el = checkedListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+      computeItemDropIndex(hoveredId, clientY, el)
+    },
+    onDrop: commitReorder,
+    onCancel() {
+      draggingItemId.value = null
+      draggingPartition.value = null
       dropIndex.value = null
     },
   },
