@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.4.0...v0.5.0) (2026-04-11)
+
+
+### Features
+
+* add checklist item category sorting ([f3880ce](https://github.com/chenasraf/nextcloud-pantry/commit/f3880cefe08c5595252c5e2b69b1a95f0baea093))
+* checklists in sidebar ([3c2f5a2](https://github.com/chenasraf/nextcloud-pantry/commit/3c2f5a2766eedcf6bd19c6931da88bcde0252150))
+* update notifications accumulate logic ([eeeef67](https://github.com/chenasraf/nextcloud-pantry/commit/eeeef6717e6063e381060e34aa5f3484680ae2b2))
+
+
+### Bug Fixes
+
+* allow reordering checked list items ([afc699c](https://github.com/chenasraf/nextcloud-pantry/commit/afc699c0dbbf51171c5a3d501ec695366198f76d))
+
 ## [0.4.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.3.2...v0.4.0) (2026-04-10)
 
 
