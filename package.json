@@ -49,7 +49,7 @@
     "@vue/tsconfig": "^0.9.1",
     "eslint": "^10.2.0",
     "happy-dom": "^20.8.9",
-    "lefthook": "^1.13.6",
+    "lefthook": "^2.1.5",
     "prettier": "^3.8.2",
     "rollup-plugin-visualizer": "^7.0.1",
     "sass": "^1.99.0",
