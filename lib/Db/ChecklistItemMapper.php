@@ -30,26 +30,26 @@ class ChecklistItemMapper extends QBMapper {
 
 		if ($sortBy === 'category') {
 			// Left-join the categories table so items with no category still appear.
-			// Uncategorized items are grouped separately (sort_uncategorized = 1)
-			// so they appear after all categorized items regardless of DB null ordering.
+			// Uncategorized items are pushed to the end via a CASE expression in
+			// ORDER BY (we can't SELECT it as an alias because the mapper would
+			// try to set it as an entity attribute).
 			$categories = Application::tableName('categories');
-			$qb->select($items . '.*')
-				->selectAlias(
-					$qb->createFunction('CASE WHEN ' . $items . '.category_id IS NULL THEN 1 ELSE 0 END'),
-					'sort_uncategorized',
-				)
-				->from($items)
+			$qb->select('i.*')
+				->from($items, 'i')
 				->leftJoin(
-					$items,
+					'i',
 					$categories,
 					'c',
-					$qb->expr()->eq($items . '.category_id', 'c.id'),
+					$qb->expr()->eq('i.category_id', 'c.id'),
 				)
-				->where($qb->expr()->eq($items . '.list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
-				->orderBy('sort_uncategorized', 'ASC')
+				->where($qb->expr()->eq('i.list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+				->orderBy(
+					$qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'),
+					'ASC',
+				)
 				->addOrderBy('c.name', 'ASC')
-				->addOrderBy($items . '.name', 'ASC')
-				->addOrderBy($items . '.created_at', 'ASC');
+				->addOrderBy('i.name', 'ASC')
+				->addOrderBy('i.created_at', 'ASC');
 			return $this->findEntities($qb);
 		}
 
