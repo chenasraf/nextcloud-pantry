@@ -4,3 +4,4 @@ export {
   checklistIconComponent,
   type ChecklistIconOption,
 } from './checklistIcons'
+export { default as ChecklistFormDialog } from './ChecklistFormDialog.vue'

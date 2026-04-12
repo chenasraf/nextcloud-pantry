@@ -74,6 +74,7 @@
               @toggle="handleToggle"
               @view="openView"
               @edit="startEdit"
+              @move="startMoveItem"
               @remove="handleRemove"
               @preview="openPreview"
               @drag-start="onItemDragStart"
@@ -145,6 +146,36 @@
       :house-id="houseIdNum"
       @update:open="showCategoryManager = $event"
     />
+
+    <!-- Move item to another list -->
+    <NcDialog
+      v-if="movingItem"
+      :name="strings.moveToList"
+      :open="!!movingItem"
+      close-on-click-outside
+      @update:open="(v) => !v && (movingItem = null)"
+    >
+      <div class="pantry-move-list">
+        <NcButton v-for="cl in otherLists" :key="cl.id" wide @click="submitMoveItem(cl.id)">
+          <template #icon>
+            <component :is="checklistIconComponent(cl.icon)" :size="20" />
+          </template>
+          {{ cl.name }}
+        </NcButton>
+        <NcButton wide @click="createListForMove">
+          <template #icon>
+            <PlusIcon :size="20" />
+          </template>
+          {{ strings.newList }}
+        </NcButton>
+      </div>
+    </NcDialog>
+
+    <ChecklistFormDialog
+      :open="showCreateForMove"
+      @update:open="showCreateForMove = $event"
+      @save="submitCreateListAndMove"
+    />
   </div>
 </template>
 
@@ -152,11 +183,13 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
+import PlusIcon from '@icons/Plus.vue'
 import SortIcon from '@icons/Sort.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
@@ -168,8 +201,8 @@ import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
-import { checklistIconComponent } from '@/components/ChecklistIconPicker'
-import { useChecklistItems } from '@/composables/useChecklist'
+import { checklistIconComponent, ChecklistFormDialog } from '@/components/ChecklistIconPicker'
+import { useChecklists, useChecklistItems } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { getList } from '@/api/lists'
@@ -517,6 +550,34 @@ function openPreview(item: ChecklistItem) {
 
 const showCategoryManager = ref(false)
 
+// ----- Move item to another list -----
+
+const { lists: allLists, create: createList } = useChecklists(houseIdNum.value)
+const otherLists = computed(() => allLists.value.filter((l) => l.id !== listIdNum.value))
+const movingItem = ref<ChecklistItem | null>(null)
+const showCreateForMove = ref(false)
+
+function startMoveItem(item: ChecklistItem) {
+  movingItem.value = item
+}
+
+async function submitMoveItem(targetListId: number) {
+  if (!movingItem.value) return
+  await update(movingItem.value.id, { targetListId })
+  items.value = items.value.filter((i) => i.id !== movingItem.value!.id)
+  movingItem.value = null
+}
+
+function createListForMove() {
+  showCreateForMove.value = true
+}
+
+async function submitCreateListAndMove(data: { name: string; description: string; icon: string }) {
+  const newList = await createList(data.name, data.description || null, data.icon || null)
+  showCreateForMove.value = false
+  await submitMoveItem(newList.id)
+}
+
 const strings = {
   back: t('pantry', 'Back to lists'),
   emptyTitle: t('pantry', 'No items yet'),
@@ -524,6 +585,8 @@ const strings = {
   sortLabel: t('pantry', 'Sort order'),
   doneTitle: t('pantry', 'Done'),
   manageCategories: t('pantry', 'Manage categories'),
+  moveToList: t('pantry', 'Move to list'),
+  newList: t('pantry', 'New list'),
 }
 </script>
 
@@ -566,6 +629,13 @@ const strings = {
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+}
+
+.pantry-move-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
 }
 
 .pantry-sort-active {

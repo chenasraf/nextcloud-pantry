@@ -2123,6 +2123,13 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New sort order."
+                                    },
+                                    "targetListId": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Move item to a different list (must belong to the same house)."
                                     }
                                 }
                             }

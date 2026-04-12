@@ -57,6 +57,7 @@ export interface ItemInput {
   rrule?: string | null
   repeatFromCompletion?: boolean
   sortOrder?: number
+  targetListId?: number
 }
 
 export async function addItem(

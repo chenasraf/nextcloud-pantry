@@ -46,6 +46,12 @@
           </template>
           {{ strings.editItem }}
         </NcActionButton>
+        <NcActionButton @click="$emit('move', item)">
+          <template #icon>
+            <ArrowRightIcon :size="20" />
+          </template>
+          {{ strings.moveItem }}
+        </NcActionButton>
         <NcActionButton @click="$emit('remove', item.id)">
           <template #icon>
             <DeleteIcon :size="20" />
@@ -68,6 +74,7 @@ import RepeatIcon from '@icons/Repeat.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
 import DeleteIcon from '@icons/Delete.vue'
+import ArrowRightIcon from '@icons/ArrowRight.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule } from '@/utils/rrule'
@@ -87,6 +94,7 @@ const emit = defineEmits<{
   toggle: [id: number]
   view: [item: ChecklistItem]
   edit: [item: ChecklistItem]
+  move: [item: ChecklistItem]
   remove: [id: number]
   preview: [item: ChecklistItem]
   'drag-start': [itemId: number]
@@ -124,6 +132,7 @@ const strings = {
   viewItem: t('pantry', 'View item'),
   itemActions: t('pantry', 'Item actions'),
   editItem: t('pantry', 'Edit item'),
+  moveItem: t('pantry', 'Move to list'),
   removeItem: t('pantry', 'Remove item'),
 }
 </script>

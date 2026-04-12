@@ -206,6 +206,12 @@ class ChecklistService {
 			&& (array_key_exists('rrule', $patch) || array_key_exists('repeatFromCompletion', $patch))) {
 			$item->setNextDueAt($this->computeNextDueAt($item, time())?->getTimestamp());
 		}
+		if (isset($patch['listId'])) {
+			$targetListId = (int)$patch['listId'];
+			// Ensure the target list exists.
+			$this->getList($targetListId);
+			$item->setListId($targetListId);
+		}
 		if (isset($patch['sortOrder'])) {
 			$item->setSortOrder((int)$patch['sortOrder']);
 		}

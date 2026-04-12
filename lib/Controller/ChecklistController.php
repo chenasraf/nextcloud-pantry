@@ -265,6 +265,7 @@ final class ChecklistController extends OCSController {
 	 * @param bool|null $repeatFromCompletion New recurrence anchor mode.
 	 * @param int|null $imageFileId File id of attached image (0 or negative clears).
 	 * @param int|null $sortOrder New sort order.
+	 * @param int|null $targetListId Move item to a different list (must belong to the same house).
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -284,8 +285,9 @@ final class ChecklistController extends OCSController {
 		?bool $repeatFromCompletion = null,
 		?int $imageFileId = null,
 		?int $sortOrder = null,
+		?int $targetListId = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $imageFileId, $sortOrder): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $imageFileId, $sortOrder, $targetListId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$item = $this->lists->getItem($itemId);
 			$list = $this->lists->getList($item->getListId());
@@ -322,6 +324,11 @@ final class ChecklistController extends OCSController {
 			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($targetListId !== null) {
+				$targetList = $this->lists->getList($targetListId);
+				$this->assertListInHouse($targetList->getHouseId(), $houseId);
+				$patch['listId'] = $targetListId;
 			}
 			$updated = $this->lists->updateItem($itemId, $patch);
 			return new DataResponse($updated->jsonSerialize());
