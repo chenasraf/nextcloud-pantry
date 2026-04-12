@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.6.0...v0.6.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* close action menus after clicking actions ([f5fad58](https://github.com/chenasraf/nextcloud-pantry/commit/f5fad5832e03e5e3569669ecae799bf796dde8d5))
+* easier scanning by aligning labels ([57a7c22](https://github.com/chenasraf/nextcloud-pantry/commit/57a7c225c99b3e9635d1ef0a777390145a3acc81))
+* move checked items ([3182567](https://github.com/chenasraf/nextcloud-pantry/commit/31825670fcff1c4ef3039b7a4871f5ee86214a86))
+* rtl detection in more fields ([c8f9ab8](https://github.com/chenasraf/nextcloud-pantry/commit/c8f9ab821f76f00b195cf463de5a12f0030db1a8))
+
 ## [0.6.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.5.1...v0.6.0) (2026-04-12)
 
 
