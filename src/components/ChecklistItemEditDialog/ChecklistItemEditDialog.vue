@@ -21,6 +21,7 @@
         v-model="editDescription"
         :label="strings.descriptionLabel"
         :placeholder="strings.descriptionPlaceholder"
+        dir="auto"
         autocomplete="off"
       />
       <NcTextField

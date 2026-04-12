@@ -17,7 +17,7 @@
         <img class="item-view__image" :src="largeUrl" :alt="item.name" />
       </button>
 
-      <div v-if="item.description" class="item-view__description">
+      <div v-if="item.description" class="item-view__description" dir="auto">
         <NcRichText :text="item.description" :use-markdown="true" :use-extended-markdown="true" />
       </div>
 
