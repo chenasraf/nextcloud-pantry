@@ -42,6 +42,7 @@ namespace OCA\Pantry;
  *     id: int,
  *     listId: int,
  *     name: string,
+ *     description: string|null,
  *     categoryId: int|null,
  *     quantity: string|null,
  *     done: bool,
