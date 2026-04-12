@@ -101,6 +101,7 @@
                 @toggle="handleToggle"
                 @view="openView"
                 @edit="startEdit"
+                @move="startMoveItem"
                 @remove="handleRemove"
                 @preview="openPreview"
                 @drag-start="onItemDragStart"
