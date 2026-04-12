@@ -9,6 +9,7 @@ vi.mock('@icons/Repeat.vue', () => createIconMock('RepeatIcon'))
 vi.mock('@icons/Pencil.vue', () => createIconMock('PencilIcon'))
 vi.mock('@icons/Eye.vue', () => createIconMock('EyeIcon'))
 vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
+vi.mock('@icons/ArrowRight.vue', () => createIconMock('ArrowRightIcon'))
 
 vi.mock('@nextcloud/vue/components/NcButton', () => ({
   default: {
@@ -193,6 +194,15 @@ describe('ChecklistItemRow', () => {
       await editBtn.trigger('click')
       expect(wrapper.emitted('edit')).toBeTruthy()
       expect(wrapper.emitted('edit')![0]).toEqual([item])
+    })
+
+    it('emits move with item on move action click', async () => {
+      const item = makeItem()
+      const wrapper = mount(ChecklistItemRow, { props: { ...defaultProps, item } })
+      const moveBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Move to list')!
+      await moveBtn.trigger('click')
+      expect(wrapper.emitted('move')).toBeTruthy()
+      expect(wrapper.emitted('move')![0]).toEqual([item])
     })
 
     it('emits remove with item id on remove action click', async () => {

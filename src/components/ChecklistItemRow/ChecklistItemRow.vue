@@ -24,13 +24,13 @@
     </NcCheckboxRadioSwitch>
     <div class="checklist-row__meta">
       <span v-if="item.quantity" class="checklist-row__quantity">&times; {{ item.quantity }}</span>
-      <span v-if="category" class="checklist-row__category" :style="{ color: category.color }">
-        <component :is="categoryIconComponent(category.icon)" :size="14" />
-        {{ category.name }}
-      </span>
       <span v-if="item.rrule" class="checklist-row__recurrence" :title="item.rrule">
         <RepeatIcon :size="14" />
         {{ formatRrule(item.rrule) }}
+      </span>
+      <span v-if="category" class="checklist-row__category" :style="{ color: category.color }">
+        <component :is="categoryIconComponent(category.icon)" :size="14" />
+        {{ category.name }}
       </span>
     </div>
     <div class="checklist-row__actions">
