@@ -18,19 +18,23 @@
     </div>
     <div class="photo-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
-        <NcActionButton @click.stop="$emit('edit', photo)">
+        <NcActionButton close-after-click @click.stop="$emit('edit', photo)">
           <template #icon>
             <PencilIcon :size="20" />
           </template>
           {{ strings.edit }}
         </NcActionButton>
-        <NcActionButton v-if="photo.folderId !== null" @click.stop="$emit('move-to-root', photo)">
+        <NcActionButton
+          v-if="photo.folderId !== null"
+          close-after-click
+          @click.stop="$emit('move-to-root', photo)"
+        >
           <template #icon>
             <ArrowUpIcon :size="20" />
           </template>
           {{ strings.moveToBoard }}
         </NcActionButton>
-        <NcActionButton @click.stop="$emit('delete', photo)">
+        <NcActionButton close-after-click @click.stop="$emit('delete', photo)">
           <template #icon>
             <DeleteIcon :size="20" />
           </template>

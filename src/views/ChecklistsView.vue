@@ -57,11 +57,11 @@
             </div>
           </router-link>
           <NcActions class="pantry-list-card__actions" :aria-label="strings.listMenu">
-            <NcActionButton @click="startEdit(list)">
+            <NcActionButton close-after-click @click="startEdit(list)">
               <template #icon><PencilIcon :size="20" /></template>
               {{ strings.edit }}
             </NcActionButton>
-            <NcActionButton @click="confirmDelete(list)">
+            <NcActionButton close-after-click @click="confirmDelete(list)">
               <template #icon><DeleteIcon :size="20" /></template>
               {{ strings.delete }}
             </NcActionButton>

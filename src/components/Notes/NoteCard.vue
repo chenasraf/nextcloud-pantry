@@ -18,7 +18,7 @@
     </div>
     <div class="note-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
-        <NcActionButton @click.stop="$emit('delete', note)">
+        <NcActionButton close-after-click @click.stop="$emit('delete', note)">
           <template #icon><DeleteIcon :size="20" /></template>
           {{ strings.delete }}
         </NcActionButton>

@@ -40,19 +40,19 @@
         </template>
       </NcButton>
       <NcActions :aria-label="strings.itemActions">
-        <NcActionButton @click="$emit('edit', item)">
+        <NcActionButton close-after-click @click="$emit('edit', item)">
           <template #icon>
             <PencilIcon :size="20" />
           </template>
           {{ strings.editItem }}
         </NcActionButton>
-        <NcActionButton @click="$emit('move', item)">
+        <NcActionButton close-after-click @click="$emit('move', item)">
           <template #icon>
             <ArrowRightIcon :size="20" />
           </template>
           {{ strings.moveItem }}
         </NcActionButton>
-        <NcActionButton @click="$emit('remove', item.id)">
+        <NcActionButton close-after-click @click="$emit('remove', item.id)">
           <template #icon>
             <DeleteIcon :size="20" />
           </template>

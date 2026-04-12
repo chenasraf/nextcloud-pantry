@@ -28,11 +28,11 @@
     <span v-if="photoCount > 0" class="folder-stack__count">{{ photoCount }}</span>
     <div class="folder-stack__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
-        <NcActionButton @click.stop="$emit('rename', folder)">
+        <NcActionButton close-after-click @click.stop="$emit('rename', folder)">
           <template #icon><PencilIcon :size="20" /></template>
           {{ strings.rename }}
         </NcActionButton>
-        <NcActionButton @click.stop="$emit('delete', folder)">
+        <NcActionButton close-after-click @click.stop="$emit('delete', folder)">
           <template #icon><DeleteIcon :size="20" /></template>
           {{ strings.delete }}
         </NcActionButton>
