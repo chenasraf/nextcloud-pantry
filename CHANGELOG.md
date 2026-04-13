@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.6.1...v0.7.0) (2026-04-13)
+
+
+### Features
+
+* show next due date for items ([7bcaea3](https://github.com/chenasraf/nextcloud-pantry/commit/7bcaea3eddbd854a75b6790a1810d0ccbd57a4bb))
+
 ## [0.6.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.6.0...v0.6.1) (2026-04-12)
 
 
