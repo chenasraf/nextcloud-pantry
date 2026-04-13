@@ -40,6 +40,10 @@
             {{ formatRrule(item.rrule) }}
           </span>
         </div>
+        <div v-if="nextRecurrence" class="item-view__row">
+          <span class="item-view__label">{{ strings.nextRecurrence }}:</span>
+          <span>{{ nextRecurrence }}</span>
+        </div>
         <div v-if="item.done" class="item-view__row">
           <span class="item-view__label">{{ strings.status }}:</span>
           <span>{{ strings.done }}</span>
@@ -67,7 +71,7 @@ import RepeatIcon from '@icons/Repeat.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { itemImagePreviewUrl } from '@/api/images'
-import { formatRrule } from '@/utils/rrule'
+import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import type { ChecklistItem, Category } from '@/api/types'
 
 const props = defineProps<{
@@ -89,11 +93,18 @@ const largeUrl = computed(() =>
     : '',
 )
 
+const nextRecurrence = computed(() =>
+  props.item.rrule
+    ? formatNextRecurrence(props.item.nextDueAt, props.item.repeatFromCompletion, props.item.done)
+    : null,
+)
+
 const strings = {
   viewImage: t('pantry', 'View image'),
   quantity: t('pantry', 'Quantity'),
   category: t('pantry', 'Category'),
   recurrence: t('pantry', 'Recurrence'),
+  nextRecurrence: t('pantry', 'Next recurrence'),
   status: t('pantry', 'Status'),
   done: t('pantry', 'Done'),
   editItem: t('pantry', 'Edit item'),

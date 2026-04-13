@@ -45,6 +45,7 @@ vi.mock('@/api/images', () => ({
 
 vi.mock('@/utils/rrule', () => ({
   formatRrule: (rrule: string) => rrule,
+  formatNextRecurrence: () => null,
 }))
 
 import ChecklistItemViewDialog from './ChecklistItemViewDialog.vue'

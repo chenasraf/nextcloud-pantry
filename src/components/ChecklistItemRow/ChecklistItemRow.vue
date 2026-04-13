@@ -24,7 +24,7 @@
     </NcCheckboxRadioSwitch>
     <div class="checklist-row__meta">
       <span v-if="item.quantity" class="checklist-row__quantity">&times; {{ item.quantity }}</span>
-      <span v-if="item.rrule" class="checklist-row__recurrence" :title="item.rrule">
+      <span v-if="item.rrule" class="checklist-row__recurrence" :title="recurrenceTooltip">
         <RepeatIcon :size="14" />
         {{ formatRrule(item.rrule) }}
       </span>
@@ -77,7 +77,7 @@ import DeleteIcon from '@icons/Delete.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { itemImagePreviewUrl } from '@/api/images'
-import { formatRrule } from '@/utils/rrule'
+import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import type { ChecklistItem, Category } from '@/api/types'
 
 const props = withDefaults(
@@ -126,6 +126,15 @@ const thumbUrl = computed(() =>
     ? itemImagePreviewUrl(props.houseId, props.item.imageFileId!, props.item.imageUploadedBy!, 64)
     : '',
 )
+
+const recurrenceTooltip = computed(() => {
+  const next = formatNextRecurrence(
+    props.item.nextDueAt,
+    props.item.repeatFromCompletion,
+    props.item.done,
+  )
+  return next ? t('pantry', 'Next: {next}', { next }) : formatRrule(props.item.rrule!)
+})
 
 const strings = {
   viewImage: t('pantry', 'View image'),

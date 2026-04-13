@@ -57,6 +57,7 @@ vi.mock('@/api/images', () => ({
 
 vi.mock('@/utils/rrule', () => ({
   formatRrule: (rrule: string) => rrule,
+  formatNextRecurrence: () => null,
 }))
 
 import ChecklistItemRow from './ChecklistItemRow.vue'
