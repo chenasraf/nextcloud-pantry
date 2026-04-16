@@ -30,6 +30,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setRrule(?string $rrule)
  * @method bool getRepeatFromCompletion()
  * @method void setRepeatFromCompletion(bool $repeatFromCompletion)
+ * @method bool getDeleteOnDone()
+ * @method void setDeleteOnDone(bool $deleteOnDone)
  * @method int|null getNextDueAt()
  * @method void setNextDueAt(?int $nextDueAt)
  * @method int|null getImageFileId()
@@ -54,6 +56,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?string $doneBy = null;
 	protected ?string $rrule = null;
 	protected bool $repeatFromCompletion = false;
+	protected bool $deleteOnDone = false;
 	protected ?int $nextDueAt = null;
 	protected ?int $imageFileId = null;
 	protected ?string $imageUploadedBy = null;
@@ -67,6 +70,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		$this->addType('done', 'boolean');
 		$this->addType('doneAt', 'integer');
 		$this->addType('repeatFromCompletion', 'boolean');
+		$this->addType('deleteOnDone', 'boolean');
 		$this->addType('nextDueAt', 'integer');
 		$this->addType('imageFileId', 'integer');
 		$this->addType('sortOrder', 'integer');
@@ -78,6 +82,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		// fromRow() resets updated fields after hydration, so reads are unaffected.
 		$this->markFieldUpdated('done');
 		$this->markFieldUpdated('repeatFromCompletion');
+		$this->markFieldUpdated('deleteOnDone');
 	}
 
 	public function jsonSerialize(): array {
@@ -93,6 +98,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'doneBy' => $this->doneBy,
 			'rrule' => $this->rrule,
 			'repeatFromCompletion' => $this->repeatFromCompletion,
+			'deleteOnDone' => $this->deleteOnDone,
 			'nextDueAt' => $this->nextDueAt,
 			'imageFileId' => $this->imageFileId,
 			'imageUploadedBy' => $this->imageUploadedBy,

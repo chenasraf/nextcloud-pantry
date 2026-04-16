@@ -143,6 +143,7 @@ class ChecklistService {
 		$item->setRrule($rrule);
 		$repeatFromCompletion = !empty($data['repeatFromCompletion']);
 		$item->setRepeatFromCompletion($repeatFromCompletion);
+		$item->setDeleteOnDone(!empty($data['deleteOnDone']));
 		// For fixed-schedule items, compute the first due time immediately.
 		if ($rrule !== null && !$repeatFromCompletion) {
 			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
@@ -193,6 +194,9 @@ class ChecklistService {
 		}
 		if (array_key_exists('repeatFromCompletion', $patch)) {
 			$item->setRepeatFromCompletion((bool)$patch['repeatFromCompletion']);
+		}
+		if (array_key_exists('deleteOnDone', $patch)) {
+			$item->setDeleteOnDone((bool)$patch['deleteOnDone']);
 		}
 		if (array_key_exists('imageFileId', $patch)) {
 			$item->setImageFileId($this->intOrNull($patch['imageFileId']));
@@ -256,6 +260,13 @@ class ChecklistService {
 			$item->setDone(true);
 			$item->setDoneAt($now);
 			$item->setDoneBy($uid);
+			// "Once" items are removed from the list when marked done. We still
+			// return the transient done state so callers (notifications, API
+			// response) can reflect the completion before the row is gone.
+			if ($item->getDeleteOnDone()) {
+				$this->itemMapper->delete($item);
+				return $item;
+			}
 			if ($item->getRrule() !== null) {
 				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 			}

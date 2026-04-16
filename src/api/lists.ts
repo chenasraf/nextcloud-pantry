@@ -56,6 +56,7 @@ export interface ItemInput {
   quantity?: string | null
   rrule?: string | null
   repeatFromCompletion?: boolean
+  deleteOnDone?: boolean
   sortOrder?: number
   targetListId?: number
 }

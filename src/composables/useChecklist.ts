@@ -108,18 +108,30 @@ export function useChecklistItems(houseId: number, listId: number) {
   }
 
   async function toggle(itemId: number): Promise<void> {
-    // Optimistic flip.
+    // Optimistic flip. "Once" items disappear when marked done — the backend
+    // deletes them in the same call, so we drop them locally too.
     const prev = items.value.find((i) => i.id === itemId)
+    const willDelete = !!prev && !prev.done && prev.deleteOnDone
     if (prev) {
-      items.value = items.value.map((i) => (i.id === itemId ? { ...i, done: !i.done } : i))
+      if (willDelete) {
+        items.value = items.value.filter((i) => i.id !== itemId)
+      } else {
+        items.value = items.value.map((i) => (i.id === itemId ? { ...i, done: !i.done } : i))
+      }
     }
     try {
       const updated = await api.toggleItem(houseId, listId, itemId)
-      items.value = items.value.map((i) => (i.id === itemId ? updated : i))
+      if (!willDelete) {
+        items.value = items.value.map((i) => (i.id === itemId ? updated : i))
+      }
     } catch (e) {
       // Roll back on failure.
       if (prev) {
-        items.value = items.value.map((i) => (i.id === itemId ? prev : i))
+        if (willDelete) {
+          items.value = [...items.value, prev]
+        } else {
+          items.value = items.value.map((i) => (i.id === itemId ? prev : i))
+        }
       }
       throw e
     }

@@ -50,6 +50,7 @@ namespace OCA\Pantry;
  *     doneBy: string|null,
  *     rrule: string|null,
  *     repeatFromCompletion: bool,
+ *     deleteOnDone: bool,
  *     nextDueAt: int|null,
  *     imageFileId: int|null,
  *     imageUploadedBy: string|null,

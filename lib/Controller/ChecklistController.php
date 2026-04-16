@@ -211,6 +211,7 @@ final class ChecklistController extends OCSController {
 	 * @param string|null $quantity Optional quantity string.
 	 * @param string|null $rrule Optional RFC 5545 RRULE for recurrence.
 	 * @param bool $repeatFromCompletion If true, the next occurrence is measured from when the item is marked done; if false, the schedule is anchored at item creation.
+	 * @param bool $deleteOnDone If true, the item is deleted when marked done.
 	 * @param int|null $sortOrder Optional sort order.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
@@ -228,9 +229,10 @@ final class ChecklistController extends OCSController {
 		?string $quantity = null,
 		?string $rrule = null,
 		bool $repeatFromCompletion = false,
+		bool $deleteOnDone = false,
 		?int $sortOrder = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $sortOrder): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$list = $this->lists->getList($listId);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
@@ -244,6 +246,7 @@ final class ChecklistController extends OCSController {
 				'quantity' => $quantity,
 				'rrule' => $rrule,
 				'repeatFromCompletion' => $repeatFromCompletion,
+				'deleteOnDone' => $deleteOnDone,
 				'sortOrder' => $sortOrder ?? 0,
 			]);
 			$this->notifications->notifyItemAdded($houseId, $this->requireUid(), $item->getName(), $list->getName());
@@ -263,6 +266,7 @@ final class ChecklistController extends OCSController {
 	 * @param string|null $quantity New quantity (empty string clears).
 	 * @param string|null $rrule New RRULE (empty string clears).
 	 * @param bool|null $repeatFromCompletion New recurrence anchor mode.
+	 * @param bool|null $deleteOnDone If true, the item is deleted when marked done.
 	 * @param int|null $imageFileId File id of attached image (0 or negative clears).
 	 * @param int|null $sortOrder New sort order.
 	 * @param int|null $targetListId Move item to a different list (must belong to the same house).
@@ -283,11 +287,12 @@ final class ChecklistController extends OCSController {
 		?string $quantity = null,
 		?string $rrule = null,
 		?bool $repeatFromCompletion = null,
+		?bool $deleteOnDone = null,
 		?int $imageFileId = null,
 		?int $sortOrder = null,
 		?int $targetListId = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $imageFileId, $sortOrder, $targetListId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$item = $this->lists->getItem($itemId);
 			$list = $this->lists->getList($item->getListId());
@@ -318,6 +323,9 @@ final class ChecklistController extends OCSController {
 			}
 			if ($repeatFromCompletion !== null) {
 				$patch['repeatFromCompletion'] = $repeatFromCompletion;
+			}
+			if ($deleteOnDone !== null) {
+				$patch['deleteOnDone'] = $deleteOnDone;
 			}
 			if ($imageFileId !== null) {
 				$patch['imageFileId'] = $imageFileId > 0 ? $imageFileId : null;

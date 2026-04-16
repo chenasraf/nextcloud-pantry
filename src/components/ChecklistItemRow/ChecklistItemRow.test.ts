@@ -75,6 +75,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     doneBy: null,
     rrule: null,
     repeatFromCompletion: false,
+    deleteOnDone: false,
     nextDueAt: null,
     imageFileId: null,
     imageUploadedBy: null,

@@ -53,6 +53,7 @@ export interface ChecklistItem {
   doneBy: string | null
   rrule: string | null
   repeatFromCompletion: boolean
+  deleteOnDone: boolean
   nextDueAt: number | null
   imageFileId: number | null
   imageUploadedBy: string | null

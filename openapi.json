@@ -295,6 +295,7 @@
                     "doneBy",
                     "rrule",
                     "repeatFromCompletion",
+                    "deleteOnDone",
                     "nextDueAt",
                     "imageFileId",
                     "imageUploadedBy",
@@ -344,6 +345,9 @@
                         "nullable": true
                     },
                     "repeatFromCompletion": {
+                        "type": "boolean"
+                    },
+                    "deleteOnDone": {
                         "type": "boolean"
                     },
                     "nextDueAt": {
@@ -1950,6 +1954,11 @@
                                         "default": false,
                                         "description": "If true, the next occurrence is measured from when the item is marked done; if false, the schedule is anchored at item creation."
                                     },
+                                    "deleteOnDone": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "If true, the item is deleted when marked done."
+                                    },
                                     "sortOrder": {
                                         "type": "integer",
                                         "format": "int64",
@@ -2114,6 +2123,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New recurrence anchor mode."
+                                    },
+                                    "deleteOnDone": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "If true, the item is deleted when marked done."
                                     },
                                     "imageFileId": {
                                         "type": "integer",

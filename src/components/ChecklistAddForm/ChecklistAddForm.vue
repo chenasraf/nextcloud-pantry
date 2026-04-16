@@ -17,7 +17,12 @@
       :house-id="houseId"
       :placeholder="strings.categoryPlaceholder"
     />
-    <NcButton variant="tertiary" @click="showRecurrenceEditor = true">
+    <div class="checklist-add__once" :title="strings.onceHint">
+      <NcCheckboxRadioSwitch v-model="deleteOnDone">
+        {{ strings.once }}
+      </NcCheckboxRadioSwitch>
+    </div>
+    <NcButton v-if="!deleteOnDone" variant="tertiary" @click="showRecurrenceEditor = true">
       <template #icon>
         <RepeatIcon :size="20" />
       </template>
@@ -63,6 +68,7 @@
 import { ref } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
 import RepeatIcon from '@icons/Repeat.vue'
@@ -87,19 +93,23 @@ const quantity = ref('')
 const categoryId = ref<number | null>(null)
 const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
+const deleteOnDone = ref(false)
 const showDescription = ref(false)
 const showRecurrenceEditor = ref(false)
 
 function submitAdd() {
   const trimmedName = name.value.trim()
   if (!trimmedName) return
+  // "Once" items can't recur — ignore any locally-retained recurrence settings.
+  const once = deleteOnDone.value
   emit('add', {
     name: trimmedName,
     description: description.value.trim() || null,
     quantity: quantity.value.trim() || null,
     categoryId: categoryId.value,
-    rrule: rrule.value,
-    repeatFromCompletion: repeatFromCompletion.value,
+    rrule: once ? null : rrule.value,
+    repeatFromCompletion: once ? false : repeatFromCompletion.value,
+    deleteOnDone: once,
   })
   name.value = ''
   description.value = ''
@@ -107,6 +117,7 @@ function submitAdd() {
   categoryId.value = null
   rrule.value = null
   repeatFromCompletion.value = false
+  deleteOnDone.value = false
   showDescription.value = false
 }
 
@@ -119,6 +130,8 @@ const strings = {
   categoryPlaceholder: t('pantry', 'Category'),
   recurrenceButton: t('pantry', 'Repeat …'),
   recurrenceSet: t('pantry', 'Repeat: set'),
+  once: t('pantry', 'Once'),
+  onceHint: t('pantry', 'Delete this item once it is marked as done.'),
   descriptionLabel: t('pantry', 'Description'),
   descriptionPlaceholder: t('pantry', 'Add a description …'),
   descriptionToggle: t('pantry', 'Toggle description'),
@@ -128,7 +141,7 @@ const strings = {
 <style scoped lang="scss">
 .checklist-add {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr auto auto auto;
+  grid-template-columns: 2fr 1fr 1fr auto auto auto auto;
   gap: 0.75rem;
   align-items: end;
   margin-bottom: 1.5rem;
@@ -143,6 +156,10 @@ const strings = {
 
   &__description {
     grid-column: 1 / -1;
+  }
+
+  &__once {
+    padding-bottom: 0.25rem;
   }
 
   &__chevron {

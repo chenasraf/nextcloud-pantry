@@ -44,6 +44,7 @@ class ChecklistServiceTest extends TestCase {
 		$item->setDoneBy($overrides['doneBy'] ?? null);
 		$item->setRrule($overrides['rrule'] ?? null);
 		$item->setRepeatFromCompletion($overrides['repeatFromCompletion'] ?? false);
+		$item->setDeleteOnDone($overrides['deleteOnDone'] ?? false);
 		$item->setNextDueAt($overrides['nextDueAt'] ?? null);
 		$item->setSortOrder($overrides['sortOrder'] ?? 0);
 		$item->setCreatedAt($overrides['createdAt'] ?? 0);
@@ -160,5 +161,54 @@ class ChecklistServiceTest extends TestCase {
 		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->expectException(\InvalidArgumentException::class);
 		$this->svc->addItem(1, ['name' => 'Eggs', 'rrule' => 'not valid']);
+	}
+
+	public function testToggleItemDeletesOnceItemWhenMarkingDone(): void {
+		$now = 1_700_000_000;
+		$item = $this->makeItem([
+			'deleteOnDone' => true,
+		]);
+		$this->itemMapper->method('findById')->willReturn($item);
+		// Once items are deleted rather than updated when marked done.
+		$this->itemMapper->expects($this->once())->method('delete')->with($item);
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$toggled = $this->svc->toggleItem(42, 'alice', $now);
+		$this->assertTrue($toggled->getDone());
+		$this->assertSame($now, $toggled->getDoneAt());
+		$this->assertSame('alice', $toggled->getDoneBy());
+	}
+
+	public function testToggleItemOnceItemIgnoresFlagWhenUnchecking(): void {
+		// An already-done once item can still be unchecked (e.g., via an
+		// already-cached client) — the flag only triggers on the done transition.
+		$item = $this->makeItem([
+			'done' => true,
+			'doneAt' => 123,
+			'doneBy' => 'alice',
+			'deleteOnDone' => true,
+		]);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
+		$this->itemMapper->expects($this->never())->method('delete');
+
+		$toggled = $this->svc->toggleItem(42, 'alice', 999);
+		$this->assertFalse($toggled->getDone());
+		$this->assertNull($toggled->getDoneAt());
+		$this->assertNull($toggled->getDoneBy());
+	}
+
+	public function testAddItemStoresDeleteOnDoneFlag(): void {
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$captured = null;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		$this->svc->addItem(1, ['name' => 'Lightbulb', 'deleteOnDone' => true]);
+		$this->assertNotNull($captured);
+		$this->assertTrue($captured->getDeleteOnDone());
 	}
 }

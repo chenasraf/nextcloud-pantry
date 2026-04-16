@@ -36,7 +36,19 @@
         :label="strings.categoryLabel"
         :placeholder="strings.categoryPlaceholder"
       />
-      <NcButton variant="tertiary" type="button" @click="showRecurrenceEditor = true">
+      <div class="edit-item-form__once">
+        <NcCheckboxRadioSwitch v-model="editDeleteOnDone">
+          {{ strings.once }}
+        </NcCheckboxRadioSwitch>
+        <span class="edit-item-form__once-hint">{{ strings.onceHint }}</span>
+      </div>
+
+      <NcButton
+        v-if="!editDeleteOnDone"
+        variant="tertiary"
+        type="button"
+        @click="showRecurrenceEditor = true"
+      >
         <template #icon>
           <RepeatIcon :size="20" />
         </template>
@@ -100,6 +112,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import RepeatIcon from '@icons/Repeat.vue'
 import UploadIcon from '@icons/Upload.vue'
@@ -129,6 +142,7 @@ const editQuantity = ref('')
 const editCategoryId = ref<number | null>(null)
 const editRrule = ref<string | null>(null)
 const editRepeatFromCompletion = ref(false)
+const editDeleteOnDone = ref(false)
 const showRecurrenceEditor = ref(false)
 const imageInputRef = ref<HTMLInputElement | null>(null)
 
@@ -176,6 +190,7 @@ watch(
       editCategoryId.value = props.item.categoryId ?? null
       editRrule.value = props.item.rrule ?? null
       editRepeatFromCompletion.value = props.item.repeatFromCompletion ?? false
+      editDeleteOnDone.value = props.item.deleteOnDone ?? false
       resetImageState()
     }
   },
@@ -187,6 +202,8 @@ onBeforeUnmount(revokeObjectUrl)
 function submitEdit() {
   const name = editName.value.trim()
   if (!name) return
+  // "Once" items can't recur — ignore any locally-retained recurrence settings.
+  const once = editDeleteOnDone.value
   emit(
     'save',
     props.item.id,
@@ -195,8 +212,9 @@ function submitEdit() {
       description: editDescription.value.trim(),
       quantity: editQuantity.value.trim(),
       categoryId: editCategoryId.value,
-      rrule: editRrule.value,
-      repeatFromCompletion: editRepeatFromCompletion.value,
+      rrule: once ? null : editRrule.value,
+      repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
+      deleteOnDone: once,
     },
     pendingImageFile.value,
     pendingClearImage.value,
@@ -238,6 +256,8 @@ const strings = {
   categoryPlaceholder: t('pantry', 'Category'),
   recurrenceButton: t('pantry', 'Repeat …'),
   recurrenceSet: t('pantry', 'Repeat: set'),
+  once: t('pantry', 'Once'),
+  onceHint: t('pantry', 'Delete this item once it is marked as done.'),
   imageLabel: t('pantry', 'Image'),
   uploadImage: t('pantry', 'Upload image'),
   replaceImage: t('pantry', 'Replace image'),
@@ -280,6 +300,18 @@ const strings = {
 
   &__image-input {
     display: none;
+  }
+
+  &__once {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__once-hint {
+    font-size: 0.8rem;
+    color: var(--color-text-maxcontrast);
+    padding-inline-start: 2rem;
   }
 }
 </style>

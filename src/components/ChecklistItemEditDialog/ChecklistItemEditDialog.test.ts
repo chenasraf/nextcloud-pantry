@@ -33,6 +33,15 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template:
+      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><slot /></label>',
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/components/AutoResizeTextarea', () => ({
   AutoResizeTextarea: {
     name: 'AutoResizeTextarea',
@@ -83,6 +92,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     doneBy: null,
     rrule: null,
     repeatFromCompletion: false,
+    deleteOnDone: false,
     nextDueAt: null,
     imageFileId: null,
     imageUploadedBy: null,
@@ -194,5 +204,27 @@ describe('ChecklistItemEditDialog', () => {
   it('shows description field', () => {
     const wrapper = mount(ChecklistItemEditDialog, { props: defaultProps })
     expect(wrapper.find('.nc-text-area').exists()).toBe(true)
+  })
+
+  it('pre-fills "Once" checkbox from item.deleteOnDone and emits it on save', async () => {
+    const wrapper = mount(ChecklistItemEditDialog, {
+      props: { ...defaultProps, item: makeItem({ deleteOnDone: true }) },
+    })
+    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+
+    await wrapper.find('#pantry-edit-item-form').trigger('submit')
+    const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
+    expect(patch.deleteOnDone).toBe(true)
+  })
+
+  it('toggles "Once" checkbox and emits updated deleteOnDone on save', async () => {
+    const wrapper = mount(ChecklistItemEditDialog, { props: defaultProps })
+    const checkboxInput = wrapper.find('.nc-checkbox input[type="checkbox"]')
+    await checkboxInput.setValue(true)
+
+    await wrapper.find('#pantry-edit-item-form').trigger('submit')
+    const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
+    expect(patch.deleteOnDone).toBe(true)
   })
 })

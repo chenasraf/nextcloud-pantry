@@ -48,6 +48,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     doneBy: null,
     rrule: null,
     repeatFromCompletion: false,
+    deleteOnDone: false,
     nextDueAt: null,
     imageFileId: null,
     imageUploadedBy: null,
@@ -284,6 +285,51 @@ describe('useChecklistItems', () => {
       await c.load()
 
       await expect(c.toggle(1)).rejects.toThrow('fail')
+      expect(c.items.value[0].done).toBe(false)
+    })
+
+    it('removes a "Once" item from local state when marked done', async () => {
+      const once = makeItem({ id: 1, done: false, deleteOnDone: true })
+      const other = makeItem({ id: 2, done: false })
+      mockApi.listItems.mockResolvedValue([once, other])
+      // Backend returns the (now-deleted) item flagged as done.
+      mockApi.toggleItem.mockResolvedValue({ ...once, done: true })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+
+      // Optimistic removal — the row is gone immediately.
+      const togglePromise = c.toggle(1)
+      expect(c.items.value.map((i) => i.id)).toEqual([2])
+
+      await togglePromise
+      // And it stays gone after the server confirms.
+      expect(c.items.value.map((i) => i.id)).toEqual([2])
+    })
+
+    it('restores a "Once" item on server failure when marking done', async () => {
+      const once = makeItem({ id: 1, done: false, deleteOnDone: true })
+      mockApi.listItems.mockResolvedValue([once])
+      mockApi.toggleItem.mockRejectedValue(new Error('fail'))
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+
+      await expect(c.toggle(1)).rejects.toThrow('fail')
+      expect(c.items.value.map((i) => i.id)).toEqual([1])
+      expect(c.items.value[0].done).toBe(false)
+    })
+
+    it('does not delete a "Once" item when unchecking (done → not done)', async () => {
+      const once = makeItem({ id: 1, done: true, deleteOnDone: true })
+      mockApi.listItems.mockResolvedValue([once])
+      mockApi.toggleItem.mockResolvedValue({ ...once, done: false })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+
+      await c.toggle(1)
+      expect(c.items.value.map((i) => i.id)).toEqual([1])
       expect(c.items.value[0].done).toBe(false)
     })
   })

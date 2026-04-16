@@ -25,6 +25,15 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template:
+      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><slot /></label>',
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/components/AutoResizeTextarea', () => ({
   AutoResizeTextarea: {
     name: 'AutoResizeTextarea',
@@ -112,7 +121,33 @@ describe('ChecklistAddForm', () => {
       categoryId: null,
       rrule: null,
       repeatFromCompletion: false,
+      deleteOnDone: false,
     })
+  })
+
+  it('emits deleteOnDone=true when the "Once" checkbox is ticked', async () => {
+    const wrapper = mountForm()
+    await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
+
+    const onceCheckbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
+    await onceCheckbox.setValue(true)
+
+    await wrapper.find('form').trigger('submit')
+
+    const payload = wrapper.emitted('add')![0][0]
+    expect(payload.deleteOnDone).toBe(true)
+  })
+
+  it('resets the "Once" checkbox after submit', async () => {
+    const wrapper = mountForm()
+    await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
+    const onceCheckbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
+    await onceCheckbox.setValue(true)
+
+    await wrapper.find('form').trigger('submit')
+
+    const after = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
+    expect(after.checked).toBe(false)
   })
 
   it('resets all fields after submit', async () => {
