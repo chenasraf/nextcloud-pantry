@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.7.0...v0.8.0) (2026-04-16)
+
+
+### Features
+
+* add more icons to categories ([f1c7d83](https://github.com/chenasraf/nextcloud-pantry/commit/f1c7d839fcdaf311d09af2eb0eb905c4a70f7907))
+* allow adding one-off list items ([ad7dae5](https://github.com/chenasraf/nextcloud-pantry/commit/ad7dae5a5e4608ef03e8e57044bf81b2e0142636))
+
 ## [0.7.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.6.1...v0.7.0) (2026-04-13)
 
 
