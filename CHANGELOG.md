@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.8.0...v0.9.0) (2026-04-18)
+
+
+### Features
+
+* add search in lists ([8ff2169](https://github.com/chenasraf/nextcloud-pantry/commit/8ff216992bc889b6873f8af76bd4a0334127750f))
+
 ## [0.8.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.7.0...v0.8.0) (2026-04-16)
 
 
