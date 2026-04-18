@@ -1,10 +1,16 @@
 {
-    "require-dev": {
-        "phpunit/phpunit": "^10.5"
+  "require-dev": {
+    "phpunit/phpunit": "^11.0"
+  },
+  "config": {
+    "audit": {
+      "ignore": [
+        "PKSA-5jz8-6tcw-pbk4",
+        "PKSA-z3gr-8qht-p93v"
+      ]
     },
-	"config": {
-		"platform": {
-			"php": "8.1"
-		}
-	}
+    "platform": {
+      "php": "8.2"
+    }
+  }
 }
