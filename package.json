@@ -48,7 +48,7 @@
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.9.1",
     "eslint": "^10.2.0",
-    "happy-dom": "^20.8.9",
+    "happy-dom": "^20.9.0",
     "lefthook": "^2.1.5",
     "prettier": "^3.8.2",
     "rollup-plugin-visualizer": "^7.0.1",
