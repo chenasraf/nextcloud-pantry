@@ -54,7 +54,7 @@
     "rollup-plugin-visualizer": "^7.0.1",
     "sass": "^1.99.0",
     "sass-embedded": "^1.99.0",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.58.1",
     "vite": "^8.0.8",
     "vite-plugin-checker": "^0.12.0",
