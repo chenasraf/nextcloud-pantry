@@ -42,6 +42,15 @@
     <div class="pantry-detail__body">
       <ChecklistAddForm :house-id="houseIdNum" :adding="adding" @add="handleAdd" />
 
+      <ChecklistFilter
+        v-if="items.length > 0"
+        v-model:query="filterQuery"
+        v-model:selected-category-ids="filterCategoryIds"
+        :items="items"
+        :categories="categories.items.value"
+        class="pantry-detail__filter"
+      />
+
       <div v-if="loading" class="pantry-detail__center">
         <NcLoadingIcon :size="36" />
       </div>
@@ -197,6 +206,7 @@ import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import TagIcon from '@icons/Tag.vue'
 import PageToolbar from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
+import { ChecklistFilter } from '@/components/ChecklistFilter'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
@@ -282,6 +292,28 @@ watch(
   },
 )
 
+// ----- Filter -----
+
+const filterQuery = ref('')
+const filterCategoryIds = ref<number[]>([])
+
+const filteredItems = computed(() => {
+  let result = items.value
+  const catIds = filterCategoryIds.value
+  if (catIds.length > 0) {
+    result = result.filter((i) => i.categoryId != null && catIds.includes(i.categoryId))
+  }
+  const q = filterQuery.value.trim().toLowerCase()
+  if (q) {
+    result = result.filter(
+      (i) =>
+        i.name.toLowerCase().includes(q) ||
+        (i.description && i.description.toLowerCase().includes(q)),
+    )
+  }
+  return result
+})
+
 // ----- Partitioned items -----
 
 function sortWithinPartition(arr: ChecklistItem[]): ChecklistItem[] {
@@ -292,8 +324,10 @@ function sortWithinPartition(arr: ChecklistItem[]): ChecklistItem[] {
 }
 
 const isCustomSort = computed(() => currentSort.value === 'custom')
-const uncheckedItems = computed(() => sortWithinPartition(items.value.filter((i) => !i.done)))
-const checkedItems = computed(() => sortWithinPartition(items.value.filter((i) => i.done)))
+const uncheckedItems = computed(() =>
+  sortWithinPartition(filteredItems.value.filter((i) => !i.done)),
+)
+const checkedItems = computed(() => sortWithinPartition(filteredItems.value.filter((i) => i.done)))
 
 // ----- Drag/drop reorder (custom sort, per partition) -----
 
@@ -596,6 +630,11 @@ const strings = {
   &__body {
     max-width: 900px;
     margin: 0 auto;
+  }
+
+  &__filter {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
   }
 
   &__center {
