@@ -1,0 +1,22 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Account settings" : "Socruithe cuntas",
+    "Images" : "Íomhánna",
+    "Edit category" : "Cuir catagóir in eagar",
+    "Name" : "Ainm",
+    "Cancel" : "Cealaigh",
+    "Create" : "Cruthaigh",
+    "Delete category" : "Scrios catagóir",
+    "Quantity" : "Cainníocht",
+    "Done" : "Déanta",
+    "Account" : "Cuntas",
+    "months" : "míonna",
+    "Weekly" : "Seachtainiúil",
+    "Never" : "Riamh",
+    "Newest first" : "Is nua ar dtús",
+    "No lists yet" : "Níl aon liostaí fós",
+    "Back" : "Ar ais",
+    "Add a description" : "Cuir cur síos leis"
+},
+"nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : 4);");

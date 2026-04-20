@@ -1,0 +1,27 @@
+{ "translations": {
+    "Account settings" : "Paskyros nustatymai",
+    "Images" : "Paveikslai",
+    "Name" : "Vardas",
+    "Cancel" : "Atsisakyti",
+    "Create" : "Sukurti",
+    "Delete category" : "Ištrinti kategoriją",
+    "Add" : "Pridėti",
+    "Upload image" : "Įkelti paveikslą",
+    "Done" : "Atlikta",
+    "General" : "Bendra",
+    "Save changes" : "Įrašyti pakeitimus",
+    "Account" : "Paskyra",
+    "Create folder" : "Sukurti aplanką",
+    "Folder name" : "Aplanko pavadinimas",
+    "weeks" : "savaičių",
+    "months" : "mėnesių",
+    "Weekly" : "Kas savaitę",
+    "Ends" : "Pasibaigia",
+    "Never" : "Niekada",
+    "Newest first" : "Naujausi pirmi",
+    "No lists yet" : "Kol kas sąrašų nėra",
+    "Upload" : "Įkelti",
+    "Back" : "Atgal",
+    "Add a description" : "Pridėti aprašą"
+},"pluralForm" :"nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < 11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? 1 : n % 1 != 0 ? 2: 3);"
+}

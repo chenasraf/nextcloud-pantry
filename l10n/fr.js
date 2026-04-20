@@ -1,0 +1,20 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Images" : "Images",
+    "Name" : "Nom",
+    "Cancel" : "Annuler",
+    "Create" : "Créer",
+    "Quantity" : "Quantité",
+    "Done" : "Terminé",
+    "Account" : "Compte",
+    "Untitled note" : "Note sans titre",
+    "months" : "mois",
+    "Weekly" : "Hebdomadaire",
+    "Never" : "Jamais",
+    "Newest first" : "Les plus récents en premier",
+    "No lists yet" : "Aucune liste pour l'instant",
+    "Back" : "Retour",
+    "Add a description" : "Ajouter une description"
+},
+"nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

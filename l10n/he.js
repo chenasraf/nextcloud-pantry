@@ -1,0 +1,21 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Account settings" : "הגדרות חשבון",
+    "Images" : "תמונות",
+    "Name" : "שם",
+    "Cancel" : "ביטול",
+    "Create" : "יצירה",
+    "Done" : "הסתיים",
+    "Account" : "חשבון",
+    "Untitled note" : "פתק ללא כותרת",
+    "weeks" : "שבועיים",
+    "months" : "חודשיים",
+    "Weekly" : "שבועי",
+    "Never" : "מעולם לא",
+    "Newest first" : "החדש ביותר ראשון",
+    "No lists yet" : "אין רשימות עדיין",
+    "Back" : "אחורה",
+    "Add a description" : "הוסף תיאור"
+},
+"nplurals=3; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: 2;");

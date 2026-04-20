@@ -1,0 +1,22 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Account settings" : "Account settings",
+    "Images" : "Images",
+    "Name" : "სახელი",
+    "Cancel" : "გაუქმება",
+    "Create" : "Create",
+    "Done" : "მზადაა",
+    "General" : "General",
+    "Account" : "Account",
+    "Folder name" : "Folder name",
+    "weeks" : "weeks",
+    "months" : "months",
+    "Weekly" : "კვირეულად",
+    "Never" : "Never",
+    "Newest first" : "Newest first",
+    "Upload" : "Upload",
+    "Back" : "უკან",
+    "Add a description" : "Add a description"
+},
+"nplurals=2; plural=(n!=1);");

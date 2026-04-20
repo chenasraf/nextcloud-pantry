@@ -1,0 +1,24 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Account settings" : "Stillingar notandaaðgangs",
+    "Images" : "Myndir",
+    "Name" : "Heiti",
+    "Cancel" : "Cancel",
+    "Create" : "Búa til",
+    "Quantity" : "Magn",
+    "Done" : "Lokið",
+    "General" : "Almennt",
+    "Account" : "Aðgangur",
+    "Untitled note" : "Ónefndur minnispunktur",
+    "weeks" : "vikur",
+    "months" : "mánuðir",
+    "Weekly" : "Vikulega",
+    "Never" : "Aldrei",
+    "Newest first" : "Nýjast fyrst",
+    "No lists yet" : "Engir listar ennþá",
+    "Upload" : "Senda inn",
+    "Back" : "Til baka",
+    "Add a description" : "Settu inn lýsingu"
+},
+"nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);");

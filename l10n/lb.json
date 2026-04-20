@@ -1,0 +1,10 @@
+{ "translations": {
+    "Name" : "Numm",
+    "Cancel" : "Cancel",
+    "General" : "Allgemeng",
+    "Folder name" : "Dossiers Numm:",
+    "weeks" : "Wochen",
+    "Weekly" : "All Woch",
+    "Upload" : "Eroplueden"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

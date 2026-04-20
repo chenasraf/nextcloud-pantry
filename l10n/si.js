@@ -1,0 +1,21 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Images" : "පින්තූර",
+    "Name" : "නම",
+    "Cancel" : "Cancel",
+    "Create" : "සාදන්න",
+    "Edit" : "සංස්කරණය",
+    "Add" : "එකතු කරන්න",
+    "Owner" : "හිමිකරු",
+    "General" : "සමාන්‍යය",
+    "Save changes" : "වෙනස්කම් සුරකින්න",
+    "Account" : "ගිණුම",
+    "Preview" : "පෙරදසුන",
+    "Folder name" : "බහාලුමේ නම",
+    "Weekly" : "සතිපතා",
+    "No notes yet" : "තවම සටහන් නැත",
+    "Upload" : "උඩුගත",
+    "Back" : "ආපසු"
+},
+"nplurals=2; plural=(n != 1);");

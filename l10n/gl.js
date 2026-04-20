@@ -1,0 +1,23 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Account settings" : "Axustes da conta",
+    "Images" : "Imaxes",
+    "Edit category" : "Editar categoría",
+    "Name" : "Nome",
+    "Cancel" : "Cancelar",
+    "Create" : "Crear",
+    "Delete category" : "Eliminar categoría",
+    "Quantity" : "Cantidade",
+    "Done" : "Feito",
+    "Account" : "Conta",
+    "Untitled note" : "Nota sen título",
+    "months" : "meses",
+    "Weekly" : "Cada semana",
+    "Never" : "Nunca",
+    "Newest first" : "Primeiro o máis recente",
+    "No lists yet" : "Non hai listas",
+    "Back" : "Atrás",
+    "Add a description" : "Engadir unha descrición"
+},
+"nplurals=2; plural=(n != 1);");

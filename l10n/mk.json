@@ -1,0 +1,26 @@
+{ "translations": {
+    "Account settings" : "Праметри за сметката",
+    "Images" : "Слики",
+    "Name" : "Име",
+    "Cancel" : "Откажи",
+    "Create" : "Креирај",
+    "Add" : "Додади",
+    "Quantity" : "Количина",
+    "Done" : "Готово",
+    "General" : "Општо",
+    "Save changes" : "Зачувај ги промените",
+    "Account" : "Сметка",
+    "Folder name" : "Име на папка",
+    "weeks" : "недели",
+    "months" : "месеци",
+    "Weekly" : "Неделно",
+    "Never" : "Никогаш",
+    "Newest first" : "Новите прво",
+    "No lists yet" : "Сеуште нема листи",
+    "No notes yet" : "Сеуште нема забелешки",
+    "Clear selection" : "Исчисти ги селектираните",
+    "Upload" : "Прикачи",
+    "Back" : "Назад",
+    "Add a description" : "Додади опис"
+},"pluralForm" :"nplurals=2; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : 1;"
+}

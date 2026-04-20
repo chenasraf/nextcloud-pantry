@@ -1,0 +1,25 @@
+{ "translations": {
+    "Images" : "รูปภาพ",
+    "Save" : "บันทึก",
+    "Name" : "ชื่อ",
+    "Cancel" : "Cancel",
+    "Create" : "สร้าง",
+    "Delete" : "ลบ",
+    "Edit" : "แก้ไข",
+    "Category" : "หมวดหมู่",
+    "Description" : "คำอธิบาย",
+    "Owner" : "เจ้าของ",
+    "General" : "ทั่วไป",
+    "Save changes" : "บันทึกการเปลี่ยนแปลง",
+    "Account" : "บัญชี",
+    "Preview" : "ตัวอย่าง",
+    "Folder name" : "ชื่อโฟลเดอร์",
+    "weeks" : "สัปดาห์",
+    "Weekly" : "รายสัปดาห์",
+    "Never" : "ไม่เคย",
+    "Newest first" : "ใหม่ที่สุดก่อน",
+    "Custom" : "กำหนดเอง",
+    "Upload" : "อัปโหลด",
+    "New folder" : "โฟลเดอร์ใหม่"
+},"pluralForm" :"nplurals=1; plural=0;"
+}

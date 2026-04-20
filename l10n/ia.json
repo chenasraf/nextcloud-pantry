@@ -1,0 +1,9 @@
+{ "translations": {
+    "Cancel" : "Cancel",
+    "Done" : "Preste",
+    "General" : "General",
+    "weeks" : "septimanas",
+    "Weekly" : "Cata septimana",
+    "Never" : "Nunquam"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

@@ -1,0 +1,27 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Account settings" : "Impostazioni account",
+    "Images" : "Immagini",
+    "Name" : "Nome",
+    "Cancel" : "Annulla",
+    "Create" : "Crea",
+    "Quantity" : "Quantità",
+    "Upload image" : "Carica immagine",
+    "Done" : "Completato",
+    "General" : "Generale",
+    "Account" : "Account",
+    "Untitled note" : "Nota senza titolo",
+    "Create folder" : "Crea cartella",
+    "Folder name" : "Nome della cartella",
+    "weeks" : "settimane",
+    "months" : "mesi",
+    "Weekly" : "Settimanalmente",
+    "Never" : "Mai",
+    "Newest first" : "Prima i più recenti",
+    "No lists yet" : "Ancora nessun elenco",
+    "Upload" : "Carica",
+    "Back" : "Indietro",
+    "Add a description" : "Aggiungi una descrizione"
+},
+"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

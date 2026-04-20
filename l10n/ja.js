@@ -1,0 +1,26 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Account settings" : "アカウント設定",
+    "Images" : "画像",
+    "Name" : "名前",
+    "Cancel" : "キャンセル",
+    "Create" : "作成",
+    "Upload image" : "画像をアップロード",
+    "Done" : "完了",
+    "General" : "一般",
+    "Account" : "アカウント",
+    "Untitled note" : "無題のノート",
+    "Create folder" : "フォルダーの作成",
+    "Folder name" : "フォルダー名",
+    "weeks" : "週",
+    "months" : "月",
+    "Weekly" : "毎週",
+    "Never" : "なし",
+    "Newest first" : "新しい順",
+    "No lists yet" : "まだリストがありません",
+    "Upload" : "アップロード",
+    "Back" : "戻る",
+    "Add a description" : "説明を追加"
+},
+"nplurals=1; plural=0;");

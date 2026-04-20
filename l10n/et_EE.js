@@ -1,0 +1,18 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Images" : "Pildid",
+    "Edit category" : "Muuda kategooriat",
+    "Name" : "Nimi",
+    "Cancel" : "Katkesta",
+    "Delete category" : "Kustuta kategooria",
+    "Quantity" : "Kogu",
+    "Done" : "Valmis",
+    "Account" : "Kasutajakonto",
+    "Weekly" : "Kord nädalas",
+    "Never" : "Mitte kunagi",
+    "Newest first" : "Uuemad eespool",
+    "No lists yet" : "Loendeid veel pole",
+    "Back" : "Tagasi"
+},
+"nplurals=2; plural=(n != 1);");
