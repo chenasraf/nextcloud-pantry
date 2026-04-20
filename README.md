@@ -35,6 +35,11 @@ place.
   content.
 - **Modern UI**: Built with Vue 3 and Nextcloud Vue components.
 
+## Mobile Apps
+
+- [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry)
+- [iOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
+
 ## Installation
 
 ### From the Nextcloud App Store

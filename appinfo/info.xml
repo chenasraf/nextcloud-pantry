@@ -17,6 +17,8 @@ Pantry helps households stay organized in Nextcloud.
 - **Notifications** keep everyone in the loop when photos are uploaded or notes are added or edited.
 
 All data is scoped to a house; members only see the houses they belong to.
+
+**Mobile apps:** [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry) | [iOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
 ]]></description>
 	<version>0.9.0</version>
 	<licence>agpl</licence>
