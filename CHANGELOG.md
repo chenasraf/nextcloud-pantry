@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.9.0...v0.10.0) (2026-04-21)
+
+
+### Features
+
+* member user selector+search ([6e7348d](https://github.com/chenasraf/nextcloud-pantry/commit/6e7348df26814da8088abf3c8ff85342703c0b3a))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([285d6b0](https://github.com/chenasraf/nextcloud-pantry/commit/285d6b01c0a1d182286d45ca58317ae2afe2745c))
+
 ## [0.9.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.8.0...v0.9.0) (2026-04-18)
 
 
