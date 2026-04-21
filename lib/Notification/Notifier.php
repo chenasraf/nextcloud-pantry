@@ -68,7 +68,7 @@ class Notifier implements INotifier {
 			case 'note_created':
 				if ($count <= 1) {
 					$notification->setRichSubject(
-						$l->t('{user} added a note "{title}" in {house}'),
+						$l->t('{user} added note "{title}" in {house}'),
 						[
 							'user' => $userParam,
 							'title' => [
@@ -94,7 +94,7 @@ class Notifier implements INotifier {
 			case 'note_edited':
 				if ($count <= 1) {
 					$notification->setRichSubject(
-						$l->t('{user} edited the note "{title}" in {house}'),
+						$l->t('{user} edited note "{title}" in {house}'),
 						[
 							'user' => $userParam,
 							'title' => [
