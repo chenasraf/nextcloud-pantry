@@ -108,12 +108,33 @@
     @update:open="showAdd = $event"
   >
     <form class="pantry-form" autocomplete="off" @submit.prevent="submitAdd">
-      <NcTextField
-        v-model="newUserId"
-        :label="strings.userIdLabel"
-        :placeholder="strings.userIdPlaceholder"
-        autocomplete="off"
-      />
+      <NcSelect
+        v-model="selectedUser"
+        :options="userSearchOptions"
+        :placeholder="strings.userSearchPlaceholder"
+        :input-label="strings.userIdLabel"
+        :loading="userSearching"
+        :filterable="false"
+        label="label"
+        @search="handleUserSearch"
+      >
+        <template #option="option">
+          <div class="pantry-user-option">
+            <NcAvatar :user="option.id" :size="24" :show-user-status="false" />
+            <span class="pantry-user-option__label">{{ option.label }}</span>
+            <span class="pantry-user-option__id">@{{ option.id }}</span>
+          </div>
+        </template>
+        <template #selected-option="option">
+          <div class="pantry-user-option">
+            <NcAvatar :user="option.id" :size="20" :show-user-status="false" />
+            <span class="pantry-user-option__label">{{ option.label }}</span>
+          </div>
+        </template>
+        <template #no-options>
+          {{ userSearchQuery ? strings.noResults : strings.typeToSearch }}
+        </template>
+      </NcSelect>
       <NcSelect
         v-model="newRoleOption"
         :options="roleOptions"
@@ -124,7 +145,7 @@
     </form>
     <template #actions>
       <NcButton @click="showAdd = false">{{ strings.cancel }}</NcButton>
-      <NcButton variant="primary" :disabled="!newUserId.trim()" @click="submitAdd">
+      <NcButton variant="primary" :disabled="!selectedUser" @click="submitAdd">
         {{ strings.addMember }}
       </NcButton>
     </template>
@@ -157,9 +178,11 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcDateTime from '@nextcloud/vue/components/NcDateTime'
+import NcAvatar from '@nextcloud/vue/components/NcAvatar'
 import PlusIcon from '@icons/Plus.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import * as houseApi from '@/api/houses'
+import type { UserAutocomplete } from '@/api/houses'
 import type { HouseMember, HouseRole } from '@/api/types'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useHouses } from '@/composables/useHouses'
@@ -237,21 +260,50 @@ const roleOptions = computed<RoleOption[]>(() => [
 ])
 
 const showAdd = ref(false)
-const newUserId = ref('')
+const selectedUser = ref<UserAutocomplete | null>(null)
 const newRoleOption = ref<RoleOption>(roleOptions.value[0]!)
 const addError = ref<string | null>(null)
 
+const userSearchOptions = ref<UserAutocomplete[]>([])
+const userSearching = ref(false)
+const userSearchQuery = ref('')
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+function handleUserSearch(query: string) {
+  userSearchQuery.value = query
+  if (searchTimeout) clearTimeout(searchTimeout)
+  if (!query) {
+    userSearchOptions.value = []
+    return
+  }
+  searchTimeout = setTimeout(() => {
+    void fetchUsers(query)
+  }, 300)
+}
+
+async function fetchUsers(query: string) {
+  try {
+    userSearching.value = true
+    userSearchOptions.value = await houseApi.searchUsers(query, 10)
+  } catch {
+    userSearchOptions.value = []
+  } finally {
+    userSearching.value = false
+  }
+}
+
 async function submitAdd() {
   const id = houseIdNum.value
-  const uid = newUserId.value.trim()
-  if (!uid || id === null) return
+  if (!selectedUser.value || id === null) return
   addError.value = null
   try {
     const role: HouseRole = newRoleOption.value?.value ?? 'member'
-    const member = await houseApi.addMember(id, uid, role)
+    const member = await houseApi.addMember(id, selectedUser.value.id, role)
     members.value = [...members.value, member]
     showAdd.value = false
-    newUserId.value = ''
+    selectedUser.value = null
+    userSearchOptions.value = []
+    userSearchQuery.value = ''
   } catch (e) {
     addError.value = (e as Error).message || t('pantry', 'Could not add member.')
   }
@@ -332,8 +384,10 @@ const strings = {
   colRole: t('pantry', 'Role'),
   colJoined: t('pantry', 'Joined'),
   addDialogTitle: t('pantry', 'Add a member'),
-  userIdLabel: t('pantry', 'Account ID'),
-  userIdPlaceholder: t('pantry', 'The Nextcloud username'),
+  userIdLabel: t('pantry', 'Account'),
+  userSearchPlaceholder: t('pantry', 'Search for an account …'),
+  noResults: t('pantry', 'No accounts found'),
+  typeToSearch: t('pantry', 'Type to search for an account'),
   roleLabel: t('pantry', 'Role'),
   dangerSection: t('pantry', 'Danger zone'),
   dangerBody: t(
@@ -411,5 +465,16 @@ const strings = {
 .pantry-hint {
   color: var(--color-text-maxcontrast);
   margin: 0 0 0.75rem 0;
+}
+
+.pantry-user-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &__id {
+    color: var(--color-text-maxcontrast);
+    font-size: 0.85em;
+  }
 }
 </style>

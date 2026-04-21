@@ -54,6 +54,7 @@ vi.mock('@/api/houses', () => ({
   updateMemberRole: vi.fn(),
   removeMember: vi.fn(),
   leaveHouse: vi.fn(),
+  searchUsers: vi.fn(() => Promise.resolve([])),
 }))
 
 // Mock Nextcloud Vue components that pull in CSS
@@ -105,6 +106,13 @@ vi.mock('@nextcloud/vue/components/NcSelect', () => ({
 vi.mock('@nextcloud/vue/components/NcDateTime', () => ({
   default: { name: 'NcDateTime', template: '<span />', props: { timestamp: Number } },
 }))
+vi.mock('@nextcloud/vue/components/NcAvatar', () => ({
+  default: {
+    name: 'NcAvatar',
+    template: '<span />',
+    props: { user: String, size: Number, showUserStatus: Boolean },
+  },
+}))
 
 // Stub for Nextcloud Vue components
 function createStub(name: string, opts?: { slots?: boolean; props?: string[] }) {
@@ -142,6 +150,7 @@ const stubs = {
   NcDialog: createStub('NcDialog'),
   NcSelect: createStub('NcSelect', { slots: false }),
   NcDateTime: createStub('NcDateTime', { slots: false }),
+  NcAvatar: createStub('NcAvatar', { slots: false }),
 }
 
 function mountDialog(props: { open: boolean } = { open: true }) {

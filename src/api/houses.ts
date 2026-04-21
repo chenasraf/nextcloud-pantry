@@ -58,3 +58,15 @@ export async function removeMember(houseId: number, memberId: number): Promise<v
 export async function leaveHouse(houseId: number): Promise<void> {
   await ocs.post(`/houses/${houseId}/leave`)
 }
+
+export interface UserAutocomplete {
+  id: string
+  label: string
+}
+
+export async function searchUsers(search: string, limit = 10): Promise<UserAutocomplete[]> {
+  const resp = await ocs.get<UserAutocomplete[]>('/users/autocomplete', {
+    params: { search, limit },
+  })
+  return resp.data ?? []
+}

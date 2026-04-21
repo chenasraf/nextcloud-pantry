@@ -282,6 +282,41 @@ final class HouseController extends OCSController {
 		});
 	}
 
+	/**
+	 * Search Nextcloud users for autocomplete
+	 *
+	 * Excludes the current user from results.
+	 *
+	 * @param string $search Search query.
+	 * @param int<1, 50> $limit Maximum results.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<array{id: string, label: string}>, array{}>
+	 *
+	 * 200: Users returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/users/autocomplete')]
+	#[NoAdminRequired]
+	public function autocompleteUsers(string $search = '', int $limit = 10): DataResponse {
+		return $this->runAction(function () use ($search, $limit): DataResponse {
+			$currentUid = $this->requireUid();
+			$users = $this->userManager->search(trim($search), $limit + 1);
+			$results = [];
+			foreach ($users as $user) {
+				if ($user->getUID() === $currentUid) {
+					continue;
+				}
+				$results[] = [
+					'id' => $user->getUID(),
+					'label' => $user->getDisplayName(),
+				];
+				if (count($results) >= $limit) {
+					break;
+				}
+			}
+			return new DataResponse($results);
+		});
+	}
+
 	private function requireUid(): string {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
