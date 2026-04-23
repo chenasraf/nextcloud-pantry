@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.10.0...v0.10.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* **l10n:** update translation strings ([451d86b](https://github.com/chenasraf/nextcloud-pantry/commit/451d86bd6fab46a115ae2a2bcee70b1ccd2154a9))
+* **l10n:** Update translations from Transifex ([b42970a](https://github.com/chenasraf/nextcloud-pantry/commit/b42970a2f3e87ddda2b01c80d1dfdbeadb97a3c7))
+
 ## [0.10.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.9.0...v0.10.0) (2026-04-21)
 
 
