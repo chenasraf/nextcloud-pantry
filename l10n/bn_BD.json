@@ -1,0 +1,23 @@
+{ "translations": {
+    "Save" : "সংরক্ষণ",
+    "Name" : "নাম",
+    "Cancel" : "Cancel",
+    "Delete" : "মুছে",
+    "Edit" : "সম্পাদনা",
+    "Add" : "যোগ কর",
+    "Description" : "বিবরণ",
+    "All" : "সবাই",
+    "Done" : "শেষ হলো",
+    "General" : "সাধারণ",
+    "Rename folder" : "ফোল্ডার পূনঃনামকরণ কর",
+    "Folder name" : "ফোলডারের নাম",
+    "Rename" : "পূনঃনামকরণ",
+    "Close" : "বন্ধ",
+    "days" : "দিনগুলি",
+    "weeks" : "সপ্তাহসমূহ",
+    "Daily" : "দৈনিক",
+    "Weekly" : "সাপ্তাহিক",
+    "Upload" : "আপলোড",
+    "New folder" : "নতুন ফোল্ডার"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

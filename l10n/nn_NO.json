@@ -1,11 +1,28 @@
 { "translations": {
     "Images" : "Bilete",
+    "Save" : "Lagre",
+    "Saved." : "Lagra.",
+    "Notifications" : "Varsel",
     "Name" : "Namn",
     "Cancel" : "Cancel",
+    "Delete" : "Slett",
+    "Edit" : "Rediger",
+    "Category" : "Kategori",
+    "Description" : "Skildring",
+    "All" : "Alle",
+    "Remove image" : "Fjern bilete",
     "General" : "Generelt",
     "Folder name" : "Katalognavn",
+    "Rename" : "Endra namn",
+    "Close" : "Lat att",
+    "days" : "dagar",
+    "Daily" : "Kvar dag",
     "Weekly" : "Kvar veke",
+    "Summary" : "Oppsumering",
     "Newest first" : "Nyaste fyrst",
-    "Upload" : "Last opp"
+    "Oldest first" : "Eldste fyrst",
+    "Checklists" : "Sjekkliste",
+    "Upload" : "Last opp",
+    "New folder" : "Ny mappe"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

@@ -1,0 +1,21 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Notifications" : "Notificacions",
+    "Name" : "Nombre",
+    "Cancel" : "Cancel",
+    "Create" : "Crear",
+    "Delete" : "Borrar",
+    "All" : "Tot",
+    "Done" : "Feito",
+    "Folder name" : "Nombre de carpeta",
+    "Rename" : "Renombrar",
+    "Close" : "Zarrar",
+    "days" : "Dias",
+    "Daily" : "Diariament",
+    "Weekly" : "Semanalment",
+    "Never" : "Nunca",
+    "New folder" : "Nueva carpeta",
+    "Back" : "Ta zaga"
+},
+"nplurals=2; plural=(n != 1);");

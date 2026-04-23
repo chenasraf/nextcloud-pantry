@@ -1,0 +1,28 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Account settings" : "Rekeninginstellings",
+    "Images" : "Beelde",
+    "Save" : "Stoor",
+    "Saving …" : "Bewaar tans…",
+    "Cancel" : "Cancel",
+    "Delete" : "Skrap",
+    "Add" : "Voeg toe",
+    "Category" : "Kategorie",
+    "Description" : "Beskrywing",
+    "All" : "Alle",
+    "Remove image" : "Verwyder beeld",
+    "Account" : "Rekening",
+    "days" : "dae",
+    "weeks" : "weke",
+    "Daily" : "Daagliks",
+    "Weekly" : "Weekliks",
+    "Ends" : "Eindig",
+    "Summary" : "Opsomming",
+    "Newest first" : "Nuutste eerste",
+    "Oldest first" : "Oudste eerste",
+    "Custom" : "Eie",
+    "Upload" : "Oplaai",
+    "New folder" : "Nuwe gids"
+},
+"nplurals=2; plural=(n != 1);");

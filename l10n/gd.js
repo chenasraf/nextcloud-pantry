@@ -1,10 +1,24 @@
 OC.L10N.register(
     "pantry",
     {
+    "Save" : "Sàbhail",
+    "Notifications" : "Brathan",
     "Name" : "Ainm",
     "Cancel" : "Cancel",
     "Create" : "Cruthaich",
+    "Delete" : "Sguab às",
+    "Edit" : "Deasaich",
+    "Category" : "Roinn-seòrsa",
+    "General" : "Coitcheann",
+    "Preview" : "Ro-sheall",
+    "Folder name" : "Ainm a’ phasgain",
+    "Rename" : "Thoir ainm ùr air",
+    "Close" : "Dùin",
     "Newest first" : "As ùire an toiseach",
+    "Oldest first" : "As sine an toiseach",
+    "New note" : "Nòta ùr",
+    "Upload" : "Luchdaich suas",
+    "New folder" : "Pasgan ùr",
     "Back" : "Air ais"
 },
 "nplurals=4; plural=(n==1 || n==11) ? 0 : (n==2 || n==12) ? 1 : (n > 2 && n < 20) ? 2 : 3;");

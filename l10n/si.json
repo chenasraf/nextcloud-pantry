@@ -5,15 +5,23 @@
     "Create" : "සාදන්න",
     "Edit" : "සංස්කරණය",
     "Add" : "එකතු කරන්න",
+    "Category" : "ප්‍රවර්ගය",
+    "Description" : "විස්තරය",
+    "All" : "සියල්ල",
+    "Member" : "සාමාජික",
     "Owner" : "හිමිකරු",
     "General" : "සමාන්‍යය",
     "Save changes" : "වෙනස්කම් සුරකින්න",
     "Account" : "ගිණුම",
     "Preview" : "පෙරදසුන",
     "Folder name" : "බහාලුමේ නම",
+    "Close" : "වසන්න",
+    "Daily" : "දිනපතා",
     "Weekly" : "සතිපතා",
+    "Summary" : "සාරාංශය",
     "No notes yet" : "තවම සටහන් නැත",
     "Upload" : "උඩුගත",
+    "New folder" : "නව බහාලුම",
     "Back" : "ආපසු"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

@@ -2,6 +2,7 @@ OC.L10N.register(
     "pantry",
     {
     "Save" : "Saklamak",
+    "Notifications" : "Duýduryşlar",
     "Name" : "Ady",
     "Cancel" : "Cancel",
     "Create" : "Dörediň",
@@ -9,7 +10,10 @@ OC.L10N.register(
     "Edit" : "Redaktirläň",
     "General" : "Esasy",
     "Folder name" : "Papkanyň ady",
+    "Rename" : "Adyny üýtgetmek",
+    "Close" : "Ýap",
     "Newest first" : "Täze ilkinji",
+    "Oldest first" : "Ilki bilen iň köne",
     "Upload" : "Ýüklemek",
     "New folder" : "Täze papka döretmek",
     "Back" : "Yzyna"

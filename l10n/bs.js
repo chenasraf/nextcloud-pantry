@@ -1,0 +1,26 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Save" : "Spremi",
+    "Name" : "Ime",
+    "Cancel" : "Cancel",
+    "Create" : "Kreiraj",
+    "Delete" : "Obriši",
+    "Edit" : "Izmjeni",
+    "Description" : "Opis",
+    "All" : "Sve",
+    "Remove image" : "Ukloni sliku",
+    "Member" : "Član",
+    "Owner" : "Vlasnik",
+    "Members" : "Članovi",
+    "Rename folder" : "Preimenuj fasciklu",
+    "Rename" : "Preimenuj",
+    "Close" : "Zatvori",
+    "days" : "dana",
+    "weeks" : "sedmica",
+    "Daily" : "Dnevno",
+    "Weekly" : "Sedmično",
+    "Upload" : "Učitaj",
+    "New folder" : "Nova fascikla"
+},
+"nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);");

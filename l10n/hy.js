@@ -1,9 +1,23 @@
 OC.L10N.register(
     "pantry",
     {
+    "Save" : "Պահպանել",
+    "Notifications" : "Ծանուցում",
     "Name" : "Անուն",
     "Cancel" : "Cancel",
+    "Delete" : "հեռացնել",
+    "Edit" : "մշակել",
+    "Description" : "Նկարագրություն",
+    "General" : "Ընդհանուր",
+    "Folder name" : "Պանակի անուն",
+    "Rename" : "Վերանվանել",
+    "Close" : "Փակել",
+    "days" : "օր",
+    "Daily" : "Օրական",
     "Weekly" : "Շաբաթական",
-    "Never" : "Երբեք"
+    "Never" : "Երբեք",
+    "New note" : "նոր գրառում",
+    "Upload" : "Բեռնել",
+    "New folder" : "Նոր պանակ"
 },
 "nplurals=2; plural=(n != 1);");

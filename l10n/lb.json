@@ -1,10 +1,24 @@
 { "translations": {
+    "Save" : "Späicheren",
     "Name" : "Numm",
     "Cancel" : "Cancel",
+    "Delete" : "Läschen",
+    "Edit" : "Änneren",
+    "Add" : "Dobäisetzen",
+    "Description" : "Beschreiwung",
+    "All" : "All",
     "General" : "Allgemeng",
+    "Save changes" : "Ännerunge späicheren",
+    "Rename folder" : "Dossier ëmbenennen",
     "Folder name" : "Dossiers Numm:",
+    "Rename" : "Ëmbenennen",
+    "Close" : "Zoumaachen",
+    "days" : "Deeg",
     "weeks" : "Wochen",
+    "Daily" : "All Dag",
     "Weekly" : "All Woch",
-    "Upload" : "Eroplueden"
+    "Custom" : "Individualiséier",
+    "Upload" : "Eroplueden",
+    "New folder" : "Neien Dossier"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

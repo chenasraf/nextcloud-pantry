@@ -8,10 +8,13 @@ OC.L10N.register(
     "Edit" : "தொகுக்க",
     "Add" : "சேர்க்க",
     "Description" : "விவரிப்பு",
+    "All" : "எல்லாம்",
     "Done" : "Done",
     "Owner" : "Owner",
     "General" : "பொதுவான",
     "Folder name" : "கோப்புறை பெயர்",
+    "Rename" : "பெயர்மாற்றம்",
+    "Close" : "மூடுக",
     "Upload" : "பதிவேற்றுக",
     "Back" : "பின்னுக்கு"
 },

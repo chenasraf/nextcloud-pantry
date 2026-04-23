@@ -1,5 +1,6 @@
 { "translations": {
     "Save" : "Saklamak",
+    "Notifications" : "Duýduryşlar",
     "Name" : "Ady",
     "Cancel" : "Cancel",
     "Create" : "Dörediň",
@@ -7,7 +8,10 @@
     "Edit" : "Redaktirläň",
     "General" : "Esasy",
     "Folder name" : "Papkanyň ady",
+    "Rename" : "Adyny üýtgetmek",
+    "Close" : "Ýap",
     "Newest first" : "Täze ilkinji",
+    "Oldest first" : "Ilki bilen iň köne",
     "Upload" : "Ýüklemek",
     "New folder" : "Täze papka döretmek",
     "Back" : "Yzyna"

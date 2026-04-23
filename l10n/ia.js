@@ -1,11 +1,31 @@
 OC.L10N.register(
     "pantry",
     {
+    "Save" : "Salveguardar",
     "Cancel" : "Cancel",
+    "Delete" : "Deler",
+    "Edit" : "Modificar",
+    "Category" : "Categoria",
+    "Description" : "Description",
+    "All" : "Tote",
+    "Remove image" : "Remover imagine",
     "Done" : "Preste",
     "General" : "General",
+    "Members" : "Membros",
+    "Preview" : "Previsualisar",
+    "Rename folder" : "Renominar dossier",
+    "Folder name" : "Nomine de dossier",
+    "Rename" : "Renominar",
+    "Close" : "Clauder",
+    "days" : "dies",
     "weeks" : "septimanas",
+    "Daily" : "Cata die",
     "Weekly" : "Cata septimana",
-    "Never" : "Nunquam"
+    "Ends" : "Fini",
+    "Never" : "Nunquam",
+    "Summary" : "Summario",
+    "Custom" : "Personalisate",
+    "Upload" : "Incargar",
+    "New folder" : "Nove dossier"
 },
 "nplurals=2; plural=(n != 1);");
