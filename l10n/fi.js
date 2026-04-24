@@ -34,6 +34,7 @@ OC.L10N.register(
     "Role" : "Rooli",
     "Joined" : "Liittynyt",
     "Add a member" : "Lisää jäsen",
+    "No accounts found" : "Tilejä ei löytynyt",
     "Danger zone" : "Vaaravyöhyke",
     "Preview" : "Esikatselu",
     "Untitled note" : "Nimetön muistiinpano",

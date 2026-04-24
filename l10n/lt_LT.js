@@ -33,6 +33,7 @@ OC.L10N.register(
     "Account" : "Paskyra",
     "Role" : "Vaidmuo",
     "Add a member" : "Pridėti narį",
+    "No accounts found" : "Nerasta jokių paskyrų",
     "Danger zone" : "Pavojinga zona",
     "Preview" : "Peržiūra",
     "Rename folder" : "Pervadinti aplanką",

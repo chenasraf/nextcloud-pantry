@@ -30,6 +30,7 @@ OC.L10N.register(
     "Account" : "Aðgangur",
     "Joined" : "Gekk inn",
     "Add a member" : "Bæta við meðlimi",
+    "No accounts found" : "Engir aðgangsreikningar fundust",
     "Danger zone" : "Hættusvæði",
     "Preview" : "Forskoðun",
     "Untitled note" : "Ónefndur minnispunktur",

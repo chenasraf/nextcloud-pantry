@@ -30,6 +30,7 @@ OC.L10N.register(
     "Account" : "Compte",
     "Joined" : "Unit",
     "Add a member" : "Afegeix un membre",
+    "No accounts found" : "Cap compte trobat",
     "Danger zone" : "Zona perillosa",
     "Preview" : "Previsualitza",
     "Untitled note" : "Nota sense títol",

@@ -29,6 +29,7 @@ OC.L10N.register(
     "Role" : "Роля",
     "Joined" : "Присъединен",
     "Add a member" : "Добавяне на нов член",
+    "No accounts found" : "Не е открит профил",
     "Danger zone" : "Зона на опасност",
     "Preview" : "Визуализация",
     "Rename folder" : "Преименуване на папка",

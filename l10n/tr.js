@@ -37,6 +37,7 @@ OC.L10N.register(
     "Role" : "Rol",
     "Joined" : "Katıldı",
     "Add a member" : "Üye ekle",
+    "No accounts found" : "Herhangi bir hesap bulunamadı",
     "Danger zone" : "Tehlikeli bölge",
     "Preview" : "Ön izleme",
     "Untitled note" : "Başlıksız not",

@@ -34,6 +34,7 @@ OC.L10N.register(
     "Role" : "Ruolo",
     "Joined" : "Partecipata",
     "Add a member" : "Aggiungi un membro",
+    "No accounts found" : "Nessun account trovato",
     "Danger zone" : "Zona pericolosa",
     "Preview" : "Anteprima",
     "Untitled note" : "Nota senza titolo",

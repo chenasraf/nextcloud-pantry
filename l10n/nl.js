@@ -33,6 +33,7 @@ OC.L10N.register(
     "Role" : "Rol",
     "Joined" : "Toegetreden",
     "Add a member" : "Voeg een lid toe",
+    "No accounts found" : "Geen accounts gevonden",
     "Danger zone" : "Gevarenzone",
     "Preview" : "Voorbeeld",
     "Untitled note" : "Notitie zonder titel",

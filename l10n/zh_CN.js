@@ -33,6 +33,7 @@ OC.L10N.register(
     "Role" : "角色",
     "Joined" : "已加入",
     "Add a member" : "添加一个成员",
+    "No accounts found" : "没有找到帐户",
     "Danger zone" : "危险区域",
     "Preview" : "预览",
     "Untitled note" : "未命名笔记",

@@ -33,6 +33,7 @@ OC.L10N.register(
     "Role" : "ロール",
     "Joined" : "参加",
     "Add a member" : "メンバーの追加",
+    "No accounts found" : "アカウントが見つかりません",
     "Danger zone" : "危険区域",
     "Preview" : "プレビュー",
     "Untitled note" : "無題のノート",

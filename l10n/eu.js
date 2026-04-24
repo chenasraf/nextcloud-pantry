@@ -33,6 +33,7 @@ OC.L10N.register(
     "Role" : "Zeregina",
     "Joined" : "Batu da",
     "Add a member" : "Gehitu kide bat",
+    "No accounts found" : "Ez da konturik aurkitu",
     "Danger zone" : "Arrisku eremua",
     "Preview" : "Aurrebista",
     "Untitled note" : "Izen gabeko oharra",

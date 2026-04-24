@@ -33,6 +33,7 @@ OC.L10N.register(
     "Role" : "Роль",
     "Joined" : "Присоединился(ась)",
     "Add a member" : "Добавить участника",
+    "No accounts found" : "Аккуант не найден",
     "Danger zone" : "Опасная зона",
     "Preview" : "Предварительный просмотр",
     "Untitled note" : "Заметка без названия",

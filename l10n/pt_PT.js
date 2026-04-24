@@ -27,6 +27,7 @@ OC.L10N.register(
     "Role" : "Função",
     "Joined" : "Aderiu",
     "Add a member" : "Adicionar um membro",
+    "No accounts found" : "Nenhuma conta encontrada",
     "Preview" : "Pré-visualizar",
     "Untitled note" : "Nota sem título",
     "Rename folder" : "Renomear pasta",

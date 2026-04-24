@@ -33,6 +33,7 @@ OC.L10N.register(
     "Role" : "Roll",
     "Joined" : "Gått med i",
     "Add a member" : "Lägg till en medlem",
+    "No accounts found" : "Inga konton hittades",
     "Danger zone" : "Riskzon",
     "Preview" : "Förhandsgranskning",
     "Untitled note" : "Namnlös anteckning",

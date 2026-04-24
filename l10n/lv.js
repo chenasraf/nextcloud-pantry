@@ -22,6 +22,7 @@ OC.L10N.register(
     "Members" : "Biedri",
     "Account" : "Konts",
     "Role" : "Loma",
+    "No accounts found" : "Konti nav atrasti",
     "Preview" : "Priekšskatīt",
     "Rename folder" : "Pārdēvēt mapi",
     "Folder name" : "Mapes nosaukums",

@@ -32,6 +32,7 @@ OC.L10N.register(
     "Role" : "Szerepkör",
     "Joined" : "Csatlakozott",
     "Add a member" : "Tag felvétele",
+    "No accounts found" : "Nincsenek ilyen felhasználói fiókok",
     "Danger zone" : "Veszélyes területet",
     "Preview" : "Előnézet",
     "Untitled note" : "Jegyzet cím nélkül",

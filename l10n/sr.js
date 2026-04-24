@@ -34,6 +34,7 @@ OC.L10N.register(
     "Role" : "Улога",
     "Joined" : "Придружен",
     "Add a member" : "Додај члана",
+    "No accounts found" : "Није пронађен ниједан налог",
     "Danger zone" : "Зона опасности",
     "Preview" : "Преглед",
     "Untitled note" : "Неименована белешка",

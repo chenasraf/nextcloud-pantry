@@ -37,6 +37,7 @@ OC.L10N.register(
     "Role" : "Role",
     "Joined" : "Připojený",
     "Add a member" : "Přidat člena",
+    "No accounts found" : "Nenalezeny žádné účty",
     "Danger zone" : "Nebezpečná zóna",
     "Preview" : "Náhled",
     "Untitled note" : "Nepojmenovaná poznámka",
