@@ -60,6 +60,6 @@
     "vite-plugin-checker": "^0.13.0",
     "vitest": "^4.1.4",
     "vue-router": "^5.0.4",
-    "vue-tsc": "^3.2.6"
+    "vue-tsc": "^3.2.7"
   }
 }
