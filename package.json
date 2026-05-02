@@ -47,7 +47,7 @@
     "@vitejs/plugin-vue": "^6.0.6",
     "@vue/test-utils": "^2.4.8",
     "@vue/tsconfig": "^0.9.1",
-    "eslint": "^10.2.1",
+    "eslint": "^10.3.0",
     "happy-dom": "^20.9.0",
     "lefthook": "^2.1.6",
     "prettier": "^3.8.3",
