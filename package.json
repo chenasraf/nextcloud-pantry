@@ -55,7 +55,7 @@
     "sass": "^1.99.0",
     "sass-embedded": "^1.99.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.0",
+    "typescript-eslint": "^8.59.1",
     "vite": "^8.0.10",
     "vite-plugin-checker": "^0.13.0",
     "vitest": "^4.1.5",
