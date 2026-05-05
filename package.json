@@ -27,7 +27,7 @@
     "@nextcloud/l10n": "^3.4.1",
     "@nextcloud/router": "^3.1.0",
     "@nextcloud/vite-config": "^2.5.2",
-    "@nextcloud/vue": "^9.6.0",
+    "@nextcloud/vue": "^9.7.0",
     "date-fns": "^4.1.0",
     "linkifyjs": "^4.3.2",
     "rrule": "^2.8.1",
@@ -45,9 +45,9 @@
     "@nextcloud/eslint-config": "^8.4.2",
     "@nextcloud/stylelint-config": "^3.2.1",
     "@vitejs/plugin-vue": "^6.0.6",
-    "@vue/test-utils": "^2.4.8",
+    "@vue/test-utils": "^2.4.10",
     "@vue/tsconfig": "^0.9.1",
-    "eslint": "^10.2.1",
+    "eslint": "^10.3.0",
     "happy-dom": "^20.9.0",
     "lefthook": "^2.1.6",
     "prettier": "^3.8.3",
@@ -55,11 +55,11 @@
     "sass": "^1.99.0",
     "sass-embedded": "^1.99.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.0",
+    "typescript-eslint": "^8.59.2",
     "vite": "^8.0.10",
     "vite-plugin-checker": "^0.13.0",
     "vitest": "^4.1.5",
     "vue-router": "^5.0.6",
-    "vue-tsc": "^3.2.7"
+    "vue-tsc": "^3.2.8"
   }
 }
