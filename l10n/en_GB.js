@@ -38,7 +38,7 @@ OC.L10N.register(
     "Checklist items completed" : "Checklist items completed",
     "New category" : "New category",
     "Edit category" : "Edit category",
-    "Name" : "Surname",
+    "Name" : "Name",
     "e.g. Produce, Dairy" : "e.g. Produce, Dairy",
     "Icon:" : "Icon:",
     "Color:" : "Colour:",
