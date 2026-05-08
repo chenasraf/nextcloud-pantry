@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.3](https://github.com/chenasraf/nextcloud-pantry/compare/v0.10.2...v0.10.3) (2026-05-08)
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([fe30bea](https://github.com/chenasraf/nextcloud-pantry/commit/fe30bea88bf9ad39f5dd67de9987016367bd2e40))
+* **l10n:** wrong en_GB translation ([79c1b33](https://github.com/chenasraf/nextcloud-pantry/commit/79c1b33efcb80675e0b3e3f947b44d7e5f0213f7))
+* **ui/checklist:** list items no longer clipped by viewport ([c7632ac](https://github.com/chenasraf/nextcloud-pantry/commit/c7632ac7c940bedda26e823a05530effc7ff49f5))
+
 ## [0.10.2](https://github.com/chenasraf/nextcloud-pantry/compare/v0.10.1...v0.10.2) (2026-04-26)
 
 
