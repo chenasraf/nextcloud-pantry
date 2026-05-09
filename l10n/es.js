@@ -55,6 +55,7 @@ OC.L10N.register(
     "After" : "Después",
     "On date" : "en fecha",
     "Summary" : "Resumen",
+    "Remove recurrence" : "Eliminar repetición",
     "Newest first" : "Más nuevas primero",
     "Oldest first" : "Más antiguas primero",
     "Custom" : "Personalizado",
