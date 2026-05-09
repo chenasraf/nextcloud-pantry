@@ -52,8 +52,8 @@ importers:
         specifier: ^8.4.2
         version: 8.4.2(@babel/core@7.26.0)(@babel/eslint-parser@7.25.9(@babel/core@7.26.0)(eslint@10.3.0))(@nextcloud/eslint-plugin@2.2.1(eslint@10.3.0))(@vue/eslint-config-typescript@13.0.0(eslint-plugin-vue@9.32.0(eslint@10.3.0))(eslint@10.3.0)(typescript@6.0.3))(eslint-config-standard@17.1.0(eslint-plugin-import@2.31.0)(eslint-plugin-n@16.6.2(eslint@10.3.0))(eslint-plugin-promise@6.6.0(eslint@10.3.0))(eslint@10.3.0))(eslint-import-resolver-exports@1.0.0-beta.5(eslint-plugin-import@2.31.0)(eslint@10.3.0))(eslint-import-resolver-typescript@3.6.3)(eslint-plugin-import@2.31.0)(eslint-plugin-jsdoc@46.10.1(eslint@10.3.0))(eslint-plugin-n@16.6.2(eslint@10.3.0))(eslint-plugin-promise@6.6.0(eslint@10.3.0))(eslint-plugin-vue@9.32.0(eslint@10.3.0))(eslint@10.3.0)(typescript@6.0.3)
       '@nextcloud/stylelint-config':
-        specifier: ^3.2.1
-        version: 3.2.1(stylelint-config-recommended-scss@13.1.0(postcss@8.5.14)(stylelint@16.11.0(typescript@6.0.3)))(stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.3)))(stylelint@16.11.0(typescript@6.0.3))
+        specifier: ^3.2.2
+        version: 3.2.2(stylelint-config-recommended-scss@13.1.0(postcss@8.5.14)(stylelint@16.11.0(typescript@6.0.3)))(stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.3)))(stylelint@16.11.0(typescript@6.0.3))
       '@vitejs/plugin-vue':
         specifier: ^6.0.6
         version: 6.0.6(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(sass-embedded@1.99.0)(sass@1.99.0)(yaml@2.8.4))(vue@3.5.33(typescript@6.0.3))
@@ -764,12 +764,12 @@ packages:
     resolution: {integrity: sha512-1hUNyc7uJdBpnimOnEshJjEtAPAjzDYVl6qmWqF5ZxoN9wOvbExw0QjX3xFIbHbX2dmvbRNLBj0RzLzipmZyeg==}
     engines: {node: ^20.0.0 || ^22.0.0 || ^24.0.0}
 
-  '@nextcloud/stylelint-config@3.2.1':
-    resolution: {integrity: sha512-fRWuN92ydC52+CGURBmbgkaAFDKOq9pmx/vsujr8cRKlGbAhLH+gyxzSpQUc37ZKKNaBDuUvcGzrqH/YipKbGA==}
+  '@nextcloud/stylelint-config@3.2.2':
+    resolution: {integrity: sha512-5rr77fGK+zoa8yN+8zR43XbqyuN/yB2wSAy4vKE2F+hgAeOhpUAyChV+pfySDbP20t4s22DHgn7BDiZKsbNE3Q==}
     engines: {node: ^20.19 || ^22 || ^24}
     peerDependencies:
-      stylelint: ^17.1.1
-      stylelint-config-recommended-scss: ^17.0.0
+      stylelint: ^17.9.1
+      stylelint-config-recommended-scss: ^17.0.1
       stylelint-config-recommended-vue: ^1.6.1
 
   '@nextcloud/typings@1.10.0':
@@ -1388,6 +1388,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@vitejs/plugin-vue@6.0.6':
     resolution: {integrity: sha512-u9HHgfrq3AjXlysn0eINFnWQOJQLO9WN6VprZ8FXl7A2bYisv3Hui9Ij+7QZ41F/WYWarHjwBbXtD7dKg3uxbg==}
@@ -2134,8 +2135,8 @@ packages:
   emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
 
-  enhanced-resolve@5.21.0:
-    resolution: {integrity: sha512-otxSQPw4lkOZWkHpB3zaEQs6gWYEsmX4xQF68ElXC/TWvGxGMSGOvoNbaLXm6/cS/fSfHtsEdw90y20PCd+sCA==}
+  enhanced-resolve@5.21.2:
+    resolution: {integrity: sha512-xe9vQb5kReirPUxgQrXA3ihgbCqssmTiM7cOZ+Gzu+VeGWgpV98lLZvp0dl4yriyAePcewxGUs9UpKD8PET9KQ==}
     engines: {node: '>=10.13.0'}
 
   entities@4.5.0:
@@ -3964,6 +3965,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.0:
+    resolution: {integrity: sha512-AcM7dV/5ul4EekoQ29Agm5vri8JNqRyj39o0qpX6vDF2GZrtutZl5RwgD1XnZjiTAfncsJhMI48QQH3sN87YNA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   set-function-length@1.2.2:
     resolution: {integrity: sha512-pgRc4hJ4/sNjWCSS9AmnS40x3bNMDTknHgL5UaMBTMyJnU90EgWh1Rz+MC9eFu4BuN/UwZjKQuY/1v3rM7HMfg==}
     engines: {node: '>= 0.4'}
@@ -5292,7 +5298,7 @@ snapshots:
       eslint: 10.3.0
       fast-xml-parser: 4.5.6
       requireindex: 1.2.0
-      semver: 7.7.4
+      semver: 7.8.0
 
   '@nextcloud/event-bus@3.3.3':
     dependencies:
@@ -5361,7 +5367,7 @@ snapshots:
     optionalDependencies:
       '@nextcloud/files': 4.0.0
 
-  '@nextcloud/stylelint-config@3.2.1(stylelint-config-recommended-scss@13.1.0(postcss@8.5.14)(stylelint@16.11.0(typescript@6.0.3)))(stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.3)))(stylelint@16.11.0(typescript@6.0.3))':
+  '@nextcloud/stylelint-config@3.2.2(stylelint-config-recommended-scss@13.1.0(postcss@8.5.14)(stylelint@16.11.0(typescript@6.0.3)))(stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.3)))(stylelint@16.11.0(typescript@6.0.3))':
     dependencies:
       stylelint: 16.11.0(typescript@6.0.3)
       stylelint-config-recommended-scss: 13.1.0(postcss@8.5.14)(stylelint@16.11.0(typescript@6.0.3))
@@ -5929,7 +5935,7 @@ snapshots:
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.9
-      semver: 7.7.4
+      semver: 7.8.0
       ts-api-utils: 1.4.3(typescript@6.0.3)
     optionalDependencies:
       typescript: 6.0.3
@@ -6473,7 +6479,7 @@ snapshots:
 
   builtins@5.1.0:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.0
 
   bundle-name@4.1.0:
     dependencies:
@@ -6812,7 +6818,7 @@ snapshots:
 
   emoji-regex@9.2.2: {}
 
-  enhanced-resolve@5.21.0:
+  enhanced-resolve@5.21.2:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.3.3
@@ -6983,7 +6989,7 @@ snapshots:
   eslint-compat-utils@0.5.1(eslint@10.3.0):
     dependencies:
       eslint: 10.3.0
-      semver: 7.7.4
+      semver: 7.8.0
 
   eslint-config-standard@17.1.0(eslint-plugin-import@2.31.0)(eslint-plugin-n@16.6.2(eslint@10.3.0))(eslint-plugin-promise@6.6.0(eslint@10.3.0))(eslint@10.3.0):
     dependencies:
@@ -7010,7 +7016,7 @@ snapshots:
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3
-      enhanced-resolve: 5.21.0
+      enhanced-resolve: 5.21.2
       eslint: 10.3.0
       eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.59.2(eslint@10.3.0)(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.6.3)(eslint@10.3.0)
       fast-glob: 3.3.3
@@ -7082,7 +7088,7 @@ snapshots:
       eslint: 10.3.0
       esquery: 1.7.0
       is-builtin-module: 3.2.1
-      semver: 7.7.4
+      semver: 7.8.0
       spdx-expression-parse: 4.0.0
     transitivePeerDependencies:
       - supports-color
@@ -7100,7 +7106,7 @@ snapshots:
       is-core-module: 2.16.2
       minimatch: 3.1.5
       resolve: 1.22.12
-      semver: 7.7.4
+      semver: 7.8.0
 
   eslint-plugin-promise@6.6.0(eslint@10.3.0):
     dependencies:
@@ -7114,7 +7120,7 @@ snapshots:
       natural-compare: 1.4.0
       nth-check: 2.1.1
       postcss-selector-parser: 6.1.2
-      semver: 7.7.4
+      semver: 7.8.0
       vue-eslint-parser: 9.4.3(eslint@10.3.0)
       xml-name-validator: 4.0.0
     transitivePeerDependencies:
@@ -7640,7 +7646,7 @@ snapshots:
 
   is-bun-module@1.3.0:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.0
 
   is-callable@1.2.7: {}
 
@@ -9001,6 +9007,8 @@ snapshots:
 
   semver@7.7.4: {}
 
+  semver@7.8.0: {}
+
   set-function-length@1.2.2:
     dependencies:
       define-data-property: 1.1.4
@@ -9247,7 +9255,7 @@ snapshots:
   stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.3)):
     dependencies:
       postcss-html: 1.7.0
-      semver: 7.7.4
+      semver: 7.8.0
       stylelint: 16.11.0(typescript@6.0.3)
       stylelint-config-html: 1.1.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.3))
       stylelint-config-recommended: 18.0.0(stylelint@16.11.0(typescript@6.0.3))
@@ -9685,7 +9693,7 @@ snapshots:
       espree: 9.6.1
       esquery: 1.7.0
       lodash: 4.18.1
-      semver: 7.7.4
+      semver: 7.8.0
     transitivePeerDependencies:
       - supports-color
 
