@@ -24,8 +24,8 @@ importers:
         specifier: ^2.5.2
         version: 2.5.2(@types/node@25.6.0)(browserslist@4.28.2)(picomatch@4.0.4)(rollup@4.60.1)(sass@1.99.0)(typescript@6.0.3)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(sass-embedded@1.99.0)(sass@1.99.0)(yaml@2.8.4))(vue@3.5.33(typescript@6.0.3))
       '@nextcloud/vue':
-        specifier: ^9.7.0
-        version: 9.7.0(@vue/compiler-sfc@3.5.33)(typescript@6.0.3)
+        specifier: ^9.8.0
+        version: 9.8.0(@vue/compiler-sfc@3.5.33)(typescript@6.0.3)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -790,8 +790,8 @@ packages:
     peerDependencies:
       vue: ^3
 
-  '@nextcloud/vue@9.7.0':
-    resolution: {integrity: sha512-L8movmKtIwadcwflbKT5l8Cb/6i//vluJfe8iNX/XisQeBK3wf6aB0S4dpSAg0W1ZUv9Mh1x504uYplLdRfqGQ==}
+  '@nextcloud/vue@9.8.0':
+    resolution: {integrity: sha512-pEYtoVRavaI8EQv7pERfIs16MI11LqFW3+S01b5c54PMsfG+vqXtxR3I8Pyapf39sond6Sjg8Yx5cyBxQ2Y+2A==}
     engines: {node: ^20.11.0 || ^22 || ^24}
 
   '@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1':
@@ -1221,6 +1221,9 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/estree@1.0.9':
+    resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
+
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
 
@@ -1386,8 +1389,8 @@ packages:
     resolution: {integrity: sha512-NwjLUnGy8/Zfx23fl50tRC8rYaYnM52xNRYFAXvmiil9yh1+K6aRVQMnzW6gQB/1DLgWt977lYQn7C+wtgXZiA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@ungap/structured-clone@1.3.0':
-    resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+  '@ungap/structured-clone@1.3.1':
+    resolution: {integrity: sha512-mUFwbeTqrVgDQxFveS+df2yfap6iuP20NAKAsBt5jDEoOTDew+zwLAOilHCeQJOVSvmgCX4ogqIrA0mnyr08yQ==}
 
   '@vitejs/plugin-vue@6.0.6':
     resolution: {integrity: sha512-u9HHgfrq3AjXlysn0eINFnWQOJQLO9WN6VprZ8FXl7A2bYisv3Hui9Ij+7QZ41F/WYWarHjwBbXtD7dKg3uxbg==}
@@ -2134,8 +2137,8 @@ packages:
   emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
 
-  enhanced-resolve@5.21.0:
-    resolution: {integrity: sha512-otxSQPw4lkOZWkHpB3zaEQs6gWYEsmX4xQF68ElXC/TWvGxGMSGOvoNbaLXm6/cS/fSfHtsEdw90y20PCd+sCA==}
+  enhanced-resolve@5.21.2:
+    resolution: {integrity: sha512-xe9vQb5kReirPUxgQrXA3ihgbCqssmTiM7cOZ+Gzu+VeGWgpV98lLZvp0dl4yriyAePcewxGUs9UpKD8PET9KQ==}
     engines: {node: '>=10.13.0'}
 
   entities@4.5.0:
@@ -3964,6 +3967,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.0:
+    resolution: {integrity: sha512-AcM7dV/5ul4EekoQ29Agm5vri8JNqRyj39o0qpX6vDF2GZrtutZl5RwgD1XnZjiTAfncsJhMI48QQH3sN87YNA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   set-function-length@1.2.2:
     resolution: {integrity: sha512-pgRc4hJ4/sNjWCSS9AmnS40x3bNMDTknHgL5UaMBTMyJnU90EgWh1Rz+MC9eFu4BuN/UwZjKQuY/1v3rM7HMfg==}
     engines: {node: '>= 0.4'}
@@ -5254,7 +5262,7 @@ snapshots:
       '@nextcloud/paths': 3.1.0
       '@nextcloud/router': 3.1.0
       '@nextcloud/sharing': 0.4.0
-      '@nextcloud/vue': 9.7.0(@vue/compiler-sfc@3.5.33)(typescript@6.0.3)
+      '@nextcloud/vue': 9.8.0(@vue/compiler-sfc@3.5.33)(typescript@6.0.3)
       '@types/toastify-js': 1.12.4
       '@vueuse/core': 14.3.0(vue@3.5.33(typescript@6.0.3))
       p-queue: 9.2.0
@@ -5292,12 +5300,12 @@ snapshots:
       eslint: 10.3.0
       fast-xml-parser: 4.5.6
       requireindex: 1.2.0
-      semver: 7.7.4
+      semver: 7.8.0
 
   '@nextcloud/event-bus@3.3.3':
     dependencies:
       '@types/semver': 7.7.1
-      semver: 7.7.4
+      semver: 7.8.0
 
   '@nextcloud/files@3.12.2':
     dependencies:
@@ -5401,7 +5409,7 @@ snapshots:
     dependencies:
       vue: 3.5.33(typescript@6.0.3)
 
-  '@nextcloud/vue@9.7.0(@vue/compiler-sfc@3.5.33)(typescript@6.0.3)':
+  '@nextcloud/vue@9.8.0(@vue/compiler-sfc@3.5.33)(typescript@6.0.3)':
     dependencies:
       '@ckpack/vue-color': 1.6.0(vue@3.5.33(typescript@6.0.3))
       '@floating-ui/dom': 1.7.6
@@ -5764,9 +5772,11 @@ snapshots:
 
   '@types/estree-jsx@1.0.5':
     dependencies:
-      '@types/estree': 1.0.8
+      '@types/estree': 1.0.9
 
   '@types/estree@1.0.8': {}
+
+  '@types/estree@1.0.9': {}
 
   '@types/hast@3.0.4':
     dependencies:
@@ -5929,7 +5939,7 @@ snapshots:
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.9
-      semver: 7.7.4
+      semver: 7.8.0
       ts-api-utils: 1.4.3(typescript@6.0.3)
     optionalDependencies:
       typescript: 6.0.3
@@ -5983,7 +5993,7 @@ snapshots:
       '@typescript-eslint/types': 8.59.2
       eslint-visitor-keys: 5.0.1
 
-  '@ungap/structured-clone@1.3.0': {}
+  '@ungap/structured-clone@1.3.1': {}
 
   '@vitejs/plugin-vue@6.0.6(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(sass-embedded@1.99.0)(sass@1.99.0)(yaml@2.8.4))(vue@3.5.33(typescript@6.0.3))':
     dependencies:
@@ -6473,7 +6483,7 @@ snapshots:
 
   builtins@5.1.0:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.0
 
   bundle-name@4.1.0:
     dependencies:
@@ -6786,7 +6796,7 @@ snapshots:
       '@one-ini/wasm': 0.1.1
       commander: 10.0.1
       minimatch: 9.0.9
-      semver: 7.7.4
+      semver: 7.8.0
 
   electron-to-chromium@1.5.349: {}
 
@@ -6812,7 +6822,7 @@ snapshots:
 
   emoji-regex@9.2.2: {}
 
-  enhanced-resolve@5.21.0:
+  enhanced-resolve@5.21.2:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.3.3
@@ -6983,7 +6993,7 @@ snapshots:
   eslint-compat-utils@0.5.1(eslint@10.3.0):
     dependencies:
       eslint: 10.3.0
-      semver: 7.7.4
+      semver: 7.8.0
 
   eslint-config-standard@17.1.0(eslint-plugin-import@2.31.0)(eslint-plugin-n@16.6.2(eslint@10.3.0))(eslint-plugin-promise@6.6.0(eslint@10.3.0))(eslint@10.3.0):
     dependencies:
@@ -7010,7 +7020,7 @@ snapshots:
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3
-      enhanced-resolve: 5.21.0
+      enhanced-resolve: 5.21.2
       eslint: 10.3.0
       eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.59.2(eslint@10.3.0)(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.6.3)(eslint@10.3.0)
       fast-glob: 3.3.3
@@ -7082,7 +7092,7 @@ snapshots:
       eslint: 10.3.0
       esquery: 1.7.0
       is-builtin-module: 3.2.1
-      semver: 7.7.4
+      semver: 7.8.0
       spdx-expression-parse: 4.0.0
     transitivePeerDependencies:
       - supports-color
@@ -7100,7 +7110,7 @@ snapshots:
       is-core-module: 2.16.2
       minimatch: 3.1.5
       resolve: 1.22.12
-      semver: 7.7.4
+      semver: 7.8.0
 
   eslint-plugin-promise@6.6.0(eslint@10.3.0):
     dependencies:
@@ -7114,7 +7124,7 @@ snapshots:
       natural-compare: 1.4.0
       nth-check: 2.1.1
       postcss-selector-parser: 6.1.2
-      semver: 7.7.4
+      semver: 7.8.0
       vue-eslint-parser: 9.4.3(eslint@10.3.0)
       xml-name-validator: 4.0.0
     transitivePeerDependencies:
@@ -7508,7 +7518,7 @@ snapshots:
 
   hast-util-to-jsx-runtime@2.3.6:
     dependencies:
-      '@types/estree': 1.0.8
+      '@types/estree': 1.0.9
       '@types/hast': 3.0.4
       '@types/unist': 3.0.3
       comma-separated-tokens: 2.0.3
@@ -7640,7 +7650,7 @@ snapshots:
 
   is-bun-module@1.3.0:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.0
 
   is-callable@1.2.7: {}
 
@@ -8069,7 +8079,7 @@ snapshots:
     dependencies:
       '@types/hast': 3.0.4
       '@types/mdast': 4.0.4
-      '@ungap/structured-clone': 1.3.0
+      '@ungap/structured-clone': 1.3.1
       devlop: 1.1.0
       micromark-util-sanitize-uri: 2.0.1
       trim-lines: 3.0.1
@@ -8677,7 +8687,7 @@ snapshots:
   rehype-external-links@3.0.0:
     dependencies:
       '@types/hast': 3.0.4
-      '@ungap/structured-clone': 1.3.0
+      '@ungap/structured-clone': 1.3.1
       hast-util-is-element: 3.0.0
       is-absolute-url: 4.0.1
       space-separated-tokens: 2.0.2
@@ -9001,6 +9011,8 @@ snapshots:
 
   semver@7.7.4: {}
 
+  semver@7.8.0: {}
+
   set-function-length@1.2.2:
     dependencies:
       define-data-property: 1.1.4
@@ -9247,7 +9259,7 @@ snapshots:
   stylelint-config-recommended-vue@1.5.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.3)):
     dependencies:
       postcss-html: 1.7.0
-      semver: 7.7.4
+      semver: 7.8.0
       stylelint: 16.11.0(typescript@6.0.3)
       stylelint-config-html: 1.1.0(postcss-html@1.7.0)(stylelint@16.11.0(typescript@6.0.3))
       stylelint-config-recommended: 18.0.0(stylelint@16.11.0(typescript@6.0.3))
@@ -9685,7 +9697,7 @@ snapshots:
       espree: 9.6.1
       esquery: 1.7.0
       lodash: 4.18.1
-      semver: 7.7.4
+      semver: 7.8.0
     transitivePeerDependencies:
       - supports-color
 
