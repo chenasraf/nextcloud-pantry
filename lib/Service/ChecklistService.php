@@ -106,9 +106,18 @@ class ChecklistService {
 		return $this->itemMapper->findByList($listId, $sortBy);
 	}
 
-	public function getItem(int $itemId): ChecklistItem {
+	/**
+	 * List soft-deleted items for a list. Most recently deleted first.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function listDeletedItems(int $listId): array {
+		return $this->itemMapper->findDeletedByList($listId);
+	}
+
+	public function getItem(int $itemId, bool $includeDeleted = false): ChecklistItem {
 		try {
-			return $this->itemMapper->findById($itemId);
+			return $this->itemMapper->findById($itemId, $includeDeleted);
 		} catch (DoesNotExistException) {
 			throw new NotFoundException('Item not found');
 		}
@@ -358,6 +367,33 @@ class ChecklistService {
 		$item->setDeletedAt($now);
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
+	}
+
+	/**
+	 * Permanently remove an item, regardless of whether it is currently in
+	 * trash. Bypasses the soft-delete row and erases it from the table.
+	 */
+	public function permanentlyDeleteItem(int $itemId): void {
+		$item = $this->getItem($itemId, includeDeleted: true);
+		$this->itemMapper->delete($item);
+	}
+
+	/**
+	 * Restore a soft-deleted item by clearing its deleted_at marker.
+	 */
+	public function restoreItem(int $itemId): ChecklistItem {
+		$item = $this->getItem($itemId, includeDeleted: true);
+		$item->setDeletedAt(null);
+		$item->setUpdatedAt(time());
+		$this->itemMapper->update($item);
+		return $item;
+	}
+
+	/**
+	 * Hard-delete every soft-deleted item in the list.
+	 */
+	public function emptyTrash(int $listId): void {
+		$this->itemMapper->emptyTrashForList($listId);
 	}
 
 	private function strOrNull(mixed $v): ?string {

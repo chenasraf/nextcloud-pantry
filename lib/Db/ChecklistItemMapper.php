@@ -135,10 +135,37 @@ class ChecklistItemMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * Find soft-deleted items in a list, most recently deleted first.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function findDeletedByList(int $listId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('deleted_at'))
+			->orderBy('deleted_at', 'DESC');
+
+		return $this->findEntities($qb);
+	}
+
 	public function deleteByList(int $listId): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * Hard-delete every soft-deleted item in the list.
+	 */
+	public function emptyTrashForList(int $listId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('deleted_at'));
 		$qb->executeStatement();
 	}
 }

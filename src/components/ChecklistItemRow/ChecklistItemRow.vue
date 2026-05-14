@@ -52,11 +52,17 @@
           </template>
           {{ strings.moveItem }}
         </NcActionButton>
+        <NcActionButton v-if="trashMode" close-after-click @click="$emit('restore', item.id)">
+          <template #icon>
+            <DeleteRestoreIcon :size="20" />
+          </template>
+          {{ strings.restoreItem }}
+        </NcActionButton>
         <NcActionButton close-after-click @click="$emit('remove', item.id)">
           <template #icon>
             <DeleteIcon :size="20" />
           </template>
-          {{ strings.removeItem }}
+          {{ trashMode ? strings.deletePermanently : strings.removeItem }}
         </NcActionButton>
       </NcActions>
     </div>
@@ -74,6 +80,7 @@ import RepeatIcon from '@icons/Repeat.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
 import DeleteIcon from '@icons/Delete.vue'
+import DeleteRestoreIcon from '@icons/DeleteRestore.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { itemImagePreviewUrl } from '@/api/images'
@@ -86,8 +93,9 @@ const props = withDefaults(
     category: Category | null
     houseId: number
     reorderEnabled?: boolean
+    trashMode?: boolean
   }>(),
-  { reorderEnabled: false },
+  { reorderEnabled: false, trashMode: false },
 )
 
 const emit = defineEmits<{
@@ -96,6 +104,7 @@ const emit = defineEmits<{
   edit: [item: ChecklistItem]
   move: [item: ChecklistItem]
   remove: [id: number]
+  restore: [id: number]
   preview: [item: ChecklistItem]
   'drag-start': [itemId: number]
   'reorder-over': [itemId: number, event: MouseEvent]
@@ -143,6 +152,8 @@ const strings = {
   editItem: t('pantry', 'Edit item'),
   moveItem: t('pantry', 'Move to list'),
   removeItem: t('pantry', 'Remove item'),
+  deletePermanently: t('pantry', 'Delete permanently'),
+  restoreItem: t('pantry', 'Restore'),
 }
 </script>
 

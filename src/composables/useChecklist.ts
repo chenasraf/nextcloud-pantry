@@ -82,13 +82,16 @@ export function useChecklistItems(houseId: number, listId: number) {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const sortBy = ref<ChecklistItemSort>('custom')
+  const trashMode = ref(false)
 
   async function load(sort?: ChecklistItemSort): Promise<void> {
     loading.value = true
     error.value = null
     const s = sort ?? sortBy.value
     try {
-      items.value = await api.listItems(houseId, listId, s)
+      items.value = trashMode.value
+        ? await api.listDeletedItems(houseId, listId)
+        : await api.listItems(houseId, listId, s)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -150,6 +153,25 @@ export function useChecklistItems(houseId: number, listId: number) {
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
+  async function removePermanently(itemId: number): Promise<void> {
+    await api.permanentlyDeleteItem(houseId, listId, itemId)
+    items.value = items.value.filter((i) => i.id !== itemId)
+  }
+
+  async function restore(itemId: number): Promise<void> {
+    await api.restoreItem(houseId, listId, itemId)
+    // The item leaves the current view: in trash mode it returns to the active
+    // list (and stays hidden here); in active mode it was never visible.
+    items.value = items.value.filter((i) => i.id !== itemId)
+  }
+
+  async function emptyTrash(): Promise<void> {
+    await api.emptyTrash(houseId, listId)
+    if (trashMode.value) {
+      items.value = []
+    }
+  }
+
   async function uploadImage(itemId: number, file: File): Promise<void> {
     const updated = await api.uploadItemImage(houseId, listId, itemId, file)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
@@ -165,12 +187,16 @@ export function useChecklistItems(houseId: number, listId: number) {
     loading,
     error,
     sortBy,
+    trashMode,
     load,
     add,
     update,
     toggle,
     reorderItems,
     remove,
+    removePermanently,
+    restore,
+    emptyTrash,
     uploadImage,
     clearImage,
   }

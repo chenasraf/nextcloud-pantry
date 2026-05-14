@@ -49,6 +49,11 @@ export async function listItems(
   return resp.data ?? []
 }
 
+export async function listDeletedItems(houseId: number, listId: number): Promise<ChecklistItem[]> {
+  const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/lists/${listId}/items/trash`)
+  return resp.data ?? []
+}
+
 export interface ItemInput {
   name: string
   description?: string | null
@@ -96,6 +101,29 @@ export async function toggleItem(
 
 export async function deleteItem(houseId: number, listId: number, itemId: number): Promise<void> {
   await ocs.delete(`/houses/${houseId}/lists/${listId}/items/${itemId}`)
+}
+
+export async function permanentlyDeleteItem(
+  houseId: number,
+  listId: number,
+  itemId: number,
+): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/lists/${listId}/items/${itemId}/permanent`)
+}
+
+export async function restoreItem(
+  houseId: number,
+  listId: number,
+  itemId: number,
+): Promise<ChecklistItem> {
+  const resp = await ocs.post<ChecklistItem>(
+    `/houses/${houseId}/lists/${listId}/items/${itemId}/restore`,
+  )
+  return resp.data
+}
+
+export async function emptyTrash(houseId: number, listId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/lists/${listId}/items/trash`)
 }
 
 export async function reorderItems(

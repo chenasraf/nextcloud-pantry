@@ -201,6 +201,34 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * List soft-deleted items in a checklist (trash)
+	 *
+	 * Returns items whose deleted_at is set, most recently deleted first.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int<1, 1000> $limit Maximum number of items to return.
+	 * @param int<0, max> $offset Number of items to skip.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>
+	 *
+	 * 200: Deleted items returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/items/trash')]
+	#[NoAdminRequired]
+	public function indexDeletedItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $limit, $offset): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$all = $this->lists->listDeletedItems($listId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			return new DataResponse($items);
+		});
+	}
+
+	/**
 	 * Add an item to a list
 	 *
 	 * @param int $houseId House id.
@@ -397,6 +425,84 @@ final class ChecklistController extends OCSController {
 				throw new NotFoundException('Item does not belong to this list');
 			}
 			$this->lists->deleteItem($itemId);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Restore a soft-deleted item back into the active list
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int $itemId Item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
+	 *
+	 * 200: Item restored
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/restore')]
+	#[NoAdminRequired]
+	public function restoreItem(int $houseId, int $listId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$item = $this->lists->getItem($itemId, includeDeleted: true);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$restored = $this->lists->restoreItem($itemId);
+			return new DataResponse($restored->jsonSerialize());
+		});
+	}
+
+	/**
+	 * Permanently delete an item, bypassing the trash
+	 *
+	 * Works on both live items and items already in trash.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int $itemId Item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Item permanently deleted
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/permanent')]
+	#[NoAdminRequired]
+	public function permanentlyDeleteItem(int $houseId, int $listId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$item = $this->lists->getItem($itemId, includeDeleted: true);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$this->lists->permanentlyDeleteItem($itemId);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Empty a list's trash, permanently deleting every soft-deleted item
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Trash emptied
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/items/trash')]
+	#[NoAdminRequired]
+	public function emptyTrash(int $houseId, int $listId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$this->lists->emptyTrash($listId);
 			return new DataResponse(['success' => true]);
 		});
 	}

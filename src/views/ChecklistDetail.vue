@@ -13,7 +13,7 @@
         </NcButton>
       </template>
       <template #actions>
-        <NcActions :aria-label="strings.sortLabel" type="tertiary">
+        <NcActions :aria-label="strings.sortLabel" :title="strings.sortLabel" type="tertiary">
           <template #icon>
             <SortIcon :size="20" />
           </template>
@@ -30,6 +30,18 @@
             {{ opt.label }}
           </NcActionButton>
         </NcActions>
+        <NcButton
+          :variant="trashMode ? 'primary' : 'tertiary'"
+          :aria-label="strings.trashLabel"
+          :title="strings.trashLabel"
+          :aria-pressed="trashMode"
+          @click="toggleTrash"
+        >
+          <template #icon>
+            <TrashCanIcon :size="20" />
+          </template>
+          {{ strings.trashLabel }}
+        </NcButton>
         <NcButton variant="primary" @click="showCategoryManager = true">
           <template #icon>
             <TagIcon :size="20" />
@@ -57,15 +69,24 @@
 
       <NcEmptyContent
         v-else-if="items.length === 0"
-        :name="strings.emptyTitle"
-        :description="strings.emptyBody"
+        :name="trashMode ? strings.trashEmptyTitle : strings.emptyTitle"
+        :description="trashMode ? strings.trashEmptyBody : strings.emptyBody"
       >
         <template #icon>
-          <component :is="checklistIconComponent(list?.icon)" />
+          <TrashCanIcon v-if="trashMode" />
+          <component :is="checklistIconComponent(list?.icon)" v-else />
         </template>
       </NcEmptyContent>
 
       <template v-else>
+        <div v-if="trashMode" class="pantry-detail__trash-bar">
+          <NcButton variant="error" @click="confirmingEmptyTrash = true">
+            <template #icon>
+              <TrashCanIcon :size="20" />
+            </template>
+            {{ strings.emptyTrashAction }}
+          </NcButton>
+        </div>
         <ul v-if="uncheckedItems.length > 0" ref="uncheckedListRef" class="pantry-detail__items">
           <template v-for="gi in uncheckedGridItems" :key="gi.key">
             <li
@@ -80,11 +101,13 @@
               :category="categoryFor(gi.item.categoryId)"
               :house-id="houseIdNum"
               :reorder-enabled="isCustomSort"
+              :trash-mode="trashMode"
               @toggle="handleToggle"
               @view="openView"
               @edit="startEdit"
               @move="startMoveItem"
               @remove="handleRemove"
+              @restore="handleRestore"
               @preview="openPreview"
               @drag-start="onItemDragStart"
               @reorder-over="onReorderOver"
@@ -186,6 +209,22 @@
       @update:open="showCreateForMove = $event"
       @save="submitCreateListAndMove"
     />
+
+    <NcDialog
+      v-if="confirmingEmptyTrash"
+      :name="strings.emptyTrashTitle"
+      :open="confirmingEmptyTrash"
+      close-on-click-outside
+      @update:open="(v) => !v && (confirmingEmptyTrash = false)"
+    >
+      <p>{{ strings.emptyTrashConfirm }}</p>
+      <template #actions>
+        <NcButton @click="confirmingEmptyTrash = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" @click="submitEmptyTrash">
+          {{ strings.emptyTrashAction }}
+        </NcButton>
+      </template>
+    </NcDialog>
   </div>
 </template>
 
@@ -204,6 +243,7 @@ import SortIcon from '@icons/Sort.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import TagIcon from '@icons/Tag.vue'
+import TrashCanIcon from '@icons/TrashCan.vue'
 import PageToolbar from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
 import { ChecklistFilter } from '@/components/ChecklistFilter'
@@ -237,10 +277,26 @@ const {
   toggle,
   reorderItems,
   remove,
+  removePermanently,
+  restore,
+  emptyTrash,
   uploadImage,
   clearImage,
   sortBy,
+  trashMode,
 } = useChecklistItems(houseIdNum.value, listIdNum.value)
+
+async function toggleTrash() {
+  trashMode.value = !trashMode.value
+  await load()
+}
+
+const confirmingEmptyTrash = ref(false)
+
+async function submitEmptyTrash() {
+  confirmingEmptyTrash.value = false
+  await emptyTrash()
+}
 const categories = useCategories(houseIdNum.value)
 
 function categoryFor(id: number | null) {
@@ -531,7 +587,15 @@ async function handleToggle(itemId: number) {
 }
 
 async function handleRemove(itemId: number) {
-  await remove(itemId)
+  if (trashMode.value) {
+    await removePermanently(itemId)
+  } else {
+    await remove(itemId)
+  }
+}
+
+async function handleRestore(itemId: number) {
+  await restore(itemId)
 }
 
 // ----- Edit -----
@@ -617,11 +681,21 @@ const strings = {
   back: t('pantry', 'Back to lists'),
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
+  trashEmptyTitle: t('pantry', 'Trash is empty'),
+  trashEmptyBody: t('pantry', 'Deleted items will appear here.'),
   sortLabel: t('pantry', 'Sort order'),
+  trashLabel: t('pantry', 'Trash'),
   doneTitle: t('pantry', 'Done'),
   manageCategories: t('pantry', 'Manage categories'),
   moveToList: t('pantry', 'Move to list'),
   newList: t('pantry', 'New list'),
+  emptyTrashAction: t('pantry', 'Empty trash'),
+  emptyTrashTitle: t('pantry', 'Empty trash?'),
+  emptyTrashConfirm: t(
+    'pantry',
+    'All deleted items in this list will be permanently removed. This cannot be undone.',
+  ),
+  cancel: t('pantry', 'Cancel'),
 }
 </script>
 
@@ -650,6 +724,12 @@ const strings = {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  &__trash-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
   }
 
   &__placeholder {
