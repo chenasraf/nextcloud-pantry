@@ -260,11 +260,13 @@ class ChecklistService {
 			$item->setDone(true);
 			$item->setDoneAt($now);
 			$item->setDoneBy($uid);
-			// "Once" items are removed from the list when marked done. We still
-			// return the transient done state so callers (notifications, API
-			// response) can reflect the completion before the row is gone.
+			// "Once" items are soft-deleted from the list when marked done. The
+			// row stays in the DB (deleted_at set) so it can be surfaced in a
+			// trash view, while default queries hide it.
 			if ($item->getDeleteOnDone()) {
-				$this->itemMapper->delete($item);
+				$item->setDeletedAt($now);
+				$item->setUpdatedAt($now);
+				$this->itemMapper->update($item);
 				return $item;
 			}
 			if ($item->getRrule() !== null) {
@@ -352,7 +354,10 @@ class ChecklistService {
 
 	public function deleteItem(int $itemId): void {
 		$item = $this->getItem($itemId);
-		$this->itemMapper->delete($item);
+		$now = time();
+		$item->setDeletedAt($now);
+		$item->setUpdatedAt($now);
+		$this->itemMapper->update($item);
 	}
 
 	private function strOrNull(mixed $v): ?string {

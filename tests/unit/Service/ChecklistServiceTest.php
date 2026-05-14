@@ -163,20 +163,40 @@ class ChecklistServiceTest extends TestCase {
 		$this->svc->addItem(1, ['name' => 'Eggs', 'rrule' => 'not valid']);
 	}
 
-	public function testToggleItemDeletesOnceItemWhenMarkingDone(): void {
+	public function testToggleItemSoftDeletesOnceItemWhenMarkingDone(): void {
 		$now = 1_700_000_000;
 		$item = $this->makeItem([
 			'deleteOnDone' => true,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
-		// Once items are deleted rather than updated when marked done.
-		$this->itemMapper->expects($this->once())->method('delete')->with($item);
-		$this->itemMapper->expects($this->never())->method('update');
+		// Once items are soft-deleted (deleted_at set) rather than removed.
+		$this->itemMapper->expects($this->never())->method('delete');
+		$this->itemMapper->expects($this->once())
+			->method('update')
+			->with($this->callback(function (ChecklistItem $i) use ($now) {
+				return $i->getDone() === true
+					&& $i->getDeletedAt() === $now;
+			}));
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
 		$this->assertTrue($toggled->getDone());
 		$this->assertSame($now, $toggled->getDoneAt());
 		$this->assertSame('alice', $toggled->getDoneBy());
+		$this->assertSame($now, $toggled->getDeletedAt());
+	}
+
+	public function testDeleteItemSoftDeletes(): void {
+		$item = $this->makeItem();
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->expects($this->never())->method('delete');
+		$this->itemMapper->expects($this->once())
+			->method('update')
+			->with($this->callback(function (ChecklistItem $i) {
+				return $i->getDeletedAt() !== null;
+			}));
+
+		$this->svc->deleteItem(42);
+		$this->assertNotNull($item->getDeletedAt());
 	}
 
 	public function testToggleItemOnceItemIgnoresFlagWhenUnchecking(): void {

@@ -43,6 +43,7 @@ class ChecklistItemMapper extends QBMapper {
 					$qb->expr()->eq('i.category_id', 'c.id'),
 				)
 				->where($qb->expr()->eq('i.list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->isNull('i.deleted_at'))
 				->orderBy(
 					$qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'),
 					'ASC',
@@ -55,7 +56,8 @@ class ChecklistItemMapper extends QBMapper {
 
 		$qb->select('*')
 			->from($items)
-			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'));
 
 		switch ($sortBy) {
 			case 'newest':
@@ -84,11 +86,14 @@ class ChecklistItemMapper extends QBMapper {
 	/**
 	 * @throws DoesNotExistException
 	 */
-	public function findById(int $id): ChecklistItem {
+	public function findById(int $id, bool $includeDeleted = false): ChecklistItem {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		if (!$includeDeleted) {
+			$qb->andWhere($qb->expr()->isNull('deleted_at'));
+		}
 
 		return $this->findEntity($qb);
 	}
@@ -104,7 +109,8 @@ class ChecklistItemMapper extends QBMapper {
 			->from($this->getTableName())
 			->where($qb->expr()->eq('done', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->isNotNull('next_due_at'))
-			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)));
+			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'));
 
 		return $this->findEntities($qb);
 	}
@@ -123,7 +129,8 @@ class ChecklistItemMapper extends QBMapper {
 			->andWhere($qb->expr()->eq('repeat_from_completion', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->isNotNull('rrule'))
 			->andWhere($qb->expr()->isNotNull('next_due_at'))
-			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)));
+			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'));
 
 		return $this->findEntities($qb);
 	}

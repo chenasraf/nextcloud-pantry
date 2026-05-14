@@ -60,6 +60,7 @@ export interface ChecklistItem {
   sortOrder: number
   createdAt: number
   updatedAt: number
+  deletedAt: number | null
 }
 
 export interface Note {
