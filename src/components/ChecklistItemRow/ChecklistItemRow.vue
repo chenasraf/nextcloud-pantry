@@ -1,15 +1,37 @@
 <template>
   <li
     class="checklist-row"
-    :class="{ 'checklist-row--done': item.done, 'checklist-row--dragging': isDragging }"
+    :class="{
+      'checklist-row--done': item.done,
+      'checklist-row--dragging': isDragging,
+    }"
     :data-drag-id="item.id"
     :draggable="reorderEnabled ? 'true' : 'false'"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
   >
-    <NcCheckboxRadioSwitch :model-value="item.done" @update:model-value="$emit('toggle', item.id)">
-      <span class="checklist-row__label">
+    <div class="checklist-row__check">
+      <NcCheckboxRadioSwitch
+        :model-value="item.done"
+        :aria-label="tapRowToComplete ? undefined : item.name"
+        :class="{ 'checklist-row__check-fill': tapRowToComplete }"
+        @update:model-value="$emit('toggle', item.id)"
+      >
+        <span v-if="tapRowToComplete" class="checklist-row__label">
+          <button
+            v-if="item.imageFileId"
+            type="button"
+            class="checklist-row__thumb"
+            :aria-label="strings.viewImage"
+            @click.stop.prevent="$emit('preview', item)"
+          >
+            <img :src="thumbUrl" :alt="item.name" />
+          </button>
+          <span class="checklist-row__name">{{ item.name }}</span>
+        </span>
+      </NcCheckboxRadioSwitch>
+      <span v-if="!tapRowToComplete" class="checklist-row__label checklist-row__label--standalone">
         <button
           v-if="item.imageFileId"
           type="button"
@@ -21,7 +43,7 @@
         </button>
         <span class="checklist-row__name">{{ item.name }}</span>
       </span>
-    </NcCheckboxRadioSwitch>
+    </div>
     <div class="checklist-row__meta">
       <span v-if="item.quantity" class="checklist-row__quantity">&times; {{ item.quantity }}</span>
       <span v-if="item.rrule" class="checklist-row__recurrence" :title="recurrenceTooltip">
@@ -94,8 +116,9 @@ const props = withDefaults(
     houseId: number
     reorderEnabled?: boolean
     trashMode?: boolean
+    tapRowToComplete?: boolean
   }>(),
-  { reorderEnabled: false, trashMode: false },
+  { reorderEnabled: false, trashMode: false, tapRowToComplete: false },
 )
 
 const emit = defineEmits<{
@@ -175,7 +198,7 @@ const strings = {
       'meta  meta';
     gap: 0.25rem 0.5rem;
 
-    :deep(.checkbox-radio-switch) {
+    .checklist-row__check {
       grid-area: check;
     }
 
@@ -210,19 +233,42 @@ const strings = {
     }
   }
 
-  :deep(.checkbox-content__icon) {
-    margin-block: auto !important;
+  &__check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
   }
 
-  :deep(.checkbox-radio-switch__content) {
-    width: 100%;
-    max-width: unset;
+  // When the row-tap pref is on, the label content sits inside the
+  // NcCheckboxRadioSwitch slot. Stretch the checkbox component (and its
+  // inner content wrapper) so the hover highlight and click target span
+  // the whole row.
+  &__check-fill {
+    flex: 1;
+    min-width: 0;
+
+    :deep(.checkbox-radio-switch__content) {
+      width: 100%;
+      max-width: unset;
+    }
+  }
+
+  :deep(.checkbox-content__icon) {
+    margin-block: auto !important;
   }
 
   &__label {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
+    min-width: 0;
+
+    // Standalone label (checkbox-only mode): fills the remaining space
+    // next to the checkbox in the flex container.
+    &--standalone {
+      flex: 1;
+    }
   }
 
   &__thumb {

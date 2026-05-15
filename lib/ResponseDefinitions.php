@@ -84,6 +84,7 @@ namespace OCA\Pantry;
  * @psalm-type PantryUserPrefs = array{
  *     lastHouseId: int|null,
  *     firstDayOfWeek: int,
+ *     tapRowToComplete: bool,
  * }
  *
  * @psalm-type PantryHousePrefs = array{

@@ -31,6 +31,20 @@
       </form>
     </NcAppSettingsSection>
 
+    <NcAppSettingsSection id="pantry-interface" :name="strings.interfaceSection">
+      <div class="account-settings__checks">
+        <NcCheckboxRadioSwitch
+          :model-value="tapRowToComplete"
+          @update:model-value="updateTapRowToComplete($event)"
+        >
+          {{ strings.tapRowToCompleteLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="account-settings__hint account-settings__hint--inline">
+          {{ strings.tapRowToCompleteHint }}
+        </p>
+      </div>
+    </NcAppSettingsSection>
+
     <NcAppSettingsSection id="pantry-notifications" :name="strings.notificationsSection">
       <p class="account-settings__hint">{{ strings.notificationsHint }}</p>
       <div class="account-settings__checks">
@@ -92,6 +106,7 @@ import {
   setNotificationPrefs,
   type NotificationPrefs,
 } from '@/api/prefs'
+import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 
 const props = defineProps<{ open: boolean; houseId: number | null }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -187,6 +202,18 @@ async function updateNotifPref(key: keyof NotificationPrefs, value: boolean) {
   }
 }
 
+// ----- Interface prefs -----
+
+const { tapRowToComplete, set: setTapRowPref } = useTapRowToComplete()
+
+async function updateTapRowToComplete(value: boolean) {
+  try {
+    await setTapRowPref(value)
+  } catch {
+    // Composable already reverted the optimistic update.
+  }
+}
+
 const strings = {
   title: t('pantry', 'Account settings'),
   imagesSection: t('pantry', 'Images'),
@@ -211,6 +238,12 @@ const strings = {
   notifyItemAdd: t('pantry', 'Checklist items added'),
   notifyItemRecur: t('pantry', 'Recurring items reappearing'),
   notifyItemDone: t('pantry', 'Checklist items completed'),
+  interfaceSection: t('pantry', 'Interface'),
+  tapRowToCompleteLabel: t('pantry', 'Click row to complete items'),
+  tapRowToCompleteHint: t(
+    'pantry',
+    'When off, items are only marked complete by clicking the checkbox.',
+  ),
 }
 </script>
 
@@ -219,6 +252,10 @@ const strings = {
   color: var(--color-text-maxcontrast);
   margin: 0 0 0.75rem 0;
   font-size: 0.9rem;
+
+  &--inline {
+    margin: 0 0 0 1.85rem;
+  }
 }
 
 .account-settings__form {

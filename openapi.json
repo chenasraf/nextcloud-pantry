@@ -658,7 +658,8 @@
                 "type": "object",
                 "required": [
                     "lastHouseId",
-                    "firstDayOfWeek"
+                    "firstDayOfWeek",
+                    "tapRowToComplete"
                 ],
                 "properties": {
                     "lastHouseId": {
@@ -669,6 +670,9 @@
                     "firstDayOfWeek": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "tapRowToComplete": {
+                        "type": "boolean"
                     }
                 }
             }
@@ -6952,6 +6956,7 @@
             "put": {
                 "operationId": "prefs-set-user-prefs",
                 "summary": "Update user-level preferences",
+                "description": "Only the fields present in the request body are updated; omitted fields are left unchanged.",
                 "tags": [
                     "prefs"
                 ],
@@ -6976,6 +6981,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Last-used house id, or null to clear."
+                                    },
+                                    "tapRowToComplete": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether clicking anywhere on a checklist row marks it done."
                                     }
                                 }
                             }

@@ -14,6 +14,7 @@ use OCP\IL10N;
 class PrefsService {
 	private const KEY_LAST_HOUSE = 'last_house_id';
 	private const KEY_IMAGE_FOLDER = 'image_folder';
+	private const KEY_TAP_ROW_TO_COMPLETE = 'tap_row_to_complete';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
 
 	public function __construct(
@@ -62,6 +63,25 @@ class PrefsService {
 		return $normalized;
 	}
 
+	public function getTapRowToComplete(string $uid): bool {
+		// Off by default — taps only register on the checkbox itself.
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_TAP_ROW_TO_COMPLETE,
+			'0',
+		) === '1';
+	}
+
+	public function setTapRowToComplete(string $uid, bool $value): void {
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_TAP_ROW_TO_COMPLETE,
+			$value ? '1' : '0',
+		);
+	}
+
 	// ----- Unified user prefs -----
 
 	/**
@@ -71,6 +91,7 @@ class PrefsService {
 		return [
 			'lastHouseId' => $this->getLastHouseId($uid),
 			'firstDayOfWeek' => $this->getFirstDayOfWeek($uid),
+			'tapRowToComplete' => $this->getTapRowToComplete($uid),
 		];
 	}
 
@@ -81,6 +102,9 @@ class PrefsService {
 		if (array_key_exists('lastHouseId', $patch)) {
 			$v = $patch['lastHouseId'];
 			$this->setLastHouseId($uid, is_int($v) ? $v : null);
+		}
+		if (array_key_exists('tapRowToComplete', $patch) && is_bool($patch['tapRowToComplete'])) {
+			$this->setTapRowToComplete($uid, $patch['tapRowToComplete']);
 		}
 	}
 

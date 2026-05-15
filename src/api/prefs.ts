@@ -6,6 +6,14 @@ export interface UserPrefs {
   lastHouseId: number | null
   /** 0 = Sunday, 1 = Monday, …, 6 = Saturday. Read-only from server. */
   firstDayOfWeek: number
+  /** When true, clicking anywhere on a checklist row marks the item done. */
+  tapRowToComplete: boolean
+}
+
+const userPrefsDefaults: UserPrefs = {
+  lastHouseId: null,
+  firstDayOfWeek: 1,
+  tapRowToComplete: false,
 }
 
 let userPrefsInflight: Promise<UserPrefs> | null = null
@@ -15,7 +23,7 @@ export function getUserPrefs(): Promise<UserPrefs> {
 
   userPrefsInflight = ocs
     .get<UserPrefs>('/prefs')
-    .then((resp) => resp.data ?? { lastHouseId: null, firstDayOfWeek: 1 })
+    .then((resp) => ({ ...userPrefsDefaults, ...resp.data }))
     .finally(() => {
       userPrefsInflight = null
     })
@@ -25,7 +33,7 @@ export function getUserPrefs(): Promise<UserPrefs> {
 
 export async function setUserPrefs(patch: Partial<UserPrefs>): Promise<UserPrefs> {
   const resp = await ocs.put<UserPrefs>('/prefs', patch)
-  return resp.data ?? { lastHouseId: null, firstDayOfWeek: 1 }
+  return { ...userPrefsDefaults, ...resp.data }
 }
 
 // Convenience wrappers (used widely, keep the simple API)
@@ -36,6 +44,16 @@ export async function getLastHouse(): Promise<number | null> {
 
 export async function setLastHouse(houseId: number | null): Promise<void> {
   await setUserPrefs({ lastHouseId: houseId })
+}
+
+export async function getTapRowToComplete(): Promise<boolean> {
+  const prefs = await getUserPrefs()
+  return prefs.tapRowToComplete
+}
+
+export async function setTapRowToComplete(value: boolean): Promise<boolean> {
+  const prefs = await setUserPrefs({ tapRowToComplete: value })
+  return prefs.tapRowToComplete
 }
 
 // ----- Per-house prefs -----

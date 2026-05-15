@@ -66,7 +66,11 @@ final class PrefsController extends OCSController {
 	/**
 	 * Update user-level preferences
 	 *
+	 * Only the fields present in the request body are updated; omitted fields
+	 * are left unchanged.
+	 *
 	 * @param int|null $lastHouseId Last-used house id, or null to clear.
+	 * @param bool|null $tapRowToComplete Whether clicking anywhere on a checklist row marks it done.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>
 	 *
@@ -74,16 +78,16 @@ final class PrefsController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function setUserPrefs(?int $lastHouseId = null): DataResponse {
-		return $this->runAction(function () use ($lastHouseId): DataResponse {
+	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null): DataResponse {
+		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete): DataResponse {
 			$uid = $this->requireUid();
 			$patch = [];
 			if ($lastHouseId !== null) {
 				$this->auth->requireMember($lastHouseId, $uid);
 				$patch['lastHouseId'] = $lastHouseId;
-			} else {
-				// Explicit null means clear
-				$patch['lastHouseId'] = null;
+			}
+			if ($tapRowToComplete !== null) {
+				$patch['tapRowToComplete'] = $tapRowToComplete;
 			}
 			$this->prefs->setUserPrefs($uid, $patch);
 			return new DataResponse($this->prefs->getAllUserPrefs($uid));

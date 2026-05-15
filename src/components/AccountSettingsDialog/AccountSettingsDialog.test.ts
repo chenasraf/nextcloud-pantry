@@ -11,6 +11,8 @@ vi.mock('@/api/prefs', () => ({
   setImageFolder: vi.fn(),
   getNotificationPrefs: vi.fn(),
   setNotificationPrefs: vi.fn(),
+  getTapRowToComplete: vi.fn(),
+  setTapRowToComplete: vi.fn(),
 }))
 
 // Mock Nextcloud Vue components that pull in CSS
@@ -24,7 +26,7 @@ vi.mock('@nextcloud/vue/components/NcAppSettingsDialog', () => ({
 vi.mock('@nextcloud/vue/components/NcAppSettingsSection', () => ({
   default: {
     name: 'NcAppSettingsSection',
-    template: '<div class="nc-app-settings-section"><slot /></div>',
+    template: '<div class="nc-app-settings-section" :id="id"><slot /></div>',
     props: ['id', 'name'],
   },
 }))
@@ -66,7 +68,7 @@ const NcAppSettingsDialogStub = {
 }
 
 const NcAppSettingsSectionStub = {
-  template: '<div class="nc-app-settings-section"><slot /></div>',
+  template: '<div class="nc-app-settings-section" :id="id"><slot /></div>',
   props: ['id', 'name'],
 }
 
@@ -225,7 +227,8 @@ describe('AccountSettingsDialog', () => {
       const wrapper = mountComponent({ open: true, houseId: 1 })
       await flushPromises()
 
-      const checkboxes = wrapper.findAll('.nc-checkbox')
+      const notifSection = wrapper.find('#pantry-notifications')
+      const checkboxes = notifSection.findAll('.nc-checkbox')
       expect(checkboxes).toHaveLength(6)
     })
 
@@ -242,7 +245,8 @@ describe('AccountSettingsDialog', () => {
       const wrapper = mountComponent({ open: true, houseId: 3 })
       await flushPromises()
 
-      const checkbox = wrapper.find('.nc-checkbox input')
+      const notifSection = wrapper.find('#pantry-notifications')
+      const checkbox = notifSection.find('.nc-checkbox input')
       await checkbox.setValue(false)
       await flushPromises()
 

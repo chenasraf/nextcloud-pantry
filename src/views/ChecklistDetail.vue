@@ -102,6 +102,7 @@
               :house-id="houseIdNum"
               :reorder-enabled="isCustomSort"
               :trash-mode="trashMode"
+              :tap-row-to-complete="tapRowToComplete"
               @toggle="handleToggle"
               @view="openView"
               @edit="startEdit"
@@ -261,6 +262,7 @@ import type { ItemInput } from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
 import type { ChecklistItemSort } from '@/api/prefs'
 import { getChecklistItemSort, setChecklistItemSort } from '@/api/prefs'
+import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 
 const props = defineProps<{ houseId: string; listId: string }>()
 
@@ -334,6 +336,8 @@ async function changeSort(value: ChecklistItemSort) {
 async function loadList() {
   list.value = await getList(houseIdNum.value, listIdNum.value)
 }
+
+const { tapRowToComplete } = useTapRowToComplete()
 
 onMounted(async () => {
   await loadSortPref()
