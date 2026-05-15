@@ -12,6 +12,7 @@ OC.L10N.register(
     "Description" : "Deskrivadur",
     "All" : "Pep tra",
     "Remove image" : "Lemel skeudenn",
+    "Delete permanently" : "Dilemel da viken",
     "Status" : "Statud",
     "Done" : "Graet",
     "Member" : "Ezel",

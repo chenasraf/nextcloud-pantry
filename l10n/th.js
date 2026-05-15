@@ -13,6 +13,8 @@ OC.L10N.register(
     "Description" : "คำอธิบาย",
     "All" : "ทั้งหมด",
     "Remove image" : "ลบรูปภาพ",
+    "Delete permanently" : "ลบแบบถาวร",
+    "Restore" : "คืนค่า",
     "Status" : "สถานะ",
     "Owner" : "เจ้าของ",
     "General" : "ทั่วไป",
@@ -31,6 +33,7 @@ OC.L10N.register(
     "Newest first" : "ใหม่ที่สุดก่อน",
     "Oldest first" : "เก่าที่สุดก่อน",
     "Custom" : "กำหนดเอง",
+    "Trash" : "ถังขยะ",
     "Upload" : "อัปโหลด",
     "New folder" : "โฟลเดอร์ใหม่"
 },

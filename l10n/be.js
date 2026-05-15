@@ -17,6 +17,7 @@ OC.L10N.register(
     "Category" : "Катэгорыя",
     "Description" : "Апісанне",
     "All" : "Усе",
+    "Delete permanently" : "Выдаліць назаўжды",
     "Status" : "Статус",
     "Done" : "Гатова",
     "Member" : "Удзельнік",

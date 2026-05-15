@@ -26,6 +26,8 @@ OC.L10N.register(
     "Image" : "Obrázek",
     "Upload image" : "Nahrát obrázek",
     "Remove image" : "Odebrat obrázek",
+    "Delete permanently" : "Nevratně smazat",
+    "Restore" : "Obnovit",
     "Status" : "Stav",
     "Done" : "Dokončeno",
     "Member" : "Člen",

@@ -9,6 +9,8 @@ OC.L10N.register(
     "Description" : "Description",
     "All" : "Tote",
     "Remove image" : "Remover imagine",
+    "Delete permanently" : "Deler permanentemente",
+    "Restore" : "Restaurar",
     "Done" : "Preste",
     "General" : "General",
     "Members" : "Membros",

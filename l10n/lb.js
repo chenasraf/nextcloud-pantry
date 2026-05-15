@@ -9,6 +9,8 @@ OC.L10N.register(
     "Add" : "Dobäisetzen",
     "Description" : "Beschreiwung",
     "All" : "All",
+    "Delete permanently" : "Permanent läschen",
+    "Restore" : "Zrécksetzen",
     "General" : "Allgemeng",
     "Save changes" : "Ännerunge späicheren",
     "Rename folder" : "Dossier ëmbenennen",

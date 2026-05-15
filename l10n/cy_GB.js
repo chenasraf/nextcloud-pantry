@@ -9,6 +9,8 @@ OC.L10N.register(
     "Category" : "Categori",
     "Description" : "Disgrifiad",
     "All" : "Popeth",
+    "Delete permanently" : "Dileu'n barhaol",
+    "Restore" : "Adfer",
     "Status" : "Statws",
     "Member" : "Aelod",
     "Owner" : "Perchennog",

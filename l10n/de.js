@@ -85,6 +85,8 @@ OC.L10N.register(
     "Item actions" : "Elementaktionen",
     "Move to list" : "Zur Liste verschieben",
     "Remove item" : "Element entfernen",
+    "Delete permanently" : "Endgültig löschen",
+    "Restore" : "Wiederherstellen",
     "Recurrence" : "Wiederholung",
     "Next recurrence" : "Nächste Wiederholung",
     "Status" : "Status",

@@ -21,6 +21,8 @@ OC.L10N.register(
     "Image" : "Billede",
     "Upload image" : "Upload billede",
     "Remove image" : "Fjern billede",
+    "Delete permanently" : "Slet permanent",
+    "Restore" : "Gendan",
     "Status" : "Status",
     "Done" : "Færdig",
     "Member" : "Medlem",

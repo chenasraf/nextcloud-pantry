@@ -13,6 +13,8 @@ OC.L10N.register(
     "Description" : "Skildring",
     "All" : "Alle",
     "Remove image" : "Fjern bilete",
+    "Delete permanently" : "Slett for godt",
+    "Restore" : "Gjenopprett",
     "General" : "Generelt",
     "Folder name" : "Katalognavn",
     "Rename" : "Endra namn",

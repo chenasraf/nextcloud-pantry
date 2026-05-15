@@ -12,6 +12,8 @@
     "Description" : "Descripción",
     "All" : "Todos",
     "Remove image" : "Eliminar imagen",
+    "Delete permanently" : "Borrar permanentemente",
+    "Restore" : "Restaurar",
     "Member" : "Miembro",
     "Owner" : "Dueño",
     "General" : "General",
@@ -32,6 +34,7 @@
     "Newest first" : "Más reciente primero",
     "Oldest first" : "Más antiguo primero",
     "Custom" : "Personalizado",
+    "Trash" : "Basura",
     "New note" : "Nota nueva",
     "Upload" : "Cargar",
     "New folder" : "Carpeta nueva "

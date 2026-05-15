@@ -23,6 +23,8 @@ OC.L10N.register(
     "All" : "Zote",
     "Image" : "Picha",
     "Upload image" : "Pakia picha",
+    "Delete permanently" : "Futa moja kwa moja",
+    "Restore" : "Hifadhi upya",
     "Status" : "Wadhifa/hadhi/hali",
     "Done" : "Imefanyika",
     "Member" : "Mwanachama",

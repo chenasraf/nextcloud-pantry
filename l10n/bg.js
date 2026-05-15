@@ -19,6 +19,7 @@ OC.L10N.register(
     "All" : "Всички",
     "Image" : "Изображение",
     "Remove image" : "Премахни изображението",
+    "Delete permanently" : "Изтрий завинаги",
     "Status" : "Състояние",
     "Done" : "Завършено",
     "Owner" : "Създател",

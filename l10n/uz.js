@@ -15,6 +15,8 @@ OC.L10N.register(
     "Category" : "Kategoriya",
     "Description" : "Tavsif",
     "All" : "Barchasi",
+    "Delete permanently" : "Butunlay o'chirish",
+    "Restore" : "Qayta tiklangan",
     "Status" : "Holat",
     "Done" : "Bajarildi",
     "Member" : "A'zo",

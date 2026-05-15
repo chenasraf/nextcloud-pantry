@@ -13,6 +13,8 @@ OC.L10N.register(
     "Description" : "Descripción",
     "All" : "Todos",
     "Remove image" : "Eliminar imagen",
+    "Delete permanently" : "Borrar permanentemente",
+    "Restore" : "Restaurar",
     "Member" : "Miembro",
     "General" : "General",
     "Save changes" : "Guardar cambios",
@@ -33,6 +35,7 @@ OC.L10N.register(
     "Newest first" : "Más reciente primero",
     "Oldest first" : "Más antiguo primero",
     "Custom" : "Personalizado",
+    "Trash" : "Basura",
     "Upload" : "Cargar",
     "New folder" : "Carpeta nueva"
 },

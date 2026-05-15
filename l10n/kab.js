@@ -14,6 +14,7 @@ OC.L10N.register(
     "Description" : "Aglam",
     "All" : "Akk",
     "Image" : "Tugna",
+    "Delete permanently" : "Kkes-it i lebda",
     "Status" : "Addad",
     "Done" : "Immed",
     "Owner" : "Bab-is",

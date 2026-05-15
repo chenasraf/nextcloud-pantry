@@ -8,6 +8,7 @@ OC.L10N.register(
     "Delete" : "Padam",
     "Edit" : "Sunting",
     "Description" : "Keterangan",
+    "Restore" : "Pulihkan",
     "Done" : "Selesai",
     "General" : "Umum",
     "Rename" : "Namakan",

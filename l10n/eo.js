@@ -14,6 +14,8 @@ OC.L10N.register(
     "Description" : "Priskribo",
     "All" : "Ĉiuj",
     "Remove image" : "Forigi bildon",
+    "Delete permanently" : "Forigi por ĉiam",
+    "Restore" : "Restaŭri",
     "Done" : "Farita",
     "Member" : "Membro",
     "Owner" : "Posedanto",
@@ -40,6 +42,7 @@ OC.L10N.register(
     "Newest first" : "Pli novaj unue",
     "Oldest first" : "Malpli novaj unue",
     "Custom" : "Propra",
+    "Trash" : "Rubujo",
     "Upload" : "Alŝuti",
     "New folder" : "Nova dosierujo"
 },

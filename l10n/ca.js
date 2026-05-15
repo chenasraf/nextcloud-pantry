@@ -22,6 +22,8 @@ OC.L10N.register(
     "Image" : "Imatge",
     "Upload image" : "Pujada d'una imatge",
     "Remove image" : "Suprimir imatge",
+    "Delete permanently" : "Suprimir permanentment",
+    "Restore" : "Restablir",
     "Done" : "Fet",
     "Owner" : "Propietat",
     "General" : "General",

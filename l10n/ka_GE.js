@@ -12,6 +12,8 @@ OC.L10N.register(
     "Description" : "აღწერილობა",
     "All" : "ყველა",
     "Remove image" : "სურათის წაშლა",
+    "Delete permanently" : "სამუდამოდ წაშლა",
+    "Restore" : "აღდგენა",
     "Status" : "სტაუტის",
     "Done" : "დასრულდა",
     "Member" : "წევრი",
@@ -36,6 +38,7 @@ OC.L10N.register(
     "Newest first" : "ჯერ ახალი",
     "Oldest first" : "ჯერ ძველი",
     "Custom" : "ინდივიდუალური",
+    "Trash" : "ნაგავი",
     "Upload" : "ატვირთვა",
     "New folder" : "ახალი დირექტორია",
     "Delete folder" : "ფოლდერის წაშლა"

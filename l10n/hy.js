@@ -8,6 +8,8 @@ OC.L10N.register(
     "Delete" : "հեռացնել",
     "Edit" : "մշակել",
     "Description" : "Նկարագրություն",
+    "Delete permanently" : "Ջնջել ընդմիշտ",
+    "Restore" : "Վերականգնել",
     "General" : "Ընդհանուր",
     "Folder name" : "Պանակի անուն",
     "Rename" : "Վերանվանել",

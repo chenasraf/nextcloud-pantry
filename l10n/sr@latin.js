@@ -9,6 +9,7 @@ OC.L10N.register(
     "Category" : "Kategorija",
     "Description" : "Opis",
     "All" : "Sve",
+    "Delete permanently" : "Obriši zauvek",
     "Done" : "Gotovo",
     "Owner" : "Vlasnik",
     "Folder name" : "Naziv fascikle",
