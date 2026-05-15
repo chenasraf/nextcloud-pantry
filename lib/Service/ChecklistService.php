@@ -12,6 +12,8 @@ use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Exception\NotFoundException;
+use OCA\Pantry\Latch\PantrySource;
+use OCA\Pantry\Latch\Payload\CategorySuggestionContext;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 class ChecklistService {
@@ -19,6 +21,7 @@ class ChecklistService {
 		private ChecklistMapper $listMapper,
 		private ChecklistItemMapper $itemMapper,
 		private RecurrenceService $recurrence,
+		private PantrySource $hooks,
 	) {
 	}
 
@@ -39,11 +42,19 @@ class ChecklistService {
 		}
 	}
 
-	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null): Checklist {
-		$name = trim($name);
+	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null, ?string $actorUid = null): Checklist {
+		$filtered = $this->hooks->filterListBeforeCreate($houseId, [
+			'name' => $name,
+			'description' => $description,
+			'icon' => $icon,
+		], $actorUid);
+		$data = $filtered->data;
+		$name = trim((string)($data['name'] ?? ''));
 		if ($name === '') {
 			throw new \InvalidArgumentException('List name cannot be empty');
 		}
+		$description = isset($data['description']) && is_string($data['description']) ? $data['description'] : null;
+		$icon = isset($data['icon']) && is_string($data['icon']) ? $data['icon'] : null;
 		$now = time();
 		$list = new Checklist();
 		$list->setHouseId($houseId);
@@ -57,11 +68,15 @@ class ChecklistService {
 		$list->setUpdatedAt($now);
 		/** @var Checklist $saved */
 		$saved = $this->listMapper->insert($list);
+		$this->hooks->dispatchListCreated($saved, $actorUid);
 		return $saved;
 	}
 
-	public function updateList(int $listId, array $patch): Checklist {
+	public function updateList(int $listId, array $patch, ?string $actorUid = null): Checklist {
 		$list = $this->getList($listId);
+		$previous = $list->jsonSerialize();
+		$filtered = $this->hooks->filterListBeforeUpdate($list->getHouseId(), $patch, $previous, $actorUid);
+		$patch = $filtered->data;
 		if (isset($patch['name'])) {
 			$name = trim((string)$patch['name']);
 			if ($name === '') {
@@ -84,13 +99,15 @@ class ChecklistService {
 		}
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
+		$this->hooks->dispatchListUpdated($list, $previous, $actorUid);
 		return $list;
 	}
 
-	public function deleteList(int $listId): void {
+	public function deleteList(int $listId, ?string $actorUid = null): void {
 		$list = $this->getList($listId);
 		$this->itemMapper->deleteByList((int)$list->getId());
 		$this->listMapper->delete($list);
+		$this->hooks->dispatchListDeleted($list, $actorUid);
 	}
 
 	// ----- Items -----
@@ -123,9 +140,12 @@ class ChecklistService {
 		}
 	}
 
-	public function addItem(int $listId, array $data): ChecklistItem {
+	public function addItem(int $listId, array $data, ?string $actorUid = null): ChecklistItem {
 		// Ensure the list exists.
-		$this->getList($listId);
+		$list = $this->getList($listId);
+
+		$filtered = $this->hooks->filterItemBeforeCreate($listId, $data, $actorUid);
+		$data = $filtered->data;
 
 		$name = trim((string)($data['name'] ?? ''));
 		if ($name === '') {
@@ -139,12 +159,24 @@ class ChecklistService {
 			$this->recurrence->validate($rrule);
 		}
 
+		// If no category was supplied, ask category.suggestions handlers.
+		$categoryId = $this->intOrNull($data['categoryId'] ?? null);
+		if ($categoryId === null) {
+			$categoryId = $this->hooks->collectCategorySuggestion(new CategorySuggestionContext(
+				$list->getHouseId(),
+				$listId,
+				$name,
+				$this->strOrNull($data['quantity'] ?? null),
+				$this->strOrNull($data['description'] ?? null),
+			));
+		}
+
 		$now = time();
 		$item = new ChecklistItem();
 		$item->setListId($listId);
 		$item->setName($name);
 		$item->setDescription($this->strOrNull($data['description'] ?? null));
-		$item->setCategoryId($this->intOrNull($data['categoryId'] ?? null));
+		$item->setCategoryId($categoryId);
 		$item->setQuantity($this->strOrNull($data['quantity'] ?? null));
 		$item->setDone(false);
 		$item->setDoneAt(null);
@@ -155,7 +187,7 @@ class ChecklistService {
 		$item->setDeleteOnDone(!empty($data['deleteOnDone']));
 		// For fixed-schedule items, compute the first due time immediately.
 		if ($rrule !== null && !$repeatFromCompletion) {
-			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
+			$item->setNextDueAt($this->resolveNextDueAt($item, $now));
 		} else {
 			$item->setNextDueAt(null);
 		}
@@ -165,11 +197,15 @@ class ChecklistService {
 		$item->setUpdatedAt($now);
 		/** @var ChecklistItem $saved */
 		$saved = $this->itemMapper->insert($item);
+		$this->hooks->dispatchItemCreated($saved, $actorUid);
 		return $saved;
 	}
 
-	public function updateItem(int $itemId, array $patch): ChecklistItem {
+	public function updateItem(int $itemId, array $patch, ?string $actorUid = null): ChecklistItem {
 		$item = $this->getItem($itemId);
+		$previous = $item->jsonSerialize();
+		$filtered = $this->hooks->filterItemBeforeUpdate($item->getListId(), $patch, $previous, $actorUid);
+		$patch = $filtered->data;
 
 		if (isset($patch['name'])) {
 			$name = trim((string)$patch['name']);
@@ -217,7 +253,7 @@ class ChecklistService {
 		// If already done and rrule or mode changed, recompute next due.
 		if ($item->getDone() && $item->getRrule() !== null
 			&& (array_key_exists('rrule', $patch) || array_key_exists('repeatFromCompletion', $patch))) {
-			$item->setNextDueAt($this->computeNextDueAt($item, time())?->getTimestamp());
+			$item->setNextDueAt($this->resolveNextDueAt($item, time()));
 		}
 		if (isset($patch['listId'])) {
 			$targetListId = (int)$patch['listId'];
@@ -231,6 +267,7 @@ class ChecklistService {
 
 		$item->setUpdatedAt(time());
 		$this->itemMapper->update($item);
+		$this->hooks->dispatchItemUpdated($item, $previous, $actorUid);
 		return $item;
 	}
 
@@ -264,8 +301,9 @@ class ChecklistService {
 	public function toggleItem(int $itemId, string $uid, ?int $now = null): ChecklistItem {
 		$item = $this->getItem($itemId);
 		$now ??= time();
+		$wasDone = $item->getDone();
 
-		if (!$item->getDone()) {
+		if (!$wasDone) {
 			$item->setDone(true);
 			$item->setDoneAt($now);
 			$item->setDoneBy($uid);
@@ -276,10 +314,11 @@ class ChecklistService {
 				$item->setDeletedAt($now);
 				$item->setUpdatedAt($now);
 				$this->itemMapper->update($item);
+				$this->hooks->dispatchItemCompleted($item, $uid);
 				return $item;
 			}
 			if ($item->getRrule() !== null) {
-				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
+				$item->setNextDueAt($this->resolveNextDueAt($item, $now));
 			}
 		} else {
 			$item->setDone(false);
@@ -289,6 +328,11 @@ class ChecklistService {
 		}
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
+		if (!$wasDone) {
+			$this->hooks->dispatchItemCompleted($item, $uid);
+		} else {
+			$this->hooks->dispatchItemReopened($item, $uid);
+		}
 		return $item;
 	}
 
@@ -313,6 +357,16 @@ class ChecklistService {
 	}
 
 	/**
+	 * Compute the next-due timestamp for an item and pass it through the
+	 * item.next-due-at filter so external schedulers can override Pantry's
+	 * default rrule computation.
+	 */
+	private function resolveNextDueAt(ChecklistItem $item, int $now): ?int {
+		$default = $this->computeNextDueAt($item, $now)?->getTimestamp();
+		return $this->hooks->filterItemNextDueAt($item, $default, $now);
+	}
+
+	/**
 	 * Reopen all recurring items whose next_due_at has passed.
 	 *
 	 * Called both lazily from listItems() and periodically by the background job.
@@ -333,10 +387,11 @@ class ChecklistService {
 			} else {
 				// Fixed schedule: immediately compute the next occurrence so the
 				// item keeps cycling even if the user never interacts with it.
-				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
+				$item->setNextDueAt($this->resolveNextDueAt($item, $now));
 			}
 			$item->setUpdatedAt($now);
 			$this->itemMapper->update($item);
+			$this->hooks->dispatchItemReopened($item, null);
 		}
 		return $items;
 	}
@@ -354,38 +409,41 @@ class ChecklistService {
 		$now ??= time();
 		$items = $this->itemMapper->findDueFixedScheduleUndone($now);
 		foreach ($items as $item) {
-			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
+			$item->setNextDueAt($this->resolveNextDueAt($item, $now));
 			$item->setUpdatedAt($now);
 			$this->itemMapper->update($item);
 		}
 		return $items;
 	}
 
-	public function deleteItem(int $itemId): void {
+	public function deleteItem(int $itemId, ?string $actorUid = null): void {
 		$item = $this->getItem($itemId);
 		$now = time();
 		$item->setDeletedAt($now);
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
+		$this->hooks->dispatchItemDeleted($item, $actorUid);
 	}
 
 	/**
 	 * Permanently remove an item, regardless of whether it is currently in
 	 * trash. Bypasses the soft-delete row and erases it from the table.
 	 */
-	public function permanentlyDeleteItem(int $itemId): void {
+	public function permanentlyDeleteItem(int $itemId, ?string $actorUid = null): void {
 		$item = $this->getItem($itemId, includeDeleted: true);
 		$this->itemMapper->delete($item);
+		$this->hooks->dispatchItemPermanentlyDeleted($item, $actorUid);
 	}
 
 	/**
 	 * Restore a soft-deleted item by clearing its deleted_at marker.
 	 */
-	public function restoreItem(int $itemId): ChecklistItem {
+	public function restoreItem(int $itemId, ?string $actorUid = null): ChecklistItem {
 		$item = $this->getItem($itemId, includeDeleted: true);
 		$item->setDeletedAt(null);
 		$item->setUpdatedAt(time());
 		$this->itemMapper->update($item);
+		$this->hooks->dispatchItemRestored($item, $actorUid);
 		return $item;
 	}
 
@@ -394,6 +452,79 @@ class ChecklistService {
 	 */
 	public function emptyTrash(int $listId): void {
 		$this->itemMapper->emptyTrashForList($listId);
+	}
+
+	/**
+	 * Serialize a single item for API responses, applying the
+	 * `item.render-name` filter and merging `extraActions` / `badges` from
+	 * the corresponding collect points.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function serializeItem(ChecklistItem $item, ?string $viewerUid = null): array {
+		$base = $item->jsonSerialize();
+		$base['name'] = $this->hooks->filterItemRenderName($item, $viewerUid);
+		$base['extraActions'] = $this->hooks->collectItemExtraActions($item, $viewerUid);
+		$base['badges'] = $this->hooks->collectItemBadges($item, $viewerUid);
+		$base['contributedBy'] = null;
+		return $base;
+	}
+
+	/**
+	 * Serialize a list-of-items response, merging contributed items from
+	 * the `list.contributed-items` collect point. Each contributed item is
+	 * tagged with `contributedBy` so the frontend can skip edit/delete UI
+	 * for rows not backed by a stored ChecklistItem.
+	 *
+	 * @param ChecklistItem[] $items
+	 * @return list<array<string,mixed>>
+	 */
+	public function serializeListItems(int $listId, int $houseId, array $items, ?string $viewerUid = null): array {
+		$out = [];
+		foreach ($items as $item) {
+			$out[] = $this->serializeItem($item, $viewerUid);
+		}
+		foreach ($this->hooks->collectContributedItems($listId, $houseId, $viewerUid) as $contrib) {
+			$row = $this->normalizeContributedItem($contrib, $listId);
+			$row['contributedBy'] = isset($contrib['contributedBy']) && is_string($contrib['contributedBy'])
+				? $contrib['contributedBy']
+				: 'external';
+			$out[] = $row;
+		}
+		return $out;
+	}
+
+	/**
+	 * Coerce a handler-supplied contributed item into the PantryListItem
+	 * shape so the response stays consistent.
+	 *
+	 * @param array<string,mixed> $contrib
+	 * @return array<string,mixed>
+	 */
+	private function normalizeContributedItem(array $contrib, int $defaultListId): array {
+		return [
+			'id' => isset($contrib['id']) && is_int($contrib['id']) ? $contrib['id'] : 0,
+			'listId' => isset($contrib['listId']) && is_int($contrib['listId']) ? $contrib['listId'] : $defaultListId,
+			'name' => isset($contrib['name']) && is_string($contrib['name']) ? $contrib['name'] : '',
+			'description' => isset($contrib['description']) && is_string($contrib['description']) ? $contrib['description'] : null,
+			'categoryId' => isset($contrib['categoryId']) && is_int($contrib['categoryId']) ? $contrib['categoryId'] : null,
+			'quantity' => isset($contrib['quantity']) && is_string($contrib['quantity']) ? $contrib['quantity'] : null,
+			'done' => !empty($contrib['done']),
+			'doneAt' => isset($contrib['doneAt']) && is_int($contrib['doneAt']) ? $contrib['doneAt'] : null,
+			'doneBy' => isset($contrib['doneBy']) && is_string($contrib['doneBy']) ? $contrib['doneBy'] : null,
+			'rrule' => isset($contrib['rrule']) && is_string($contrib['rrule']) ? $contrib['rrule'] : null,
+			'repeatFromCompletion' => !empty($contrib['repeatFromCompletion']),
+			'deleteOnDone' => !empty($contrib['deleteOnDone']),
+			'nextDueAt' => isset($contrib['nextDueAt']) && is_int($contrib['nextDueAt']) ? $contrib['nextDueAt'] : null,
+			'imageFileId' => isset($contrib['imageFileId']) && is_int($contrib['imageFileId']) ? $contrib['imageFileId'] : null,
+			'imageUploadedBy' => isset($contrib['imageUploadedBy']) && is_string($contrib['imageUploadedBy']) ? $contrib['imageUploadedBy'] : null,
+			'sortOrder' => isset($contrib['sortOrder']) && is_int($contrib['sortOrder']) ? $contrib['sortOrder'] : 0,
+			'createdAt' => isset($contrib['createdAt']) && is_int($contrib['createdAt']) ? $contrib['createdAt'] : 0,
+			'updatedAt' => isset($contrib['updatedAt']) && is_int($contrib['updatedAt']) ? $contrib['updatedAt'] : 0,
+			'deletedAt' => isset($contrib['deletedAt']) && is_int($contrib['deletedAt']) ? $contrib['deletedAt'] : null,
+			'extraActions' => isset($contrib['extraActions']) && is_array($contrib['extraActions']) ? $contrib['extraActions'] : [],
+			'badges' => isset($contrib['badges']) && is_array($contrib['badges']) ? $contrib['badges'] : [],
+		];
 	}
 
 	private function strOrNull(mixed $v): ?string {

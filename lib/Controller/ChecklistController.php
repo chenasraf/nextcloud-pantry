@@ -84,7 +84,7 @@ final class ChecklistController extends OCSController {
 	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $name, $description, $icon): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$list = $this->lists->createList($houseId, $name, $description, $icon);
+			$list = $this->lists->createList($houseId, $name, $description, $icon, $this->requireUid());
 			return new DataResponse($list->jsonSerialize());
 		});
 	}
@@ -144,7 +144,7 @@ final class ChecklistController extends OCSController {
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
 			}
-			$list = $this->lists->updateList($listId, $patch);
+			$list = $this->lists->updateList($listId, $patch, $this->requireUid());
 			return new DataResponse($list->jsonSerialize());
 		});
 	}
@@ -166,7 +166,7 @@ final class ChecklistController extends OCSController {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$existing = $this->lists->getList($listId);
 			$this->assertListInHouse($existing->getHouseId(), $houseId);
-			$this->lists->deleteList($listId);
+			$this->lists->deleteList($listId, $this->requireUid());
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -195,7 +195,7 @@ final class ChecklistController extends OCSController {
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$all = $this->lists->listItems($listId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			$items = $this->lists->serializeListItems($listId, $list->getHouseId(), $sliced, $this->requireUid());
 			return new DataResponse($items);
 		});
 	}
@@ -223,7 +223,7 @@ final class ChecklistController extends OCSController {
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$all = $this->lists->listDeletedItems($listId);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			$items = array_map(fn ($i) => $this->lists->serializeItem($i, $this->requireUid()), $sliced);
 			return new DataResponse($items);
 		});
 	}
@@ -267,6 +267,7 @@ final class ChecklistController extends OCSController {
 			if ($categoryId !== null) {
 				$this->categories->assertInHouse($categoryId, $houseId);
 			}
+			$uid = $this->requireUid();
 			$item = $this->lists->addItem($listId, [
 				'name' => $name,
 				'description' => $description,
@@ -276,9 +277,9 @@ final class ChecklistController extends OCSController {
 				'repeatFromCompletion' => $repeatFromCompletion,
 				'deleteOnDone' => $deleteOnDone,
 				'sortOrder' => $sortOrder ?? 0,
-			]);
-			$this->notifications->notifyItemAdded($houseId, $this->requireUid(), $item->getName(), $list->getName());
-			return new DataResponse($item->jsonSerialize());
+			], $uid);
+			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
+			return new DataResponse($this->lists->serializeItem($item, $uid));
 		});
 	}
 
@@ -366,8 +367,9 @@ final class ChecklistController extends OCSController {
 				$this->assertListInHouse($targetList->getHouseId(), $houseId);
 				$patch['listId'] = $targetListId;
 			}
-			$updated = $this->lists->updateItem($itemId, $patch);
-			return new DataResponse($updated->jsonSerialize());
+			$uid = $this->requireUid();
+			$updated = $this->lists->updateItem($itemId, $patch, $uid);
+			return new DataResponse($this->lists->serializeItem($updated, $uid));
 		});
 	}
 
@@ -398,7 +400,7 @@ final class ChecklistController extends OCSController {
 			if ($toggled->getDone()) {
 				$this->notifications->notifyItemDone($houseId, $uid, $toggled->getName(), $list->getName());
 			}
-			return new DataResponse($toggled->jsonSerialize());
+			return new DataResponse($this->lists->serializeItem($toggled, $uid));
 		});
 	}
 
@@ -424,7 +426,7 @@ final class ChecklistController extends OCSController {
 			if ($item->getListId() !== $listId) {
 				throw new NotFoundException('Item does not belong to this list');
 			}
-			$this->lists->deleteItem($itemId);
+			$this->lists->deleteItem($itemId, $this->requireUid());
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -451,8 +453,9 @@ final class ChecklistController extends OCSController {
 			if ($item->getListId() !== $listId) {
 				throw new NotFoundException('Item does not belong to this list');
 			}
-			$restored = $this->lists->restoreItem($itemId);
-			return new DataResponse($restored->jsonSerialize());
+			$uid = $this->requireUid();
+			$restored = $this->lists->restoreItem($itemId, $uid);
+			return new DataResponse($this->lists->serializeItem($restored, $uid));
 		});
 	}
 
@@ -480,7 +483,7 @@ final class ChecklistController extends OCSController {
 			if ($item->getListId() !== $listId) {
 				throw new NotFoundException('Item does not belong to this list');
 			}
-			$this->lists->permanentlyDeleteItem($itemId);
+			$this->lists->permanentlyDeleteItem($itemId, $this->requireUid());
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -572,8 +575,8 @@ final class ChecklistController extends OCSController {
 			$original = (string)($data['name'] ?? 'image.jpg');
 			$fileId = $this->images->uploadForUser($uid, $houseId, $original, $bytes);
 
-			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId, 'imageUploadedBy' => $uid]);
-			return new DataResponse($updated->jsonSerialize());
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId, 'imageUploadedBy' => $uid], $uid);
+			return new DataResponse($this->lists->serializeItem($updated, $uid));
 		});
 	}
 
@@ -600,8 +603,8 @@ final class ChecklistController extends OCSController {
 			if ($item->getListId() !== $listId) {
 				throw new NotFoundException('Item does not belong to this list');
 			}
-			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null, 'imageUploadedBy' => null]);
-			return new DataResponse($updated->jsonSerialize());
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null, 'imageUploadedBy' => null], $uid);
+			return new DataResponse($this->lists->serializeItem($updated, $uid));
 		});
 	}
 

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\AppInfo;
 
+use OCA\Pantry\Latch\PantryLatch;
 use OCA\Pantry\Notification\Notifier;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -29,6 +30,7 @@ class Application extends App implements IBootstrap {
 	}
 
 	public function boot(IBootContext $context): void {
+		$context->getServerContainer()->get(PantryLatch::class);
 	}
 
 	/**

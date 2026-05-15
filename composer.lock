@@ -4,8 +4,64 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fda0932386893b8cdb0f2a8c13dbc75e",
+    "content-hash": "54b87b0a09287376ee8e267409bd11b1",
     "packages": [
+        {
+            "name": "chenasraf/latch",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/chenasraf/latch.git",
+                "reference": "b153959e1bb26511b49ae04ee80d090e9c267819"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/chenasraf/latch/zipball/b153959e1bb26511b49ae04ee80d090e9c267819",
+                "reference": "b153959e1bb26511b49ae04ee80d090e9c267819",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "pestphp/pest": "^2.0",
+                "phpstan/phpstan": "^1.10"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Latch\\Integration\\Laravel\\LatchServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Latch\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Latch\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Chen Asraf"
+                }
+            ],
+            "description": "Cross-package hook/filter registry system for PHP",
+            "support": {
+                "source": "https://github.com/chenasraf/latch/tree/master",
+                "issues": "https://github.com/chenasraf/latch/issues"
+            },
+            "time": "2026-04-26T20:23:59+00:00"
+        },
         {
             "name": "sabre/uri",
             "version": "2.3.4",
@@ -2330,11 +2386,12 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": {
+        "chenasraf/latch": 20,
         "nextcloud/ocp": 20
     },
-    "prefer-stable": false,
+    "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2"

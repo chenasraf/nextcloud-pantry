@@ -271,6 +271,44 @@
                     }
                 }
             },
+            "ItemBadge": {
+                "type": "object",
+                "required": [
+                    "label"
+                ],
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "color": {
+                        "type": "string"
+                    },
+                    "icon": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ItemExtraAction": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "label"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "icon": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    }
+                }
+            },
             "List": {
                 "type": "object",
                 "required": [
@@ -337,7 +375,10 @@
                     "sortOrder",
                     "createdAt",
                     "updatedAt",
-                    "deletedAt"
+                    "deletedAt",
+                    "extraActions",
+                    "badges",
+                    "contributedBy"
                 ],
                 "properties": {
                     "id": {
@@ -415,6 +456,22 @@
                     "deletedAt": {
                         "type": "integer",
                         "format": "int64",
+                        "nullable": true
+                    },
+                    "extraActions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemExtraAction"
+                        }
+                    },
+                    "badges": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemBadge"
+                        }
+                    },
+                    "contributedBy": {
+                        "type": "string",
                         "nullable": true
                     }
                 }

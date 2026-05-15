@@ -158,7 +158,7 @@ final class HouseController extends OCSController {
 		return $this->runAction(function () use ($houseId): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireOwner($houseId, $uid);
-			$this->houseService->delete($houseId);
+			$this->houseService->delete($houseId, $uid);
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -209,7 +209,7 @@ final class HouseController extends OCSController {
 		return $this->runAction(function () use ($houseId, $userId, $role): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireAdmin($houseId, $uid);
-			$member = $this->houseService->addMember($houseId, $userId, $role);
+			$member = $this->houseService->addMember($houseId, $userId, $role, $uid);
 			return new DataResponse($this->serializeMember($member));
 		});
 	}
@@ -233,7 +233,7 @@ final class HouseController extends OCSController {
 		return $this->runAction(function () use ($houseId, $memberId, $role): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireAdmin($houseId, $uid);
-			$member = $this->houseService->updateMemberRole($houseId, $memberId, $role);
+			$member = $this->houseService->updateMemberRole($houseId, $memberId, $role, $uid);
 			return new DataResponse($this->serializeMember($member));
 		});
 	}
@@ -256,7 +256,7 @@ final class HouseController extends OCSController {
 		return $this->runAction(function () use ($houseId, $memberId): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireAdmin($houseId, $uid);
-			$this->houseService->removeMember($houseId, $memberId);
+			$this->houseService->removeMember($houseId, $memberId, $uid);
 			return new DataResponse(['success' => true]);
 		});
 	}

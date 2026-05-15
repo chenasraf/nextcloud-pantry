@@ -29,11 +29,20 @@
     "test:integration": "phpunit tests -c tests/phpunit.integration.xml --colors=always --fail-on-warning --fail-on-risky",
     "openapi": "generate-spec"
   },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/chenasraf/latch"
+    }
+  ],
   "require": {
     "php": "^8.2",
+    "chenasraf/latch": "dev-master",
     "sabre/vobject": "^4.5",
     "sabre/xml": "^2.1"
   },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
   "require-dev": {
     "bamarni/composer-bin-plugin": "^1.8",
     "nextcloud/ocp": "dev-stable32",

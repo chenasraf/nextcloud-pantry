@@ -19,6 +19,7 @@ use OCA\Pantry\Db\PhotoFolderMapper;
 use OCA\Pantry\Db\PhotoMapper;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
+use OCA\Pantry\Latch\PantrySource;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IDBConnection;
 use OCP\IUserManager;
@@ -35,6 +36,7 @@ class HouseService {
 		private NoteMapper $noteMapper,
 		private IDBConnection $db,
 		private IUserManager $userManager,
+		private PantrySource $hooks,
 	) {
 	}
 
@@ -80,6 +82,7 @@ class HouseService {
 			$this->memberMapper->insert($member);
 
 			$this->db->commit();
+			$this->hooks->dispatchHouseCreated($house, $uid);
 			return $house;
 		} catch (\Throwable $e) {
 			$this->db->rollBack();
@@ -105,7 +108,7 @@ class HouseService {
 		return $house;
 	}
 
-	public function delete(int $houseId): void {
+	public function delete(int $houseId, ?string $actorUid = null): void {
 		$house = $this->get($houseId);
 
 		$this->db->beginTransaction();
@@ -122,6 +125,7 @@ class HouseService {
 			$this->memberMapper->deleteByHouse($houseId);
 			$this->houseMapper->delete($house);
 			$this->db->commit();
+			$this->hooks->dispatchHouseDeleted($house, $actorUid);
 		} catch (\Throwable $e) {
 			$this->db->rollBack();
 			throw $e;
@@ -135,7 +139,7 @@ class HouseService {
 		return $this->memberMapper->findByHouse($houseId);
 	}
 
-	public function addMember(int $houseId, string $userId, string $role): HouseMember {
+	public function addMember(int $houseId, string $userId, string $role, ?string $actorUid = null): HouseMember {
 		$role = $this->normalizeAssignableRole($role);
 
 		if ($this->userManager->get($userId) === null) {
@@ -153,26 +157,30 @@ class HouseService {
 		$member->setJoinedAt(time());
 		/** @var HouseMember $saved */
 		$saved = $this->memberMapper->insert($member);
+		$this->hooks->dispatchHouseMemberAdded($saved, $actorUid);
 		return $saved;
 	}
 
-	public function updateMemberRole(int $houseId, int $memberId, string $role): HouseMember {
+	public function updateMemberRole(int $houseId, int $memberId, string $role, ?string $actorUid = null): HouseMember {
 		$role = $this->normalizeAssignableRole($role);
 		$member = $this->getMember($houseId, $memberId);
 		if ($member->isOwner()) {
 			throw new ForbiddenException('Cannot change the role of the house owner');
 		}
+		$previousRole = $member->getRole();
 		$member->setRole($role);
 		$this->memberMapper->update($member);
+		$this->hooks->dispatchHouseMemberRoleChanged($member, $previousRole, $actorUid);
 		return $member;
 	}
 
-	public function removeMember(int $houseId, int $memberId): void {
+	public function removeMember(int $houseId, int $memberId, ?string $actorUid = null): void {
 		$member = $this->getMember($houseId, $memberId);
 		if ($member->isOwner()) {
 			throw new ForbiddenException('Cannot remove the house owner');
 		}
 		$this->memberMapper->delete($member);
+		$this->hooks->dispatchHouseMemberRemoved($member, $actorUid);
 	}
 
 	public function leaveHouse(int $houseId, string $uid): void {
@@ -184,6 +192,7 @@ class HouseService {
 			throw new ForbiddenException('Owner cannot leave the house. Transfer ownership or delete the house.');
 		}
 		$this->memberMapper->delete($member);
+		$this->hooks->dispatchHouseMemberRemoved($member, $uid);
 	}
 
 	private function getMember(int $houseId, int $memberId): HouseMember {

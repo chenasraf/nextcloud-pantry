@@ -41,6 +41,19 @@ export interface Category {
   updatedAt: number
 }
 
+export interface ChecklistItemExtraAction {
+  id: string
+  label: string
+  icon?: string
+  url?: string
+}
+
+export interface ChecklistItemBadge {
+  label: string
+  color?: string
+  icon?: string
+}
+
 export interface ChecklistItem {
   id: number
   listId: number
@@ -61,6 +74,9 @@ export interface ChecklistItem {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  extraActions: ChecklistItemExtraAction[]
+  badges: ChecklistItemBadge[]
+  contributedBy: string | null
 }
 
 export interface Note {

@@ -7,10 +7,12 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Tests\Unit\Service;
 
+use Latch\Integration\Nextcloud\LatchBootstrap;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Latch\PantrySource;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\RecurrenceService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -24,13 +26,21 @@ class ChecklistServiceTest extends TestCase {
 	private ChecklistService $svc;
 
 	protected function setUp(): void {
+		// Isolate the Latch registry between tests so each PantrySource
+		// instantiation cleanly re-registers the source.
+		LatchBootstrap::reset();
 		$this->listMapper = $this->createMock(ChecklistMapper::class);
 		$this->itemMapper = $this->createMock(ChecklistItemMapper::class);
 		$this->svc = new ChecklistService(
 			$this->listMapper,
 			$this->itemMapper,
 			new RecurrenceService(),
+			new PantrySource(),
 		);
+	}
+
+	protected function tearDown(): void {
+		LatchBootstrap::reset();
 	}
 
 	private function makeItem(array $overrides = []): ChecklistItem {
