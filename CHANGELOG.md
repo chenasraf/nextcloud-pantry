@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.11.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.10.3...v0.11.0) (2026-05-15)
+
+
+### Features
+
+* **checklist:** add 'click row to complete' user pref ([cc6f91d](https://github.com/chenasraf/nextcloud-pantry/commit/cc6f91d112b4bd2f71a0a225a641e9cc2dc6dba3))
+* **checklist:** soft-delete checklist items ([d5765be](https://github.com/chenasraf/nextcloud-pantry/commit/d5765be160f94c2c1e2f64782ca75d6a7be37829))
+* **checklist:** trash mode toggle to view deleted items ([ec9c176](https://github.com/chenasraf/nextcloud-pantry/commit/ec9c1767bb4e16cdb963d5d54ac9689289c2f435))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([37000ae](https://github.com/chenasraf/nextcloud-pantry/commit/37000ae54f4ac82c6b108526f86a4a618033caf4))
+* **l10n:** Update translations from Transifex ([0d5f9d9](https://github.com/chenasraf/nextcloud-pantry/commit/0d5f9d998bba64c9aba20f7b4d72b8a5d329968c))
+
 ## [0.10.3](https://github.com/chenasraf/nextcloud-pantry/compare/v0.10.2...v0.10.3) (2026-05-08)
 
 
