@@ -10,6 +10,8 @@ OC.L10N.register(
     "Description" : "Açıqlanma",
     "All" : "Hamısı",
     "Remove image" : "Şəkili sil",
+    "Delete permanently" : "Həmişəlik sil",
+    "Restore" : "Geri qaytar",
     "Status" : "Status",
     "Done" : "Edildi",
     "General" : "Ümumi",
@@ -25,6 +27,7 @@ OC.L10N.register(
     "Weekly" : "Həftəlik",
     "Never" : "Heç vaxt",
     "Summary" : "Xülasə",
+    "Trash" : "Zibil",
     "Upload" : "Serverə yüklə",
     "New folder" : "Yeni qovluq",
     "Back" : "Geri"

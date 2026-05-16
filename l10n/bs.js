@@ -10,6 +10,7 @@ OC.L10N.register(
     "Description" : "Opis",
     "All" : "Sve",
     "Remove image" : "Ukloni sliku",
+    "Restore" : "Obnovi",
     "Member" : "Član",
     "Owner" : "Vlasnik",
     "Members" : "Članovi",

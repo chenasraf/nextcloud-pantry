@@ -18,6 +18,7 @@ OC.L10N.register(
     "Description" : "Апісанне",
     "All" : "Усе",
     "Delete permanently" : "Выдаліць назаўжды",
+    "Restore" : "Аднавіць",
     "Status" : "Статус",
     "Done" : "Гатова",
     "Member" : "Удзельнік",

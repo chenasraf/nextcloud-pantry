@@ -66,6 +66,7 @@ OC.L10N.register(
     "Oldest first" : "Nejstarší jako první",
     "Custom" : "Uživatelsky určený",
     "Sort order" : "Pořadí řazení",
+    "Trash" : "Koš",
     "New list" : "Nový seznam",
     "Checklists" : "Kontrolní seznamy",
     "No lists yet" : "Zatím žádné seznamy",

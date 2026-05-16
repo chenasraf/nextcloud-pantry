@@ -56,6 +56,7 @@ OC.L10N.register(
     "Oldest first" : "Ældste først",
     "Custom" : "Brugerdefineret",
     "Sort order" : "Sorteringsrækkefølge",
+    "Trash" : "Papirkurv",
     "New list" : "Ny liste",
     "Checklists" : "Tjeklister",
     "No lists yet" : "Endnu ingen lister",

@@ -12,6 +12,8 @@ OC.L10N.register(
     "Description" : "Beskrywing",
     "All" : "Alle",
     "Remove image" : "Verwyder beeld",
+    "Delete permanently" : "Skrap permanent",
+    "Restore" : "Herstel",
     "Account" : "Rekening",
     "days" : "dae",
     "weeks" : "weke",
@@ -22,6 +24,7 @@ OC.L10N.register(
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
     "Custom" : "Eie",
+    "Trash" : "Asblik",
     "Upload" : "Oplaai",
     "New folder" : "Nuwe gids"
 },

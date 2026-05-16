@@ -9,6 +9,7 @@ OC.L10N.register(
     "Add" : "যোগ কর",
     "Description" : "বিবরণ",
     "All" : "সবাই",
+    "Restore" : "ফিরিয়ে দাও",
     "Done" : "শেষ হলো",
     "General" : "সাধারণ",
     "Rename folder" : "ফোল্ডার পূনঃনামকরণ কর",

@@ -10,6 +10,8 @@
     "Description" : "Beskrywing",
     "All" : "Alle",
     "Remove image" : "Verwyder beeld",
+    "Delete permanently" : "Skrap permanent",
+    "Restore" : "Herstel",
     "Account" : "Rekening",
     "days" : "dae",
     "weeks" : "weke",
@@ -20,6 +22,7 @@
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
     "Custom" : "Eie",
+    "Trash" : "Asblik",
     "Upload" : "Oplaai",
     "New folder" : "Nuwe gids"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

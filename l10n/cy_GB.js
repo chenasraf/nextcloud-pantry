@@ -32,6 +32,7 @@ OC.L10N.register(
     "Newest first" : "Diweddaraf gyntaf",
     "Oldest first" : "Hynaf gyntaf",
     "Custom" : "Cyfaddas",
+    "Trash" : "Sbwriel",
     "New note" : "Nodyn newydd",
     "Upload" : "Llwytho i fyny",
     "New folder" : "Ffolder newydd",

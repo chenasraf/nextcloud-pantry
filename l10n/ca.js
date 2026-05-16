@@ -56,6 +56,7 @@ OC.L10N.register(
     "Oldest first" : "Més antic primer",
     "Custom" : "Personalitzat",
     "Sort order" : "Ordenació",
+    "Trash" : "Paperera",
     "New list" : "Llista nova",
     "Checklists" : "Llistes",
     "No lists yet" : "Encara no hi ha llistes",
