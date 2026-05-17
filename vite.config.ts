@@ -35,7 +35,6 @@ const nextcloudSharedList = [
 export default createAppConfig(
   {
     app: path.resolve(path.join('src', 'app.ts')),
-    settings: path.resolve(path.join('src', 'settings.ts')),
   },
   {
     emptyOutputDirectory: false,
