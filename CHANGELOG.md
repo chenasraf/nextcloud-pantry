@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.12.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.11.0...v0.12.0) (2026-05-17)
+
+
+### Features
+
+* **activity:** publish Nextcloud activity events for pantry actions ([1b53b45](https://github.com/chenasraf/nextcloud-pantry/commit/1b53b45b1f0a3a2d35a44b08f0d701e4f824c460))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([a08d58f](https://github.com/chenasraf/nextcloud-pantry/commit/a08d58fc15d07eec998e7711ef53e06728553d02))
+* **l10n:** Update translations from Transifex ([a4bcf1f](https://github.com/chenasraf/nextcloud-pantry/commit/a4bcf1f8832a988ac3485e37411028b56d5fd1f5))
+* **settings:** remove unused blank admin settings page ([a750544](https://github.com/chenasraf/nextcloud-pantry/commit/a75054485bbfb18586f9679ced2a4b994fb1b79d))
+
 ## [0.11.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.10.3...v0.11.0) (2026-05-15)
 
 
