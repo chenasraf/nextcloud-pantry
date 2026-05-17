@@ -7,12 +7,14 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Controller;
 
+use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
+use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\NotificationService;
 use OCP\AppFramework\Http;
@@ -37,8 +39,10 @@ final class ChecklistController extends OCSController {
 		private ChecklistService $lists,
 		private CategoryService $categories,
 		private HouseAuthService $auth,
+		private HouseService $houses,
 		private ImageService $images,
 		private NotificationService $notifications,
+		private ActivityPublisher $activity,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -83,8 +87,16 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $name, $description, $icon): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->createList($houseId, $name, $description, $icon);
+			$this->activity->publishListCreated(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$list->getId(),
+				$list->getName(),
+			);
 			return new DataResponse($list->jsonSerialize());
 		});
 	}
@@ -128,7 +140,8 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $sortOrder): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->lists->getList($listId);
 			$this->assertListInHouse($existing->getHouseId(), $houseId);
 			$patch = [];
@@ -145,6 +158,16 @@ final class ChecklistController extends OCSController {
 				$patch['sortOrder'] = $sortOrder;
 			}
 			$list = $this->lists->updateList($listId, $patch);
+			$contentChanged = $name !== null || $description !== null || $icon !== null;
+			if ($contentChanged) {
+				$this->activity->publishListUpdated(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					$listId,
+					$list->getName(),
+				);
+			}
 			return new DataResponse($list->jsonSerialize());
 		});
 	}
@@ -163,10 +186,19 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	public function deleteList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->lists->getList($listId);
 			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$listName = $existing->getName();
 			$this->lists->deleteList($listId);
+			$this->activity->publishListDeleted(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				$listId,
+				$listName,
+			);
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -277,7 +309,17 @@ final class ChecklistController extends OCSController {
 				'deleteOnDone' => $deleteOnDone,
 				'sortOrder' => $sortOrder ?? 0,
 			]);
-			$this->notifications->notifyItemAdded($houseId, $this->requireUid(), $item->getName(), $list->getName());
+			$uid = $this->requireUid();
+			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
+			$this->activity->publishItemAdded(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$item->getId(),
+				$item->getName(),
+				$listId,
+				$list->getName(),
+			);
 			return new DataResponse($item->jsonSerialize());
 		});
 	}
@@ -321,7 +363,8 @@ final class ChecklistController extends OCSController {
 		?int $targetListId = null,
 	): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId);
 			$list = $this->lists->getList($item->getListId());
 			$this->assertListInHouse($list->getHouseId(), $houseId);
@@ -361,12 +404,38 @@ final class ChecklistController extends OCSController {
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
 			}
+			$targetList = null;
 			if ($targetListId !== null) {
 				$targetList = $this->lists->getList($targetListId);
 				$this->assertListInHouse($targetList->getHouseId(), $houseId);
 				$patch['listId'] = $targetListId;
 			}
 			$updated = $this->lists->updateItem($itemId, $patch);
+
+			$houseName = $this->houses->get($houseId)->getName();
+			if ($targetList !== null && $targetList->getId() !== $list->getId()) {
+				$this->activity->publishItemMoved(
+					$houseId,
+					$houseName,
+					$uid,
+					$itemId,
+					$updated->getName(),
+					(int)$list->getId(),
+					$list->getName(),
+					(int)$targetList->getId(),
+					$targetList->getName(),
+				);
+			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null) {
+				$this->activity->publishItemUpdated(
+					$houseId,
+					$houseName,
+					$uid,
+					$itemId,
+					$updated->getName(),
+					(int)$list->getId(),
+					$list->getName(),
+				);
+			}
 			return new DataResponse($updated->jsonSerialize());
 		});
 	}
@@ -395,8 +464,28 @@ final class ChecklistController extends OCSController {
 				throw new NotFoundException('Item does not belong to this list');
 			}
 			$toggled = $this->lists->toggleItem($itemId, $uid);
+			$houseName = $this->houses->get($houseId)->getName();
 			if ($toggled->getDone()) {
 				$this->notifications->notifyItemDone($houseId, $uid, $toggled->getName(), $list->getName());
+				$this->activity->publishItemDone(
+					$houseId,
+					$houseName,
+					$uid,
+					$itemId,
+					$toggled->getName(),
+					(int)$list->getId(),
+					$list->getName(),
+				);
+			} else {
+				$this->activity->publishItemReopened(
+					$houseId,
+					$houseName,
+					$uid,
+					$itemId,
+					$toggled->getName(),
+					(int)$list->getId(),
+					$list->getName(),
+				);
 			}
 			return new DataResponse($toggled->jsonSerialize());
 		});
@@ -417,14 +506,25 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	public function deleteItem(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId);
 			$list = $this->lists->getList($item->getListId());
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			if ($item->getListId() !== $listId) {
 				throw new NotFoundException('Item does not belong to this list');
 			}
+			$itemName = $item->getName();
 			$this->lists->deleteItem($itemId);
+			$this->activity->publishItemDeleted(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				$itemId,
+				$itemName,
+				(int)$list->getId(),
+				$list->getName(),
+			);
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -444,7 +544,8 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	public function restoreItem(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId, includeDeleted: true);
 			$list = $this->lists->getList($item->getListId());
 			$this->assertListInHouse($list->getHouseId(), $houseId);
@@ -452,6 +553,15 @@ final class ChecklistController extends OCSController {
 				throw new NotFoundException('Item does not belong to this list');
 			}
 			$restored = $this->lists->restoreItem($itemId);
+			$this->activity->publishItemRestored(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				$itemId,
+				$restored->getName(),
+				(int)$list->getId(),
+				$list->getName(),
+			);
 			return new DataResponse($restored->jsonSerialize());
 		});
 	}

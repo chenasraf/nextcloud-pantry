@@ -43,6 +43,14 @@ All data is scoped to a house; members only see the houses they belong to.
 	<background-jobs>
 		<job>OCA\Pantry\BackgroundJob\ReopenRecurringItemsJob</job>
 	</background-jobs>
+	<activity>
+		<settings>
+			<setting>OCA\Pantry\Activity\Setting</setting>
+		</settings>
+		<providers>
+			<provider>OCA\Pantry\Activity\Provider</provider>
+		</providers>
+	</activity>
 	<navigations>
 		<navigation role="all">
 			<name>Pantry</name>

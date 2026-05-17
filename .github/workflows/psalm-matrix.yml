@@ -19,3 +19,5 @@ jobs:
   psalm:
     uses: chenasraf/workflows/.github/workflows/nextcloud-psalm.yml@nextcloud-latest
     secrets: inherit
+    with:
+      php-versions-min: "8.2"

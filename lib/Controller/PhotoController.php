@@ -7,10 +7,12 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Controller;
 
+use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
+use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PhotoService;
@@ -35,8 +37,10 @@ final class PhotoController extends OCSController {
 		IRequest $request,
 		private PhotoService $photos,
 		private HouseAuthService $auth,
+		private HouseService $houses,
 		private ImageService $images,
 		private NotificationService $notifications,
+		private ActivityPublisher $activity,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -81,8 +85,16 @@ final class PhotoController extends OCSController {
 	#[NoAdminRequired]
 	public function createFolder(int $houseId, string $name): DataResponse {
 		return $this->runAction(function () use ($houseId, $name): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$folder = $this->photos->createFolder($houseId, $name);
+			$this->activity->publishFolderCreated(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$folder->getId(),
+				$folder->getName(),
+			);
 			return new DataResponse($folder->jsonSerialize());
 		});
 	}
@@ -103,9 +115,11 @@ final class PhotoController extends OCSController {
 	#[NoAdminRequired]
 	public function updateFolder(int $houseId, int $folderId, ?string $name = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $folderId, $name, $sortOrder): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getFolder($folderId);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Folder');
+			$oldName = $existing->getName();
 			$patch = [];
 			if ($name !== null) {
 				$patch['name'] = $name;
@@ -114,6 +128,16 @@ final class PhotoController extends OCSController {
 				$patch['sortOrder'] = $sortOrder;
 			}
 			$folder = $this->photos->updateFolder($folderId, $patch);
+			if ($name !== null && $folder->getName() !== $oldName) {
+				$this->activity->publishFolderRenamed(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					$folderId,
+					$oldName,
+					$folder->getName(),
+				);
+			}
 			return new DataResponse($folder->jsonSerialize());
 		});
 	}
@@ -140,7 +164,15 @@ final class PhotoController extends OCSController {
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getFolder($folderId);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Folder');
+			$folderName = $existing->getName();
 			$this->photos->deleteFolder($folderId, $deleteContents, $uid);
+			$this->activity->publishFolderDeleted(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				$folderId,
+				$folderName,
+			);
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -236,6 +268,23 @@ final class PhotoController extends OCSController {
 
 			$photo = $this->photos->addPhoto($houseId, $uid, $fileId, $folderId, $caption);
 			$this->notifications->notifyPhotoUploaded($houseId, $uid);
+			$folderName = null;
+			if ($folderId !== null) {
+				try {
+					$folderName = $this->photos->getFolder($folderId)->getName();
+				} catch (\Throwable) {
+					// best-effort
+				}
+			}
+			$this->activity->publishPhotoUploaded(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$photo->getId(),
+				$photo->getCaption(),
+				$folderId,
+				$folderName,
+			);
 			return new DataResponse($photo->jsonSerialize());
 		});
 	}
@@ -257,9 +306,11 @@ final class PhotoController extends OCSController {
 	#[NoAdminRequired]
 	public function updatePhoto(int $houseId, int $photoId, ?string $caption = null, ?int $folderId = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId, $caption, $folderId, $sortOrder): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getPhoto($photoId);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
+			$previousFolderId = $existing->getFolderId();
 
 			$patch = [];
 			if ($caption !== null) {
@@ -276,6 +327,20 @@ final class PhotoController extends OCSController {
 				$patch['sortOrder'] = $sortOrder;
 			}
 			$photo = $this->photos->updatePhoto($photoId, $patch);
+
+			if ($folderId !== null && $photo->getFolderId() !== $previousFolderId) {
+				$this->activity->publishPhotoMoved(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					$photoId,
+					$photo->getCaption(),
+					$previousFolderId,
+					$this->safeFolderName($previousFolderId),
+					$photo->getFolderId(),
+					$this->safeFolderName($photo->getFolderId()),
+				);
+			}
 			return new DataResponse($photo->jsonSerialize());
 		});
 	}
@@ -298,7 +363,19 @@ final class PhotoController extends OCSController {
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getPhoto($photoId);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
+			$caption = $existing->getCaption();
+			$folderId = $existing->getFolderId();
+			$folderName = $this->safeFolderName($folderId);
 			$this->photos->deletePhoto($photoId, $uid);
+			$this->activity->publishPhotoDeleted(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				$photoId,
+				$caption,
+				$folderId,
+				$folderName,
+			);
 			return new DataResponse(['success' => true]);
 		});
 	}
@@ -334,6 +411,17 @@ final class PhotoController extends OCSController {
 	private function assertInHouse(int $entityHouseId, int $routeHouseId, string $label): void {
 		if ($entityHouseId !== $routeHouseId) {
 			throw new NotFoundException($label . ' does not belong to this house');
+		}
+	}
+
+	private function safeFolderName(?int $folderId): ?string {
+		if ($folderId === null) {
+			return null;
+		}
+		try {
+			return $this->photos->getFolder($folderId)->getName();
+		} catch (\Throwable) {
+			return null;
 		}
 	}
 }

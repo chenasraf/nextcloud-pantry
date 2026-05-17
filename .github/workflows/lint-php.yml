@@ -18,3 +18,5 @@ jobs:
   lint-php:
     uses: chenasraf/workflows/.github/workflows/nextcloud-lint-php.yml@nextcloud-latest
     secrets: inherit
+    with:
+      php-versions-min: "8.2"

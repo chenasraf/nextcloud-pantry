@@ -7,10 +7,12 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Controller;
 
+use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
+use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\NoteService;
 use OCA\Pantry\Service\NotificationService;
 use OCP\AppFramework\Http;
@@ -33,7 +35,9 @@ final class NoteController extends OCSController {
 		IRequest $request,
 		private NoteService $notes,
 		private HouseAuthService $auth,
+		private HouseService $houses,
 		private NotificationService $notifications,
+		private ActivityPublisher $activity,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -82,6 +86,13 @@ final class NoteController extends OCSController {
 			$this->auth->requireMember($houseId, $uid);
 			$note = $this->notes->createNote($houseId, $uid, $title, $content, $color);
 			$this->notifications->notifyNoteCreated($houseId, $uid, (int)$note->getId(), $note->getTitle());
+			$this->activity->publishNoteCreated(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$note->getId(),
+				$note->getTitle(),
+			);
 			return new DataResponse($note->jsonSerialize());
 		});
 	}
@@ -125,6 +136,13 @@ final class NoteController extends OCSController {
 			// Only notify for content/title changes, not color/sort-order-only changes
 			if ($title !== null || $content !== null) {
 				$this->notifications->notifyNoteEdited($houseId, $uid, (int)$note->getId(), $note->getTitle());
+				$this->activity->publishNoteEdited(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					(int)$note->getId(),
+					$note->getTitle(),
+				);
 			}
 			return new DataResponse($note->jsonSerialize());
 		});
@@ -144,10 +162,19 @@ final class NoteController extends OCSController {
 	#[NoAdminRequired]
 	public function deleteNote(int $houseId, int $noteId): DataResponse {
 		return $this->runAction(function () use ($houseId, $noteId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->notes->getNote($noteId);
 			$this->assertInHouse($existing->getHouseId(), $houseId);
+			$noteTitle = $existing->getTitle();
 			$this->notes->deleteNote($noteId);
+			$this->activity->publishNoteDeleted(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				$noteId,
+				$noteTitle,
+			);
 			return new DataResponse(['success' => true]);
 		});
 	}
