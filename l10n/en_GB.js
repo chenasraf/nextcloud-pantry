@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "_%n item_::_%n items_" : ["%n item","%n items"],
     "Pantry" : "Pantry",
     "{user} uploaded a photo in {house}" : "{user} uploaded a photo in {house}",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["{user} uploaded %n photo in {house}","{user} uploaded %n photos in {house}"],
@@ -12,13 +13,10 @@ OC.L10N.register(
     "_{user} added %n item to {list} in {house}_::_{user} added %n items to {list} in {house}_" : ["{user} added %n item to {list} in {house}","{user} added %n items to {list} in {house}"],
     "{user} completed \"{item}\" on {list} in {house}" : "{user} completed \"{item}\" on {list} in {house}",
     "_{user} completed %n item on {list} in {house}_::_{user} completed %n items on {list} in {house}_" : ["{user} completed %n item on {list} in {house}","{user} completed %n items on {list} in {house}"],
-    "_%n item_::_%n items_" : ["%n item","%n items"],
     "{items} still undone on {list} in {house}" : "{items} still undone on {list} in {house}",
     "{items} back on {list} in {house}" : "{items} back on {list} in {house}",
     "Manage your household: shared checklists, photo boards, and notes." : "Manage your household: shared checklists, photo boards, and notes.",
     "Pantry helps households stay organized in Nextcloud.\n\n- **Houses** group members and their shared data. A person can belong to multiple houses and switch between them freely.\n- **Checklists** support recurring items (e.g. milk every week) that automatically reappear when due. Share lists with the whole household so everyone knows what to pick up.\n- **Photo boards** let you keep shared reference photos organized in folders — the right brand of dog food, a favorite recipe card, a product label, and so on.\n- **Notes wall** gives the household a lightweight shared space for reminders, pinned messages, and quick notes with customizable colors.\n- **Notifications** keep everyone in the loop when photos are uploaded or notes are added or edited.\n\nAll data is scoped to a house; members only see the houses they belong to.\n\n**Mobile apps:** [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry) | [iOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)" : "Pantry helps households stay organised in Nextcloud.\n\n- **Houses** group members and their shared data. A person can belong to multiple houses and switch between them freely.\n- **Checklists** support recurring items (e.g. milk every week) that automatically reappear when due. Share lists with the whole household so everyone knows what to pick up.\n- **Photo boards** let you keep shared reference photos organised in folders — the right brand of dog food, a favourite recipe card, a product label, and so on.\n- **Notes wall** gives the household a lightweight shared space for reminders, pinned messages, and quick notes with customisable colours.\n- **Notifications** keep everyone in the loop when photos are uploaded, or notes are added or edited.\n\nAll data is scoped to a house; members only see the houses they belong to.\n\n**Mobile apps:** [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry) | [iOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)",
-    "About:" : "About:",
-    "Pantry is a household organizer. Open the Pantry app from the top navigation to manage your houses, checklists, photos and notes." : "Pantry is a household organiser. Open the Pantry app from the top navigation to manage your houses, checklists, photos and notes.",
     "Account settings" : "Account settings",
     "Images" : "Images",
     "Pick the base folder where Pantry will store uploaded images. Checklist item images go into a \"Checklist items\" subfolder inside it, created automatically." : "Pick the base folder where Pantry will store uploaded images. Checklist item images go into a \"Checklist items\" subfolder inside it, created automatically.",
