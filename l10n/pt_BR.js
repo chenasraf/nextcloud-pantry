@@ -1,7 +1,17 @@
 OC.L10N.register(
     "pantry",
     {
+    "You created list {list} in {house}" : "Você criou a lista {list} em {house}",
+    "{author} created list {list} in {house}" : "{author} criou a lista {list} em {house}",
+    "You updated list {list} in {house}" : "Você atualizou a lista {list} em {house}",
+    "{author} updated list {list} in {house}" : "{author} atualizou a lista {list} em {house}",
+    "You deleted list {list} in {house}" : "Você excluiu a lista {list} em {house}",
+    "{author} deleted list {list} in {house}" : "{author} excluiu a lista {list} em {house}",
+    "You added {item} to {list} in {house}" : "Você adicionou {item} a {list} em {house}",
+    "{author} added {item} to {list} in {house}" : "{author} adicionou {item} a {list} em {house}",
     "_%n item_::_%n items_" : ["%n item","%n de itens","%n itens"],
+    "You deleted a photo in {house}" : "Você excluiu uma foto em {house}",
+    "{author} deleted a photo in {house}" : "{author} excluiu uma foto em {house}",
     "Pantry" : "Despensa",
     "{user} uploaded a photo in {house}" : "{user} enviou uma foto em {house}",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["{user} enviou %n foto em {house}","{user} enviou %n de fotos em {house}","{user} enviou %n fotos em {house}"],
