@@ -8,6 +8,8 @@
     "Saving …" : "Kaydediliyor …",
     "Saved." : "Kaydedildi.",
     "Notifications" : "Bildirimler",
+    "New notes" : "Yeni notlar",
+    "New category" : "Yeni kategori",
     "Edit category" : "Bölümü düzenle",
     "Name" : "Ad",
     "Cancel" : "İptal",
@@ -16,6 +18,7 @@
     "Delete" : "Sil",
     "Edit" : "Düzenle",
     "Delete category" : "Bölümü sil",
+    "Create new category …" : "Yeni kategori oluştur…",
     "Add" : "Ekle",
     "Quantity" : "Adet",
     "Category" : "Bölüm",
@@ -42,7 +45,7 @@
     "Preview" : "Ön izleme",
     "Untitled note" : "Başlıksız not",
     "Rename folder" : "Klasörü yeniden adlandır",
-    "Create folder" : "Klasör ekle",
+    "Create folder" : "Klasör oluştur",
     "Folder name" : "Klasör adı",
     "Rename" : "Yeniden adlandır",
     "Close" : "Kapat",
@@ -65,9 +68,10 @@
     "Custom" : "Özel",
     "Sort order" : "Sıralama",
     "Trash" : "Çöp kutusu",
-    "New list" : "Liste ekle",
+    "New list" : "Yeni liste",
     "Checklists" : "Denetim listeleri",
     "No lists yet" : "Henüz bir liste yok",
+    "New note" : "Yeni not",
     "No notes yet" : "Henüz not yok",
     "Clear selection" : "Seçimi temizle",
     "Upload" : "Yükle",
@@ -76,6 +80,7 @@
     "Caption" : "Alt yazı",
     "Add a description" : "Bir açıklama ekleyin",
     "Delete folder" : "Klasörü sil",
-    "Move to folder" : "Klasöre taşı"
+    "Move to folder" : "Klasöre taşı",
+    "New house …" : "Yeni ev…"
 },"pluralForm" :"nplurals=2; plural=(n > 1);"
 }

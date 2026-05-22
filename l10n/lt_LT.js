@@ -53,6 +53,7 @@ OC.L10N.register(
     "Ends" : "Pasibaigia",
     "Never" : "Niekada",
     "After" : "Po",
+    "occurrences" : "paplitimas",
     "On date" : "data",
     "Summary" : "Santrauka",
     "Newest first" : "Naujausi pirmi",

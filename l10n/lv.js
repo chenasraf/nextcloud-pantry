@@ -43,7 +43,7 @@ OC.L10N.register(
     "Newest first" : "Jaunākie pirms",
     "Oldest first" : "Vecākie pirms",
     "Custom" : "Pielāgots",
-    "Trash" : "Miskaste",
+    "Trash" : "Atkritne",
     "Upload" : "Augšupielādēt",
     "New folder" : "Jauna mape",
     "Add a description" : "Pievienot aprakstu",
