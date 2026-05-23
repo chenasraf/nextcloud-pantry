@@ -50,6 +50,7 @@ OC.L10N.register(
     "Daily" : "Kas dieną",
     "Weekly" : "Kas savaitę",
     "Monthly" : "Kas mėnesį",
+    "Unit" : "Vienetas",
     "Ends" : "Pasibaigia",
     "Never" : "Niekada",
     "After" : "Po",
