@@ -248,6 +248,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
+import { showUndo, showError } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -294,6 +295,7 @@ const {
   add,
   update,
   toggle,
+  undoToggle,
   reorderItems,
   remove,
   removePermanently,
@@ -632,7 +634,21 @@ async function handleAdd(input: ItemInput) {
 // ----- Toggle / Remove -----
 
 async function handleToggle(itemId: number) {
+  const prev = items.value.find((i) => i.id === itemId)
+  if (!prev) return
+  const snapshot = { ...prev }
   await toggle(itemId)
+  // Only offer undo when an item is marked done (undone → done).
+  if (snapshot.done) return
+  showUndo(
+    strings.itemMarkedDone,
+    () => {
+      void undoToggle(snapshot).catch(() => {
+        showError(strings.restoreFailed)
+      })
+    },
+    { timeout: 6000 },
+  )
 }
 
 async function handleRemove(itemId: number) {
@@ -745,6 +761,8 @@ const strings = {
     'All deleted items in this list will be permanently removed. This cannot be undone.',
   ),
   cancel: t('pantry', 'Cancel'),
+  itemMarkedDone: t('pantry', 'Item marked as done'),
+  restoreFailed: t('pantry', 'Failed to restore item.'),
 }
 </script>
 

@@ -140,6 +140,23 @@ export function useChecklistItems(houseId: number, listId: number) {
     }
   }
 
+  async function undoToggle(prevItem: ChecklistItem): Promise<void> {
+    // Reverses a just-completed toggle (undone → done).
+    // If deleteOnDone was true, the backend soft-deleted the item — restore it
+    // first so the subsequent toggle has something to act on. The item comes
+    // back still marked done, so we toggle once more to flip it to undone.
+    const stillPresent = items.value.some((i) => i.id === prevItem.id)
+    if (!stillPresent) {
+      await api.restoreItem(houseId, listId, prevItem.id)
+    }
+    const updated = await api.toggleItem(houseId, listId, prevItem.id)
+    if (stillPresent) {
+      items.value = items.value.map((i) => (i.id === prevItem.id ? updated : i))
+    } else {
+      items.value = [...items.value, updated]
+    }
+  }
+
   async function reorderItems(reorderEntries: { id: number; sortOrder: number }[]): Promise<void> {
     const map = new Map(reorderEntries.map((i) => [i.id, i.sortOrder]))
     items.value = items.value
@@ -192,6 +209,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     add,
     update,
     toggle,
+    undoToggle,
     reorderItems,
     remove,
     removePermanently,
