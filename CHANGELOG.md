@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.13.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.12.0...v0.13.0) (2026-05-25)
+
+
+### Features
+
+* **checklists:** category divider/spacing user preference ([2c1ebcf](https://github.com/chenasraf/nextcloud-pantry/commit/2c1ebcf308fdd8cfd1c1d4e2ecbb7c4960dd606e))
+* **checklists:** undo toast when marking item done ([716bfbf](https://github.com/chenasraf/nextcloud-pantry/commit/716bfbfcc453cc058845a1949e8bcd5fb9bcb8e0))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([c4b2650](https://github.com/chenasraf/nextcloud-pantry/commit/c4b2650be1963c5061db64918170706b0de816db))
+* **l10n:** Update translations from Transifex ([02e49b7](https://github.com/chenasraf/nextcloud-pantry/commit/02e49b722f6471327599938421a46e9d2a61fb51))
+* **l10n:** Update translations from Transifex ([2f433a8](https://github.com/chenasraf/nextcloud-pantry/commit/2f433a8facddd393dab759cde15757f1e1846aa1))
+* **l10n:** Update translations from Transifex ([682a807](https://github.com/chenasraf/nextcloud-pantry/commit/682a80759e5fa7996d6d5e1b00e4c0c336b572ab))
+* **l10n:** Update translations from Transifex ([90f03ca](https://github.com/chenasraf/nextcloud-pantry/commit/90f03caa0d0b0c895bcffd6fc307b19d7728ca58))
+* **l10n:** Update translations from Transifex ([9cf9087](https://github.com/chenasraf/nextcloud-pantry/commit/9cf9087d02418ac11626e8d86444800a28bbd256))
+* **l10n:** Update translations from Transifex ([e1ab564](https://github.com/chenasraf/nextcloud-pantry/commit/e1ab56498111e03c0be390e382f98e5978d7d2d9))
+
 ## [0.12.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.11.0...v0.12.0) (2026-05-17)
 
 
