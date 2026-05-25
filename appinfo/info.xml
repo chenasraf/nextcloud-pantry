@@ -18,7 +18,9 @@ Pantry helps households stay organized in Nextcloud.
 
 All data is scoped to a house; members only see the houses they belong to.
 
-**Mobile apps:** [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry) | [iOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
+Pantry also has companion apps for mobile and desktop that let you manage your lists, photos and notes on the go and keep everything in sync with your Nextcloud instance.
+
+**Companion apps:** [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry) | [iOS/macOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
 ]]></description>
 	<version>0.12.0</version>
 	<licence>agpl</licence>

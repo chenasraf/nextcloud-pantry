@@ -35,10 +35,13 @@ place.
   content.
 - **Modern UI**: Built with Vue 3 and Nextcloud Vue components.
 
-## Mobile Apps
+## Companion Apps
+
+Pantry also has companion apps for mobile and desktop that let you manage your lists, photos and
+notes on the go and keep everything in sync with your Nextcloud instance.
 
 - [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry)
-- [iOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
+- [iOS/macOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
 
 ## Installation
 
