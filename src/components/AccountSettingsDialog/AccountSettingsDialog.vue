@@ -43,6 +43,18 @@
           {{ strings.tapRowToCompleteHint }}
         </p>
       </div>
+      <div class="account-settings__field">
+        <label class="account-settings__label">{{ strings.categorySpacingLabel }}</label>
+        <p class="account-settings__hint">{{ strings.categorySpacingHint }}</p>
+        <NcSelect
+          :model-value="selectedCategorySpacingOption"
+          :options="categorySpacingOptions"
+          :clearable="false"
+          :searchable="false"
+          input-label=""
+          @update:model-value="updateCategorySpacing"
+        />
+      </div>
     </NcAppSettingsSection>
 
     <NcAppSettingsSection id="pantry-notifications" :name="strings.notificationsSection">
@@ -97,7 +109,9 @@ import NcAppSettingsSection from '@nextcloud/vue/components/NcAppSettingsSection
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
+import { computed } from 'vue'
 import FolderIcon from '@icons/Folder.vue'
 import {
   getImageFolder,
@@ -105,8 +119,10 @@ import {
   getNotificationPrefs,
   setNotificationPrefs,
   type NotificationPrefs,
+  type CategorySpacing,
 } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
+import { useCategorySpacing } from '@/composables/useCategorySpacing'
 
 const props = defineProps<{ open: boolean; houseId: number | null }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -214,6 +230,34 @@ async function updateTapRowToComplete(value: boolean) {
   }
 }
 
+const { categorySpacing, set: setCategorySpacingPref } = useCategorySpacing()
+
+interface CategorySpacingOption {
+  value: CategorySpacing
+  label: string
+}
+
+const categorySpacingOptions = computed<CategorySpacingOption[]>(() => [
+  { value: 'disabled', label: strings.categorySpacingDisabled },
+  { value: 'divider', label: strings.categorySpacingDivider },
+  { value: 'spacing', label: strings.categorySpacingSpacing },
+])
+
+const selectedCategorySpacingOption = computed<CategorySpacingOption>(
+  () =>
+    categorySpacingOptions.value.find((o) => o.value === categorySpacing.value) ??
+    categorySpacingOptions.value[0],
+)
+
+async function updateCategorySpacing(option: CategorySpacingOption | null) {
+  if (!option) return
+  try {
+    await setCategorySpacingPref(option.value)
+  } catch {
+    // Composable already reverted the optimistic update.
+  }
+}
+
 const strings = {
   title: t('pantry', 'Account settings'),
   imagesSection: t('pantry', 'Images'),
@@ -244,6 +288,11 @@ const strings = {
     'pantry',
     'When off, items are only marked complete by clicking the checkbox.',
   ),
+  categorySpacingLabel: t('pantry', 'Show spacing between categories in list items'),
+  categorySpacingHint: t('pantry', 'Only visible when sorting by category.'),
+  categorySpacingDisabled: t('pantry', 'Disabled'),
+  categorySpacingDivider: t('pantry', 'Divider'),
+  categorySpacingSpacing: t('pantry', 'Spacing'),
 }
 </script>
 
@@ -290,5 +339,16 @@ const strings = {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.account-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.account-settings__label {
+  font-weight: 600;
 }
 </style>

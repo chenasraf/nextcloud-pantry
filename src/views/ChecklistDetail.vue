@@ -95,6 +95,14 @@
               @dragover.prevent
               @drop.prevent.stop="onPlaceholderDrop"
             />
+            <li
+              v-else-if="gi.type === 'separator'"
+              :class="[
+                'pantry-detail__category-separator',
+                `pantry-detail__category-separator--${categorySpacing}`,
+              ]"
+              aria-hidden="true"
+            />
             <ChecklistItemRow
               v-else
               :item="gi.item"
@@ -124,6 +132,14 @@
                 class="pantry-detail__placeholder"
                 @dragover.prevent
                 @drop.prevent.stop="onPlaceholderDrop"
+              />
+              <li
+                v-else-if="gi.type === 'separator'"
+                :class="[
+                  'pantry-detail__category-separator',
+                  `pantry-detail__category-separator--${categorySpacing}`,
+                ]"
+                aria-hidden="true"
               />
               <ChecklistItemRow
                 v-else
@@ -263,6 +279,7 @@ import type { Checklist, ChecklistItem } from '@/api/types'
 import type { ChecklistItemSort } from '@/api/prefs'
 import { getChecklistItemSort, setChecklistItemSort } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
+import { useCategorySpacing } from '@/composables/useCategorySpacing'
 
 const props = defineProps<{ houseId: string; listId: string }>()
 
@@ -338,6 +355,10 @@ async function loadList() {
 }
 
 const { tapRowToComplete } = useTapRowToComplete()
+const { categorySpacing } = useCategorySpacing()
+const showCategorySeparators = computed(
+  () => currentSort.value === 'category' && categorySpacing.value !== 'disabled',
+)
 
 onMounted(async () => {
   await loadSortPref()
@@ -394,6 +415,7 @@ const checkedItems = computed(() => sortWithinPartition(filteredItems.value.filt
 type ListGridItem =
   | { type: 'item'; key: string; item: ChecklistItem }
   | { type: 'placeholder'; key: string }
+  | { type: 'separator'; key: string }
 
 type Partition = 'unchecked' | 'checked'
 
@@ -407,6 +429,25 @@ function partitionItems(p: Partition): ChecklistItem[] {
   return p === 'unchecked' ? uncheckedItems.value : checkedItems.value
 }
 
+function withCategorySeparators(items: ListGridItem[]): ListGridItem[] {
+  if (!showCategorySeparators.value) return items
+  const out: ListGridItem[] = []
+  let prevCategoryId: number | null | undefined = undefined
+  for (const gi of items) {
+    if (gi.type !== 'item') {
+      out.push(gi)
+      continue
+    }
+    const catId = gi.item.categoryId ?? null
+    if (prevCategoryId !== undefined && prevCategoryId !== catId) {
+      out.push({ type: 'separator', key: `sep-${gi.key}` })
+    }
+    prevCategoryId = catId
+    out.push(gi)
+  }
+  return out
+}
+
 function buildGridItems(p: Partition): ListGridItem[] {
   const source = partitionItems(p)
   const dragId = draggingItemId.value
@@ -416,7 +457,9 @@ function buildGridItems(p: Partition): ListGridItem[] {
     dropIndex.value === null ||
     draggingPartition.value !== p
   ) {
-    return source.map((i) => ({ type: 'item' as const, key: 'i-' + i.id, item: i }))
+    return withCategorySeparators(
+      source.map((i) => ({ type: 'item' as const, key: 'i-' + i.id, item: i })),
+    )
   }
   const without = source.filter((i) => i.id !== dragId)
   const items: ListGridItem[] = without.map((i) => ({
@@ -742,6 +785,22 @@ const strings = {
     border-radius: var(--border-radius, 8px);
     background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
     list-style: none;
+  }
+
+  &__category-separator {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    &--divider {
+      border-top: 1px solid var(--color-border);
+      margin-top: 1rem;
+      padding-top: 1rem;
+    }
+
+    &--spacing {
+      height: 0.75rem;
+    }
   }
 
   &__section-title {

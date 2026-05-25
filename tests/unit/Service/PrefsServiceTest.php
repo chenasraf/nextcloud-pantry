@@ -160,4 +160,46 @@ class PrefsServiceTest extends TestCase {
 
 		$this->svc->setLastHouseId('alice', 5);
 	}
+
+	// ----- Category spacing -----
+
+	public function testGetCategorySpacingDefaultsToDisabled(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'category_spacing', 'disabled')
+			->willReturn('disabled');
+
+		$this->assertSame('disabled', $this->svc->getCategorySpacing('alice'));
+	}
+
+	public function testGetCategorySpacingReturnsStoredValue(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'category_spacing', 'disabled')
+			->willReturn('divider');
+
+		$this->assertSame('divider', $this->svc->getCategorySpacing('alice'));
+	}
+
+	public function testGetCategorySpacingFallsBackForUnknownValue(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'category_spacing', 'disabled')
+			->willReturn('bogus');
+
+		$this->assertSame('disabled', $this->svc->getCategorySpacing('alice'));
+	}
+
+	public function testSetCategorySpacingStoresValidValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'category_spacing', 'spacing');
+
+		$this->assertSame('spacing', $this->svc->setCategorySpacing('alice', 'spacing'));
+	}
+
+	public function testSetCategorySpacingFallsBackForUnknownValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'category_spacing', 'disabled');
+
+		$this->assertSame('disabled', $this->svc->setCategorySpacing('alice', 'bogus'));
+	}
 }

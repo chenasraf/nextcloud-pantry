@@ -659,7 +659,8 @@
                 "required": [
                     "lastHouseId",
                     "firstDayOfWeek",
-                    "tapRowToComplete"
+                    "tapRowToComplete",
+                    "categorySpacing"
                 ],
                 "properties": {
                     "lastHouseId": {
@@ -673,6 +674,9 @@
                     },
                     "tapRowToComplete": {
                         "type": "boolean"
+                    },
+                    "categorySpacing": {
+                        "type": "string"
                     }
                 }
             }
@@ -6987,6 +6991,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Whether clicking anywhere on a checklist row marks it done."
+                                    },
+                                    "categorySpacing": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Separator between categories when sorting by category. One of: disabled, divider, spacing."
                                     }
                                 }
                             }

@@ -85,6 +85,7 @@ namespace OCA\Pantry;
  *     lastHouseId: int|null,
  *     firstDayOfWeek: int,
  *     tapRowToComplete: bool,
+ *     categorySpacing: string,
  * }
  *
  * @psalm-type PantryHousePrefs = array{

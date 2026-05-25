@@ -15,7 +15,9 @@ class PrefsService {
 	private const KEY_LAST_HOUSE = 'last_house_id';
 	private const KEY_IMAGE_FOLDER = 'image_folder';
 	private const KEY_TAP_ROW_TO_COMPLETE = 'tap_row_to_complete';
+	private const KEY_CATEGORY_SPACING = 'category_spacing';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
+	public const CATEGORY_SPACING_OPTIONS = ['disabled', 'divider', 'spacing'];
 
 	public function __construct(
 		private IConfig $config,
@@ -82,6 +84,27 @@ class PrefsService {
 		);
 	}
 
+	public function getCategorySpacing(string $uid): string {
+		$value = $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_CATEGORY_SPACING,
+			'disabled',
+		);
+		return in_array($value, self::CATEGORY_SPACING_OPTIONS, true) ? $value : 'disabled';
+	}
+
+	public function setCategorySpacing(string $uid, string $value): string {
+		$normalized = in_array($value, self::CATEGORY_SPACING_OPTIONS, true) ? $value : 'disabled';
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_CATEGORY_SPACING,
+			$normalized,
+		);
+		return $normalized;
+	}
+
 	// ----- Unified user prefs -----
 
 	/**
@@ -92,6 +115,7 @@ class PrefsService {
 			'lastHouseId' => $this->getLastHouseId($uid),
 			'firstDayOfWeek' => $this->getFirstDayOfWeek($uid),
 			'tapRowToComplete' => $this->getTapRowToComplete($uid),
+			'categorySpacing' => $this->getCategorySpacing($uid),
 		];
 	}
 
@@ -105,6 +129,9 @@ class PrefsService {
 		}
 		if (array_key_exists('tapRowToComplete', $patch) && is_bool($patch['tapRowToComplete'])) {
 			$this->setTapRowToComplete($uid, $patch['tapRowToComplete']);
+		}
+		if (array_key_exists('categorySpacing', $patch) && is_string($patch['categorySpacing'])) {
+			$this->setCategorySpacing($uid, $patch['categorySpacing']);
 		}
 	}
 

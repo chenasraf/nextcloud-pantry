@@ -13,6 +13,8 @@ vi.mock('@/api/prefs', () => ({
   setNotificationPrefs: vi.fn(),
   getTapRowToComplete: vi.fn(),
   setTapRowToComplete: vi.fn(),
+  getCategorySpacing: vi.fn(),
+  setCategorySpacing: vi.fn(),
 }))
 
 // Mock Nextcloud Vue components that pull in CSS
@@ -50,6 +52,14 @@ vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
     template:
       '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><slot /></label>',
     props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
+}))
+vi.mock('@nextcloud/vue/components/NcSelect', () => ({
+  default: {
+    name: 'NcSelect',
+    template: '<div class="nc-select"></div>',
+    props: ['modelValue', 'options', 'clearable', 'searchable', 'inputLabel'],
     emits: ['update:modelValue'],
   },
 }))

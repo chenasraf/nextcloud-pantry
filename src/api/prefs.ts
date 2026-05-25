@@ -2,18 +2,23 @@ import { ocs } from '@/axios'
 
 // ----- User-level prefs (not per-house) -----
 
+export type CategorySpacing = 'disabled' | 'divider' | 'spacing'
+
 export interface UserPrefs {
   lastHouseId: number | null
   /** 0 = Sunday, 1 = Monday, …, 6 = Saturday. Read-only from server. */
   firstDayOfWeek: number
   /** When true, clicking anywhere on a checklist row marks the item done. */
   tapRowToComplete: boolean
+  /** Separator style between categories when checklists are sorted by category. */
+  categorySpacing: CategorySpacing
 }
 
 const userPrefsDefaults: UserPrefs = {
   lastHouseId: null,
   firstDayOfWeek: 1,
   tapRowToComplete: false,
+  categorySpacing: 'disabled',
 }
 
 let userPrefsInflight: Promise<UserPrefs> | null = null
@@ -54,6 +59,16 @@ export async function getTapRowToComplete(): Promise<boolean> {
 export async function setTapRowToComplete(value: boolean): Promise<boolean> {
   const prefs = await setUserPrefs({ tapRowToComplete: value })
   return prefs.tapRowToComplete
+}
+
+export async function getCategorySpacing(): Promise<CategorySpacing> {
+  const prefs = await getUserPrefs()
+  return prefs.categorySpacing
+}
+
+export async function setCategorySpacing(value: CategorySpacing): Promise<CategorySpacing> {
+  const prefs = await setUserPrefs({ categorySpacing: value })
+  return prefs.categorySpacing
 }
 
 // ----- Per-house prefs -----
