@@ -4,6 +4,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { Note } from '@/api/types'
 
+type SavePayload = { title: string; content: string; color: string }
+
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@icons/Pencil.vue', () => createIconMock('PencilIcon'))
 vi.mock('@icons/Eye.vue', () => createIconMock('EyeIcon'))
@@ -31,8 +33,12 @@ vi.mock('@/components/AutoResizeTextarea', () => ({
     props: ['modelValue', 'label', 'placeholder', 'maxHeight', 'rows'],
     emits: ['update:modelValue'],
     methods: {
-      getTextareaEl() {
-        return this.$el?.tagName === 'TEXTAREA' ? this.$el : this.$el?.querySelector('textarea')
+      getTextareaEl(): HTMLTextAreaElement | null {
+        const el = (this as unknown as { $el: HTMLElement | undefined }).$el
+        if (!el) return null
+        return el.tagName === 'TEXTAREA'
+          ? (el as HTMLTextAreaElement)
+          : el.querySelector('textarea')
       },
       resize() {},
     },
@@ -93,7 +99,7 @@ describe('NoteDialog', () => {
       wrapper.findComponent({ name: 'NcDialog' }).vm.$emit('update:open', false)
       await wrapper.vm.$nextTick()
       expect(wrapper.emitted('save')).toBeTruthy()
-      expect(wrapper.emitted('save')![0][0].title).toBe('New Note')
+      expect((wrapper.emitted('save')![0][0] as SavePayload).title).toBe('New Note')
     })
 
     it('does not save on close when title is empty', async () => {
@@ -206,7 +212,7 @@ describe('NoteDialog', () => {
       expect(wrapper.emitted('save')).toBeFalsy()
       vi.advanceTimersByTime(1000)
       expect(wrapper.emitted('save')).toBeTruthy()
-      expect(wrapper.emitted('save')![0][0].title).toBe('Updated Title')
+      expect((wrapper.emitted('save')![0][0] as SavePayload).title).toBe('Updated Title')
     })
 
     it('debounces saves on content changes', async () => {
@@ -223,7 +229,7 @@ describe('NoteDialog', () => {
       expect(wrapper.emitted('save')).toBeFalsy()
       vi.advanceTimersByTime(1000)
       expect(wrapper.emitted('save')).toBeTruthy()
-      expect(wrapper.emitted('save')![0][0].content).toBe('New content')
+      expect((wrapper.emitted('save')![0][0] as SavePayload).content).toBe('New content')
     })
 
     it('flushes save when toggling back to view mode', async () => {
@@ -240,7 +246,7 @@ describe('NoteDialog', () => {
       const viewBtn = wrapper.findAll('.nc-button').find((b) => b.find('.mock-eye-icon').exists())!
       await viewBtn.trigger('click')
       expect(wrapper.emitted('save')).toBeTruthy()
-      expect(wrapper.emitted('save')![0][0].title).toBe('Modified')
+      expect((wrapper.emitted('save')![0][0] as SavePayload).title).toBe('Modified')
     })
 
     it('does not auto-save for new notes', async () => {

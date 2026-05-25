@@ -140,7 +140,7 @@ describe('FolderStack', () => {
 
     it('emits rename when Rename action is clicked', async () => {
       const folder = makeFolder()
-      const wrapper = mount(FolderStack, { props: { folder, photos: [] } })
+      const wrapper = mount(FolderStack, { props: { houseId: 1, folder, photos: [] } })
       const renameBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Rename')!
       await renameBtn.trigger('click')
       expect(wrapper.emitted('rename')).toBeTruthy()
@@ -149,7 +149,7 @@ describe('FolderStack', () => {
 
     it('emits delete when Delete action is clicked', async () => {
       const folder = makeFolder()
-      const wrapper = mount(FolderStack, { props: { folder, photos: [] } })
+      const wrapper = mount(FolderStack, { props: { houseId: 1, folder, photos: [] } })
       const delBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Delete')!
       await delBtn.trigger('click')
       expect(wrapper.emitted('delete')).toBeTruthy()
@@ -168,7 +168,7 @@ describe('FolderStack', () => {
   describe('events', () => {
     it('emits open on click', async () => {
       const folder = makeFolder()
-      const wrapper = mount(FolderStack, { props: { folder, photos: [] } })
+      const wrapper = mount(FolderStack, { props: { houseId: 1, folder, photos: [] } })
       await wrapper.find('.folder-stack').trigger('click')
       expect(wrapper.emitted('open')).toBeTruthy()
       expect(wrapper.emitted('open')![0]).toEqual([folder])

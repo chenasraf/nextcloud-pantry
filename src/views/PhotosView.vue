@@ -644,7 +644,7 @@ useTouchReorder(
     onDragStart: onPhotoDragStart,
     onReorderOver(hoveredId, clientX) {
       const source = activeFolderId.value ? activeFolderPhotos.value : rootPhotos.value
-      const el = boardRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+      const el = boardRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
       computePhotoDropIndex(hoveredId, source, clientX, el)
     },
     onDrop: commitReorder,

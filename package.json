@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
+    "typecheck": "vue-tsc -p tsconfig.app.json --noEmit",
     "lint": "eslint src",
     "format": "eslint --fix src && prettier --write {vite.config.ts,src/,README.md}",
     "prepare": "lefthook install",

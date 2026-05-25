@@ -583,7 +583,8 @@ useTouchReorder(
   {
     onDragStart: onItemDragStart,
     onReorderOver(hoveredId, _clientX, clientY) {
-      const el = uncheckedListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+      const el =
+        uncheckedListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
       computeItemDropIndex(hoveredId, clientY, el)
     },
     onDrop: commitReorder,
@@ -601,7 +602,8 @@ useTouchReorder(
   {
     onDragStart: onItemDragStart,
     onReorderOver(hoveredId, _clientX, clientY) {
-      const el = checkedListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+      const el =
+        checkedListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
       computeItemDropIndex(hoveredId, clientY, el)
     },
     onDrop: commitReorder,

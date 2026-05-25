@@ -27,7 +27,7 @@ function makeList(overrides: Partial<Checklist> = {}): Checklist {
     houseId: 1,
     name: 'Groceries',
     description: null,
-    icon: null,
+    icon: 'clipboard-list',
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

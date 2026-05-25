@@ -50,8 +50,12 @@ vi.mock('@/components/AutoResizeTextarea', () => ({
     props: ['modelValue', 'label', 'placeholder', 'autocomplete'],
     emits: ['update:modelValue'],
     methods: {
-      getTextareaEl() {
-        return this.$el?.tagName === 'TEXTAREA' ? this.$el : this.$el?.querySelector('textarea')
+      getTextareaEl(): HTMLTextAreaElement | null {
+        const el = (this as unknown as { $el: HTMLElement | undefined }).$el
+        if (!el) return null
+        return el.tagName === 'TEXTAREA'
+          ? (el as HTMLTextAreaElement)
+          : el.querySelector('textarea')
       },
       resize() {},
     },

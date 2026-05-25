@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
+import type { ItemInput } from '@/api/lists'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@icons/Plus.vue', () => createIconMock('PlusIcon'))
@@ -42,8 +43,12 @@ vi.mock('@/components/AutoResizeTextarea', () => ({
     props: ['modelValue', 'label', 'placeholder', 'maxHeight', 'rows'],
     emits: ['update:modelValue'],
     methods: {
-      getTextareaEl() {
-        return this.$el?.tagName === 'TEXTAREA' ? this.$el : this.$el?.querySelector('textarea')
+      getTextareaEl(): HTMLTextAreaElement | null {
+        const el = (this as unknown as { $el: HTMLElement | undefined }).$el
+        if (!el) return null
+        return el.tagName === 'TEXTAREA'
+          ? (el as HTMLTextAreaElement)
+          : el.querySelector('textarea')
       },
       resize() {},
     },
@@ -134,7 +139,7 @@ describe('ChecklistAddForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    const payload = wrapper.emitted('add')![0][0]
+    const payload = wrapper.emitted('add')![0][0] as ItemInput
     expect(payload.deleteOnDone).toBe(true)
   })
 
@@ -196,7 +201,7 @@ describe('ChecklistAddForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    const payload = wrapper.emitted('add')![0][0]
+    const payload = wrapper.emitted('add')![0][0] as ItemInput
     expect(payload.description).toBe('Whole milk preferred')
   })
 

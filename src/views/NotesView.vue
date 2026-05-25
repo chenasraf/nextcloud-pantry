@@ -288,7 +288,7 @@ useTouchReorder(
   {
     onDragStart: onDragStart,
     onReorderOver(hoveredId, clientX) {
-      const el = wallRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`)
+      const el = wallRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
       computeDropIndex(hoveredId, clientX, el)
     },
     onDrop: commitReorder,

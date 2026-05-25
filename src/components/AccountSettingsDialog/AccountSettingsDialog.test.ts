@@ -120,11 +120,17 @@ describe('AccountSettingsDialog', () => {
       notifyPhoto: true,
       notifyNoteCreate: true,
       notifyNoteEdit: true,
+      notifyItemAdd: true,
+      notifyItemRecur: true,
+      notifyItemDone: true,
     })
     vi.mocked(setNotificationPrefs).mockResolvedValue({
       notifyPhoto: true,
       notifyNoteCreate: true,
       notifyNoteEdit: true,
+      notifyItemAdd: true,
+      notifyItemRecur: true,
+      notifyItemDone: true,
     })
   })
 
