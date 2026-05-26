@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Sparar …",
     "Saved." : "Sparad.",
     "Notifications" : "Notiser",
+    "Disabled" : "Inaktiverad",
     "Name" : "Namn",
     "Cancel" : "Avbryt",
     "Create" : "Skapa",

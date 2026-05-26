@@ -6,6 +6,7 @@ OC.L10N.register(
     "Save" : "Konservi",
     "Saving …" : "Konservado...",
     "Notifications" : "Atentigoj",
+    "Disabled" : "Malkapabligita",
     "Name" : "Nomo",
     "Cancel" : "Cancel",
     "Delete" : "Forigi",

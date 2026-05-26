@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Ukladá sa...",
     "Saved." : "Uložené.",
     "Notifications" : "Upozornenia",
+    "Disabled" : "Vypnuté",
     "Name" : "Názov",
     "Cancel" : "Zrušiť",
     "Create" : "Vytvoriť",

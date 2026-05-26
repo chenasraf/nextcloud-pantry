@@ -3,6 +3,7 @@ OC.L10N.register(
     {
     "Images" : "Imágenes",
     "Save" : "Guardar",
+    "Disabled" : "Deshabilitado",
     "Name" : "Nombre",
     "Cancel" : "Cancel",
     "Delete" : "Eliminar",

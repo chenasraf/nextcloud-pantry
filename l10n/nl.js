@@ -9,6 +9,7 @@ OC.L10N.register(
     "Saving …" : "Opslaan …",
     "Saved." : "Opgeslagen.",
     "Notifications" : "Meldingen",
+    "Disabled" : "Uitgeschakeld",
     "Name" : "Naam",
     "Cancel" : "Annuleer",
     "Create" : "Creëer",

@@ -7,6 +7,7 @@ OC.L10N.register(
     "Save" : "Salvează",
     "Saving …" : "Se salvează",
     "Notifications" : "Notificări",
+    "Disabled" : "Dezactivați",
     "Name" : "Nume",
     "Cancel" : "Cancel",
     "Create" : "Crează",

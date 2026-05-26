@@ -8,6 +8,7 @@ OC.L10N.register(
     "Save" : "ذخیره",
     "Saving …" : "ذخیره کردن …",
     "Notifications" : "هشدارها",
+    "Disabled" : "غیرفعال شده",
     "Name" : "نام",
     "Cancel" : "انصراف",
     "Create" : "ایجاد",

@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Чувам…",
     "Saved." : "Сачувано.",
     "Notifications" : "Упозорења",
+    "Disabled" : "Искључено",
     "Name" : "Име",
     "Cancel" : "Откажи",
     "Create" : "Креирање",

@@ -2,6 +2,7 @@ OC.L10N.register(
     "pantry",
     {
     "Save" : "រក្សាទុក",
+    "Disabled" : "បាន​បិទ",
     "Name" : "ឈ្មោះ",
     "Cancel" : "Cancel",
     "Delete" : "លុប",

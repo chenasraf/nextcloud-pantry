@@ -8,6 +8,7 @@ OC.L10N.register(
     "Save" : "Hifadhi",
     "Saving …" : "Inahifadhi...",
     "Notifications" : "Arifa",
+    "Disabled" : "Ilizimwa",
     "Edit category" : "Edit category",
     "Name" : "Jina",
     "Cancel" : "Ghairi",

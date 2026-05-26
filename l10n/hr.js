@@ -9,6 +9,7 @@ OC.L10N.register(
     "Save" : "Spremi",
     "Saving …" : "Spremanje…",
     "Notifications" : "Obavijesti",
+    "Disabled" : "Onemogućeno",
     "Name" : "Naziv",
     "Cancel" : "Otkaži",
     "Create" : "Stvori",

@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Poteka shranjevanje ...",
     "Saved." : "Podatki so shranjeni.",
     "Notifications" : "Obvestila",
+    "Disabled" : "Onemogočeno",
     "Name" : "Ime podpisnika",
     "Cancel" : "Prekliči",
     "Create" : "Ustvari",

@@ -4,6 +4,7 @@ OC.L10N.register(
     "Images" : "Imágenes",
     "Save" : "Guardar",
     "Saved." : "Guardado.",
+    "Disabled" : "Deshabilitado",
     "Name" : "Nombre",
     "Cancel" : "Cancel",
     "Delete" : "Eliminar",

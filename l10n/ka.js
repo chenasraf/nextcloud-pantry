@@ -7,6 +7,7 @@ OC.L10N.register(
     "Save" : "დამახსოვრება",
     "Saving …" : "შენახვა…",
     "Notifications" : "შეტყობინებები",
+    "Disabled" : "Disabled",
     "Name" : "სახელი",
     "Cancel" : "გაუქმება",
     "Create" : "Create",

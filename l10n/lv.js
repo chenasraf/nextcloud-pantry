@@ -6,6 +6,7 @@ OC.L10N.register(
     "Save" : "Saglabāt",
     "Saving …" : "Saglabā ...",
     "Saved." : "Saglabāts",
+    "Disabled" : "Atspējots",
     "Name" : "Nosaukums",
     "Cancel" : "Atcelt",
     "Delete" : "Izdzēst",

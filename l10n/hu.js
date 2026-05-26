@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Mentés…",
     "Saved." : "Elmentve.",
     "Notifications" : "Értesítések",
+    "Disabled" : "Letiltva",
     "Name" : "Név",
     "Cancel" : "Mégse",
     "Create" : "Létrehozás",

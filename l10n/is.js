@@ -8,6 +8,7 @@ OC.L10N.register(
     "Save" : "Vista",
     "Saving …" : "Vista …",
     "Saved." : "Vistað.",
+    "Disabled" : "Óvirkt",
     "Name" : "Heiti",
     "Cancel" : "Cancel",
     "Create" : "Búa til",

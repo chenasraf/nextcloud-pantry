@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Сохранение…",
     "Saved." : "Сохранено.",
     "Notifications" : "Уведомления",
+    "Disabled" : "Отключено",
     "Name" : "Имя",
     "Cancel" : "Cancel",
     "Create" : "Создать",

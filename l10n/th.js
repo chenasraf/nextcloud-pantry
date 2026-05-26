@@ -4,6 +4,7 @@ OC.L10N.register(
     "Images" : "รูปภาพ",
     "Save" : "บันทึก",
     "Saving …" : "กำลังบันทึก …",
+    "Disabled" : "ปิดใช้งาน",
     "Name" : "ชื่อ",
     "Cancel" : "Cancel",
     "Create" : "สร้าง",

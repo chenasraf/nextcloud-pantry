@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Lagrer ...",
     "Saved." : "Lagret.",
     "Notifications" : "Varsel",
+    "Disabled" : "Deaktivert",
     "Name" : "Navn",
     "Cancel" : "Cancel",
     "Create" : "Opprett",

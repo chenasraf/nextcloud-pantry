@@ -7,6 +7,7 @@ OC.L10N.register(
     "Save" : "Enregistrar",
     "Saving …" : "Enregistrament...",
     "Notifications" : "Notificacions",
+    "Disabled" : "Desactivat",
     "Name" : "Nom",
     "Cancel" : "Cancel",
     "Create" : "Crear",

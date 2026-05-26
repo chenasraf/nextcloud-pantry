@@ -11,6 +11,7 @@ OC.L10N.register(
     "Saved." : "Kaydedildi.",
     "Notifications" : "Bildirimler",
     "New notes" : "Yeni notlar",
+    "Disabled" : "Kullanılmıyor",
     "New category" : "Yeni kategori",
     "Edit category" : "Kategoriyi düzenle",
     "Name" : "Ad",

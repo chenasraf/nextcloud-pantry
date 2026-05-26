@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Αποθηκεύεται …",
     "Saved." : "Αποθηκεύτηκε.",
     "Notifications" : "Ειδοποιήσεις",
+    "Disabled" : "Απενεργοποιημένο",
     "Edit category" : "Επεξεργασία κατηγορίας",
     "Name" : "Όνομα",
     "Cancel" : "Ακύρωση",

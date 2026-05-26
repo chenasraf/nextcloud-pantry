@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Įrašoma…",
     "Saved." : "Įrašyta.",
     "Notifications" : "Pranešimai",
+    "Disabled" : "Išjungta",
     "Name" : "Vardas",
     "Cancel" : "Atsisakyti",
     "Create" : "Sukurti",

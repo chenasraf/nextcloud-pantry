@@ -4,6 +4,7 @@ OC.L10N.register(
     "Images" : "სურათები",
     "Save" : "შენახვა",
     "Saved." : "შენახულია.",
+    "Disabled" : "არაა მოქმედი",
     "Name" : "სახელი",
     "Cancel" : "Cancel",
     "Delete" : "წაშლა",

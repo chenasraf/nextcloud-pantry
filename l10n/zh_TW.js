@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "正在儲存…",
     "Saved." : "已儲存。",
     "Notifications" : "通知",
+    "Disabled" : "已停用",
     "Edit category" : "編輯分類",
     "Name" : "名稱",
     "Cancel" : "取消",

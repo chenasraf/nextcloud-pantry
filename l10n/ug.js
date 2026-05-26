@@ -9,6 +9,7 @@ OC.L10N.register(
     "Save" : "ساقلا",
     "Saving …" : "ساقلاۋاتىدۇ…",
     "Notifications" : "ئۇقتۇرۇش",
+    "Disabled" : "چەكلەنگەن",
     "Edit category" : "تۈرنى تەھرىرلەش",
     "Name" : "ئاتى",
     "Cancel" : "ۋاز كەچ",

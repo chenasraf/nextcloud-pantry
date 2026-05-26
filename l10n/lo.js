@@ -8,6 +8,7 @@ OC.L10N.register(
     "Save" : "ບັນທຶກ",
     "Saving …" : "ກຳລັງບັນທຶກ...",
     "Notifications" : "ການແຈ້ງເຕືອນ",
+    "Disabled" : "ປິດໃຊ້ງານ",
     "Name" : "ຊື່",
     "Cancel" : "ຍົກເລີກ",
     "Create" : "ສ້າງ",

@@ -6,6 +6,7 @@ OC.L10N.register(
     "Save" : "Sarva",
     "Saving …" : "Sarvende …",
     "Notifications" : "Notìficas",
+    "Disabled" : "Disativadu",
     "Name" : "Nùmene",
     "Cancel" : "Cancel",
     "Create" : "Crea",

@@ -8,6 +8,7 @@ OC.L10N.register(
     "Save" : "Simpan",
     "Saving …" : "Menyimpan …",
     "Notifications" : "Notifikasi",
+    "Disabled" : "Dinonaktifkan",
     "Edit category" : "Edit kategori",
     "Name" : "Nama",
     "Cancel" : "Batal",

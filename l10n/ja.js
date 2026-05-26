@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "保存中...",
     "Saved." : "保存しました。",
     "Notifications" : "通知",
+    "Disabled" : "無効",
     "Name" : "名前",
     "Cancel" : "キャンセル",
     "Create" : "作成",

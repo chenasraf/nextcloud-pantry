@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Tallennetaan…",
     "Saved." : "Tallennettu.",
     "Notifications" : "Ilmoitukset",
+    "Disabled" : "Pois käytöstä",
     "Name" : "Nimi",
     "Cancel" : "Peruuta",
     "Create" : "Luo",

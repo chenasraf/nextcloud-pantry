@@ -7,6 +7,7 @@ OC.L10N.register(
     "Saving …" : "מתבצעת שמירה…",
     "Saved." : "נשמר.",
     "Notifications" : "התראות",
+    "Disabled" : "מושבת",
     "Name" : "שם",
     "Cancel" : "ביטול",
     "Create" : "יצירה",

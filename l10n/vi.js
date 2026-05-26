@@ -6,6 +6,7 @@ OC.L10N.register(
     "Save" : "Lưu",
     "Saving …" : "Đang lưu ...",
     "Notifications" : "Thông báo",
+    "Disabled" : "Đã vô hiệu",
     "Name" : "Tên",
     "Cancel" : "Cancel",
     "Create" : "Tạo",

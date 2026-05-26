@@ -6,6 +6,7 @@ OC.L10N.register(
     "Images" : "Imagens",
     "Save" : "Guardar",
     "Saving …" : "A guardar...",
+    "Disabled" : "Desativado",
     "Name" : "Nome",
     "Cancel" : "Cancelar",
     "Create" : "Criar",

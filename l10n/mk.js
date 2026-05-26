@@ -7,6 +7,7 @@ OC.L10N.register(
     "Upload folder" : "Папка за прикачување",
     "Save" : "Сними",
     "Saving …" : "Зачувува ...",
+    "Disabled" : "Оневозможено",
     "Name" : "Име",
     "Cancel" : "Откажи",
     "Create" : "Креирај",

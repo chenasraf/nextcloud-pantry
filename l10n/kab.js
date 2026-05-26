@@ -5,6 +5,7 @@ OC.L10N.register(
     "Save" : "Sekles",
     "Saving …" : "Asekles ...",
     "Notifications" : "Ilɣa",
+    "Disabled" : "Ittwarermed",
     "Name" : "Isem",
     "Cancel" : "Semmet",
     "Create" : "Snulfu-d",

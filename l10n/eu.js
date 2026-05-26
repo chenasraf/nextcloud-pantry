@@ -10,6 +10,7 @@ OC.L10N.register(
     "Saving …" : "Gordetzen …",
     "Saved." : "Gordeta.",
     "Notifications" : "Jakinarazpenak",
+    "Disabled" : "Desgaituta",
     "Name" : "Izena",
     "Cancel" : "Cancel",
     "Create" : "Sortu",

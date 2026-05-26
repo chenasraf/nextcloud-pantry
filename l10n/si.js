@@ -2,6 +2,7 @@ OC.L10N.register(
     "pantry",
     {
     "Images" : "පින්තූර",
+    "Disabled" : "අබල කර ඇත",
     "Name" : "නම",
     "Cancel" : "Cancel",
     "Create" : "සාදන්න",

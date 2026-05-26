@@ -5,6 +5,7 @@ OC.L10N.register(
     "Save" : "Ruaje",
     "Saved." : "Ruajtur.",
     "Notifications" : "Njoftime",
+    "Disabled" : "I/E çaktivizuar",
     "Name" : "Emër",
     "Cancel" : "Cancel",
     "Create" : "Krijo",
