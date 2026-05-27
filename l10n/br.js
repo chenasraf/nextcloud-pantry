@@ -5,6 +5,7 @@ OC.L10N.register(
     "Save" : "Enrollañ",
     "Saving …" : "Orc'h enrolliñ",
     "Notifications" : "Kemennadennoù",
+    "Disabled" : "Disaotreañ",
     "Name" : "Anv",
     "Cancel" : "Cancel",
     "Delete" : "Dilemel",

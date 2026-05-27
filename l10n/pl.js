@@ -41,6 +41,7 @@ OC.L10N.register(
     "Preview" : "Podgląd",
     "Untitled note" : "Notatka bez nazwy",
     "Rename folder" : "Zmień nazwę katalogu",
+    "Create folder" : "Utwórz folder",
     "Folder name" : "Nazwa katalogu",
     "Rename" : "Zmień nazwę",
     "Close" : "Zamknij",

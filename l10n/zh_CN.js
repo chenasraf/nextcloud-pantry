@@ -41,6 +41,7 @@ OC.L10N.register(
     "Preview" : "预览",
     "Untitled note" : "未命名笔记",
     "Rename folder" : "重命名文件夹",
+    "Create folder" : "创建文件夹",
     "Folder name" : "文件夹名称",
     "Rename" : "重命名",
     "Close" : "关闭",

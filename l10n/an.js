@@ -2,6 +2,7 @@ OC.L10N.register(
     "pantry",
     {
     "Notifications" : "Notificacions",
+    "Disabled" : "Desactivau",
     "Name" : "Nombre",
     "Cancel" : "Cancel",
     "Create" : "Crear",
