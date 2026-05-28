@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.14.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.13.0...v0.14.0) (2026-05-28)
+
+
+### Features
+
+* **checklist:** remember "once" toggle value per-list ([1759dad](https://github.com/chenasraf/nextcloud-pantry/commit/1759dad3de15fa38a12d6fb0bf925a1cd25b44ee))
+
+
+### Bug Fixes
+
+* **checklist:** properly empty trash bin on request ([6f89e08](https://github.com/chenasraf/nextcloud-pantry/commit/6f89e08031d9b1b86167ef1e9931e4949627cfec))
+* **l10n:** Update translations from Transifex ([0a7ddbf](https://github.com/chenasraf/nextcloud-pantry/commit/0a7ddbfac0364904968335c2974100d71c3a1ff5))
+* **l10n:** Update translations from Transifex ([51ecccd](https://github.com/chenasraf/nextcloud-pantry/commit/51ecccd992b86e66f090e27ccab1ddcaa9eca52c))
+
 ## [0.13.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.12.0...v0.13.0) (2026-05-25)
 
 
