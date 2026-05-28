@@ -280,6 +280,7 @@
                     "description",
                     "icon",
                     "sortOrder",
+                    "deleteOnDoneDefault",
                     "createdAt",
                     "updatedAt"
                 ],
@@ -305,6 +306,9 @@
                     "sortOrder": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "deleteOnDoneDefault": {
+                        "type": "boolean"
                     },
                     "createdAt": {
                         "type": "integer",
@@ -1594,6 +1598,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New sort order."
+                                    },
+                                    "deleteOnDoneDefault": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New default for the \"Once\" toggle on the add-item form."
                                     }
                                 }
                             }

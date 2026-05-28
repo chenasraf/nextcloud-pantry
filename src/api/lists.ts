@@ -28,7 +28,13 @@ export async function getList(houseId: number, listId: number): Promise<Checklis
 export async function updateList(
   houseId: number,
   listId: number,
-  patch: { name?: string; description?: string | null; icon?: string; sortOrder?: number },
+  patch: {
+    name?: string
+    description?: string | null
+    icon?: string
+    sortOrder?: number
+    deleteOnDoneDefault?: boolean
+  },
 ): Promise<Checklist> {
   const resp = await ocs.patch<Checklist>(`/houses/${houseId}/lists/${listId}`, patch)
   return resp.data

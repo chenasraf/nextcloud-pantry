@@ -52,7 +52,13 @@
     </PageToolbar>
 
     <div class="pantry-detail__body">
-      <ChecklistAddForm :house-id="houseIdNum" :adding="adding" @add="handleAdd" />
+      <ChecklistAddForm
+        :house-id="houseIdNum"
+        :adding="adding"
+        :delete-on-done-default="list?.deleteOnDoneDefault ?? false"
+        @add="handleAdd"
+        @update:delete-on-done-default="handleDeleteOnDoneDefaultChange"
+      />
 
       <ChecklistFilter
         v-if="items.length > 0"
@@ -274,7 +280,7 @@ import { checklistIconComponent, ChecklistFormDialog } from '@/components/Checkl
 import { useChecklists, useChecklistItems } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { useTouchReorder } from '@/composables/useTouchReorder'
-import { getList } from '@/api/lists'
+import { getList, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
 import type { ChecklistItemSort } from '@/api/prefs'
@@ -628,6 +634,21 @@ async function handleAdd(input: ItemInput) {
     await add(input)
   } finally {
     adding.value = false
+  }
+}
+
+async function handleDeleteOnDoneDefaultChange(value: boolean) {
+  if (!list.value || list.value.deleteOnDoneDefault === value) return
+  const prev = list.value
+  list.value = { ...prev, deleteOnDoneDefault: value }
+  try {
+    const updated = await apiUpdateList(houseIdNum.value, listIdNum.value, {
+      deleteOnDoneDefault: value,
+    })
+    list.value = updated
+  } catch (e) {
+    list.value = prev
+    showError((e as Error).message)
   }
 }
 

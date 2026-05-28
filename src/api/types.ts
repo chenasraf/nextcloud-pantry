@@ -26,6 +26,7 @@ export interface Checklist {
   description: string | null
   icon: string
   sortOrder: number
+  deleteOnDoneDefault: boolean
   createdAt: number
   updatedAt: number
 }

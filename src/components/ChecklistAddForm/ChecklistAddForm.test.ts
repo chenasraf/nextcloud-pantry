@@ -73,11 +73,14 @@ vi.mock('@/components/CategoryPicker', () => ({
 
 import ChecklistAddForm from './ChecklistAddForm.vue'
 
-function mountForm(props: { houseId?: number; adding?: boolean } = {}) {
+function mountForm(
+  props: { houseId?: number; adding?: boolean; deleteOnDoneDefault?: boolean } = {},
+) {
   return mount(ChecklistAddForm, {
     props: {
       houseId: props.houseId ?? 1,
       adding: props.adding ?? false,
+      deleteOnDoneDefault: props.deleteOnDoneDefault ?? false,
     },
   })
 }
@@ -143,7 +146,7 @@ describe('ChecklistAddForm', () => {
     expect(payload.deleteOnDone).toBe(true)
   })
 
-  it('resets the "Once" checkbox after submit', async () => {
+  it('resets the "Once" checkbox to the list default after submit', async () => {
     const wrapper = mountForm()
     await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
     const onceCheckbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
@@ -153,6 +156,48 @@ describe('ChecklistAddForm', () => {
 
     const after = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
     expect(after.checked).toBe(false)
+  })
+
+  it('initializes "Once" from deleteOnDoneDefault prop', () => {
+    const wrapper = mountForm({ deleteOnDoneDefault: true })
+    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+  })
+
+  it('keeps "Once" checked after submit when the list default is true', async () => {
+    const wrapper = mountForm({ deleteOnDoneDefault: true })
+    await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
+
+    await wrapper.find('form').trigger('submit')
+
+    const after = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
+    expect(after.checked).toBe(true)
+  })
+
+  it('emits update:deleteOnDoneDefault when the user toggles "Once"', async () => {
+    const wrapper = mountForm()
+    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
+    await checkbox.setValue(true)
+
+    const events = wrapper.emitted('update:deleteOnDoneDefault')
+    expect(events).toBeTruthy()
+    expect(events![0]).toEqual([true])
+  })
+
+  it('does not emit update:deleteOnDoneDefault when the toggle already matches the default', async () => {
+    const wrapper = mountForm({ deleteOnDoneDefault: true })
+    // Re-asserting the same value (true) via the checkbox should not re-emit.
+    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
+    await checkbox.setValue(true)
+
+    expect(wrapper.emitted('update:deleteOnDoneDefault')).toBeFalsy()
+  })
+
+  it('syncs "Once" when the parent updates deleteOnDoneDefault', async () => {
+    const wrapper = mountForm({ deleteOnDoneDefault: false })
+    await wrapper.setProps({ deleteOnDoneDefault: true })
+    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
   })
 
   it('resets all fields after submit', async () => {

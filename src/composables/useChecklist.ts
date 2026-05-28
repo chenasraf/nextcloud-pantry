@@ -63,7 +63,12 @@ export function useChecklists(houseId: number) {
 
   async function update(
     listId: number,
-    patch: { name?: string; description?: string | null; icon?: string },
+    patch: {
+      name?: string
+      description?: string | null
+      icon?: string
+      deleteOnDoneDefault?: boolean
+    },
   ): Promise<void> {
     const updated = await api.updateList(houseId, listId, patch)
     lists.value = lists.value.map((l) => (l.id === listId ? updated : l))

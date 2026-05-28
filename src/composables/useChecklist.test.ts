@@ -29,6 +29,7 @@ function makeList(overrides: Partial<Checklist> = {}): Checklist {
     description: null,
     icon: 'clipboard-list',
     sortOrder: 0,
+    deleteOnDoneDefault: false,
     createdAt: 0,
     updatedAt: 0,
     ...overrides,

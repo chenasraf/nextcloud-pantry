@@ -34,6 +34,7 @@ namespace OCA\Pantry;
  *     description: string|null,
  *     icon: PantryChecklistIcon,
  *     sortOrder: int,
+ *     deleteOnDoneDefault: bool,
  *     createdAt: int,
  *     updatedAt: int,
  * }

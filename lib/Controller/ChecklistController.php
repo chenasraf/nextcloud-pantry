@@ -131,6 +131,7 @@ final class ChecklistController extends OCSController {
 	 * @param string|null $description New description.
 	 * @param string|null $icon New icon key.
 	 * @param int|null $sortOrder New sort order.
+	 * @param bool|null $deleteOnDoneDefault New default for the "Once" toggle on the add-item form.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
 	 *
@@ -138,8 +139,8 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}')]
 	#[NoAdminRequired]
-	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?int $sortOrder = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $sortOrder): DataResponse {
+	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?int $sortOrder = null, ?bool $deleteOnDoneDefault = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $sortOrder, $deleteOnDoneDefault): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->lists->getList($listId);
@@ -156,6 +157,9 @@ final class ChecklistController extends OCSController {
 			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($deleteOnDoneDefault !== null) {
+				$patch['deleteOnDoneDefault'] = $deleteOnDoneDefault;
 			}
 			$list = $this->lists->updateList($listId, $patch);
 			$contentChanged = $name !== null || $description !== null || $icon !== null;

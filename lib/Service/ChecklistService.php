@@ -82,6 +82,9 @@ class ChecklistService {
 		if (isset($patch['sortOrder'])) {
 			$list->setSortOrder((int)$patch['sortOrder']);
 		}
+		if (array_key_exists('deleteOnDoneDefault', $patch)) {
+			$list->setDeleteOnDoneDefault((bool)$patch['deleteOnDoneDefault']);
+		}
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
 		return $list;

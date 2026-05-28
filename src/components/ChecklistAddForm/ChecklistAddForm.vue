@@ -18,7 +18,7 @@
       :placeholder="strings.categoryPlaceholder"
     />
     <div class="checklist-add__once" :title="strings.onceHint">
-      <NcCheckboxRadioSwitch v-model="deleteOnDone">
+      <NcCheckboxRadioSwitch :model-value="deleteOnDone" @update:model-value="onceChanged">
         {{ strings.once }}
       </NcCheckboxRadioSwitch>
     </div>
@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -78,13 +78,18 @@ import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
 import type { ItemInput } from '@/api/lists'
 
-defineProps<{
-  houseId: number
-  adding: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    houseId: number
+    adding: boolean
+    deleteOnDoneDefault?: boolean
+  }>(),
+  { deleteOnDoneDefault: false },
+)
 
 const emit = defineEmits<{
   add: [input: ItemInput]
+  'update:deleteOnDoneDefault': [value: boolean]
 }>()
 
 const name = ref('')
@@ -93,9 +98,25 @@ const quantity = ref('')
 const categoryId = ref<number | null>(null)
 const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
-const deleteOnDone = ref(false)
+const deleteOnDone = ref(props.deleteOnDoneDefault)
 const showDescription = ref(false)
 const showRecurrenceEditor = ref(false)
+
+// Sync local toggle when the list's stored default changes (e.g. on first
+// load, or when switching between lists with the form mounted).
+watch(
+  () => props.deleteOnDoneDefault,
+  (value) => {
+    deleteOnDone.value = value
+  },
+)
+
+function onceChanged(value: boolean) {
+  deleteOnDone.value = value
+  if (value !== props.deleteOnDoneDefault) {
+    emit('update:deleteOnDoneDefault', value)
+  }
+}
 
 function submitAdd() {
   const trimmedName = name.value.trim()
@@ -117,7 +138,8 @@ function submitAdd() {
   categoryId.value = null
   rrule.value = null
   repeatFromCompletion.value = false
-  deleteOnDone.value = false
+  // Keep the user's "Once" choice as the default for subsequent items.
+  deleteOnDone.value = props.deleteOnDoneDefault
   showDescription.value = false
 }
 
