@@ -9,6 +9,7 @@ OC.L10N.register(
     "Saving …" : "S'està desant…",
     "Saved." : "S'ha desat.",
     "Notifications" : "Notificacions",
+    "Disabled" : "Inhabilitat",
     "Name" : "Nom",
     "Cancel" : "Cancel",
     "Create" : "Crea",

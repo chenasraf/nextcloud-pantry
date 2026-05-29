@@ -15,6 +15,7 @@ OC.L10N.register(
     "Edit" : "עריכה",
     "Add" : "הוספה",
     "Category" : "קטגוריה",
+    "Repeat …" : "חזרה",
     "Description" : "תיאור",
     "All" : "הכול",
     "Image" : "תמונה",

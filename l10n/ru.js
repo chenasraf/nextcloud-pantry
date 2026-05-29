@@ -55,6 +55,7 @@ OC.L10N.register(
     "After" : "После",
     "On date" : "В указанную дату",
     "Summary" : "Всего",
+    "Remove recurrence" : "Удалить повторение",
     "Newest first" : "Самый новый первый",
     "Oldest first" : "Самый старый первый",
     "Custom" : "Задать",

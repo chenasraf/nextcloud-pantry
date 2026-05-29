@@ -9,6 +9,7 @@ OC.L10N.register(
     "Saving …" : "Gemmer ...",
     "Saved." : "Gemt.",
     "Notifications" : "Påmindelser",
+    "Disabled" : "Deaktiveret",
     "Name" : "Navn",
     "Cancel" : "Annullér",
     "Create" : "Opret",
