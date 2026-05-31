@@ -154,6 +154,7 @@
                 :category="categoryFor(gi.item.categoryId)"
                 :house-id="houseIdNum"
                 :reorder-enabled="isCustomSort"
+                :tap-row-to-complete="tapRowToComplete"
                 :show-added-by="showAddedBy"
                 @toggle="handleToggle"
                 @view="openView"
