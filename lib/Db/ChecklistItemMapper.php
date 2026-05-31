@@ -22,9 +22,12 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * @param string $categorySort When $sortBy is 'category', the category sort
+	 *                             mode to apply (name_asc, name_desc, custom).
+	 *
 	 * @return ChecklistItem[]
 	 */
-	public function findByList(int $listId, string $sortBy = 'custom'): array {
+	public function findByList(int $listId, string $sortBy = 'custom', string $categorySort = 'name_asc'): array {
 		$qb = $this->db->getQueryBuilder();
 		$items = $this->getTableName();
 
@@ -47,9 +50,20 @@ class ChecklistItemMapper extends QBMapper {
 				->orderBy(
 					$qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'),
 					'ASC',
-				)
-				->addOrderBy('c.name', 'ASC')
-				->addOrderBy('i.name', 'ASC')
+				);
+			switch ($categorySort) {
+				case 'name_desc':
+					$qb->addOrderBy('c.name', 'DESC');
+					break;
+				case 'custom':
+					$qb->addOrderBy('c.sort_order', 'ASC')
+						->addOrderBy('c.name', 'ASC');
+					break;
+				default: // name_asc
+					$qb->addOrderBy('c.name', 'ASC');
+					break;
+			}
+			$qb->addOrderBy('i.name', 'ASC')
 				->addOrderBy('i.created_at', 'ASC');
 			return $this->findEntities($qb);
 		}

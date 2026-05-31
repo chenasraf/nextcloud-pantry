@@ -26,3 +26,10 @@ export async function updateCategory(
 export async function deleteCategory(houseId: number, categoryId: number): Promise<void> {
   await ocs.delete(`/houses/${houseId}/categories/${categoryId}`)
 }
+
+export async function reorderCategories(
+  houseId: number,
+  items: { id: number; sortOrder: number }[],
+): Promise<void> {
+  await ocs.post(`/houses/${houseId}/categories/reorder`, { items })
+}

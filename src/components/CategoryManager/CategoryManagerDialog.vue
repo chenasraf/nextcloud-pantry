@@ -6,6 +6,26 @@
     close-on-click-outside
     @update:open="$emit('update:open', $event)"
   >
+    <div v-if="!catLoading && catItems.length > 0" class="pantry-cat-toolbar">
+      <NcActions :aria-label="strings.sortLabel" :title="strings.sortLabel" type="tertiary">
+        <template #icon>
+          <SortIcon :size="20" />
+        </template>
+        <NcActionButton
+          v-for="opt in sortOptions"
+          :key="opt.value"
+          :class="{ 'pantry-sort-active': currentSort === opt.value }"
+          @click="changeSort(opt.value)"
+        >
+          <template #icon>
+            <RadioboxMarkedIcon v-if="currentSort === opt.value" :size="20" />
+            <RadioboxBlankIcon v-else :size="20" />
+          </template>
+          {{ opt.label }}
+        </NcActionButton>
+      </NcActions>
+    </div>
+
     <div v-if="catLoading" class="pantry-center">
       <NcLoadingIcon :size="28" />
     </div>
@@ -13,29 +33,57 @@
       <p v-if="catItems.length === 0" class="pantry-cat-hint">
         {{ strings.noCategoriesHint }}
       </p>
-      <ul v-else class="pantry-cat-list">
-        <li v-for="cat in catItems" :key="cat.id" class="pantry-cat-list__item">
-          <span class="pantry-cat-list__icon" :style="{ color: cat.color }">
-            <component :is="categoryIconComponent(cat.icon)" :size="20" />
-          </span>
-          <span class="pantry-cat-list__name">{{ cat.name }}</span>
-          <div class="pantry-cat-list__actions">
-            <NcButton
-              variant="tertiary"
-              :aria-label="strings.editCategory"
-              @click="startEditCat(cat)"
+      <ul v-else ref="listRef" class="pantry-cat-list">
+        <template v-for="gi in gridItems" :key="gi.key">
+          <li
+            v-if="gi.type === 'placeholder'"
+            class="pantry-cat-list__placeholder"
+            @dragover.prevent
+            @drop.prevent.stop="onPlaceholderDrop"
+          />
+          <li
+            v-else
+            :class="[
+              'pantry-cat-list__item',
+              { 'pantry-cat-list__item--dragging': draggingId === gi.cat.id },
+            ]"
+            :data-drag-id="gi.cat.id"
+            :draggable="isCustomSort ? 'true' : 'false'"
+            @dragstart="onDragStart($event, gi.cat.id)"
+            @dragend="onDragEnd"
+            @dragover.prevent="onDragOver($event, gi.cat.id)"
+            @drop.prevent.stop="commitReorder"
+          >
+            <span
+              v-if="isCustomSort"
+              class="pantry-cat-list__handle"
+              :aria-label="strings.dragHandle"
+              :title="strings.dragHandle"
             >
-              <template #icon><PencilIcon :size="18" /></template>
-            </NcButton>
-            <NcButton
-              variant="tertiary"
-              :aria-label="strings.deleteCategory"
-              @click="confirmDeleteCat(cat)"
-            >
-              <template #icon><DeleteIcon :size="18" /></template>
-            </NcButton>
-          </div>
-        </li>
+              <DragVerticalIcon :size="20" />
+            </span>
+            <span class="pantry-cat-list__icon" :style="{ color: gi.cat.color }">
+              <component :is="categoryIconComponent(gi.cat.icon)" :size="20" />
+            </span>
+            <span class="pantry-cat-list__name">{{ gi.cat.name }}</span>
+            <div class="pantry-cat-list__actions">
+              <NcButton
+                variant="tertiary"
+                :aria-label="strings.editCategory"
+                @click="startEditCat(gi.cat)"
+              >
+                <template #icon><PencilIcon :size="18" /></template>
+              </NcButton>
+              <NcButton
+                variant="tertiary"
+                :aria-label="strings.deleteCategory"
+                @click="confirmDeleteCat(gi.cat)"
+              >
+                <template #icon><DeleteIcon :size="18" /></template>
+              </NcButton>
+            </div>
+          </li>
+        </template>
       </ul>
     </template>
     <template #actions>
@@ -73,16 +121,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcActions from '@nextcloud/vue/components/NcActions'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import PlusIcon from '@icons/Plus.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PencilIcon from '@icons/Pencil.vue'
+import SortIcon from '@icons/Sort.vue'
+import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
+import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
+import DragVerticalIcon from '@icons/DragVertical.vue'
 import type { Category } from '@/api/types'
+import type { CategorySort } from '@/api/prefs'
+import { getCategorySort, setCategorySort } from '@/api/prefs'
 import { useCategories } from '@/composables/useCategories'
+import { useTouchReorder } from '@/composables/useTouchReorder'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import CategoryFormDialog from './CategoryFormDialog.vue'
 
@@ -93,12 +150,156 @@ const categories = useCategories(props.houseId)
 const catItems = computed(() => categories.items.value)
 const catLoading = computed(() => categories.loading.value)
 
+const currentSort = ref<CategorySort>('name_asc')
+const isCustomSort = computed(() => currentSort.value === 'custom')
+
+const sortOptions: { value: CategorySort; label: string }[] = [
+  { value: 'name_asc', label: t('pantry', 'Name A–Z') },
+  { value: 'name_desc', label: t('pantry', 'Name Z–A') },
+  { value: 'custom', label: t('pantry', 'Custom') },
+]
+
+async function loadSortPref() {
+  const prefs = await getCategorySort(props.houseId)
+  currentSort.value = prefs.sort
+  categories.setSortBy(prefs.sort)
+}
+
+async function changeSort(value: CategorySort) {
+  currentSort.value = value
+  categories.setSortBy(value)
+  await setCategorySort(props.houseId, value)
+}
+
 watch(
   () => props.open,
-  (isOpen) => {
-    if (isOpen) categories.load()
+  async (isOpen) => {
+    if (isOpen) {
+      await loadSortPref()
+      await categories.load()
+    }
   },
   { immediate: true },
+)
+
+// -------- Drag & drop reorder --------
+
+type ListGridItem =
+  | { type: 'cat'; key: string; cat: Category }
+  | { type: 'placeholder'; key: string }
+
+const draggingId = ref<number | null>(null)
+const dropIndex = ref<number | null>(null)
+const listRef = ref<HTMLElement | null>(null)
+
+const gridItems = computed<ListGridItem[]>(() => {
+  const source = catItems.value
+  if (!isCustomSort.value || draggingId.value === null || dropIndex.value === null) {
+    return source.map((c) => ({ type: 'cat' as const, key: 'c-' + c.id, cat: c }))
+  }
+  const dragId = draggingId.value
+  const without = source.filter((c) => c.id !== dragId)
+  const out: ListGridItem[] = without.map((c) => ({
+    type: 'cat' as const,
+    key: 'c-' + c.id,
+    cat: c,
+  }))
+  const clamped = Math.min(dropIndex.value, out.length)
+  out.splice(clamped, 0, { type: 'placeholder', key: 'drop-placeholder' })
+  return out
+})
+
+function onDragStart(e: DragEvent, id: number) {
+  if (!isCustomSort.value || !e.dataTransfer) return
+  draggingId.value = id
+  dropIndex.value = null
+  e.dataTransfer.effectAllowed = 'move'
+  // Some browsers refuse to start a drag without data — set anything.
+  e.dataTransfer.setData('text/plain', String(id))
+}
+
+function onDragEnd() {
+  draggingId.value = null
+  dropIndex.value = null
+}
+
+function computeDropIndex(hoveredId: number, clientY: number, target: HTMLElement | null) {
+  const dragId = draggingId.value
+  if (!dragId || dragId === hoveredId) return
+  const without = catItems.value.filter((c) => c.id !== dragId)
+  const idx = without.findIndex((c) => c.id === hoveredId)
+  if (idx === -1) return
+  if (target) {
+    const rect = target.getBoundingClientRect()
+    const past = clientY > rect.top + rect.height / 2
+    dropIndex.value = past ? idx + 1 : idx
+  } else {
+    dropIndex.value = idx
+  }
+}
+
+function onDragOver(e: DragEvent, hoveredId: number) {
+  computeDropIndex(hoveredId, e.clientY, e.currentTarget as HTMLElement | null)
+}
+
+function onPlaceholderDrop() {
+  commitReorder()
+}
+
+async function commitReorder() {
+  const dragId = draggingId.value
+  const idx = dropIndex.value
+  draggingId.value = null
+  dropIndex.value = null
+  if (dragId === null || idx === null) return
+
+  const source = catItems.value
+  const dragged = source.find((c) => c.id === dragId)
+  if (!dragged) return
+
+  const without = source.filter((c) => c.id !== dragId)
+  const clamped = Math.min(idx, without.length)
+  const reordered = [...without]
+  reordered.splice(clamped, 0, dragged)
+  const entries = reordered.map((c, n) => ({ id: c.id, sortOrder: n }))
+  await categories.reorder(entries)
+}
+
+function bindDragListeners(el: HTMLElement | null) {
+  if (!el) return
+  el.addEventListener('dragend', onDragEnd, true)
+}
+function unbindDragListeners(el: HTMLElement | null) {
+  if (!el) return
+  el.removeEventListener('dragend', onDragEnd, true)
+}
+
+watch(listRef, (newEl, oldEl) => {
+  unbindDragListeners(oldEl ?? null)
+  bindDragListeners(newEl ?? null)
+})
+onBeforeUnmount(() => {
+  unbindDragListeners(listRef.value)
+})
+
+useTouchReorder(
+  listRef,
+  {
+    onDragStart: (id) => {
+      draggingId.value = id
+      dropIndex.value = null
+    },
+    onReorderOver(hoveredId, _clientX, clientY) {
+      const el = listRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
+      computeDropIndex(hoveredId, clientY, el)
+    },
+    onDrop: commitReorder,
+    onCancel() {
+      draggingId.value = null
+      dropIndex.value = null
+    },
+  },
+  isCustomSort,
 )
 
 // -------- Form state --------
@@ -175,6 +376,8 @@ const strings = {
   editCategory: t('pantry', 'Edit'),
   deleteCategory: t('pantry', 'Delete'),
   deleteCategoryTitle: t('pantry', 'Delete category'),
+  sortLabel: t('pantry', 'Sort order'),
+  dragHandle: t('pantry', 'Drag to reorder'),
 }
 </script>
 
@@ -183,6 +386,12 @@ const strings = {
   display: flex;
   justify-content: center;
   padding: 1rem;
+}
+
+.pantry-cat-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.25rem;
 }
 
 .pantry-cat-hint {
@@ -201,6 +410,19 @@ const strings = {
     gap: 0.5rem;
     padding: 6px 0;
     border-bottom: 1px solid var(--color-border);
+
+    &--dragging {
+      opacity: 0.4;
+    }
+  }
+
+  &__handle {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: grab;
+    color: var(--color-text-maxcontrast);
+    touch-action: none;
   }
 
   &__icon {
@@ -222,5 +444,18 @@ const strings = {
     gap: 0;
     flex-shrink: 0;
   }
+
+  &__placeholder {
+    min-height: 40px;
+    border: 3px dashed var(--color-primary-element);
+    border-radius: var(--border-radius, 8px);
+    background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
+    list-style: none;
+    margin: 4px 0;
+  }
+}
+
+.pantry-sort-active {
+  font-weight: 600;
 }
 </style>

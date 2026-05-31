@@ -17,6 +17,7 @@ use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\NotificationService;
+use OCA\Pantry\Service\PrefsService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -43,6 +44,7 @@ final class ChecklistController extends OCSController {
 		private ImageService $images,
 		private NotificationService $notifications,
 		private ActivityPublisher $activity,
+		private PrefsService $prefs,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -226,10 +228,12 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	public function indexItems(int $houseId, int $listId, string $sortBy = 'custom', int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $sortBy, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$all = $this->lists->listItems($listId, $sortBy);
+			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
+			$all = $this->lists->listItems($listId, $sortBy, $categorySort);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
 			return new DataResponse($items);

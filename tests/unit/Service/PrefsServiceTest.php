@@ -284,4 +284,78 @@ class PrefsServiceTest extends TestCase {
 
 		$this->svc->setHousePrefs('alice', 4, ['showAddedBy' => 'yes']);
 	}
+
+	// ----- Category sort -----
+
+	public function testGetCategorySortDefaultsToNameAsc(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'category_sort_1', 'name_asc')
+			->willReturn('name_asc');
+
+		$this->assertSame('name_asc', $this->svc->getCategorySort('alice', 1));
+	}
+
+	public function testGetCategorySortReturnsStoredValue(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'category_sort_2', 'name_asc')
+			->willReturn('custom');
+
+		$this->assertSame('custom', $this->svc->getCategorySort('alice', 2));
+	}
+
+	public function testSetCategorySortStoresValidValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'category_sort_3', 'custom');
+
+		$this->assertSame('custom', $this->svc->setCategorySort('alice', 3, 'custom'));
+	}
+
+	public function testSetCategorySortFallsBackForUnknownValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'category_sort_4', 'name_asc');
+
+		$this->assertSame('name_asc', $this->svc->setCategorySort('alice', 4, 'bogus'));
+	}
+
+	public function testCategorySortIsScopedPerHouse(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'category_sort_1') {
+					return 'custom';
+				}
+				if ($key === 'category_sort_2') {
+					return 'name_desc';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertSame('custom', $this->svc->getCategorySort('alice', 1));
+		$this->assertSame('name_desc', $this->svc->getCategorySort('alice', 2));
+	}
+
+	public function testGetAllHousePrefsIncludesCategorySort(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'category_sort_7') {
+					return 'custom';
+				}
+				return $default;
+			}
+		);
+
+		$prefs = $this->svc->getAllHousePrefs('alice', 7);
+		$this->assertArrayHasKey('categorySort', $prefs);
+		$this->assertSame('custom', $prefs['categorySort']);
+	}
+
+	public function testSetHousePrefsAppliesCategorySort(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'category_sort_4', 'name_desc');
+
+		$this->svc->setHousePrefs('alice', 4, ['categorySort' => 'name_desc']);
+	}
 }

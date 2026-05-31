@@ -22,15 +22,28 @@ class CategoryMapper extends QBMapper {
 	}
 
 	/**
+	 * @param string $sortBy One of: name_asc, name_desc, custom.
+	 *
 	 * @return Category[]
 	 */
-	public function findByHouse(int $houseId): array {
+	public function findByHouse(int $houseId, string $sortBy = 'name_asc'): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->orderBy('sort_order', 'ASC')
-			->addOrderBy('name', 'ASC');
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+
+		switch ($sortBy) {
+			case 'name_desc':
+				$qb->orderBy('name', 'DESC');
+				break;
+			case 'custom':
+				$qb->orderBy('sort_order', 'ASC')
+					->addOrderBy('name', 'ASC');
+				break;
+			default: // name_asc
+				$qb->orderBy('name', 'ASC');
+				break;
+		}
 		return $this->findEntities($qb);
 	}
 

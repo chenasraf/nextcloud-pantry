@@ -11,6 +11,7 @@ use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\HouseAuthService;
+use OCA\Pantry\Service\PrefsService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -31,6 +32,7 @@ final class CategoryController extends OCSController {
 		IRequest $request,
 		private CategoryService $categories,
 		private HouseAuthService $auth,
+		private PrefsService $prefs,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -51,8 +53,10 @@ final class CategoryController extends OCSController {
 	#[NoAdminRequired]
 	public function index(int $houseId, int $limit = 100, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$all = $this->categories->listForHouse($houseId);
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$sortBy = $this->prefs->getCategorySort($uid, $houseId);
+			$all = $this->categories->listForHouse($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			return new DataResponse(array_map(fn ($c) => $c->jsonSerialize(), $sliced));
 		});
@@ -144,6 +148,26 @@ final class CategoryController extends OCSController {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$this->categories->assertInHouse($categoryId, $houseId);
 			$this->categories->delete($categoryId);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Batch reorder categories
+	 *
+	 * @param int $houseId House id.
+	 * @param list<array{id: int, sortOrder: int}> $items Reorder entries.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Categories reordered
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/categories/reorder')]
+	#[NoAdminRequired]
+	public function reorder(int $houseId, array $items = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $items): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->categories->reorder($houseId, $items);
 			return new DataResponse(['success' => true]);
 		});
 	}

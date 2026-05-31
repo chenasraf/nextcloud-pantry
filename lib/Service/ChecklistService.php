@@ -103,10 +103,10 @@ class ChecklistService {
 	 *
 	 * @return ChecklistItem[]
 	 */
-	public function listItems(int $listId, string $sortBy = 'custom', ?int $now = null): array {
+	public function listItems(int $listId, string $sortBy = 'custom', string $categorySort = 'name_asc', ?int $now = null): array {
 		// Eagerly reopen any due recurring items in this list before returning.
 		$this->reopenDueItems($now);
-		return $this->itemMapper->findByList($listId, $sortBy);
+		return $this->itemMapper->findByList($listId, $sortBy, $categorySort);
 	}
 
 	/**

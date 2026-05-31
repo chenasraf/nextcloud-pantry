@@ -21,8 +21,34 @@ class CategoryService {
 	/**
 	 * @return Category[]
 	 */
-	public function listForHouse(int $houseId): array {
-		return $this->mapper->findByHouse($houseId);
+	public function listForHouse(int $houseId, string $sortBy = 'name_asc'): array {
+		return $this->mapper->findByHouse($houseId, $sortBy);
+	}
+
+	/**
+	 * Batch reorder categories in a house.
+	 *
+	 * @param list<array{id: int, sortOrder: int}> $items
+	 */
+	public function reorder(int $houseId, array $items): void {
+		foreach ($items as $entry) {
+			$id = (int)($entry['id'] ?? 0);
+			$sortOrder = (int)($entry['sortOrder'] ?? 0);
+			if ($id <= 0) {
+				continue;
+			}
+			try {
+				$cat = $this->mapper->findById($id);
+			} catch (DoesNotExistException) {
+				continue;
+			}
+			if ($cat->getHouseId() !== $houseId) {
+				continue;
+			}
+			$cat->setSortOrder($sortOrder);
+			$cat->setUpdatedAt(time());
+			$this->mapper->update($cat);
+		}
 	}
 
 	public function get(int $categoryId): Category {
