@@ -308,6 +308,7 @@ const {
   undoToggle,
   reorderItems,
   remove,
+  undoRemove,
   removePermanently,
   restore,
   emptyTrash,
@@ -680,9 +681,21 @@ async function handleToggle(itemId: number) {
 async function handleRemove(itemId: number) {
   if (trashMode.value) {
     await removePermanently(itemId)
-  } else {
-    await remove(itemId)
+    return
   }
+  const prev = items.value.find((i) => i.id === itemId)
+  if (!prev) return
+  const snapshot = { ...prev }
+  await remove(itemId)
+  showUndo(
+    strings.itemRemoved,
+    () => {
+      void undoRemove(snapshot).catch(() => {
+        showError(strings.restoreFailed)
+      })
+    },
+    { timeout: 6000 },
+  )
 }
 
 async function handleRestore(itemId: number) {
@@ -788,6 +801,7 @@ const strings = {
   ),
   cancel: t('pantry', 'Cancel'),
   itemMarkedDone: t('pantry', 'Item marked as done'),
+  itemRemoved: t('pantry', 'Item moved to trash'),
   restoreFailed: t('pantry', 'Failed to restore item.'),
 }
 </script>

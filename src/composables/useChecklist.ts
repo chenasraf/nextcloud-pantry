@@ -175,6 +175,12 @@ export function useChecklistItems(houseId: number, listId: number) {
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
+  async function undoRemove(prevItem: ChecklistItem): Promise<void> {
+    // Restores a soft-deleted item without changing its done state.
+    const restored = await api.restoreItem(houseId, listId, prevItem.id)
+    items.value = [...items.value, restored]
+  }
+
   async function removePermanently(itemId: number): Promise<void> {
     await api.permanentlyDeleteItem(houseId, listId, itemId)
     items.value = items.value.filter((i) => i.id !== itemId)
@@ -217,6 +223,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     undoToggle,
     reorderItems,
     remove,
+    undoRemove,
     removePermanently,
     restore,
     emptyTrash,
