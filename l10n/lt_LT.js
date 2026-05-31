@@ -66,6 +66,7 @@ OC.L10N.register(
     "New list" : "Naujas sąrašas",
     "Checklists" : "Kontrolinis sąrašas",
     "No lists yet" : "Kol kas sąrašų nėra",
+    "Are you sure you want to delete \"{name}\"?" : "Ar tikrai norite ištrinti „{name}“?",
     "Upload" : "Įkelti",
     "New folder" : "Naujas aplankas",
     "Back" : "Atgal",
