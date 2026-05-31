@@ -125,6 +125,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { n, t } from '@nextcloud/l10n'
+import { showInfo } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -382,6 +383,7 @@ async function submitBulkDelete() {
   }
   selectedNoteIds.value = new Set()
   bulkDeleting.value = false
+  showInfo(n('pantry', '%n note deleted', '%n notes deleted', ids.length))
 }
 
 // ----- Delete -----
@@ -401,6 +403,7 @@ async function submitDelete() {
   if (!deletingNote.value) return
   await remove(deletingNote.value.id)
   deletingNote.value = null
+  showInfo(t('pantry', 'Note deleted'))
 }
 
 const strings = {

@@ -371,6 +371,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { n, t } from '@nextcloud/l10n'
+import { showInfo } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcProgressBar from '@nextcloud/vue/components/NcProgressBar'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -778,6 +779,7 @@ async function submitDeletePhoto() {
   if (!deletingPhoto.value) return
   await removePhoto(deletingPhoto.value.id)
   deletingPhoto.value = null
+  showInfo(t('pantry', 'Photo deleted'))
 }
 
 async function movePhotoToRoot(photo: Photo) {
@@ -830,6 +832,7 @@ async function submitDeleteFolder() {
   if (!deletingFolder.value) return
   await removeFolder(deletingFolder.value.id, deleteFolderMode.value === 'delete')
   deletingFolder.value = null
+  showInfo(t('pantry', 'Folder deleted'))
 }
 
 // ----- Selection -----
@@ -871,6 +874,7 @@ async function submitBulkDeletePhotos() {
   }
   selectedPhotoIds.value = new Set()
   bulkDeletingPhotos.value = false
+  showInfo(n('pantry', '%n photo deleted', '%n photos deleted', ids.length))
 }
 
 // Move to folder
