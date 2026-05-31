@@ -202,4 +202,86 @@ class PrefsServiceTest extends TestCase {
 
 		$this->assertSame('disabled', $this->svc->setCategorySpacing('alice', 'bogus'));
 	}
+
+	// ----- Show added-by -----
+
+	public function testGetShowAddedByDefaultsToFalse(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'show_added_by_1', '0')
+			->willReturn('0');
+
+		$this->assertFalse($this->svc->getShowAddedBy('alice', 1));
+	}
+
+	public function testGetShowAddedByReturnsTrueWhenEnabled(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'show_added_by_1', '0')
+			->willReturn('1');
+
+		$this->assertTrue($this->svc->getShowAddedBy('alice', 1));
+	}
+
+	public function testShowAddedByIsScopedPerHouse(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'show_added_by_1') {
+					return '1';
+				}
+				if ($key === 'show_added_by_2') {
+					return '0';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertTrue($this->svc->getShowAddedBy('alice', 1));
+		$this->assertFalse($this->svc->getShowAddedBy('alice', 2));
+	}
+
+	public function testSetShowAddedByStoresOne(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'show_added_by_1', '1');
+
+		$this->assertTrue($this->svc->setShowAddedBy('alice', 1, true));
+	}
+
+	public function testSetShowAddedByStoresZero(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'show_added_by_3', '0');
+
+		$this->assertFalse($this->svc->setShowAddedBy('alice', 3, false));
+	}
+
+	public function testGetAllHousePrefsIncludesShowAddedBy(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'show_added_by_7') {
+					return '1';
+				}
+				return $default;
+			}
+		);
+
+		$prefs = $this->svc->getAllHousePrefs('alice', 7);
+		$this->assertArrayHasKey('showAddedBy', $prefs);
+		$this->assertTrue($prefs['showAddedBy']);
+	}
+
+	public function testSetHousePrefsAppliesShowAddedBy(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'show_added_by_4', '1');
+
+		$this->svc->setHousePrefs('alice', 4, ['showAddedBy' => true]);
+	}
+
+	public function testSetHousePrefsIgnoresShowAddedByWhenNotBool(): void {
+		// Patch values that aren't booleans should be skipped rather than coerced.
+		$this->config->expects($this->never())
+			->method('setUserValue');
+
+		$this->svc->setHousePrefs('alice', 4, ['showAddedBy' => 'yes']);
+	}
 }

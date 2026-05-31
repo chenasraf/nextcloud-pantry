@@ -126,7 +126,7 @@ class ChecklistService {
 		}
 	}
 
-	public function addItem(int $listId, array $data): ChecklistItem {
+	public function addItem(int $listId, array $data, ?string $addedBy = null): ChecklistItem {
 		// Ensure the list exists.
 		$this->getList($listId);
 
@@ -163,6 +163,7 @@ class ChecklistService {
 			$item->setNextDueAt(null);
 		}
 		$item->setImageFileId($this->intOrNull($data['imageFileId'] ?? null));
+		$item->setAddedBy($addedBy);
 		$item->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : 0);
 		$item->setCreatedAt($now);
 		$item->setUpdatedAt($now);

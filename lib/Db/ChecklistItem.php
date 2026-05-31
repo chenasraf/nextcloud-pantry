@@ -38,6 +38,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setImageFileId(?int $imageFileId)
  * @method string|null getImageUploadedBy()
  * @method void setImageUploadedBy(?string $imageUploadedBy)
+ * @method string|null getAddedBy()
+ * @method void setAddedBy(?string $addedBy)
  * @method int getSortOrder()
  * @method void setSortOrder(int $sortOrder)
  * @method int getCreatedAt()
@@ -62,6 +64,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?int $nextDueAt = null;
 	protected ?int $imageFileId = null;
 	protected ?string $imageUploadedBy = null;
+	protected ?string $addedBy = null;
 	protected int $sortOrder = 0;
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
@@ -106,6 +109,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'nextDueAt' => $this->nextDueAt,
 			'imageFileId' => $this->imageFileId,
 			'imageUploadedBy' => $this->imageUploadedBy,
+			'addedBy' => $this->addedBy,
 			'sortOrder' => $this->sortOrder,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,

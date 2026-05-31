@@ -297,7 +297,8 @@ final class ChecklistController extends OCSController {
 		?int $sortOrder = null,
 	): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			if ($categoryId !== null) {
@@ -312,8 +313,7 @@ final class ChecklistController extends OCSController {
 				'repeatFromCompletion' => $repeatFromCompletion,
 				'deleteOnDone' => $deleteOnDone,
 				'sortOrder' => $sortOrder ?? 0,
-			]);
-			$uid = $this->requireUid();
+			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
 				$houseId,

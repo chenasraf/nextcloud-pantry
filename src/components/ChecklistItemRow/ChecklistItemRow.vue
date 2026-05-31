@@ -55,6 +55,14 @@
         {{ category.name }}
       </span>
     </div>
+    <div v-if="showAddedBy && item.addedBy" class="checklist-row__added-by">
+      <NcAvatar
+        :user="item.addedBy"
+        :size="24"
+        :show-user-status="false"
+        :tooltip-message="addedByTooltip"
+      />
+    </div>
     <div class="checklist-row__actions">
       <NcButton variant="tertiary" :aria-label="strings.viewItem" @click="$emit('view', item)">
         <template #icon>
@@ -98,6 +106,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcAvatar from '@nextcloud/vue/components/NcAvatar'
 import RepeatIcon from '@icons/Repeat.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
@@ -107,6 +116,7 @@ import ArrowRightIcon from '@icons/ArrowRight.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
+import { useHouseMembers } from '@/composables/useHouseMembers'
 import type { ChecklistItem, Category } from '@/api/types'
 
 const props = withDefaults(
@@ -117,8 +127,9 @@ const props = withDefaults(
     reorderEnabled?: boolean
     trashMode?: boolean
     tapRowToComplete?: boolean
+    showAddedBy?: boolean
   }>(),
-  { reorderEnabled: false, trashMode: false, tapRowToComplete: false },
+  { reorderEnabled: false, trashMode: false, tapRowToComplete: false, showAddedBy: false },
 )
 
 const emit = defineEmits<{
@@ -159,6 +170,14 @@ const thumbUrl = computed(() =>
     : '',
 )
 
+const { displayNameByUid } = useHouseMembers(props.houseId)
+const addedByTooltip = computed(() => {
+  const uid = props.item.addedBy
+  if (!uid) return ''
+  const name = displayNameByUid.value[uid] ?? uid
+  return t('pantry', 'Added by {user}', { user: name })
+})
+
 const recurrenceTooltip = computed(() => {
   const next = formatNextRecurrence(
     props.item.nextDueAt,
@@ -183,7 +202,7 @@ const strings = {
 <style scoped lang="scss">
 .checklist-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
@@ -192,14 +211,18 @@ const strings = {
   background: var(--color-main-background);
 
   @media (max-width: 600px) {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
     grid-template-areas:
-      'check actions'
-      'meta  meta';
+      'check added actions'
+      'meta  meta  meta';
     gap: 0.25rem 0.5rem;
 
     .checklist-row__check {
       grid-area: check;
+    }
+
+    .checklist-row__added-by {
+      grid-area: added;
     }
 
     .checklist-row__actions {
@@ -311,6 +334,11 @@ const strings = {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+  }
+
+  &__added-by {
+    display: flex;
+    align-items: center;
   }
 
   &__quantity,

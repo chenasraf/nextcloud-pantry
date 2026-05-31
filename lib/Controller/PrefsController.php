@@ -129,6 +129,7 @@ final class PrefsController extends OCSController {
 	 * @param bool|null $photoFoldersFirst Whether folders appear first in photo board.
 	 * @param string|null $noteSort Note sort mode.
 	 * @param string|null $checklistItemSort Checklist item sort mode.
+	 * @param bool|null $showAddedBy Show the avatar of the user that added each checklist item.
 	 * @param bool|null $notifyPhoto Photo upload notifications.
 	 * @param bool|null $notifyNoteCreate Note creation notifications.
 	 * @param bool|null $notifyNoteEdit Note edit notifications.
@@ -149,6 +150,7 @@ final class PrefsController extends OCSController {
 		?bool $photoFoldersFirst = null,
 		?string $noteSort = null,
 		?string $checklistItemSort = null,
+		?bool $showAddedBy = null,
 		?bool $notifyPhoto = null,
 		?bool $notifyNoteCreate = null,
 		?bool $notifyNoteEdit = null,
@@ -156,7 +158,7 @@ final class PrefsController extends OCSController {
 		?bool $notifyItemRecur = null,
 		?bool $notifyItemDone = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $showAddedBy, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$patch = array_filter([
@@ -165,6 +167,7 @@ final class PrefsController extends OCSController {
 				'photoFoldersFirst' => $photoFoldersFirst,
 				'noteSort' => $noteSort,
 				'checklistItemSort' => $checklistItemSort,
+				'showAddedBy' => $showAddedBy,
 				'notifyPhoto' => $notifyPhoto,
 				'notifyNoteCreate' => $notifyNoteCreate,
 				'notifyNoteEdit' => $notifyNoteEdit,

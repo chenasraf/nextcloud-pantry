@@ -41,12 +41,26 @@ vi.mock('@nextcloud/vue/components/NcActionButton', () => ({
       '<button class="nc-action-button" @click="$emit(\'click\')"><slot name="icon" /><slot /></button>',
   },
 }))
+vi.mock('@nextcloud/vue/components/NcAvatar', () => ({
+  default: {
+    name: 'NcAvatar',
+    template: '<span class="nc-avatar" :data-user="user" />',
+    props: ['user', 'size', 'showUserStatus', 'tooltipMessage'],
+  },
+}))
 
 vi.mock('@/components/CategoryPicker', () => ({
   categoryIconComponent: () => ({
     name: 'MockCategoryIcon',
     template: '<span class="mock-category-icon" />',
     props: ['size'],
+  }),
+}))
+
+vi.mock('@/composables/useHouseMembers', () => ({
+  useHouseMembers: () => ({
+    members: { value: [] },
+    displayNameByUid: { value: {} },
   }),
 }))
 
@@ -79,6 +93,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     nextDueAt: null,
     imageFileId: null,
     imageUploadedBy: null,
+    addedBy: null,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

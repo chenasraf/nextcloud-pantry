@@ -58,6 +58,7 @@ export interface ChecklistItem {
   nextDueAt: number | null
   imageFileId: number | null
   imageUploadedBy: string | null
+  addedBy: string | null
   sortOrder: number
   createdAt: number
   updatedAt: number

@@ -228,6 +228,7 @@
                     "photoFoldersFirst",
                     "noteSort",
                     "checklistItemSort",
+                    "showAddedBy",
                     "notifyPhoto",
                     "notifyNoteCreate",
                     "notifyNoteEdit",
@@ -250,6 +251,9 @@
                     },
                     "checklistItemSort": {
                         "type": "string"
+                    },
+                    "showAddedBy": {
+                        "type": "boolean"
                     },
                     "notifyPhoto": {
                         "type": "boolean"
@@ -338,6 +342,7 @@
                     "nextDueAt",
                     "imageFileId",
                     "imageUploadedBy",
+                    "addedBy",
                     "sortOrder",
                     "createdAt",
                     "updatedAt",
@@ -401,6 +406,10 @@
                         "nullable": true
                     },
                     "imageUploadedBy": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "addedBy": {
                         "type": "string",
                         "nullable": true
                     },
@@ -7236,6 +7245,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Checklist item sort mode."
+                                    },
+                                    "showAddedBy": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Show the avatar of the user that added each checklist item."
                                     },
                                     "notifyPhoto": {
                                         "type": "boolean",

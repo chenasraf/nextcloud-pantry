@@ -117,6 +117,7 @@
               :reorder-enabled="isCustomSort"
               :trash-mode="trashMode"
               :tap-row-to-complete="tapRowToComplete"
+              :show-added-by="showAddedBy"
               @toggle="handleToggle"
               @view="openView"
               @edit="startEdit"
@@ -153,6 +154,7 @@
                 :category="categoryFor(gi.item.categoryId)"
                 :house-id="houseIdNum"
                 :reorder-enabled="isCustomSort"
+                :show-added-by="showAddedBy"
                 @toggle="handleToggle"
                 @view="openView"
                 @edit="startEdit"
@@ -287,6 +289,7 @@ import type { ChecklistItemSort } from '@/api/prefs'
 import { getChecklistItemSort, setChecklistItemSort } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useCategorySpacing } from '@/composables/useCategorySpacing'
+import { useShowAddedBy } from '@/composables/useShowAddedBy'
 
 const props = defineProps<{ houseId: string; listId: string }>()
 
@@ -364,6 +367,7 @@ async function loadList() {
 
 const { tapRowToComplete } = useTapRowToComplete()
 const { categorySpacing } = useCategorySpacing()
+const showAddedBy = computed(() => useShowAddedBy(houseIdNum.value).showAddedBy.value)
 const showCategorySeparators = computed(
   () => currentSort.value === 'category' && categorySpacing.value !== 'disabled',
 )

@@ -53,6 +53,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     nextDueAt: null,
     imageFileId: null,
     imageUploadedBy: null,
+    addedBy: null,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

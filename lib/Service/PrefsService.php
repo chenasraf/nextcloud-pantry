@@ -212,6 +212,31 @@ class PrefsService {
 		return $sort;
 	}
 
+	// ----- Show added-by avatar -----
+
+	private const KEY_SHOW_ADDED_BY = 'show_added_by';
+
+	public function getShowAddedBy(string $uid, int $houseId): bool {
+		// Off by default — most users do not care who added an item, and
+		// surfacing avatars on every row adds visual noise.
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_SHOW_ADDED_BY . '_' . $houseId,
+			'0',
+		) === '1';
+	}
+
+	public function setShowAddedBy(string $uid, int $houseId, bool $value): bool {
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_SHOW_ADDED_BY . '_' . $houseId,
+			$value ? '1' : '0',
+		);
+		return $value;
+	}
+
 	// ----- Notification preferences -----
 
 	public function getNotificationPref(string $uid, int $houseId, string $prefKey): bool {
@@ -259,6 +284,7 @@ class PrefsService {
 			'photoFoldersFirst' => $this->getPhotoFoldersFirst($uid, $houseId),
 			'noteSort' => $this->getNoteSort($uid, $houseId),
 			'checklistItemSort' => $this->getChecklistItemSort($uid, $houseId),
+			'showAddedBy' => $this->getShowAddedBy($uid, $houseId),
 			...$this->getNotificationPrefs($uid, $houseId),
 		];
 	}
@@ -281,6 +307,9 @@ class PrefsService {
 		}
 		if (array_key_exists('checklistItemSort', $patch) && is_string($patch['checklistItemSort'])) {
 			$this->setChecklistItemSort($uid, $houseId, $patch['checklistItemSort']);
+		}
+		if (array_key_exists('showAddedBy', $patch) && is_bool($patch['showAddedBy'])) {
+			$this->setShowAddedBy($uid, $houseId, $patch['showAddedBy']);
 		}
 		// Notification prefs
 		$notifKeys = [

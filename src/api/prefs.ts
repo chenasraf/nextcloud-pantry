@@ -103,6 +103,8 @@ export interface HousePrefs extends NotificationPrefs {
   photoFoldersFirst: boolean
   noteSort: NoteSort
   checklistItemSort: ChecklistItemSort
+  /** When true, show the avatar of the user who added each checklist item. */
+  showAddedBy: boolean
 }
 
 const housePrefsDefaults: HousePrefs = {
@@ -111,6 +113,7 @@ const housePrefsDefaults: HousePrefs = {
   photoFoldersFirst: true,
   noteSort: 'custom',
   checklistItemSort: 'custom',
+  showAddedBy: false,
   notifyPhoto: true,
   notifyNoteCreate: true,
   notifyNoteEdit: true,

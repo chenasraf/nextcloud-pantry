@@ -27,6 +27,22 @@
       </form>
     </NcAppSettingsSection>
 
+    <NcAppSettingsSection
+      v-if="houseIdNum !== null"
+      id="house-display"
+      :name="strings.displaySection"
+    >
+      <div class="pantry-display">
+        <NcCheckboxRadioSwitch
+          :model-value="showAddedBy"
+          @update:model-value="updateShowAddedBy($event)"
+        >
+          {{ strings.showAddedByLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="pantry-hint pantry-hint--inline">{{ strings.showAddedByHint }}</p>
+      </div>
+    </NcAppSettingsSection>
+
     <NcAppSettingsSection id="house-members" :name="strings.membersSection">
       <div v-if="loadingMembers" class="pantry-center">
         <NcLoadingIcon :size="28" />
@@ -173,6 +189,7 @@ import { t } from '@nextcloud/l10n'
 import NcAppSettingsDialog from '@nextcloud/vue/components/NcAppSettingsDialog'
 import NcAppSettingsSection from '@nextcloud/vue/components/NcAppSettingsSection'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
@@ -186,6 +203,7 @@ import type { UserAutocomplete } from '@/api/houses'
 import type { HouseMember, HouseRole } from '@/api/types'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useHouses } from '@/composables/useHouses'
+import { useShowAddedBy } from '@/composables/useShowAddedBy'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -334,6 +352,23 @@ async function leave() {
 // -------- Danger zone --------
 const confirmingDelete = ref(false)
 
+// -------- Display --------
+const showAddedBy = computed(() => {
+  const id = houseIdNum.value
+  if (id === null) return false
+  return useShowAddedBy(id).showAddedBy.value
+})
+
+async function updateShowAddedBy(value: boolean) {
+  const id = houseIdNum.value
+  if (id === null) return
+  try {
+    await useShowAddedBy(id).set(value)
+  } catch {
+    // Composable already reverted the optimistic update.
+  }
+}
+
 async function deleteHouse() {
   const id = houseIdNum.value
   if (id === null) return
@@ -376,6 +411,12 @@ const strings = {
   folderLabel: t('pantry', 'Upload folder'),
   browse: t('pantry', 'Browse …'),
   pickerTitle: t('pantry', 'Pick an upload folder'),
+  displaySection: t('pantry', 'Display'),
+  showAddedByLabel: t('pantry', 'Show who added each item'),
+  showAddedByHint: t(
+    'pantry',
+    'Display the avatar of the person who added each checklist item on the right of the row.',
+  ),
   membersSection: t('pantry', 'Members'),
   addMember: t('pantry', 'Add member'),
   removeMember: t('pantry', 'Remove member'),
@@ -465,6 +506,16 @@ const strings = {
 .pantry-hint {
   color: var(--color-text-maxcontrast);
   margin: 0 0 0.75rem 0;
+
+  &--inline {
+    margin: 0 0 0 1.85rem;
+  }
+}
+
+.pantry-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .pantry-user-option {

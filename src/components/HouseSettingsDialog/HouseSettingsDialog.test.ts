@@ -48,6 +48,13 @@ vi.mock('@/composables/useHouses', () => ({
   })),
 }))
 
+vi.mock('@/composables/useShowAddedBy', () => ({
+  useShowAddedBy: vi.fn(() => ({
+    showAddedBy: ref(false),
+    set: vi.fn(() => Promise.resolve()),
+  })),
+}))
+
 vi.mock('@/api/houses', () => ({
   listMembers: vi.fn(() => Promise.resolve([])),
   addMember: vi.fn(),
@@ -113,6 +120,14 @@ vi.mock('@nextcloud/vue/components/NcAvatar', () => ({
     props: { user: String, size: Number, showUserStatus: Boolean },
   },
 }))
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template:
+      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', !modelValue)" /><slot /></label>',
+    props: ['modelValue'],
+  },
+}))
 
 // Stub for Nextcloud Vue components
 function createStub(name: string, opts?: { slots?: boolean; props?: string[] }) {
@@ -151,6 +166,7 @@ const stubs = {
   NcSelect: createStub('NcSelect', { slots: false }),
   NcDateTime: createStub('NcDateTime', { slots: false }),
   NcAvatar: createStub('NcAvatar', { slots: false }),
+  NcCheckboxRadioSwitch: createStub('NcCheckboxRadioSwitch'),
 }
 
 function mountDialog(props: { open: boolean } = { open: true }) {

@@ -231,4 +231,34 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertNotNull($captured);
 		$this->assertTrue($captured->getDeleteOnDone());
 	}
+
+	public function testAddItemStoresAddedByUid(): void {
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$captured = null;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		$this->svc->addItem(1, ['name' => 'Eggs'], 'alice');
+		$this->assertNotNull($captured);
+		$this->assertSame('alice', $captured->getAddedBy());
+	}
+
+	public function testAddItemLeavesAddedByNullWhenOmitted(): void {
+		// Back-compat: rows created without a uid (e.g., older callers, or
+		// migrated data) leave added_by null, which the UI treats as "unknown".
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$captured = null;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		$this->svc->addItem(1, ['name' => 'Bread']);
+		$this->assertNotNull($captured);
+		$this->assertNull($captured->getAddedBy());
+	}
 }
