@@ -3,6 +3,7 @@ OC.L10N.register(
     {
     "Images" : "Bilete",
     "Save" : "Lagre",
+    "Saving …" : "Lagrar …",
     "Saved." : "Lagra.",
     "Notifications" : "Varsel",
     "Disabled" : "Deaktivert",
@@ -16,6 +17,7 @@ OC.L10N.register(
     "Remove image" : "Fjern bilete",
     "Delete permanently" : "Slett for godt",
     "Restore" : "Gjenopprett",
+    "Done" : "Ferdig",
     "General" : "Generelt",
     "Folder name" : "Katalognavn",
     "Rename" : "Endra namn",

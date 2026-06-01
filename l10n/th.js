@@ -8,6 +8,7 @@ OC.L10N.register(
     "Name" : "ชื่อ",
     "Cancel" : "Cancel",
     "Create" : "สร้าง",
+    "Custom" : "กำหนดเอง",
     "Delete" : "ลบ",
     "Edit" : "แก้ไข",
     "Category" : "หมวดหมู่",
@@ -20,6 +21,7 @@ OC.L10N.register(
     "Owner" : "เจ้าของ",
     "General" : "ทั่วไป",
     "Save changes" : "บันทึกการเปลี่ยนแปลง",
+    "Display" : "การแสดงผล",
     "Account" : "บัญชี",
     "Preview" : "ตัวอย่าง",
     "Folder name" : "ชื่อโฟลเดอร์",
@@ -33,7 +35,6 @@ OC.L10N.register(
     "Never" : "ไม่เคย",
     "Newest first" : "ใหม่ที่สุดก่อน",
     "Oldest first" : "เก่าที่สุดก่อน",
-    "Custom" : "กำหนดเอง",
     "Trash" : "ถังขยะ",
     "Upload" : "อัปโหลด",
     "New folder" : "โฟลเดอร์ใหม่"

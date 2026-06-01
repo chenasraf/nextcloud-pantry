@@ -12,6 +12,7 @@ OC.L10N.register(
     "Delete permanently" : "Obriši zauvek",
     "Done" : "Gotovo",
     "Owner" : "Vlasnik",
+    "Display" : "Prikaz",
     "Folder name" : "Naziv fascikle",
     "Rename" : "Preimenuj",
     "Close" : "Zatvori",
@@ -20,6 +21,7 @@ OC.L10N.register(
     "Never" : "Nikad",
     "Newest first" : "Prvo novije",
     "Oldest first" : "prvo starije",
+    "Note deleted" : "Beleška obrisana",
     "Upload" : "Otpremi",
     "New folder" : "Nova fascikla"
 },

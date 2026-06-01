@@ -9,6 +9,7 @@ OC.L10N.register(
     "Disabled" : "Malkapabligita",
     "Name" : "Nomo",
     "Cancel" : "Cancel",
+    "Custom" : "Propra",
     "Delete" : "Forigi",
     "Edit" : "Modifi",
     "Category" : "Kategorio",
@@ -22,6 +23,7 @@ OC.L10N.register(
     "Owner" : "Posedanto",
     "General" : "Ĝenerala",
     "Save changes" : "Konservi ŝanĝojn",
+    "Display" : "Montrilo",
     "Members" : "Membroj",
     "Account" : "Konto",
     "Joined" : "Membriĝinta",
@@ -42,7 +44,6 @@ OC.L10N.register(
     "Summary" : "Resumo",
     "Newest first" : "Pli novaj unue",
     "Oldest first" : "Malpli novaj unue",
-    "Custom" : "Propra",
     "Trash" : "Rubujo",
     "Upload" : "Alŝuti",
     "New folder" : "Nova dosierujo"

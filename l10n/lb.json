@@ -3,6 +3,7 @@
     "Disabled" : "Deaktivéiert",
     "Name" : "Numm",
     "Cancel" : "Cancel",
+    "Custom" : "Individualiséier",
     "Delete" : "Läschen",
     "Edit" : "Änneren",
     "Add" : "Dobäisetzen",
@@ -20,7 +21,6 @@
     "weeks" : "Wochen",
     "Daily" : "All Dag",
     "Weekly" : "All Woch",
-    "Custom" : "Individualiséier",
     "Upload" : "Eroplueden",
     "New folder" : "Neien Dossier"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

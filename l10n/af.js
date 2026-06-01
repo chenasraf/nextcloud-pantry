@@ -6,6 +6,7 @@ OC.L10N.register(
     "Save" : "Stoor",
     "Saving …" : "Bewaar tans…",
     "Cancel" : "Cancel",
+    "Custom" : "Eie",
     "Delete" : "Skrap",
     "Add" : "Voeg toe",
     "Category" : "Kategorie",
@@ -23,7 +24,6 @@ OC.L10N.register(
     "Summary" : "Opsomming",
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
-    "Custom" : "Eie",
     "Trash" : "Asblik",
     "Upload" : "Oplaai",
     "New folder" : "Nuwe gids"

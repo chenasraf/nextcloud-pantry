@@ -1,6 +1,7 @@
 { "translations": {
     "Save" : "Salveguardar",
     "Cancel" : "Cancel",
+    "Custom" : "Personalisate",
     "Delete" : "Deler",
     "Edit" : "Modificar",
     "Category" : "Categoria",
@@ -24,7 +25,6 @@
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
-    "Custom" : "Personalisate",
     "Upload" : "Incargar",
     "New folder" : "Nove dossier"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

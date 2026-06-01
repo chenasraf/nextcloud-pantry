@@ -5,6 +5,7 @@ OC.L10N.register(
     "Disabled" : "Deaktivéiert",
     "Name" : "Numm",
     "Cancel" : "Cancel",
+    "Custom" : "Individualiséier",
     "Delete" : "Läschen",
     "Edit" : "Änneren",
     "Add" : "Dobäisetzen",
@@ -22,7 +23,6 @@ OC.L10N.register(
     "weeks" : "Wochen",
     "Daily" : "All Dag",
     "Weekly" : "All Woch",
-    "Custom" : "Individualiséier",
     "Upload" : "Eroplueden",
     "New folder" : "Neien Dossier"
 },

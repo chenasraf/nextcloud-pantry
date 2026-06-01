@@ -3,6 +3,7 @@ OC.L10N.register(
     {
     "Save" : "Salveguardar",
     "Cancel" : "Cancel",
+    "Custom" : "Personalisate",
     "Delete" : "Deler",
     "Edit" : "Modificar",
     "Category" : "Categoria",
@@ -26,7 +27,6 @@ OC.L10N.register(
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
-    "Custom" : "Personalisate",
     "Upload" : "Incargar",
     "New folder" : "Nove dossier"
 },
