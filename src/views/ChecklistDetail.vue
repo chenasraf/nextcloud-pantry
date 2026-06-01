@@ -204,6 +204,7 @@
       :open="showCategoryManager"
       :house-id="houseIdNum"
       @update:open="showCategoryManager = $event"
+      @sort-changed="onCategorySortChanged"
     />
 
     <!-- Move item to another list -->
@@ -752,6 +753,14 @@ function openPreview(item: ChecklistItem) {
 // ----- Category manager -----
 
 const showCategoryManager = ref(false)
+
+async function onCategorySortChanged() {
+  // The list endpoint groups items by category, so changing category order
+  // requires a re-fetch to reflect the new grouping.
+  if (currentSort.value === 'category') {
+    await load()
+  }
+}
 
 // ----- Move item to another list -----
 

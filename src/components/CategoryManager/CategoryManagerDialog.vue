@@ -144,7 +144,10 @@ import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons
 import CategoryFormDialog from './CategoryFormDialog.vue'
 
 const props = defineProps<{ open: boolean; houseId: number }>()
-defineEmits<{ 'update:open': [value: boolean] }>()
+const emit = defineEmits<{
+  'update:open': [value: boolean]
+  'sort-changed': []
+}>()
 
 const categories = useCategories(props.houseId)
 const catItems = computed(() => categories.items.value)
@@ -165,18 +168,26 @@ async function loadSortPref() {
   categories.setSortBy(prefs.sort)
 }
 
+const sortDirty = ref(false)
+
 async function changeSort(value: CategorySort) {
+  if (value === currentSort.value) return
   currentSort.value = value
   categories.setSortBy(value)
+  sortDirty.value = true
   await setCategorySort(props.houseId, value)
 }
 
 watch(
   () => props.open,
-  async (isOpen) => {
+  async (isOpen, wasOpen) => {
     if (isOpen) {
+      sortDirty.value = false
       await loadSortPref()
       await categories.load()
+    } else if (wasOpen && sortDirty.value) {
+      sortDirty.value = false
+      emit('sort-changed')
     }
   },
   { immediate: true },
@@ -262,6 +273,7 @@ async function commitReorder() {
   const reordered = [...without]
   reordered.splice(clamped, 0, dragged)
   const entries = reordered.map((c, n) => ({ id: c.id, sortOrder: n }))
+  sortDirty.value = true
   await categories.reorder(entries)
 }
 
