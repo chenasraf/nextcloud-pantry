@@ -328,6 +328,79 @@ class NotificationService {
 	}
 
 	/**
+	 * Send a notification to every house member (minus the author) without
+	 * aggregation. Used for batch events whose payload already contains the
+	 * full list of items, so accumulation would be redundant.
+	 *
+	 * @param callable():array $paramsFn Lazy parameter builder (only called
+	 *                                   if at least one recipient needs it).
+	 */
+	private function sendToHouseMembers(
+		int $houseId,
+		string $authorUid,
+		string $subject,
+		string $objectType,
+		string $prefKey,
+		callable $paramsFn,
+	): void {
+		$members = $this->memberMapper->findByHouse($houseId);
+
+		$recipients = [];
+		foreach ($members as $member) {
+			$uid = $member->getUserId();
+			if ($authorUid !== '' && $uid === $authorUid) {
+				continue;
+			}
+			if (!$this->isNotificationEnabled($uid, $houseId, $prefKey)) {
+				continue;
+			}
+			$recipients[] = $uid;
+		}
+
+		if (empty($recipients)) {
+			return;
+		}
+
+		$params = $paramsFn();
+		$link = $this->urlGenerator->linkToRouteAbsolute('pantry.page.index');
+		$iconUrl = $this->urlGenerator->getAbsoluteURL(
+			$this->urlGenerator->imagePath(Application::APP_ID, 'app-dark.svg')
+		);
+
+		$objectId = (string)($params['houseId'] ?? $houseId);
+
+		foreach ($recipients as $uid) {
+			try {
+				// Dismiss any previous notification for the same object so
+				// repeat fires don't pile up — only the latest is shown.
+				$stale = $this->notificationManager->createNotification();
+				$stale->setApp(Application::APP_ID)
+					->setUser($uid)
+					->setObject($objectType, $objectId);
+				$this->notificationManager->markProcessed($stale);
+
+				$notification = $this->notificationManager->createNotification();
+				$notification->setApp(Application::APP_ID)
+					->setUser($uid)
+					->setDateTime(new \DateTime())
+					->setObject($objectType, $objectId)
+					->setSubject($subject, $params)
+					->setLink($link)
+					->setIcon($iconUrl);
+
+				$this->notificationManager->notify($notification);
+			} catch (\Throwable $e) {
+				$this->logger->error('Pantry notify: failed to send {subject} to {uid}: {msg}', [
+					'subject' => $subject,
+					'uid' => $uid,
+					'msg' => $e->getMessage(),
+					'exception' => $e,
+				]);
+			}
+		}
+	}
+
+	/**
 	 * Decode an accumulator state, resetting it if it is older than the
 	 * grouping window (so a long pause between events starts a new group).
 	 *
