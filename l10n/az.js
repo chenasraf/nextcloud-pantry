@@ -17,6 +17,7 @@ OC.L10N.register(
     "Done" : "Edildi",
     "General" : "Ümumi",
     "Save changes" : "Dəyişiklikləri yaddaşa ver",
+    "Display" : "Ekran",
     "Account" : "Hesab",
     "Rename folder" : "Qovluğun adını dəyiş",
     "Folder name" : "Qovluq adı",

@@ -33,6 +33,7 @@ OC.L10N.register(
     "Owner" : "المالك",
     "General" : "عامٌّ",
     "Save changes" : "حفظ التعديلات",
+    "Display" : "عرض",
     "Members" : "الاعضاء",
     "Account" : "الحساب",
     "Role" : "الوظيفة",

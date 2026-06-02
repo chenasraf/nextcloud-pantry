@@ -27,6 +27,7 @@ OC.L10N.register(
     "Owner" : "Уладальнік",
     "General" : "Агульныя",
     "Save changes" : "Захаваць змены",
+    "Display" : "Дысплей",
     "Members" : "Удзельнікі",
     "Account" : "Уліковы запіс",
     "Role" : "Роля",
