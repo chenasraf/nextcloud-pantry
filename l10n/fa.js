@@ -22,6 +22,7 @@ OC.L10N.register(
     "Description" : "شرح",
     "All" : "همه",
     "Image" : "Image",
+    "Upload image" : "بارگذاری تصویر",
     "Remove image" : "تصویر پاک شود",
     "Delete permanently" : "حذف قطعی",
     "Restore" : "بازیابی",
