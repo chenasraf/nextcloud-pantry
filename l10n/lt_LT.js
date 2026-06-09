@@ -23,6 +23,7 @@ OC.L10N.register(
     "Sort order" : "Rikiavimo tvarka",
     "Drag to reorder" : "Norėdami pertvarkyti, vilkite",
     "Add" : "Pridėti",
+    "Quantity" : "Kiekis",
     "Category" : "Kategorija",
     "Description" : "Aprašas",
     "All" : "Visos",
