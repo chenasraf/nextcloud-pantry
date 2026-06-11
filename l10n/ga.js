@@ -18,7 +18,7 @@ OC.L10N.register(
     "You moved {item} from {from} to {to} in {house}" : "Bhog tú {item} ó {from} go {to} i {house}",
     "{author} moved {item} from {from} to {to} in {house}" : "Bhog {author} {item} ó {from} go {to} i {house}",
     "You deleted {item} from {list} in {house}" : "Scrios tú {item} ó {list} i {house}",
-    "{author} deleted {item} from {list} in {house}" : "{author} deleted {item} from {list} in {house}",
+    "{author} deleted {item} from {list} in {house}" : "Scrios {author} {item} ó {list} i {house}",
     "_%n item_::_%n items_" : ["%n mír","%n mhír","%n mhír","%n mhír","%n mhír"],
     "{items} due again on {list} in {house}" : "{items} dlite arís ar {list} i {house}",
     "You restored {item} on {list} in {house}" : "D'athchóirigh tú {item} ar {list} i {house}",
