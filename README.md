@@ -43,6 +43,10 @@ notes on the go and keep everything in sync with your Nextcloud instance.
 - [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry)
 - [iOS/macOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
 
+The repository for the companion apps is [here](https://github.com/chenasraf/pantry-flutter). If you
+have issues that are specific to the apps and not the core Nextcloud app, please open an issue
+there.
+
 ## Installation
 
 ### From the Nextcloud App Store
