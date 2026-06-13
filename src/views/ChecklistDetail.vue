@@ -11,6 +11,9 @@
             <ArrowLeftIcon :size="20" />
           </template>
         </NcButton>
+        <span v-if="list" class="pantry-detail__title-icon" :style="iconWrapStyle(list.color)">
+          <component :is="checklistIconComponent(list.icon)" :size="20" />
+        </span>
       </template>
       <template #actions>
         <NcActions :aria-label="strings.sortLabel" :title="strings.sortLabel" type="tertiary">
@@ -80,7 +83,13 @@
       >
         <template #icon>
           <TrashCanIcon v-if="trashMode" />
-          <component :is="checklistIconComponent(list?.icon)" v-else />
+          <span
+            v-else
+            class="pantry-detail__empty-icon"
+            :style="iconWrapStyle(list?.color ?? null)"
+          >
+            <component :is="checklistIconComponent(list?.icon)" :size="32" />
+          </span>
         </template>
       </NcEmptyContent>
 
@@ -280,7 +289,16 @@ import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
-import { checklistIconComponent, ChecklistFormDialog } from '@/components/ChecklistIconPicker'
+import {
+  checklistIconComponent,
+  ChecklistFormDialog,
+  contrastColor,
+} from '@/components/ChecklistIconPicker'
+
+function iconWrapStyle(color: string | null) {
+  if (!color) return undefined
+  return { background: color, color: contrastColor(color) }
+}
 import { useChecklists, useChecklistItems } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { useTouchReorder } from '@/composables/useTouchReorder'
@@ -784,8 +802,18 @@ function createListForMove() {
   showCreateForMove.value = true
 }
 
-async function submitCreateListAndMove(data: { name: string; description: string; icon: string }) {
-  const newList = await createList(data.name, data.description || null, data.icon || null)
+async function submitCreateListAndMove(data: {
+  name: string
+  description: string
+  icon: string
+  color: string
+}) {
+  const newList = await createList(
+    data.name,
+    data.description || null,
+    data.icon || null,
+    data.color || null,
+  )
   showCreateForMove.value = false
   await submitMoveItem(newList.id)
 }
@@ -817,6 +845,29 @@ const strings = {
 
 <style scoped lang="scss">
 .pantry-detail {
+  &__title-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--color-background-dark);
+    color: var(--color-primary-element);
+  }
+
+  &__empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--color-background-dark);
+    color: var(--color-primary-element);
+  }
+
   &__body {
     max-width: 900px;
     margin: 0 auto;

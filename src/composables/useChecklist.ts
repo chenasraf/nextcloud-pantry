@@ -55,8 +55,9 @@ export function useChecklists(houseId: number) {
     name: string,
     description?: string | null,
     icon?: string | null,
+    color?: string | null,
   ): Promise<Checklist> {
-    const created = await api.createList(houseId, name, description, icon)
+    const created = await api.createList(houseId, name, description, icon, color)
     lists.value = [...lists.value, created]
     return created
   }
@@ -67,6 +68,7 @@ export function useChecklists(houseId: number) {
       name?: string
       description?: string | null
       icon?: string
+      color?: string | null
       deleteOnDoneDefault?: boolean
     },
   ): Promise<void> {

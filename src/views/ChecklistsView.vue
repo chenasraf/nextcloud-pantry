@@ -46,11 +46,13 @@
             }"
             class="pantry-list-card"
           >
-            <component
-              :is="checklistIconComponent(list.icon)"
-              :size="28"
-              class="pantry-list-card__icon"
-            />
+            <span class="pantry-list-card__icon-wrap" :style="iconWrapStyle(list.color)">
+              <component
+                :is="checklistIconComponent(list.icon)"
+                :size="28"
+                class="pantry-list-card__icon"
+              />
+            </span>
             <div class="pantry-list-card__body">
               <h3>{{ list.name }}</h3>
               <p v-if="list.description">{{ list.description }}</p>
@@ -70,105 +72,18 @@
       </ul>
     </div>
 
-    <NcDialog
-      v-if="showCreate"
-      :name="strings.createDialogTitle"
+    <ChecklistFormDialog
       :open="showCreate"
-      close-on-click-outside
       @update:open="showCreate = $event"
-    >
-      <form
-        id="pantry-create-list-form"
-        class="pantry-form"
-        autocomplete="off"
-        @submit.prevent="submitCreate"
-      >
-        <NcTextField
-          v-model="newName"
-          :label="strings.nameLabel"
-          :placeholder="strings.namePlaceholder"
-          autocomplete="off"
-        />
-        <NcTextField
-          v-model="newDescription"
-          :label="strings.descriptionLabel"
-          :placeholder="strings.descriptionPlaceholder"
-          autocomplete="off"
-        />
-        <div>
-          <label class="pantry-icon-picker__label">{{ strings.iconLabel }}</label>
-          <div class="pantry-icon-picker__grid">
-            <button
-              v-for="opt in CHECKLIST_ICONS"
-              :key="opt.key"
-              type="button"
-              class="pantry-icon-picker__button"
-              :class="{ 'pantry-icon-picker__button--active': newIcon === opt.key }"
-              :title="opt.label"
-              @click="newIcon = opt.key"
-            >
-              <component :is="opt.component" :size="20" />
-            </button>
-          </div>
-        </div>
-      </form>
-      <template #actions>
-        <NcButton @click="showCreate = false">{{ strings.cancel }}</NcButton>
-        <NcButton
-          form="pantry-create-list-form"
-          type="submit"
-          variant="primary"
-          :disabled="!newName.trim()"
-        >
-          {{ strings.create }}
-        </NcButton>
-      </template>
-    </NcDialog>
+      @save="submitCreate"
+    />
 
-    <NcDialog
-      v-if="editing"
-      :name="strings.editDialogTitle"
+    <ChecklistFormDialog
       :open="!!editing"
-      close-on-click-outside
+      :list="editing"
       @update:open="(v) => !v && (editing = null)"
-    >
-      <form class="pantry-form" autocomplete="off" @submit.prevent="submitEdit">
-        <NcTextField
-          v-model="editName"
-          :label="strings.nameLabel"
-          :placeholder="strings.namePlaceholder"
-          autocomplete="off"
-        />
-        <NcTextField
-          v-model="editDescription"
-          :label="strings.descriptionLabel"
-          :placeholder="strings.descriptionPlaceholder"
-          autocomplete="off"
-        />
-        <div>
-          <label class="pantry-icon-picker__label">{{ strings.iconLabel }}</label>
-          <div class="pantry-icon-picker__grid">
-            <button
-              v-for="opt in CHECKLIST_ICONS"
-              :key="opt.key"
-              type="button"
-              class="pantry-icon-picker__button"
-              :class="{ 'pantry-icon-picker__button--active': editIcon === opt.key }"
-              :title="opt.label"
-              @click="editIcon = opt.key"
-            >
-              <component :is="opt.component" :size="20" />
-            </button>
-          </div>
-        </div>
-      </form>
-      <template #actions>
-        <NcButton @click="editing = null">{{ strings.cancel }}</NcButton>
-        <NcButton variant="primary" :disabled="!editName.trim()" @click="submitEdit">
-          {{ strings.save }}
-        </NcButton>
-      </template>
-    </NcDialog>
+      @save="submitEdit"
+    />
 
     <NcDialog
       v-if="deleting"
@@ -200,7 +115,6 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import PageToolbar from '@/components/PageToolbar'
@@ -213,10 +127,15 @@ import DeleteIcon from '@icons/Delete.vue'
 import type { Checklist } from '@/api/types'
 import { useChecklists } from '@/composables/useChecklist'
 import {
-  CHECKLIST_ICONS,
-  DEFAULT_CHECKLIST_ICON_KEY,
   checklistIconComponent,
+  ChecklistFormDialog,
+  contrastColor,
 } from '@/components/ChecklistIconPicker'
+
+function iconWrapStyle(color: string | null) {
+  if (!color) return undefined
+  return { background: color, color: contrastColor(color) }
+}
 
 const props = defineProps<{ houseId: string }>()
 const router = useRouter()
@@ -233,18 +152,15 @@ watch(
 const showCategoryManager = ref(false)
 
 const showCreate = ref(false)
-const newName = ref('')
-const newDescription = ref('')
-const newIcon = ref(DEFAULT_CHECKLIST_ICON_KEY)
 
-async function submitCreate() {
-  const name = newName.value.trim()
-  if (!name) return
-  const list = await create(name, newDescription.value.trim() || null, newIcon.value)
+async function submitCreate(data: {
+  name: string
+  description: string
+  icon: string
+  color: string
+}) {
+  const list = await create(data.name, data.description || null, data.icon, data.color || null)
   showCreate.value = false
-  newName.value = ''
-  newDescription.value = ''
-  newIcon.value = DEFAULT_CHECKLIST_ICON_KEY
   await router.push({
     name: 'list-detail',
     params: { houseId: String(houseIdNum.value), listId: String(list.id) },
@@ -252,26 +168,24 @@ async function submitCreate() {
 }
 
 const editing = ref<Checklist | null>(null)
-const editName = ref('')
-const editDescription = ref('')
-const editIcon = ref(DEFAULT_CHECKLIST_ICON_KEY)
 
 function startEdit(list: Checklist) {
   editing.value = list
-  editName.value = list.name
-  editDescription.value = list.description ?? ''
-  editIcon.value = list.icon || DEFAULT_CHECKLIST_ICON_KEY
 }
 
-async function submitEdit() {
+async function submitEdit(data: {
+  name: string
+  description: string
+  icon: string
+  color: string
+}) {
   const target = editing.value
   if (!target) return
-  const name = editName.value.trim()
-  if (!name) return
   await update(target.id, {
-    name,
-    description: editDescription.value.trim(),
-    icon: editIcon.value,
+    name: data.name,
+    description: data.description,
+    icon: data.icon,
+    color: data.color || null,
   })
   editing.value = null
 }
@@ -300,20 +214,11 @@ const strings = {
   title: t('pantry', 'Checklists'),
   newList: t('pantry', 'New list'),
   manageCategories: t('pantry', 'Manage categories'),
-  create: t('pantry', 'Create'),
-  save: t('pantry', 'Save'),
   cancel: t('pantry', 'Cancel'),
   edit: t('pantry', 'Edit'),
   delete: t('pantry', 'Delete'),
   listMenu: t('pantry', 'List actions'),
-  createDialogTitle: t('pantry', 'Create a checklist'),
-  editDialogTitle: t('pantry', 'Edit checklist'),
   deleteDialogTitle: t('pantry', 'Delete checklist'),
-  nameLabel: t('pantry', 'Name'),
-  namePlaceholder: t('pantry', 'e.g. Weekly groceries'),
-  descriptionLabel: t('pantry', 'Description (optional)'),
-  descriptionPlaceholder: t('pantry', 'A short description'),
-  iconLabel: t('pantry', 'Icon:'),
   emptyTitle: t('pantry', 'No lists yet'),
   emptyBody: t('pantry', 'Create your first checklist to start adding items.'),
 }
@@ -365,8 +270,20 @@ const strings = {
     background: var(--color-background-hover);
   }
 
-  &__icon {
+  &__icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--color-background-dark);
     color: var(--color-primary-element);
+  }
+
+  &__icon {
+    color: inherit;
   }
 
   &__body {
@@ -390,51 +307,5 @@ const strings = {
   display: flex;
   justify-content: center;
   padding: 2rem;
-}
-
-.pantry-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 0.5rem 0;
-}
-
-.pantry-icon-picker {
-  &__label {
-    display: block;
-    font-weight: 600;
-    font-size: 0.85rem;
-    margin-bottom: 0.35rem;
-  }
-
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
-    gap: 0.35rem;
-  }
-
-  &__button {
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid transparent;
-    border-radius: var(--border-radius, 4px);
-    background: var(--color-background-dark);
-    color: var(--color-main-text);
-    cursor: pointer;
-    transition:
-      border-color 0.15s,
-      background 0.15s;
-
-    &:hover {
-      background: var(--color-background-hover);
-    }
-
-    &--active {
-      border-color: var(--color-primary-element);
-      background: var(--color-primary-element-light);
-    }
-  }
 }
 </style>

@@ -28,7 +28,9 @@
             :active="currentListId === list.id"
           >
             <template #icon>
-              <component :is="checklistIconComponent(list.icon)" :size="18" />
+              <span class="pantry-nav__list-icon" :style="iconWrapStyle(list.color)">
+                <component :is="checklistIconComponent(list.icon)" :size="16" />
+              </span>
             </template>
           </NcAppNavigationItem>
         </NcAppNavigationItem>
@@ -191,7 +193,12 @@ import CheckIcon from '@icons/Check.vue'
 import PlusIcon from '@icons/Plus.vue'
 import { useHouses } from '@/composables/useHouses'
 import { useChecklists } from '@/composables/useChecklist'
-import { checklistIconComponent } from '@/components/ChecklistIconPicker'
+import { checklistIconComponent, contrastColor } from '@/components/ChecklistIconPicker'
+
+function iconWrapStyle(color: string | null) {
+  if (!color) return undefined
+  return { background: color, color: contrastColor(color) }
+}
 import HouseSettingsDialog from '@/components/HouseSettingsDialog'
 import AccountSettingsDialog from '@/components/AccountSettingsDialog'
 
@@ -335,6 +342,18 @@ const strings = {
 </script>
 
 <style scoped lang="scss">
+.pantry-nav__list-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-inline-end: 6px;
+  border-radius: 8px;
+  background: var(--color-background-dark);
+  color: var(--color-main-text);
+}
+
 .pantry-nav__house-label {
   padding: 8px 16px 4px;
   font-weight: 600;

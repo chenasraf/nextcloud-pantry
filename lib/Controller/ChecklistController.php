@@ -80,6 +80,7 @@ final class ChecklistController extends OCSController {
 	 * @param string $name List name.
 	 * @param string|null $description Optional description.
 	 * @param string|null $icon Optional icon key.
+	 * @param string|null $color Optional accent color (hex, e.g. "#03a9f4"). Null clears.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
 	 *
@@ -87,11 +88,11 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists')]
 	#[NoAdminRequired]
-	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $description, $icon): DataResponse {
+	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null, ?string $color = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $description, $icon, $color): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$list = $this->lists->createList($houseId, $name, $description, $icon);
+			$list = $this->lists->createList($houseId, $name, $description, $icon, $color);
 			$this->activity->publishListCreated(
 				$houseId,
 				$this->houses->get($houseId)->getName(),
@@ -132,6 +133,7 @@ final class ChecklistController extends OCSController {
 	 * @param string|null $name New name.
 	 * @param string|null $description New description.
 	 * @param string|null $icon New icon key.
+	 * @param string|null $color New accent color (hex). Pass an empty string to clear.
 	 * @param int|null $sortOrder New sort order.
 	 * @param bool|null $deleteOnDoneDefault New default for the "Once" toggle on the add-item form.
 	 *
@@ -141,8 +143,8 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}')]
 	#[NoAdminRequired]
-	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?int $sortOrder = null, ?bool $deleteOnDoneDefault = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $sortOrder, $deleteOnDoneDefault): DataResponse {
+	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?bool $deleteOnDoneDefault = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $color, $sortOrder, $deleteOnDoneDefault): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->lists->getList($listId);
@@ -157,6 +159,9 @@ final class ChecklistController extends OCSController {
 			if ($icon !== null) {
 				$patch['icon'] = $icon;
 			}
+			if ($color !== null) {
+				$patch['color'] = $color;
+			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
 			}
@@ -164,7 +169,7 @@ final class ChecklistController extends OCSController {
 				$patch['deleteOnDoneDefault'] = $deleteOnDoneDefault;
 			}
 			$list = $this->lists->updateList($listId, $patch);
-			$contentChanged = $name !== null || $description !== null || $icon !== null;
+			$contentChanged = $name !== null || $description !== null || $icon !== null || $color !== null;
 			if ($contentChanged) {
 				$this->activity->publishListUpdated(
 					$houseId,

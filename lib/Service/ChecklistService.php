@@ -39,7 +39,7 @@ class ChecklistService {
 		}
 	}
 
-	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null): Checklist {
+	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null, ?string $color = null): Checklist {
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('List name cannot be empty');
@@ -52,6 +52,7 @@ class ChecklistService {
 		if ($icon !== null && $icon !== '') {
 			$list->setIcon($icon);
 		}
+		$list->setColor($color !== null && $color !== '' ? $color : null);
 		$list->setSortOrder(0);
 		$list->setCreatedAt($now);
 		$list->setUpdatedAt($now);
@@ -78,6 +79,10 @@ class ChecklistService {
 			if ($icon !== '') {
 				$list->setIcon($icon);
 			}
+		}
+		if (array_key_exists('color', $patch)) {
+			$color = $patch['color'];
+			$list->setColor(is_string($color) && $color !== '' ? $color : null);
 		}
 		if (isset($patch['sortOrder'])) {
 			$list->setSortOrder((int)$patch['sortOrder']);

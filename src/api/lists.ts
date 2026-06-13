@@ -11,11 +11,13 @@ export async function createList(
   name: string,
   description?: string | null,
   icon?: string | null,
+  color?: string | null,
 ): Promise<Checklist> {
   const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists`, {
     name,
     description: description ?? null,
     icon: icon ?? null,
+    color: color ?? null,
   })
   return resp.data
 }
@@ -32,6 +34,7 @@ export async function updateList(
     name?: string
     description?: string | null
     icon?: string
+    color?: string | null
     sortOrder?: number
     deleteOnDoneDefault?: boolean
   },

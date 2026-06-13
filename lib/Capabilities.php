@@ -49,6 +49,7 @@ class Capabilities implements IPublicCapability {
 				'features' => [
 					'houses',
 					'checklists',
+					'checklist-color',
 					'categories',
 					'category-sort',
 					'photos',

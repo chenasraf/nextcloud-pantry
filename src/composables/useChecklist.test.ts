@@ -28,6 +28,7 @@ function makeList(overrides: Partial<Checklist> = {}): Checklist {
     name: 'Groceries',
     description: null,
     icon: 'clipboard-list',
+    color: null,
     sortOrder: 0,
     deleteOnDoneDefault: false,
     createdAt: 0,
@@ -116,7 +117,13 @@ describe('useChecklists', () => {
       await c.load()
       const result = await c.create('New', 'desc', 'cart')
 
-      expect(mockApi.createList).toHaveBeenCalledWith(houseCounter, 'New', 'desc', 'cart')
+      expect(mockApi.createList).toHaveBeenCalledWith(
+        houseCounter,
+        'New',
+        'desc',
+        'cart',
+        undefined,
+      )
       expect(result).toEqual(newList)
       expect(c.lists.value).toHaveLength(1)
     })

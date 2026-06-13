@@ -5,3 +5,4 @@ export {
   type ChecklistIconOption,
 } from './checklistIcons'
 export { default as ChecklistFormDialog } from './ChecklistFormDialog.vue'
+export { checklistColorOptions, contrastColor } from './checklistColors'

@@ -138,6 +138,27 @@
                     "beach"
                 ]
             },
+            "ChecklistColor": {
+                "type": "string",
+                "enum": [
+                    "#f44336",
+                    "#e91e63",
+                    "#9c27b0",
+                    "#673ab7",
+                    "#3f51b5",
+                    "#2196f3",
+                    "#03a9f4",
+                    "#00bcd4",
+                    "#009688",
+                    "#4caf50",
+                    "#8bc34a",
+                    "#cddc39",
+                    "#ffeb3b",
+                    "#ffc107",
+                    "#ff9800",
+                    "#ff5722"
+                ]
+            },
             "ChecklistIcon": {
                 "type": "string",
                 "enum": [
@@ -287,6 +308,7 @@
                     "name",
                     "description",
                     "icon",
+                    "color",
                     "sortOrder",
                     "deleteOnDoneDefault",
                     "createdAt",
@@ -310,6 +332,14 @@
                     },
                     "icon": {
                         "$ref": "#/components/schemas/ChecklistIcon"
+                    },
+                    "color": {
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ChecklistColor"
+                            }
+                        ]
                     },
                     "sortOrder": {
                         "type": "integer",
@@ -1558,6 +1588,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Optional icon key."
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Optional accent color (hex, e.g. \"#03a9f4\"). Null clears."
                                     }
                                 }
                             }
@@ -1794,6 +1830,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New icon key."
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New accent color (hex). Pass an empty string to clear."
                                     },
                                     "sortOrder": {
                                         "type": "integer",

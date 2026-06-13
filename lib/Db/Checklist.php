@@ -18,6 +18,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setDescription(?string $description)
  * @method string getIcon()
  * @method void setIcon(string $icon)
+ * @method string|null getColor()
+ * @method void setColor(?string $color)
  * @method int getSortOrder()
  * @method void setSortOrder(int $sortOrder)
  * @method bool getDeleteOnDoneDefault()
@@ -32,6 +34,7 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected string $name = '';
 	protected ?string $description = null;
 	protected string $icon = 'clipboard-check';
+	protected ?string $color = null;
 	protected int $sortOrder = 0;
 	protected bool $deleteOnDoneDefault = false;
 	protected int $createdAt = 0;
@@ -57,6 +60,7 @@ class Checklist extends Entity implements \JsonSerializable {
 			'name' => $this->name,
 			'description' => $this->description,
 			'icon' => $this->icon,
+			'color' => $this->color,
 			'sortOrder' => $this->sortOrder,
 			'deleteOnDoneDefault' => $this->deleteOnDoneDefault,
 			'createdAt' => $this->createdAt,

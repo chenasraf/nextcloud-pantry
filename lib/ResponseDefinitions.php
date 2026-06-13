@@ -27,12 +27,15 @@ namespace OCA\Pantry;
  *     joinedAt: int,
  * }
  *
+ * @psalm-type PantryChecklistColor = '#f44336'|'#e91e63'|'#9c27b0'|'#673ab7'|'#3f51b5'|'#2196f3'|'#03a9f4'|'#00bcd4'|'#009688'|'#4caf50'|'#8bc34a'|'#cddc39'|'#ffeb3b'|'#ffc107'|'#ff9800'|'#ff5722'
+ *
  * @psalm-type PantryList = array{
  *     id: int,
  *     houseId: int,
  *     name: string,
  *     description: string|null,
  *     icon: PantryChecklistIcon,
+ *     color: PantryChecklistColor|null,
  *     sortOrder: int,
  *     deleteOnDoneDefault: bool,
  *     createdAt: int,

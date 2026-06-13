@@ -25,6 +25,7 @@ export interface Checklist {
   name: string
   description: string | null
   icon: string
+  color: string | null
   sortOrder: number
   deleteOnDoneDefault: boolean
   createdAt: number
