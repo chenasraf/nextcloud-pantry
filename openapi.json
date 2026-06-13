@@ -657,6 +657,63 @@
                     }
                 }
             },
+            "PublicCapabilities": {
+                "type": "object",
+                "required": [
+                    "pantry"
+                ],
+                "properties": {
+                    "pantry": {
+                        "type": "object",
+                        "required": [
+                            "version",
+                            "features"
+                        ],
+                        "properties": {
+                            "version": {
+                                "type": "object",
+                                "required": [
+                                    "major",
+                                    "minor",
+                                    "micro",
+                                    "string",
+                                    "array"
+                                ],
+                                "properties": {
+                                    "major": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "minor": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "micro": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                    },
+                                    "string": {
+                                        "type": "string"
+                                    },
+                                    "array": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        }
+                                    }
+                                }
+                            },
+                            "features": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "Success": {
                 "type": "object",
                 "required": [
