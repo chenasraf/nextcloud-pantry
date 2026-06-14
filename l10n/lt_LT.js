@@ -76,6 +76,7 @@ OC.L10N.register(
     "No lists yet" : "Kol kas sąrašų nėra",
     "Are you sure you want to delete \"{name}\"?" : "Ar tikrai norite ištrinti „{name}“?",
     "Note deleted" : "Užrašai ištrinti",
+    "Clear selection" : "Išvalyti pasirinkimą",
     "Upload" : "Įkelti",
     "New folder" : "Naujas aplankas",
     "Back" : "Atgal",
