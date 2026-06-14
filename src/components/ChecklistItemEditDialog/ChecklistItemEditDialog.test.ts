@@ -5,7 +5,6 @@ import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ChecklistItem } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
-vi.mock('@icons/Repeat.vue', () => createIconMock('RepeatIcon'))
 vi.mock('@icons/Upload.vue', () => createIconMock('UploadIcon'))
 vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
 
@@ -33,13 +32,17 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
-vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+vi.mock('@/components/ItemTypeSelector', () => ({
   default: {
-    name: 'NcCheckboxRadioSwitch',
+    name: 'ItemTypeSelector',
     template:
-      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><slot /></label>',
-    props: ['modelValue'],
-    emits: ['update:modelValue'],
+      '<div class="mock-item-type-selector" :data-delete-on-done="deleteOnDone" :data-rrule="rrule || \'\'">' +
+      '<button class="mock-staple" type="button" @click="$emit(\'select-staple\')">staple</button>' +
+      '<button class="mock-one-time" type="button" @click="$emit(\'select-one-time\')">one-time</button>' +
+      '<button class="mock-recurring" type="button" @click="$emit(\'select-recurring\')">recurring</button>' +
+      '</div>',
+    props: ['deleteOnDone', 'rrule'],
+    emits: ['select-staple', 'select-one-time', 'select-recurring'],
   },
 }))
 vi.mock('@/components/AutoResizeTextarea', () => ({
@@ -212,25 +215,36 @@ describe('ChecklistItemEditDialog', () => {
     expect(wrapper.find('.nc-text-area').exists()).toBe(true)
   })
 
-  it('pre-fills "Once" checkbox from item.deleteOnDone and emits it on save', async () => {
+  it('pre-fills item type from item.deleteOnDone and emits it on save', async () => {
     const wrapper = mount(ChecklistItemEditDialog, {
       props: { ...defaultProps, item: makeItem({ deleteOnDone: true }) },
     })
-    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
-    expect(checkbox.checked).toBe(true)
+    const selector = wrapper.find('.mock-item-type-selector')
+    expect(selector.attributes('data-delete-on-done')).toBe('true')
 
     await wrapper.find('#pantry-edit-item-form').trigger('submit')
     const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
     expect(patch.deleteOnDone).toBe(true)
   })
 
-  it('toggles "Once" checkbox and emits updated deleteOnDone on save', async () => {
+  it('picks "One-time" and emits updated deleteOnDone on save', async () => {
     const wrapper = mount(ChecklistItemEditDialog, { props: defaultProps })
-    const checkboxInput = wrapper.find('.nc-checkbox input[type="checkbox"]')
-    await checkboxInput.setValue(true)
+    await wrapper.find('.mock-one-time').trigger('click')
 
     await wrapper.find('#pantry-edit-item-form').trigger('submit')
     const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
     expect(patch.deleteOnDone).toBe(true)
+  })
+
+  it('picks "Staple" and clears rrule/deleteOnDone on save', async () => {
+    const wrapper = mount(ChecklistItemEditDialog, {
+      props: { ...defaultProps, item: makeItem({ deleteOnDone: true }) },
+    })
+    await wrapper.find('.mock-staple').trigger('click')
+
+    await wrapper.find('#pantry-edit-item-form').trigger('submit')
+    const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
+    expect(patch.deleteOnDone).toBe(false)
+    expect(patch.rrule).toBeNull()
   })
 })

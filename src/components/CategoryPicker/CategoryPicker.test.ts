@@ -197,7 +197,7 @@ describe('CategoryPicker', () => {
       expect(options[1]).toMatchObject({ label: 'Produce', id: 2 })
     })
 
-    it('includes a "Create new category" option at the end', () => {
+    it('includes a "Create …" option at the end', () => {
       mockItems.value = [makeCategory()]
 
       const wrapper = mount(CategoryPicker, {
@@ -209,7 +209,7 @@ describe('CategoryPicker', () => {
       const options = select.props('options') as Array<{ label: string; create?: boolean }>
       const lastOption = options[options.length - 1]
       expect(lastOption.create).toBe(true)
-      expect(lastOption.label).toContain('Create new category')
+      expect(lastOption.label).toContain('Create')
     })
 
     it('shows create option even when no categories exist', () => {

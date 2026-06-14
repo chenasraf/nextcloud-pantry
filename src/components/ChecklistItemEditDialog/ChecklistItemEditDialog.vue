@@ -36,24 +36,16 @@
         :label="strings.categoryLabel"
         :placeholder="strings.categoryPlaceholder"
       />
-      <div class="edit-item-form__once">
-        <NcCheckboxRadioSwitch v-model="editDeleteOnDone">
-          {{ strings.once }}
-        </NcCheckboxRadioSwitch>
-        <span class="edit-item-form__once-hint">{{ strings.onceHint }}</span>
+      <div class="edit-item-form__type">
+        <span class="edit-item-form__label">{{ strings.typeLabel }}</span>
+        <ItemTypeSelector
+          :delete-on-done="editDeleteOnDone"
+          :rrule="editRrule"
+          @select-staple="selectStaple"
+          @select-one-time="selectOneTime"
+          @select-recurring="selectRecurring"
+        />
       </div>
-
-      <NcButton
-        v-if="!editDeleteOnDone"
-        variant="tertiary"
-        type="button"
-        @click="showRecurrenceEditor = true"
-      >
-        <template #icon>
-          <RepeatIcon :size="20" />
-        </template>
-        {{ editRrule ? strings.recurrenceSet : strings.recurrenceButton }}
-      </NcButton>
 
       <div class="edit-item-form__image">
         <span class="edit-item-form__label">{{ strings.imageLabel }}</span>
@@ -112,14 +104,13 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import RepeatIcon from '@icons/Repeat.vue'
 import UploadIcon from '@icons/Upload.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
+import ItemTypeSelector from '@/components/ItemTypeSelector'
 import { itemImagePreviewUrl } from '@/api/images'
 import type { ChecklistItem } from '@/api/types'
 import type { ItemInput } from '@/api/lists'
@@ -199,6 +190,23 @@ watch(
 
 onBeforeUnmount(revokeObjectUrl)
 
+function selectStaple() {
+  editRrule.value = null
+  editRepeatFromCompletion.value = false
+  editDeleteOnDone.value = false
+}
+
+function selectOneTime() {
+  editRrule.value = null
+  editRepeatFromCompletion.value = false
+  editDeleteOnDone.value = true
+}
+
+function selectRecurring() {
+  editDeleteOnDone.value = false
+  showRecurrenceEditor.value = true
+}
+
 function submitEdit() {
   const name = editName.value.trim()
   if (!name) return
@@ -254,10 +262,7 @@ const strings = {
   quantityPlaceholder: t('pantry', 'e.g. 2 L'),
   categoryLabel: t('pantry', 'Category'),
   categoryPlaceholder: t('pantry', 'Category'),
-  recurrenceButton: t('pantry', 'Repeat …'),
-  recurrenceSet: t('pantry', 'Repeat: set'),
-  once: t('pantry', 'Once'),
-  onceHint: t('pantry', 'Delete this item once it is marked as done.'),
+  typeLabel: t('pantry', 'Item type'),
   imageLabel: t('pantry', 'Image'),
   uploadImage: t('pantry', 'Upload image'),
   replaceImage: t('pantry', 'Replace image'),
@@ -302,16 +307,10 @@ const strings = {
     display: none;
   }
 
-  &__once {
+  &__type {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  &__once-hint {
-    font-size: 0.8rem;
-    color: var(--color-text-maxcontrast);
-    padding-inline-start: 2rem;
+    gap: 0.5rem;
   }
 }
 </style>

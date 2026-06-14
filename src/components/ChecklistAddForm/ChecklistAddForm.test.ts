@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
@@ -6,8 +6,15 @@ import type { ItemInput } from '@/api/lists'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@icons/Plus.vue', () => createIconMock('PlusIcon'))
+vi.mock('@icons/TagOutline.vue', () => createIconMock('TagOutlineIcon'))
+vi.mock('@icons/ScaleBalance.vue', () => createIconMock('ScaleBalanceIcon'))
+vi.mock('@icons/Text.vue', () => createIconMock('TextIcon'))
+vi.mock('@icons/Pin.vue', () => createIconMock('PinIcon'))
+vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
 vi.mock('@icons/Repeat.vue', () => createIconMock('RepeatIcon'))
-vi.mock('@icons/ChevronDown.vue', () => createIconMock('ChevronDownIcon'))
+vi.mock('@icons/Image.vue', () => createIconMock('ImageIcon'))
+vi.mock('@icons/ImagePlus.vue', () => createIconMock('ImagePlusIcon'))
+vi.mock('@icons/Upload.vue', () => createIconMock('UploadIcon'))
 
 vi.mock('@nextcloud/vue/components/NcButton', () => ({
   default: {
@@ -26,13 +33,13 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
-vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+vi.mock('@nextcloud/vue/components/NcChip', () => ({
   default: {
-    name: 'NcCheckboxRadioSwitch',
+    name: 'NcChip',
     template:
-      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><slot /></label>',
-    props: ['modelValue'],
-    emits: ['update:modelValue'],
+      '<button class="nc-chip" :data-variant="variant" type="button" @click="$emit(\'click\')"><slot name="icon" /><slot /></button>',
+    props: ['variant', 'noClose'],
+    emits: ['click'],
   },
 }))
 vi.mock('@/components/AutoResizeTextarea', () => ({
@@ -40,18 +47,8 @@ vi.mock('@/components/AutoResizeTextarea', () => ({
     name: 'AutoResizeTextarea',
     template:
       '<textarea class="nc-text-area" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-    props: ['modelValue', 'label', 'placeholder', 'maxHeight', 'rows'],
+    props: ['modelValue', 'label', 'placeholder', 'autocomplete'],
     emits: ['update:modelValue'],
-    methods: {
-      getTextareaEl(): HTMLTextAreaElement | null {
-        const el = (this as unknown as { $el: HTMLElement | undefined }).$el
-        if (!el) return null
-        return el.tagName === 'TEXTAREA'
-          ? (el as HTMLTextAreaElement)
-          : el.querySelector('textarea')
-      },
-      resize() {},
-    },
   },
 }))
 vi.mock('@/components/RecurrenceEditor', () => ({
@@ -61,14 +58,54 @@ vi.mock('@/components/RecurrenceEditor', () => ({
     props: ['modelValue', 'open', 'fromCompletion'],
     emits: ['update:modelValue', 'update:open', 'update:fromCompletion'],
   },
+  RecurrenceForm: {
+    name: 'RecurrenceForm',
+    template: '<div class="mock-recurrence-form" />',
+    props: ['modelValue', 'fromCompletion'],
+    emits: ['update:modelValue', 'update:fromCompletion'],
+  },
 }))
-vi.mock('@/components/CategoryPicker', () => ({
+vi.mock('@/components/CategoryChipList', () => ({
   default: {
-    name: 'CategoryPicker',
-    template: '<div class="mock-category-picker" />',
-    props: ['modelValue', 'houseId', 'placeholder'],
+    name: 'CategoryChipList',
+    template: '<div class="mock-category-chip-list" />',
+    props: ['modelValue', 'houseId'],
     emits: ['update:modelValue'],
   },
+}))
+vi.mock('@/components/QuantityInput', () => ({
+  default: {
+    name: 'QuantityInput',
+    template:
+      '<input class="mock-quantity-input" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
+}))
+vi.mock('@/components/ItemTypeSelector', () => ({
+  default: {
+    name: 'ItemTypeSelector',
+    template:
+      '<div class="mock-item-type-selector" :data-delete-on-done="deleteOnDone" :data-rrule="rrule || \'\'">' +
+      '<button class="mock-staple" type="button" @click="$emit(\'select-staple\')">staple</button>' +
+      '<button class="mock-one-time" type="button" @click="$emit(\'select-one-time\')">one-time</button>' +
+      '<button class="mock-recurring" type="button" @click="$emit(\'select-recurring\')">recurring</button>' +
+      '</div>',
+    props: ['deleteOnDone', 'rrule'],
+    emits: ['select-staple', 'select-one-time', 'select-recurring'],
+  },
+}))
+vi.mock('@/components/CategoryPicker/categoryIcons', () => ({
+  categoryIconComponent: () => ({ name: 'StubCategoryIcon', template: '<span />' }),
+}))
+vi.mock('@/composables/useCategories', () => ({
+  useCategories: () => ({
+    items: { value: [] },
+    load: vi.fn().mockResolvedValue(undefined),
+  }),
+}))
+vi.mock('@/utils/rrule', () => ({
+  formatRrule: (s: string) => `text(${s})`,
 }))
 
 import ChecklistAddForm from './ChecklistAddForm.vue'
@@ -85,16 +122,45 @@ function mountForm(
   })
 }
 
+function chipForKey(wrapper: ReturnType<typeof mountForm>, label: string) {
+  return wrapper.findAll('.nc-chip').find((c) => c.text().includes(label))!
+}
+
 describe('ChecklistAddForm', () => {
-  it('renders the form with all fields', () => {
+  it('renders only the name input + add button initially', () => {
     const wrapper = mountForm()
-    const textFields = wrapper.findAll('.nc-text-field')
-    expect(textFields).toHaveLength(2)
-    expect(wrapper.find('.mock-category-picker').exists()).toBe(true)
-    expect(wrapper.find('.mock-recurrence-editor').exists()).toBe(true)
-    // Submit button exists
-    const submitBtn = wrapper.findAll('.nc-button').find((b) => b.attributes('type') === 'submit')
-    expect(submitBtn).toBeTruthy()
+    // Only one text field is visible (the name); no expanded section yet.
+    expect(wrapper.findAll('.nc-text-field')).toHaveLength(1)
+    expect(wrapper.find('.mock-category-chip-list').exists()).toBe(false)
+    expect(wrapper.find('.mock-quantity-input').exists()).toBe(false)
+    expect(wrapper.find('.nc-text-area').exists()).toBe(false)
+    expect(wrapper.find('.mock-item-type-selector').exists()).toBe(false)
+  })
+
+  it('renders one chip per field section', () => {
+    const wrapper = mountForm()
+    const chips = wrapper.findAll('.nc-chip')
+    expect(chips).toHaveLength(5)
+    expect(chips[0].text()).toContain('Category')
+    expect(chips[1].text()).toContain('Quantity')
+    expect(chips[2].text()).toContain('Description')
+    expect(chips[3].text()).toContain('Item type')
+    expect(chips[4].text()).toContain('Image')
+  })
+
+  it('item type chip shows the chosen type text only after explicit selection', async () => {
+    const wrapper = mountForm()
+    await chipForKey(wrapper, 'Item type').trigger('click')
+    await wrapper.find('.mock-staple').trigger('click')
+    // After picking Staple, the chip's neutral label is replaced.
+    expect(chipForKey(wrapper, 'Staple').exists()).toBe(true)
+  })
+
+  it('item type chip stays neutral when only the list default is one-time', () => {
+    const wrapper = mountForm({ deleteOnDoneDefault: true })
+    // No explicit pick yet — chip should read "Item type", not "One-time".
+    expect(wrapper.text()).toContain('Item type')
+    expect(wrapper.findAll('.nc-chip').some((c) => c.text() === 'One-time')).toBe(false)
   })
 
   it('submit button is disabled when name is empty', () => {
@@ -105,163 +171,134 @@ describe('ChecklistAddForm', () => {
 
   it('submit button is disabled when adding prop is true', async () => {
     const wrapper = mountForm({ adding: true })
-    // Set a name so the only reason for disabled is the adding prop
-    const nameInput = wrapper.findAll('.nc-text-field').at(0)!
-    await nameInput.setValue('Milk')
+    await wrapper.find('.nc-text-field').setValue('Milk')
     const submitBtn = wrapper.findAll('.nc-button').find((b) => b.attributes('type') === 'submit')!
     expect(submitBtn.attributes('disabled')).toBeDefined()
   })
 
-  it('emits add event with correct ItemInput on submit', async () => {
+  it('emits add event with correct ItemInput and null pendingImage on submit', async () => {
     const wrapper = mountForm()
-    const textFields = wrapper.findAll('.nc-text-field')
-    await textFields.at(0)!.setValue('Milk')
-    await textFields.at(1)!.setValue('2 L')
+    await wrapper.find('.nc-text-field').setValue('Milk')
 
     await wrapper.find('form').trigger('submit')
 
     expect(wrapper.emitted('add')).toBeTruthy()
-    const payload = wrapper.emitted('add')![0][0]
-    expect(payload).toEqual({
+    const [input, pendingImage] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    expect(input).toEqual({
       name: 'Milk',
       description: null,
-      quantity: '2 L',
+      quantity: null,
       categoryId: null,
       rrule: null,
       repeatFromCompletion: false,
       deleteOnDone: false,
     })
+    expect(pendingImage).toBeNull()
   })
 
-  it('emits deleteOnDone=true when the "Once" checkbox is ticked', async () => {
+  it('toggles section open and closed when chip is clicked', async () => {
     const wrapper = mountForm()
-    await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
+    const qtyChip = chipForKey(wrapper, 'Quantity')
+    await qtyChip.trigger('click')
+    expect(wrapper.find('.mock-quantity-input').exists()).toBe(true)
 
-    const onceCheckbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
-    await onceCheckbox.setValue(true)
-
-    await wrapper.find('form').trigger('submit')
-
-    const payload = wrapper.emitted('add')![0][0] as ItemInput
-    expect(payload.deleteOnDone).toBe(true)
+    await qtyChip.trigger('click')
+    expect(wrapper.find('.mock-quantity-input').exists()).toBe(false)
   })
 
-  it('resets the "Once" checkbox to the list default after submit', async () => {
+  it('only one section is open at a time', async () => {
     const wrapper = mountForm()
-    await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
-    const onceCheckbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
-    await onceCheckbox.setValue(true)
+    await chipForKey(wrapper, 'Quantity').trigger('click')
+    expect(wrapper.find('.mock-quantity-input').exists()).toBe(true)
 
-    await wrapper.find('form').trigger('submit')
-
-    const after = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
-    expect(after.checked).toBe(false)
-  })
-
-  it('initializes "Once" from deleteOnDoneDefault prop', () => {
-    const wrapper = mountForm({ deleteOnDoneDefault: true })
-    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
-    expect(checkbox.checked).toBe(true)
-  })
-
-  it('keeps "Once" checked after submit when the list default is true', async () => {
-    const wrapper = mountForm({ deleteOnDoneDefault: true })
-    await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
-
-    await wrapper.find('form').trigger('submit')
-
-    const after = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
-    expect(after.checked).toBe(true)
-  })
-
-  it('emits update:deleteOnDoneDefault when the user toggles "Once"', async () => {
-    const wrapper = mountForm()
-    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
-    await checkbox.setValue(true)
-
-    const events = wrapper.emitted('update:deleteOnDoneDefault')
-    expect(events).toBeTruthy()
-    expect(events![0]).toEqual([true])
-  })
-
-  it('does not emit update:deleteOnDoneDefault when the toggle already matches the default', async () => {
-    const wrapper = mountForm({ deleteOnDoneDefault: true })
-    // Re-asserting the same value (true) via the checkbox should not re-emit.
-    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]')
-    await checkbox.setValue(true)
-
-    expect(wrapper.emitted('update:deleteOnDoneDefault')).toBeFalsy()
-  })
-
-  it('syncs "Once" when the parent updates deleteOnDoneDefault', async () => {
-    const wrapper = mountForm({ deleteOnDoneDefault: false })
-    await wrapper.setProps({ deleteOnDoneDefault: true })
-    const checkbox = wrapper.find('.nc-checkbox input[type="checkbox"]').element as HTMLInputElement
-    expect(checkbox.checked).toBe(true)
-  })
-
-  it('resets all fields after submit', async () => {
-    const wrapper = mountForm()
-    const textFields = wrapper.findAll('.nc-text-field')
-    await textFields.at(0)!.setValue('Milk')
-    await textFields.at(1)!.setValue('2 L')
-
-    await wrapper.find('form').trigger('submit')
-
-    const textFieldsAfter = wrapper.findAll('.nc-text-field')
-    expect((textFieldsAfter.at(0)!.element as HTMLInputElement).value).toBe('')
-    expect((textFieldsAfter.at(1)!.element as HTMLInputElement).value).toBe('')
-  })
-
-  it('description field is hidden by default', () => {
-    const wrapper = mountForm()
-    expect(wrapper.find('.nc-text-area').exists()).toBe(false)
-  })
-
-  it('clicking chevron toggles description visibility', async () => {
-    const wrapper = mountForm()
-    const chevronBtn = wrapper
-      .findAll('.nc-button')
-      .find((b) => b.find('.mock-chevron-down-icon').exists())!
-    expect(wrapper.find('.nc-text-area').exists()).toBe(false)
-
-    await chevronBtn.trigger('click')
+    await chipForKey(wrapper, 'Description').trigger('click')
+    expect(wrapper.find('.mock-quantity-input').exists()).toBe(false)
     expect(wrapper.find('.nc-text-area').exists()).toBe(true)
-
-    await chevronBtn.trigger('click')
-    expect(wrapper.find('.nc-text-area').exists()).toBe(false)
   })
 
-  it('description is included in the emitted add event when provided', async () => {
+  it('typed quantity is included in the emitted add input', async () => {
     const wrapper = mountForm()
-    // Set name
-    await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
+    await wrapper.find('.nc-text-field').setValue('Milk')
+    await chipForKey(wrapper, 'Quantity').trigger('click')
+    await wrapper.find('.mock-quantity-input').setValue('2 L')
 
-    // Open description and fill it
-    const chevronBtn = wrapper
-      .findAll('.nc-button')
-      .find((b) => b.find('.mock-chevron-down-icon').exists())!
-    await chevronBtn.trigger('click')
+    await wrapper.find('form').trigger('submit')
+
+    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    expect(input.quantity).toBe('2 L')
+  })
+
+  it('typed description is included in the emitted add input', async () => {
+    const wrapper = mountForm()
+    await wrapper.find('.nc-text-field').setValue('Milk')
+    await chipForKey(wrapper, 'Description').trigger('click')
     await wrapper.find('.nc-text-area').setValue('Whole milk preferred')
 
     await wrapper.find('form').trigger('submit')
 
-    const payload = wrapper.emitted('add')![0][0] as ItemInput
-    expect(payload.description).toBe('Whole milk preferred')
+    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    expect(input.description).toBe('Whole milk preferred')
   })
 
-  it('description area collapses after submit', async () => {
+  it('selecting One-time emits deleteOnDone=true and update:deleteOnDoneDefault', async () => {
     const wrapper = mountForm()
-    await wrapper.findAll('.nc-text-field').at(0)!.setValue('Milk')
+    await wrapper.find('.nc-text-field').setValue('Milk')
+    await chipForKey(wrapper, 'Item type').trigger('click')
+    await wrapper.find('.mock-one-time').trigger('click')
 
-    // Open description
-    const chevronBtn = wrapper
-      .findAll('.nc-button')
-      .find((b) => b.find('.mock-chevron-down-icon').exists())!
-    await chevronBtn.trigger('click')
-    expect(wrapper.find('.nc-text-area').exists()).toBe(true)
+    expect(wrapper.emitted('update:deleteOnDoneDefault')![0]).toEqual([true])
 
     await wrapper.find('form').trigger('submit')
-    expect(wrapper.find('.nc-text-area').exists()).toBe(false)
+    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    expect(input.deleteOnDone).toBe(true)
+  })
+
+  it('selecting Recurring opens the inline RecurrenceForm and seeds an rrule', async () => {
+    const wrapper = mountForm()
+    await chipForKey(wrapper, 'Item type').trigger('click')
+    await wrapper.find('.mock-recurring').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.mock-recurrence-form').exists()).toBe(true)
+  })
+
+  it('initializes deleteOnDone from deleteOnDoneDefault prop and emits it on submit', async () => {
+    const wrapper = mountForm({ deleteOnDoneDefault: true })
+    await wrapper.find('.nc-text-field').setValue('Milk')
+
+    await wrapper.find('form').trigger('submit')
+    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    expect(input.deleteOnDone).toBe(true)
+  })
+
+  it('does not emit update:deleteOnDoneDefault when choice already matches the default', async () => {
+    const wrapper = mountForm({ deleteOnDoneDefault: true })
+    // Pick One-time again — it already matches the list default.
+    await chipForKey(wrapper, 'Item type').trigger('click')
+    await wrapper.find('.mock-one-time').trigger('click')
+
+    expect(wrapper.emitted('update:deleteOnDoneDefault')).toBeFalsy()
+  })
+
+  it('does not change deleteOnDoneDefault when the user picks Recurring', async () => {
+    const wrapper = mountForm()
+    await chipForKey(wrapper, 'Item type').trigger('click')
+    await wrapper.find('.mock-recurring').trigger('click')
+
+    expect(wrapper.emitted('update:deleteOnDoneDefault')).toBeFalsy()
+  })
+
+  it('resets the open section and inputs after submit', async () => {
+    const wrapper = mountForm()
+    await wrapper.find('.nc-text-field').setValue('Milk')
+    await chipForKey(wrapper, 'Quantity').trigger('click')
+    await wrapper.find('.mock-quantity-input').setValue('2 L')
+
+    await wrapper.find('form').trigger('submit')
+
+    // Section closes
+    expect(wrapper.find('.mock-quantity-input').exists()).toBe(false)
+    // Name field is cleared
+    expect((wrapper.find('.nc-text-field').element as HTMLInputElement).value).toBe('')
   })
 })

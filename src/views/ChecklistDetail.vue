@@ -653,10 +653,17 @@ useTouchReorder(
 
 const adding = ref(false)
 
-async function handleAdd(input: ItemInput) {
+async function handleAdd(input: ItemInput, pendingImage: File | null) {
   adding.value = true
   try {
-    await add(input)
+    const created = await add(input)
+    if (pendingImage) {
+      try {
+        await uploadImage(created.id, pendingImage)
+      } catch (e) {
+        showError((e as Error).message)
+      }
+    }
   } finally {
     adding.value = false
   }

@@ -100,7 +100,7 @@ const options = computed<SelectOption[]>(() => {
     id: c.id,
     category: c,
   }))
-  return [...categoryOptions, { label: t('pantry', 'Create new category …'), create: true }]
+  return [...categoryOptions, { label: t('pantry', 'Create …'), create: true }]
 })
 
 const selected = computed<SelectOption | null>({
@@ -170,6 +170,12 @@ const strings = {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
+  max-width: 160px;
+
+  :deep(.v-select.select) {
+    min-width: 0;
+  }
 
   &__label {
     font-size: 0.85rem;
