@@ -406,6 +406,52 @@ watch(
   },
 )
 
+// ----- Silent polling while window is focused -----
+//
+// Refresh items every 30 s so multi-device edits show up without the user
+// reloading. Pause when the window loses focus; on refocus, fire an immediate
+// refresh and resume the interval.
+
+const POLL_INTERVAL_MS = 30_000
+let pollTimer: number | null = null
+
+function silentRefresh() {
+  void load(undefined, { silent: true })
+}
+
+function startPolling() {
+  stopPolling()
+  pollTimer = window.setInterval(silentRefresh, POLL_INTERVAL_MS)
+}
+
+function stopPolling() {
+  if (pollTimer !== null) {
+    window.clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+function onWindowFocus() {
+  silentRefresh()
+  startPolling()
+}
+
+function onWindowBlur() {
+  stopPolling()
+}
+
+onMounted(() => {
+  window.addEventListener('focus', onWindowFocus)
+  window.addEventListener('blur', onWindowBlur)
+  if (document.hasFocus()) startPolling()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', onWindowFocus)
+  window.removeEventListener('blur', onWindowBlur)
+  stopPolling()
+})
+
 // ----- Filter -----
 
 const filterQuery = ref('')

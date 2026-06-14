@@ -91,18 +91,21 @@ export function useChecklistItems(houseId: number, listId: number) {
   const sortBy = ref<ChecklistItemSort>('custom')
   const trashMode = ref(false)
 
-  async function load(sort?: ChecklistItemSort): Promise<void> {
-    loading.value = true
-    error.value = null
+  async function load(sort?: ChecklistItemSort, options?: { silent?: boolean }): Promise<void> {
+    const silent = options?.silent ?? false
+    if (!silent) {
+      loading.value = true
+      error.value = null
+    }
     const s = sort ?? sortBy.value
     try {
       items.value = trashMode.value
         ? await api.listDeletedItems(houseId, listId)
         : await api.listItems(houseId, listId, s)
     } catch (e) {
-      error.value = (e as Error).message
+      if (!silent) error.value = (e as Error).message
     } finally {
-      loading.value = false
+      if (!silent) loading.value = false
     }
   }
 
