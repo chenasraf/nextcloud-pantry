@@ -126,6 +126,7 @@ namespace OCA\Pantry;
  *     color: PantryNoteColor|null,
  *     createdBy: string,
  *     sortOrder: int,
+ *     isPinned: bool,
  *     createdAt: int,
  *     updatedAt: int,
  * }

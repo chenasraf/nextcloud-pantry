@@ -35,23 +35,25 @@ class NoteMapper extends QBMapper {
 	}
 
 	private function applySort(IQueryBuilder $qb, string $sortBy): void {
+		// Pinned notes always float to the top regardless of sort mode.
+		$qb->orderBy('is_pinned', 'DESC');
 		switch ($sortBy) {
 			case 'newest':
-				$qb->orderBy('created_at', 'DESC');
+				$qb->addOrderBy('created_at', 'DESC');
 				break;
 			case 'oldest':
-				$qb->orderBy('created_at', 'ASC');
+				$qb->addOrderBy('created_at', 'ASC');
 				break;
 			case 'title_asc':
-				$qb->orderBy('title', 'ASC')
+				$qb->addOrderBy('title', 'ASC')
 					->addOrderBy('created_at', 'DESC');
 				break;
 			case 'title_desc':
-				$qb->orderBy('title', 'DESC')
+				$qb->addOrderBy('title', 'DESC')
 					->addOrderBy('created_at', 'DESC');
 				break;
 			default: // custom
-				$qb->orderBy('sort_order', 'ASC')
+				$qb->addOrderBy('sort_order', 'ASC')
 					->addOrderBy('created_at', 'DESC');
 				break;
 		}

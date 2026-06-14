@@ -154,6 +154,24 @@ class NoteServiceTest extends TestCase {
 		$this->assertSame(5, $result->getSortOrder());
 	}
 
+	public function testUpdateNoteIsPinned(): void {
+		$note = $this->makeNote(['id' => 1]);
+		$this->noteMapper->method('findById')->willReturn($note);
+		$this->noteMapper->expects($this->once())->method('update');
+
+		$result = $this->svc->updateNote(1, ['isPinned' => true]);
+		$this->assertTrue($result->getIsPinned());
+	}
+
+	public function testCreateNoteDefaultsToUnpinned(): void {
+		$this->noteMapper->expects($this->once())
+			->method('insert')
+			->with($this->callback(fn (Note $n) => $n->getIsPinned() === false))
+			->willReturnArgument(0);
+
+		$this->svc->createNote(1, 'alice', 'Test', null, null);
+	}
+
 	public function testDeleteNoteRemovesFromMapper(): void {
 		$note = $this->makeNote(['id' => 1]);
 		$this->noteMapper->method('findById')->willReturn($note);

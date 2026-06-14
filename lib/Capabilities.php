@@ -54,6 +54,7 @@ class Capabilities implements IPublicCapability {
 					'category-sort',
 					'photos',
 					'notes',
+					'note-pinning',
 					'notifications',
 					'item-images',
 					'recurring-items',

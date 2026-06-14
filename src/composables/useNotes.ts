@@ -50,9 +50,19 @@ export function useNotes(houseId: number) {
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
     notes.value = notes.value
       .map((n) => (map.has(n.id) ? { ...n, sortOrder: map.get(n.id)! } : n))
-      .sort((a, b) => a.sortOrder - b.sortOrder)
+      // Pinned first, then by sort order — mirrors the server-side ordering.
+      .sort((a, b) => {
+        if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1
+        return a.sortOrder - b.sortOrder
+      })
     await api.reorderNotes(houseId, items)
   }
 
-  return { notes, loading, error, sortBy, load, create, update, remove, reorder }
+  async function togglePin(noteId: number): Promise<void> {
+    const note = notes.value.find((n) => n.id === noteId)
+    if (!note) return
+    await update(noteId, { isPinned: !note.isPinned })
+  }
+
+  return { notes, loading, error, sortBy, load, create, update, remove, reorder, togglePin }
 }

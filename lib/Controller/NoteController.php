@@ -106,6 +106,7 @@ final class NoteController extends OCSController {
 	 * @param string|null $content New content (empty string clears).
 	 * @param string|null $color New color (empty string clears).
 	 * @param int|null $sortOrder New sort order.
+	 * @param bool|null $isPinned New pinned state.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryNote, array{}>
 	 *
@@ -113,8 +114,8 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/notes/{noteId}')]
 	#[NoAdminRequired]
-	public function updateNote(int $houseId, int $noteId, ?string $title = null, ?string $content = null, ?string $color = null, ?int $sortOrder = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $noteId, $title, $content, $color, $sortOrder): DataResponse {
+	public function updateNote(int $houseId, int $noteId, ?string $title = null, ?string $content = null, ?string $color = null, ?int $sortOrder = null, ?bool $isPinned = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $noteId, $title, $content, $color, $sortOrder, $isPinned): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->notes->getNote($noteId);
@@ -131,6 +132,9 @@ final class NoteController extends OCSController {
 			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($isPinned !== null) {
+				$patch['isPinned'] = $isPinned;
 			}
 			$note = $this->notes->updateNote($noteId, $patch);
 			// Only notify for content/title changes, not color/sort-order-only changes

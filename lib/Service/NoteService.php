@@ -49,6 +49,7 @@ class NoteService {
 		$note->setColor($color);
 		$note->setCreatedBy($uid);
 		$note->setSortOrder(0);
+		$note->setIsPinned(false);
 		$note->setCreatedAt($now);
 		$note->setUpdatedAt($now);
 		/** @var Note $saved */
@@ -80,6 +81,9 @@ class NoteService {
 		}
 		if (isset($patch['sortOrder'])) {
 			$note->setSortOrder((int)$patch['sortOrder']);
+		}
+		if (array_key_exists('isPinned', $patch)) {
+			$note->setIsPinned((bool)$patch['isPinned']);
 		}
 		$note->setUpdatedAt(time());
 		$this->noteMapper->update($note);

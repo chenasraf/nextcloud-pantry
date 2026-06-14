@@ -72,6 +72,7 @@
               :selected="selectedNoteIds.has(item.note.id)"
               @edit="openEditDialog"
               @delete="confirmDelete"
+              @toggle-pin="onTogglePin"
               @drag-start="onDragStart"
               @reorder-over="onReorderOver"
               @select="toggleNoteSelection"
@@ -149,7 +150,9 @@ import { useTouchReorder } from '@/composables/useTouchReorder'
 const props = defineProps<{ houseId: string }>()
 
 const houseIdNum = computed(() => Number(props.houseId))
-const { notes, loading, load, create, update, remove, reorder, sortBy } = useNotes(houseIdNum.value)
+const { notes, loading, load, create, update, remove, reorder, togglePin, sortBy } = useNotes(
+  houseIdNum.value,
+)
 
 // ----- Sort -----
 
@@ -194,23 +197,37 @@ watch(
 type GridItem = { type: 'note'; key: string; note: Note } | { type: 'placeholder'; key: string }
 
 const draggingNoteId = ref<number | null>(null)
+// Index is relative to the dragged note's pin group, not the full list.
 const dropIndex = ref<number | null>(null)
 const wallRef = ref<HTMLElement | null>(null)
 
+function getDraggedNote(): Note | null {
+  const id = draggingNoteId.value
+  if (id === null) return null
+  return notes.value.find((n) => n.id === id) ?? null
+}
+
 function buildGridItems(): GridItem[] {
   const dragId = draggingNoteId.value
-  if (dragId === null || dropIndex.value === null) {
+  const dragged = getDraggedNote()
+  if (dragId === null || dropIndex.value === null || !dragged) {
     return notes.value.map((n) => ({ type: 'note' as const, key: 'n-' + n.id, note: n }))
   }
 
+  // Pinned notes always occupy the first slots in notes.value (backend ordering),
+  // so the placeholder's absolute position is groupOffset + (in-group dropIndex).
   const without = notes.value.filter((n) => n.id !== dragId)
+  const pinnedCount = without.filter((n) => n.isPinned).length
+  const groupOffset = dragged.isPinned ? 0 : pinnedCount
+  const groupSize = dragged.isPinned ? pinnedCount : without.length - pinnedCount
+  const clamped = Math.max(0, Math.min(dropIndex.value, groupSize))
+
   const items: GridItem[] = without.map((n) => ({
     type: 'note' as const,
     key: 'n-' + n.id,
     note: n,
   }))
-  const clampedIndex = Math.min(dropIndex.value, items.length)
-  items.splice(clampedIndex, 0, { type: 'placeholder', key: 'drop-placeholder' })
+  items.splice(groupOffset + clamped, 0, { type: 'placeholder', key: 'drop-placeholder' })
   return items
 }
 
@@ -223,10 +240,16 @@ function onDragStart(noteId: number) {
 
 function computeDropIndex(hoveredNoteId: number, clientX: number, target: HTMLElement | null) {
   const dragId = draggingNoteId.value
-  if (!dragId || dragId === hoveredNoteId) return
+  const dragged = getDraggedNote()
+  if (!dragId || !dragged || dragId === hoveredNoteId) return
 
-  const without = notes.value.filter((n) => n.id !== dragId)
-  const idx = without.findIndex((n) => n.id === hoveredNoteId)
+  const hovered = notes.value.find((n) => n.id === hoveredNoteId)
+  // Cross-group hover is ignored — pinned and unpinned reorder independently.
+  if (!hovered || hovered.isPinned !== dragged.isPinned) return
+
+  // Index relative to the same-pin-group, excluding the dragged note.
+  const group = notes.value.filter((n) => n.isPinned === dragged.isPinned && n.id !== dragId)
+  const idx = group.findIndex((n) => n.id === hoveredNoteId)
   if (idx === -1) return
 
   if (target) {
@@ -257,9 +280,10 @@ async function commitReorder() {
   const dragged = notes.value.find((n) => n.id === dragId)
   if (!dragged) return
 
-  const without = notes.value.filter((n) => n.id !== dragId)
-  const clampedIndex = Math.min(idx, without.length)
-  const reordered = [...without]
+  // Reorder only within the dragged note's pin group; leave the other group alone.
+  const group = notes.value.filter((n) => n.isPinned === dragged.isPinned && n.id !== dragId)
+  const clampedIndex = Math.min(idx, group.length)
+  const reordered = [...group]
   reordered.splice(clampedIndex, 0, dragged)
 
   const items = reordered.map((n, i) => ({ id: n.id, sortOrder: i }))
@@ -300,6 +324,14 @@ useTouchReorder(
   },
   isCustomSort,
 )
+
+// ----- Pin -----
+
+async function onTogglePin(note: Note) {
+  await togglePin(note.id)
+  // After flipping isPinned, re-fetch so backend ordering (pinned first) is reflected.
+  await load()
+}
 
 // ----- Create / Edit -----
 

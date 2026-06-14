@@ -74,6 +74,7 @@ export interface Note {
   color: string | null
   createdBy: string
   sortOrder: number
+  isPinned: boolean
   createdAt: number
   updatedAt: number
 }

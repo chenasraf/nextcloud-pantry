@@ -510,6 +510,7 @@
                     "color",
                     "createdBy",
                     "sortOrder",
+                    "isPinned",
                     "createdAt",
                     "updatedAt"
                 ],
@@ -543,6 +544,9 @@
                     "sortOrder": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "isPinned": {
+                        "type": "boolean"
                     },
                     "createdAt": {
                         "type": "integer",
@@ -5512,6 +5516,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New sort order."
+                                    },
+                                    "isPinned": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New pinned state."
                                     }
                                 }
                             }

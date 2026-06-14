@@ -63,6 +63,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     color: '#f44336',
     createdBy: 'admin',
     sortOrder: 0,
+    isPinned: false,
     createdAt: 0,
     updatedAt: 0,
     ...overrides,

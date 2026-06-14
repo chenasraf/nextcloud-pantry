@@ -24,6 +24,17 @@
         </NcActionButton>
       </NcActions>
     </div>
+    <button
+      type="button"
+      class="note-card__pin"
+      :class="{ 'note-card__pin--pinned': note.isPinned }"
+      :aria-label="note.isPinned ? strings.unpin : strings.pin"
+      :title="note.isPinned ? strings.unpin : strings.pin"
+      @click.stop="$emit('toggle-pin', note)"
+    >
+      <PinIcon v-if="note.isPinned" :size="18" />
+      <PinOutlineIcon v-else :size="18" />
+    </button>
     <h3 class="note-card__title" dir="auto">{{ note.title }}</h3>
     <div v-if="note.content" class="note-card__content" dir="auto">
       <NcRichText :text="note.content" :use-markdown="true" :use-extended-markdown="true" />
@@ -39,6 +50,8 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
 import DeleteIcon from '@icons/Delete.vue'
+import PinIcon from '@icons/Pin.vue'
+import PinOutlineIcon from '@icons/PinOutline.vue'
 import { contrastColor } from './noteColors'
 import type { Note } from '@/api/types'
 
@@ -49,6 +62,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   edit: [note: Note]
   delete: [note: Note]
+  'toggle-pin': [note: Note]
   'drag-start': [noteId: number]
   'reorder-over': [noteId: number, event: MouseEvent]
   select: [noteId: number]
@@ -84,6 +98,8 @@ function onDragOver(e: DragEvent) {
 const strings = {
   actions: t('pantry', 'Note actions'),
   delete: t('pantry', 'Delete'),
+  pin: t('pantry', 'Pin to top'),
+  unpin: t('pantry', 'Unpin'),
 }
 </script>
 
@@ -179,6 +195,50 @@ const strings = {
 
   @media (hover: none) {
     .note-card__actions {
+      opacity: 1;
+    }
+  }
+
+  &__pin {
+    position: absolute;
+    bottom: 0.5rem;
+    inset-inline-end: 0.5rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 99px;
+    background: rgba(0, 0, 0, 0.3);
+    color: inherit;
+    cursor: pointer;
+    opacity: 0;
+    transition:
+      opacity 0.2s ease,
+      background 0.2s ease;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    &--pinned {
+      opacity: 0.9;
+    }
+  }
+
+  &:hover &__pin {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .note-card__pin {
       opacity: 1;
     }
   }

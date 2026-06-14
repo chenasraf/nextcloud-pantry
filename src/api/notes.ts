@@ -25,7 +25,13 @@ export async function createNote(
 export async function updateNote(
   houseId: number,
   noteId: number,
-  patch: { title?: string; content?: string; color?: string; sortOrder?: number },
+  patch: {
+    title?: string
+    content?: string
+    color?: string
+    sortOrder?: number
+    isPinned?: boolean
+  },
 ): Promise<Note> {
   const resp = await ocs.patch<Note>(`/houses/${houseId}/notes/${noteId}`, patch)
   return resp.data
