@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.15.0...v0.16.0) (2026-06-14)
+
+
+### Features
+
+* **add-form:** chip-based field sections with inline recurrence ([f20b809](https://github.com/chenasraf/nextcloud-pantry/commit/f20b80919d890c1dead6c05e7a5c6c08c768c1cd))
+* **capabilities:** expose pantry version and features via OCS ([2d1f23c](https://github.com/chenasraf/nextcloud-pantry/commit/2d1f23cc725aa225ae6ef5b6039825c68b1d5964))
+* **checklist:** silent 30s polling while window is focused ([bce8cee](https://github.com/chenasraf/nextcloud-pantry/commit/bce8cee53c72f0a7a4a0c3312340b25ec27d9272))
+* **checklists:** per-list accent color in view and sidebar ([3f4b950](https://github.com/chenasraf/nextcloud-pantry/commit/3f4b950ef56dccfbba487dde98c69a884510f842))
+* **notes:** pin notes to top of the list ([69965d9](https://github.com/chenasraf/nextcloud-pantry/commit/69965d9bb759cbe10ed7ca1a07de01d98ad72709))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([6a2534a](https://github.com/chenasraf/nextcloud-pantry/commit/6a2534a5ab60b56bf684f084665b7334ee2e12ae))
+
 ## [0.15.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.14.0...v0.15.0) (2026-06-12)
 
 
