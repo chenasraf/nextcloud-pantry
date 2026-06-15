@@ -96,4 +96,21 @@ class ChecklistMapper extends QBMapper {
 		}
 		return $rows;
 	}
+
+	/**
+	 * Find soft-deleted checklists in the house whose deleted_at is strictly
+	 * before the cutoff (seconds since epoch). Used by the purge job.
+	 *
+	 * @return Checklist[]
+	 */
+	public function findExpiredTrashByHouse(int $houseId, int $cutoff): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('deleted_at'))
+			->andWhere($qb->expr()->lt('deleted_at', $qb->createNamedParameter($cutoff, IQueryBuilder::PARAM_INT)));
+
+		return $this->findEntities($qb);
+	}
 }

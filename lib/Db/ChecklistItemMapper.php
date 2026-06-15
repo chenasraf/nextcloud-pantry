@@ -182,4 +182,25 @@ class ChecklistItemMapper extends QBMapper {
 			->andWhere($qb->expr()->isNotNull('deleted_at'));
 		$qb->executeStatement();
 	}
+
+	/**
+	 * Find soft-deleted items belonging to lists in the given house whose
+	 * deleted_at is strictly before the cutoff (seconds since epoch). Joins
+	 * the lists table so callers don't need to enumerate every list.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function findExpiredTrashByHouse(int $houseId, int $cutoff): array {
+		$qb = $this->db->getQueryBuilder();
+		$items = $this->getTableName();
+		$lists = Application::tableName('lists');
+		$qb->select('i.*')
+			->from($items, 'i')
+			->innerJoin('i', $lists, 'l', $qb->expr()->eq('i.list_id', 'l.id'))
+			->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('i.deleted_at'))
+			->andWhere($qb->expr()->lt('i.deleted_at', $qb->createNamedParameter($cutoff, IQueryBuilder::PARAM_INT)));
+
+		return $this->findEntities($qb);
+	}
 }

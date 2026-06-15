@@ -43,6 +43,34 @@
       </div>
     </NcAppSettingsSection>
 
+    <NcAppSettingsSection
+      v-if="houseIdNum !== null && canAdmin"
+      id="house-trash"
+      :name="strings.trashSection"
+    >
+      <p class="pantry-hint">{{ strings.trashRetentionHint }}</p>
+      <form class="pantry-form" autocomplete="off" @submit.prevent="saveTrashRetention">
+        <NcTextField
+          v-model="trashRetentionInput"
+          type="number"
+          :label="strings.trashRetentionLabel"
+          :min="0"
+          :max="3650"
+          autocomplete="off"
+        />
+        <p class="pantry-hint pantry-hint--small">{{ trashRetentionSummary }}</p>
+        <div class="pantry-form__actions">
+          <NcButton
+            type="submit"
+            variant="primary"
+            :disabled="savingTrashRetention || !isTrashRetentionValid"
+          >
+            {{ savingTrashRetention ? strings.saving : strings.save }}
+          </NcButton>
+        </div>
+      </form>
+    </NcAppSettingsSection>
+
     <NcAppSettingsSection id="house-members" :name="strings.membersSection">
       <div v-if="loadingMembers" class="pantry-center">
         <NcLoadingIcon :size="28" />
@@ -218,11 +246,14 @@ const houseIdNum = computed(() => house.value?.id ?? null)
 const name = ref('')
 const description = ref('')
 const savingGeneral = ref(false)
+const trashRetentionInput = ref<string>('30')
+const savingTrashRetention = ref(false)
 
 function syncFromHouse() {
   if (house.value) {
     name.value = house.value.name
     description.value = house.value.description ?? ''
+    trashRetentionInput.value = String(house.value.trashRetentionDays ?? 30)
   }
 }
 
@@ -250,6 +281,37 @@ async function saveGeneral() {
     await refresh()
   } finally {
     savingGeneral.value = false
+  }
+}
+
+const trashRetentionParsed = computed(() => {
+  const raw = trashRetentionInput.value.trim()
+  if (raw === '') return null
+  if (!/^\d+$/.test(raw)) return null
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 0 || n > 3650) return null
+  return n
+})
+
+const isTrashRetentionValid = computed(() => trashRetentionParsed.value !== null)
+
+const trashRetentionSummary = computed(() => {
+  const n = trashRetentionParsed.value
+  if (n === null) return strings.trashRetentionInvalid
+  if (n === 0) return strings.trashRetentionDisabled
+  return t('pantry', 'Items in the trash are permanently deleted after {n} day(s).', { n })
+})
+
+async function saveTrashRetention() {
+  const id = houseIdNum.value
+  const n = trashRetentionParsed.value
+  if (id === null || n === null) return
+  savingTrashRetention.value = true
+  try {
+    await update(id, { trashRetentionDays: n })
+    await refresh()
+  } finally {
+    savingTrashRetention.value = false
   }
 }
 
@@ -417,6 +479,17 @@ const strings = {
     'pantry',
     'Display the avatar of the person who added each checklist item on the right of the row.',
   ),
+  trashSection: t('pantry', 'Trash'),
+  trashRetentionLabel: t('pantry', 'Days to keep items in the trash'),
+  trashRetentionHint: t(
+    'pantry',
+    'A daily background job permanently deletes checklists, items, notes and photos whose deleted-at timestamp is older than this many days. Set to 0 to never auto-delete — items stay in the trash until removed manually.',
+  ),
+  trashRetentionDisabled: t(
+    'pantry',
+    'Auto-delete disabled. Items stay in the trash until removed manually.',
+  ),
+  trashRetentionInvalid: t('pantry', 'Enter a whole number between 0 and 3650.'),
   membersSection: t('pantry', 'Members'),
   addMember: t('pantry', 'Add member'),
   removeMember: t('pantry', 'Remove member'),
@@ -509,6 +582,11 @@ const strings = {
 
   &--inline {
     margin: 0 0 0 1.85rem;
+  }
+
+  &--small {
+    font-size: 0.85em;
+    margin: 0;
   }
 }
 

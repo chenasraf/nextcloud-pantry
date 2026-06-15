@@ -118,6 +118,7 @@ final class HouseController extends OCSController {
 	 * @param int $houseId House id.
 	 * @param string|null $name New name.
 	 * @param string|null $description New description.
+	 * @param int<0, 3650>|null $trashRetentionDays Days an item stays in the trash before being permanently deleted by the cleanup job. Set to 0 to disable auto-purge.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryHouse, array{}>
 	 *
@@ -125,8 +126,8 @@ final class HouseController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}')]
 	#[NoAdminRequired]
-	public function update(int $houseId, ?string $name = null, ?string $description = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $description): DataResponse {
+	public function update(int $houseId, ?string $name = null, ?string $description = null, ?int $trashRetentionDays = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $description, $trashRetentionDays): DataResponse {
 			$uid = $this->requireUid();
 			$member = $this->auth->requireAdmin($houseId, $uid);
 			$patch = [];
@@ -135,6 +136,9 @@ final class HouseController extends OCSController {
 			}
 			if ($description !== null) {
 				$patch['description'] = $description;
+			}
+			if ($trashRetentionDays !== null) {
+				$patch['trashRetentionDays'] = $trashRetentionDays;
 			}
 			$house = $this->houseService->update($houseId, $patch);
 			return new DataResponse($this->serializeHouseWithRole($house, $member->getRole()));
@@ -336,6 +340,7 @@ final class HouseController extends OCSController {
 			'ownerUid' => $house->getOwnerUid(),
 			'createdAt' => $house->getCreatedAt(),
 			'updatedAt' => $house->getUpdatedAt(),
+			'trashRetentionDays' => $house->getTrashRetentionDays(),
 			'role' => $role,
 		];
 	}

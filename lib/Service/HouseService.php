@@ -100,9 +100,30 @@ class HouseService {
 			$desc = $patch['description'];
 			$house->setDescription(is_string($desc) && $desc !== '' ? $desc : null);
 		}
+		if (array_key_exists('trashRetentionDays', $patch)) {
+			$house->setTrashRetentionDays($this->normalizeRetentionDays($patch['trashRetentionDays']));
+		}
 		$house->setUpdatedAt(time());
 		$this->houseMapper->update($house);
 		return $house;
+	}
+
+	/**
+	 * Coerce the trash retention days value into [0, House::MAX_TRASH_RETENTION_DAYS].
+	 * 0 means "never auto-purge".
+	 */
+	private function normalizeRetentionDays(mixed $value): int {
+		if (!is_int($value) && !(is_string($value) && ctype_digit($value))) {
+			throw new \InvalidArgumentException('trashRetentionDays must be a non-negative integer');
+		}
+		$days = (int)$value;
+		if ($days < 0) {
+			throw new \InvalidArgumentException('trashRetentionDays must be a non-negative integer');
+		}
+		if ($days > House::MAX_TRASH_RETENTION_DAYS) {
+			$days = House::MAX_TRASH_RETENTION_DAYS;
+		}
+		return $days;
 	}
 
 	public function delete(int $houseId): void {

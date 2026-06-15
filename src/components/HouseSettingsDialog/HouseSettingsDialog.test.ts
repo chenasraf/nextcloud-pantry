@@ -31,6 +31,7 @@ vi.mock('@/composables/useCurrentHouse', () => ({
       ownerUid: 'me',
       createdAt: 0,
       updatedAt: 0,
+      trashRetentionDays: 30,
     }),
     houseId: computed(() => 1),
     loading: ref(false),
@@ -62,6 +63,7 @@ vi.mock('@/api/houses', () => ({
   removeMember: vi.fn(),
   leaveHouse: vi.fn(),
   searchUsers: vi.fn(() => Promise.resolve([])),
+  updateHouse: vi.fn(),
 }))
 
 // Mock Nextcloud Vue components that pull in CSS
@@ -190,6 +192,7 @@ describe('HouseSettingsDialog', () => {
         ownerUid: 'me',
         createdAt: 0,
         updatedAt: 0,
+        trashRetentionDays: 30,
       }),
       houseId: computed(() => 1),
       loading: ref(false),
@@ -262,6 +265,43 @@ describe('HouseSettingsDialog', () => {
     })
   })
 
+  describe('trash retention section', () => {
+    it('renders for admins with the current retention value pre-filled', () => {
+      const wrapper = mountDialog()
+      const sections = wrapper.findAllComponents({ name: 'NcAppSettingsSection' })
+      const trash = sections.find((s) => s.props('name') === 'Trash')
+      expect(trash).toBeDefined()
+
+      const field = wrapper
+        .findAllComponents({ name: 'NcTextField' })
+        .find((f) => f.props('label') === 'Days to keep items in the trash')
+      expect(field).toBeDefined()
+      expect(field!.props('modelValue')).toBe('30')
+    })
+
+    it('explains what happens when retention is 0', async () => {
+      const wrapper = mountDialog()
+      const field = wrapper
+        .findAllComponents({ name: 'NcTextField' })
+        .find((f) => f.props('label') === 'Days to keep items in the trash')!
+      field.vm.$emit('update:modelValue', '0')
+      await flushPromises()
+      expect(wrapper.text()).toContain(
+        'Auto-delete disabled. Items stay in the trash until removed manually.',
+      )
+    })
+
+    it('warns when retention input is invalid', async () => {
+      const wrapper = mountDialog()
+      const field = wrapper
+        .findAllComponents({ name: 'NcTextField' })
+        .find((f) => f.props('label') === 'Days to keep items in the trash')!
+      field.vm.$emit('update:modelValue', 'never')
+      await flushPromises()
+      expect(wrapper.text()).toContain('Enter a whole number between 0 and 3650.')
+    })
+  })
+
   describe('owner view', () => {
     it('shows danger zone section', () => {
       const wrapper = mountDialog()
@@ -293,6 +333,7 @@ describe('HouseSettingsDialog', () => {
           ownerUid: 'other',
           createdAt: 0,
           updatedAt: 0,
+          trashRetentionDays: 30,
         }),
         houseId: computed(() => 1),
         loading: ref(false),
@@ -338,6 +379,7 @@ describe('HouseSettingsDialog', () => {
           ownerUid: 'other',
           createdAt: 0,
           updatedAt: 0,
+          trashRetentionDays: 30,
         }),
         houseId: computed(() => 1),
         loading: ref(false),

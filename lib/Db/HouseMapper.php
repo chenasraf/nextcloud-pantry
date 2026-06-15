@@ -51,4 +51,17 @@ class HouseMapper extends QBMapper {
 
 		return $this->findEntity($qb);
 	}
+
+	/**
+	 * Used by the background purge job — iterates every house regardless of
+	 * membership so retention policy is enforced even for houses whose owner
+	 * is no longer signing in.
+	 *
+	 * @return House[]
+	 */
+	public function findAll(): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')->from($this->getTableName());
+		return $this->findEntities($qb);
+	}
 }

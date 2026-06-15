@@ -42,7 +42,7 @@ async function create(name: string, description?: string | null): Promise<House>
 
 async function update(
   id: number,
-  patch: { name?: string; description?: string | null },
+  patch: { name?: string; description?: string | null; trashRetentionDays?: number },
 ): Promise<House> {
   const updated = await api.updateHouse(id, patch)
   houses.value = houses.value.map((h) => (h.id === id ? updated : h))

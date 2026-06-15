@@ -15,6 +15,7 @@ namespace OCA\Pantry;
  *     ownerUid: string,
  *     createdAt: int,
  *     updatedAt: int,
+ *     trashRetentionDays: int,
  *     role: string,
  * }
  *

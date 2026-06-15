@@ -20,17 +20,24 @@ use OCP\AppFramework\Db\Entity;
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
  * @method void setUpdatedAt(int $updatedAt)
+ * @method int getTrashRetentionDays()
+ * @method void setTrashRetentionDays(int $trashRetentionDays)
  */
 class House extends Entity implements \JsonSerializable {
+	public const DEFAULT_TRASH_RETENTION_DAYS = 30;
+	public const MAX_TRASH_RETENTION_DAYS = 3650;
+
 	protected string $name = '';
 	protected ?string $description = null;
 	protected string $ownerUid = '';
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
+	protected int $trashRetentionDays = self::DEFAULT_TRASH_RETENTION_DAYS;
 
 	public function __construct() {
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
+		$this->addType('trashRetentionDays', 'integer');
 	}
 
 	public function jsonSerialize(): array {
@@ -41,6 +48,7 @@ class House extends Entity implements \JsonSerializable {
 			'ownerUid' => $this->ownerUid,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,
+			'trashRetentionDays' => $this->trashRetentionDays,
 		];
 	}
 }

@@ -18,7 +18,11 @@ export async function createHouse(name: string, description?: string | null): Pr
 
 export async function updateHouse(
   houseId: number,
-  patch: { name?: string; description?: string | null },
+  patch: {
+    name?: string
+    description?: string | null
+    trashRetentionDays?: number
+  },
 ): Promise<House> {
   const resp = await ocs.patch<House>(`/houses/${houseId}`, patch)
   return resp.data

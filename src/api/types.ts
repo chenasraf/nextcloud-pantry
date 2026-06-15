@@ -5,6 +5,7 @@ export interface House {
   ownerUid: string
   createdAt: number
   updatedAt: number
+  trashRetentionDays: number
   role: HouseRole
 }
 

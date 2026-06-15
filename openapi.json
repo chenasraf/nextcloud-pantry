@@ -211,6 +211,7 @@
                     "ownerUid",
                     "createdAt",
                     "updatedAt",
+                    "trashRetentionDays",
                     "role"
                 ],
                 "properties": {
@@ -233,6 +234,10 @@
                         "format": "int64"
                     },
                     "updatedAt": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "trashRetentionDays": {
                         "type": "integer",
                         "format": "int64"
                     },
@@ -4632,6 +4637,15 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New description."
+                                    },
+                                    "trashRetentionDays": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Days an item stays in the trash before being permanently deleted by the cleanup job. Set to 0 to disable auto-purge.",
+                                        "minimum": 0,
+                                        "maximum": 3650
                                     }
                                 }
                             }
