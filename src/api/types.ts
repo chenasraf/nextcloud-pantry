@@ -30,6 +30,7 @@ export interface Checklist {
   deleteOnDoneDefault: boolean
   createdAt: number
   updatedAt: number
+  deletedAt: number | null
 }
 
 export interface Category {
@@ -77,6 +78,7 @@ export interface Note {
   isPinned: boolean
   createdAt: number
   updatedAt: number
+  deletedAt: number | null
 }
 
 export interface PhotoFolder {
@@ -98,4 +100,5 @@ export interface Photo {
   sortOrder: number
   createdAt: number
   updatedAt: number
+  deletedAt: number | null
 }

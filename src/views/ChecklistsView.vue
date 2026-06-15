@@ -1,8 +1,8 @@
 <template>
   <div ref="gridWrapRef" class="pantry-lists">
-    <PageToolbar :title="strings.title">
+    <PageToolbar :title="trashMode ? strings.trashTitle : strings.title">
       <template #actions>
-        <NcActions :aria-label="strings.sortLabel" type="tertiary">
+        <NcActions v-if="!trashMode" :aria-label="strings.sortLabel" type="tertiary">
           <template #icon>
             <SortIcon :size="20" />
           </template>
@@ -19,13 +19,25 @@
             {{ opt.label }}
           </NcActionButton>
         </NcActions>
-        <NcButton variant="primary" @click="showCategoryManager = true">
+        <NcButton
+          :variant="trashMode ? 'primary' : 'tertiary'"
+          :aria-label="strings.trashLabel"
+          :title="strings.trashLabel"
+          :aria-pressed="trashMode"
+          @click="toggleTrash"
+        >
+          <template #icon>
+            <TrashCanIcon :size="20" />
+          </template>
+          {{ strings.trashLabel }}
+        </NcButton>
+        <NcButton v-if="!trashMode" variant="primary" @click="showCategoryManager = true">
           <template #icon>
             <TagIcon :size="20" />
           </template>
           {{ strings.manageCategories }}
         </NcButton>
-        <NcButton variant="primary" @click="showCreate = true">
+        <NcButton v-if="!trashMode" variant="primary" @click="showCreate = true">
           <template #icon>
             <PlusIcon :size="20" />
           </template>
@@ -38,6 +50,53 @@
       <div v-if="loading" class="pantry-center">
         <NcLoadingIcon :size="36" />
       </div>
+
+      <template v-else-if="trashMode">
+        <NcEmptyContent
+          v-if="deletedLists.length === 0"
+          :name="strings.trashEmptyTitle"
+          :description="strings.trashEmptyBody"
+        >
+          <template #icon>
+            <TrashCanIcon />
+          </template>
+        </NcEmptyContent>
+        <template v-else>
+          <div class="pantry-lists__trash-bar">
+            <NcButton variant="error" @click="confirmingEmptyTrash = true">
+              <template #icon><TrashCanIcon :size="20" /></template>
+              {{ strings.emptyTrashAction }}
+            </NcButton>
+          </div>
+          <ul class="pantry-lists__grid">
+            <li v-for="list in deletedLists" :key="'t-' + list.id" class="pantry-list-card-wrap">
+              <div class="pantry-list-card pantry-list-card--trash">
+                <span class="pantry-list-card__icon-wrap" :style="iconWrapStyle(list.color)">
+                  <component
+                    :is="checklistIconComponent(list.icon)"
+                    :size="28"
+                    class="pantry-list-card__icon"
+                  />
+                </span>
+                <div class="pantry-list-card__body">
+                  <h3>{{ list.name }}</h3>
+                  <p v-if="list.description">{{ list.description }}</p>
+                </div>
+              </div>
+              <NcActions class="pantry-list-card__actions" :aria-label="strings.listMenu">
+                <NcActionButton close-after-click @click="onRestoreList(list)">
+                  <template #icon><RestoreIcon :size="20" /></template>
+                  {{ strings.restore }}
+                </NcActionButton>
+                <NcActionButton close-after-click @click="confirmDelete(list)">
+                  <template #icon><DeleteIcon :size="20" /></template>
+                  {{ strings.deletePermanently }}
+                </NcActionButton>
+              </NcActions>
+            </li>
+          </ul>
+        </template>
+      </template>
 
       <NcEmptyContent
         v-else-if="lists.length === 0"
@@ -98,7 +157,7 @@
               </NcActionButton>
               <NcActionButton close-after-click @click="confirmDelete(item.list)">
                 <template #icon><DeleteIcon :size="20" /></template>
-                {{ strings.delete }}
+                {{ strings.remove }}
               </NcActionButton>
             </NcActions>
           </li>
@@ -121,7 +180,7 @@
 
     <NcDialog
       v-if="deleting"
-      :name="strings.deleteDialogTitle"
+      :name="deleteDialogTitle"
       :open="!!deleting"
       close-on-click-outside
       @update:open="(v) => !v && (deleting = null)"
@@ -129,7 +188,23 @@
       <p>{{ deleteConfirmBody }}</p>
       <template #actions>
         <NcButton @click="deleting = null">{{ strings.cancel }}</NcButton>
-        <NcButton variant="error" @click="submitDelete">{{ strings.delete }}</NcButton>
+        <NcButton variant="error" @click="submitDelete">{{ deleteDialogAction }}</NcButton>
+      </template>
+    </NcDialog>
+
+    <NcDialog
+      v-if="confirmingEmptyTrash"
+      :name="strings.emptyTrashTitle"
+      :open="confirmingEmptyTrash"
+      close-on-click-outside
+      @update:open="(v) => !v && (confirmingEmptyTrash = false)"
+    >
+      <p>{{ strings.emptyTrashBody }}</p>
+      <template #actions>
+        <NcButton @click="confirmingEmptyTrash = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" @click="submitEmptyTrash">{{
+          strings.emptyTrashAction
+        }}</NcButton>
       </template>
     </NcDialog>
 
@@ -145,6 +220,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { t } from '@nextcloud/l10n'
+import { showInfo, showUndo, showError } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -159,6 +235,8 @@ import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
+import TrashCanIcon from '@icons/TrashCan.vue'
+import RestoreIcon from '@icons/Restore.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import type { Checklist } from '@/api/types'
@@ -181,9 +259,48 @@ const props = defineProps<{ houseId: string }>()
 const router = useRouter()
 
 const houseIdNum = computed(() => Number(props.houseId))
-const { lists, loading, load, create, update, remove, reorder, sortBy } = useChecklists(
-  houseIdNum.value,
-)
+const {
+  lists,
+  deletedLists,
+  loading,
+  load,
+  loadDeleted,
+  create,
+  update,
+  remove,
+  restore,
+  removePermanently,
+  emptyTrash,
+  reorder,
+  sortBy,
+  trashMode,
+} = useChecklists(houseIdNum.value)
+
+async function toggleTrash() {
+  trashMode.value = !trashMode.value
+  await refresh()
+}
+
+async function refresh() {
+  if (trashMode.value) {
+    await loadDeleted()
+  } else {
+    await load(true)
+  }
+}
+
+const confirmingEmptyTrash = ref(false)
+
+async function submitEmptyTrash() {
+  confirmingEmptyTrash.value = false
+  await emptyTrash()
+  showInfo(strings.trashEmptiedToast)
+}
+
+async function onRestoreList(list: Checklist) {
+  await restore(list.id)
+  showInfo(strings.listRestored)
+}
 
 // ----- Sort -----
 
@@ -263,12 +380,22 @@ async function submitEdit(data: {
 }
 
 const deleting = ref<Checklist | null>(null)
-const deleteConfirmBody = computed(() =>
-  t(
-    'pantry',
-    'Are you sure you want to delete {name}? All items in this list will also be removed.',
-    { name: deleting.value?.name ?? '' },
-  ),
+const deleteConfirmBody = computed(() => {
+  const name = deleting.value?.name ?? ''
+  if (trashMode.value) {
+    return t(
+      'pantry',
+      'Permanently delete {name}? Every item in this list will also be erased. This cannot be undone.',
+      { name },
+    )
+  }
+  return t('pantry', 'Move {name} to the trash? You can restore it later.', { name })
+})
+const deleteDialogTitle = computed(() =>
+  trashMode.value ? strings.deletePermanentlyDialogTitle : strings.deleteDialogTitle,
+)
+const deleteDialogAction = computed(() =>
+  trashMode.value ? strings.deletePermanently : strings.remove,
 )
 
 function confirmDelete(list: Checklist) {
@@ -278,8 +405,22 @@ function confirmDelete(list: Checklist) {
 async function submitDelete() {
   const target = deleting.value
   if (!target) return
-  await remove(target.id)
+  if (trashMode.value) {
+    await removePermanently(target.id)
+    deleting.value = null
+    showInfo(strings.listPermanentlyDeleted)
+    return
+  }
+  const id = target.id
+  await remove(id)
   deleting.value = null
+  showUndo(
+    strings.listMovedToTrash,
+    () => {
+      void restore(id).catch(() => showError(strings.restoreFailed))
+    },
+    { timeout: 6000 },
+  )
 }
 
 // ----- Reorder (custom sort only) -----
@@ -406,16 +547,34 @@ useTouchReorder(
 
 const strings = {
   title: t('pantry', 'Checklists'),
+  trashTitle: t('pantry', 'Checklists trash'),
   newList: t('pantry', 'New list'),
   manageCategories: t('pantry', 'Manage categories'),
   cancel: t('pantry', 'Cancel'),
   edit: t('pantry', 'Edit'),
-  delete: t('pantry', 'Delete'),
+  remove: t('pantry', 'Remove'),
+  deletePermanently: t('pantry', 'Delete permanently'),
+  restore: t('pantry', 'Restore'),
   listMenu: t('pantry', 'List actions'),
-  deleteDialogTitle: t('pantry', 'Delete checklist'),
+  deleteDialogTitle: t('pantry', 'Remove checklist'),
+  deletePermanentlyDialogTitle: t('pantry', 'Delete checklist permanently'),
   emptyTitle: t('pantry', 'No lists yet'),
   emptyBody: t('pantry', 'Create your first checklist to start adding items.'),
   sortLabel: t('pantry', 'Sort order'),
+  trashLabel: t('pantry', 'Trash'),
+  trashEmptyTitle: t('pantry', 'Trash is empty'),
+  trashEmptyBody: t('pantry', 'Deleted checklists will appear here.'),
+  emptyTrashAction: t('pantry', 'Empty trash'),
+  emptyTrashTitle: t('pantry', 'Empty trash?'),
+  emptyTrashBody: t(
+    'pantry',
+    'This will permanently delete every checklist in the trash, along with all of their items. This cannot be undone.',
+  ),
+  trashEmptiedToast: t('pantry', 'Trash emptied'),
+  listRestored: t('pantry', 'Checklist restored'),
+  listMovedToTrash: t('pantry', 'Checklist moved to trash'),
+  listPermanentlyDeleted: t('pantry', 'Checklist permanently deleted'),
+  restoreFailed: t('pantry', 'Could not restore from trash'),
 }
 </script>
 
@@ -433,6 +592,12 @@ const strings = {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 1rem;
+  }
+
+  &__trash-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem 0 0.75rem;
   }
 }
 

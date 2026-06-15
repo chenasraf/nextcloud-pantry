@@ -6,9 +6,11 @@ import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
 // Per-house state shared across all callers so sidebar and views stay in sync.
 interface HouseChecklistState {
   lists: Ref<Checklist[]>
+  deletedLists: Ref<Checklist[]>
   loading: Ref<boolean>
   error: Ref<string | null>
   sortBy: Ref<ChecklistSort>
+  trashMode: Ref<boolean>
   inflight: Promise<Checklist[]> | null
 }
 const houseStates = new Map<number, HouseChecklistState>()
@@ -18,9 +20,11 @@ function getState(houseId: number): HouseChecklistState {
   if (!s) {
     s = {
       lists: ref<Checklist[]>([]),
+      deletedLists: ref<Checklist[]>([]),
       loading: ref(false),
       error: ref<string | null>(null),
       sortBy: ref<ChecklistSort>('custom'),
+      trashMode: ref(false),
       inflight: null,
     }
     houseStates.set(houseId, s)
@@ -30,7 +34,7 @@ function getState(houseId: number): HouseChecklistState {
 
 export function useChecklists(houseId: number) {
   const state = getState(houseId)
-  const { lists, loading, error, sortBy } = state
+  const { lists, deletedLists, loading, error, sortBy, trashMode } = state
 
   function load(sortOrForce?: ChecklistSort | boolean): Promise<Checklist[]> {
     const force = sortOrForce === true
@@ -53,6 +57,18 @@ export function useChecklists(houseId: number) {
         state.inflight = null
       })
     return state.inflight
+  }
+
+  async function loadDeleted(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      deletedLists.value = await api.listDeletedLists(houseId)
+    } catch (e) {
+      error.value = (e as Error).message
+    } finally {
+      loading.value = false
+    }
   }
 
   async function create(
@@ -85,6 +101,24 @@ export function useChecklists(houseId: number) {
     lists.value = lists.value.filter((l) => l.id !== listId)
   }
 
+  async function restore(listId: number): Promise<void> {
+    const restored = await api.restoreList(houseId, listId)
+    deletedLists.value = deletedLists.value.filter((l) => l.id !== listId)
+    // Append so it shows up immediately if the user toggles back to the active view.
+    lists.value = [...lists.value, restored]
+  }
+
+  async function removePermanently(listId: number): Promise<void> {
+    await api.permanentlyDeleteList(houseId, listId)
+    deletedLists.value = deletedLists.value.filter((l) => l.id !== listId)
+    lists.value = lists.value.filter((l) => l.id !== listId)
+  }
+
+  async function emptyTrash(): Promise<void> {
+    await api.emptyListsTrash(houseId)
+    deletedLists.value = []
+  }
+
   async function reorder(items: { id: number; sortOrder: number }[]): Promise<void> {
     // Apply optimistically so there's no visual jump while the API call is in flight.
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
@@ -94,7 +128,23 @@ export function useChecklists(houseId: number) {
     await api.reorderLists(houseId, items)
   }
 
-  return { lists, loading, error, sortBy, load, create, update, remove, reorder }
+  return {
+    lists,
+    deletedLists,
+    loading,
+    error,
+    sortBy,
+    trashMode,
+    load,
+    loadDeleted,
+    create,
+    update,
+    remove,
+    restore,
+    removePermanently,
+    emptyTrash,
+    reorder,
+  }
 }
 
 export function useChecklistItems(houseId: number, listId: number) {

@@ -58,9 +58,18 @@ class ChecklistService {
 		}
 	}
 
-	public function getList(int $listId): Checklist {
+	/**
+	 * List soft-deleted checklists in a house. Most recently deleted first.
+	 *
+	 * @return Checklist[]
+	 */
+	public function listDeletedForHouse(int $houseId): array {
+		return $this->listMapper->findDeletedByHouse($houseId);
+	}
+
+	public function getList(int $listId, bool $includeDeleted = false): Checklist {
 		try {
-			return $this->listMapper->findById($listId);
+			return $this->listMapper->findById($listId, $includeDeleted);
 		} catch (DoesNotExistException) {
 			throw new NotFoundException('List not found');
 		}
@@ -122,10 +131,48 @@ class ChecklistService {
 		return $list;
 	}
 
+	/**
+	 * Soft-delete a checklist. Items remain on the list (their own deleted_at
+	 * state is untouched) so the list can be restored intact.
+	 */
 	public function deleteList(int $listId): void {
 		$list = $this->getList($listId);
+		$now = time();
+		$list->setDeletedAt($now);
+		$list->setUpdatedAt($now);
+		$this->listMapper->update($list);
+	}
+
+	/**
+	 * Restore a soft-deleted checklist by clearing its deleted_at marker.
+	 */
+	public function restoreList(int $listId): Checklist {
+		$list = $this->getList($listId, includeDeleted: true);
+		$list->setDeletedAt(null);
+		$list->setUpdatedAt(time());
+		$this->listMapper->update($list);
+		return $list;
+	}
+
+	/**
+	 * Permanently remove a checklist and every item that belongs to it,
+	 * regardless of whether it is currently in trash.
+	 */
+	public function permanentlyDeleteList(int $listId): void {
+		$list = $this->getList($listId, includeDeleted: true);
 		$this->itemMapper->deleteByList((int)$list->getId());
 		$this->listMapper->delete($list);
+	}
+
+	/**
+	 * Hard-delete every soft-deleted checklist in the house, along with any
+	 * items those lists contained.
+	 */
+	public function emptyListsTrash(int $houseId): void {
+		$removed = $this->listMapper->emptyTrashForHouse($houseId);
+		foreach ($removed as $list) {
+			$this->itemMapper->deleteByList((int)$list->getId());
+		}
 	}
 
 	// ----- Items -----

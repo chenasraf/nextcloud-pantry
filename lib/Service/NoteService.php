@@ -25,9 +25,18 @@ class NoteService {
 		return $this->noteMapper->findByHouse($houseId, $sortBy);
 	}
 
-	public function getNote(int $noteId): Note {
+	/**
+	 * List soft-deleted notes in a house. Most recently deleted first.
+	 *
+	 * @return Note[]
+	 */
+	public function listDeletedNotes(int $houseId): array {
+		return $this->noteMapper->findDeletedByHouse($houseId);
+	}
+
+	public function getNote(int $noteId, bool $includeDeleted = false): Note {
 		try {
-			return $this->noteMapper->findById($noteId);
+			return $this->noteMapper->findById($noteId, $includeDeleted);
 		} catch (DoesNotExistException) {
 			throw new NotFoundException('Note not found');
 		}
@@ -92,7 +101,36 @@ class NoteService {
 
 	public function deleteNote(int $noteId): void {
 		$note = $this->getNote($noteId);
+		$now = time();
+		$note->setDeletedAt($now);
+		$note->setUpdatedAt($now);
+		$this->noteMapper->update($note);
+	}
+
+	/**
+	 * Permanently remove a note, regardless of whether it is currently in trash.
+	 */
+	public function permanentlyDeleteNote(int $noteId): void {
+		$note = $this->getNote($noteId, includeDeleted: true);
 		$this->noteMapper->delete($note);
+	}
+
+	/**
+	 * Restore a soft-deleted note by clearing its deleted_at marker.
+	 */
+	public function restoreNote(int $noteId): Note {
+		$note = $this->getNote($noteId, includeDeleted: true);
+		$note->setDeletedAt(null);
+		$note->setUpdatedAt(time());
+		$this->noteMapper->update($note);
+		return $note;
+	}
+
+	/**
+	 * Hard-delete every soft-deleted note in the house.
+	 */
+	public function emptyTrash(int $houseId): void {
+		$this->noteMapper->emptyTrashForHouse($houseId);
 	}
 
 	/**

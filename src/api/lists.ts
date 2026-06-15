@@ -56,6 +56,24 @@ export async function deleteList(houseId: number, listId: number): Promise<void>
   await ocs.delete(`/houses/${houseId}/lists/${listId}`)
 }
 
+export async function listDeletedLists(houseId: number): Promise<Checklist[]> {
+  const resp = await ocs.get<Checklist[]>(`/houses/${houseId}/lists/trash`)
+  return resp.data ?? []
+}
+
+export async function restoreList(houseId: number, listId: number): Promise<Checklist> {
+  const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists/${listId}/restore`)
+  return resp.data
+}
+
+export async function permanentlyDeleteList(houseId: number, listId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/lists/${listId}/permanent`)
+}
+
+export async function emptyListsTrash(houseId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/lists/trash`)
+}
+
 export async function listItems(
   houseId: number,
   listId: number,

@@ -44,6 +44,7 @@ function makePhoto(overrides: Partial<Photo> = {}): Photo {
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
+    deletedAt: null,
     ...overrides,
   }
 }

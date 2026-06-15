@@ -126,6 +126,49 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * List soft-deleted checklists in a house (trash)
+	 *
+	 * Returns lists whose deleted_at is set, most recently deleted first.
+	 *
+	 * @param int $houseId House id.
+	 * @param int<1, 500> $limit Maximum number of lists to return.
+	 * @param int<0, max> $offset Number of lists to skip.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryList>, array{}>
+	 *
+	 * 200: Deleted lists returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/trash')]
+	#[NoAdminRequired]
+	public function indexDeletedLists(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$all = $this->lists->listDeletedForHouse($houseId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			return new DataResponse(array_map(fn ($l) => $l->jsonSerialize(), $sliced));
+		});
+	}
+
+	/**
+	 * Empty the house's checklists trash, permanently deleting every soft-deleted list
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Trash emptied
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/trash')]
+	#[NoAdminRequired]
+	public function emptyListsTrash(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->lists->emptyListsTrash($houseId);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
 	 * Get a checklist
 	 *
 	 * @param int $houseId House id.
@@ -135,7 +178,7 @@ final class ChecklistController extends OCSController {
 	 *
 	 * 200: List returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	public function showList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
@@ -162,7 +205,7 @@ final class ChecklistController extends OCSController {
 	 *
 	 * 200: List updated
 	 */
-	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}')]
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?bool $deleteOnDoneDefault = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $color, $sortOrder, $deleteOnDoneDefault): DataResponse {
@@ -214,7 +257,7 @@ final class ChecklistController extends OCSController {
 	 *
 	 * 200: List deleted
 	 */
-	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}')]
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	public function deleteList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
@@ -231,6 +274,53 @@ final class ChecklistController extends OCSController {
 				$listId,
 				$listName,
 			);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Restore a soft-deleted checklist back into the active list index
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
+	 *
+	 * 200: List restored
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/restore', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	public function restoreList(int $houseId, int $listId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$existing = $this->lists->getList($listId, includeDeleted: true);
+			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$restored = $this->lists->restoreList($listId);
+			return new DataResponse($restored->jsonSerialize());
+		});
+	}
+
+	/**
+	 * Permanently delete a checklist, bypassing the trash
+	 *
+	 * Works on both live lists and lists already in trash. Also wipes every
+	 * item that belongs to the list, including items in the list's own item-trash.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: List permanently deleted
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/permanent', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	public function permanentlyDeleteList(int $houseId, int $listId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$existing = $this->lists->getList($listId, includeDeleted: true);
+			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$this->lists->permanentlyDeleteList($listId);
 			return new DataResponse(['success' => true]);
 		});
 	}

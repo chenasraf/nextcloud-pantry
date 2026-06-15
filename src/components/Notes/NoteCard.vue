@@ -4,13 +4,13 @@
     :class="{ 'note-card--dragging': isDragging, 'note-card--selected': selected }"
     :style="cardStyle"
     :data-drag-id="note.id"
-    :draggable="draggableEnabled ? 'true' : 'false'"
+    :draggable="!trashMode && draggableEnabled ? 'true' : 'false'"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
-    @click="$emit('edit', note)"
+    @click="trashMode ? null : $emit('edit', note)"
   >
-    <div class="note-card__select" @click.stop>
+    <div v-if="!trashMode" class="note-card__select" @click.stop>
       <NcCheckboxRadioSwitch
         :model-value="selected"
         @update:model-value="$emit('select', note.id)"
@@ -18,13 +18,18 @@
     </div>
     <div class="note-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
+        <NcActionButton v-if="trashMode" close-after-click @click.stop="$emit('restore', note)">
+          <template #icon><RestoreIcon :size="20" /></template>
+          {{ strings.restore }}
+        </NcActionButton>
         <NcActionButton close-after-click @click.stop="$emit('delete', note)">
           <template #icon><DeleteIcon :size="20" /></template>
-          {{ strings.delete }}
+          {{ trashMode ? strings.deletePermanently : strings.removeNote }}
         </NcActionButton>
       </NcActions>
     </div>
     <button
+      v-if="!trashMode"
       type="button"
       class="note-card__pin"
       :class="{ 'note-card__pin--pinned': note.isPinned }"
@@ -52,16 +57,23 @@ import NcRichText from '@nextcloud/vue/components/NcRichText'
 import DeleteIcon from '@icons/Delete.vue'
 import PinIcon from '@icons/Pin.vue'
 import PinOutlineIcon from '@icons/PinOutline.vue'
+import RestoreIcon from '@icons/Restore.vue'
 import { contrastColor } from './noteColors'
 import type { Note } from '@/api/types'
 
 const props = withDefaults(
-  defineProps<{ note: Note; draggableEnabled?: boolean; selected?: boolean }>(),
-  { draggableEnabled: true, selected: false },
+  defineProps<{
+    note: Note
+    draggableEnabled?: boolean
+    selected?: boolean
+    trashMode?: boolean
+  }>(),
+  { draggableEnabled: true, selected: false, trashMode: false },
 )
 const emit = defineEmits<{
   edit: [note: Note]
   delete: [note: Note]
+  restore: [note: Note]
   'toggle-pin': [note: Note]
   'drag-start': [noteId: number]
   'reorder-over': [noteId: number, event: MouseEvent]
@@ -97,7 +109,9 @@ function onDragOver(e: DragEvent) {
 
 const strings = {
   actions: t('pantry', 'Note actions'),
-  delete: t('pantry', 'Delete'),
+  removeNote: t('pantry', 'Remove'),
+  deletePermanently: t('pantry', 'Delete permanently'),
+  restore: t('pantry', 'Restore'),
   pin: t('pantry', 'Pin to top'),
   unpin: t('pantry', 'Unpin'),
 }

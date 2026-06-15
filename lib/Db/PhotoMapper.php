@@ -28,7 +28,8 @@ class PhotoMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'));
 		$this->applySort($qb, $sortBy);
 
 		return $this->findEntities($qb);
@@ -41,7 +42,8 @@ class PhotoMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('folder_id', $qb->createNamedParameter($folderId, IQueryBuilder::PARAM_INT)));
+			->where($qb->expr()->eq('folder_id', $qb->createNamedParameter($folderId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'));
 		$this->applySort($qb, $sortBy);
 
 		return $this->findEntities($qb);
@@ -55,7 +57,8 @@ class PhotoMapper extends QBMapper {
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('folder_id'));
+			->andWhere($qb->expr()->isNull('folder_id'))
+			->andWhere($qb->expr()->isNull('deleted_at'));
 		$this->applySort($qb, $sortBy);
 
 		return $this->findEntities($qb);
@@ -87,13 +90,32 @@ class PhotoMapper extends QBMapper {
 	/**
 	 * @throws DoesNotExistException
 	 */
-	public function findById(int $id): Photo {
+	public function findById(int $id, bool $includeDeleted = false): Photo {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		if (!$includeDeleted) {
+			$qb->andWhere($qb->expr()->isNull('deleted_at'));
+		}
 
 		return $this->findEntity($qb);
+	}
+
+	/**
+	 * Find soft-deleted photos in a house, most recently deleted first.
+	 *
+	 * @return Photo[]
+	 */
+	public function findDeletedByHouse(int $houseId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('deleted_at'))
+			->orderBy('deleted_at', 'DESC');
+
+		return $this->findEntities($qb);
 	}
 
 	public function moveToRoot(int $folderId): void {
@@ -109,5 +131,18 @@ class PhotoMapper extends QBMapper {
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
 		$qb->executeStatement();
+	}
+
+	/**
+	 * Hard-delete every soft-deleted photo in the house.
+	 *
+	 * @return Photo[] The rows that were removed (so callers can clean files).
+	 */
+	public function emptyTrashForHouse(int $houseId): array {
+		$rows = $this->findDeletedByHouse($houseId);
+		foreach ($rows as $row) {
+			$this->delete($row);
+		}
+		return $rows;
 	}
 }

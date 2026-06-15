@@ -40,6 +40,7 @@ namespace OCA\Pantry;
  *     deleteOnDoneDefault: bool,
  *     createdAt: int,
  *     updatedAt: int,
+ *     deletedAt: int|null,
  * }
  *
  * @psalm-type PantryListItem = array{
@@ -130,6 +131,7 @@ namespace OCA\Pantry;
  *     isPinned: bool,
  *     createdAt: int,
  *     updatedAt: int,
+ *     deletedAt: int|null,
  * }
  *
  * @psalm-type PantryPhoto = array{
@@ -142,6 +144,7 @@ namespace OCA\Pantry;
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,
+ *     deletedAt: int|null,
  * }
  */
 class ResponseDefinitions {

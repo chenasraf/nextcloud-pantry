@@ -12,6 +12,10 @@ const mockApi = vi.hoisted(() => ({
   updateFolder: vi.fn(),
   deleteFolder: vi.fn(),
   reorderFolders: vi.fn(),
+  listDeletedPhotos: vi.fn(),
+  restorePhoto: vi.fn(),
+  permanentlyDeletePhoto: vi.fn(),
+  emptyPhotosTrash: vi.fn(),
 }))
 
 vi.mock('@/api/photos', () => mockApi)
@@ -29,6 +33,7 @@ function makePhoto(overrides: Partial<Photo> = {}): Photo {
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
+    deletedAt: null,
     ...overrides,
   }
 }
@@ -351,6 +356,59 @@ describe('usePhotos', () => {
       await board.load()
 
       expect(board.photosInFolder(5).map((p) => p.id)).toEqual([3, 1])
+    })
+  })
+
+  describe('trash', () => {
+    it('loadDeleted populates deletedPhotos', async () => {
+      const deleted = [makePhoto({ id: 9, deletedAt: 123 })]
+      mockApi.listDeletedPhotos.mockResolvedValue(deleted)
+
+      const board = usePhotos(1)
+      await board.loadDeleted()
+
+      expect(board.deletedPhotos.value).toEqual(deleted)
+    })
+
+    it('restorePhoto moves photo from deletedPhotos back to photos', async () => {
+      const restored = makePhoto({ id: 9, deletedAt: null })
+      mockApi.listDeletedPhotos.mockResolvedValue([makePhoto({ id: 9, deletedAt: 123 })])
+      mockApi.restorePhoto.mockResolvedValue(restored)
+
+      const board = usePhotos(1)
+      await board.loadDeleted()
+      await board.restorePhoto(9)
+
+      expect(board.deletedPhotos.value).toHaveLength(0)
+      expect(board.photos.value).toContainEqual(restored)
+    })
+
+    it('removePhotoPermanently drops the photo from both arrays', async () => {
+      mockApi.listPhotos.mockResolvedValue([makePhoto({ id: 9 })])
+      mockApi.listFolders.mockResolvedValue([])
+      mockApi.listDeletedPhotos.mockResolvedValue([makePhoto({ id: 9, deletedAt: 123 })])
+      mockApi.permanentlyDeletePhoto.mockResolvedValue(undefined)
+
+      const board = usePhotos(1)
+      await board.load()
+      await board.loadDeleted()
+      await board.removePhotoPermanently(9)
+
+      expect(board.deletedPhotos.value).toHaveLength(0)
+      expect(board.photos.value).toHaveLength(0)
+      expect(mockApi.permanentlyDeletePhoto).toHaveBeenCalledWith(1, 9)
+    })
+
+    it('emptyPhotosTrash clears deletedPhotos', async () => {
+      mockApi.listDeletedPhotos.mockResolvedValue([makePhoto({ id: 1 }), makePhoto({ id: 2 })])
+      mockApi.emptyPhotosTrash.mockResolvedValue(undefined)
+
+      const board = usePhotos(1)
+      await board.loadDeleted()
+      await board.emptyPhotosTrash()
+
+      expect(board.deletedPhotos.value).toHaveLength(0)
+      expect(mockApi.emptyPhotosTrash).toHaveBeenCalledWith(1)
     })
   })
 })

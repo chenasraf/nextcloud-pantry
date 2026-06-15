@@ -86,6 +86,24 @@ export async function deletePhoto(houseId: number, photoId: number): Promise<voi
   await ocs.delete(`/houses/${houseId}/photos/${photoId}`)
 }
 
+export async function listDeletedPhotos(houseId: number): Promise<Photo[]> {
+  const resp = await ocs.get<Photo[]>(`/houses/${houseId}/photos/trash`)
+  return resp.data ?? []
+}
+
+export async function restorePhoto(houseId: number, photoId: number): Promise<Photo> {
+  const resp = await ocs.post<Photo>(`/houses/${houseId}/photos/${photoId}/restore`)
+  return resp.data
+}
+
+export async function permanentlyDeletePhoto(houseId: number, photoId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/photos/${photoId}/permanent`)
+}
+
+export async function emptyPhotosTrash(houseId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/photos/trash`)
+}
+
 export async function reorderPhotos(
   houseId: number,
   items: { id: number; sortOrder: number }[],

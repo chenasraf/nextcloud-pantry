@@ -2,7 +2,7 @@
   <div ref="wallRef" class="pantry-notes">
     <PageToolbar :title="strings.title">
       <template #actions>
-        <NcActions :aria-label="strings.sortLabel" type="tertiary">
+        <NcActions v-if="!trashMode" :aria-label="strings.sortLabel" type="tertiary">
           <template #icon>
             <SortIcon :size="20" />
           </template>
@@ -19,7 +19,19 @@
             {{ opt.label }}
           </NcActionButton>
         </NcActions>
-        <NcButton variant="primary" @click="openCreateDialog">
+        <NcButton
+          :variant="trashMode ? 'primary' : 'tertiary'"
+          :aria-label="strings.trashLabel"
+          :title="strings.trashLabel"
+          :aria-pressed="trashMode"
+          @click="toggleTrash"
+        >
+          <template #icon>
+            <TrashCanIcon :size="20" />
+          </template>
+          {{ strings.trashLabel }}
+        </NcButton>
+        <NcButton v-if="!trashMode" variant="primary" @click="openCreateDialog">
           <template #icon><PlusIcon :size="20" /></template>
           {{ strings.newNote }}
         </NcButton>
@@ -32,14 +44,15 @@
       </div>
 
       <NcEmptyContent
-        v-else-if="notes.length === 0"
-        :name="strings.emptyTitle"
-        :description="strings.emptyBody"
+        v-else-if="visibleNotes.length === 0"
+        :name="trashMode ? strings.trashEmptyTitle : strings.emptyTitle"
+        :description="trashMode ? strings.trashEmptyBody : strings.emptyBody"
       >
         <template #icon>
-          <NoteIcon />
+          <TrashCanIcon v-if="trashMode" />
+          <NoteIcon v-else />
         </template>
-        <template #action>
+        <template v-if="!trashMode" #action>
           <NcButton variant="primary" @click="openCreateDialog">
             {{ strings.newNote }}
           </NcButton>
@@ -47,12 +60,19 @@
       </NcEmptyContent>
 
       <template v-else>
+        <div v-if="trashMode" class="pantry-notes__trash-bar">
+          <NcButton variant="error" @click="confirmingEmptyTrash = true">
+            <template #icon><TrashCanIcon :size="20" /></template>
+            {{ strings.emptyTrashAction }}
+          </NcButton>
+        </div>
+
         <!-- Selection bar -->
-        <div v-if="selectedNoteIds.size > 0" class="pantry-selection-bar">
+        <div v-if="!trashMode && selectedNoteIds.size > 0" class="pantry-selection-bar">
           <span>{{ selectionLabel }}</span>
           <NcButton variant="error" @click="confirmBulkDelete">
             <template #icon><DeleteIcon :size="20" /></template>
-            {{ strings.delete }}
+            {{ strings.remove }}
           </NcButton>
           <NcButton @click="selectedNoteIds.clear()">{{ strings.clearSelection }}</NcButton>
         </div>
@@ -68,10 +88,12 @@
             <NoteCard
               v-else
               :note="item.note"
-              :draggable-enabled="isCustomSort"
+              :draggable-enabled="reorderEnabled"
               :selected="selectedNoteIds.has(item.note.id)"
+              :trash-mode="trashMode"
               @edit="openEditDialog"
               @delete="confirmDelete"
+              @restore="onRestore"
               @toggle-pin="onTogglePin"
               @drag-start="onDragStart"
               @reorder-over="onReorderOver"
@@ -94,7 +116,7 @@
     <!-- Delete confirm -->
     <NcDialog
       v-if="deletingNote"
-      :name="strings.deleteTitle"
+      :name="deleteDialogTitle"
       :open="!!deletingNote"
       close-on-click-outside
       @update:open="(v) => !v && (deletingNote = null)"
@@ -102,14 +124,14 @@
       <p>{{ deleteBody }}</p>
       <template #actions>
         <NcButton @click="deletingNote = null">{{ strings.cancel }}</NcButton>
-        <NcButton variant="error" @click="submitDelete">{{ strings.delete }}</NcButton>
+        <NcButton variant="error" @click="submitDelete">{{ deleteDialogAction }}</NcButton>
       </template>
     </NcDialog>
 
     <!-- Bulk delete confirm -->
     <NcDialog
       v-if="bulkDeleting"
-      :name="strings.deleteTitle"
+      :name="strings.removeTitle"
       :open="bulkDeleting"
       close-on-click-outside
       @update:open="(v) => !v && (bulkDeleting = false)"
@@ -117,7 +139,24 @@
       <p>{{ bulkDeleteBody }}</p>
       <template #actions>
         <NcButton @click="bulkDeleting = false">{{ strings.cancel }}</NcButton>
-        <NcButton variant="error" @click="submitBulkDelete">{{ strings.delete }}</NcButton>
+        <NcButton variant="error" @click="submitBulkDelete">{{ strings.remove }}</NcButton>
+      </template>
+    </NcDialog>
+
+    <!-- Empty trash confirm -->
+    <NcDialog
+      v-if="confirmingEmptyTrash"
+      :name="strings.emptyTrashTitle"
+      :open="confirmingEmptyTrash"
+      close-on-click-outside
+      @update:open="(v) => !v && (confirmingEmptyTrash = false)"
+    >
+      <p>{{ strings.emptyTrashBody }}</p>
+      <template #actions>
+        <NcButton @click="confirmingEmptyTrash = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" @click="submitEmptyTrash">{{
+          strings.emptyTrashAction
+        }}</NcButton>
       </template>
     </NcDialog>
   </div>
@@ -126,7 +165,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { n, t } from '@nextcloud/l10n'
-import { showInfo } from '@nextcloud/dialogs'
+import { showInfo, showUndo, showError } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -139,6 +178,7 @@ import PlusIcon from '@icons/Plus.vue'
 import NoteIcon from '@icons/Note.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
+import TrashCanIcon from '@icons/TrashCan.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import type { Note } from '@/api/types'
@@ -150,14 +190,58 @@ import { useTouchReorder } from '@/composables/useTouchReorder'
 const props = defineProps<{ houseId: string }>()
 
 const houseIdNum = computed(() => Number(props.houseId))
-const { notes, loading, load, create, update, remove, reorder, togglePin, sortBy } = useNotes(
-  houseIdNum.value,
-)
+const {
+  notes,
+  deletedNotes,
+  loading,
+  load,
+  loadDeleted,
+  create,
+  update,
+  remove,
+  restore,
+  removePermanently,
+  emptyTrash,
+  reorder,
+  togglePin,
+  sortBy,
+  trashMode,
+} = useNotes(houseIdNum.value)
+
+const visibleNotes = computed(() => (trashMode.value ? deletedNotes.value : notes.value))
+
+async function toggleTrash() {
+  trashMode.value = !trashMode.value
+  selectedNoteIds.value = new Set()
+  await refresh()
+}
+
+async function refresh() {
+  if (trashMode.value) {
+    await loadDeleted()
+  } else {
+    await load()
+  }
+}
+
+const confirmingEmptyTrash = ref(false)
+
+async function submitEmptyTrash() {
+  confirmingEmptyTrash.value = false
+  await emptyTrash()
+  showInfo(strings.trashEmptiedToast)
+}
+
+async function onRestore(note: Note) {
+  await restore(note.id)
+  showInfo(strings.noteRestored)
+}
 
 // ----- Sort -----
 
 const currentSort = ref<NoteSort>('custom')
 const isCustomSort = computed(() => currentSort.value === 'custom')
+const reorderEnabled = computed(() => isCustomSort.value && !trashMode.value)
 
 const noteSortOptions: { value: NoteSort; label: string }[] = [
   { value: 'newest', label: t('pantry', 'Newest first') },
@@ -208,6 +292,9 @@ function getDraggedNote(): Note | null {
 }
 
 function buildGridItems(): GridItem[] {
+  if (trashMode.value) {
+    return deletedNotes.value.map((n) => ({ type: 'note' as const, key: 'n-' + n.id, note: n }))
+  }
   const dragId = draggingNoteId.value
   const dragged = getDraggedNote()
   if (dragId === null || dropIndex.value === null || !dragged) {
@@ -322,7 +409,7 @@ useTouchReorder(
       dropIndex.value = null
     },
   },
-  isCustomSort,
+  reorderEnabled,
 )
 
 // ----- Pin -----
@@ -398,8 +485,8 @@ const bulkDeleting = ref(false)
 const bulkDeleteBody = computed(() =>
   n(
     'pantry',
-    'Are you sure you want to delete %n note?',
-    'Are you sure you want to delete %n notes?',
+    'Move %n note to the trash?',
+    'Move %n notes to the trash?',
     selectedNoteIds.value.size,
   ),
 )
@@ -415,16 +502,30 @@ async function submitBulkDelete() {
   }
   selectedNoteIds.value = new Set()
   bulkDeleting.value = false
-  showInfo(n('pantry', '%n note deleted', '%n notes deleted', ids.length))
+  showUndo(
+    n('pantry', '%n note moved to trash', '%n notes moved to trash', ids.length),
+    () => {
+      void Promise.all(ids.map((id) => restore(id))).catch(() => showError(strings.restoreFailed))
+    },
+    { timeout: 6000 },
+  )
 }
 
 // ----- Delete -----
 
 const deletingNote = ref<Note | null>(null)
-const deleteBody = computed(() =>
-  t('pantry', 'Are you sure you want to delete "{name}"?', {
-    name: deletingNote.value?.title ?? '',
-  }),
+const deleteBody = computed(() => {
+  const name = deletingNote.value?.title ?? ''
+  if (trashMode.value) {
+    return t('pantry', 'Permanently delete "{name}"? This cannot be undone.', { name })
+  }
+  return t('pantry', 'Move "{name}" to the trash?', { name })
+})
+const deleteDialogTitle = computed(() =>
+  trashMode.value ? strings.deletePermanentlyTitle : strings.removeTitle,
+)
+const deleteDialogAction = computed(() =>
+  trashMode.value ? strings.deletePermanently : strings.remove,
 )
 
 function confirmDelete(note: Note) {
@@ -433,21 +534,50 @@ function confirmDelete(note: Note) {
 
 async function submitDelete() {
   if (!deletingNote.value) return
-  await remove(deletingNote.value.id)
+  const id = deletingNote.value.id
+  if (trashMode.value) {
+    await removePermanently(id)
+    deletingNote.value = null
+    showInfo(strings.notePermanentlyDeleted)
+    return
+  }
+  await remove(id)
   deletingNote.value = null
-  showInfo(t('pantry', 'Note deleted'))
+  showUndo(
+    strings.noteMovedToTrash,
+    () => {
+      void restore(id).catch(() => showError(strings.restoreFailed))
+    },
+    { timeout: 6000 },
+  )
 }
 
 const strings = {
   title: t('pantry', 'Notes wall'),
   newNote: t('pantry', 'New note'),
   cancel: t('pantry', 'Cancel'),
-  delete: t('pantry', 'Delete'),
+  remove: t('pantry', 'Remove'),
+  deletePermanently: t('pantry', 'Delete permanently'),
   emptyTitle: t('pantry', 'No notes yet'),
   emptyBody: t('pantry', 'Create your first note to start sharing reminders with your household.'),
-  deleteTitle: t('pantry', 'Delete note'),
+  removeTitle: t('pantry', 'Remove note'),
+  deletePermanentlyTitle: t('pantry', 'Delete note permanently'),
   sortLabel: t('pantry', 'Sort order'),
   clearSelection: t('pantry', 'Clear selection'),
+  trashLabel: t('pantry', 'Trash'),
+  trashEmptyTitle: t('pantry', 'Trash is empty'),
+  trashEmptyBody: t('pantry', 'Deleted notes will appear here.'),
+  emptyTrashAction: t('pantry', 'Empty trash'),
+  emptyTrashTitle: t('pantry', 'Empty trash?'),
+  emptyTrashBody: t(
+    'pantry',
+    'This will permanently delete every note in the trash. This cannot be undone.',
+  ),
+  trashEmptiedToast: t('pantry', 'Trash emptied'),
+  noteRestored: t('pantry', 'Note restored'),
+  noteMovedToTrash: t('pantry', 'Note moved to trash'),
+  notePermanentlyDeleted: t('pantry', 'Note permanently deleted'),
+  restoreFailed: t('pantry', 'Could not restore from trash'),
 }
 </script>
 
@@ -473,6 +603,12 @@ const strings = {
     border: 3px dashed var(--color-primary-element);
     border-radius: var(--border-radius-large, 12px);
     background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
+  }
+
+  &__trash-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem 1rem 0.75rem;
   }
 }
 

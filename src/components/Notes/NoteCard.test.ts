@@ -50,6 +50,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     isPinned: false,
     createdAt: 0,
     updatedAt: 0,
+    deletedAt: null,
     ...overrides,
   }
 }
@@ -111,10 +112,20 @@ describe('NoteCard', () => {
   })
 
   describe('actions', () => {
-    it('shows delete action', () => {
+    it('shows remove action in active mode', () => {
       const wrapper = mount(NoteCard, { props: { note: makeNote() } })
       const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
-      expect(texts).toContain('Delete')
+      expect(texts).toContain('Remove')
+    })
+
+    it('shows restore + delete-permanently in trash mode', () => {
+      const wrapper = mount(NoteCard, {
+        props: { note: makeNote(), trashMode: true },
+      })
+      const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(texts).toContain('Restore')
+      expect(texts).toContain('Delete permanently')
+      expect(texts).not.toContain('Remove')
     })
 
     it('does not emit edit when actions wrapper is clicked', async () => {
@@ -133,13 +144,22 @@ describe('NoteCard', () => {
       expect(wrapper.emitted('edit')![0]).toEqual([note])
     })
 
-    it('emits delete when Delete action is clicked', async () => {
+    it('emits delete when Remove action is clicked', async () => {
       const note = makeNote()
       const wrapper = mount(NoteCard, { props: { note } })
-      const delBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Delete')!
+      const delBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Remove')!
       await delBtn.trigger('click')
       expect(wrapper.emitted('delete')).toBeTruthy()
       expect(wrapper.emitted('delete')![0]).toEqual([note])
+    })
+
+    it('emits restore when Restore action is clicked in trash mode', async () => {
+      const note = makeNote()
+      const wrapper = mount(NoteCard, { props: { note, trashMode: true } })
+      const restoreBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Restore')!
+      await restoreBtn.trigger('click')
+      expect(wrapper.emitted('restore')).toBeTruthy()
+      expect(wrapper.emitted('restore')![0]).toEqual([note])
     })
 
     it('emits drag-start on dragstart', async () => {

@@ -14,11 +14,13 @@ let uploadSeq = 0
 
 export function usePhotos(houseId: number) {
   const photos = ref<Photo[]>([])
+  const deletedPhotos = ref<Photo[]>([])
   const folders = ref<PhotoFolder[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
   const uploads = ref<UploadEntry[]>([])
   const sortBy = ref<PhotoSort>('custom')
+  const trashMode = ref(false)
 
   async function load(sort?: PhotoSort): Promise<void> {
     loading.value = true
@@ -28,6 +30,18 @@ export function usePhotos(houseId: number) {
       const [p, f] = await Promise.all([api.listPhotos(houseId, s), api.listFolders(houseId, s)])
       photos.value = p
       folders.value = f
+    } catch (e) {
+      error.value = (e as Error).message
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function loadDeleted(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      deletedPhotos.value = await api.listDeletedPhotos(houseId)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -89,6 +103,23 @@ export function usePhotos(houseId: number) {
     photos.value = photos.value.filter((p) => p.id !== photoId)
   }
 
+  async function restorePhoto(photoId: number): Promise<void> {
+    const restored = await api.restorePhoto(houseId, photoId)
+    deletedPhotos.value = deletedPhotos.value.filter((p) => p.id !== photoId)
+    photos.value = [...photos.value, restored]
+  }
+
+  async function removePhotoPermanently(photoId: number): Promise<void> {
+    await api.permanentlyDeletePhoto(houseId, photoId)
+    deletedPhotos.value = deletedPhotos.value.filter((p) => p.id !== photoId)
+    photos.value = photos.value.filter((p) => p.id !== photoId)
+  }
+
+  async function emptyPhotosTrash(): Promise<void> {
+    await api.emptyPhotosTrash(houseId)
+    deletedPhotos.value = []
+  }
+
   async function reorderPhotos(items: { id: number; sortOrder: number }[]): Promise<void> {
     // Apply optimistically so there's no visual jump while the API call is in flight.
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
@@ -136,17 +167,23 @@ export function usePhotos(houseId: number) {
 
   return {
     photos,
+    deletedPhotos,
     folders,
     uploads,
     loading,
     error,
     sortBy,
+    trashMode,
     load,
+    loadDeleted,
     rootPhotos,
     photosInFolder,
     upload,
     updatePhoto,
     removePhoto,
+    restorePhoto,
+    removePhotoPermanently,
+    emptyPhotosTrash,
     reorderPhotos,
     createFolder,
     updateFolder,

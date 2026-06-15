@@ -58,6 +58,7 @@ function makePhoto(id: number, folderId: number): Photo {
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
+    deletedAt: null,
   }
 }
 
@@ -129,13 +130,13 @@ describe('FolderStack', () => {
   })
 
   describe('actions', () => {
-    it('has rename and delete actions', () => {
+    it('has rename and remove actions', () => {
       const wrapper = mount(FolderStack, {
         props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
       expect(texts).toContain('Rename')
-      expect(texts).toContain('Delete')
+      expect(texts).toContain('Remove')
     })
 
     it('emits rename when Rename action is clicked', async () => {
@@ -147,10 +148,10 @@ describe('FolderStack', () => {
       expect(wrapper.emitted('rename')![0]).toEqual([folder])
     })
 
-    it('emits delete when Delete action is clicked', async () => {
+    it('emits delete when Remove action is clicked', async () => {
       const folder = makeFolder()
       const wrapper = mount(FolderStack, { props: { houseId: 1, folder, photos: [] } })
-      const delBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Delete')!
+      const delBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Remove')!
       await delBtn.trigger('click')
       expect(wrapper.emitted('delete')).toBeTruthy()
       expect(wrapper.emitted('delete')![0]).toEqual([folder])

@@ -7,8 +7,10 @@
     @dragleave="onBoardDragLeave"
     @drop.prevent="onBoardDrop"
   >
-    <PageToolbar :title="activeFolderId ? activeFolder?.name : strings.title">
-      <template v-if="activeFolderId" #before-title>
+    <PageToolbar
+      :title="trashMode ? strings.trashLabel : activeFolderId ? activeFolder?.name : strings.title"
+    >
+      <template v-if="!trashMode && activeFolderId" #before-title>
         <NcButton variant="tertiary" :aria-label="strings.back" @click="navigateToFolder(null)">
           <template #icon>
             <ArrowLeftIcon :size="20" />
@@ -16,7 +18,7 @@
         </NcButton>
       </template>
       <template #actions>
-        <NcActions :aria-label="strings.sortLabel" type="tertiary">
+        <NcActions v-if="!trashMode" :aria-label="strings.sortLabel" type="tertiary">
           <template #icon>
             <SortIcon :size="20" />
           </template>
@@ -37,13 +39,25 @@
             {{ opt.label }}
           </NcActionButton>
         </NcActions>
-        <NcButton v-if="!activeFolderId" @click="showFolderDialog = true">
+        <NcButton
+          :variant="trashMode ? 'primary' : 'tertiary'"
+          :aria-label="strings.trashLabel"
+          :title="strings.trashLabel"
+          :aria-pressed="trashMode"
+          @click="toggleTrash"
+        >
+          <template #icon>
+            <TrashCanIcon :size="20" />
+          </template>
+          {{ strings.trashLabel }}
+        </NcButton>
+        <NcButton v-if="!trashMode && !activeFolderId" @click="showFolderDialog = true">
           <template #icon>
             <FolderPlusIcon :size="20" />
           </template>
           {{ strings.newFolder }}
         </NcButton>
-        <NcButton variant="primary" @click="triggerUpload">
+        <NcButton v-if="!trashMode" variant="primary" @click="triggerUpload">
           <template #icon>
             <UploadIcon :size="20" />
           </template>
@@ -54,13 +68,13 @@
 
     <div class="pantry-photos__body">
       <!-- Drop zone overlay -->
-      <div v-if="isFileDragOver" class="pantry-photos__drop-overlay">
+      <div v-if="!trashMode && isFileDragOver" class="pantry-photos__drop-overlay">
         <UploadIcon :size="48" />
         <p>{{ strings.dropToUpload }}</p>
       </div>
 
       <!-- Selection bar -->
-      <div v-if="selectedPhotoIds.size > 0" class="pantry-selection-bar">
+      <div v-if="!trashMode && selectedPhotoIds.size > 0" class="pantry-selection-bar">
         <span>{{ photoSelectionLabel }}</span>
         <NcButton @click="showMoveToFolderDialog = true">
           <template #icon><FolderMoveIcon :size="20" /></template>
@@ -68,7 +82,7 @@
         </NcButton>
         <NcButton variant="error" @click="confirmBulkDeletePhotos">
           <template #icon><DeleteIcon :size="20" /></template>
-          {{ strings.delete }}
+          {{ strings.remove }}
         </NcButton>
         <NcButton @click="selectedPhotoIds.clear()">{{ strings.clearSelection }}</NcButton>
       </div>
@@ -77,8 +91,42 @@
         <NcLoadingIcon :size="36" />
       </div>
 
+      <!-- Trash view -->
+      <template v-else-if="trashMode">
+        <NcEmptyContent
+          v-if="deletedPhotos.length === 0"
+          :name="strings.trashEmptyTitle"
+          :description="strings.trashEmptyBody"
+        >
+          <template #icon>
+            <TrashCanIcon />
+          </template>
+        </NcEmptyContent>
+        <template v-else>
+          <div class="pantry-photos__trash-bar">
+            <NcButton variant="error" @click="confirmingEmptyTrash = true">
+              <template #icon><TrashCanIcon :size="20" /></template>
+              {{ strings.emptyTrashAction }}
+            </NcButton>
+          </div>
+          <div class="pantry-photos__grid">
+            <PhotoCard
+              v-for="photo in deletedPhotos"
+              :key="'t-' + photo.id"
+              :photo="photo"
+              :house-id="houseIdNum"
+              :reorder-enabled="false"
+              :trash-mode="true"
+              @preview="openPreview"
+              @restore="onRestorePhoto"
+              @delete="confirmDeletePhoto"
+            />
+          </div>
+        </template>
+      </template>
+
       <!-- Root view -->
-      <template v-else-if="!activeFolderId">
+      <template v-else-if="!activeFolderId && !trashMode">
         <NcEmptyContent
           v-if="folders.length === 0 && rootPhotos.length === 0 && rootUploads.length === 0"
           :name="strings.emptyTitle"
@@ -259,15 +307,34 @@
     <!-- Delete photo confirm -->
     <NcDialog
       v-if="deletingPhoto"
-      :name="strings.deletePhotoTitle"
+      :name="deletePhotoDialogTitle"
       :open="!!deletingPhoto"
       close-on-click-outside
       @update:open="(v) => !v && (deletingPhoto = null)"
     >
-      <p>{{ strings.deletePhotoBody }}</p>
+      <p>{{ deletePhotoDialogBody }}</p>
       <template #actions>
         <NcButton @click="deletingPhoto = null">{{ strings.cancel }}</NcButton>
-        <NcButton variant="error" @click="submitDeletePhoto">{{ strings.delete }}</NcButton>
+        <NcButton variant="error" @click="submitDeletePhoto">
+          {{ deletePhotoDialogAction }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <!-- Empty trash confirm -->
+    <NcDialog
+      v-if="confirmingEmptyTrash"
+      :name="strings.emptyTrashTitle"
+      :open="confirmingEmptyTrash"
+      close-on-click-outside
+      @update:open="(v) => !v && (confirmingEmptyTrash = false)"
+    >
+      <p>{{ strings.emptyTrashBody }}</p>
+      <template #actions>
+        <NcButton @click="confirmingEmptyTrash = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" @click="submitEmptyTrash">{{
+          strings.emptyTrashAction
+        }}</NcButton>
       </template>
     </NcDialog>
 
@@ -307,7 +374,7 @@
       <template #actions>
         <NcButton @click="deletingFolder = null">{{ strings.cancel }}</NcButton>
         <NcButton variant="error" @click="submitDeleteFolder">
-          {{ strings.delete }}
+          {{ strings.remove }}
         </NcButton>
       </template>
     </NcDialog>
@@ -315,7 +382,7 @@
     <!-- Bulk delete photos confirm -->
     <NcDialog
       v-if="bulkDeletingPhotos"
-      :name="strings.deletePhotoTitle"
+      :name="strings.removePhotoTitle"
       :open="bulkDeletingPhotos"
       close-on-click-outside
       @update:open="(v) => !v && (bulkDeletingPhotos = false)"
@@ -323,7 +390,7 @@
       <p>{{ bulkDeletePhotosBody }}</p>
       <template #actions>
         <NcButton @click="bulkDeletingPhotos = false">{{ strings.cancel }}</NcButton>
-        <NcButton variant="error" @click="submitBulkDeletePhotos">{{ strings.delete }}</NcButton>
+        <NcButton variant="error" @click="submitBulkDeletePhotos">{{ strings.remove }}</NcButton>
       </template>
     </NcDialog>
 
@@ -371,7 +438,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { n, t } from '@nextcloud/l10n'
-import { showInfo } from '@nextcloud/dialogs'
+import { showInfo, showUndo, showError } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcProgressBar from '@nextcloud/vue/components/NcProgressBar'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -389,6 +456,7 @@ import UploadIcon from '@icons/Upload.vue'
 import ImageIcon from '@icons/Image.vue'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import DeleteIcon from '@icons/Delete.vue'
+import TrashCanIcon from '@icons/TrashCan.vue'
 import FolderIcon from '@icons/Folder.vue'
 import FolderMoveIcon from '@icons/FolderMove.vue'
 import FolderPlusIcon from '@icons/FolderPlus.vue'
@@ -407,20 +475,53 @@ const router = useRouter()
 const houseIdNum = computed(() => Number(props.houseId))
 const {
   folders,
+  deletedPhotos,
   loading,
   load,
+  loadDeleted,
   rootPhotos,
   photosInFolder,
   upload,
   updatePhoto,
   removePhoto,
+  restorePhoto,
+  removePhotoPermanently,
+  emptyPhotosTrash,
   reorderPhotos,
   createFolder,
   updateFolder,
   removeFolder,
   uploads,
   sortBy,
+  trashMode,
 } = usePhotos(houseIdNum.value)
+
+async function toggleTrash() {
+  trashMode.value = !trashMode.value
+  selectedPhotoIds.value = new Set()
+  await refresh()
+}
+
+async function refresh() {
+  if (trashMode.value) {
+    await loadDeleted()
+  } else {
+    await load()
+  }
+}
+
+const confirmingEmptyTrash = ref(false)
+
+async function submitEmptyTrash() {
+  confirmingEmptyTrash.value = false
+  await emptyPhotosTrash()
+  showInfo(strings.trashEmptiedToast)
+}
+
+async function onRestorePhoto(photo: Photo) {
+  await restorePhoto(photo.id)
+  showInfo(strings.photoRestored)
+}
 
 // ----- Sort -----
 
@@ -777,10 +878,33 @@ function confirmDeletePhoto(photo: Photo) {
 
 async function submitDeletePhoto() {
   if (!deletingPhoto.value) return
-  await removePhoto(deletingPhoto.value.id)
+  const id = deletingPhoto.value.id
+  if (trashMode.value) {
+    await removePhotoPermanently(id)
+    deletingPhoto.value = null
+    showInfo(strings.photoPermanentlyDeleted)
+    return
+  }
+  await removePhoto(id)
   deletingPhoto.value = null
-  showInfo(t('pantry', 'Photo deleted'))
+  showUndo(
+    strings.photoMovedToTrash,
+    () => {
+      void restorePhoto(id).catch(() => showError(strings.restoreFailed))
+    },
+    { timeout: 6000 },
+  )
 }
+
+const deletePhotoDialogTitle = computed(() =>
+  trashMode.value ? strings.deletePhotoPermanentlyTitle : strings.removePhotoTitle,
+)
+const deletePhotoDialogBody = computed(() =>
+  trashMode.value ? strings.deletePhotoPermanentlyBody : strings.deletePhotoBody,
+)
+const deletePhotoDialogAction = computed(() =>
+  trashMode.value ? strings.deletePermanently : strings.remove,
+)
 
 async function movePhotoToRoot(photo: Photo) {
   await updatePhoto(photo.id, { folderId: 0 })
@@ -832,7 +956,7 @@ async function submitDeleteFolder() {
   if (!deletingFolder.value) return
   await removeFolder(deletingFolder.value.id, deleteFolderMode.value === 'delete')
   deletingFolder.value = null
-  showInfo(t('pantry', 'Folder deleted'))
+  showInfo(t('pantry', 'Folder removed'))
 }
 
 // ----- Selection -----
@@ -857,8 +981,8 @@ const bulkDeletingPhotos = ref(false)
 const bulkDeletePhotosBody = computed(() =>
   n(
     'pantry',
-    'Are you sure you want to delete %n photo? The file will also be removed.',
-    'Are you sure you want to delete %n photos? The files will also be removed.',
+    'Move %n photo to the trash?',
+    'Move %n photos to the trash?',
     selectedPhotoIds.value.size,
   ),
 )
@@ -874,7 +998,15 @@ async function submitBulkDeletePhotos() {
   }
   selectedPhotoIds.value = new Set()
   bulkDeletingPhotos.value = false
-  showInfo(n('pantry', '%n photo deleted', '%n photos deleted', ids.length))
+  showUndo(
+    n('pantry', '%n photo moved to trash', '%n photos moved to trash', ids.length),
+    () => {
+      void Promise.all(ids.map((id) => restorePhoto(id))).catch(() =>
+        showError(strings.restoreFailed),
+      )
+    },
+    { timeout: 6000 },
+  )
 }
 
 // Move to folder
@@ -912,7 +1044,7 @@ const strings = {
   back: t('pantry', 'Back'),
   cancel: t('pantry', 'Cancel'),
   save: t('pantry', 'Save'),
-  delete: t('pantry', 'Delete'),
+  remove: t('pantry', 'Remove'),
   editPhotoTitle: t('pantry', 'Edit photo'),
   captionLabel: t('pantry', 'Caption'),
   captionPlaceholder: t('pantry', 'Add a description'),
@@ -921,19 +1053,39 @@ const strings = {
   folderEmpty: t('pantry', 'This folder is empty'),
   folderEmptyBody: t('pantry', 'Upload photos or drag them into this folder.'),
   dropToUpload: t('pantry', 'Drop files to upload'),
-  deletePhotoTitle: t('pantry', 'Delete photo'),
-  deletePhotoBody: t('pantry', 'Are you sure you want to delete this photo?'),
-  deleteFolderTitle: t('pantry', 'Delete folder'),
-  deleteFolderKeepLabel: t('pantry', 'Delete folder only'),
+  removePhotoTitle: t('pantry', 'Remove photo'),
+  deletePhotoBody: t('pantry', 'Move this photo to the trash?'),
+  deleteFolderTitle: t('pantry', 'Remove folder'),
+  deleteFolderKeepLabel: t('pantry', 'Remove folder only'),
   deleteFolderKeepHint: t('pantry', 'Photos will be moved to the board root.'),
-  deleteFolderDeleteLabel: t('pantry', 'Delete folder and all photos'),
-  deleteFolderDeleteHint: t('pantry', 'All photos and their files will be permanently deleted.'),
+  deleteFolderDeleteLabel: t('pantry', 'Remove folder and move photos to trash'),
+  deleteFolderDeleteHint: t('pantry', 'Photos can still be restored from the trash.'),
   sortLabel: t('pantry', 'Sort order'),
   foldersFirst: t('pantry', 'Folders first'),
   clearSelection: t('pantry', 'Clear selection'),
   moveToFolder: t('pantry', 'Move to folder'),
   moveToFolderTitle: t('pantry', 'Move to folder'),
   board: t('pantry', 'Board (root)'),
+  deletePermanently: t('pantry', 'Delete permanently'),
+  deletePhotoPermanentlyTitle: t('pantry', 'Delete photo permanently'),
+  deletePhotoPermanentlyBody: t(
+    'pantry',
+    'Permanently delete this photo? The underlying file will be removed and this cannot be undone.',
+  ),
+  trashLabel: t('pantry', 'Trash'),
+  trashEmptyTitle: t('pantry', 'Trash is empty'),
+  trashEmptyBody: t('pantry', 'Deleted photos will appear here.'),
+  emptyTrashAction: t('pantry', 'Empty trash'),
+  emptyTrashTitle: t('pantry', 'Empty trash?'),
+  emptyTrashBody: t(
+    'pantry',
+    'This will permanently delete every photo in the trash, including their underlying files. This cannot be undone.',
+  ),
+  trashEmptiedToast: t('pantry', 'Trash emptied'),
+  photoRestored: t('pantry', 'Photo restored'),
+  photoMovedToTrash: t('pantry', 'Photo moved to trash'),
+  photoPermanentlyDeleted: t('pantry', 'Photo permanently deleted'),
+  restoreFailed: t('pantry', 'Could not restore from trash'),
 }
 </script>
 
@@ -960,6 +1112,12 @@ const strings = {
     border: 3px dashed var(--color-primary-element);
     border-radius: var(--border-radius-large, 12px);
     background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
+  }
+
+  &__trash-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem 1rem 0.75rem;
   }
 
   &__upload-card {

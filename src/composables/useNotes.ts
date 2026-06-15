@@ -5,9 +5,11 @@ import type { NoteSort } from '@/api/prefs'
 
 export function useNotes(houseId: number) {
   const notes = ref<Note[]>([])
+  const deletedNotes = ref<Note[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
   const sortBy = ref<NoteSort>('custom')
+  const trashMode = ref(false)
 
   async function load(sort?: NoteSort): Promise<void> {
     loading.value = true
@@ -15,6 +17,18 @@ export function useNotes(houseId: number) {
     const s = sort ?? sortBy.value
     try {
       notes.value = await api.listNotes(houseId, s)
+    } catch (e) {
+      error.value = (e as Error).message
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function loadDeleted(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      deletedNotes.value = await api.listDeletedNotes(houseId)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -45,6 +59,23 @@ export function useNotes(houseId: number) {
     notes.value = notes.value.filter((n) => n.id !== noteId)
   }
 
+  async function restore(noteId: number): Promise<void> {
+    const restored = await api.restoreNote(houseId, noteId)
+    deletedNotes.value = deletedNotes.value.filter((n) => n.id !== noteId)
+    notes.value = [...notes.value, restored]
+  }
+
+  async function removePermanently(noteId: number): Promise<void> {
+    await api.permanentlyDeleteNote(houseId, noteId)
+    deletedNotes.value = deletedNotes.value.filter((n) => n.id !== noteId)
+    notes.value = notes.value.filter((n) => n.id !== noteId)
+  }
+
+  async function emptyTrash(): Promise<void> {
+    await api.emptyNotesTrash(houseId)
+    deletedNotes.value = []
+  }
+
   async function reorder(items: { id: number; sortOrder: number }[]): Promise<void> {
     // Apply optimistically so there's no visual jump while the API call is in flight.
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
@@ -64,5 +95,22 @@ export function useNotes(houseId: number) {
     await update(noteId, { isPinned: !note.isPinned })
   }
 
-  return { notes, loading, error, sortBy, load, create, update, remove, reorder, togglePin }
+  return {
+    notes,
+    deletedNotes,
+    loading,
+    error,
+    sortBy,
+    trashMode,
+    load,
+    loadDeleted,
+    create,
+    update,
+    remove,
+    restore,
+    removePermanently,
+    emptyTrash,
+    reorder,
+    togglePin,
+  }
 }

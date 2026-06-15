@@ -28,7 +28,8 @@ class ChecklistMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'));
 		switch ($sortBy) {
 			case 'name_asc':
 				$qb->orderBy('name', 'ASC');
@@ -48,13 +49,32 @@ class ChecklistMapper extends QBMapper {
 	/**
 	 * @throws DoesNotExistException
 	 */
-	public function findById(int $id): Checklist {
+	public function findById(int $id, bool $includeDeleted = false): Checklist {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		if (!$includeDeleted) {
+			$qb->andWhere($qb->expr()->isNull('deleted_at'));
+		}
 
 		return $this->findEntity($qb);
+	}
+
+	/**
+	 * Find soft-deleted checklists in a house, most recently deleted first.
+	 *
+	 * @return Checklist[]
+	 */
+	public function findDeletedByHouse(int $houseId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('deleted_at'))
+			->orderBy('deleted_at', 'DESC');
+
+		return $this->findEntities($qb);
 	}
 
 	public function deleteByHouse(int $houseId): void {
@@ -62,5 +82,18 @@ class ChecklistMapper extends QBMapper {
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
 		$qb->executeStatement();
+	}
+
+	/**
+	 * Hard-delete every soft-deleted checklist in the house.
+	 *
+	 * @return Checklist[] The rows that were removed (so callers can clean items).
+	 */
+	public function emptyTrashForHouse(int $houseId): array {
+		$rows = $this->findDeletedByHouse($houseId);
+		foreach ($rows as $row) {
+			$this->delete($row);
+		}
+		return $rows;
 	}
 }

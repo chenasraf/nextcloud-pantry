@@ -314,4 +314,78 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertNotNull($captured);
 		$this->assertNull($captured->getAddedBy());
 	}
+
+	// ----- List soft-delete + trash -----
+
+	public function testDeleteListSoftDeletesInsteadOfHardDelete(): void {
+		$list = new Checklist();
+		$list->setHouseId(7);
+		$list->setName('Groceries');
+		$this->listMapper->method('findById')->willReturn($list);
+		$this->listMapper->expects($this->never())->method('delete');
+		$this->itemMapper->expects($this->never())->method('deleteByList');
+		$this->listMapper->expects($this->once())
+			->method('update')
+			->with($this->callback(fn (Checklist $l) => $l->getDeletedAt() !== null));
+
+		$this->svc->deleteList(1);
+		$this->assertNotNull($list->getDeletedAt());
+	}
+
+	public function testListDeletedForHouseDelegatesToMapper(): void {
+		$deleted = [new Checklist()];
+		$this->listMapper->expects($this->once())
+			->method('findDeletedByHouse')
+			->with(7)
+			->willReturn($deleted);
+
+		$this->assertSame($deleted, $this->svc->listDeletedForHouse(7));
+	}
+
+	public function testRestoreListClearsDeletedAt(): void {
+		$list = new Checklist();
+		$list->setDeletedAt(123);
+		$this->listMapper->method('findById')->willReturn($list);
+		$this->listMapper->expects($this->once())
+			->method('update')
+			->with($this->callback(fn (Checklist $l) => $l->getDeletedAt() === null));
+
+		$restored = $this->svc->restoreList(1);
+		$this->assertNull($restored->getDeletedAt());
+	}
+
+	public function testPermanentlyDeleteListWipesItemsAndRow(): void {
+		$list = new Checklist();
+		$ref = new \ReflectionProperty($list, 'id');
+		$ref->setValue($list, 99);
+		$this->listMapper->method('findById')->willReturn($list);
+		$this->itemMapper->expects($this->once())->method('deleteByList')->with(99);
+		$this->listMapper->expects($this->once())->method('delete')->with($list);
+
+		$this->svc->permanentlyDeleteList(99);
+	}
+
+	public function testEmptyListsTrashRemovesListsAndTheirItems(): void {
+		$a = new Checklist();
+		$refA = new \ReflectionProperty($a, 'id');
+		$refA->setValue($a, 1);
+		$b = new Checklist();
+		$refB = new \ReflectionProperty($b, 'id');
+		$refB->setValue($b, 2);
+
+		$this->listMapper->expects($this->once())
+			->method('emptyTrashForHouse')
+			->with(7)
+			->willReturn([$a, $b]);
+
+		$deletedListIds = [];
+		$this->itemMapper->expects($this->exactly(2))
+			->method('deleteByList')
+			->willReturnCallback(function (int $id) use (&$deletedListIds) {
+				$deletedListIds[] = $id;
+			});
+
+		$this->svc->emptyListsTrash(7);
+		$this->assertSame([1, 2], $deletedListIds);
+	}
 }

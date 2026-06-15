@@ -41,6 +41,24 @@ export async function deleteNote(houseId: number, noteId: number): Promise<void>
   await ocs.delete(`/houses/${houseId}/notes/${noteId}`)
 }
 
+export async function listDeletedNotes(houseId: number): Promise<Note[]> {
+  const resp = await ocs.get<Note[]>(`/houses/${houseId}/notes/trash`)
+  return resp.data ?? []
+}
+
+export async function restoreNote(houseId: number, noteId: number): Promise<Note> {
+  const resp = await ocs.post<Note>(`/houses/${houseId}/notes/${noteId}/restore`)
+  return resp.data
+}
+
+export async function permanentlyDeleteNote(houseId: number, noteId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/notes/${noteId}/permanent`)
+}
+
+export async function emptyNotesTrash(houseId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/notes/trash`)
+}
+
 export async function reorderNotes(
   houseId: number,
   items: { id: number; sortOrder: number }[],

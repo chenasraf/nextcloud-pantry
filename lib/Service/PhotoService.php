@@ -76,12 +76,16 @@ class PhotoService {
 	public function deleteFolder(int $folderId, bool $deleteContents = false, ?string $uid = null): void {
 		$folder = $this->getFolder($folderId);
 		if ($deleteContents) {
+			// Soft-delete every photo in the folder so the user can recover
+			// them from the photos trash. The folder itself is hard-deleted,
+			// so detach the photos first.
+			$now = time();
 			$photos = $this->photoMapper->findByFolder($folderId);
 			foreach ($photos as $photo) {
-				if ($uid !== null) {
-					$this->images->deleteFile($photo->getFileId(), $uid);
-				}
-				$this->photoMapper->delete($photo);
+				$photo->setFolderId(null);
+				$photo->setDeletedAt($now);
+				$photo->setUpdatedAt($now);
+				$this->photoMapper->update($photo);
 			}
 		} else {
 			// Move all photos in this folder to the board root
@@ -132,9 +136,18 @@ class PhotoService {
 		return $this->photoMapper->findByFolder($folderId, $sortBy);
 	}
 
-	public function getPhoto(int $photoId): Photo {
+	/**
+	 * List soft-deleted photos in a house. Most recently deleted first.
+	 *
+	 * @return Photo[]
+	 */
+	public function listDeletedPhotos(int $houseId): array {
+		return $this->photoMapper->findDeletedByHouse($houseId);
+	}
+
+	public function getPhoto(int $photoId, bool $includeDeleted = false): Photo {
 		try {
-			return $this->photoMapper->findById($photoId);
+			return $this->photoMapper->findById($photoId, $includeDeleted);
 		} catch (DoesNotExistException) {
 			throw new NotFoundException('Photo not found');
 		}
@@ -174,12 +187,53 @@ class PhotoService {
 		return $photo;
 	}
 
-	public function deletePhoto(int $photoId, ?string $uid = null): void {
+	/**
+	 * Soft-delete a photo. The underlying file is kept until the photo is
+	 * permanently deleted, so a restore brings the image back intact.
+	 */
+	public function deletePhoto(int $photoId): void {
 		$photo = $this->getPhoto($photoId);
+		$now = time();
+		$photo->setDeletedAt($now);
+		$photo->setUpdatedAt($now);
+		$this->photoMapper->update($photo);
+	}
+
+	/**
+	 * Permanently remove a photo (and its underlying file, if a uid is
+	 * provided), regardless of whether it is currently in trash.
+	 */
+	public function permanentlyDeletePhoto(int $photoId, ?string $uid = null): void {
+		$photo = $this->getPhoto($photoId, includeDeleted: true);
 		if ($uid !== null) {
 			$this->images->deleteFile($photo->getFileId(), $uid);
 		}
 		$this->photoMapper->delete($photo);
+	}
+
+	/**
+	 * Restore a soft-deleted photo by clearing its deleted_at marker.
+	 */
+	public function restorePhoto(int $photoId): Photo {
+		$photo = $this->getPhoto($photoId, includeDeleted: true);
+		$photo->setDeletedAt(null);
+		$photo->setUpdatedAt(time());
+		$this->photoMapper->update($photo);
+		return $photo;
+	}
+
+	/**
+	 * Hard-delete every soft-deleted photo in the house, including the
+	 * underlying files when a uid is provided.
+	 */
+	public function emptyTrash(int $houseId, ?string $uid = null): void {
+		$rows = $this->photoMapper->findDeletedByHouse($houseId);
+		foreach ($rows as $photo) {
+			if ($uid !== null) {
+				$this->images->deleteFile($photo->getFileId(), $uid);
+			}
+			$this->photoMapper->delete($photo);
+		}
 	}
 
 	/**

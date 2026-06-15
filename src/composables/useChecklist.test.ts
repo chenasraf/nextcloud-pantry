@@ -9,6 +9,10 @@ const mockApi = vi.hoisted(() => ({
   reorderLists: vi.fn(),
   getList: vi.fn(),
   listItems: vi.fn(),
+  listDeletedLists: vi.fn(),
+  restoreList: vi.fn(),
+  permanentlyDeleteList: vi.fn(),
+  emptyListsTrash: vi.fn(),
   addItem: vi.fn(),
   updateItem: vi.fn(),
   toggleItem: vi.fn(),
@@ -34,6 +38,7 @@ function makeList(overrides: Partial<Checklist> = {}): Checklist {
     deleteOnDoneDefault: false,
     createdAt: 0,
     updatedAt: 0,
+    deletedAt: null,
     ...overrides,
   }
 }
@@ -247,6 +252,69 @@ describe('useChecklists', () => {
 
       expect(a.lists.value).not.toEqual(b.lists.value)
       expect(a.lists.value[0].id).not.toBe(b.lists.value[0].id)
+    })
+  })
+
+  describe('trash', () => {
+    it('loadDeleted populates deletedLists', async () => {
+      const deleted = [makeList({ id: 9, deletedAt: 123 })]
+      mockApi.listDeletedLists.mockResolvedValue(deleted)
+
+      const c = useChecklists(houseCounter)
+      await c.loadDeleted()
+
+      expect(c.deletedLists.value).toEqual(deleted)
+    })
+
+    it('restore moves list from deletedLists back to lists', async () => {
+      const restored = makeList({ id: 9, deletedAt: null })
+      mockApi.listDeletedLists.mockResolvedValue([makeList({ id: 9, deletedAt: 123 })])
+      mockApi.restoreList.mockResolvedValue(restored)
+
+      const c = useChecklists(houseCounter)
+      await c.loadDeleted()
+      await c.restore(9)
+
+      expect(c.deletedLists.value).toHaveLength(0)
+      expect(c.lists.value).toContainEqual(restored)
+    })
+
+    it('removePermanently drops the list from both arrays', async () => {
+      mockApi.listLists.mockResolvedValue([makeList({ id: 9 })])
+      mockApi.listDeletedLists.mockResolvedValue([makeList({ id: 9, deletedAt: 123 })])
+      mockApi.permanentlyDeleteList.mockResolvedValue(undefined)
+
+      const c = useChecklists(houseCounter)
+      await c.load(true)
+      await c.loadDeleted()
+      await c.removePermanently(9)
+
+      expect(c.deletedLists.value).toHaveLength(0)
+      expect(c.lists.value).toHaveLength(0)
+      expect(mockApi.permanentlyDeleteList).toHaveBeenCalledWith(houseCounter, 9)
+    })
+
+    it('emptyTrash clears deletedLists', async () => {
+      mockApi.listDeletedLists.mockResolvedValue([makeList({ id: 1 }), makeList({ id: 2 })])
+      mockApi.emptyListsTrash.mockResolvedValue(undefined)
+
+      const c = useChecklists(houseCounter)
+      await c.loadDeleted()
+      await c.emptyTrash()
+
+      expect(c.deletedLists.value).toHaveLength(0)
+      expect(mockApi.emptyListsTrash).toHaveBeenCalledWith(houseCounter)
+    })
+
+    it('soft-delete via remove drops from active lists', async () => {
+      mockApi.listLists.mockResolvedValue([makeList({ id: 1 }), makeList({ id: 2 })])
+      mockApi.deleteList.mockResolvedValue(undefined)
+
+      const c = useChecklists(houseCounter)
+      await c.load(true)
+      await c.remove(1)
+
+      expect(c.lists.value.map((l) => l.id)).toEqual([2])
     })
   })
 })

@@ -66,6 +66,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     isPinned: false,
     createdAt: 0,
     updatedAt: 0,
+    deletedAt: null,
     ...overrides,
   }
 }

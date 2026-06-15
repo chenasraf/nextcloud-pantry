@@ -223,6 +223,50 @@ final class PhotoController extends OCSController {
 	}
 
 	/**
+	 * List soft-deleted photos in a house (trash)
+	 *
+	 * Returns photos whose deleted_at is set, most recently deleted first.
+	 *
+	 * @param int $houseId House id.
+	 * @param int<1, 1000> $limit Maximum number of photos to return.
+	 * @param int<0, max> $offset Number of photos to skip.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryPhoto>, array{}>
+	 *
+	 * 200: Deleted photos returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/photos/trash')]
+	#[NoAdminRequired]
+	public function indexDeletedPhotos(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$all = $this->photos->listDeletedPhotos($houseId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			return new DataResponse(array_map(fn ($p) => $p->jsonSerialize(), $sliced));
+		});
+	}
+
+	/**
+	 * Empty the photos trash, permanently deleting every soft-deleted photo
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Trash emptied
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/trash')]
+	#[NoAdminRequired]
+	public function emptyTrash(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$this->photos->emptyTrash($houseId, $uid);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
 	 * Upload a photo
 	 *
 	 * Expects a multipart/form-data request with the image file in a field
@@ -302,7 +346,7 @@ final class PhotoController extends OCSController {
 	 *
 	 * 200: Photo updated
 	 */
-	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/photos/{photoId}')]
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/photos/{photoId}', requirements: ['photoId' => '\d+'])]
 	#[NoAdminRequired]
 	public function updatePhoto(int $houseId, int $photoId, ?string $caption = null, ?int $folderId = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId, $caption, $folderId, $sortOrder): DataResponse {
@@ -355,7 +399,7 @@ final class PhotoController extends OCSController {
 	 *
 	 * 200: Photo deleted
 	 */
-	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/{photoId}')]
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/{photoId}', requirements: ['photoId' => '\d+'])]
 	#[NoAdminRequired]
 	public function deletePhoto(int $houseId, int $photoId): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId): DataResponse {
@@ -366,7 +410,7 @@ final class PhotoController extends OCSController {
 			$caption = $existing->getCaption();
 			$folderId = $existing->getFolderId();
 			$folderName = $this->safeFolderName($folderId);
-			$this->photos->deletePhoto($photoId, $uid);
+			$this->photos->deletePhoto($photoId);
 			$this->activity->publishPhotoDeleted(
 				$houseId,
 				$this->houses->get($houseId)->getName(),
@@ -376,6 +420,54 @@ final class PhotoController extends OCSController {
 				$folderId,
 				$folderName,
 			);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Restore a soft-deleted photo back into the active gallery
+	 *
+	 * @param int $houseId House id.
+	 * @param int $photoId Photo id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryPhoto, array{}>
+	 *
+	 * 200: Photo restored
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/photos/{photoId}/restore', requirements: ['photoId' => '\d+'])]
+	#[NoAdminRequired]
+	public function restorePhoto(int $houseId, int $photoId): DataResponse {
+		return $this->runAction(function () use ($houseId, $photoId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$existing = $this->photos->getPhoto($photoId, includeDeleted: true);
+			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
+			$restored = $this->photos->restorePhoto($photoId);
+			return new DataResponse($restored->jsonSerialize());
+		});
+	}
+
+	/**
+	 * Permanently delete a photo, bypassing the trash
+	 *
+	 * Works on both live photos and photos already in trash. Also removes
+	 * the underlying file from the user's storage.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $photoId Photo id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Photo permanently deleted
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/{photoId}/permanent', requirements: ['photoId' => '\d+'])]
+	#[NoAdminRequired]
+	public function permanentlyDeletePhoto(int $houseId, int $photoId): DataResponse {
+		return $this->runAction(function () use ($houseId, $photoId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->photos->getPhoto($photoId, includeDeleted: true);
+			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
+			$this->photos->permanentlyDeletePhoto($photoId, $uid);
 			return new DataResponse(['success' => true]);
 		});
 	}

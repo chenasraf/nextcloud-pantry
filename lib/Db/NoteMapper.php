@@ -28,7 +28,8 @@ class NoteMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'));
 		$this->applySort($qb, $sortBy);
 
 		return $this->findEntities($qb);
@@ -62,19 +63,49 @@ class NoteMapper extends QBMapper {
 	/**
 	 * @throws DoesNotExistException
 	 */
-	public function findById(int $id): Note {
+	public function findById(int $id, bool $includeDeleted = false): Note {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		if (!$includeDeleted) {
+			$qb->andWhere($qb->expr()->isNull('deleted_at'));
+		}
 
 		return $this->findEntity($qb);
+	}
+
+	/**
+	 * Find soft-deleted notes in a house, most recently deleted first.
+	 *
+	 * @return Note[]
+	 */
+	public function findDeletedByHouse(int $houseId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('deleted_at'))
+			->orderBy('deleted_at', 'DESC');
+
+		return $this->findEntities($qb);
 	}
 
 	public function deleteByHouse(int $houseId): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * Hard-delete every soft-deleted note in the house.
+	 */
+	public function emptyTrashForHouse(int $houseId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('deleted_at'));
 		$qb->executeStatement();
 	}
 }

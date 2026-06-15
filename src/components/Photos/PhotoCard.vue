@@ -3,14 +3,14 @@
     class="photo-card"
     :class="{ 'photo-card--dragging': isDragging, 'photo-card--selected': selected }"
     :data-drag-id="photo.id"
-    draggable="true"
+    :draggable="trashMode ? 'false' : 'true'"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
     @click="$emit('preview', photo)"
   >
     <img :src="thumbUrl(photo.id)" :alt="photo.caption ?? ''" class="photo-card__img" />
-    <div class="photo-card__select" @click.stop>
+    <div v-if="!trashMode" class="photo-card__select" @click.stop>
       <NcCheckboxRadioSwitch
         :model-value="selected"
         @update:model-value="$emit('select', photo.id)"
@@ -18,14 +18,20 @@
     </div>
     <div class="photo-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
-        <NcActionButton close-after-click @click.stop="$emit('edit', photo)">
+        <NcActionButton v-if="trashMode" close-after-click @click.stop="$emit('restore', photo)">
+          <template #icon>
+            <RestoreIcon :size="20" />
+          </template>
+          {{ strings.restore }}
+        </NcActionButton>
+        <NcActionButton v-if="!trashMode" close-after-click @click.stop="$emit('edit', photo)">
           <template #icon>
             <PencilIcon :size="20" />
           </template>
           {{ strings.edit }}
         </NcActionButton>
         <NcActionButton
-          v-if="photo.folderId !== null"
+          v-if="!trashMode && photo.folderId !== null"
           close-after-click
           @click.stop="$emit('move-to-root', photo)"
         >
@@ -38,7 +44,7 @@
           <template #icon>
             <DeleteIcon :size="20" />
           </template>
-          {{ strings.delete }}
+          {{ trashMode ? strings.deletePermanently : strings.removePhoto }}
         </NcActionButton>
       </NcActions>
     </div>
@@ -56,16 +62,24 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import ArrowUpIcon from '@icons/ArrowUp.vue'
+import RestoreIcon from '@icons/Restore.vue'
 import type { Photo } from '@/api/types'
 
 const props = withDefaults(
-  defineProps<{ photo: Photo; houseId: number; reorderEnabled?: boolean; selected?: boolean }>(),
-  { reorderEnabled: true, selected: false },
+  defineProps<{
+    photo: Photo
+    houseId: number
+    reorderEnabled?: boolean
+    selected?: boolean
+    trashMode?: boolean
+  }>(),
+  { reorderEnabled: true, selected: false, trashMode: false },
 )
 const emit = defineEmits<{
   preview: [photo: Photo]
   edit: [photo: Photo]
   delete: [photo: Photo]
+  restore: [photo: Photo]
   'move-to-root': [photo: Photo]
   'drag-start': [photoId: number]
   'reorder-over': [photoId: number, event: MouseEvent]
@@ -79,7 +93,7 @@ function thumbUrl(photoId: number): string {
 }
 
 function onDragStart(e: DragEvent) {
-  if (!e.dataTransfer) return
+  if (props.trashMode || !e.dataTransfer) return
   isDragging.value = true
   e.dataTransfer.effectAllowed = 'move'
   e.dataTransfer.setData(
@@ -104,7 +118,9 @@ function onDragOver(e: DragEvent) {
 const strings = {
   actions: t('pantry', 'Photo actions'),
   edit: t('pantry', 'Edit'),
-  delete: t('pantry', 'Delete'),
+  removePhoto: t('pantry', 'Remove'),
+  deletePermanently: t('pantry', 'Delete permanently'),
+  restore: t('pantry', 'Restore'),
   moveToBoard: t('pantry', 'Move to board'),
 }
 </script>

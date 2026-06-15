@@ -26,6 +26,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
  * @method void setUpdatedAt(int $updatedAt)
+ * @method int|null getDeletedAt()
+ * @method void setDeletedAt(?int $deletedAt)
  */
 class Photo extends Entity implements \JsonSerializable {
 	protected int $houseId = 0;
@@ -36,6 +38,7 @@ class Photo extends Entity implements \JsonSerializable {
 	protected int $sortOrder = 0;
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
+	protected ?int $deletedAt = null;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -44,6 +47,7 @@ class Photo extends Entity implements \JsonSerializable {
 		$this->addType('sortOrder', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
+		$this->addType('deletedAt', 'integer');
 	}
 
 	public function jsonSerialize(): array {
@@ -57,6 +61,7 @@ class Photo extends Entity implements \JsonSerializable {
 			'sortOrder' => $this->sortOrder,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,
+			'deletedAt' => $this->deletedAt,
 		];
 	}
 }

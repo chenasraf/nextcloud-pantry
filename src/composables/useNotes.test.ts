@@ -7,6 +7,10 @@ const mockApi = vi.hoisted(() => ({
   updateNote: vi.fn(),
   deleteNote: vi.fn(),
   reorderNotes: vi.fn(),
+  listDeletedNotes: vi.fn(),
+  restoreNote: vi.fn(),
+  permanentlyDeleteNote: vi.fn(),
+  emptyNotesTrash: vi.fn(),
 }))
 
 vi.mock('@/api/notes', () => mockApi)
@@ -25,6 +29,7 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     isPinned: false,
     createdAt: 0,
     updatedAt: 0,
+    deletedAt: null,
     ...overrides,
   }
 }
@@ -156,6 +161,58 @@ describe('useNotes', () => {
       await wall.load()
 
       expect(mockApi.listNotes).toHaveBeenCalledWith(1, 'custom')
+    })
+  })
+
+  describe('trash', () => {
+    it('loadDeleted populates deletedNotes', async () => {
+      const deleted = [makeNote({ id: 9, deletedAt: 123 })]
+      mockApi.listDeletedNotes.mockResolvedValue(deleted)
+
+      const wall = useNotes(1)
+      await wall.loadDeleted()
+
+      expect(wall.deletedNotes.value).toEqual(deleted)
+    })
+
+    it('restore moves note from deletedNotes back to notes', async () => {
+      const restored = makeNote({ id: 9, deletedAt: null })
+      mockApi.listDeletedNotes.mockResolvedValue([makeNote({ id: 9, deletedAt: 123 })])
+      mockApi.restoreNote.mockResolvedValue(restored)
+
+      const wall = useNotes(1)
+      await wall.loadDeleted()
+      await wall.restore(9)
+
+      expect(wall.deletedNotes.value).toHaveLength(0)
+      expect(wall.notes.value).toContainEqual(restored)
+    })
+
+    it('removePermanently drops the note from both arrays', async () => {
+      mockApi.listNotes.mockResolvedValue([makeNote({ id: 9 })])
+      mockApi.listDeletedNotes.mockResolvedValue([makeNote({ id: 9, deletedAt: 123 })])
+      mockApi.permanentlyDeleteNote.mockResolvedValue(undefined)
+
+      const wall = useNotes(1)
+      await wall.load()
+      await wall.loadDeleted()
+      await wall.removePermanently(9)
+
+      expect(wall.deletedNotes.value).toHaveLength(0)
+      expect(wall.notes.value).toHaveLength(0)
+      expect(mockApi.permanentlyDeleteNote).toHaveBeenCalledWith(1, 9)
+    })
+
+    it('emptyTrash clears deletedNotes', async () => {
+      mockApi.listDeletedNotes.mockResolvedValue([makeNote({ id: 1 }), makeNote({ id: 2 })])
+      mockApi.emptyNotesTrash.mockResolvedValue(undefined)
+
+      const wall = useNotes(1)
+      await wall.loadDeleted()
+      await wall.emptyTrash()
+
+      expect(wall.deletedNotes.value).toHaveLength(0)
+      expect(mockApi.emptyNotesTrash).toHaveBeenCalledWith(1)
     })
   })
 })

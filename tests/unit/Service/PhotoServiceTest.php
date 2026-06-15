@@ -266,14 +266,110 @@ class PhotoServiceTest extends TestCase {
 		$this->assertSame(10, $result->getSortOrder());
 	}
 
-	public function testDeletePhotoRemovesFromMapper(): void {
+	public function testDeletePhotoSoftDeletes(): void {
 		$photo = $this->makePhoto(['id' => 1]);
 		$this->photoMapper->method('findById')->willReturn($photo);
 		$this->photoMapper->expects($this->once())
-			->method('delete')
-			->with($photo);
+			->method('update')
+			->with($this->callback(fn (Photo $p) => $p->getDeletedAt() !== null));
+		$this->photoMapper->expects($this->never())->method('delete');
 
 		$this->svc->deletePhoto(1);
+		$this->assertNotNull($photo->getDeletedAt());
+	}
+
+	public function testListDeletedPhotosDelegatesToMapper(): void {
+		$deleted = [$this->makePhoto()];
+		$this->photoMapper->expects($this->once())
+			->method('findDeletedByHouse')
+			->with(1)
+			->willReturn($deleted);
+
+		$this->assertSame($deleted, $this->svc->listDeletedPhotos(1));
+	}
+
+	public function testRestorePhotoClearsDeletedAt(): void {
+		$photo = $this->makePhoto(['id' => 1]);
+		$photo->setDeletedAt(123);
+		$this->photoMapper->method('findById')->willReturn($photo);
+		$this->photoMapper->expects($this->once())
+			->method('update')
+			->with($this->callback(fn (Photo $p) => $p->getDeletedAt() === null));
+
+		$restored = $this->svc->restorePhoto(1);
+		$this->assertNull($restored->getDeletedAt());
+	}
+
+	public function testPermanentlyDeletePhotoRemovesFileAndRow(): void {
+		$photo = $this->makePhoto(['id' => 1, 'fileId' => 42]);
+		$this->photoMapper->method('findById')->willReturn($photo);
+		$this->imageService->expects($this->once())
+			->method('deleteFile')
+			->with(42, 'alice');
+		$this->photoMapper->expects($this->once())->method('delete')->with($photo);
+
+		$this->svc->permanentlyDeletePhoto(1, 'alice');
+	}
+
+	public function testPermanentlyDeletePhotoWithoutUidLeavesFileAlone(): void {
+		$photo = $this->makePhoto(['id' => 1]);
+		$this->photoMapper->method('findById')->willReturn($photo);
+		$this->imageService->expects($this->never())->method('deleteFile');
+		$this->photoMapper->expects($this->once())->method('delete')->with($photo);
+
+		$this->svc->permanentlyDeletePhoto(1);
+	}
+
+	public function testEmptyTrashDeletesFilesAndRows(): void {
+		$a = $this->makePhoto(['id' => 1, 'fileId' => 10]);
+		$b = $this->makePhoto(['id' => 2, 'fileId' => 20]);
+		$this->photoMapper->expects($this->once())
+			->method('findDeletedByHouse')
+			->with(7)
+			->willReturn([$a, $b]);
+		$removedFiles = [];
+		$this->imageService->expects($this->exactly(2))
+			->method('deleteFile')
+			->willReturnCallback(function (int $fileId, string $uid) use (&$removedFiles) {
+				$removedFiles[] = [$fileId, $uid];
+			});
+		$this->photoMapper->expects($this->exactly(2))->method('delete');
+
+		$this->svc->emptyTrash(7, 'alice');
+		$this->assertSame([[10, 'alice'], [20, 'alice']], $removedFiles);
+	}
+
+	public function testEmptyTrashWithoutUidSkipsFileDeletion(): void {
+		$a = $this->makePhoto(['id' => 1, 'fileId' => 10]);
+		$this->photoMapper->method('findDeletedByHouse')->willReturn([$a]);
+		$this->imageService->expects($this->never())->method('deleteFile');
+		$this->photoMapper->expects($this->once())->method('delete');
+
+		$this->svc->emptyTrash(7);
+	}
+
+	public function testDeleteFolderWithDeleteContentsSoftDeletesPhotos(): void {
+		$folder = $this->makeFolder(['id' => 5]);
+		$p1 = $this->makePhoto(['id' => 10, 'folderId' => 5, 'fileId' => 100]);
+		$p2 = $this->makePhoto(['id' => 11, 'folderId' => 5, 'fileId' => 101]);
+		$this->folderMapper->method('findById')->willReturn($folder);
+		$this->photoMapper->method('findByFolder')->willReturn([$p1, $p2]);
+
+		// Folder is hard-deleted; photos are soft-deleted with folderId detached
+		// and underlying files are kept until permanent delete from the trash.
+		$this->imageService->expects($this->never())->method('deleteFile');
+		$this->folderMapper->expects($this->once())->method('delete')->with($folder);
+		$this->photoMapper->expects($this->exactly(2))
+			->method('update')
+			->with($this->callback(function (Photo $p) {
+				return $p->getDeletedAt() !== null && $p->getFolderId() === null;
+			}));
+
+		$this->svc->deleteFolder(5, deleteContents: true, uid: 'alice');
+		$this->assertNotNull($p1->getDeletedAt());
+		$this->assertNull($p1->getFolderId());
+		$this->assertNotNull($p2->getDeletedAt());
+		$this->assertNull($p2->getFolderId());
 	}
 
 	public function testReorderPhotosUpdatesMatchingItems(): void {

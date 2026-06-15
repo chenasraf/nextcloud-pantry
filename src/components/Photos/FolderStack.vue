@@ -34,7 +34,7 @@
         </NcActionButton>
         <NcActionButton close-after-click @click.stop="$emit('delete', folder)">
           <template #icon><DeleteIcon :size="20" /></template>
-          {{ strings.delete }}
+          {{ strings.remove }}
         </NcActionButton>
       </NcActions>
     </div>
@@ -150,7 +150,7 @@ function onDrop(e: DragEvent) {
 const strings = {
   actions: t('pantry', 'Folder actions'),
   rename: t('pantry', 'Rename'),
-  delete: t('pantry', 'Delete'),
+  remove: t('pantry', 'Remove'),
 }
 </script>
 

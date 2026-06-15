@@ -172,14 +172,54 @@ class NoteServiceTest extends TestCase {
 		$this->svc->createNote(1, 'alice', 'Test', null, null);
 	}
 
-	public function testDeleteNoteRemovesFromMapper(): void {
+	public function testDeleteNoteSoftDeletes(): void {
 		$note = $this->makeNote(['id' => 1]);
 		$this->noteMapper->method('findById')->willReturn($note);
 		$this->noteMapper->expects($this->once())
-			->method('delete')
-			->with($note);
+			->method('update')
+			->with($this->callback(fn (Note $n) => $n->getDeletedAt() !== null));
+		$this->noteMapper->expects($this->never())->method('delete');
 
 		$this->svc->deleteNote(1);
+		$this->assertNotNull($note->getDeletedAt());
+	}
+
+	public function testListDeletedNotesDelegatesToMapper(): void {
+		$deleted = [$this->makeNote()];
+		$this->noteMapper->expects($this->once())
+			->method('findDeletedByHouse')
+			->with(1)
+			->willReturn($deleted);
+
+		$this->assertSame($deleted, $this->svc->listDeletedNotes(1));
+	}
+
+	public function testRestoreNoteClearsDeletedAt(): void {
+		$note = $this->makeNote(['id' => 1]);
+		$note->setDeletedAt(123);
+		$this->noteMapper->method('findById')->willReturn($note);
+		$this->noteMapper->expects($this->once())
+			->method('update')
+			->with($this->callback(fn (Note $n) => $n->getDeletedAt() === null));
+
+		$restored = $this->svc->restoreNote(1);
+		$this->assertNull($restored->getDeletedAt());
+	}
+
+	public function testPermanentlyDeleteNoteRemovesRow(): void {
+		$note = $this->makeNote(['id' => 1]);
+		$this->noteMapper->method('findById')->willReturn($note);
+		$this->noteMapper->expects($this->once())->method('delete')->with($note);
+
+		$this->svc->permanentlyDeleteNote(1);
+	}
+
+	public function testEmptyTrashDelegatesToMapper(): void {
+		$this->noteMapper->expects($this->once())
+			->method('emptyTrashForHouse')
+			->with(7);
+
+		$this->svc->emptyTrash(7);
 	}
 
 	public function testReorderNotesUpdatesMatchingItems(): void {

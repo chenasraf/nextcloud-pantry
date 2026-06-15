@@ -54,6 +54,7 @@ function makePhoto(overrides: Partial<Photo> = {}): Photo {
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
+    deletedAt: null,
     ...overrides,
   }
 }
@@ -102,10 +103,21 @@ describe('PhotoCard', () => {
       expect(texts).toContain('Edit')
     })
 
-    it('always shows Delete action', () => {
+    it('shows Remove action in active mode', () => {
       const wrapper = mountCard()
       const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
-      expect(texts).toContain('Delete')
+      expect(texts).toContain('Remove')
+    })
+
+    it('shows Restore + Delete permanently in trash mode', () => {
+      const wrapper = mount(PhotoCard, {
+        props: { photo: makePhoto(), houseId: 1, trashMode: true },
+      })
+      const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(texts).toContain('Restore')
+      expect(texts).toContain('Delete permanently')
+      expect(texts).not.toContain('Remove')
+      expect(texts).not.toContain('Edit')
     })
 
     it('shows "Move to board" action when photo is in a folder', () => {
@@ -139,13 +151,24 @@ describe('PhotoCard', () => {
       expect(wrapper.emitted('edit')![0]).toEqual([photo])
     })
 
-    it('emits delete when Delete action is clicked', async () => {
+    it('emits delete when Remove action is clicked', async () => {
       const photo = makePhoto()
       const wrapper = mount(PhotoCard, { props: { photo, houseId: 1 } })
-      const delBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Delete')!
+      const delBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Remove')!
       await delBtn.trigger('click')
       expect(wrapper.emitted('delete')).toBeTruthy()
       expect(wrapper.emitted('delete')![0]).toEqual([photo])
+    })
+
+    it('emits restore when Restore is clicked in trash mode', async () => {
+      const photo = makePhoto()
+      const wrapper = mount(PhotoCard, {
+        props: { photo, houseId: 1, trashMode: true },
+      })
+      const restoreBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Restore')!
+      await restoreBtn.trigger('click')
+      expect(wrapper.emitted('restore')).toBeTruthy()
+      expect(wrapper.emitted('restore')![0]).toEqual([photo])
     })
 
     it('emits move-to-root when "Move to board" is clicked', async () => {
