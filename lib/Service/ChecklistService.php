@@ -27,8 +27,35 @@ class ChecklistService {
 	/**
 	 * @return Checklist[]
 	 */
-	public function listForHouse(int $houseId): array {
-		return $this->listMapper->findByHouse($houseId);
+	public function listForHouse(int $houseId, string $sortBy = 'custom'): array {
+		return $this->listMapper->findByHouse($houseId, $sortBy);
+	}
+
+	/**
+	 * Batch reorder lists within a house.
+	 *
+	 * @param int $houseId House id.
+	 * @param array<array{id: int, sortOrder: int}> $items Reorder entries.
+	 */
+	public function reorderLists(int $houseId, array $items): void {
+		foreach ($items as $entry) {
+			$id = (int)($entry['id'] ?? 0);
+			$sortOrder = (int)($entry['sortOrder'] ?? 0);
+			if ($id <= 0) {
+				continue;
+			}
+			try {
+				$list = $this->listMapper->findById($id);
+			} catch (DoesNotExistException) {
+				continue;
+			}
+			if ($list->getHouseId() !== $houseId) {
+				continue;
+			}
+			$list->setSortOrder($sortOrder);
+			$list->setUpdatedAt(time());
+			$this->listMapper->update($list);
+		}
 	}
 
 	public function getList(int $listId): Checklist {

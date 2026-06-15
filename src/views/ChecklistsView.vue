@@ -1,7 +1,24 @@
 <template>
-  <div class="pantry-lists">
+  <div ref="gridWrapRef" class="pantry-lists">
     <PageToolbar :title="strings.title">
       <template #actions>
+        <NcActions :aria-label="strings.sortLabel" type="tertiary">
+          <template #icon>
+            <SortIcon :size="20" />
+          </template>
+          <NcActionButton
+            v-for="opt in sortOptions"
+            :key="opt.value"
+            :class="{ 'pantry-sort-active': currentSort === opt.value }"
+            @click="changeSort(opt.value)"
+          >
+            <template #icon>
+              <RadioboxMarkedIcon v-if="currentSort === opt.value" :size="20" />
+              <RadioboxBlankIcon v-else :size="20" />
+            </template>
+            {{ opt.label }}
+          </NcActionButton>
+        </NcActions>
         <NcButton variant="primary" @click="showCategoryManager = true">
           <template #icon>
             <TagIcon :size="20" />
@@ -38,37 +55,54 @@
       </NcEmptyContent>
 
       <ul v-else class="pantry-lists__grid">
-        <li v-for="list in lists" :key="list.id" class="pantry-list-card-wrap">
-          <router-link
-            :to="{
-              name: 'list-detail',
-              params: { houseId: String(houseIdNum), listId: String(list.id) },
-            }"
-            class="pantry-list-card"
+        <template v-for="item in gridItems" :key="item.key">
+          <li
+            v-if="item.type === 'placeholder'"
+            class="pantry-list-card-placeholder"
+            @dragover.prevent
+            @drop.prevent.stop="onPlaceholderDrop"
+          />
+          <li
+            v-else
+            class="pantry-list-card-wrap"
+            :class="{ 'pantry-list-card-wrap--dragging': draggingListId === item.list.id }"
+            :data-drag-id="item.list.id"
+            :draggable="isCustomSort ? 'true' : 'false'"
+            @dragstart="onCardDragStart(item.list.id, $event)"
+            @dragend="onCardDragEnd"
+            @dragover.prevent="onCardDragOver(item.list.id, $event)"
           >
-            <span class="pantry-list-card__icon-wrap" :style="iconWrapStyle(list.color)">
-              <component
-                :is="checklistIconComponent(list.icon)"
-                :size="28"
-                class="pantry-list-card__icon"
-              />
-            </span>
-            <div class="pantry-list-card__body">
-              <h3>{{ list.name }}</h3>
-              <p v-if="list.description">{{ list.description }}</p>
-            </div>
-          </router-link>
-          <NcActions class="pantry-list-card__actions" :aria-label="strings.listMenu">
-            <NcActionButton close-after-click @click="startEdit(list)">
-              <template #icon><PencilIcon :size="20" /></template>
-              {{ strings.edit }}
-            </NcActionButton>
-            <NcActionButton close-after-click @click="confirmDelete(list)">
-              <template #icon><DeleteIcon :size="20" /></template>
-              {{ strings.delete }}
-            </NcActionButton>
-          </NcActions>
-        </li>
+            <router-link
+              :to="{
+                name: 'list-detail',
+                params: { houseId: String(houseIdNum), listId: String(item.list.id) },
+              }"
+              class="pantry-list-card"
+            >
+              <span class="pantry-list-card__icon-wrap" :style="iconWrapStyle(item.list.color)">
+                <component
+                  :is="checklistIconComponent(item.list.icon)"
+                  :size="28"
+                  class="pantry-list-card__icon"
+                />
+              </span>
+              <div class="pantry-list-card__body">
+                <h3>{{ item.list.name }}</h3>
+                <p v-if="item.list.description">{{ item.list.description }}</p>
+              </div>
+            </router-link>
+            <NcActions class="pantry-list-card__actions" :aria-label="strings.listMenu">
+              <NcActionButton close-after-click @click="startEdit(item.list)">
+                <template #icon><PencilIcon :size="20" /></template>
+                {{ strings.edit }}
+              </NcActionButton>
+              <NcActionButton close-after-click @click="confirmDelete(item.list)">
+                <template #icon><DeleteIcon :size="20" /></template>
+                {{ strings.delete }}
+              </NcActionButton>
+            </NcActions>
+          </li>
+        </template>
       </ul>
     </div>
 
@@ -108,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -124,8 +158,14 @@ import TagIcon from '@icons/Tag.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
+import SortIcon from '@icons/Sort.vue'
+import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
+import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import type { Checklist } from '@/api/types'
+import type { ChecklistSort } from '@/api/prefs'
+import { getChecklistSort, setChecklistSort } from '@/api/prefs'
 import { useChecklists } from '@/composables/useChecklist'
+import { useTouchReorder } from '@/composables/useTouchReorder'
 import {
   checklistIconComponent,
   ChecklistFormDialog,
@@ -141,12 +181,44 @@ const props = defineProps<{ houseId: string }>()
 const router = useRouter()
 
 const houseIdNum = computed(() => Number(props.houseId))
-const { lists, loading, load, create, update, remove } = useChecklists(houseIdNum.value)
+const { lists, loading, load, create, update, remove, reorder, sortBy } = useChecklists(
+  houseIdNum.value,
+)
 
-onMounted(load)
+// ----- Sort -----
+
+const currentSort = ref<ChecklistSort>('custom')
+const isCustomSort = computed(() => currentSort.value === 'custom')
+
+const sortOptions: { value: ChecklistSort; label: string }[] = [
+  { value: 'name_asc', label: t('pantry', 'Name A–Z') },
+  { value: 'name_desc', label: t('pantry', 'Name Z–A') },
+  { value: 'custom', label: t('pantry', 'Custom') },
+]
+
+async function loadSortPref() {
+  const prefs = await getChecklistSort(houseIdNum.value)
+  currentSort.value = prefs.sort
+  sortBy.value = prefs.sort
+}
+
+async function changeSort(value: ChecklistSort) {
+  currentSort.value = value
+  sortBy.value = value
+  await setChecklistSort(houseIdNum.value, value)
+  await load(value)
+}
+
+onMounted(async () => {
+  await loadSortPref()
+  await load(true)
+})
 watch(
   () => props.houseId,
-  () => load(),
+  async () => {
+    await loadSortPref()
+    await load(true)
+  },
 )
 
 const showCategoryManager = ref(false)
@@ -210,6 +282,128 @@ async function submitDelete() {
   deleting.value = null
 }
 
+// ----- Reorder (custom sort only) -----
+
+type GridItem =
+  | { type: 'list'; key: string; list: Checklist }
+  | { type: 'placeholder'; key: string }
+
+const draggingListId = ref<number | null>(null)
+const dropIndex = ref<number | null>(null)
+const gridWrapRef = ref<HTMLElement | null>(null)
+
+function buildGridItems(): GridItem[] {
+  if (draggingListId.value === null || dropIndex.value === null) {
+    return lists.value.map((l) => ({ type: 'list' as const, key: 'l-' + l.id, list: l }))
+  }
+  const without = lists.value.filter((l) => l.id !== draggingListId.value)
+  const clamped = Math.max(0, Math.min(dropIndex.value, without.length))
+  const items: GridItem[] = without.map((l) => ({
+    type: 'list' as const,
+    key: 'l-' + l.id,
+    list: l,
+  }))
+  items.splice(clamped, 0, { type: 'placeholder', key: 'drop-placeholder' })
+  return items
+}
+
+const gridItems = computed(() => buildGridItems())
+
+function onCardDragStart(listId: number, e: DragEvent) {
+  if (!isCustomSort.value || !e.dataTransfer) return
+  draggingListId.value = listId
+  dropIndex.value = null
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('application/x-pantry-list', String(listId))
+}
+
+function onCardDragEnd() {
+  draggingListId.value = null
+  dropIndex.value = null
+}
+
+function computeDropIndex(hoveredListId: number, clientX: number, target: HTMLElement | null) {
+  const dragId = draggingListId.value
+  if (dragId === null || dragId === hoveredListId) return
+  const without = lists.value.filter((l) => l.id !== dragId)
+  const idx = without.findIndex((l) => l.id === hoveredListId)
+  if (idx === -1) return
+  if (target) {
+    const rect = target.getBoundingClientRect()
+    const past = clientX > rect.left + rect.width / 2
+    dropIndex.value = past ? idx + 1 : idx
+  } else {
+    dropIndex.value = idx
+  }
+}
+
+function onCardDragOver(hoveredListId: number, e: DragEvent) {
+  if (!isCustomSort.value) return
+  if (!e.dataTransfer?.types.includes('application/x-pantry-list')) return
+  computeDropIndex(hoveredListId, e.clientX, e.currentTarget as HTMLElement | null)
+}
+
+function onPlaceholderDrop() {
+  commitReorder()
+}
+
+async function commitReorder() {
+  const dragId = draggingListId.value
+  const idx = dropIndex.value
+  draggingListId.value = null
+  dropIndex.value = null
+
+  if (dragId === null || idx === null) return
+
+  const dragged = lists.value.find((l) => l.id === dragId)
+  if (!dragged) return
+
+  const without = lists.value.filter((l) => l.id !== dragId)
+  const clampedIndex = Math.min(idx, without.length)
+  const reordered = [...without]
+  reordered.splice(clampedIndex, 0, dragged)
+
+  const items = reordered.map((l, i) => ({ id: l.id, sortOrder: i }))
+  await reorder(items)
+}
+
+function onDropCapture() {
+  commitReorder()
+}
+function onDragEndCapture() {
+  draggingListId.value = null
+  dropIndex.value = null
+}
+onMounted(() => {
+  gridWrapRef.value?.addEventListener('drop', onDropCapture, true)
+  gridWrapRef.value?.addEventListener('dragend', onDragEndCapture, true)
+})
+onBeforeUnmount(() => {
+  gridWrapRef.value?.removeEventListener('drop', onDropCapture, true)
+  gridWrapRef.value?.removeEventListener('dragend', onDragEndCapture, true)
+})
+
+useTouchReorder(
+  gridWrapRef,
+  {
+    onDragStart(id) {
+      draggingListId.value = id
+      dropIndex.value = null
+    },
+    onReorderOver(hoveredId, clientX) {
+      const el =
+        gridWrapRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
+      computeDropIndex(hoveredId, clientX, el)
+    },
+    onDrop: commitReorder,
+    onCancel() {
+      draggingListId.value = null
+      dropIndex.value = null
+    },
+  },
+  isCustomSort,
+)
+
 const strings = {
   title: t('pantry', 'Checklists'),
   newList: t('pantry', 'New list'),
@@ -221,6 +415,7 @@ const strings = {
   deleteDialogTitle: t('pantry', 'Delete checklist'),
   emptyTitle: t('pantry', 'No lists yet'),
   emptyBody: t('pantry', 'Create your first checklist to start adding items.'),
+  sortLabel: t('pantry', 'Sort order'),
 }
 </script>
 
@@ -243,6 +438,9 @@ const strings = {
 
 .pantry-list-card-wrap {
   position: relative;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 
   &__actions,
   .pantry-list-card__actions {
@@ -251,6 +449,20 @@ const strings = {
     inset-inline-end: 0.5rem;
     z-index: 1;
   }
+
+  &--dragging {
+    opacity: 0.35;
+    transform: scale(0.95);
+    pointer-events: none;
+  }
+}
+
+.pantry-list-card-placeholder {
+  min-height: 80px;
+  border: 3px dashed var(--color-primary-element);
+  border-radius: var(--border-radius-large, 12px);
+  background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
+  list-style: none;
 }
 
 .pantry-list-card {
@@ -307,5 +519,9 @@ const strings = {
   display: flex;
   justify-content: center;
   padding: 2rem;
+}
+
+.pantry-sort-active {
+  font-weight: 600;
 }
 </style>

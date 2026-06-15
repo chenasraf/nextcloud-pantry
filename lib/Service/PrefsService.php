@@ -234,6 +234,28 @@ class PrefsService {
 		return $sort;
 	}
 
+	// ----- Checklist (list of checklists) sort preferences -----
+
+	private const KEY_CHECKLIST_SORT = 'checklist_sort';
+	public const CHECKLIST_SORT_OPTIONS = ['name_asc', 'name_desc', 'custom'];
+
+	public function getChecklistSort(string $uid, int $houseId): string {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_CHECKLIST_SORT . '_' . $houseId,
+			'custom',
+		);
+	}
+
+	public function setChecklistSort(string $uid, int $houseId, string $sort): string {
+		if (!in_array($sort, self::CHECKLIST_SORT_OPTIONS, true)) {
+			$sort = 'custom';
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_CHECKLIST_SORT . '_' . $houseId, $sort);
+		return $sort;
+	}
+
 	// ----- Show added-by avatar -----
 
 	private const KEY_SHOW_ADDED_BY = 'show_added_by';
@@ -306,6 +328,7 @@ class PrefsService {
 			'photoFoldersFirst' => $this->getPhotoFoldersFirst($uid, $houseId),
 			'noteSort' => $this->getNoteSort($uid, $houseId),
 			'checklistItemSort' => $this->getChecklistItemSort($uid, $houseId),
+			'checklistSort' => $this->getChecklistSort($uid, $houseId),
 			'categorySort' => $this->getCategorySort($uid, $houseId),
 			'showAddedBy' => $this->getShowAddedBy($uid, $houseId),
 			...$this->getNotificationPrefs($uid, $houseId),
@@ -330,6 +353,9 @@ class PrefsService {
 		}
 		if (array_key_exists('checklistItemSort', $patch) && is_string($patch['checklistItemSort'])) {
 			$this->setChecklistItemSort($uid, $houseId, $patch['checklistItemSort']);
+		}
+		if (array_key_exists('checklistSort', $patch) && is_string($patch['checklistSort'])) {
+			$this->setChecklistSort($uid, $houseId, $patch['checklistSort']);
 		}
 		if (array_key_exists('categorySort', $patch) && is_string($patch['categorySort'])) {
 			$this->setCategorySort($uid, $houseId, $patch['categorySort']);

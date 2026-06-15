@@ -1,9 +1,18 @@
 import { ocs } from '@/axios'
 import type { Checklist, ChecklistItem } from './types'
 
-export async function listLists(houseId: number): Promise<Checklist[]> {
-  const resp = await ocs.get<Checklist[]>(`/houses/${houseId}/lists`)
+export async function listLists(houseId: number, sortBy?: string): Promise<Checklist[]> {
+  const resp = await ocs.get<Checklist[]>(`/houses/${houseId}/lists`, {
+    params: sortBy ? { sortBy } : undefined,
+  })
   return resp.data ?? []
+}
+
+export async function reorderLists(
+  houseId: number,
+  items: { id: number; sortOrder: number }[],
+): Promise<void> {
+  await ocs.post(`/houses/${houseId}/lists/reorder`, { items })
 }
 
 export async function createList(

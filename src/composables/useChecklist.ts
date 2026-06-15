@@ -1,13 +1,14 @@
 import { ref, type Ref } from 'vue'
 import * as api from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
-import type { ChecklistItemSort } from '@/api/prefs'
+import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
 
 // Per-house state shared across all callers so sidebar and views stay in sync.
 interface HouseChecklistState {
   lists: Ref<Checklist[]>
   loading: Ref<boolean>
   error: Ref<string | null>
+  sortBy: Ref<ChecklistSort>
   inflight: Promise<Checklist[]> | null
 }
 const houseStates = new Map<number, HouseChecklistState>()
@@ -19,6 +20,7 @@ function getState(houseId: number): HouseChecklistState {
       lists: ref<Checklist[]>([]),
       loading: ref(false),
       error: ref<string | null>(null),
+      sortBy: ref<ChecklistSort>('custom'),
       inflight: null,
     }
     houseStates.set(houseId, s)
@@ -28,14 +30,16 @@ function getState(houseId: number): HouseChecklistState {
 
 export function useChecklists(houseId: number) {
   const state = getState(houseId)
-  const { lists, loading, error } = state
+  const { lists, loading, error, sortBy } = state
 
-  function load(force = false): Promise<Checklist[]> {
+  function load(sortOrForce?: ChecklistSort | boolean): Promise<Checklist[]> {
+    const force = sortOrForce === true
+    const sort = typeof sortOrForce === 'string' ? sortOrForce : sortBy.value
     if (state.inflight && !force) return state.inflight
     loading.value = true
     error.value = null
     state.inflight = api
-      .listLists(houseId)
+      .listLists(houseId, sort)
       .then((result) => {
         lists.value = result
         return result
@@ -81,7 +85,16 @@ export function useChecklists(houseId: number) {
     lists.value = lists.value.filter((l) => l.id !== listId)
   }
 
-  return { lists, loading, error, load, create, update, remove }
+  async function reorder(items: { id: number; sortOrder: number }[]): Promise<void> {
+    // Apply optimistically so there's no visual jump while the API call is in flight.
+    const map = new Map(items.map((i) => [i.id, i.sortOrder]))
+    lists.value = lists.value
+      .map((l) => (map.has(l.id) ? { ...l, sortOrder: map.get(l.id)! } : l))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+    await api.reorderLists(houseId, items)
+  }
+
+  return { lists, loading, error, sortBy, load, create, update, remove, reorder }
 }
 
 export function useChecklistItems(houseId: number, listId: number) {

@@ -99,6 +99,7 @@ namespace OCA\Pantry;
  *     photoFoldersFirst: bool,
  *     noteSort: string,
  *     checklistItemSort: string,
+ *     checklistSort: string,
  *     categorySort: string,
  *     showAddedBy: bool,
  *     notifyPhoto: bool,

@@ -6,6 +6,7 @@ const mockApi = vi.hoisted(() => ({
   createList: vi.fn(),
   updateList: vi.fn(),
   deleteList: vi.fn(),
+  reorderLists: vi.fn(),
   getList: vi.fn(),
   listItems: vi.fn(),
   addItem: vi.fn(),
@@ -155,6 +156,46 @@ describe('useChecklists', () => {
 
       expect(c.lists.value).toHaveLength(1)
       expect(c.lists.value[0].id).toBe(2)
+    })
+  })
+
+  describe('reorder', () => {
+    it('optimistically updates sortOrder and re-sorts', async () => {
+      mockApi.listLists.mockResolvedValue([
+        makeList({ id: 1, sortOrder: 0 }),
+        makeList({ id: 2, sortOrder: 1 }),
+      ])
+      mockApi.reorderLists.mockResolvedValue(undefined)
+
+      const c = useChecklists(houseCounter)
+      await c.load()
+      await c.reorder([
+        { id: 2, sortOrder: 0 },
+        { id: 1, sortOrder: 1 },
+      ])
+
+      expect(c.lists.value[0].id).toBe(2)
+      expect(c.lists.value[1].id).toBe(1)
+      expect(mockApi.reorderLists).toHaveBeenCalledWith(houseCounter, [
+        { id: 2, sortOrder: 0 },
+        { id: 1, sortOrder: 1 },
+      ])
+    })
+  })
+
+  describe('sortBy', () => {
+    it('defaults to custom', () => {
+      const c = useChecklists(houseCounter)
+      expect(c.sortBy.value).toBe('custom')
+    })
+
+    it('passes sort to listLists when load() is given a sort', async () => {
+      mockApi.listLists.mockResolvedValue([])
+
+      const c = useChecklists(houseCounter)
+      await c.load('name_asc')
+
+      expect(mockApi.listLists).toHaveBeenCalledWith(houseCounter, 'name_asc')
     })
   })
 

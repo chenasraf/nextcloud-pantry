@@ -246,6 +246,59 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertSame('alice', $captured->getAddedBy());
 	}
 
+	public function testListForHousePassesSortBy(): void {
+		$this->listMapper->expects($this->once())
+			->method('findByHouse')
+			->with(42, 'name_asc')
+			->willReturn([]);
+
+		$this->svc->listForHouse(42, 'name_asc');
+	}
+
+	public function testReorderListsUpdatesSortOrderForHouseLists(): void {
+		$a = new Checklist();
+		$a->setId(1);
+		$a->setHouseId(7);
+		$a->setSortOrder(0);
+		$b = new Checklist();
+		$b->setId(2);
+		$b->setHouseId(7);
+		$b->setSortOrder(1);
+
+		$this->listMapper->method('findById')->willReturnMap([
+			[1, $a],
+			[2, $b],
+		]);
+
+		$updated = [];
+		$this->listMapper->expects($this->exactly(2))
+			->method('update')
+			->willReturnCallback(function (Checklist $l) use (&$updated) {
+				$updated[(int)$l->getId()] = $l->getSortOrder();
+				return $l;
+			});
+
+		$this->svc->reorderLists(7, [
+			['id' => 1, 'sortOrder' => 1],
+			['id' => 2, 'sortOrder' => 0],
+		]);
+
+		$this->assertSame(1, $updated[1]);
+		$this->assertSame(0, $updated[2]);
+	}
+
+	public function testReorderListsSkipsListsFromOtherHouses(): void {
+		$other = new Checklist();
+		$other->setId(5);
+		$other->setHouseId(99);
+		$other->setSortOrder(0);
+
+		$this->listMapper->method('findById')->willReturn($other);
+		$this->listMapper->expects($this->never())->method('update');
+
+		$this->svc->reorderLists(7, [['id' => 5, 'sortOrder' => 3]]);
+	}
+
 	public function testAddItemLeavesAddedByNullWhenOmitted(): void {
 		// Back-compat: rows created without a uid (e.g., older callers, or
 		// migrated data) leave added_by null, which the UI treats as "unknown".

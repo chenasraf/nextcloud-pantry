@@ -358,4 +358,53 @@ class PrefsServiceTest extends TestCase {
 
 		$this->svc->setHousePrefs('alice', 4, ['categorySort' => 'name_desc']);
 	}
+
+	// ----- Checklist sort -----
+
+	public function testGetChecklistSortDefaultsToCustom(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'checklist_sort_1', 'custom')
+			->willReturn('custom');
+
+		$this->assertSame('custom', $this->svc->getChecklistSort('alice', 1));
+	}
+
+	public function testSetChecklistSortStoresValidValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'checklist_sort_3', 'name_asc');
+
+		$this->assertSame('name_asc', $this->svc->setChecklistSort('alice', 3, 'name_asc'));
+	}
+
+	public function testSetChecklistSortFallsBackForUnknownValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'checklist_sort_4', 'custom');
+
+		$this->assertSame('custom', $this->svc->setChecklistSort('alice', 4, 'bogus'));
+	}
+
+	public function testGetAllHousePrefsIncludesChecklistSort(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'checklist_sort_7') {
+					return 'name_desc';
+				}
+				return $default;
+			}
+		);
+
+		$prefs = $this->svc->getAllHousePrefs('alice', 7);
+		$this->assertArrayHasKey('checklistSort', $prefs);
+		$this->assertSame('name_desc', $prefs['checklistSort']);
+	}
+
+	public function testSetHousePrefsAppliesChecklistSort(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'checklist_sort_4', 'name_asc');
+
+		$this->svc->setHousePrefs('alice', 4, ['checklistSort' => 'name_asc']);
+	}
 }

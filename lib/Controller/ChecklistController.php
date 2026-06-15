@@ -54,6 +54,7 @@ final class ChecklistController extends OCSController {
 	 * List all checklists in a house
 	 *
 	 * @param int $houseId House id.
+	 * @param string $sortBy Sort mode (custom, name_asc, name_desc).
 	 * @param int<1, 500> $limit Maximum number of lists to return.
 	 * @param int<0, max> $offset Number of lists to skip.
 	 *
@@ -63,13 +64,33 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists')]
 	#[NoAdminRequired]
-	public function indexLists(int $houseId, int $limit = 100, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+	public function indexLists(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$all = $this->lists->listForHouse($houseId);
+			$all = $this->lists->listForHouse($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			$out = array_map(fn ($l) => $l->jsonSerialize(), $sliced);
 			return new DataResponse($out);
+		});
+	}
+
+	/**
+	 * Batch reorder checklists in a house
+	 *
+	 * @param int $houseId House id.
+	 * @param list<array{id: int, sortOrder: int}> $items Reorder entries.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Lists reordered
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/reorder')]
+	#[NoAdminRequired]
+	public function reorderLists(int $houseId, array $items = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $items): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->lists->reorderLists($houseId, $items);
+			return new DataResponse(['success' => true]);
 		});
 	}
 

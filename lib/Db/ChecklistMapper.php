@@ -24,13 +24,23 @@ class ChecklistMapper extends QBMapper {
 	/**
 	 * @return Checklist[]
 	 */
-	public function findByHouse(int $houseId): array {
+	public function findByHouse(int $houseId, string $sortBy = 'custom'): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->orderBy('sort_order', 'ASC')
-			->addOrderBy('name', 'ASC');
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+		switch ($sortBy) {
+			case 'name_asc':
+				$qb->orderBy('name', 'ASC');
+				break;
+			case 'name_desc':
+				$qb->orderBy('name', 'DESC');
+				break;
+			default: // custom
+				$qb->orderBy('sort_order', 'ASC')
+					->addOrderBy('name', 'ASC');
+				break;
+		}
 
 		return $this->findEntities($qb);
 	}

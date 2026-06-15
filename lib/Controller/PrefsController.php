@@ -129,6 +129,7 @@ final class PrefsController extends OCSController {
 	 * @param bool|null $photoFoldersFirst Whether folders appear first in photo board.
 	 * @param string|null $noteSort Note sort mode.
 	 * @param string|null $checklistItemSort Checklist item sort mode.
+	 * @param string|null $checklistSort Checklist (list) sort mode (name_asc, name_desc, custom).
 	 * @param string|null $categorySort Category sort mode (name_asc, name_desc, custom).
 	 * @param bool|null $showAddedBy Show the avatar of the user that added each checklist item.
 	 * @param bool|null $notifyPhoto Photo upload notifications.
@@ -151,6 +152,7 @@ final class PrefsController extends OCSController {
 		?bool $photoFoldersFirst = null,
 		?string $noteSort = null,
 		?string $checklistItemSort = null,
+		?string $checklistSort = null,
 		?string $categorySort = null,
 		?bool $showAddedBy = null,
 		?bool $notifyPhoto = null,
@@ -160,7 +162,7 @@ final class PrefsController extends OCSController {
 		?bool $notifyItemRecur = null,
 		?bool $notifyItemDone = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $categorySort, $showAddedBy, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $showAddedBy, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$patch = array_filter([
@@ -169,6 +171,7 @@ final class PrefsController extends OCSController {
 				'photoFoldersFirst' => $photoFoldersFirst,
 				'noteSort' => $noteSort,
 				'checklistItemSort' => $checklistItemSort,
+				'checklistSort' => $checklistSort,
 				'categorySort' => $categorySort,
 				'showAddedBy' => $showAddedBy,
 				'notifyPhoto' => $notifyPhoto,

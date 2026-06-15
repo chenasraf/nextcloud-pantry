@@ -50,6 +50,7 @@ class Capabilities implements IPublicCapability {
 					'houses',
 					'checklists',
 					'checklist-color',
+					'checklist-sort',
 					'categories',
 					'category-sort',
 					'photos',

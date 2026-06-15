@@ -83,6 +83,7 @@ export type ChecklistItemSort =
   | 'name_desc'
   | 'category'
 export type CategorySort = 'name_asc' | 'name_desc' | 'custom'
+export type ChecklistSort = 'name_asc' | 'name_desc' | 'custom'
 
 export interface PhotoSortPrefs {
   sort: PhotoSort
@@ -104,6 +105,7 @@ export interface HousePrefs extends NotificationPrefs {
   photoFoldersFirst: boolean
   noteSort: NoteSort
   checklistItemSort: ChecklistItemSort
+  checklistSort: ChecklistSort
   categorySort: CategorySort
   /** When true, show the avatar of the user who added each checklist item. */
   showAddedBy: boolean
@@ -115,6 +117,7 @@ const housePrefsDefaults: HousePrefs = {
   photoFoldersFirst: true,
   noteSort: 'custom',
   checklistItemSort: 'custom',
+  checklistSort: 'custom',
   categorySort: 'name_asc',
   showAddedBy: false,
   notifyPhoto: true,
@@ -189,6 +192,19 @@ export async function setChecklistItemSort(
 ): Promise<{ sort: ChecklistItemSort }> {
   const p = await setHousePrefs(houseId, { checklistItemSort: sort })
   return { sort: p.checklistItemSort }
+}
+
+export async function getChecklistSort(houseId: number): Promise<{ sort: ChecklistSort }> {
+  const p = await getHousePrefs(houseId)
+  return { sort: p.checklistSort }
+}
+
+export async function setChecklistSort(
+  houseId: number,
+  sort: ChecklistSort,
+): Promise<{ sort: ChecklistSort }> {
+  const p = await setHousePrefs(houseId, { checklistSort: sort })
+  return { sort: p.checklistSort }
 }
 
 export async function getCategorySort(houseId: number): Promise<{ sort: CategorySort }> {
