@@ -32,6 +32,7 @@ OC.L10N.register(
     "Account" : "Уліковы запіс",
     "Role" : "Роля",
     "Danger zone" : "Небяспечная зона",
+    "Unpin" : "Адмацаваць",
     "Preview" : "Перадпрагляд",
     "Rename folder" : "Перайменаваць папку",
     "Create folder" : "Стварыць папку",
