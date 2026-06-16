@@ -41,6 +41,7 @@ Pantry also has companion apps for mobile and desktop that let you manage your l
 notes on the go and keep everything in sync with your Nextcloud instance.
 
 - [Android (Google Play)](https://play.google.com/store/apps/details?id=dev.casraf.pantry)
+- [Android (F-Droid)](https://f-droid.org/en/packages/dev.casraf.pantry/)
 - [iOS/macOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
 
 The repository for the companion apps is [here](https://github.com/chenasraf/pantry-flutter). If you
