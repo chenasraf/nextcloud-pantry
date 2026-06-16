@@ -28,6 +28,7 @@
     "General" : "Общи",
     "Save changes" : "Запиши промените",
     "Display" : "Показване",
+    "Trash" : "Кошче",
     "Members" : "Членове",
     "Account" : "Профил",
     "Role" : "Роля",
@@ -56,18 +57,16 @@
     "Summary" : "Резюме",
     "Newest first" : "Първо най-новият",
     "Oldest first" : "Първо най-старият",
-    "Trash" : "Кошче",
     "New list" : "Нов списък",
     "Checklists" : "Контролни списъци",
     "No lists yet" : "Все още няма списъци",
-    "Note deleted" : "Бележката е изтрита",
     "No notes yet" : "Няма открити бележки",
     "Clear selection" : "Изчистване на селекцията",
+    "Note restored" : "Бележката е възстановена",
     "Upload" : "Качване",
     "New folder" : "Нова папка",
     "Back" : "Назад",
     "Add a description" : "Добави описание",
-    "Delete folder" : "Изтриване на папка",
     "Move to folder" : "Преместване в папка"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

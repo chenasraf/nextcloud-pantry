@@ -27,6 +27,7 @@ OC.L10N.register(
     "Save changes" : "Save changes",
     "Display" : "Displey",
     "Account" : "Akkaunt",
+    "Remove" : "O'chirish",
     "Preview" : "Ko‘rib chiqish",
     "Folder name" : "Papka nomi",
     "Rename" : "Nomini o'zgartirish",
@@ -47,7 +48,6 @@ OC.L10N.register(
     "Upload" : "Yuklash",
     "New folder" : "Yangi jild",
     "Back" : "Orqaga",
-    "Add a description" : "Tavsif qo'shing",
-    "Delete folder" : "Jildni o'chirish"
+    "Add a description" : "Tavsif qo'shing"
 },
 "nplurals=1; plural=0;");

@@ -21,7 +21,7 @@ OC.L10N.register(
     "Never" : "Nikad",
     "Newest first" : "Prvo novije",
     "Oldest first" : "prvo starije",
-    "Note deleted" : "Beleška obrisana",
+    "Note restored" : "Beleška vraćena",
     "Upload" : "Otpremi",
     "New folder" : "Nova fascikla"
 },

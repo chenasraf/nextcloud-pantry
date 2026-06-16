@@ -32,6 +32,7 @@ OC.L10N.register(
     "General" : "General",
     "Save changes" : "Desa els canvis",
     "Display" : "Pantalla",
+    "Trash" : "Paperera",
     "Members" : "Membres",
     "Account" : "Compte",
     "Joined" : "Unit",
@@ -60,18 +61,15 @@ OC.L10N.register(
     "Summary" : "Resum",
     "Newest first" : "Més nou primer",
     "Oldest first" : "Més antic primer",
-    "Trash" : "Paperera",
     "New list" : "Llista nova",
     "Checklists" : "Llistes",
     "No lists yet" : "Encara no hi ha llistes",
-    "Note deleted" : "S'ha suprimit la nota",
     "No notes yet" : "No hi ha notes encara",
-    "Delete note" : "Suprimeix l'anotació",
+    "Note restored" : "S'ha restaurat la nota",
     "Upload" : "Puja",
     "New folder" : "Carpeta nova",
     "Back" : "Torna",
     "Caption" : "Subtítol",
-    "Add a description" : "Afegir una descripció",
-    "Delete folder" : "Suprimeix la carpeta"
+    "Add a description" : "Afegir una descripció"
 },
 "nplurals=2; plural=(n != 1);");

@@ -35,11 +35,13 @@
     "General" : "ئۇمۇمىي",
     "Save changes" : "ئۆزگەرتىشلەرنى ساقلاڭ",
     "Display" : "كۆرسىتىش",
+    "Trash" : "ئەخلەت ساندۇقى",
     "Members" : "ئەزالار",
     "Account" : "ھېسابات",
     "Role" : "رولى",
     "Joined" : "قوشۇلغان",
     "Danger zone" : "خەتەر رايونى",
+    "Remove" : "ئۆچۈرۈڭ",
     "Pin to top" : "ئۈستىدىن پىن",
     "Unpin" : "مىخلىما",
     "Preview" : "ئالدىن كۆرۈش",
@@ -61,7 +63,6 @@
     "Summary" : "خۇلاسە",
     "Newest first" : "ئەڭ يېڭى",
     "Oldest first" : "ئەڭ كونا",
-    "Trash" : "ئەخلەت ساندۇقى",
     "New list" : "يېڭى تىزىملىك",
     "Checklists" : "تەكشۈرۈش تىزىملىكى",
     "No lists yet" : "تېخى تىزىملىك يوق",
@@ -73,7 +74,7 @@
     "Back" : "قايتىش",
     "Caption" : "ئاستى ماۋزۇ",
     "Add a description" : "چۈشەندۈرۈش قوشۇڭ",
-    "Delete folder" : "ھۆججەت قىسقۇچنى ئۆچۈرۈڭ",
+    "Remove folder" : "ھۆججەت قىسقۇچنى ئۆچۈرۈڭ",
     "Move to folder" : "قىسقۇچقا يۆتكەڭ"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

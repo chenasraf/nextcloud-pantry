@@ -29,12 +29,14 @@
     "General" : "Almennt",
     "Save changes" : "Vista breytingar",
     "Display" : "Birting",
+    "Trash" : "Rusl",
     "Members" : "Meðlimir",
     "Account" : "Aðgangur",
     "Joined" : "Gekk inn",
     "Add a member" : "Bæta við meðlimi",
     "No accounts found" : "Engir aðgangsreikningar fundust",
     "Danger zone" : "Hættusvæði",
+    "Remove" : "Fjarlægja",
     "Pin to top" : "Tengja á topphluta",
     "Unpin" : "Losa",
     "Preview" : "Forskoðun",
@@ -57,15 +59,14 @@
     "Summary" : "Samantekt",
     "Newest first" : "Nýjast fyrst",
     "Oldest first" : "Elsta fyrst",
-    "Trash" : "Rusl",
     "New list" : "Nýr listi",
     "Checklists" : "Gátlistar",
     "No lists yet" : "Engir listar ennþá",
-    "Note deleted" : "Minnispunkti var eytt",
+    "Note restored" : "Minnispunktur endurheimtur",
     "Upload" : "Senda inn",
     "New folder" : "Ný mappa",
     "Back" : "Til baka",
     "Add a description" : "Settu inn lýsingu",
-    "Delete folder" : "Eyða möppu"
+    "Remove folder" : "Fjarlægja möppu"
 },"pluralForm" :"nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);"
 }

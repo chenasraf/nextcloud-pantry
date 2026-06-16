@@ -22,6 +22,7 @@ OC.L10N.register(
     "General" : "ზოგადი",
     "Save changes" : "ცვილებების შენახვა",
     "Display" : "დისპლეი",
+    "Trash" : "ნაგავი",
     "Members" : "წევრები",
     "Account" : "ანგარიში",
     "Joined" : "გაწევრიანდა",
@@ -41,10 +42,8 @@ OC.L10N.register(
     "Summary" : "შეჯამება",
     "Newest first" : "ჯერ ახალი",
     "Oldest first" : "ჯერ ძველი",
-    "Trash" : "ნაგავი",
-    "Note deleted" : "ჩანაწერი გაუქმდა",
+    "Note restored" : "ჩანაწერი აღდგა",
     "Upload" : "ატვირთვა",
-    "New folder" : "ახალი დირექტორია",
-    "Delete folder" : "ფოლდერის წაშლა"
+    "New folder" : "ახალი დირექტორია"
 },
 "nplurals=2; plural=(n!=1);");

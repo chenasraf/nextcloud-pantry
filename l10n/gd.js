@@ -10,6 +10,7 @@ OC.L10N.register(
     "Edit" : "Deasaich",
     "Category" : "Roinn-seòrsa",
     "General" : "Coitcheann",
+    "Remove" : "Thoir air falbh",
     "Preview" : "Ro-sheall",
     "Folder name" : "Ainm a’ phasgain",
     "Rename" : "Thoir ainm ùr air",

@@ -26,10 +26,12 @@ OC.L10N.register(
     "Owner" : "Proprietar",
     "General" : "General",
     "Display" : "Display",
+    "Trash" : "Șterse",
     "Members" : "Membri",
     "Account" : "Cont",
     "Joined" : "Alăturat",
     "Add a member" : "Adaugă un membru",
+    "Remove" : "Elimină",
     "Pin to top" : "Adăugați în capul listei",
     "Preview" : "Previzualizare",
     "Rename folder" : "Redenumește director",
@@ -49,13 +51,13 @@ OC.L10N.register(
     "Summary" : "Rezumat",
     "Newest first" : "Cel mai nou mai întâi",
     "Oldest first" : "Cel mai vechi mai întâi",
-    "Trash" : "Șterse",
     "Checklists" : "Liste",
     "No lists yet" : "Nu există încă liste",
     "No notes yet" : "Nu există notițe încă ",
     "Upload" : "Încărcare",
     "New folder" : "Director nou",
     "Back" : "Înapoi",
-    "Add a description" : "Adauga o descripție"
+    "Add a description" : "Adauga o descripție",
+    "Remove folder" : "Șterge dosarul"
 },
 "nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1));");

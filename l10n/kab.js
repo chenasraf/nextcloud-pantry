@@ -28,10 +28,12 @@ OC.L10N.register(
     "General" : "Amatu",
     "Save changes" : "Sekles asnifel",
     "Display" : "Sken",
+    "Trash" : "Iḍumman",
     "Members" : "Imedrawen",
     "Account" : "Amiḍan",
     "Role" : "Tamlilt",
     "Joined" : "Izeddi da seg ass n",
+    "Remove" : "Kkes",
     "Unpin" : "Kkes anṭaḍ",
     "Preview" : "Pre-timeẓriwt",
     "Folder name" : "Isem n ukaram",
@@ -50,10 +52,8 @@ OC.L10N.register(
     "Summary" : "Agzul",
     "Newest first" : "Imaynuten d imezwura",
     "Oldest first" : "Iqbuṛen d imezwura",
-    "Trash" : "Iḍumman",
     "Upload" : "Sili",
     "New folder" : "Akaram amaynut",
-    "Back" : "Tuɣalin",
-    "Delete folder" : "Kkes akaram"
+    "Back" : "Tuɣalin"
 },
 "nplurals=2; plural=(n != 1);");

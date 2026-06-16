@@ -24,10 +24,12 @@ OC.L10N.register(
     "Member" : "Anëtar",
     "General" : "Të përgjithshme",
     "Display" : "Ekran",
+    "Trash" : "Hedhurina",
     "Members" : "Anëtar",
     "Account" : "Llogari",
     "Joined" : "I lidhur",
     "Add a member" : "Shto një anëtar",
+    "Remove" : "Hiqe",
     "Pin to top" : "Fikstoje në krye",
     "Preview" : "Parapamje ",
     "Rename folder" : "Riemërtoni dosjen",
@@ -43,11 +45,9 @@ OC.L10N.register(
     "Summary" : "Përmbledhje",
     "Newest first" : "Më i riu i pari",
     "Oldest first" : "Më i vjetri i pari",
-    "Trash" : "Hedhurina",
-    "Note deleted" : "Shënimi u fshi",
+    "Note restored" : "Shënimi i rivendos",
     "Upload" : "Ngarkoni",
     "New folder" : "Dosje e re",
-    "Back" : "Mbrapsht",
-    "Delete folder" : "Fshije dosjen"
+    "Back" : "Mbrapsht"
 },
 "nplurals=2; plural=(n != 1);");

@@ -27,10 +27,12 @@
     "General" : "כללי",
     "Save changes" : "שמירת השינויים",
     "Display" : "תצוגה",
+    "Trash" : "פח אשפה",
     "Members" : "חברים",
     "Account" : "חשבון",
     "Role" : "תפקיד",
     "Add a member" : "הוספת חבר",
+    "Remove" : "הסרה",
     "Pin to top" : "הצמדה למעלה",
     "Preview" : "תצוגה מקדימה",
     "Untitled note" : "פתק ללא כותרת",
@@ -51,15 +53,12 @@
     "Summary" : "תקציר",
     "Newest first" : "החדש ביותר ראשון",
     "Oldest first" : "הישן ביותר ראשון",
-    "Trash" : "פח אשפה",
     "No lists yet" : "אין רשימות עדיין",
-    "Note deleted" : "פתק נמחק",
     "New note" : "פתק חדש",
-    "Delete note" : "מחיקת פתק",
+    "Note restored" : "פתק שוחזר",
     "Upload" : "העלאה",
     "New folder" : "תיקייה חדשה",
     "Back" : "אחורה",
-    "Add a description" : "הוסף תיאור",
-    "Delete folder" : "מחק תיקייה"
+    "Add a description" : "הוסף תיאור"
 },"pluralForm" :"nplurals=3; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: 2;"
 }

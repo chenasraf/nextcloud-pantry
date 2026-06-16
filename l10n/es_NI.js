@@ -22,6 +22,7 @@ OC.L10N.register(
     "General" : "General",
     "Save changes" : "Guardar cambios",
     "Display" : "Mostrar",
+    "Trash" : "Basura",
     "Members" : "Miembros",
     "Account" : "Cuenta",
     "Joined" : "Se ha unido",
@@ -39,8 +40,7 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Newest first" : "Más reciente primero",
     "Oldest first" : "Más antiguo primero",
-    "Trash" : "Basura",
-    "Note deleted" : "Nota borrada",
+    "Note restored" : "Nota restaurada",
     "Upload" : "Cargar",
     "New folder" : "Carpeta nueva"
 },

@@ -24,10 +24,12 @@ OC.L10N.register(
     "Owner" : "Īpašnieks",
     "General" : "Vispārīgi",
     "Save changes" : "Saglabāt izmaiņas",
+    "Trash" : "Atkritne",
     "Members" : "Dalībnieki",
     "Account" : "Konts",
     "Role" : "Loma",
     "No accounts found" : "Konti nav atrasti",
+    "Remove" : "Noņemt",
     "Preview" : "Priekšskatīt",
     "Rename folder" : "Pārdēvēt mapi",
     "Folder name" : "Mapes nosaukums",
@@ -45,10 +47,8 @@ OC.L10N.register(
     "Summary" : "Kopsavilkums",
     "Newest first" : "Jaunākie pirms",
     "Oldest first" : "Vecākie pirms",
-    "Trash" : "Atkritne",
     "Upload" : "Augšupielādēt",
     "New folder" : "Jauna mape",
-    "Add a description" : "Pievienot aprakstu",
-    "Delete folder" : "Izdzēst mapi"
+    "Add a description" : "Pievienot aprakstu"
 },
 "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);");

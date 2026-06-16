@@ -40,6 +40,7 @@ OC.L10N.register(
     "Account" : "Akaunti",
     "Role" : "Role",
     "Danger zone" : "Eneo la hatari",
+    "Remove" : "Ondoa",
     "Pin to top" : "Weka mpaka juu",
     "Unpin" : "Bandua",
     "Preview" : "Mwonekano wa awali",
@@ -72,6 +73,6 @@ OC.L10N.register(
     "New folder" : "Folda mpya",
     "Back" : "Rudi",
     "Caption" : "Manukuu",
-    "Delete folder" : "Futa kisanduku"
+    "Remove folder" : "Ondoa folda"
 },
 "nplurals=2; plural=(n != 1);");

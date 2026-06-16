@@ -16,6 +16,7 @@ OC.L10N.register(
     "Member" : "Aelod",
     "Owner" : "Perchennog",
     "General" : "Cyffredinol",
+    "Trash" : "Sbwriel",
     "Account" : "Cyfrif",
     "Preview" : "Rhagolwg",
     "Rename" : "Ailenwi",
@@ -32,9 +33,8 @@ OC.L10N.register(
     "Summary" : "Crynodeb",
     "Newest first" : "Diweddaraf gyntaf",
     "Oldest first" : "Hynaf gyntaf",
-    "Trash" : "Sbwriel",
-    "Note deleted" : "Nodyn wedi'i ddileu",
     "New note" : "Nodyn newydd",
+    "Note restored" : "Nodyn wedi'i adfer",
     "Upload" : "Llwytho i fyny",
     "New folder" : "Ffolder newydd",
     "Add a description" : "Ychwanegu disgrifiad"

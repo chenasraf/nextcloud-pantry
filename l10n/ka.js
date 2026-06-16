@@ -27,10 +27,12 @@ OC.L10N.register(
     "Owner" : "Owner",
     "General" : "General",
     "Save changes" : "Save changes",
+    "Trash" : "Trash",
     "Members" : "Members",
     "Account" : "Account",
     "Role" : "Role",
     "Danger zone" : "Danger zone",
+    "Remove" : "Remove",
     "Pin to top" : "Pin to top",
     "Unpin" : "Unpin",
     "Preview" : "Preview",
@@ -49,7 +51,6 @@ OC.L10N.register(
     "Summary" : "Summary",
     "Newest first" : "Newest first",
     "Oldest first" : "Oldest first",
-    "Trash" : "Trash",
     "New list" : "New list",
     "Checklists" : "Checklists",
     "New note" : "New note",
@@ -58,7 +59,6 @@ OC.L10N.register(
     "Upload" : "Upload",
     "New folder" : "New folder",
     "Back" : "უკან",
-    "Add a description" : "Add a description",
-    "Delete folder" : "Delete folder"
+    "Add a description" : "Add a description"
 },
 "nplurals=2; plural=(n!=1);");

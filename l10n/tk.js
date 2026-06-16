@@ -9,6 +9,7 @@ OC.L10N.register(
     "Delete" : "Pozmak",
     "Edit" : "Redaktirläň",
     "General" : "Esasy",
+    "Remove" : "Aýyrmak",
     "Folder name" : "Papkanyň ady",
     "Rename" : "Adyny üýtgetmek",
     "Close" : "Ýap",

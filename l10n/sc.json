@@ -23,11 +23,13 @@
     "Status" : "Status",
     "Save changes" : "Sarva càmbios",
     "Display" : "Ischermu",
+    "Trash" : "Àliga",
     "Members" : "Membros",
     "Account" : "Contu",
     "Joined" : "As atzèdidu",
     "Add a member" : "Agiunghe unu membru",
     "Danger zone" : "Zona de perìgulu",
+    "Remove" : "Boga",
     "Pin to top" : "Piga nota in artu",
     "Unpin" : "No apicare",
     "Rename folder" : "Torra a numenare sa cartella",
@@ -45,14 +47,12 @@
     "Summary" : "Resumu",
     "Newest first" : "In antis is prus reghentes",
     "Oldest first" : "In antis is prus betzos",
-    "Trash" : "Àliga",
     "New list" : "Lista noa",
     "No lists yet" : "Perunu elencu ancora",
     "New note" : "Notas noas",
     "Upload" : "Càrriga",
     "New folder" : "Cartella noa",
     "Back" : "In segus",
-    "Add a description" : "Agiunghe una descritzione",
-    "Delete folder" : "Cantzella sa cartella"
+    "Add a description" : "Agiunghe una descritzione"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

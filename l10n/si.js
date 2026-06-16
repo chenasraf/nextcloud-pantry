@@ -17,6 +17,7 @@ OC.L10N.register(
     "General" : "සමාන්‍යය",
     "Save changes" : "වෙනස්කම් සුරකින්න",
     "Account" : "ගිණුම",
+    "Remove" : "ඉවත් කරන්න",
     "Preview" : "පෙරදසුන",
     "Folder name" : "බහාලුමේ නම",
     "Close" : "වසන්න",

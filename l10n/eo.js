@@ -24,6 +24,7 @@ OC.L10N.register(
     "General" : "Ĝenerala",
     "Save changes" : "Konservi ŝanĝojn",
     "Display" : "Montrilo",
+    "Trash" : "Rubujo",
     "Members" : "Membroj",
     "Account" : "Konto",
     "Joined" : "Membriĝinta",
@@ -44,7 +45,6 @@ OC.L10N.register(
     "Summary" : "Resumo",
     "Newest first" : "Pli novaj unue",
     "Oldest first" : "Malpli novaj unue",
-    "Trash" : "Rubujo",
     "Upload" : "Alŝuti",
     "New folder" : "Nova dosierujo"
 },

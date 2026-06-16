@@ -18,6 +18,7 @@ OC.L10N.register(
     "General" : "Ümumi",
     "Save changes" : "Dəyişiklikləri yaddaşa ver",
     "Display" : "Ekran",
+    "Trash" : "Zibil",
     "Account" : "Hesab",
     "Rename folder" : "Qovluğun adını dəyiş",
     "Folder name" : "Qovluq adı",
@@ -29,7 +30,6 @@ OC.L10N.register(
     "Weekly" : "Həftəlik",
     "Never" : "Heç vaxt",
     "Summary" : "Xülasə",
-    "Trash" : "Zibil",
     "Upload" : "Serverə yüklə",
     "New folder" : "Yeni qovluq",
     "Back" : "Geri"

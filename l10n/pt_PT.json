@@ -25,12 +25,14 @@
     "General" : "Geral",
     "Save changes" : "Guardar alterações",
     "Display" : "Mostrar",
+    "Trash" : "Reciclagem",
     "Members" : "Membros",
     "Account" : "Conta",
     "Role" : "Função",
     "Joined" : "Aderiu",
     "Add a member" : "Adicionar um membro",
     "No accounts found" : "Nenhuma conta encontrada",
+    "Remove" : "Remover",
     "Preview" : "Pré-visualizar",
     "Untitled note" : "Nota sem título",
     "Rename folder" : "Renomear pasta",
@@ -49,12 +51,10 @@
     "Summary" : "Resumo",
     "Newest first" : "Recentes primeiro",
     "Oldest first" : "Antigos primeiro",
-    "Trash" : "Reciclagem",
-    "Delete note" : "Eliminar nota",
     "Upload" : "Enviar",
     "New folder" : "Nova pasta",
     "Back" : "Voltar",
-    "Delete folder" : "Apagar pasta",
+    "Remove folder" : "Remover pasta",
     "Move to folder" : "Mover para pasta"
 },"pluralForm" :"nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

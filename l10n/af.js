@@ -15,6 +15,7 @@ OC.L10N.register(
     "All" : "Alle",
     "Delete permanently" : "Skrap permanent",
     "Restore" : "Herstel",
+    "Trash" : "Asblik",
     "Account" : "Rekening",
     "days" : "dae",
     "weeks" : "weke",
@@ -24,7 +25,6 @@ OC.L10N.register(
     "Summary" : "Opsomming",
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
-    "Trash" : "Asblik",
     "Upload" : "Oplaai",
     "New folder" : "Nuwe gids"
 },

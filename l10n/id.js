@@ -36,10 +36,12 @@ OC.L10N.register(
     "General" : "Umum",
     "Save changes" : "Simpan perubahan",
     "Display" : "Tampilkan",
+    "Trash" : "Tempat Sampah",
     "Members" : "Anggota",
     "Account" : "Akun",
     "Role" : "Peran",
     "Joined" : "Bergabung",
+    "Remove" : "Hapus",
     "Pin to top" : "Sematkan ke atas",
     "Unpin" : "Lepas sematan",
     "Preview" : "Pratinjau",
@@ -59,7 +61,6 @@ OC.L10N.register(
     "Summary" : "Kesimpulan",
     "Newest first" : "Terbaru terlebih dahulu",
     "Oldest first" : "Terlama terlebih dahulu",
-    "Trash" : "Tempat Sampah",
     "New list" : "Daftar baru",
     "Checklists" : "Daftar periksa",
     "No lists yet" : "Belum ada list",
@@ -67,6 +68,6 @@ OC.L10N.register(
     "New folder" : "Folder baru",
     "Back" : "Kembali",
     "Add a description" : "Tambah deskripsi",
-    "Delete folder" : "Hapus folder"
+    "Remove folder" : "Hapus folder"
 },
 "nplurals=1; plural=0;");

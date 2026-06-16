@@ -26,12 +26,14 @@
     "General" : "Општо",
     "Save changes" : "Зачувај ги промените",
     "Display" : "Прикажи",
+    "Trash" : "Корпа",
     "Members" : "Членови",
     "Account" : "Сметка",
     "Role" : "Улога",
     "Joined" : "Приклучен",
     "Add a member" : "Додади член",
     "Danger zone" : "Опасна зона",
+    "Remove" : "Отстрани ",
     "Unpin" : "Од-ппинувај",
     "Rename folder" : "Преименувај папка",
     "Folder name" : "Име на папка",
@@ -49,7 +51,6 @@
     "Summary" : "Резиме",
     "Newest first" : "Новите прво",
     "Oldest first" : "Старите прво",
-    "Trash" : "Корпа",
     "New list" : "Нова листа",
     "No lists yet" : "Сеуште нема листи",
     "No notes yet" : "Сеуште нема забелешки",
@@ -58,7 +59,6 @@
     "New folder" : "Нова папка",
     "Back" : "Назад",
     "Add a description" : "Додади опис",
-    "Delete folder" : "Избриши папка",
     "Move to folder" : "Помести во папка"
 },"pluralForm" :"nplurals=2; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : 1;"
 }

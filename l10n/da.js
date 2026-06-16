@@ -33,6 +33,7 @@ OC.L10N.register(
     "General" : "Generelt",
     "Save changes" : "Gem ændringer",
     "Display" : "Vis",
+    "Trash" : "Papirkurv",
     "Members" : "Medlemmer",
     "Account" : "Konto",
     "Role" : "Rolle",
@@ -60,16 +61,14 @@ OC.L10N.register(
     "Summary" : "Sammendrag",
     "Newest first" : "Nyeste først",
     "Oldest first" : "Ældste først",
-    "Trash" : "Papirkurv",
     "New list" : "Ny liste",
     "Checklists" : "Tjeklister",
     "No lists yet" : "Endnu ingen lister",
-    "Note deleted" : "Note slettet",
+    "Note restored" : "Note gendannet",
     "Upload" : "Upload",
     "New folder" : "Ny mappe",
     "Back" : "Tilbage",
     "Caption" : "Overskrift",
-    "Add a description" : "Tilføj en beskrivelse",
-    "Delete folder" : "Slet mappe"
+    "Add a description" : "Tilføj en beskrivelse"
 },
 "nplurals=2; plural=(n != 1);");

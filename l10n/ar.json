@@ -32,10 +32,13 @@
     "General" : "عامٌّ",
     "Save changes" : "حفظ التعديلات",
     "Display" : "عرض",
+    "Trash" : "سلّة المَحذُوفَات",
     "Members" : "الاعضاء",
     "Account" : "الحساب",
     "Role" : "الوظيفة",
     "Danger zone" : "منطقة خطر",
+    "Pin to top" : "ثبتّ في الأعلى",
+    "Unpin" : "فك التثبيت",
     "Preview" : "معاينة",
     "Rename folder" : "غيّر تسمية المجلد",
     "Folder name" : "اسم المجلد",
@@ -55,7 +58,6 @@
     "Summary" : "مُلخَّص",
     "Newest first" : "الأحدث أولاً",
     "Oldest first" : "الأقدم أولاً",
-    "Trash" : "سلّة المَحذُوفَات",
     "New list" : "قائمة جديدة",
     "Checklists" : "قائمة مراجعة",
     "No lists yet" : "لا توجد قائمة حتى الآن",
@@ -67,7 +69,6 @@
     "Back" : "عودة",
     "Caption" : "الشرح",
     "Add a description" : "إضافة وصف",
-    "Delete folder" : "حذف مجلد",
     "Move to folder" : "أنقُل إلى المجلد"
 },"pluralForm" :"nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;"
 }

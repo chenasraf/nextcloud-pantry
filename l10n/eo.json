@@ -22,6 +22,7 @@
     "General" : "Ĝenerala",
     "Save changes" : "Konservi ŝanĝojn",
     "Display" : "Montrilo",
+    "Trash" : "Rubujo",
     "Members" : "Membroj",
     "Account" : "Konto",
     "Joined" : "Membriĝinta",
@@ -42,7 +43,6 @@
     "Summary" : "Resumo",
     "Newest first" : "Pli novaj unue",
     "Oldest first" : "Malpli novaj unue",
-    "Trash" : "Rubujo",
     "Upload" : "Alŝuti",
     "New folder" : "Nova dosierujo"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

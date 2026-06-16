@@ -22,7 +22,9 @@ OC.L10N.register(
     "General" : "ทั่วไป",
     "Save changes" : "บันทึกการเปลี่ยนแปลง",
     "Display" : "การแสดงผล",
+    "Trash" : "ถังขยะ",
     "Account" : "บัญชี",
+    "Remove" : "ลบออก",
     "Preview" : "ตัวอย่าง",
     "Folder name" : "ชื่อโฟลเดอร์",
     "Rename" : "เปลี่ยนชื่อ",
@@ -35,7 +37,6 @@ OC.L10N.register(
     "Never" : "ไม่เคย",
     "Newest first" : "ใหม่ที่สุดก่อน",
     "Oldest first" : "เก่าที่สุดก่อน",
-    "Trash" : "ถังขยะ",
     "Upload" : "อัปโหลด",
     "New folder" : "โฟลเดอร์ใหม่"
 },

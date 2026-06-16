@@ -14,6 +14,7 @@ OC.L10N.register(
     "Done" : "Done",
     "Owner" : "Owner",
     "General" : "பொதுவான",
+    "Remove" : "அகற்றுக",
     "Folder name" : "கோப்புறை பெயர்",
     "Rename" : "பெயர்மாற்றம்",
     "Close" : "மூடுக",

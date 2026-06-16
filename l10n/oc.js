@@ -25,10 +25,12 @@ OC.L10N.register(
     "General" : "Generals",
     "Save changes" : "Salvar modificacions",
     "Display" : "Afichatge",
+    "Trash" : "Escobilhièr",
     "Members" : "Membres",
     "Account" : "Compte",
     "Role" : "Ròtle",
     "Danger zone" : "Zòna perilhosa",
+    "Remove" : "Suprimir",
     "Preview" : "Apercebut",
     "Rename folder" : "Renomenar lo repertòri",
     "Folder name" : "Nom del dorsièr",
@@ -42,10 +44,8 @@ OC.L10N.register(
     "Weekly" : "Setmanièr",
     "Monthly" : "Cada mes",
     "Never" : "Jamai",
-    "Trash" : "Escobilhièr",
     "Upload" : "Telecargament",
     "New folder" : "Novèl dorsièr",
-    "Add a description" : "Apondre una descripcion",
-    "Delete folder" : "Suprimir dossièr"
+    "Add a description" : "Apondre una descripcion"
 },
 "nplurals=2; plural=(n > 1);");

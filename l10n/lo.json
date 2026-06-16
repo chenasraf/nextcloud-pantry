@@ -29,10 +29,12 @@
     "General" : "ທົ່ວໄປ",
     "Save changes" : "ບັນທຶກການປ່ຽນແປງ",
     "Display" : "ຈໍສະແດງຜົນ",
+    "Trash" : "Trash",
     "Members" : "ສະມາຊິກ",
     "Account" : "ບັນຊີ",
     "Role" : "ບົດບາດ",
     "Danger zone" : "Danger zone",
+    "Remove" : "ລຶບອອກ",
     "Pin to top" : "Pin to top",
     "Unpin" : "Unpin",
     "Preview" : "ເບິ່ງຕົວຢ່າງ",
@@ -56,7 +58,6 @@
     "Summary" : "ສະຫຼຸບ",
     "Newest first" : "ໃໝ່ສຸດກ່ອນ",
     "Oldest first" : "ເກົ່າສຸດກ່ອນ",
-    "Trash" : "Trash",
     "New list" : "New list",
     "Checklists" : "Checklists",
     "No lists yet" : "ຍັງບໍ່ມີລາຍການ",
@@ -67,7 +68,7 @@
     "New folder" : "ໂຟນເດີໃໝ່",
     "Back" : "ກັບຄືນ",
     "Caption" : "Caption",
-    "Delete folder" : "Delete folder",
+    "Remove folder" : "Remove folder",
     "Move to folder" : "ຍ້າຍໄປທີ່ໂຟນເດີ"
 },"pluralForm" :"nplurals=1; plural=0;"
 }
