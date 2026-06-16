@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Issue or Feature Request related to mobile/desktop app
+    url: https://github.com/chenasraf/pantry-flutter/issues/new/choose
+    about: If your issue or feature request is related to the mobile/desktop app, please raise it here
   - name: Nextcloud Community Forum
     url: https://help.nextcloud.com
     about: Ask questions and get help from the Nextcloud community

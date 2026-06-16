@@ -102,32 +102,6 @@ body:
         The following information helps us investigate and fix issues quickly. Please provide as much detail as possible.
 
   - type: textarea
-    id: migration-status
-    attributes:
-      label: Migration Status
-      description: |
-        **How to check migration status:**
-
-        This shows which database migrations have been executed for the Pantry app.
-
-        **For Docker installations:**
-        ```bash
-        docker exec --user www-data -i nextcloud-aio-nextcloud php occ migrations:status pantry
-        ```
-
-        **For standard installations:**
-        ```bash
-        php occ migrations:status pantry
-        ```
-
-        Or from the Nextcloud directory:
-        ```bash
-        sudo -u www-data php occ migrations:status pantry
-        ```
-      placeholder: Paste the migration status output here...
-      render: shell
-
-  - type: textarea
     id: nextcloud-logs
     attributes:
       label: Nextcloud Server Logs
