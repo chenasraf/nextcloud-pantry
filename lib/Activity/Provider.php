@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\Pantry\Activity;
 
 use OCA\Pantry\AppInfo\Application;
+use OCP\Activity\Exceptions\UnknownActivityException;
 use OCP\Activity\IEvent;
 use OCP\Activity\IManager;
 use OCP\Activity\IProvider;
@@ -27,7 +28,7 @@ class Provider implements IProvider {
 
 	public function parse($language, IEvent $event, ?IEvent $previousEvent = null): IEvent {
 		if ($event->getApp() !== Application::APP_ID) {
-			throw new \InvalidArgumentException();
+			throw $this->unknownActivity();
 		}
 
 		$l = $this->languageFactory->get(Application::APP_ID, $language);
@@ -41,7 +42,7 @@ class Provider implements IProvider {
 
 		$rich = $this->buildRichSubject($event->getSubject(), $params, $isSelf, $l);
 		if ($rich === null) {
-			throw new \InvalidArgumentException();
+			throw $this->unknownActivity();
 		}
 		[$template, $richParams] = $rich;
 
@@ -289,6 +290,13 @@ class Provider implements IProvider {
 		}
 
 		return null;
+	}
+
+	private function unknownActivity(): \InvalidArgumentException {
+		if (class_exists(UnknownActivityException::class)) {
+			return new UnknownActivityException();
+		}
+		return new \InvalidArgumentException();
 	}
 
 	/**
