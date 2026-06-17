@@ -7,10 +7,8 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\BackgroundJob;
 
-use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Service\ChecklistService;
-use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\NotificationService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -26,9 +24,7 @@ class ReopenRecurringItemsJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $time,
 		private ChecklistService $lists,
-		private HouseService $houses,
 		private NotificationService $notifications,
-		private ActivityPublisher $activity,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($time);
@@ -67,17 +63,13 @@ class ReopenRecurringItemsJob extends TimedJob {
 			try {
 				$list = $this->lists->getList($listId);
 				if ($type === 'recurred') {
+					// Only fire the dedicated notification; the activity entry
+					// is suppressed to avoid a duplicate push ("due again" via
+					// activity + "back on list" via notification).
 					$this->notifications->notifyItemsRecurred(
 						$list->getHouseId(),
 						$itemNames,
 						$list->getName(),
-					);
-					$this->activity->publishItemsRecurred(
-						$list->getHouseId(),
-						$this->houses->get($list->getHouseId())->getName(),
-						$listId,
-						$list->getName(),
-						$itemNames,
 					);
 				} else {
 					$this->notifications->notifyItemsReminder(
