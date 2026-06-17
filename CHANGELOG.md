@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.17.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.16.0...v0.17.0) (2026-06-17)
+
+
+### Features
+
+* **checklists:** sort + drag-to-reorder for list index ([ae6d4bc](https://github.com/chenasraf/nextcloud-pantry/commit/ae6d4bccd9c026ea6695761ce599b87b6a405bab))
+* **trash:** daily background job purges trash older than per-house retention ([f1c4584](https://github.com/chenasraf/nextcloud-pantry/commit/f1c4584e91cc1e155fda38f25f88a20c74187043))
+* **trash:** soft-delete + trash for checklists, notes, and photos ([87dad71](https://github.com/chenasraf/nextcloud-pantry/commit/87dad71051625aecfd22f94913c96fc7caa2d3cf))
+
+
+### Bug Fixes
+
+* **activity,notification:** throw typed unknown exceptions on NC30+ ([44efd7a](https://github.com/chenasraf/nextcloud-pantry/commit/44efd7a996cb472a96318c7b1b038106e4025f7d))
+* **l10n:** Update translations from Transifex ([d97bf06](https://github.com/chenasraf/nextcloud-pantry/commit/d97bf0603efc0c93752751082560e2395e70b4c2))
+* **l10n:** Update translations from Transifex ([d20a968](https://github.com/chenasraf/nextcloud-pantry/commit/d20a968906f97c7d4c24da092236aa9c4668c1c1))
+* **l10n:** Update translations from Transifex ([8328176](https://github.com/chenasraf/nextcloud-pantry/commit/8328176e911f6c6eace8c205ddb1ddde1f10c453))
+* **notifications:** drop duplicate activity push on item recurrence ([45c8c47](https://github.com/chenasraf/nextcloud-pantry/commit/45c8c4785bce627089b100d964b6a6da32c42772))
+
 ## [0.16.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.15.0...v0.16.0) (2026-06-14)
 
 
