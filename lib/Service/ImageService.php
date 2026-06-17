@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
+use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotPermittedException;
@@ -55,6 +56,31 @@ class ImageService {
 			throw new \RuntimeException('Could not write file: ' . $e->getMessage(), 0, $e);
 		}
 		return $file->getId();
+	}
+
+	/**
+	 * Duplicate an item image: read the source bytes from the original
+	 * uploader's storage and write a fresh copy into the duplicator's pantry
+	 * images folder. Returns the new file id.
+	 *
+	 * Two separate files are kept so that deleting one item's image does not
+	 * affect the other.
+	 */
+	public function duplicateItemImage(string $sourceOwnerUid, int $sourceFileId, string $newOwnerUid, int $houseId): ?int {
+		$sourceFolder = $this->rootFolder->getUserFolder($sourceOwnerUid);
+		$nodes = $sourceFolder->getById($sourceFileId);
+		if (empty($nodes)) {
+			return null;
+		}
+		$node = $nodes[0];
+		if (!$node instanceof File) {
+			return null;
+		}
+		$bytes = $node->getContent();
+		if ($bytes === '') {
+			return null;
+		}
+		return $this->uploadForUser($newOwnerUid, $houseId, $node->getName(), $bytes);
 	}
 
 	/**

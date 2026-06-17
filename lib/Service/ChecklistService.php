@@ -444,6 +444,52 @@ class ChecklistService {
 		return $items;
 	}
 
+	/**
+	 * Create a fresh copy of an item on a target list. The copy carries over
+	 * name, description, category, quantity, recurrence, delete-on-done and
+	 * image references, but starts undone with no completion metadata. The
+	 * caller is responsible for duplicating the image file (if any) and
+	 * passing the new file id/owner.
+	 */
+	public function copyItem(
+		int $itemId,
+		int $targetListId,
+		?string $addedBy,
+		?int $imageFileId,
+		?string $imageUploadedBy,
+	): ChecklistItem {
+		$source = $this->getItem($itemId);
+		$this->getList($targetListId);
+
+		$now = time();
+		$copy = new ChecklistItem();
+		$copy->setListId($targetListId);
+		$copy->setName($source->getName());
+		$copy->setDescription($source->getDescription());
+		$copy->setCategoryId($source->getCategoryId());
+		$copy->setQuantity($source->getQuantity());
+		$copy->setDone(false);
+		$copy->setDoneAt(null);
+		$copy->setDoneBy(null);
+		$copy->setRrule($source->getRrule());
+		$copy->setRepeatFromCompletion($source->getRepeatFromCompletion());
+		$copy->setDeleteOnDone($source->getDeleteOnDone());
+		if ($source->getRrule() !== null && !$source->getRepeatFromCompletion()) {
+			$copy->setNextDueAt($this->computeNextDueAt($copy, $now)?->getTimestamp());
+		} else {
+			$copy->setNextDueAt(null);
+		}
+		$copy->setImageFileId($imageFileId);
+		$copy->setImageUploadedBy($imageUploadedBy);
+		$copy->setAddedBy($addedBy);
+		$copy->setSortOrder(0);
+		$copy->setCreatedAt($now);
+		$copy->setUpdatedAt($now);
+		/** @var ChecklistItem $saved */
+		$saved = $this->itemMapper->insert($copy);
+		return $saved;
+	}
+
 	public function deleteItem(int $itemId): void {
 		$item = $this->getItem($itemId);
 		$now = time();

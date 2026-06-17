@@ -143,6 +143,17 @@ class Provider implements IProvider {
 					$isSelf ? compact('item', 'from', 'to', 'house') : compact('author', 'item', 'from', 'to', 'house'),
 				];
 
+			case ActivityPublisher::SUBJECT_ITEM_COPIED:
+				$item = $this->highlight('item', (string)($params['itemName'] ?? ''));
+				$from = $this->highlight((string)($params['fromListId'] ?? ''), (string)($params['fromListName'] ?? ''));
+				$to = $this->highlight((string)($params['toListId'] ?? ''), (string)($params['toListName'] ?? ''));
+				return [
+					$isSelf
+						? $l->t('You copied {item} from {from} to {to} in {house}')
+						: $l->t('{author} copied {item} from {from} to {to} in {house}'),
+					$isSelf ? compact('item', 'from', 'to', 'house') : compact('author', 'item', 'from', 'to', 'house'),
+				];
+
 			case ActivityPublisher::SUBJECT_ITEM_DELETED:
 				$item = $this->highlight('item', (string)($params['itemName'] ?? ''));
 				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));

@@ -31,6 +31,7 @@ class ActivityPublisher {
 	public const SUBJECT_ITEM_DONE = 'item_done';
 	public const SUBJECT_ITEM_REOPENED = 'item_reopened';
 	public const SUBJECT_ITEM_MOVED = 'item_moved';
+	public const SUBJECT_ITEM_COPIED = 'item_copied';
 	public const SUBJECT_ITEM_DELETED = 'item_deleted';
 	public const SUBJECT_ITEM_RESTORED = 'item_restored';
 	public const SUBJECT_ITEMS_RECURRED = 'items_recurred';
@@ -152,6 +153,25 @@ class ActivityPublisher {
 			$houseName,
 			$authorUid,
 			self::SUBJECT_ITEM_MOVED,
+			'item',
+			$itemId,
+			[
+				'itemName' => $itemName,
+				'fromListId' => $fromListId,
+				'fromListName' => $fromListName,
+				'toListId' => $toListId,
+				'toListName' => $toListName,
+			],
+			$this->listLink($houseId, $toListId),
+		);
+	}
+
+	public function publishItemCopied(int $houseId, string $houseName, string $authorUid, int $itemId, string $itemName, int $fromListId, string $fromListName, int $toListId, string $toListName): void {
+		$this->publish(
+			$houseId,
+			$houseName,
+			$authorUid,
+			self::SUBJECT_ITEM_COPIED,
 			'item',
 			$itemId,
 			[

@@ -131,6 +131,7 @@
               @view="openView"
               @edit="startEdit"
               @move="startMoveItem"
+              @copy="startCopyItem"
               @remove="handleRemove"
               @restore="handleRestore"
               @preview="openPreview"
@@ -169,6 +170,7 @@
                 @view="openView"
                 @edit="startEdit"
                 @move="startMoveItem"
+                @copy="startCopyItem"
                 @remove="handleRemove"
                 @preview="openPreview"
                 @drag-start="onItemDragStart"
@@ -246,6 +248,36 @@
       @save="submitCreateListAndMove"
     />
 
+    <!-- Copy item to another list -->
+    <NcDialog
+      v-if="copyingItem"
+      :name="strings.copyToList"
+      :open="!!copyingItem"
+      close-on-click-outside
+      @update:open="(v) => !v && (copyingItem = null)"
+    >
+      <div class="pantry-move-list">
+        <NcButton v-for="cl in copyTargetLists" :key="cl.id" wide @click="submitCopyItem(cl.id)">
+          <template #icon>
+            <component :is="checklistIconComponent(cl.icon)" :size="20" />
+          </template>
+          {{ cl.name }}
+        </NcButton>
+        <NcButton wide @click="createListForCopy">
+          <template #icon>
+            <PlusIcon :size="20" />
+          </template>
+          {{ strings.newList }}
+        </NcButton>
+      </div>
+    </NcDialog>
+
+    <ChecklistFormDialog
+      :open="showCreateForCopy"
+      @update:open="showCreateForCopy = $event"
+      @save="submitCreateListAndCopy"
+    />
+
     <NcDialog
       v-if="confirmingEmptyTrash"
       :name="strings.emptyTrashTitle"
@@ -267,7 +299,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
-import { showUndo, showError } from '@nextcloud/dialogs'
+import { showUndo, showError, showSuccess } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -323,6 +355,7 @@ const {
   load,
   add,
   update,
+  copy,
   toggle,
   undoToggle,
   reorderItems,
@@ -846,9 +879,14 @@ function startMoveItem(item: ChecklistItem) {
 
 async function submitMoveItem(targetListId: number) {
   if (!movingItem.value) return
+  const itemName = movingItem.value.name
+  const targetList = allLists.value.find((l) => l.id === targetListId)
   await update(movingItem.value.id, { targetListId })
   items.value = items.value.filter((i) => i.id !== movingItem.value!.id)
   movingItem.value = null
+  showSuccess(
+    t('pantry', '{item} moved to {list}', { item: itemName, list: targetList?.name ?? '' }),
+  )
 }
 
 function createListForMove() {
@@ -871,6 +909,49 @@ async function submitCreateListAndMove(data: {
   await submitMoveItem(newList.id)
 }
 
+// ----- Copy item to another list -----
+
+const copyingItem = ref<ChecklistItem | null>(null)
+const showCreateForCopy = ref(false)
+// Copy can target the current list (creates a duplicate in place) as well as
+// any other list — unlike move, where the current list would be a no-op.
+const copyTargetLists = computed(() => allLists.value)
+
+function startCopyItem(item: ChecklistItem) {
+  copyingItem.value = item
+}
+
+async function submitCopyItem(targetListId: number) {
+  if (!copyingItem.value) return
+  const itemName = copyingItem.value.name
+  const targetList = allLists.value.find((l) => l.id === targetListId)
+  await copy(copyingItem.value.id, targetListId)
+  copyingItem.value = null
+  showSuccess(
+    t('pantry', '{item} copied to {list}', { item: itemName, list: targetList?.name ?? '' }),
+  )
+}
+
+function createListForCopy() {
+  showCreateForCopy.value = true
+}
+
+async function submitCreateListAndCopy(data: {
+  name: string
+  description: string
+  icon: string
+  color: string
+}) {
+  const newList = await createList(
+    data.name,
+    data.description || null,
+    data.icon || null,
+    data.color || null,
+  )
+  showCreateForCopy.value = false
+  await submitCopyItem(newList.id)
+}
+
 const strings = {
   back: t('pantry', 'Back to lists'),
   emptyTitle: t('pantry', 'No items yet'),
@@ -882,6 +963,7 @@ const strings = {
   doneTitle: t('pantry', 'Done'),
   manageCategories: t('pantry', 'Manage categories'),
   moveToList: t('pantry', 'Move to list'),
+  copyToList: t('pantry', 'Copy to list'),
   newList: t('pantry', 'New list'),
   emptyTrashAction: t('pantry', 'Empty trash'),
   emptyTrashTitle: t('pantry', 'Empty trash?'),

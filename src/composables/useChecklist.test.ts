@@ -15,6 +15,7 @@ const mockApi = vi.hoisted(() => ({
   emptyListsTrash: vi.fn(),
   addItem: vi.fn(),
   updateItem: vi.fn(),
+  copyItem: vi.fn(),
   toggleItem: vi.fn(),
   deleteItem: vi.fn(),
   reorderItems: vi.fn(),
@@ -374,6 +375,38 @@ describe('useChecklistItems', () => {
       await c.update(1, { name: 'New' })
 
       expect(c.items.value[0].name).toBe('New')
+    })
+  })
+
+  describe('copy', () => {
+    it('appends the created copy to local state when target is the current list', async () => {
+      const existing = makeItem({ id: 1, name: 'Milk' })
+      const created = makeItem({ id: 2, name: 'Milk' })
+      mockApi.listItems.mockResolvedValue([existing])
+      mockApi.copyItem.mockResolvedValue(created)
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      const result = await c.copy(1, 10)
+
+      expect(mockApi.copyItem).toHaveBeenCalledWith(1, 10, 1, 10)
+      expect(result).toEqual(created)
+      expect(c.items.value.map((i) => i.id)).toEqual([1, 2])
+    })
+
+    it('does not append when the target is a different list', async () => {
+      const existing = makeItem({ id: 1, name: 'Milk' })
+      const created = makeItem({ id: 2, listId: 99, name: 'Milk' })
+      mockApi.listItems.mockResolvedValue([existing])
+      mockApi.copyItem.mockResolvedValue(created)
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.copy(1, 99)
+
+      expect(mockApi.copyItem).toHaveBeenCalledWith(1, 10, 1, 99)
+      // The copy belongs to a different view, so the current list state is untouched.
+      expect(c.items.value.map((i) => i.id)).toEqual([1])
     })
   })
 

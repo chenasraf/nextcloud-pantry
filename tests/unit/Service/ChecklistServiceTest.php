@@ -185,6 +185,114 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertSame($now, $toggled->getDeletedAt());
 	}
 
+	public function testCopyItemClonesFieldsAndStartsUndone(): void {
+		$source = $this->makeItem([
+			'listId' => 10,
+			'name' => 'Milk',
+			'categoryId' => 5,
+			'quantity' => '1L',
+			'done' => true,
+			'doneAt' => 999,
+			'doneBy' => 'alice',
+			'deleteOnDone' => true,
+		]);
+		$source->setDescription('whole');
+
+		$this->itemMapper->method('findById')->willReturn($source);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$captured = null;
+		$this->itemMapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertNotNull($captured);
+		$this->assertSame(20, $captured->getListId(), 'copy lives on the target list');
+		$this->assertSame('Milk', $captured->getName());
+		$this->assertSame('whole', $captured->getDescription());
+		$this->assertSame(5, $captured->getCategoryId());
+		$this->assertSame('1L', $captured->getQuantity());
+		$this->assertTrue($captured->getDeleteOnDone());
+		$this->assertFalse($captured->getDone(), 'copy is not yet done even if source was');
+		$this->assertNull($captured->getDoneAt());
+		$this->assertNull($captured->getDoneBy());
+		$this->assertSame('bob', $captured->getAddedBy());
+		$this->assertSame(0, $captured->getSortOrder());
+		$this->assertSame($copy, $captured);
+	}
+
+	public function testCopyItemPropagatesNewImageFileIdAndOwner(): void {
+		$source = $this->makeItem(['listId' => 10]);
+		$source->setImageFileId(111);
+		$source->setImageUploadedBy('alice');
+
+		$this->itemMapper->method('findById')->willReturn($source);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$captured = null;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		$this->svc->copyItem(42, 20, 'bob', 222, 'bob');
+
+		$this->assertSame(222, $captured->getImageFileId(), 'image fileId is the freshly duplicated one');
+		$this->assertSame('bob', $captured->getImageUploadedBy(), 'image owner is the copier');
+	}
+
+	public function testCopyItemRecomputesNextDueForFixedScheduleRecurrence(): void {
+		$now = strtotime('2026-04-08 10:00:00 UTC');
+		$source = $this->makeItem([
+			'listId' => 10,
+			'rrule' => 'FREQ=WEEKLY',
+			'repeatFromCompletion' => false,
+			// Anchor irrelevant: copy uses its own createdAt = now.
+		]);
+
+		$this->itemMapper->method('findById')->willReturn($source);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$captured = null;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		// Freeze time so the test is deterministic. We can't override time() in
+		// the service directly, so we just assert a non-null next_due_at in the
+		// future for fixed-schedule items.
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+		$this->assertNotNull($copy->getNextDueAt(), 'fixed-schedule copy gets a scheduled next due');
+		$this->assertGreaterThanOrEqual(time(), $copy->getNextDueAt());
+	}
+
+	public function testCopyItemLeavesNextDueNullForRepeatFromCompletion(): void {
+		$source = $this->makeItem([
+			'listId' => 10,
+			'rrule' => 'FREQ=WEEKLY',
+			'repeatFromCompletion' => true,
+		]);
+
+		$this->itemMapper->method('findById')->willReturn($source);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+		$this->assertNull(
+			$copy->getNextDueAt(),
+			'from-completion items only get a next_due once the user marks them done',
+		);
+	}
+
 	public function testDeleteItemSoftDeletes(): void {
 		$item = $this->makeItem();
 		$this->itemMapper->method('findById')->willReturn($item);

@@ -183,6 +183,16 @@ export function useChecklistItems(houseId: number, listId: number) {
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
+  async function copy(itemId: number, targetListId: number): Promise<ChecklistItem> {
+    const created = await api.copyItem(houseId, listId, itemId, targetListId)
+    // Only append locally when the destination is the current list — otherwise
+    // it belongs to a different view.
+    if (targetListId === listId) {
+      items.value = [...items.value, created]
+    }
+    return created
+  }
+
   async function toggle(itemId: number): Promise<void> {
     // Optimistic flip. "Once" items disappear when marked done — the backend
     // deletes them in the same call, so we drop them locally too.
@@ -287,6 +297,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     load,
     add,
     update,
+    copy,
     toggle,
     undoToggle,
     reorderItems,

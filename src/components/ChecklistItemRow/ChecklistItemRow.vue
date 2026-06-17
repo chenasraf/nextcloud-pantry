@@ -82,6 +82,12 @@
           </template>
           {{ strings.moveItem }}
         </NcActionButton>
+        <NcActionButton close-after-click @click="$emit('copy', item)">
+          <template #icon>
+            <ContentCopyIcon :size="20" />
+          </template>
+          {{ strings.copyItem }}
+        </NcActionButton>
         <NcActionButton v-if="trashMode" close-after-click @click="$emit('restore', item.id)">
           <template #icon>
             <DeleteRestoreIcon :size="20" />
@@ -113,6 +119,7 @@ import EyeIcon from '@icons/Eye.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import DeleteRestoreIcon from '@icons/DeleteRestore.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
+import ContentCopyIcon from '@icons/ContentCopy.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
@@ -137,6 +144,7 @@ const emit = defineEmits<{
   view: [item: ChecklistItem]
   edit: [item: ChecklistItem]
   move: [item: ChecklistItem]
+  copy: [item: ChecklistItem]
   remove: [id: number]
   restore: [id: number]
   preview: [item: ChecklistItem]
@@ -193,6 +201,7 @@ const strings = {
   itemActions: t('pantry', 'Item actions'),
   editItem: t('pantry', 'Edit item'),
   moveItem: t('pantry', 'Move to list'),
+  copyItem: t('pantry', 'Copy to list'),
   removeItem: t('pantry', 'Remove item'),
   deletePermanently: t('pantry', 'Delete permanently'),
   restoreItem: t('pantry', 'Restore'),

@@ -565,6 +565,69 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * Copy an item to another list
+	 *
+	 * Creates a new item on the target list with the same fields as the
+	 * source. If the source has an image, the underlying file is duplicated
+	 * so deleting either side's image will not affect the other.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id the source item lives on.
+	 * @param int $itemId Source item id.
+	 * @param int $targetListId Destination list id (must belong to the same house).
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
+	 *
+	 * 200: Item copied
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/copy')]
+	#[NoAdminRequired]
+	public function copyItem(int $houseId, int $listId, int $itemId, int $targetListId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $targetListId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$source = $this->lists->getItem($itemId);
+			$sourceList = $this->lists->getList($source->getListId());
+			$this->assertListInHouse($sourceList->getHouseId(), $houseId);
+			if ($source->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$targetList = $this->lists->getList($targetListId);
+			$this->assertListInHouse($targetList->getHouseId(), $houseId);
+
+			$newImageFileId = null;
+			$newImageOwner = null;
+			if ($source->getImageFileId() !== null && $source->getImageUploadedBy() !== null) {
+				$newImageFileId = $this->images->duplicateItemImage(
+					$source->getImageUploadedBy(),
+					$source->getImageFileId(),
+					$uid,
+					$houseId,
+				);
+				if ($newImageFileId !== null) {
+					$newImageOwner = $uid;
+				}
+			}
+
+			$copy = $this->lists->copyItem($itemId, $targetListId, $uid, $newImageFileId, $newImageOwner);
+
+			$houseName = $this->houses->get($houseId)->getName();
+			$this->activity->publishItemCopied(
+				$houseId,
+				$houseName,
+				$uid,
+				(int)$copy->getId(),
+				$copy->getName(),
+				(int)$sourceList->getId(),
+				$sourceList->getName(),
+				(int)$targetList->getId(),
+				$targetList->getName(),
+			);
+			return new DataResponse($copy->jsonSerialize());
+		});
+	}
+
+	/**
 	 * Toggle an item's done status
 	 *
 	 * @param int $houseId House id.

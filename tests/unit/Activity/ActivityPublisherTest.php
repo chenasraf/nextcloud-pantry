@@ -135,6 +135,27 @@ class ActivityPublisherTest extends TestCase {
 		$this->publisher->publishListCreated(1, 'My House', 'system', 42, 'Groceries');
 	}
 
+	public function testItemCopiedSendsBothListsInParameters(): void {
+		$this->memberMapper->method('findByHouse')->willReturn([$this->makeMember('alice')]);
+
+		$captured = null;
+		$event = $this->makeEvent();
+		$event->method('setSubject')->willReturnCallback(function (string $subject, array $params) use ($event, &$captured) {
+			$captured = ['subject' => $subject, 'params' => $params];
+			return $event;
+		});
+		$this->activityManager->method('generateEvent')->willReturn($event);
+
+		$this->publisher->publishItemCopied(1, 'My House', 'alice', 99, 'Milk', 7, 'Groceries', 8, 'Pharmacy');
+
+		$this->assertSame('item_copied', $captured['subject']);
+		$this->assertSame('Groceries', $captured['params']['fromListName']);
+		$this->assertSame('Pharmacy', $captured['params']['toListName']);
+		$this->assertSame(7, $captured['params']['fromListId']);
+		$this->assertSame(8, $captured['params']['toListId']);
+		$this->assertSame('Milk', $captured['params']['itemName']);
+	}
+
 	public function testItemMovedSendsBothListsInParameters(): void {
 		$this->memberMapper->method('findByHouse')->willReturn([$this->makeMember('alice')]);
 

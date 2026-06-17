@@ -124,6 +124,19 @@ export async function updateItem(
   return resp.data
 }
 
+export async function copyItem(
+  houseId: number,
+  listId: number,
+  itemId: number,
+  targetListId: number,
+): Promise<ChecklistItem> {
+  const resp = await ocs.post<ChecklistItem>(
+    `/houses/${houseId}/lists/${listId}/items/${itemId}/copy`,
+    { targetListId },
+  )
+  return resp.data
+}
+
 export async function toggleItem(
   houseId: number,
   listId: number,

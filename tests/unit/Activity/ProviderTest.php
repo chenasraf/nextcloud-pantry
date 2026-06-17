@@ -126,6 +126,46 @@ class ProviderTest extends TestCase {
 		$this->assertArrayNotHasKey('author', $captured['richParams']);
 	}
 
+	public function testItemCopiedIncludesBothLists(): void {
+		[$event, $captured] = $this->makeEvent('pantry', ActivityPublisher::SUBJECT_ITEM_COPIED, [
+			'author' => 'alice',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Milk',
+			'fromListId' => 7,
+			'fromListName' => 'Groceries',
+			'toListId' => 8,
+			'toListName' => 'Pharmacy',
+		]);
+		$this->activityManager->method('getCurrentUserId')->willReturn('bob');
+
+		$this->provider->parse('en', $event);
+
+		$this->assertStringContainsString('copied {item} from {from} to {to}', $captured['rich']);
+		$this->assertSame('Groceries', $captured['richParams']['from']['name']);
+		$this->assertSame('Pharmacy', $captured['richParams']['to']['name']);
+		$this->assertSame('Milk', $captured['richParams']['item']['name']);
+	}
+
+	public function testItemCopiedRendersSelfVariant(): void {
+		[$event, $captured] = $this->makeEvent('pantry', ActivityPublisher::SUBJECT_ITEM_COPIED, [
+			'author' => 'alice',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Milk',
+			'fromListId' => 7,
+			'fromListName' => 'Groceries',
+			'toListId' => 8,
+			'toListName' => 'Pharmacy',
+		]);
+		$this->activityManager->method('getCurrentUserId')->willReturn('alice');
+
+		$this->provider->parse('en', $event);
+
+		$this->assertStringStartsWith('You copied', $captured['rich']);
+		$this->assertArrayNotHasKey('author', $captured['richParams']);
+	}
+
 	public function testItemMovedIncludesBothLists(): void {
 		[$event, $captured] = $this->makeEvent('pantry', ActivityPublisher::SUBJECT_ITEM_MOVED, [
 			'author' => 'alice',
