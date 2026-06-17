@@ -39,6 +39,7 @@ OC.L10N.register(
     "Account" : "الحساب",
     "Role" : "الوظيفة",
     "Danger zone" : "منطقة خطر",
+    "Remove" : "حذف",
     "Pin to top" : "ثبتّ في الأعلى",
     "Unpin" : "فك التثبيت",
     "Preview" : "معاينة",
@@ -71,6 +72,7 @@ OC.L10N.register(
     "Back" : "عودة",
     "Caption" : "الشرح",
     "Add a description" : "إضافة وصف",
+    "Remove folder" : "حذف المجلد",
     "Move to folder" : "أنقُل إلى المجلد"
 },
 "nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;");

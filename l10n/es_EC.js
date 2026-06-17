@@ -72,6 +72,7 @@ OC.L10N.register(
     "New folder" : "Carpeta nueva",
     "Back" : "Regresar",
     "Add a description" : "Agregar una descripción",
+    "Remove folder" : "Eliminar carpeta",
     "Move to folder" : "Mover a carpeta"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

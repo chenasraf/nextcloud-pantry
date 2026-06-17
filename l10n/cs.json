@@ -45,6 +45,7 @@
     "Add a member" : "Přidat člena",
     "No accounts found" : "Nenalezeny žádné účty",
     "Danger zone" : "Nebezpečná zóna",
+    "Remove" : "Odebrat",
     "Pin to top" : "Připnout nahoru",
     "Unpin" : "Uvolnit",
     "Preview" : "Náhled",
@@ -80,6 +81,7 @@
     "Back" : "Zpět",
     "Caption" : "Titulek",
     "Add a description" : "Přidat popis",
+    "Remove folder" : "Odstranit složku",
     "Move to folder" : "Přesunout do složky",
     "Creating …" : "Vytváření …"
 },"pluralForm" :"nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n >= 2 && n <= 4 && n % 1 == 0) ? 1: (n % 1 != 0 ) ? 2 : 3;"

@@ -39,6 +39,7 @@ OC.L10N.register(
     "Add a member" : "Afegeix un membre",
     "No accounts found" : "Cap compte trobat",
     "Danger zone" : "Zona perillosa",
+    "Remove" : "Suprimir",
     "Pin to top" : "Ancora-ho a la part superior",
     "Unpin" : "No fixis",
     "Preview" : "Previsualitza",
@@ -70,6 +71,7 @@ OC.L10N.register(
     "New folder" : "Carpeta nova",
     "Back" : "Torna",
     "Caption" : "Subtítol",
-    "Add a description" : "Afegir una descripció"
+    "Add a description" : "Afegir una descripció",
+    "Remove folder" : "Suprimeix la carpeta"
 },
 "nplurals=2; plural=(n != 1);");

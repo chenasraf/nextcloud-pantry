@@ -40,6 +40,7 @@ OC.L10N.register(
     "Joined" : "Forbind",
     "Add a member" : "Tilføj et medlem",
     "Danger zone" : "Farezone",
+    "Remove" : "Fjern",
     "Pin to top" : "Fastgør til toppen",
     "Unpin" : "Frigør",
     "Preview" : "Forhåndsvisning",
@@ -69,6 +70,7 @@ OC.L10N.register(
     "New folder" : "Ny mappe",
     "Back" : "Tilbage",
     "Caption" : "Overskrift",
-    "Add a description" : "Tilføj en beskrivelse"
+    "Add a description" : "Tilføj en beskrivelse",
+    "Remove folder" : "Fjern mappe"
 },
 "nplurals=2; plural=(n != 1);");

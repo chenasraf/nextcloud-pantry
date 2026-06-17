@@ -38,6 +38,7 @@ OC.L10N.register(
     "Add a member" : "Добавяне на нов член",
     "No accounts found" : "Не е открит профил",
     "Danger zone" : "Зона на опасност",
+    "Remove" : "Премахване",
     "Pin to top" : "Закачи най-отгоре",
     "Unpin" : "Отмяна на закачване",
     "Preview" : "Визуализация",
@@ -69,6 +70,7 @@ OC.L10N.register(
     "New folder" : "Нова папка",
     "Back" : "Назад",
     "Add a description" : "Добави описание",
+    "Remove folder" : "Премахване на папка",
     "Move to folder" : "Преместване в папка"
 },
 "nplurals=2; plural=(n != 1);");

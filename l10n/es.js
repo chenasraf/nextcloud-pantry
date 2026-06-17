@@ -79,6 +79,7 @@ OC.L10N.register(
     "Back" : "Atrás",
     "Caption" : "Leyenda",
     "Add a description" : "Añadir una descripción",
+    "Remove folder" : "Eliminar carpeta",
     "Move to folder" : "Mover a la carpeta"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

@@ -47,6 +47,7 @@ OC.L10N.register(
     "Add a member" : "Přidat člena",
     "No accounts found" : "Nenalezeny žádné účty",
     "Danger zone" : "Nebezpečná zóna",
+    "Remove" : "Odebrat",
     "Pin to top" : "Připnout nahoru",
     "Unpin" : "Uvolnit",
     "Preview" : "Náhled",
@@ -82,6 +83,7 @@ OC.L10N.register(
     "Back" : "Zpět",
     "Caption" : "Titulek",
     "Add a description" : "Přidat popis",
+    "Remove folder" : "Odstranit složku",
     "Move to folder" : "Přesunout do složky",
     "Creating …" : "Vytváření …"
 },

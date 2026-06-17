@@ -34,6 +34,7 @@ OC.L10N.register(
     "Account" : "Cuenta",
     "Role" : "Rol",
     "Danger zone" : "Zona de peligru",
+    "Remove" : "Quitar",
     "Pin to top" : "Fixar no cimero",
     "Unpin" : "Lliberar",
     "Preview" : "Previsualizar",
@@ -57,6 +58,7 @@ OC.L10N.register(
     "No notes yet" : "Nun hai nenguna nota",
     "Upload" : "Xunir",
     "New folder" : "Carpeta nueva",
-    "Back" : "Atrás"
+    "Back" : "Atrás",
+    "Remove folder" : "Quitar la carpeta"
 },
 "nplurals=2; plural=(n != 1);");

@@ -79,6 +79,7 @@ OC.L10N.register(
     "New folder" : "Νέος φάκελος",
     "Back" : "Επιστροφή",
     "Add a description" : "Προσθήκη περιγραφής",
+    "Remove folder" : "Κατάργηση φακέλου",
     "Move to folder" : "Μετακίνηση σε φάκελο"
 },
 "nplurals=2; plural=(n != 1);");
