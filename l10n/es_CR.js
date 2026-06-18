@@ -30,6 +30,7 @@ OC.L10N.register(
     "Pin to top" : "Anclar a la parte superior",
     "Preview" : "Previsualizar",
     "Folder name" : "Nombre de la carpeta",
+    "Close" : "Close",
     "days" : "días",
     "weeks" : "semanas",
     "Daily" : "Diariamente",

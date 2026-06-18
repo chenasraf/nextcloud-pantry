@@ -279,7 +279,7 @@ OC.L10N.register(
     "_%n item selected_::_%n items selected_" : ["%n item selecionado","%n de itens selecionados","%n itens selecionados"],
     "_Move %n note to the trash?_::_Move %n notes to the trash?_" : ["Mover %n nota para a lixeira?","Mover %n de notas para a lixeira?","Mover %n notas para a lixeira?"],
     "_%n note moved to trash_::_%n notes moved to trash_" : ["%n nota movida para a lixeira","%n de notas movidas para a lixeira","%n notas movidas para a lixeira"],
-    "Permanently delete \"{name}\"? This cannot be undone." : "Deseja excluir \"{name}\"? Esta ação não pode ser revertida.",
+    "Permanently delete \"{name}\"? This cannot be undone." : "Deseja excluir \"{name}\" permanentemente? Esta ação não pode ser revertida.",
     "Move \"{name}\" to the trash?" : "Mover \"{name}\" para a lixeira?",
     "Notes wall" : "Mural de notas",
     "New note" : "Nova nota",

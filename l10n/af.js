@@ -17,6 +17,7 @@ OC.L10N.register(
     "Restore" : "Herstel",
     "Trash" : "Asblik",
     "Account" : "Rekening",
+    "Close" : "Close",
     "days" : "dae",
     "weeks" : "weke",
     "Daily" : "Daagliks",
