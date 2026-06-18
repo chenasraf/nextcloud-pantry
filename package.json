@@ -35,11 +35,6 @@
     "vue": "^3.5.38",
     "vue-material-design-icons": "^5.3.1"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "lefthook"
-    ]
-  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@nextcloud/browserslist-config": "^3.1.2",
