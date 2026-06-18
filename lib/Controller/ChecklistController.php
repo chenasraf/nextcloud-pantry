@@ -326,6 +326,35 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * List items across every list in a house (meta "All lists" view)
+	 *
+	 * Sort modes: newest, oldest, name_asc, name_desc, category. "custom" is
+	 * not supported because sort_order is per-list.
+	 *
+	 * @param int $houseId House id.
+	 * @param string $sortBy Sort mode (newest, oldest, name_asc, name_desc, category).
+	 * @param int<1, 1000> $limit Maximum number of items to return.
+	 * @param int<0, max> $offset Number of items to skip.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>
+	 *
+	 * 200: Items returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/items')]
+	#[NoAdminRequired]
+	public function indexHouseItems(int $houseId, string $sortBy = 'newest', int $limit = 1000, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
+			$all = $this->lists->listItemsForHouse($houseId, $sortBy, $categorySort);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			return new DataResponse($items);
+		});
+	}
+
+	/**
 	 * List items in a checklist
 	 *
 	 * Auto-reopens recurring items whose next occurrence has arrived.

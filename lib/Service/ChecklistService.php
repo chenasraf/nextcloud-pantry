@@ -189,6 +189,18 @@ class ChecklistService {
 	}
 
 	/**
+	 * List non-deleted items from every non-deleted list in the house. Used by
+	 * the meta "All lists" view — sort_order is per-list, so "custom" is not
+	 * a supported sort here.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function listItemsForHouse(int $houseId, string $sortBy = 'newest', string $categorySort = 'name_asc', ?int $now = null): array {
+		$this->reopenDueItems($now);
+		return $this->itemMapper->findByHouse($houseId, $sortBy, $categorySort);
+	}
+
+	/**
 	 * List soft-deleted items for a list. Most recently deleted first.
 	 *
 	 * @return ChecklistItem[]

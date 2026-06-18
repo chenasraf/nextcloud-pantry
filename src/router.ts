@@ -37,6 +37,12 @@ const routes: RouteRecordRaw[] = [
         props: true,
       },
       {
+        path: 'lists/all',
+        name: 'all-lists',
+        component: () => import('@/views/ChecklistDetail.vue'),
+        props: (route) => ({ houseId: route.params.houseId, listId: 'all' }),
+      },
+      {
         path: 'lists/:listId',
         name: 'list-detail',
         component: () => import('@/views/ChecklistDetail.vue'),

@@ -50,6 +50,10 @@
         <RepeatIcon :size="14" />
         {{ formatRrule(item.rrule) }}
       </span>
+      <span v-if="list" class="checklist-row__list" :style="listChipStyle">
+        <component :is="checklistIconComponent(list.icon)" :size="14" />
+        {{ list.name }}
+      </span>
       <span v-if="category" class="checklist-row__category" :style="{ color: category.color }">
         <component :is="categoryIconComponent(category.icon)" :size="14" />
         {{ category.name }}
@@ -121,23 +125,37 @@ import DeleteRestoreIcon from '@icons/DeleteRestore.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
+import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
+import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { useHouseMembers } from '@/composables/useHouseMembers'
-import type { ChecklistItem, Category } from '@/api/types'
+import type { ChecklistItem, Category, Checklist } from '@/api/types'
 
 const props = withDefaults(
   defineProps<{
     item: ChecklistItem
     category: Category | null
+    list?: Checklist | null
     houseId: number
     reorderEnabled?: boolean
     trashMode?: boolean
     tapRowToComplete?: boolean
     showAddedBy?: boolean
   }>(),
-  { reorderEnabled: false, trashMode: false, tapRowToComplete: false, showAddedBy: false },
+  {
+    list: null,
+    reorderEnabled: false,
+    trashMode: false,
+    tapRowToComplete: false,
+    showAddedBy: false,
+  },
 )
+
+const listChipStyle = computed(() => {
+  if (!props.list?.color) return undefined
+  return { background: props.list.color, color: contrastColor(props.list.color) }
+})
 
 const emit = defineEmits<{
   toggle: [id: number]
@@ -352,7 +370,8 @@ const strings = {
 
   &__quantity,
   &__category,
-  &__recurrence {
+  &__recurrence,
+  &__list {
     display: inline-flex;
     align-items: center;
     gap: 4px;

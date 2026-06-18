@@ -98,6 +98,84 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Find non-deleted items across every non-deleted list in the house. The
+	 * "custom" sort mode is not supported here because sort_order is scoped
+	 * to a single list — callers should fall back to a deterministic sort.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function findByHouse(int $houseId, string $sortBy = 'newest', string $categorySort = 'name_asc'): array {
+		$qb = $this->db->getQueryBuilder();
+		$items = $this->getTableName();
+		$lists = Application::tableName('lists');
+
+		if ($sortBy === 'category') {
+			$categories = Application::tableName('categories');
+			$qb->select('i.*')
+				->from($items, 'i')
+				->innerJoin('i', $lists, 'l', $qb->expr()->andX(
+					$qb->expr()->eq('i.list_id', 'l.id'),
+					$qb->expr()->isNull('l.deleted_at'),
+				))
+				->leftJoin(
+					'i',
+					$categories,
+					'c',
+					$qb->expr()->eq('i.category_id', 'c.id'),
+				)
+				->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->isNull('i.deleted_at'))
+				->orderBy(
+					$qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'),
+					'ASC',
+				);
+			switch ($categorySort) {
+				case 'name_desc':
+					$qb->addOrderBy('c.name', 'DESC');
+					break;
+				case 'custom':
+					$qb->addOrderBy('c.sort_order', 'ASC')
+						->addOrderBy('c.name', 'ASC');
+					break;
+				default: // name_asc
+					$qb->addOrderBy('c.name', 'ASC');
+					break;
+			}
+			$qb->addOrderBy('i.name', 'ASC')
+				->addOrderBy('i.created_at', 'ASC');
+			return $this->findEntities($qb);
+		}
+
+		$qb->select('i.*')
+			->from($items, 'i')
+			->innerJoin('i', $lists, 'l', $qb->expr()->andX(
+				$qb->expr()->eq('i.list_id', 'l.id'),
+				$qb->expr()->isNull('l.deleted_at'),
+			))
+			->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('i.deleted_at'));
+
+		switch ($sortBy) {
+			case 'oldest':
+				$qb->orderBy('i.created_at', 'ASC');
+				break;
+			case 'name_asc':
+				$qb->orderBy('i.name', 'ASC')
+					->addOrderBy('i.created_at', 'ASC');
+				break;
+			case 'name_desc':
+				$qb->orderBy('i.name', 'DESC')
+					->addOrderBy('i.created_at', 'ASC');
+				break;
+			default: // newest
+				$qb->orderBy('i.created_at', 'DESC');
+				break;
+		}
+
+		return $this->findEntities($qb);
+	}
+
+	/**
 	 * @throws DoesNotExistException
 	 */
 	public function findById(int $id, bool $includeDeleted = false): ChecklistItem {

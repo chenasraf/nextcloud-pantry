@@ -85,6 +85,13 @@ export async function listItems(
   return resp.data ?? []
 }
 
+export async function listAllItems(houseId: number, sortBy?: string): Promise<ChecklistItem[]> {
+  const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/items`, {
+    params: sortBy ? { sortBy } : undefined,
+  })
+  return resp.data ?? []
+}
+
 export async function listDeletedItems(houseId: number, listId: number): Promise<ChecklistItem[]> {
   const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/lists/${listId}/items/trash`)
   return resp.data ?? []

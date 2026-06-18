@@ -18,6 +18,17 @@
             <ClipboardCheckIcon :size="20" />
           </template>
           <NcAppNavigationItem
+            :name="strings.allLists"
+            :to="{ name: 'all-lists', params: { houseId: String(currentHouseId) } }"
+            :active="route.name === 'all-lists'"
+          >
+            <template #icon>
+              <span class="pantry-nav__list-icon pantry-nav__list-icon--meta">
+                <ViewListIcon :size="16" />
+              </span>
+            </template>
+          </NcAppNavigationItem>
+          <NcAppNavigationItem
             v-for="list in checklists"
             :key="list.id"
             :name="list.name"
@@ -183,6 +194,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import HomeIcon from '@icons/Home.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
+import ViewListIcon from '@icons/ViewList.vue'
 import ImageIcon from '@icons/Image.vue'
 import NoteIcon from '@icons/Note.vue'
 import CogIcon from '@icons/Cog.vue'
@@ -323,6 +335,7 @@ watch(currentHouseId, closeMenu)
 
 const strings = {
   lists: t('pantry', 'Checklists'),
+  allLists: t('pantry', 'All lists'),
   photos: t('pantry', 'Photo board'),
   notes: t('pantry', 'Notes wall'),
   houseSettings: t('pantry', 'House settings'),
@@ -352,6 +365,11 @@ const strings = {
   border-radius: 8px;
   background: var(--color-background-dark);
   color: var(--color-main-text);
+
+  &--meta {
+    background: var(--color-primary-element);
+    color: var(--color-primary-element-text);
+  }
 }
 
 .pantry-nav__house-label {

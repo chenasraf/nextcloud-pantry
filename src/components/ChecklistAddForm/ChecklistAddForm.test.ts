@@ -24,6 +24,14 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
     props: ['variant', 'type', 'disabled', 'ariaLabel'],
   },
 }))
+vi.mock('@nextcloud/vue/components/NcSelect', () => ({
+  default: {
+    name: 'NcSelect',
+    template: '<div class="nc-select"></div>',
+    props: ['modelValue', 'options', 'clearable', 'placeholder', 'inputLabel'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({
   default: {
     name: 'NcTextField',

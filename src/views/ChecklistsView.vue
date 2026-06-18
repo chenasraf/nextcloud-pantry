@@ -114,6 +114,20 @@
       </NcEmptyContent>
 
       <ul v-else class="pantry-lists__grid">
+        <li class="pantry-list-card-wrap pantry-list-card-wrap--meta">
+          <router-link
+            :to="{ name: 'all-lists', params: { houseId: String(houseIdNum) } }"
+            class="pantry-list-card pantry-list-card--meta"
+          >
+            <span class="pantry-list-card__icon-wrap pantry-list-card__icon-wrap--meta">
+              <ViewListIcon :size="28" class="pantry-list-card__icon" />
+            </span>
+            <div class="pantry-list-card__body">
+              <h3>{{ strings.allListsTitle }}</h3>
+              <p>{{ strings.allListsBody }}</p>
+            </div>
+          </router-link>
+        </li>
         <template v-for="item in gridItems" :key="item.key">
           <li
             v-if="item.type === 'placeholder'"
@@ -239,6 +253,7 @@ import TrashCanIcon from '@icons/TrashCan.vue'
 import RestoreIcon from '@icons/Restore.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
+import ViewListIcon from '@icons/ViewList.vue'
 import type { Checklist } from '@/api/types'
 import type { ChecklistSort } from '@/api/prefs'
 import { getChecklistSort, setChecklistSort } from '@/api/prefs'
@@ -560,6 +575,8 @@ const strings = {
   deletePermanentlyDialogTitle: t('pantry', 'Delete checklist permanently'),
   emptyTitle: t('pantry', 'No lists yet'),
   emptyBody: t('pantry', 'Create your first checklist to start adding items.'),
+  allListsTitle: t('pantry', 'All lists'),
+  allListsBody: t('pantry', 'Items from every list in this house.'),
   sortLabel: t('pantry', 'Sort order'),
   trashLabel: t('pantry', 'Trash'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
@@ -642,6 +659,12 @@ const strings = {
   text-decoration: none;
   transition: background-color 0.15s ease;
 
+  &--meta {
+    border-style: dashed;
+    background: var(--color-background-hover);
+    padding-inline-end: 1rem;
+  }
+
   &:hover,
   &:focus-visible {
     background: var(--color-background-hover);
@@ -657,6 +680,11 @@ const strings = {
     border-radius: 12px;
     background: var(--color-background-dark);
     color: var(--color-primary-element);
+
+    &--meta {
+      background: var(--color-primary-element);
+      color: var(--color-primary-element-text);
+    }
   }
 
   &__icon {

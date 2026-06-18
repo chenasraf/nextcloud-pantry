@@ -1,6 +1,6 @@
 <template>
   <div class="pantry-detail">
-    <PageToolbar :title="list?.name">
+    <PageToolbar :title="isMeta ? strings.allListsTitle : list?.name">
       <template #before-title>
         <NcButton
           variant="tertiary"
@@ -11,7 +11,10 @@
             <ArrowLeftIcon :size="20" />
           </template>
         </NcButton>
-        <span v-if="list" class="pantry-detail__title-icon" :style="iconWrapStyle(list.color)">
+        <span v-if="isMeta" class="pantry-detail__title-icon pantry-detail__title-icon--meta">
+          <ViewListIcon :size="20" />
+        </span>
+        <span v-else-if="list" class="pantry-detail__title-icon" :style="iconWrapStyle(list.color)">
           <component :is="checklistIconComponent(list.icon)" :size="20" />
         </span>
       </template>
@@ -34,6 +37,7 @@
           </NcActionButton>
         </NcActions>
         <NcButton
+          v-if="!isMeta"
           :variant="trashMode ? 'primary' : 'tertiary'"
           :aria-label="strings.trashLabel"
           :title="strings.trashLabel"
@@ -59,6 +63,8 @@
         :house-id="houseIdNum"
         :adding="adding"
         :delete-on-done-default="list?.deleteOnDoneDefault ?? false"
+        :require-list-selector="isMeta"
+        :available-lists="isMeta ? allLists : []"
         @add="handleAdd"
         @update:delete-on-done-default="handleDeleteOnDoneDefaultChange"
       />
@@ -122,6 +128,7 @@
               v-else
               :item="gi.item"
               :category="categoryFor(gi.item.categoryId)"
+              :list="isMeta ? listFor(gi.item.listId) : null"
               :house-id="houseIdNum"
               :reorder-enabled="isCustomSort"
               :trash-mode="trashMode"
@@ -162,6 +169,7 @@
                 v-else
                 :item="gi.item"
                 :category="categoryFor(gi.item.categoryId)"
+                :list="isMeta ? listFor(gi.item.listId) : null"
                 :house-id="houseIdNum"
                 :reorder-enabled="isCustomSort"
                 :tap-row-to-complete="tapRowToComplete"
@@ -313,6 +321,7 @@ import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import TagIcon from '@icons/Tag.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
+import ViewListIcon from '@icons/ViewList.vue'
 import PageToolbar from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
 import { ChecklistFilter } from '@/components/ChecklistFilter'
@@ -331,7 +340,7 @@ function iconWrapStyle(color: string | null) {
   if (!color) return undefined
   return { background: color, color: contrastColor(color) }
 }
-import { useChecklists, useChecklistItems } from '@/composables/useChecklist'
+import { useChecklists, useChecklistItems, ALL_LISTS_ID } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { getList, updateList as apiUpdateList } from '@/api/lists'
@@ -346,7 +355,8 @@ import { useShowAddedBy } from '@/composables/useShowAddedBy'
 const props = defineProps<{ houseId: string; listId: string }>()
 
 const houseIdNum = computed(() => Number(props.houseId))
-const listIdNum = computed(() => Number(props.listId))
+const isMeta = computed(() => props.listId === 'all')
+const listIdNum = computed(() => (isMeta.value ? ALL_LISTS_ID : Number(props.listId)))
 
 const list = ref<Checklist | null>(null)
 const {
@@ -387,11 +397,15 @@ function categoryFor(id: number | null) {
   return categories.findById(id) ?? null
 }
 
+function listFor(id: number) {
+  return allLists.value.find((l) => l.id === id) ?? null
+}
+
 // ----- Sort -----
 
 const currentSort = ref<ChecklistItemSort>('custom')
 
-const itemSortOptions: { value: ChecklistItemSort; label: string }[] = [
+const allItemSortOptions: { value: ChecklistItemSort; label: string }[] = [
   { value: 'newest', label: t('pantry', 'Newest first') },
   { value: 'oldest', label: t('pantry', 'Oldest first') },
   { value: 'name_asc', label: t('pantry', 'Name A\u2013Z') },
@@ -400,10 +414,17 @@ const itemSortOptions: { value: ChecklistItemSort; label: string }[] = [
   { value: 'custom', label: t('pantry', 'Custom') },
 ]
 
+// Custom sort is per-list, so it's hidden in the meta "All lists" view.
+const itemSortOptions = computed(() =>
+  isMeta.value ? allItemSortOptions.filter((o) => o.value !== 'custom') : allItemSortOptions,
+)
+
 async function loadSortPref() {
   const prefs = await getChecklistItemSort(houseIdNum.value)
-  currentSort.value = prefs.sort
-  sortBy.value = prefs.sort
+  // Custom sort is per-list — meta view falls back to "newest" instead.
+  const sort: ChecklistItemSort = isMeta.value && prefs.sort === 'custom' ? 'newest' : prefs.sort
+  currentSort.value = sort
+  sortBy.value = sort
 }
 
 async function changeSort(value: ChecklistItemSort) {
@@ -416,6 +437,10 @@ async function changeSort(value: ChecklistItemSort) {
 // ----- Loading -----
 
 async function loadList() {
+  if (isMeta.value) {
+    list.value = null
+    return
+  }
   list.value = await getList(houseIdNum.value, listIdNum.value)
 }
 
@@ -428,14 +453,21 @@ const showCategorySeparators = computed(
 
 onMounted(async () => {
   await loadSortPref()
-  await Promise.all([loadList(), load(), categories.load()])
+  // Meta view needs the full list catalog to render per-item chips and the
+  // required list picker; non-meta views read it lazily for move/copy dialogs,
+  // by which time the sidebar has already populated the shared state.
+  const tasks: Promise<unknown>[] = [loadList(), load(), categories.load()]
+  if (isMeta.value) tasks.push(loadLists())
+  await Promise.all(tasks)
 })
 
 watch(
   () => [props.houseId, props.listId],
   async () => {
     await loadSortPref()
-    await Promise.all([loadList(), load()])
+    const tasks: Promise<unknown>[] = [loadList(), load()]
+    if (isMeta.value) tasks.push(loadLists())
+    await Promise.all(tasks)
   },
 )
 
@@ -732,10 +764,10 @@ useTouchReorder(
 
 const adding = ref(false)
 
-async function handleAdd(input: ItemInput, pendingImage: File | null) {
+async function handleAdd(input: ItemInput, pendingImage: File | null, targetListId: number | null) {
   adding.value = true
   try {
-    const created = await add(input)
+    const created = await add(input, targetListId ?? undefined)
     if (pendingImage) {
       try {
         await uploadImage(created.id, pendingImage)
@@ -868,8 +900,13 @@ async function onCategorySortChanged() {
 
 // ----- Move item to another list -----
 
-const { lists: allLists, create: createList } = useChecklists(houseIdNum.value)
-const otherLists = computed(() => allLists.value.filter((l) => l.id !== listIdNum.value))
+const { lists: allLists, create: createList, load: loadLists } = useChecklists(houseIdNum.value)
+// In meta view, exclude the item's own current list (per movingItem); in a
+// regular view, exclude the current list.
+const otherLists = computed(() => {
+  const excludeId = isMeta.value ? (movingItem.value?.listId ?? null) : listIdNum.value
+  return excludeId === null ? allLists.value : allLists.value.filter((l) => l.id !== excludeId)
+})
 const movingItem = ref<ChecklistItem | null>(null)
 const showCreateForMove = ref(false)
 
@@ -882,7 +919,11 @@ async function submitMoveItem(targetListId: number) {
   const itemName = movingItem.value.name
   const targetList = allLists.value.find((l) => l.id === targetListId)
   await update(movingItem.value.id, { targetListId })
-  items.value = items.value.filter((i) => i.id !== movingItem.value!.id)
+  // In a normal list view the item leaves the view after move. In the meta
+  // "All lists" view it stays — just under a different list.
+  if (!isMeta.value) {
+    items.value = items.value.filter((i) => i.id !== movingItem.value!.id)
+  }
   movingItem.value = null
   showSuccess(
     t('pantry', '{item} moved to {list}', { item: itemName, list: targetList?.name ?? '' }),
@@ -954,6 +995,7 @@ async function submitCreateListAndCopy(data: {
 
 const strings = {
   back: t('pantry', 'Back to lists'),
+  allListsTitle: t('pantry', 'All lists'),
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
@@ -990,6 +1032,11 @@ const strings = {
     border-radius: 10px;
     background: var(--color-background-dark);
     color: var(--color-primary-element);
+
+    &--meta {
+      background: var(--color-primary-element);
+      color: var(--color-primary-element-text);
+    }
   }
 
   &__empty-icon {

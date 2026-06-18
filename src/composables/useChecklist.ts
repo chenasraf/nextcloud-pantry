@@ -147,12 +147,27 @@ export function useChecklists(houseId: number) {
   }
 }
 
+// Sentinel for the "All lists" meta view. Items are aggregated from every
+// list in the house; per-item operations resolve to the item's real listId.
+export const ALL_LISTS_ID = 0
+
 export function useChecklistItems(houseId: number, listId: number) {
   const items = ref<ChecklistItem[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
   const sortBy = ref<ChecklistItemSort>('custom')
   const trashMode = ref(false)
+
+  const isMeta = listId === ALL_LISTS_ID
+
+  function listIdFor(itemId: number): number {
+    if (!isMeta) return listId
+    const found = items.value.find((i) => i.id === itemId)
+    if (!found) {
+      throw new Error(`Item ${itemId} not found in current view`)
+    }
+    return found.listId
+  }
 
   async function load(sort?: ChecklistItemSort, options?: { silent?: boolean }): Promise<void> {
     const silent = options?.silent ?? false
@@ -162,9 +177,13 @@ export function useChecklistItems(houseId: number, listId: number) {
     }
     const s = sort ?? sortBy.value
     try {
-      items.value = trashMode.value
-        ? await api.listDeletedItems(houseId, listId)
-        : await api.listItems(houseId, listId, s)
+      if (isMeta) {
+        items.value = await api.listAllItems(houseId, s)
+      } else {
+        items.value = trashMode.value
+          ? await api.listDeletedItems(houseId, listId)
+          : await api.listItems(houseId, listId, s)
+      }
     } catch (e) {
       if (!silent) error.value = (e as Error).message
     } finally {
@@ -172,22 +191,28 @@ export function useChecklistItems(houseId: number, listId: number) {
     }
   }
 
-  async function add(input: api.ItemInput): Promise<ChecklistItem> {
-    const created = await api.addItem(houseId, listId, input)
+  async function add(input: api.ItemInput, targetListId?: number): Promise<ChecklistItem> {
+    const useListId = isMeta ? targetListId : listId
+    if (useListId === undefined || useListId <= 0) {
+      throw new Error('A target list is required to add an item')
+    }
+    const created = await api.addItem(houseId, useListId, input)
     items.value = [...items.value, created]
     return created
   }
 
   async function update(itemId: number, patch: Partial<api.ItemInput>): Promise<void> {
-    const updated = await api.updateItem(houseId, listId, itemId, patch)
+    const updated = await api.updateItem(houseId, listIdFor(itemId), itemId, patch)
+    if (isMeta && patch.targetListId !== undefined && patch.targetListId !== updated.listId) {
+      // Should not happen — the backend canonicalizes listId via targetListId.
+    }
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
   async function copy(itemId: number, targetListId: number): Promise<ChecklistItem> {
-    const created = await api.copyItem(houseId, listId, itemId, targetListId)
-    // Only append locally when the destination is the current list — otherwise
-    // it belongs to a different view.
-    if (targetListId === listId) {
+    const sourceListId = listIdFor(itemId)
+    const created = await api.copyItem(houseId, sourceListId, itemId, targetListId)
+    if (isMeta || targetListId === listId) {
       items.value = [...items.value, created]
     }
     return created
@@ -198,6 +223,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     // deletes them in the same call, so we drop them locally too.
     const prev = items.value.find((i) => i.id === itemId)
     const willDelete = !!prev && !prev.done && prev.deleteOnDone
+    const useListId = listIdFor(itemId)
     if (prev) {
       if (willDelete) {
         items.value = items.value.filter((i) => i.id !== itemId)
@@ -206,7 +232,7 @@ export function useChecklistItems(houseId: number, listId: number) {
       }
     }
     try {
-      const updated = await api.toggleItem(houseId, listId, itemId)
+      const updated = await api.toggleItem(houseId, useListId, itemId)
       if (!willDelete) {
         items.value = items.value.map((i) => (i.id === itemId ? updated : i))
       }
@@ -228,11 +254,12 @@ export function useChecklistItems(houseId: number, listId: number) {
     // If deleteOnDone was true, the backend soft-deleted the item — restore it
     // first so the subsequent toggle has something to act on. The item comes
     // back still marked done, so we toggle once more to flip it to undone.
+    const useListId = isMeta ? prevItem.listId : listId
     const stillPresent = items.value.some((i) => i.id === prevItem.id)
     if (!stillPresent) {
-      await api.restoreItem(houseId, listId, prevItem.id)
+      await api.restoreItem(houseId, useListId, prevItem.id)
     }
-    const updated = await api.toggleItem(houseId, listId, prevItem.id)
+    const updated = await api.toggleItem(houseId, useListId, prevItem.id)
     if (stillPresent) {
       items.value = items.value.map((i) => (i.id === prevItem.id ? updated : i))
     } else {
@@ -241,6 +268,9 @@ export function useChecklistItems(houseId: number, listId: number) {
   }
 
   async function reorderItems(reorderEntries: { id: number; sortOrder: number }[]): Promise<void> {
+    if (isMeta) {
+      throw new Error('Reordering is not supported in the All Lists view')
+    }
     const map = new Map(reorderEntries.map((i) => [i.id, i.sortOrder]))
     items.value = items.value
       .map((i) => (map.has(i.id) ? { ...i, sortOrder: map.get(i.id)! } : i))
@@ -249,29 +279,31 @@ export function useChecklistItems(houseId: number, listId: number) {
   }
 
   async function remove(itemId: number): Promise<void> {
-    await api.deleteItem(houseId, listId, itemId)
+    await api.deleteItem(houseId, listIdFor(itemId), itemId)
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function undoRemove(prevItem: ChecklistItem): Promise<void> {
     // Restores a soft-deleted item without changing its done state.
-    const restored = await api.restoreItem(houseId, listId, prevItem.id)
+    const useListId = isMeta ? prevItem.listId : listId
+    const restored = await api.restoreItem(houseId, useListId, prevItem.id)
     items.value = [...items.value, restored]
   }
 
   async function removePermanently(itemId: number): Promise<void> {
-    await api.permanentlyDeleteItem(houseId, listId, itemId)
+    await api.permanentlyDeleteItem(houseId, listIdFor(itemId), itemId)
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function restore(itemId: number): Promise<void> {
-    await api.restoreItem(houseId, listId, itemId)
+    await api.restoreItem(houseId, listIdFor(itemId), itemId)
     // The item leaves the current view: in trash mode it returns to the active
     // list (and stays hidden here); in active mode it was never visible.
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function emptyTrash(): Promise<void> {
+    if (isMeta) return
     await api.emptyTrash(houseId, listId)
     if (trashMode.value) {
       items.value = []
@@ -279,12 +311,12 @@ export function useChecklistItems(houseId: number, listId: number) {
   }
 
   async function uploadImage(itemId: number, file: File): Promise<void> {
-    const updated = await api.uploadItemImage(houseId, listId, itemId, file)
+    const updated = await api.uploadItemImage(houseId, listIdFor(itemId), itemId, file)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
   async function clearImage(itemId: number): Promise<void> {
-    const updated = await api.clearItemImage(houseId, listId, itemId)
+    const updated = await api.clearItemImage(houseId, listIdFor(itemId), itemId)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 

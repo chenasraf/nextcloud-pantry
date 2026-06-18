@@ -4,11 +4,44 @@
       <NcTextField
         v-model="name"
         class="checklist-add__name"
+        :class="{ 'checklist-add__name--compact': requireListSelector }"
         :label="strings.nameLabel"
         :placeholder="strings.namePlaceholder"
         autocomplete="off"
       />
-      <NcButton type="submit" variant="primary" :disabled="!name.trim() || adding">
+      <NcSelect
+        v-if="requireListSelector"
+        class="checklist-add__list-select"
+        :model-value="selectedListOption"
+        :options="listOptions"
+        :clearable="false"
+        :placeholder="strings.list"
+        input-label=""
+        @update:model-value="onListSelected"
+      >
+        <template #option="opt">
+          <span class="checklist-add__list-option">
+            <span class="checklist-add__list-option-icon" :style="listIconStyle(opt.list)">
+              <component :is="checklistIconComponent(opt.list.icon)" :size="14" />
+            </span>
+            {{ opt.label }}
+          </span>
+        </template>
+        <template #selected-option="opt">
+          <span class="checklist-add__list-option">
+            <span class="checklist-add__list-option-icon" :style="listIconStyle(opt.list)">
+              <component :is="checklistIconComponent(opt.list.icon)" :size="14" />
+            </span>
+            {{ opt.label }}
+          </span>
+        </template>
+      </NcSelect>
+      <NcButton
+        type="submit"
+        variant="primary"
+        :disabled="!canSubmit || adding"
+        :class="{ 'checklist-add__submit--compact': requireListSelector }"
+      >
         <template #icon>
           <PlusIcon :size="20" />
         </template>
@@ -110,6 +143,7 @@
 import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
 import TagOutlineIcon from '@icons/TagOutline.vue'
@@ -129,8 +163,11 @@ import QuantityInput from '@/components/QuantityInput'
 import PantryChip from '@/components/PantryChip'
 import { useCategories } from '@/composables/useCategories'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
+import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
+import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { formatRrule } from '@/utils/rrule'
 import type { ItemInput } from '@/api/lists'
+import type { Checklist } from '@/api/types'
 
 type SectionKey = 'category' | 'quantity' | 'description' | 'type' | 'image'
 
@@ -139,12 +176,14 @@ const props = withDefaults(
     houseId: number
     adding: boolean
     deleteOnDoneDefault?: boolean
+    requireListSelector?: boolean
+    availableLists?: Checklist[]
   }>(),
-  { deleteOnDoneDefault: false },
+  { deleteOnDoneDefault: false, requireListSelector: false, availableLists: () => [] },
 )
 
 const emit = defineEmits<{
-  add: [input: ItemInput, pendingImage: File | null]
+  add: [input: ItemInput, pendingImage: File | null, targetListId: number | null]
   'update:deleteOnDoneDefault': [value: boolean]
 }>()
 
@@ -152,10 +191,34 @@ const name = ref('')
 const description = ref('')
 const quantity = ref('')
 const categoryId = ref<number | null>(null)
+const targetListId = ref<number | null>(null)
 const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
 const deleteOnDone = ref(props.deleteOnDoneDefault)
 const openSection = ref<SectionKey | null>(null)
+
+interface ListOption {
+  value: number
+  label: string
+  list: Checklist
+}
+
+const listOptions = computed<ListOption[]>(() =>
+  props.availableLists.map((l) => ({ value: l.id, label: l.name, list: l })),
+)
+
+const selectedListOption = computed<ListOption | null>(
+  () => listOptions.value.find((o) => o.value === targetListId.value) ?? null,
+)
+
+function onListSelected(option: ListOption | null) {
+  targetListId.value = option?.value ?? null
+}
+
+function listIconStyle(list: Checklist) {
+  if (!list.color) return undefined
+  return { background: list.color, color: contrastColor(list.color) }
+}
 
 const pendingImage = ref<File | null>(null)
 const pendingImageObjectUrl = ref<string | null>(null)
@@ -277,6 +340,12 @@ interface Chip {
   filled: boolean
 }
 
+const canSubmit = computed(() => {
+  if (!name.value.trim()) return false
+  if (props.requireListSelector && targetListId.value === null) return false
+  return true
+})
+
 const chips = computed<Chip[]>(() => {
   const list: Chip[] = []
 
@@ -347,6 +416,7 @@ function chipVariant(chip: Chip): 'primary' | 'secondary' | 'tertiary' {
 function submitAdd() {
   const trimmedName = name.value.trim()
   if (!trimmedName) return
+  if (props.requireListSelector && targetListId.value === null) return
   const once = deleteOnDone.value
   emit(
     'add',
@@ -360,8 +430,9 @@ function submitAdd() {
       deleteOnDone: once,
     },
     pendingImage.value,
+    targetListId.value,
   )
-  // Reset form
+  // Reset form — keep the chosen list so users can add multiple items in a row.
   name.value = ''
   description.value = ''
   quantity.value = ''
@@ -380,6 +451,7 @@ const strings = {
   add: t('pantry', 'Add'),
   nameLabel: t('pantry', 'Item name'),
   namePlaceholder: t('pantry', 'e.g. Milk'),
+  list: t('pantry', 'Pick a list …'),
   category: t('pantry', 'Category'),
   quantity: t('pantry', 'Quantity'),
   description: t('pantry', 'Description'),
@@ -407,13 +479,49 @@ const strings = {
 
   &__primary {
     display: flex;
-    align-items: end;
+    align-items: center;
     gap: 0.75rem;
   }
 
   &__name {
     flex: 1;
     min-width: 0;
+    margin-block-start: 0;
+
+    // NcSelect renders ~36 px tall and is awkward to enlarge. When the list
+    // selector is visible, shrink the text field to match so the two controls
+    // align in the row. NcTextField wraps its input in a label-aware container
+    // whose top space lives outside the box — pull it up to compensate.
+    &--compact {
+      margin-block-start: -6px;
+    }
+
+    &--compact :deep(.input-field__main-wrapper),
+    &--compact :deep(.input-field__input) {
+      height: 36px;
+      min-height: 36px;
+    }
+
+    // Re-center the floating label inside the compact 36 px input. Only when
+    // the input is empty and unfocused — once it has content or focus, the
+    // label floats above as normal.
+    &--compact :deep(.input-field__input:not(:focus):placeholder-shown + .input-field__label) {
+      inset-block-start: calc((var(--default-clickable-area) - 1lh) / 2 + 3px);
+    }
+  }
+
+  &__list-select {
+    flex: 0 0 auto;
+    min-width: 180px;
+
+    :deep(.v-select),
+    :deep(.vs__dropdown-toggle) {
+      min-height: 36px;
+    }
+  }
+
+  &__submit--compact {
+    margin-block-start: -6px;
   }
 
   &__chips {
@@ -438,6 +546,25 @@ const strings = {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  &__list-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  &__list-option-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--color-background-dark);
+    color: var(--color-main-text);
+    flex-shrink: 0;
   }
 
   &__image-row {
