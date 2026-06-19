@@ -22,7 +22,7 @@ Pantry also has companion apps for mobile and desktop that let you manage your l
 
 **Companion apps:** Android ([Google Play](https://play.google.com/store/apps/details?id=dev.casraf.pantry), [F-Droid](https://f-droid.org/en/packages/dev.casraf.pantry/)) | iOS/macOS ([App Store](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619))
 ]]></description>
-	<version>0.18.0</version>
+	<version>0.18.1</version>
 	<licence>agpl</licence>
 	<author mail="contact@casraf.dev" homepage="https://casraf.dev">Chen Asraf</author>
 	<namespace>Pantry</namespace>
