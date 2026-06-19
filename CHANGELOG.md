@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.18.0...v0.18.1) (2026-06-19)
+
+
+### Bug Fixes
+
+* add capability tags to new features ([b4b3ee6](https://github.com/chenasraf/nextcloud-pantry/commit/b4b3ee6802ebc91f68afa83a1b3654771efb319d))
+
 ## [0.18.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.17.0...v0.18.0) (2026-06-19)
 
 
