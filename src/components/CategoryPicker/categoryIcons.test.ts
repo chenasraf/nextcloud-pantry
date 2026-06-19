@@ -53,6 +53,22 @@ vi.mock('@icons/Package.vue', () => ({ default: { name: 'PackageIcon' } }))
 vi.mock('@icons/Car.vue', () => ({ default: { name: 'CarIcon' } }))
 vi.mock('@icons/Bike.vue', () => ({ default: { name: 'BikeIcon' } }))
 vi.mock('@icons/Beach.vue', () => ({ default: { name: 'BeachIcon' } }))
+vi.mock('@icons/Fridge.vue', () => ({ default: { name: 'FridgeIcon' } }))
+vi.mock('@icons/FridgeBottom.vue', () => ({ default: { name: 'FreezerIcon' } }))
+vi.mock('@icons/Cupboard.vue', () => ({ default: { name: 'CupboardIcon' } }))
+vi.mock('@icons/FoodVariant.vue', () => ({ default: { name: 'PantryIcon' } }))
+vi.mock('@icons/Barrel.vue', () => ({ default: { name: 'CellarIcon' } }))
+vi.mock('@icons/Garage.vue', () => ({ default: { name: 'GarageIcon' } }))
+vi.mock('@icons/Bookshelf.vue', () => ({ default: { name: 'BookshelfIcon' } }))
+vi.mock('@icons/Locker.vue', () => ({ default: { name: 'LockerIcon' } }))
+vi.mock('@icons/Safe.vue', () => ({ default: { name: 'SafeIcon' } }))
+vi.mock('@icons/FileCabinet.vue', () => ({ default: { name: 'FileCabinetIcon' } }))
+vi.mock('@icons/Microwave.vue', () => ({ default: { name: 'MicrowaveIcon' } }))
+vi.mock('@icons/Stove.vue', () => ({ default: { name: 'StoveIcon' } }))
+vi.mock('@icons/ToasterOven.vue', () => ({ default: { name: 'ToasterOvenIcon' } }))
+vi.mock('@icons/CoffeeMaker.vue', () => ({ default: { name: 'CoffeeMakerIcon' } }))
+vi.mock('@icons/KettleSteam.vue', () => ({ default: { name: 'KettleIcon' } }))
+vi.mock('@icons/PotSteam.vue', () => ({ default: { name: 'PotIcon' } }))
 
 import {
   CATEGORY_COLORS,
@@ -62,8 +78,8 @@ import {
 } from './categoryIcons'
 
 describe('CATEGORY_ICONS', () => {
-  it('has 54 entries', () => {
-    expect(CATEGORY_ICONS).toHaveLength(54)
+  it('has 70 entries', () => {
+    expect(CATEGORY_ICONS).toHaveLength(70)
   })
 
   it('each entry has key, label, and component', () => {

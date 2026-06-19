@@ -59,6 +59,23 @@ import PackageIcon from '@icons/Package.vue'
 import CarIcon from '@icons/Car.vue'
 import BikeIcon from '@icons/Bike.vue'
 import BeachIcon from '@icons/Beach.vue'
+// Pantry locations and appliances — covers fridge/freezer/cupboard/cellar/etc.
+import FridgeIcon from '@icons/Fridge.vue'
+import FreezerIcon from '@icons/FridgeBottom.vue'
+import CupboardIcon from '@icons/Cupboard.vue'
+import PantryIcon from '@icons/FoodVariant.vue'
+import CellarIcon from '@icons/Barrel.vue'
+import GarageIcon from '@icons/Garage.vue'
+import BookshelfIcon from '@icons/Bookshelf.vue'
+import LockerIcon from '@icons/Locker.vue'
+import SafeIcon from '@icons/Safe.vue'
+import FileCabinetIcon from '@icons/FileCabinet.vue'
+import MicrowaveIcon from '@icons/Microwave.vue'
+import StoveIcon from '@icons/Stove.vue'
+import ToasterOvenIcon from '@icons/ToasterOven.vue'
+import CoffeeMakerIcon from '@icons/CoffeeMaker.vue'
+import KettleIcon from '@icons/KettleSteam.vue'
+import PotIcon from '@icons/PotSteam.vue'
 
 export interface CategoryIconOption {
   key: string
@@ -124,6 +141,22 @@ export const CATEGORY_ICONS: CategoryIconOption[] = [
   { key: 'car', label: 'Travel', component: CarIcon },
   { key: 'bike', label: 'Cycling', component: BikeIcon },
   { key: 'beach', label: 'Vacation', component: BeachIcon },
+  { key: 'fridge', label: 'Refrigerator', component: FridgeIcon },
+  { key: 'freezer', label: 'Freezer', component: FreezerIcon },
+  { key: 'cupboard', label: 'Cupboard', component: CupboardIcon },
+  { key: 'pantry', label: 'Pantry', component: PantryIcon },
+  { key: 'cellar', label: 'Cellar', component: CellarIcon },
+  { key: 'garage', label: 'Garage', component: GarageIcon },
+  { key: 'bookshelf', label: 'Bookshelf', component: BookshelfIcon },
+  { key: 'locker', label: 'Locker', component: LockerIcon },
+  { key: 'safe', label: 'Safe', component: SafeIcon },
+  { key: 'file-cabinet', label: 'Filing', component: FileCabinetIcon },
+  { key: 'microwave', label: 'Microwave', component: MicrowaveIcon },
+  { key: 'stove', label: 'Stove', component: StoveIcon },
+  { key: 'toaster-oven', label: 'Oven', component: ToasterOvenIcon },
+  { key: 'coffee-maker', label: 'Coffee maker', component: CoffeeMakerIcon },
+  { key: 'kettle', label: 'Kettle', component: KettleIcon },
+  { key: 'pot', label: 'Pot', component: PotIcon },
 ]
 
 const byKey: Record<string, CategoryIconOption> = Object.fromEntries(

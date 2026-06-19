@@ -70,6 +70,23 @@ class ConstantsService {
 		'car',
 		'bike',
 		'beach',
+		// Pantry locations and appliances.
+		'fridge',
+		'freezer',
+		'cupboard',
+		'pantry',
+		'cellar',
+		'garage',
+		'bookshelf',
+		'locker',
+		'safe',
+		'file-cabinet',
+		'microwave',
+		'stove',
+		'toaster-oven',
+		'coffee-maker',
+		'kettle',
+		'pot',
 	];
 
 	/** Default category color palette, mirrored in the frontend. */
@@ -126,6 +143,23 @@ class ConstantsService {
 		'bike',
 		'beach',
 		'tag',
+		// Pantry locations and appliances.
+		'fridge',
+		'freezer',
+		'cupboard',
+		'pantry',
+		'cellar',
+		'garage',
+		'bookshelf',
+		'locker',
+		'safe',
+		'file-cabinet',
+		'microwave',
+		'stove',
+		'toaster-oven',
+		'coffee-maker',
+		'kettle',
+		'pot',
 	];
 
 	/** Default note color palette, mirrored in src/components/Notes/noteColors.ts */
