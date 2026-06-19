@@ -1,14 +1,29 @@
 <template>
   <form class="checklist-add" autocomplete="off" @submit.prevent="submitAdd">
-    <div class="checklist-add__primary">
-      <NcTextField
-        v-model="name"
-        class="checklist-add__name"
-        :class="{ 'checklist-add__name--compact': requireListSelector }"
-        :label="strings.nameLabel"
-        :placeholder="strings.namePlaceholder"
-        autocomplete="off"
-      />
+    <div class="checklist-add__primary" :class="{ 'checklist-add__primary--multiple': multiple }">
+      <div class="checklist-add__name-wrapper">
+        <AutoResizeTextarea
+          v-if="multiple"
+          v-model="name"
+          class="checklist-add__name-textarea"
+          :rows="3"
+          :label="strings.nameLabel"
+          :placeholder="strings.namePlaceholder"
+          autocomplete="off"
+        />
+        <NcTextField
+          v-else
+          v-model="name"
+          class="checklist-add__name"
+          :class="{ 'checklist-add__name--compact': requireListSelector }"
+          :label="strings.nameLabel"
+          :placeholder="strings.namePlaceholder"
+          autocomplete="off"
+        />
+        <div v-if="multiple" class="checklist-add__hint">
+          {{ strings.multipleHint }}
+        </div>
+      </div>
       <NcSelect
         v-if="requireListSelector"
         class="checklist-add__list-select"
@@ -36,11 +51,14 @@
           </span>
         </template>
       </NcSelect>
+      <NcCheckboxRadioSwitch v-model="multiple" class="checklist-add__multiple-toggle">
+        {{ strings.multiple }}
+      </NcCheckboxRadioSwitch>
       <NcButton
         type="submit"
         variant="primary"
         :disabled="!canSubmit || adding"
-        :class="{ 'checklist-add__submit--compact': requireListSelector }"
+        :class="{ 'checklist-add__submit--compact': requireListSelector && !multiple }"
       >
         <template #icon>
           <PlusIcon :size="20" />
@@ -143,6 +161,7 @@
 import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
@@ -188,6 +207,7 @@ const emit = defineEmits<{
 }>()
 
 const name = ref('')
+const multiple = ref(false)
 const description = ref('')
 const quantity = ref('')
 const categoryId = ref<number | null>(null)
@@ -244,6 +264,13 @@ watch(
     deleteOnDone.value = value
   },
 )
+
+watch(multiple, (on) => {
+  if (!on) return
+  if (openSection.value === 'image') openSection.value = null
+  revokeObjectUrl()
+  pendingImage.value = null
+})
 
 function toggleSection(key: SectionKey) {
   openSection.value = openSection.value === key ? null : key
@@ -340,8 +367,19 @@ interface Chip {
   filled: boolean
 }
 
+const itemNames = computed(() =>
+  multiple.value
+    ? name.value
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0)
+    : name.value.trim().length > 0
+      ? [name.value.trim()]
+      : [],
+)
+
 const canSubmit = computed(() => {
-  if (!name.value.trim()) return false
+  if (itemNames.value.length === 0) return false
   if (props.requireListSelector && targetListId.value === null) return false
   return true
 })
@@ -395,12 +433,14 @@ const chips = computed<Chip[]>(() => {
     })
   }
 
-  list.push({
-    key: 'image',
-    text: pendingImage.value ? strings.imageAttached : strings.image,
-    icon: ImageIcon,
-    filled: pendingImage.value !== null,
-  })
+  if (!multiple.value) {
+    list.push({
+      key: 'image',
+      text: pendingImage.value ? strings.imageAttached : strings.image,
+      icon: ImageIcon,
+      filled: pendingImage.value !== null,
+    })
+  }
 
   return list
 })
@@ -414,24 +454,26 @@ function chipVariant(chip: Chip): 'primary' | 'secondary' | 'tertiary' {
 // ----- Submit -----
 
 function submitAdd() {
-  const trimmedName = name.value.trim()
-  if (!trimmedName) return
+  const names = itemNames.value
+  if (names.length === 0) return
   if (props.requireListSelector && targetListId.value === null) return
   const once = deleteOnDone.value
-  emit(
-    'add',
-    {
-      name: trimmedName,
-      description: description.value.trim() || null,
-      quantity: quantity.value.trim() || null,
-      categoryId: categoryId.value,
-      rrule: once ? null : rrule.value,
-      repeatFromCompletion: once ? false : repeatFromCompletion.value,
-      deleteOnDone: once,
-    },
-    pendingImage.value,
-    targetListId.value,
-  )
+  names.forEach((itemName, index) => {
+    emit(
+      'add',
+      {
+        name: itemName,
+        description: description.value.trim() || null,
+        quantity: quantity.value.trim() || null,
+        categoryId: categoryId.value,
+        rrule: once ? null : rrule.value,
+        repeatFromCompletion: once ? false : repeatFromCompletion.value,
+        deleteOnDone: once,
+      },
+      index === 0 ? pendingImage.value : null,
+      targetListId.value,
+    )
+  })
   // Reset form — keep the chosen list so users can add multiple items in a row.
   name.value = ''
   description.value = ''
@@ -449,6 +491,8 @@ function submitAdd() {
 
 const strings = {
   add: t('pantry', 'Add'),
+  multiple: t('pantry', 'Multiple'),
+  multipleHint: t('pantry', 'Separate items by new lines'),
   nameLabel: t('pantry', 'Item name'),
   namePlaceholder: t('pantry', 'e.g. Milk'),
   list: t('pantry', 'Pick a list …'),
@@ -481,6 +525,32 @@ const strings = {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+
+    &--multiple {
+      align-items: flex-start;
+    }
+  }
+
+  &__name-wrapper {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__name-textarea {
+    width: 100%;
+    margin-block-start: -2px;
+  }
+
+  &__hint {
+    font-size: 0.85em;
+    color: var(--color-text-maxcontrast);
+  }
+
+  &__multiple-toggle {
+    flex: 0 0 auto;
   }
 
   &__name {

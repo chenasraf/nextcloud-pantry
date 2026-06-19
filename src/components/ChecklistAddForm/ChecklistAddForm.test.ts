@@ -32,6 +32,15 @@ vi.mock('@nextcloud/vue/components/NcSelect', () => ({
     emits: ['update:modelValue'],
   },
 }))
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template:
+      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', !modelValue)" /><slot /></label>',
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({
   default: {
     name: 'NcTextField',
@@ -294,6 +303,39 @@ describe('ChecklistAddForm', () => {
     await wrapper.find('.mock-recurring').trigger('click')
 
     expect(wrapper.emitted('update:deleteOnDoneDefault')).toBeFalsy()
+  })
+
+  it('toggling Multiple swaps the name input for a textarea and shows a hint', async () => {
+    const wrapper = mountForm()
+    expect(wrapper.find('.nc-text-field').exists()).toBe(true)
+    expect(wrapper.find('.nc-text-area').exists()).toBe(false)
+
+    await wrapper.find('.nc-checkbox input').setValue(true)
+
+    expect(wrapper.find('.nc-text-field').exists()).toBe(false)
+    expect(wrapper.find('.nc-text-area').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Separate items by new lines')
+  })
+
+  it('emits one add event per non-empty line when Multiple is on', async () => {
+    const wrapper = mountForm()
+    await wrapper.find('.nc-checkbox input').setValue(true)
+    await wrapper.find('.nc-text-area').setValue('Milk\nEggs\n\n   \nBread\n')
+
+    await wrapper.find('form').trigger('submit')
+
+    const events = wrapper.emitted('add')!
+    expect(events).toHaveLength(3)
+    const names = events.map((e) => (e[0] as ItemInput).name)
+    expect(names).toEqual(['Milk', 'Eggs', 'Bread'])
+  })
+
+  it('submit is disabled in Multiple mode when no non-empty lines are present', async () => {
+    const wrapper = mountForm()
+    await wrapper.find('.nc-checkbox input').setValue(true)
+    await wrapper.find('.nc-text-area').setValue('   \n\n  ')
+    const submitBtn = wrapper.findAll('.nc-button').find((b) => b.attributes('type') === 'submit')!
+    expect(submitBtn.attributes('disabled')).toBeDefined()
   })
 
   it('resets the open section and inputs after submit', async () => {
