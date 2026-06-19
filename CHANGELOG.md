@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.18.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.17.0...v0.18.0) (2026-06-19)
+
+
+### Features
+
+* **checklist:** All Lists meta view ([9615630](https://github.com/chenasraf/nextcloud-pantry/commit/961563062d1f9ed86dedd747aab216ffae0956d1))
+* **checklist:** bulk add items via Multiple toggle ([c91fbce](https://github.com/chenasraf/nextcloud-pantry/commit/c91fbce32469782b745d93458418a8bffd049b79))
+* **checklist:** copy items between lists ([0c953f5](https://github.com/chenasraf/nextcloud-pantry/commit/0c953f533078b734d4d5f32d9e6bf66539e4f762))
+* **icons:** add pantry location and appliance icons ([3166b32](https://github.com/chenasraf/nextcloud-pantry/commit/3166b329b08a3ccaef9d1c6e2a7e3bd03ae4a5e7))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([76e40d9](https://github.com/chenasraf/nextcloud-pantry/commit/76e40d9134da73b8b34b0737ca7f346465ac6673))
+* **l10n:** Update translations from Transifex ([e453491](https://github.com/chenasraf/nextcloud-pantry/commit/e45349123419928e03f6c79413809251df9d6c06))
+* **notifications:** suppress duplicate bell push on item add ([8809234](https://github.com/chenasraf/nextcloud-pantry/commit/8809234800e2c37e9b83484a90932d40df971610))
+
 ## [0.17.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.16.0...v0.17.0) (2026-06-17)
 
 
