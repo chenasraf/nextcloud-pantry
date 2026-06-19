@@ -96,6 +96,12 @@ class ActivityPublisher {
 	}
 
 	public function publishItemAdded(int $houseId, string $houseName, string $authorUid, int $itemId, string $itemName, int $listId, string $listName): void {
+		// Item adds also dispatch an aggregated Pantry notification
+		// ({@see NotificationService::notifyItemAdded}) that collapses bulk
+		// adds into a single "added N items" bell entry. Suppress the
+		// per-event activity → notification bridge here so the bell does not
+		// also pile up one "added X" entry per item. Stream entries are
+		// unaffected.
 		$this->publish(
 			$houseId,
 			$houseName,
@@ -105,6 +111,7 @@ class ActivityPublisher {
 			$itemId,
 			['itemName' => $itemName, 'listId' => $listId, 'listName' => $listName],
 			$this->listLink($houseId, $listId),
+			generateNotification: false,
 		);
 	}
 
@@ -374,6 +381,13 @@ class ActivityPublisher {
 
 	/**
 	 * @param array<string, mixed> $extraParams
+	 * @param bool $generateNotification When false, the activity event is
+	 *                                   written to the stream but the Activity
+	 *                                   app will not turn it into a bell
+	 *                                   notification. Use this for events that
+	 *                                   already have a curated Pantry
+	 *                                   notification (e.g. aggregated bulk
+	 *                                   summaries) to avoid duplicate pushes.
 	 */
 	private function publish(
 		int $houseId,
@@ -384,6 +398,7 @@ class ActivityPublisher {
 		int $objectId,
 		array $extraParams,
 		string $link,
+		bool $generateNotification = true,
 	): void {
 		$members = $this->memberMapper->findByHouse($houseId);
 		if (empty($members)) {
@@ -415,7 +430,8 @@ class ActivityPublisher {
 					->setSubject($subject, $baseParams)
 					->setObject($objectType, $objectId)
 					->setLink($link)
-					->setIcon($icon);
+					->setIcon($icon)
+					->setGenerateNotification($generateNotification);
 				$this->activityManager->publish($event);
 			} catch (\Throwable $e) {
 				$this->logger->error('Pantry activity: failed to publish {subject} to {uid}: {msg}', [

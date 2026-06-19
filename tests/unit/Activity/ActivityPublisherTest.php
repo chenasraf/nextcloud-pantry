@@ -61,7 +61,7 @@ class ActivityPublisherTest extends TestCase {
 		$e = $this->createMock(IEvent::class);
 		foreach ([
 			'setApp', 'setType', 'setAuthor', 'setAffectedUser', 'setTimestamp',
-			'setSubject', 'setObject', 'setLink', 'setIcon',
+			'setSubject', 'setObject', 'setLink', 'setIcon', 'setGenerateNotification',
 		] as $method) {
 			$e->method($method)->willReturnSelf();
 		}
@@ -154,6 +154,27 @@ class ActivityPublisherTest extends TestCase {
 		$this->assertSame(7, $captured['params']['fromListId']);
 		$this->assertSame(8, $captured['params']['toListId']);
 		$this->assertSame('Milk', $captured['params']['itemName']);
+	}
+
+	public function testItemAddedSuppressesActivityBellNotification(): void {
+		// Item adds are covered by a curated, aggregated Pantry bell
+		// notification, so the activity → notification bridge must be off
+		// for this subject to avoid duplicate pushes.
+		$this->memberMapper->method('findByHouse')->willReturn([$this->makeMember('alice')]);
+		$event = $this->makeEvent();
+		$event->expects($this->once())->method('setGenerateNotification')->with(false)->willReturnSelf();
+		$this->activityManager->method('generateEvent')->willReturn($event);
+
+		$this->publisher->publishItemAdded(1, 'My House', 'alice', 99, 'Milk', 7, 'Groceries');
+	}
+
+	public function testItemUpdatedKeepsActivityBellNotification(): void {
+		$this->memberMapper->method('findByHouse')->willReturn([$this->makeMember('alice')]);
+		$event = $this->makeEvent();
+		$event->expects($this->once())->method('setGenerateNotification')->with(true)->willReturnSelf();
+		$this->activityManager->method('generateEvent')->willReturn($event);
+
+		$this->publisher->publishItemUpdated(1, 'My House', 'alice', 99, 'Milk', 7, 'Groceries');
 	}
 
 	public function testItemMovedSendsBothListsInParameters(): void {
