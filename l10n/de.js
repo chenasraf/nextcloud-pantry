@@ -114,6 +114,8 @@ OC.L10N.register(
     "Create …" : "Erstellen …",
     "Pick a category" : "Kategorie auswählen",
     "Add" : "Addieren",
+    "Multiple" : "Mehrfach",
+    "Separate items by new lines" : "Elemente durch neue Zeilen trennen",
     "Item name" : "Elementname",
     "e.g. Milk" : "z. B. Milch",
     "Pick a list …" : "Eine Liste auswählen …",

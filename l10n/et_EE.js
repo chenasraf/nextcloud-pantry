@@ -114,6 +114,8 @@ OC.L10N.register(
     "Create …" : "Lisa…",
     "Pick a category" : "Vali kategooria",
     "Add" : "Lisa",
+    "Multiple" : "Mitu valikut",
+    "Separate items by new lines" : "Eralda kirjed reavahetustega",
     "Item name" : "Kirje nimi",
     "e.g. Milk" : "nt. Piim",
     "Pick a list …" : "Vali loend…",
