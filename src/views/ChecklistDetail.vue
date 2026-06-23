@@ -73,8 +73,10 @@
         v-if="items.length > 0"
         v-model:query="filterQuery"
         v-model:selected-category-ids="filterCategoryIds"
+        v-model:selected-list-ids="filterListIds"
         :items="items"
         :categories="categories.items.value"
+        :lists="isMeta ? allLists : undefined"
         class="pantry-detail__filter"
       />
 
@@ -464,6 +466,7 @@ onMounted(async () => {
 watch(
   () => [props.houseId, props.listId],
   async () => {
+    filterListIds.value = loadListFilter()
     await loadSortPref()
     const tasks: Promise<unknown>[] = [loadList(), load()]
     if (isMeta.value) tasks.push(loadLists())
@@ -522,8 +525,40 @@ onBeforeUnmount(() => {
 const filterQuery = ref('')
 const filterCategoryIds = ref<number[]>([])
 
+// List filter is only meaningful in the meta "All lists" view. Its selection is
+// persisted per house in localStorage so it survives navigation and reloads.
+const listFilterStorageKey = computed(() => `pantry:list-filter:${props.houseId}`)
+const filterListIds = ref<number[]>(loadListFilter())
+
+function loadListFilter(): number[] {
+  try {
+    const raw = window.localStorage.getItem(`pantry:list-filter:${props.houseId}`)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((v): v is number => typeof v === 'number') : []
+  } catch {
+    return []
+  }
+}
+
+watch(
+  filterListIds,
+  (ids) => {
+    try {
+      window.localStorage.setItem(listFilterStorageKey.value, JSON.stringify(ids))
+    } catch {
+      // Ignore storage failures (e.g. private mode quota).
+    }
+  },
+  { deep: true },
+)
+
 const filteredItems = computed(() => {
   let result = items.value
+  if (isMeta.value && filterListIds.value.length > 0) {
+    const listIds = filterListIds.value
+    result = result.filter((i) => listIds.includes(i.listId))
+  }
   const catIds = filterCategoryIds.value
   if (catIds.length > 0) {
     result = result.filter((i) => i.categoryId != null && catIds.includes(i.categoryId))
@@ -901,6 +936,15 @@ async function onCategorySortChanged() {
 // ----- Move item to another list -----
 
 const { lists: allLists, create: createList, load: loadLists } = useChecklists(houseIdNum.value)
+
+// Drop any persisted list-filter ids that no longer correspond to an existing
+// list (e.g. a list was deleted) once the catalog has loaded.
+watch(allLists, (lists) => {
+  if (!isMeta.value || lists.length === 0 || filterListIds.value.length === 0) return
+  const valid = new Set(lists.map((l) => l.id))
+  const pruned = filterListIds.value.filter((id) => valid.has(id))
+  if (pruned.length !== filterListIds.value.length) filterListIds.value = pruned
+})
 // In meta view, exclude the item's own current list (per movingItem); in a
 // regular view, exclude the current list.
 const otherLists = computed(() => {
