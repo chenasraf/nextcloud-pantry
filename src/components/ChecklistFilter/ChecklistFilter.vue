@@ -176,9 +176,7 @@ const listOptions = computed<ListOption[]>(() => {
   for (const item of props.items) {
     counts.set(item.listId, (counts.get(item.listId) ?? 0) + 1)
   }
-  return props.lists
-    .filter((l) => counts.has(l.id))
-    .map((l) => ({ list: l, count: counts.get(l.id)! }))
+  return props.lists.map((l) => ({ list: l, count: counts.get(l.id) ?? 0 }))
 })
 
 const selectedListIdsLocal = computed(() => props.selectedListIds ?? [])
