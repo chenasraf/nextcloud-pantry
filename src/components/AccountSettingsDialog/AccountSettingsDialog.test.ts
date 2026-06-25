@@ -15,6 +15,8 @@ vi.mock('@/api/prefs', () => ({
   setTapRowToComplete: vi.fn(),
   getCategorySpacing: vi.fn(),
   setCategorySpacing: vi.fn(),
+  getReuseExistingItems: vi.fn(),
+  setReuseExistingItems: vi.fn(),
 }))
 
 // Mock Nextcloud Vue components that pull in CSS
