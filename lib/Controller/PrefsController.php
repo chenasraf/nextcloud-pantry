@@ -72,6 +72,7 @@ final class PrefsController extends OCSController {
 	 * @param int|null $lastHouseId Last-used house id, or null to clear.
 	 * @param bool|null $tapRowToComplete Whether clicking anywhere on a checklist row marks it done.
 	 * @param string|null $categorySpacing Separator between categories when sorting by category. One of: disabled, divider, spacing.
+	 * @param string|null $reuseExistingItems How to handle adding an item that already exists in the list. One of: ask, reuse, never.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>
 	 *
@@ -79,8 +80,8 @@ final class PrefsController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $categorySpacing = null): DataResponse {
-		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $categorySpacing): DataResponse {
+	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $categorySpacing = null, ?string $reuseExistingItems = null): DataResponse {
+		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $categorySpacing, $reuseExistingItems): DataResponse {
 			$uid = $this->requireUid();
 			$patch = [];
 			if ($lastHouseId !== null) {
@@ -92,6 +93,9 @@ final class PrefsController extends OCSController {
 			}
 			if ($categorySpacing !== null) {
 				$patch['categorySpacing'] = $categorySpacing;
+			}
+			if ($reuseExistingItems !== null) {
+				$patch['reuseExistingItems'] = $reuseExistingItems;
 			}
 			$this->prefs->setUserPrefs($uid, $patch);
 			return new DataResponse($this->prefs->getAllUserPrefs($uid));

@@ -203,6 +203,48 @@ class PrefsServiceTest extends TestCase {
 		$this->assertSame('disabled', $this->svc->setCategorySpacing('alice', 'bogus'));
 	}
 
+	// ----- Reuse existing items -----
+
+	public function testGetReuseExistingItemsDefaultsToAsk(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'reuse_existing_items', 'ask')
+			->willReturn('ask');
+
+		$this->assertSame('ask', $this->svc->getReuseExistingItems('alice'));
+	}
+
+	public function testGetReuseExistingItemsReturnsStoredValue(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'reuse_existing_items', 'ask')
+			->willReturn('reuse');
+
+		$this->assertSame('reuse', $this->svc->getReuseExistingItems('alice'));
+	}
+
+	public function testGetReuseExistingItemsFallsBackForUnknownValue(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'reuse_existing_items', 'ask')
+			->willReturn('bogus');
+
+		$this->assertSame('ask', $this->svc->getReuseExistingItems('alice'));
+	}
+
+	public function testSetReuseExistingItemsStoresValidValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'reuse_existing_items', 'never');
+
+		$this->assertSame('never', $this->svc->setReuseExistingItems('alice', 'never'));
+	}
+
+	public function testSetReuseExistingItemsFallsBackForUnknownValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'reuse_existing_items', 'ask');
+
+		$this->assertSame('ask', $this->svc->setReuseExistingItems('alice', 'bogus'));
+	}
+
 	// ----- Show added-by -----
 
 	public function testGetShowAddedByDefaultsToFalse(): void {

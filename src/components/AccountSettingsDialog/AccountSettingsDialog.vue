@@ -55,6 +55,18 @@
           @update:model-value="updateCategorySpacing"
         />
       </div>
+      <div class="account-settings__field">
+        <label class="account-settings__label">{{ strings.reuseExistingItemsLabel }}</label>
+        <p class="account-settings__hint">{{ strings.reuseExistingItemsHint }}</p>
+        <NcSelect
+          :model-value="selectedReuseExistingItemsOption"
+          :options="reuseExistingItemsOptions"
+          :clearable="false"
+          :searchable="false"
+          input-label=""
+          @update:model-value="updateReuseExistingItems"
+        />
+      </div>
     </NcAppSettingsSection>
 
     <NcAppSettingsSection id="pantry-notifications" :name="strings.notificationsSection">
@@ -120,9 +132,11 @@ import {
   setNotificationPrefs,
   type NotificationPrefs,
   type CategorySpacing,
+  type ReuseExistingItems,
 } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useCategorySpacing } from '@/composables/useCategorySpacing'
+import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 
 const props = defineProps<{ open: boolean; houseId: number | null }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -258,6 +272,34 @@ async function updateCategorySpacing(option: CategorySpacingOption | null) {
   }
 }
 
+const { reuseExistingItems, set: setReuseExistingItemsPref } = useReuseExistingItems()
+
+interface ReuseExistingItemsOption {
+  value: ReuseExistingItems
+  label: string
+}
+
+const reuseExistingItemsOptions = computed<ReuseExistingItemsOption[]>(() => [
+  { value: 'ask', label: strings.reuseExistingItemsAsk },
+  { value: 'reuse', label: strings.reuseExistingItemsReuse },
+  { value: 'never', label: strings.reuseExistingItemsNever },
+])
+
+const selectedReuseExistingItemsOption = computed<ReuseExistingItemsOption>(
+  () =>
+    reuseExistingItemsOptions.value.find((o) => o.value === reuseExistingItems.value) ??
+    reuseExistingItemsOptions.value[0],
+)
+
+async function updateReuseExistingItems(option: ReuseExistingItemsOption | null) {
+  if (!option) return
+  try {
+    await setReuseExistingItemsPref(option.value)
+  } catch {
+    // Composable already reverted the optimistic update.
+  }
+}
+
 const strings = {
   title: t('pantry', 'Account settings'),
   imagesSection: t('pantry', 'Images'),
@@ -293,6 +335,14 @@ const strings = {
   categorySpacingDisabled: t('pantry', 'Disabled'),
   categorySpacingDivider: t('pantry', 'Divider'),
   categorySpacingSpacing: t('pantry', 'Spacing'),
+  reuseExistingItemsLabel: t('pantry', 'Reuse existing items when adding'),
+  reuseExistingItemsHint: t(
+    'pantry',
+    'When you try to add an item that already exists in the list, reuse that item.',
+  ),
+  reuseExistingItemsAsk: t('pantry', 'Always ask'),
+  reuseExistingItemsReuse: t('pantry', 'Always reuse'),
+  reuseExistingItemsNever: t('pantry', 'Never reuse'),
 }
 </script>
 

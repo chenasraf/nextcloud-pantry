@@ -16,8 +16,10 @@ class PrefsService {
 	private const KEY_IMAGE_FOLDER = 'image_folder';
 	private const KEY_TAP_ROW_TO_COMPLETE = 'tap_row_to_complete';
 	private const KEY_CATEGORY_SPACING = 'category_spacing';
+	private const KEY_REUSE_EXISTING_ITEMS = 'reuse_existing_items';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
 	public const CATEGORY_SPACING_OPTIONS = ['disabled', 'divider', 'spacing'];
+	public const REUSE_EXISTING_ITEMS_OPTIONS = ['ask', 'reuse', 'never'];
 
 	public function __construct(
 		private IConfig $config,
@@ -105,6 +107,27 @@ class PrefsService {
 		return $normalized;
 	}
 
+	public function getReuseExistingItems(string $uid): string {
+		$value = $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_REUSE_EXISTING_ITEMS,
+			'ask',
+		);
+		return in_array($value, self::REUSE_EXISTING_ITEMS_OPTIONS, true) ? $value : 'ask';
+	}
+
+	public function setReuseExistingItems(string $uid, string $value): string {
+		$normalized = in_array($value, self::REUSE_EXISTING_ITEMS_OPTIONS, true) ? $value : 'ask';
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_REUSE_EXISTING_ITEMS,
+			$normalized,
+		);
+		return $normalized;
+	}
+
 	// ----- Unified user prefs -----
 
 	/**
@@ -116,6 +139,7 @@ class PrefsService {
 			'firstDayOfWeek' => $this->getFirstDayOfWeek($uid),
 			'tapRowToComplete' => $this->getTapRowToComplete($uid),
 			'categorySpacing' => $this->getCategorySpacing($uid),
+			'reuseExistingItems' => $this->getReuseExistingItems($uid),
 		];
 	}
 
@@ -132,6 +156,9 @@ class PrefsService {
 		}
 		if (array_key_exists('categorySpacing', $patch) && is_string($patch['categorySpacing'])) {
 			$this->setCategorySpacing($uid, $patch['categorySpacing']);
+		}
+		if (array_key_exists('reuseExistingItems', $patch) && is_string($patch['reuseExistingItems'])) {
+			$this->setReuseExistingItems($uid, $patch['reuseExistingItems']);
 		}
 	}
 

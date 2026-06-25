@@ -795,7 +795,8 @@
                     "lastHouseId",
                     "firstDayOfWeek",
                     "tapRowToComplete",
-                    "categorySpacing"
+                    "categorySpacing",
+                    "reuseExistingItems"
                 ],
                 "properties": {
                     "lastHouseId": {
@@ -811,6 +812,9 @@
                         "type": "boolean"
                     },
                     "categorySpacing": {
+                        "type": "string"
+                    },
+                    "reuseExistingItems": {
                         "type": "string"
                     }
                 }
@@ -9041,6 +9045,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Separator between categories when sorting by category. One of: disabled, divider, spacing."
+                                    },
+                                    "reuseExistingItems": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "How to handle adding an item that already exists in the list. One of: ask, reuse, never."
                                     }
                                 }
                             }

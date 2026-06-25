@@ -303,6 +303,23 @@
         </NcButton>
       </template>
     </NcDialog>
+
+    <NcDialog
+      v-if="currentReuse"
+      :name="strings.reuseTitle"
+      :open="!!currentReuse"
+      close-on-click-outside
+      @update:open="(v) => !v && resolveCurrentReuse('cancel')"
+    >
+      <p>{{ reusePrompt }}</p>
+      <template #actions>
+        <NcButton @click="resolveCurrentReuse('cancel')">{{ strings.cancel }}</NcButton>
+        <NcButton @click="resolveCurrentReuse('add')">{{ strings.reuseAddAnyway }}</NcButton>
+        <NcButton variant="primary" @click="resolveCurrentReuse('reuse')">
+          {{ strings.reuseAction }}
+        </NcButton>
+      </template>
+    </NcDialog>
   </div>
 </template>
 
@@ -353,6 +370,7 @@ import { getChecklistItemSort, setChecklistItemSort } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useCategorySpacing } from '@/composables/useCategorySpacing'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
+import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 
 const props = defineProps<{ houseId: string; listId: string }>()
 
@@ -799,7 +817,90 @@ useTouchReorder(
 
 const adding = ref(false)
 
+const { reuseExistingItems } = useReuseExistingItems()
+
+// ----- Reuse existing items -----
+//
+// When adding an item whose normalized name already matches one in the same
+// list, the user's "reuse existing items" pref decides what happens: reuse
+// (uncheck the existing item, add nothing), ask (prompt per duplicate), or
+// never (fall through to a normal add). Bulk add fires handleAdd concurrently,
+// so "ask" prompts are queued and resolved one at a time.
+
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase()
+}
+
+function findExistingItem(
+  name: string,
+  useListId: number | null | undefined,
+): ChecklistItem | null {
+  if (useListId == null || useListId <= 0) return null
+  const norm = normalizeName(name)
+  if (!norm) return null
+  return items.value.find((i) => i.listId === useListId && normalizeName(i.name) === norm) ?? null
+}
+
+async function reuseItem(existing: ChecklistItem) {
+  // "Reusing" means surfacing the existing item as active again — only the done
+  // ones need an uncheck; an already-active match is left untouched.
+  if (existing.done) {
+    await toggle(existing.id)
+  }
+  showSuccess(t('pantry', 'Reused existing item "{name}"', { name: existing.name }))
+}
+
+type ReuseDecision = 'reuse' | 'add' | 'cancel'
+
+interface ReuseRequest {
+  existing: ChecklistItem
+  resolve: (decision: ReuseDecision) => void
+}
+
+const reuseQueue = ref<ReuseRequest[]>([])
+const currentReuse = computed(() => reuseQueue.value[0] ?? null)
+const reusePrompt = computed(() =>
+  currentReuse.value
+    ? t(
+        'pantry',
+        'An item named "{name}" already exists in this list. Reuse it instead of adding a new one?',
+        { name: currentReuse.value.existing.name },
+      )
+    : '',
+)
+
+function askReuse(existing: ChecklistItem): Promise<ReuseDecision> {
+  return new Promise((resolve) => {
+    reuseQueue.value = [...reuseQueue.value, { existing, resolve }]
+  })
+}
+
+function resolveCurrentReuse(decision: ReuseDecision) {
+  const req = reuseQueue.value[0]
+  if (!req) return
+  reuseQueue.value = reuseQueue.value.slice(1)
+  req.resolve(decision)
+}
+
 async function handleAdd(input: ItemInput, pendingImage: File | null, targetListId: number | null) {
+  const mode = reuseExistingItems.value
+  if (mode !== 'never' && !trashMode.value) {
+    const useListId = isMeta.value ? targetListId : listIdNum.value
+    const existing = findExistingItem(input.name, useListId)
+    if (existing) {
+      if (mode === 'reuse') {
+        await reuseItem(existing)
+        return
+      }
+      const decision = await askReuse(existing)
+      if (decision === 'cancel') return
+      if (decision === 'reuse') {
+        await reuseItem(existing)
+        return
+      }
+      // 'add' falls through to a normal add below.
+    }
+  }
   adding.value = true
   try {
     const created = await add(input, targetListId ?? undefined)
@@ -1061,6 +1162,9 @@ const strings = {
   itemMarkedDone: t('pantry', 'Item marked as done'),
   itemRemoved: t('pantry', 'Item moved to trash'),
   restoreFailed: t('pantry', 'Failed to restore item.'),
+  reuseTitle: t('pantry', 'Item already exists'),
+  reuseAction: t('pantry', 'Reuse existing'),
+  reuseAddAnyway: t('pantry', 'Add anyway'),
 }
 </script>
 
