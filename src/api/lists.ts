@@ -74,22 +74,36 @@ export async function emptyListsTrash(houseId: number): Promise<void> {
   await ocs.delete(`/houses/${houseId}/lists/trash`)
 }
 
+// Server item endpoints page their results (indexItems caps at 200 by default,
+// indexHouseItems at 1000). Page through with an explicit limit/offset until a
+// short page comes back so long, category-sorted lists don't drop their tail.
+const ITEMS_PAGE_SIZE = 500
+
+async function fetchAllItems(url: string, sortBy?: string): Promise<ChecklistItem[]> {
+  const all: ChecklistItem[] = []
+  let offset = 0
+  for (;;) {
+    const resp = await ocs.get<ChecklistItem[]>(url, {
+      params: { ...(sortBy ? { sortBy } : {}), limit: ITEMS_PAGE_SIZE, offset },
+    })
+    const page = resp.data ?? []
+    all.push(...page)
+    if (page.length < ITEMS_PAGE_SIZE) break
+    offset += ITEMS_PAGE_SIZE
+  }
+  return all
+}
+
 export async function listItems(
   houseId: number,
   listId: number,
   sortBy?: string,
 ): Promise<ChecklistItem[]> {
-  const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/lists/${listId}/items`, {
-    params: sortBy ? { sortBy } : undefined,
-  })
-  return resp.data ?? []
+  return fetchAllItems(`/houses/${houseId}/lists/${listId}/items`, sortBy)
 }
 
 export async function listAllItems(houseId: number, sortBy?: string): Promise<ChecklistItem[]> {
-  const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/items`, {
-    params: sortBy ? { sortBy } : undefined,
-  })
-  return resp.data ?? []
+  return fetchAllItems(`/houses/${houseId}/items`, sortBy)
 }
 
 export async function listDeletedItems(houseId: number, listId: number): Promise<ChecklistItem[]> {
