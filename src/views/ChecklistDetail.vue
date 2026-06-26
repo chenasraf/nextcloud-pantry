@@ -833,9 +833,16 @@ function unbindDragListeners(el: HTMLElement | null) {
   el.removeEventListener('drop', onDropCapture, true)
   el.removeEventListener('dragend', onDragEndCapture, true)
 }
-onMounted(() => {
-  bindDragListeners(uncheckedListRef.value)
-  bindDragListeners(checkedListRef.value)
+// The partition lists are gated behind `v-if` (loading / empty state), so the
+// refs are null at mount and only appear once items render. Rebind on change
+// rather than once in onMounted, or desktop drops never reach commitReorder.
+watch(uncheckedListRef, (el, prev) => {
+  unbindDragListeners(prev ?? null)
+  bindDragListeners(el)
+})
+watch(checkedListRef, (el, prev) => {
+  unbindDragListeners(prev ?? null)
+  bindDragListeners(el)
 })
 onBeforeUnmount(() => {
   unbindDragListeners(uncheckedListRef.value)

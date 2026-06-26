@@ -4,6 +4,8 @@
     :class="{
       'checklist-row--done': item.done,
       'checklist-row--dragging': isDragging,
+      'checklist-row--reorderable': reorderEnabled,
+      'checklist-row--with-added-by': showAddedBy,
     }"
     :data-drag-id="item.id"
     :draggable="reorderEnabled ? 'true' : 'false'"
@@ -11,6 +13,9 @@
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
   >
+    <span v-if="reorderEnabled" class="checklist-row__handle" :aria-label="strings.dragToReorder">
+      <DragVerticalIcon :size="20" />
+    </span>
     <div class="checklist-row__check">
       <NcCheckboxRadioSwitch
         :model-value="item.done"
@@ -59,8 +64,9 @@
         {{ category.name }}
       </span>
     </div>
-    <div v-if="showAddedBy && item.addedBy" class="checklist-row__added-by">
+    <div v-if="showAddedBy" class="checklist-row__added-by">
       <NcAvatar
+        v-if="item.addedBy"
         :user="item.addedBy"
         :size="24"
         :show-user-status="false"
@@ -117,6 +123,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcAvatar from '@nextcloud/vue/components/NcAvatar'
+import DragVerticalIcon from '@icons/DragVertical.vue'
 import RepeatIcon from '@icons/Repeat.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
@@ -214,6 +221,7 @@ const recurrenceTooltip = computed(() => {
 })
 
 const strings = {
+  dragToReorder: t('pantry', 'Drag to reorder'),
   viewImage: t('pantry', 'View image'),
   viewItem: t('pantry', 'View item'),
   itemActions: t('pantry', 'Item actions'),
@@ -229,7 +237,10 @@ const strings = {
 <style scoped lang="scss">
 .checklist-row {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  // Columns: [handle] check(1fr) meta [added-by] actions. The optional tracks
+  // are toggled via modifier classes so the actions column is always the last
+  // track on every row — otherwise rows missing an avatar shift the eye/kebab.
+  grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
@@ -237,12 +248,35 @@ const strings = {
   border-radius: var(--border-radius, 8px);
   background: var(--color-main-background);
 
+  &--reorderable {
+    grid-template-columns: auto 1fr auto auto;
+  }
+
+  &--with-added-by {
+    grid-template-columns: 1fr auto auto auto;
+  }
+
+  &--reorderable#{&}--with-added-by {
+    grid-template-columns: auto 1fr auto auto auto;
+  }
+
   @media (max-width: 600px) {
     grid-template-columns: 1fr auto auto;
     grid-template-areas:
       'check added actions'
       'meta  meta  meta';
     gap: 0.25rem 0.5rem;
+
+    &.checklist-row--reorderable {
+      grid-template-columns: auto 1fr auto auto;
+      grid-template-areas:
+        'handle check added actions'
+        'handle meta  meta  meta';
+    }
+
+    .checklist-row__handle {
+      grid-area: handle;
+    }
 
     .checklist-row__check {
       grid-area: check;
@@ -280,6 +314,24 @@ const strings = {
 
     &:active {
       cursor: grabbing;
+    }
+  }
+
+  &__handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-maxcontrast);
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    // The icon component renders its own span/svg which reset the cursor.
+    :deep(*) {
+      cursor: inherit;
+      pointer-events: none;
     }
   }
 
