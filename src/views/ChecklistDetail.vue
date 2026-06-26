@@ -55,6 +55,23 @@
           </template>
           {{ strings.manageCategories }}
         </NcButton>
+        <NcActions v-if="!isMeta" :aria-label="strings.moreActions" :title="strings.moreActions">
+          <template #icon>
+            <DotsHorizontalIcon :size="20" />
+          </template>
+          <NcActionButton @click="showExport = true">
+            <template #icon>
+              <FileExportIcon :size="20" />
+            </template>
+            {{ strings.exportMarkdown }}
+          </NcActionButton>
+          <NcActionButton @click="showImport = true">
+            <template #icon>
+              <FileImportIcon :size="20" />
+            </template>
+            {{ strings.importMarkdown }}
+          </NcActionButton>
+        </NcActions>
       </template>
     </PageToolbar>
 
@@ -320,12 +337,27 @@
         </NcButton>
       </template>
     </NcDialog>
+
+    <MarkdownExportDialog
+      v-model:open="showExport"
+      :list-name="list?.name ?? ''"
+      :items="items"
+      :category-for="categoryFor"
+    />
+
+    <MarkdownImportDialog
+      v-model:open="showImport"
+      :house-id="houseIdNum"
+      :importing="importing"
+      :reuse-pref="reuseExistingItems"
+      @import="handleImportItems"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { t } from '@nextcloud/l10n'
+import { t, n } from '@nextcloud/l10n'
 import { showUndo, showError, showSuccess } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
@@ -341,6 +373,9 @@ import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import TagIcon from '@icons/Tag.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import ViewListIcon from '@icons/ViewList.vue'
+import DotsHorizontalIcon from '@icons/DotsHorizontal.vue'
+import FileExportIcon from '@icons/FileExport.vue'
+import FileImportIcon from '@icons/FileImport.vue'
 import PageToolbar from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
 import { ChecklistFilter } from '@/components/ChecklistFilter'
@@ -349,6 +384,8 @@ import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
+import { MarkdownExportDialog } from '@/components/MarkdownExportDialog'
+import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
 import {
   checklistIconComponent,
   ChecklistFormDialog,
@@ -365,7 +402,7 @@ import { useTouchReorder } from '@/composables/useTouchReorder'
 import { getList, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
-import type { ChecklistItemSort } from '@/api/prefs'
+import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
 import { getChecklistItemSort, setChecklistItemSort } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useCategorySpacing } from '@/composables/useCategorySpacing'
@@ -419,6 +456,37 @@ function categoryFor(id: number | null) {
 
 function listFor(id: number) {
   return allLists.value.find((l) => l.id === id) ?? null
+}
+
+// ----- Markdown import / export -----
+
+const showExport = ref(false)
+const showImport = ref(false)
+const importing = ref(false)
+
+async function handleImportItems(inputs: ItemInput[], forceReuse: boolean) {
+  // Close the import dialog first so the reuse-existing-items prompts (when the
+  // pref is set to "ask") render cleanly over the list instead of stacking on
+  // top of this dialog.
+  showImport.value = false
+  importing.value = true
+  // When the user ticked "Reuse existing items" in the dialog, force reuse for
+  // this import regardless of the global pref ("ask"/"never").
+  const modeOverride = forceReuse ? 'reuse' : undefined
+  try {
+    // Route each item through the normal add path so imports honor the
+    // reuse-existing-items pref: reuse silently, prompt per duplicate, or add.
+    // Sequential awaiting also resolves any "ask" prompts one at a time and
+    // dedupes names that repeat within the imported batch itself.
+    for (const input of inputs) {
+      await handleAdd(input, null, null, modeOverride)
+    }
+    showSuccess(n('pantry', 'Imported %n item', 'Imported %n items', inputs.length))
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    importing.value = false
+  }
 }
 
 // ----- Sort -----
@@ -882,8 +950,13 @@ function resolveCurrentReuse(decision: ReuseDecision) {
   req.resolve(decision)
 }
 
-async function handleAdd(input: ItemInput, pendingImage: File | null, targetListId: number | null) {
-  const mode = reuseExistingItems.value
+async function handleAdd(
+  input: ItemInput,
+  pendingImage: File | null,
+  targetListId: number | null,
+  modeOverride?: ReuseExistingItems,
+) {
+  const mode = modeOverride ?? reuseExistingItems.value
   if (mode !== 'never' && !trashMode.value) {
     const useListId = isMeta.value ? targetListId : listIdNum.value
     const existing = findExistingItem(input.name, useListId)
@@ -1149,6 +1222,9 @@ const strings = {
   trashLabel: t('pantry', 'Trash'),
   doneTitle: t('pantry', 'Done'),
   manageCategories: t('pantry', 'Manage categories'),
+  moreActions: t('pantry', 'More actions'),
+  exportMarkdown: t('pantry', 'Export to Markdown'),
+  importMarkdown: t('pantry', 'Import from Markdown'),
   moveToList: t('pantry', 'Move to list'),
   copyToList: t('pantry', 'Copy to list'),
   newList: t('pantry', 'New list'),
