@@ -136,6 +136,8 @@ OC.L10N.register(
     "Type to filter …" : "Filtreerimiseks kirjuta midagi...",
     "All" : "Kõik",
     "All lists" : "Kõik loendid",
+    "Filter lists" : "Filtriloendid",
+    "Filter categories" : "Filtrite kategooriad",
     "Create a checklist" : "Koosta kontroll-loend",
     "Edit checklist" : "Muuda kontroll-loendit",
     "e.g. Weekly groceries" : "nt. Iganädalased ostud",
