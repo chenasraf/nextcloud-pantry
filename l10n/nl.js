@@ -43,6 +43,12 @@ OC.L10N.register(
     "Add a member" : "Voeg een lid toe",
     "No accounts found" : "Geen accounts gevonden",
     "Danger zone" : "Gevarenzone",
+    "Close" : "Sluit",
+    "Copy" : "Kopiëren",
+    "Copied to clipboard" : "Gekopieerd naar het klembord",
+    "Could not copy to clipboard" : "Kon niet kopiëren naar het klembord",
+    "Select all" : "Alles selecteren",
+    "Deselect all" : "Deselecteer alles",
     "Remove" : "Verwijderen",
     "Pin to top" : "Bovenaan vastprikken",
     "Unpin" : "Losmaken",
@@ -52,7 +58,6 @@ OC.L10N.register(
     "Create folder" : "Creëer map",
     "Folder name" : "Mapnaam",
     "Rename" : "Hernoemen",
-    "Close" : "Sluit",
     "Remove recurrence" : "Verwijder herhaling",
     "days" : "dagen",
     "weeks" : "weken",
@@ -68,6 +73,7 @@ OC.L10N.register(
     "Summary" : "Samenvatting",
     "Newest first" : "Nieuwste eerst",
     "Oldest first" : "Oudste eerst",
+    "More actions" : "Meer acties",
     "New list" : "Nieuwe lijst",
     "Checklists" : "Controlelijst",
     "No lists yet" : "Nog geen lijsten",
@@ -80,6 +86,7 @@ OC.L10N.register(
     "Caption" : "Bijschrift",
     "Add a description" : "Voeg een omschrijving toe",
     "Remove folder" : "Map verwijderen",
-    "Move to folder" : "Verplaatsen naar map"
+    "Move to folder" : "Verplaatsen naar map",
+    "Uncategorized" : "Niet gecategoriseerd"
 },
 "nplurals=2; plural=(n != 1);");

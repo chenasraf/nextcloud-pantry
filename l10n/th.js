@@ -24,11 +24,15 @@ OC.L10N.register(
     "Display" : "การแสดงผล",
     "Trash" : "ถังขยะ",
     "Account" : "บัญชี",
+    "Close" : "ปิด",
+    "Copy" : "คัดลอก",
+    "Copied to clipboard" : "คัดลอกไปยังคลิปบอร์ดแล้ว",
+    "Select all" : "เลือกทั้งหมด",
+    "Deselect all" : "ยกเลิกการเลือกทั้งหมด",
     "Remove" : "ลบออก",
     "Preview" : "ตัวอย่าง",
     "Folder name" : "ชื่อโฟลเดอร์",
     "Rename" : "เปลี่ยนชื่อ",
-    "Close" : "ปิด",
     "days" : "วัน",
     "weeks" : "สัปดาห์",
     "Daily" : "รายวัน",
@@ -38,6 +42,7 @@ OC.L10N.register(
     "Newest first" : "ใหม่ที่สุดก่อน",
     "Oldest first" : "เก่าที่สุดก่อน",
     "Upload" : "อัปโหลด",
-    "New folder" : "โฟลเดอร์ใหม่"
+    "New folder" : "โฟลเดอร์ใหม่",
+    "Uncategorized" : "ไม่ได้จัดหมวดหมู่"
 },
 "nplurals=1; plural=0;");

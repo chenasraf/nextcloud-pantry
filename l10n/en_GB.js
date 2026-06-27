@@ -116,6 +116,9 @@ OC.L10N.register(
     "Delete house" : "Delete house",
     "Delete this house?" : "Delete this house?",
     "All lists, items and member records for this house will be permanently deleted." : "All lists, items and member records for this house will be permanently deleted.",
+    "Export to Markdown" : "Export to Markdown",
+    "Close" : "Close",
+    "Select all" : "Select all",
     "Note actions" : "Note actions",
     "Remove" : "Remove",
     "Pin to top" : "Pin to top",
@@ -134,7 +137,6 @@ OC.L10N.register(
     "Photo actions" : "Photo actions",
     "Move to board" : "Move to board",
     "Photo preview" : "Photo preview",
-    "Close" : "Close",
     "Remove recurrence" : "Remove recurrence",
     "days" : "days",
     "weeks" : "weeks",
@@ -170,6 +172,7 @@ OC.L10N.register(
     "Back to lists" : "Back to lists",
     "No items yet" : "No items yet",
     "Add items using the form above." : "Add items using the form above.",
+    "More actions" : "More actions",
     "New list" : "New list",
     "Checklists" : "Checklists",
     "List actions" : "List actions",
@@ -217,6 +220,7 @@ OC.L10N.register(
     "Welcome to Pantry" : "Welcome to Pantry",
     "Create a house to start organizing your checklists, photos and notes." : "Create a house to start organising your checklists, photos and notes.",
     "Use the house picker at the bottom of the sidebar to create one." : "Use the house picker at the bottom of the sidebar to create one.",
+    "Uncategorized" : "Uncategorised",
     "Starts after completion" : "Starts after completion"
 },
 "nplurals=2; plural=(n != 1);");

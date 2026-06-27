@@ -27,11 +27,14 @@ OC.L10N.register(
     "Save changes" : "Save changes",
     "Display" : "Displey",
     "Account" : "Akkaunt",
+    "Close" : "Yopish",
+    "Copy" : "Nusxa",
+    "Copied to clipboard" : "Buferga nusxalandi",
+    "Select all" : "Barchasini tanash",
     "Remove" : "O'chirish",
     "Preview" : "Ko‘rib chiqish",
     "Folder name" : "Papka nomi",
     "Rename" : "Nomini o'zgartirish",
-    "Close" : "Yopish",
     "days" : "kun",
     "weeks" : "hafta",
     "months" : "oy",
@@ -41,6 +44,7 @@ OC.L10N.register(
     "Monthly" : "Oylik",
     "Never" : "Hech qachon",
     "On date" : "Sanada",
+    "More actions" : "Ko'proq harakatlar",
     "Checklists" : "Tekshirish ro'yxatlari",
     "No lists yet" : "Hozircha roʻyxatlar yoʻq",
     "New note" : "Yangi eslatma",
@@ -48,6 +52,7 @@ OC.L10N.register(
     "Upload" : "Yuklash",
     "New folder" : "Yangi jild",
     "Back" : "Orqaga",
-    "Add a description" : "Tavsif qo'shing"
+    "Add a description" : "Tavsif qo'shing",
+    "Uncategorized" : "Kategoriyasiz"
 },
 "nplurals=1; plural=0;");

@@ -42,6 +42,12 @@ OC.L10N.register(
     "Add a member" : "添加一个成员",
     "No accounts found" : "没有找到帐户",
     "Danger zone" : "危险区域",
+    "Close" : "关闭",
+    "Copy" : "复制",
+    "Copied to clipboard" : "已复制到剪贴板",
+    "Could not copy to clipboard" : "无法复制到剪贴板",
+    "Select all" : "全部选择",
+    "Deselect all" : "全部取消选择",
     "Remove" : "移除",
     "Pin to top" : "置顶",
     "Unpin" : "取消置顶",
@@ -51,7 +57,6 @@ OC.L10N.register(
     "Create folder" : "创建文件夹",
     "Folder name" : "文件夹名称",
     "Rename" : "重命名",
-    "Close" : "关闭",
     "Remove recurrence" : "移除重复",
     "days" : "天",
     "weeks" : "周",
@@ -67,6 +72,7 @@ OC.L10N.register(
     "Summary" : "总结",
     "Newest first" : "从新到旧",
     "Oldest first" : "从旧到新",
+    "More actions" : "更多操作 ",
     "New list" : "新列表",
     "Checklists" : "清单",
     "No lists yet" : "尚无名单",
@@ -77,6 +83,7 @@ OC.L10N.register(
     "Back" : "返回",
     "Add a description" : "添加描述",
     "Remove folder" : "移除文件夹",
-    "Move to folder" : "移动到文件夹"
+    "Move to folder" : "移动到文件夹",
+    "Uncategorized" : "未分类"
 },
 "nplurals=1; plural=0;");

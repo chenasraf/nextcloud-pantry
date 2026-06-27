@@ -30,13 +30,17 @@
     "Account" : "Account",
     "Role" : "Role",
     "Danger zone" : "Danger zone",
+    "Close" : "Close",
+    "Copy" : "კოპირება",
+    "Copied to clipboard" : "Copied to clipboard",
+    "Select all" : "Select all",
+    "Deselect all" : "Deselect all",
     "Remove" : "Remove",
     "Pin to top" : "Pin to top",
     "Unpin" : "Unpin",
     "Preview" : "Preview",
     "Folder name" : "Folder name",
     "Rename" : "სახელის გადარქმევა",
-    "Close" : "Close",
     "days" : "days",
     "weeks" : "weeks",
     "months" : "months",
@@ -49,6 +53,7 @@
     "Summary" : "Summary",
     "Newest first" : "Newest first",
     "Oldest first" : "Oldest first",
+    "More actions" : "მეტი ქმედება",
     "New list" : "New list",
     "Checklists" : "Checklists",
     "New note" : "New note",
@@ -57,6 +62,7 @@
     "Upload" : "Upload",
     "New folder" : "New folder",
     "Back" : "უკან",
-    "Add a description" : "Add a description"
+    "Add a description" : "Add a description",
+    "Uncategorized" : "Uncategorized"
 },"pluralForm" :"nplurals=2; plural=(n!=1);"
 }

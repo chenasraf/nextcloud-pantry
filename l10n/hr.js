@@ -39,6 +39,13 @@ OC.L10N.register(
     "Joined" : "Pridružen",
     "Add a member" : "Dodaj člana",
     "Danger zone" : "Zona opasnosti",
+    "Export to Markdown" : "Izvezi u Markdown",
+    "Close" : "Zatvori",
+    "Copy" : "Kopirajte",
+    "Copied to clipboard" : "Kopirano u međuspremnik",
+    "Could not copy to clipboard" : "Kopiranje u međuspremnik nije uspjelo",
+    "Select all" : "Odaberi sve",
+    "Deselect all" : "Odznači sve",
     "Remove" : "Ukloni",
     "Pin to top" : "Prikvači na vrh",
     "Unpin" : "Otkvači",
@@ -47,7 +54,6 @@ OC.L10N.register(
     "Rename folder" : "Preimenuj mapu",
     "Folder name" : "Naziv mape",
     "Rename" : "Preimenuj",
-    "Close" : "Zatvori",
     "Remove recurrence" : "Ukloni ponavljanja",
     "days" : "dani",
     "weeks" : "tjedana",
@@ -62,6 +68,7 @@ OC.L10N.register(
     "Summary" : "Sažetak",
     "Newest first" : "Najnoviji prvi",
     "Oldest first" : "Najstariji prvi",
+    "More actions" : "Dodatne radnje",
     "New list" : "Novi popis",
     "Checklists" : "Kontrolni popisi",
     "No lists yet" : "Još nema popisa",
@@ -69,6 +76,7 @@ OC.L10N.register(
     "Upload" : "Učitaj",
     "New folder" : "Nova mapa",
     "Back" : "Natrag",
-    "Add a description" : "Dodaj opis"
+    "Add a description" : "Dodaj opis",
+    "Uncategorized" : "Nekategorizirani"
 },
 "nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;");

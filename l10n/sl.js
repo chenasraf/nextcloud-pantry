@@ -40,6 +40,12 @@ OC.L10N.register(
     "Joined" : "Pridružen",
     "Add a member" : "Dodaj člana",
     "Danger zone" : "Nevarno območje",
+    "Close" : "Zapri",
+    "Copy" : "Kopiraj",
+    "Copied to clipboard" : "Kopirano v odložišče",
+    "Could not copy to clipboard" : "Predmeta ni mogoče kopirati v odložišče",
+    "Select all" : "Izberi vse",
+    "Deselect all" : "Odstrani celoten izbor",
     "Remove" : "Odstrani",
     "Pin to top" : "Pripni na vrh",
     "Unpin" : "Odpni",
@@ -48,7 +54,6 @@ OC.L10N.register(
     "Rename folder" : "Preimenuj mapo",
     "Folder name" : "Ime mape",
     "Rename" : "Preimenuj",
-    "Close" : "Zapri",
     "days" : "dnevi",
     "weeks" : "tedne",
     "months" : "mesecev",
@@ -63,6 +68,7 @@ OC.L10N.register(
     "Summary" : "Povzetek",
     "Newest first" : "najprej najnovejše",
     "Oldest first" : "najprej najstarejše",
+    "More actions" : "Več dejanj",
     "Checklists" : "Zbirni seznam",
     "No lists yet" : "Ni še dodanega seznama",
     "New note" : "Nova zabeležka",
@@ -73,6 +79,7 @@ OC.L10N.register(
     "Back" : "Nazaj",
     "Add a description" : "Dodaj opis ...",
     "Remove folder" : "Odstrani mapo",
-    "Move to folder" : "Premakni v mapo"
+    "Move to folder" : "Premakni v mapo",
+    "Uncategorized" : "Neopredeljeno"
 },
 "nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);");

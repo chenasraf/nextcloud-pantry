@@ -182,6 +182,13 @@
     "Stays on the list after it is marked done." : "Tamamlanmış olarak işaretlendiğinde listede kalsın.",
     "Removed from the list once marked done." : "Tamamlanmış olarak işaretlendiğinde listeden kaldırılsın.",
     "Comes back on a schedule." : "Zamanlamasına göre geri gelir.",
+    "Export to Markdown" : "Markdown olarak dışa aktar",
+    "Close" : "Kapat",
+    "Copy" : "Kopyala",
+    "Copied to clipboard" : "Panoya kopyalandı",
+    "Could not copy to clipboard" : "Panoya kopyalanamadı",
+    "Select all" : "Tümünü seç",
+    "Deselect all" : "Tümünü bırak",
     "Note actions" : "Not işlemleri",
     "Remove" : "Kaldır",
     "Pin to top" : "Üste sabitle",
@@ -200,7 +207,6 @@
     "Photo actions" : "Fotoğraf işlemleri",
     "Move to board" : "Panoya taşı",
     "Photo preview" : "Fotoğraf ön izlemesi",
-    "Close" : "Kapat",
     "e.g. 2 L, 500 g" : "Örnek: 2 L, 500 g",
     "Decrease quantity" : "Miktarı azalt",
     "Increase quantity" : "Miktarı artır",
@@ -243,6 +249,7 @@
     "Add items using the form above." : "Yukarıdaki formu kullanarak ögeler ekleyin.",
     "Trash is empty" : "Çöp boş",
     "Deleted items will appear here." : "Silinen ögeler burada görüntülenir.",
+    "More actions" : "Diğer işlemler",
     "New list" : "Yeni liste",
     "Empty trash" : "Çöpü boşalt",
     "Empty trash?" : "Çöp boşaltılsın mı?",
@@ -296,6 +303,7 @@
     "Welcome to Pantry" : "Pantry uygulamasına hoş geldiniz",
     "Create a house to start organizing your checklists, photos and notes." : "Kontrol listelerinizi, fotoğraflarınızı ve notlarınızı düzenlemeye başlamak için bir ev oluşturun.",
     "Use the house picker at the bottom of the sidebar to create one." : "Bir tane oluşturmak için kenar çubuğunun altındaki ev seçiciyi kullanın.",
+    "Uncategorized" : "Bölümü yok",
     "Starts after completion" : "Tamamlandıktan sonra başlar"
 },"pluralForm" :"nplurals=2; plural=(n > 1);"
 }

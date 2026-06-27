@@ -38,6 +38,12 @@ OC.L10N.register(
     "Add a member" : "Bæta við meðlimi",
     "No accounts found" : "Engir aðgangsreikningar fundust",
     "Danger zone" : "Hættusvæði",
+    "Close" : "Loka",
+    "Copy" : "Afrita",
+    "Copied to clipboard" : "Afritað á klippispjald",
+    "Could not copy to clipboard" : "Gat ekki afritað á klippispjald",
+    "Select all" : "Velja allt",
+    "Deselect all" : "Afvelja allt",
     "Remove" : "Fjarlægja",
     "Pin to top" : "Tengja á topphluta",
     "Unpin" : "Losa",
@@ -46,7 +52,6 @@ OC.L10N.register(
     "Rename folder" : "Endurnefna möppu",
     "Folder name" : "Nafn möppu",
     "Rename" : "Endurnefna",
-    "Close" : "Loka",
     "days" : "daga",
     "weeks" : "vikur",
     "months" : "mánuðir",
@@ -61,6 +66,7 @@ OC.L10N.register(
     "Summary" : "Samantekt",
     "Newest first" : "Nýjast fyrst",
     "Oldest first" : "Elsta fyrst",
+    "More actions" : "Fleiri aðgerðir",
     "New list" : "Nýr listi",
     "Checklists" : "Gátlistar",
     "No lists yet" : "Engir listar ennþá",
@@ -69,6 +75,7 @@ OC.L10N.register(
     "New folder" : "Ný mappa",
     "Back" : "Til baka",
     "Add a description" : "Settu inn lýsingu",
-    "Remove folder" : "Fjarlægja möppu"
+    "Remove folder" : "Fjarlægja möppu",
+    "Uncategorized" : "Óflokkað"
 },
 "nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);");

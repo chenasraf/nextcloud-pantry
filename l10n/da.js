@@ -40,6 +40,8 @@ OC.L10N.register(
     "Joined" : "Forbind",
     "Add a member" : "Tilføj et medlem",
     "Danger zone" : "Farezone",
+    "Close" : "Luk",
+    "Select all" : "Vælg alle",
     "Remove" : "Fjern",
     "Pin to top" : "Fastgør til toppen",
     "Unpin" : "Frigør",
@@ -47,7 +49,6 @@ OC.L10N.register(
     "Create folder" : "Opret mappe",
     "Folder name" : "Mappenavn",
     "Rename" : "Omdøb",
-    "Close" : "Luk",
     "days" : "dage",
     "weeks" : "uger",
     "months" : "måneder",
@@ -71,6 +72,7 @@ OC.L10N.register(
     "Back" : "Tilbage",
     "Caption" : "Overskrift",
     "Add a description" : "Tilføj en beskrivelse",
-    "Remove folder" : "Fjern mappe"
+    "Remove folder" : "Fjern mappe",
+    "Uncategorized" : "Udenfor kategori"
 },
 "nplurals=2; plural=(n != 1);");

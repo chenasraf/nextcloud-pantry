@@ -34,12 +34,18 @@
     "Joined" : "등록함",
     "Add a member" : "회원 추가",
     "Danger zone" : "위험 지역",
+    "Export to Markdown" : "마크다운으로 내보내기",
+    "Close" : "닫기",
+    "Copy" : "복사",
+    "Copied to clipboard" : "클립보드로 복사됨",
+    "Could not copy to clipboard" : "클립보드에 복사할 수 없습니다.",
+    "Select all" : "모두 선택",
+    "Deselect all" : "모두 선택 해제",
     "Remove" : "삭제",
     "Pin to top" : "목록에 고정",
     "Preview" : "미리 보기",
     "Folder name" : "폴더 이름",
     "Rename" : "이름 바꾸기",
-    "Close" : "닫기",
     "days" : "일",
     "weeks" : "주",
     "months" : "개월",
@@ -54,6 +60,7 @@
     "Summary" : "요약",
     "Newest first" : "최신순",
     "Oldest first" : "오래된순",
+    "More actions" : "더 많은 동작",
     "Checklists" : "체크리스트들",
     "No lists yet" : "리스트 없음",
     "Note restored" : "메모 복원됨",
@@ -61,6 +68,7 @@
     "New folder" : "새 폴더",
     "Back" : "뒤로",
     "Add a description" : "설명 추가",
-    "Move to folder" : "폴더로 이동"
+    "Move to folder" : "폴더로 이동",
+    "Uncategorized" : "분류되지 않음"
 },"pluralForm" :"nplurals=1; plural=0;"
 }

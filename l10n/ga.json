@@ -195,6 +195,13 @@
     "Stays on the list after it is marked done." : "Fanann sé ar an liosta tar éis é a bheith marcáilte mar chríochnaithe.",
     "Removed from the list once marked done." : "Baintear den liosta é nuair a mharcáiltear é mar chríochnaithe.",
     "Comes back on a schedule." : "Tagann ar ais de réir sceidil.",
+    "Export to Markdown" : "Easpórtáil go Markdown",
+    "Close" : "Dún",
+    "Copy" : "Cóipeáil",
+    "Copied to clipboard" : "Cóipeáladh chuig an ngearrthaisce",
+    "Could not copy to clipboard" : "Níorbh fhéidir cóip a dhéanamh chuig an ngearrthaisce",
+    "Select all" : "Roghnú go léir",
+    "Deselect all" : "Díroghnaigh go léir",
     "Note actions" : "Gníomhartha nótaí",
     "Remove" : "Bain",
     "Pin to top" : "Bioráin go barr",
@@ -213,7 +220,6 @@
     "Photo actions" : "Gníomhartha grianghraf",
     "Move to board" : "Bog chuig an mbord",
     "Photo preview" : "Réamhamharc grianghraf",
-    "Close" : "Dún",
     "e.g. 2 L, 500 g" : "m.sh. 2 L, 500 g",
     "Decrease quantity" : "Laghdaigh an chainníocht",
     "Increase quantity" : "Méadaigh an chainníocht",
@@ -258,6 +264,7 @@
     "Add items using the form above." : "Cuir míreanna leis ag baint úsáide as an bhfoirm thuas.",
     "Trash is empty" : "Tá an bruscar folamh",
     "Deleted items will appear here." : "Beidh míreanna scriosta le feiceáil anseo.",
+    "More actions" : "Tuilleadh gníomhartha",
     "New list" : "Liosta nua",
     "Empty trash" : "Folmhaigh an bruscar",
     "Empty trash?" : "An bhfuil an bruscar folamh?",
@@ -349,6 +356,7 @@
     "Welcome to Pantry" : "Fáilte go dtí an Pantry",
     "Create a house to start organizing your checklists, photos and notes." : "Cruthaigh teach chun tús a chur le do liostaí seiceála, do ghrianghraif agus do nótaí a eagrú.",
     "Use the house picker at the bottom of the sidebar to create one." : "Bain úsáid as an roghnóir tí ag bun an bharra taoibh chun ceann a chruthú.",
+    "Uncategorized" : "Gan catagóir",
     "Starts after completion" : "Tosaíonn tar éis críochnaithe"
 },"pluralForm" :"nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : 4);"
 }

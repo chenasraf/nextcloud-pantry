@@ -44,6 +44,13 @@ OC.L10N.register(
     "Add a member" : "Ajouter un membre",
     "No accounts found" : "Aucun compte trouvé",
     "Danger zone" : "Zone de danger",
+    "Export to Markdown" : "Exporter en Markdown",
+    "Close" : "Fermer",
+    "Copy" : "Copie",
+    "Copied to clipboard" : "Copié dans le presse-papier",
+    "Could not copy to clipboard" : "Impossible de copier dans le presse-papiers",
+    "Select all" : "Tout sélectionner",
+    "Deselect all" : "Tout désélectionner",
     "Remove" : "Supprimer",
     "Pin to top" : "Épingler en haut",
     "Unpin" : "Détacher",
@@ -52,7 +59,6 @@ OC.L10N.register(
     "Create folder" : "Créer un dossier",
     "Folder name" : "Nom du dossier",
     "Rename" : "Renommer",
-    "Close" : "Fermer",
     "days" : "jours",
     "weeks" : "semaines",
     "months" : "mois",
@@ -68,6 +74,7 @@ OC.L10N.register(
     "Summary" : "Résumé",
     "Newest first" : "Les plus récents en premier",
     "Oldest first" : "Les plus anciens en premier",
+    "More actions" : "Plus d'actions",
     "New list" : "Nouvelle liste",
     "Checklists" : "Listes de contrôle",
     "No lists yet" : "Aucune liste pour l'instant",
@@ -80,6 +87,7 @@ OC.L10N.register(
     "Caption" : "Légende",
     "Add a description" : "Ajouter une description",
     "Remove folder" : "Supprimer le dossier",
-    "Move to folder" : "Déplacer vers le dossier"
+    "Move to folder" : "Déplacer vers le dossier",
+    "Uncategorized" : "Non catégorisé"
 },
 "nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

@@ -41,6 +41,12 @@ OC.L10N.register(
     "Joined" : "Ble med",
     "Add a member" : "Legg til en medlem",
     "Danger zone" : "Faresone",
+    "Close" : "Lukk",
+    "Copy" : "Kopi",
+    "Copied to clipboard" : "Kopiert til utklippstavlen",
+    "Could not copy to clipboard" : "Kunne ikke kopiere til utklippstavlen",
+    "Select all" : "Velg alle",
+    "Deselect all" : "Fjern all markering",
     "Remove" : "Fjern",
     "Pin to top" : "Fest til topp",
     "Unpin" : "Løsne",
@@ -49,7 +55,6 @@ OC.L10N.register(
     "Rename folder" : "Gi mappen nytt navn",
     "Folder name" : "Mappenavn",
     "Rename" : "Endre navn",
-    "Close" : "Lukk",
     "days" : "dager",
     "weeks" : "uker",
     "months" : "måneder",
@@ -64,6 +69,7 @@ OC.L10N.register(
     "Summary" : "Oppsummering",
     "Newest first" : "Nyeste først",
     "Oldest first" : "Eldste først",
+    "More actions" : "Flere handlinger",
     "New list" : "Ny liste",
     "Checklists" : "Sjekklister",
     "No lists yet" : "Ingen lister enda",
@@ -75,6 +81,7 @@ OC.L10N.register(
     "Caption" : "Bildetekst",
     "Add a description" : "Legg til en beskrivelse",
     "Remove folder" : "Fjern mappe",
-    "Move to folder" : "Flytt til mappe"
+    "Move to folder" : "Flytt til mappe",
+    "Uncategorized" : "Ukategorisert"
 },
 "nplurals=2; plural=(n != 1);");

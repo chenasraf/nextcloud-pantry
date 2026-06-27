@@ -29,11 +29,12 @@ OC.L10N.register(
     "Account" : "Konto",
     "Joined" : "Membriĝinta",
     "Add a member" : "Aldoni membron",
+    "Close" : "Malfermi",
+    "Select all" : "Elekti ĉion",
     "Preview" : "Antaŭvidi",
     "Rename folder" : "Alinomigi dosierujon",
     "Folder name" : "Dosierujnomo",
     "Rename" : "Alinomi",
-    "Close" : "Malfermi",
     "days" : "tagojn",
     "weeks" : "semajnoj",
     "months" : "Monatoj",
@@ -45,7 +46,9 @@ OC.L10N.register(
     "Summary" : "Resumo",
     "Newest first" : "Pli novaj unue",
     "Oldest first" : "Malpli novaj unue",
+    "More actions" : "Pliaj agoj",
     "Upload" : "Alŝuti",
-    "New folder" : "Nova dosierujo"
+    "New folder" : "Nova dosierujo",
+    "Uncategorized" : "Senkategoria"
 },
 "nplurals=2; plural=(n != 1);");

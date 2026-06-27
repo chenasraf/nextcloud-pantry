@@ -26,10 +26,13 @@ OC.L10N.register(
     "Account" : "Cuenta",
     "Joined" : "Se ha unido",
     "Add a member" : "Agegar un miembro",
+    "Close" : "Cerrar",
+    "Copied to clipboard" : "Copiado al portapapeles",
+    "Select all" : "Seleccionar todo",
+    "Deselect all" : "Deseleccionar todo",
     "Pin to top" : "Anclar a la parte superior",
     "Preview" : "Previsualizar",
     "Folder name" : "Nombre de la carpeta",
-    "Close" : "Cerrar",
     "days" : "días",
     "weeks" : "semanas",
     "Daily" : "Diariamente",
@@ -39,8 +42,10 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Newest first" : "Más reciente primero",
     "Oldest first" : "Más antiguo primero",
+    "More actions" : "Más acciones",
     "Note restored" : "Nota restaurada",
     "Upload" : "Cargar",
-    "New folder" : "Carpeta nueva"
+    "New folder" : "Carpeta nueva",
+    "Uncategorized" : "Sin categoría"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

@@ -29,12 +29,17 @@ OC.L10N.register(
     "Account" : "Konts",
     "Role" : "Loma",
     "No accounts found" : "Konti nav atrasti",
+    "Export to Markdown" : "Izgūt kā Markdown",
+    "Close" : "Aizvērt",
+    "Copy" : "Kopēt",
+    "Copied to clipboard" : "Nokopēts starpliktuvē",
+    "Select all" : "Atzīmēt visu",
+    "Deselect all" : "Atcelt atzīmi",
     "Remove" : "Noņemt",
     "Preview" : "Priekšskatīt",
     "Rename folder" : "Pārdēvēt mapi",
     "Folder name" : "Mapes nosaukums",
     "Rename" : "Pārdēvēt",
-    "Close" : "Aizvērt",
     "days" : "dienas",
     "weeks" : "nedēļas",
     "Daily" : "Katru dienu",
@@ -49,6 +54,7 @@ OC.L10N.register(
     "Oldest first" : "Vecākie pirms",
     "Upload" : "Augšupielādēt",
     "New folder" : "Jauna mape",
-    "Add a description" : "Pievienot aprakstu"
+    "Add a description" : "Pievienot aprakstu",
+    "Uncategorized" : "Bez kategorijas"
 },
 "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);");

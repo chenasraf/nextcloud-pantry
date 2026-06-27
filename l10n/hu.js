@@ -41,6 +41,11 @@ OC.L10N.register(
     "Add a member" : "Tag felvétele",
     "No accounts found" : "Nincsenek ilyen felhasználói fiókok",
     "Danger zone" : "Veszélyes területet",
+    "Close" : "Bezárás",
+    "Copy" : "Másolás",
+    "Copied to clipboard" : "Vágólapra másolva",
+    "Could not copy to clipboard" : "Nem sikerült a vágólapra másolni",
+    "Deselect all" : "Kijelölés megszüntetése",
     "Remove" : "Eltávolítás",
     "Pin to top" : "Rögzítés a tetejére",
     "Unpin" : "Rögzítés feloldása",
@@ -49,7 +54,6 @@ OC.L10N.register(
     "Rename folder" : "Mappa átnevezése",
     "Folder name" : "Mappanév",
     "Rename" : "Átnevezés",
-    "Close" : "Bezárás",
     "Remove recurrence" : "Ismétlődés eltávolítása",
     "days" : "napok",
     "weeks" : "hét",
@@ -65,6 +69,7 @@ OC.L10N.register(
     "Summary" : "Összefoglalás",
     "Newest first" : "Legújabb elöl",
     "Oldest first" : "Régebbiek elöl",
+    "More actions" : "További műveletek",
     "New list" : "Új lista",
     "Checklists" : "Ellenőrzőlisták",
     "No lists yet" : "Még nincsenek listák",
@@ -76,6 +81,7 @@ OC.L10N.register(
     "Caption" : "Felirat",
     "Add a description" : "Leírás hozzáadása",
     "Remove folder" : "Mappa eltávolítása",
-    "Move to folder" : "Áthelyezés mappába"
+    "Move to folder" : "Áthelyezés mappába",
+    "Uncategorized" : "Kategorizálatlan"
 },
 "nplurals=2; plural=(n != 1);");

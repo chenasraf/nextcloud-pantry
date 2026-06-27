@@ -10,16 +10,21 @@ OC.L10N.register(
     "Edit" : "Deasaich",
     "Category" : "Roinn-seòrsa",
     "General" : "Coitcheann",
+    "Close" : "Dùin",
+    "Copy" : "Dèan lethbhreac",
+    "Copied to clipboard" : "Chaidh lethbhreac dheth a chur air an stòr-bhòrd",
+    "Select all" : "Tagh na h-uile",
+    "Deselect all" : "Dì-thagh na h-uile",
     "Remove" : "Thoir air falbh",
     "Preview" : "Ro-sheall",
     "Folder name" : "Ainm a’ phasgain",
     "Rename" : "Thoir ainm ùr air",
-    "Close" : "Dùin",
     "Newest first" : "As ùire an toiseach",
     "Oldest first" : "As sine an toiseach",
     "New note" : "Nòta ùr",
     "Upload" : "Luchdaich suas",
     "New folder" : "Pasgan ùr",
-    "Back" : "Air ais"
+    "Back" : "Air ais",
+    "Uncategorized" : "Gun seòrsachadh"
 },
 "nplurals=4; plural=(n==1 || n==11) ? 0 : (n==2 || n==12) ? 1 : (n > 2 && n < 20) ? 2 : 3;");

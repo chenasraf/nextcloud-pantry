@@ -42,6 +42,12 @@ OC.L10N.register(
     "Add a member" : "メンバーの追加",
     "No accounts found" : "アカウントが見つかりません",
     "Danger zone" : "危険区域",
+    "Close" : "閉じる",
+    "Copy" : "コピー",
+    "Copied to clipboard" : "クリップボードにコピーされました",
+    "Could not copy to clipboard" : "クリップボードにコピーできませんでした",
+    "Select all" : "すべて選択",
+    "Deselect all" : "選択を全解除",
     "Remove" : "削除",
     "Pin to top" : "トップにピン",
     "Unpin" : "ピンの解除",
@@ -51,7 +57,6 @@ OC.L10N.register(
     "Create folder" : "フォルダーの作成",
     "Folder name" : "フォルダー名",
     "Rename" : "名前を変更",
-    "Close" : "閉じる",
     "days" : "日",
     "weeks" : "週",
     "months" : "月",
@@ -66,6 +71,7 @@ OC.L10N.register(
     "Summary" : "要約",
     "Newest first" : "新しい順",
     "Oldest first" : "日付（昇順）",
+    "More actions" : "その他のアクション",
     "Checklists" : "チェックリスト",
     "No lists yet" : "まだリストがありません",
     "Clear selection" : "選択をクリア",
@@ -75,6 +81,7 @@ OC.L10N.register(
     "Back" : "戻る",
     "Caption" : "カプション",
     "Add a description" : "説明を追加",
-    "Remove folder" : "フォルダーを削除"
+    "Remove folder" : "フォルダーを削除",
+    "Uncategorized" : "未分類"
 },
 "nplurals=1; plural=0;");

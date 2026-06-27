@@ -42,6 +42,12 @@ OC.L10N.register(
     "Add a member" : "Lägg till en medlem",
     "No accounts found" : "Inga konton hittades",
     "Danger zone" : "Riskzon",
+    "Close" : "Stäng",
+    "Copy" : "Kopiera",
+    "Copied to clipboard" : "Kopierat till urklipp",
+    "Could not copy to clipboard" : "Kunde inte kopiera till urklipp",
+    "Select all" : "Välj alla",
+    "Deselect all" : "Avmarkera alla",
     "Remove" : "Ta bort",
     "Pin to top" : "Fäst i toppen",
     "Unpin" : "Lossa",
@@ -51,7 +57,6 @@ OC.L10N.register(
     "Create folder" : "Skapa mapp",
     "Folder name" : "Mappnamn",
     "Rename" : "Byt namn",
-    "Close" : "Stäng",
     "days" : "dagar",
     "weeks" : "veckor",
     "months" : "månader",
@@ -65,6 +70,7 @@ OC.L10N.register(
     "Summary" : "Sammanfattning",
     "Newest first" : "Nyast först",
     "Oldest first" : "Äldst först",
+    "More actions" : "Fler händelser",
     "New list" : "Ny lista",
     "Checklists" : "Checklistor",
     "No lists yet" : "Inga listor än",
@@ -75,6 +81,7 @@ OC.L10N.register(
     "Caption" : "Rubrik",
     "Add a description" : "Lägg till en beskrivning",
     "Remove folder" : "Ta bort mapp",
-    "Move to folder" : "Flytta till mapp"
+    "Move to folder" : "Flytta till mapp",
+    "Uncategorized" : "Okategoriserade"
 },
 "nplurals=2; plural=(n != 1);");

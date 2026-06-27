@@ -36,6 +36,12 @@ OC.L10N.register(
     "Account" : "ບັນຊີ",
     "Role" : "ບົດບາດ",
     "Danger zone" : "Danger zone",
+    "Close" : "ປິດ",
+    "Copy" : "ສຳເນົາ",
+    "Copied to clipboard" : "ສໍາເນົາຄລິບ",
+    "Could not copy to clipboard" : "ບໍ່ສາມາດສຳເນົາໃສ່ຄລິບບອດໄດ້",
+    "Select all" : "ເລືອກທັງໝົດ",
+    "Deselect all" : "ເລືອກຄືນທັງໝົດ",
     "Remove" : "ລຶບອອກ",
     "Pin to top" : "Pin to top",
     "Unpin" : "Unpin",
@@ -44,7 +50,6 @@ OC.L10N.register(
     "Create folder" : "Create folder",
     "Folder name" : "ຊື່ໂຟນເດີ",
     "Rename" : "ປ່ຽນຊື່",
-    "Close" : "ປິດ",
     "days" : "days",
     "weeks" : "weeks",
     "months" : "months",
@@ -60,6 +65,7 @@ OC.L10N.register(
     "Summary" : "ສະຫຼຸບ",
     "Newest first" : "ໃໝ່ສຸດກ່ອນ",
     "Oldest first" : "ເກົ່າສຸດກ່ອນ",
+    "More actions" : "More actions",
     "New list" : "New list",
     "Checklists" : "Checklists",
     "No lists yet" : "ຍັງບໍ່ມີລາຍການ",
@@ -71,6 +77,7 @@ OC.L10N.register(
     "Back" : "ກັບຄືນ",
     "Caption" : "Caption",
     "Remove folder" : "Remove folder",
-    "Move to folder" : "ຍ້າຍໄປທີ່ໂຟນເດີ"
+    "Move to folder" : "ຍ້າຍໄປທີ່ໂຟນເດີ",
+    "Uncategorized" : "Uncategorized"
 },
 "nplurals=1; plural=0;");

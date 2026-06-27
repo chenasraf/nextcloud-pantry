@@ -14,10 +14,10 @@ OC.L10N.register(
     "Done" : "Done",
     "Owner" : "Owner",
     "General" : "பொதுவான",
+    "Close" : "மூடுக",
     "Remove" : "அகற்றுக",
     "Folder name" : "கோப்புறை பெயர்",
     "Rename" : "பெயர்மாற்றம்",
-    "Close" : "மூடுக",
     "Upload" : "பதிவேற்றுக",
     "Back" : "பின்னுக்கு"
 },

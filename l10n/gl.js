@@ -47,6 +47,13 @@ OC.L10N.register(
     "Add a member" : "Engadir un participante",
     "No accounts found" : "Non se atoparon contas",
     "Danger zone" : "Zona de perigo",
+    "Export to Markdown" : "Exportar a Markdown",
+    "Close" : "Pechar",
+    "Copy" : "Copia",
+    "Copied to clipboard" : "Copiado no portapapeis",
+    "Could not copy to clipboard" : "Non foi posíbel copiar ao portapapeis",
+    "Select all" : "Seleccionar todo",
+    "Deselect all" : "Deseleccionar todo",
     "Remove" : "Retirar",
     "Pin to top" : "Fixar enriba",
     "Unpin" : "Desprender",
@@ -56,7 +63,6 @@ OC.L10N.register(
     "Create folder" : "Crear un cartafol",
     "Folder name" : "Nome do cartafol",
     "Rename" : "Cambiar o nome",
-    "Close" : "Pechar",
     "Remove recurrence" : "Retirar a recorrencia",
     "days" : "días",
     "weeks" : "semanas",
@@ -73,6 +79,7 @@ OC.L10N.register(
     "Summary" : "Resumo",
     "Newest first" : "Primeiro o máis recente",
     "Oldest first" : "Primeiro o máis antigo",
+    "More actions" : "Máis accións",
     "New list" : "Lista nova",
     "Checklists" : "Listas de comprobación",
     "No lists yet" : "Non hai listas",
@@ -86,6 +93,7 @@ OC.L10N.register(
     "Add a description" : "Engadir unha descrición",
     "Remove folder" : "Retirar o cartafol",
     "Move to folder" : "Mover ao cartafol",
-    "Creating …" : "Creando…"
+    "Creating …" : "Creando…",
+    "Uncategorized" : "Sen categorizar"
 },
 "nplurals=2; plural=(n != 1);");

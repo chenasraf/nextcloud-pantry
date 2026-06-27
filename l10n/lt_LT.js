@@ -49,6 +49,13 @@ OC.L10N.register(
     "No accounts found" : "Nerasta jokių paskyrų",
     "Type to search for an account" : "Įveskite tekstą, kad ieškotumėte paskyros",
     "Danger zone" : "Pavojinga zona",
+    "Export to Markdown" : "Eksportuoti į Markdown",
+    "Close" : "Užverti",
+    "Copy" : "Kopijuoti",
+    "Copied to clipboard" : "Nukopijuota į iškarpinę",
+    "Could not copy to clipboard" : "Nepavyko nukopijuoti į iškarpinę",
+    "Select all" : "Pažymėti viską",
+    "Deselect all" : "Atžymėti viską",
     "Remove" : "Šalinti",
     "Pin to top" : "Prisegti viršuje",
     "Unpin" : "Atsegti",
@@ -57,7 +64,6 @@ OC.L10N.register(
     "Create folder" : "Sukurti aplanką",
     "Folder name" : "Aplanko pavadinimas",
     "Rename" : "Pervadinti",
-    "Close" : "Užverti",
     "days" : "dienos",
     "weeks" : "savaitės",
     "months" : "mėnesiai",
@@ -74,6 +80,7 @@ OC.L10N.register(
     "Summary" : "Santrauka",
     "Newest first" : "Naujausi pirmi",
     "Oldest first" : "Seniausi pirmi",
+    "More actions" : "Daugiau veiksmų",
     "New list" : "Naujas sąrašas",
     "Checklists" : "Kontrolinis sąrašas",
     "No lists yet" : "Kol kas sąrašų nėra",
@@ -85,6 +92,7 @@ OC.L10N.register(
     "Caption" : "Antraštė",
     "Add a description" : "Pridėti aprašą",
     "Remove folder" : "Šalinti aplanką",
-    "Move to folder" : "Perkelti į aplanką"
+    "Move to folder" : "Perkelti į aplanką",
+    "Uncategorized" : "Nekategorizuotas"
 },
 "nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < 11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? 1 : n % 1 != 0 ? 2: 3);");

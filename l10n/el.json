@@ -43,6 +43,9 @@
     "Joined" : "Εγγραφή",
     "Add a member" : "Προσθήκη μέλους",
     "Danger zone" : "Επικίνδυνη ζώνη",
+    "Export to Markdown" : "Εξαγωγή σε Markdown",
+    "Close" : "Κλείσιμο",
+    "Select all" : "Επιλογή όλων",
     "Remove" : "Αφαίρεση",
     "Pin to top" : "Καρφίτσωμα στην κορυφή",
     "Unpin" : "Ξεκαρφίτσωμα",
@@ -52,7 +55,6 @@
     "Create folder" : "Δημιουργία φακέλου",
     "Folder name" : "Όνομα φακέλου",
     "Rename" : "Μετονομασία",
-    "Close" : "Κλείσιμο",
     "days" : "ημέρες",
     "weeks" : "εβδομάδες",
     "months" : "μήνες",
@@ -68,6 +70,7 @@
     "Summary" : "Σύνοψη",
     "Newest first" : "Νεότερο πρώτα",
     "Oldest first" : "Παλαιότερο πρώτα",
+    "More actions" : "Περισσότερες ενέργειες",
     "New list" : "Νέα λίστα",
     "Checklists" : "Λίστες ελέγχου",
     "No lists yet" : "Χωρίς λίστες ακόμη",
@@ -78,6 +81,7 @@
     "Back" : "Επιστροφή",
     "Add a description" : "Προσθήκη περιγραφής",
     "Remove folder" : "Κατάργηση φακέλου",
-    "Move to folder" : "Μετακίνηση σε φάκελο"
+    "Move to folder" : "Μετακίνηση σε φάκελο",
+    "Uncategorized" : "Χωρίς κατηγορία"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

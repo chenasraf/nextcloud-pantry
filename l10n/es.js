@@ -44,6 +44,9 @@ OC.L10N.register(
     "Add a member" : "Agregar un miembro",
     "No accounts found" : "No se sigue a ninguna cuenta",
     "Danger zone" : "Zona de peligro",
+    "Export to Markdown" : "Exportar a Markdown",
+    "Close" : "Cerrar",
+    "Select all" : "Seleccionar todo",
     "Remove" : "Quitar",
     "Pin to top" : "Fijar arriba",
     "Unpin" : "No fijar",
@@ -53,7 +56,6 @@ OC.L10N.register(
     "Create folder" : "Crear carpeta",
     "Folder name" : "Nombre de la carpeta",
     "Rename" : "Renombrar",
-    "Close" : "Cerrar",
     "Remove recurrence" : "Eliminar repetición",
     "days" : "días",
     "weeks" : "semanas",
@@ -69,6 +71,7 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Newest first" : "Más nuevas primero",
     "Oldest first" : "Más antiguas primero",
+    "More actions" : "Más acciones",
     "New list" : "Nueva lista",
     "Checklists" : "Listas de verificación",
     "No lists yet" : "Aún no hay listas",
@@ -80,6 +83,7 @@ OC.L10N.register(
     "Caption" : "Leyenda",
     "Add a description" : "Añadir una descripción",
     "Remove folder" : "Eliminar carpeta",
-    "Move to folder" : "Mover a la carpeta"
+    "Move to folder" : "Mover a la carpeta",
+    "Uncategorized" : "Sin categoría"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

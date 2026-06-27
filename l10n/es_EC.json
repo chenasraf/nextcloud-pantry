@@ -40,13 +40,16 @@
     "Joined" : "Se unió",
     "Add a member" : "Agegar un miembro",
     "Danger zone" : "Zona peligrosa",
+    "Close" : "Cerrar",
+    "Copy" : "Copiar",
+    "Copied to clipboard" : "Copiado al portapapeles",
+    "Select all" : "Seleccionar todo",
     "Pin to top" : "Anclar a la parte superior",
     "Unpin" : "Desanclar",
     "Preview" : "Previsualizar",
     "Rename folder" : "Renombrar carpeta",
     "Folder name" : "Nombre de la carpeta",
     "Rename" : "Renombrar",
-    "Close" : "Cerrar",
     "days" : "días",
     "weeks" : "semanas",
     "months" : "meses",
@@ -60,6 +63,7 @@
     "Summary" : "Resumen",
     "Newest first" : "Más reciente primero",
     "Oldest first" : "Más antiguo primero",
+    "More actions" : "Más acciones",
     "New list" : "Nueva lista",
     "Checklists" : "Listas de verificación",
     "No lists yet" : "Aún no hay listas",
@@ -71,6 +75,7 @@
     "Back" : "Regresar",
     "Add a description" : "Agregar una descripción",
     "Remove folder" : "Eliminar carpeta",
-    "Move to folder" : "Mover a carpeta"
+    "Move to folder" : "Mover a carpeta",
+    "Uncategorized" : "Sin categoría"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

@@ -42,6 +42,12 @@ OC.L10N.register(
     "Add a member" : "Dodaj członka",
     "No accounts found" : "Nie znaleziono kont",
     "Danger zone" : "Strefa niebezpieczeństwa",
+    "Close" : "Zamknij",
+    "Copy" : "Skopiuj",
+    "Copied to clipboard" : "Kopiuj do schowka",
+    "Could not copy to clipboard" : "Nie można skopiować do schowka",
+    "Select all" : "Wybierz wszystko",
+    "Deselect all" : "Odznacz wszystkie",
     "Remove" : "Usuń",
     "Pin to top" : "Przypnij do góry",
     "Unpin" : "Odepnij",
@@ -51,7 +57,6 @@ OC.L10N.register(
     "Create folder" : "Utwórz folder",
     "Folder name" : "Nazwa katalogu",
     "Rename" : "Zmień nazwę",
-    "Close" : "Zamknij",
     "Remove recurrence" : "Usuń powtarzanie",
     "days" : "dniach",
     "weeks" : "tygodni",
@@ -67,6 +72,7 @@ OC.L10N.register(
     "Summary" : "Podsumowanie",
     "Newest first" : "Od najnowszych",
     "Oldest first" : "Od najstarszych",
+    "More actions" : "Więcej akcji",
     "New list" : "Nowa lista",
     "Checklists" : "Lista wykonania",
     "No lists yet" : "Brak list",
@@ -79,6 +85,7 @@ OC.L10N.register(
     "Caption" : "Podpis",
     "Add a description" : "Dodaj opis",
     "Remove folder" : "Usuń katalog",
-    "Move to folder" : "Przenieś do katalogu"
+    "Move to folder" : "Przenieś do katalogu",
+    "Uncategorized" : "Bez kategorii"
 },
 "nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);");

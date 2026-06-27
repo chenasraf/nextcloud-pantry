@@ -49,6 +49,13 @@ OC.L10N.register(
     "No accounts found" : "找不到帳號",
     "Type to search for an account" : "輸入以搜尋帳號",
     "Danger zone" : "危險區域",
+    "Export to Markdown" : "匯出為 Markdown",
+    "Close" : "關閉",
+    "Copy" : "複製",
+    "Copied to clipboard" : "已複製到剪貼簿",
+    "Could not copy to clipboard" : "無法複製到剪貼簿",
+    "Select all" : "全選",
+    "Deselect all" : "取消全選",
     "Remove" : "移除",
     "Pin to top" : "置頂",
     "Unpin" : "取消釘選",
@@ -57,7 +64,6 @@ OC.L10N.register(
     "Create folder" : "建立資料夾",
     "Folder name" : "資料夾名稱",
     "Rename" : "重新命名",
-    "Close" : "關閉",
     "Remove recurrence" : "移除重複",
     "days" : "日",
     "weeks" : "週",
@@ -74,6 +80,7 @@ OC.L10N.register(
     "Summary" : "摘要",
     "Newest first" : "新的在前",
     "Oldest first" : "舊的在前",
+    "More actions" : "更多動作",
     "New list" : "新清單",
     "Checklists" : "檢查清單",
     "No lists yet" : "尚無清單",
@@ -85,6 +92,7 @@ OC.L10N.register(
     "Caption" : "字幕",
     "Add a description" : "加入描述",
     "Remove folder" : "移除資料夾",
-    "Move to folder" : "移動至資料夾"
+    "Move to folder" : "移動至資料夾",
+    "Uncategorized" : "未分類"
 },
 "nplurals=1; plural=0;");

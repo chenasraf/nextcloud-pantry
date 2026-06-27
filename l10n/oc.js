@@ -30,12 +30,13 @@ OC.L10N.register(
     "Account" : "Compte",
     "Role" : "Ròtle",
     "Danger zone" : "Zòna perilhosa",
+    "Close" : "Plegar",
+    "Copied to clipboard" : "Copiat dins lo cartabèu",
     "Remove" : "Suprimir",
     "Preview" : "Apercebut",
     "Rename folder" : "Renomenar lo repertòri",
     "Folder name" : "Nom del dorsièr",
     "Rename" : "Tornar nommar",
-    "Close" : "Plegar",
     "days" : "jorns",
     "weeks" : "setmanas",
     "months" : "mese",
@@ -44,8 +45,10 @@ OC.L10N.register(
     "Weekly" : "Setmanièr",
     "Monthly" : "Cada mes",
     "Never" : "Jamai",
+    "More actions" : "Mai d’accions",
     "Upload" : "Telecargament",
     "New folder" : "Novèl dorsièr",
-    "Add a description" : "Apondre una descripcion"
+    "Add a description" : "Apondre una descripcion",
+    "Uncategorized" : "Desorganizadas"
 },
 "nplurals=2; plural=(n > 1);");

@@ -41,6 +41,13 @@ OC.L10N.register(
     "Account" : "Akun",
     "Role" : "Peran",
     "Joined" : "Bergabung",
+    "Export to Markdown" : "Ekspor ke Markdown",
+    "Close" : "Tutup",
+    "Copy" : "Salin",
+    "Copied to clipboard" : "Disalin ke papan klip",
+    "Could not copy to clipboard" : "Tidak dapat menyalin ke papan klip",
+    "Select all" : "Pilih semua",
+    "Deselect all" : "Tidak ada yang dipilih",
     "Remove" : "Hapus",
     "Pin to top" : "Sematkan ke atas",
     "Unpin" : "Lepas sematan",
@@ -48,7 +55,6 @@ OC.L10N.register(
     "Rename folder" : "Ubah nama folder",
     "Folder name" : "Nama folder",
     "Rename" : "Ganti nama",
-    "Close" : "Tutup",
     "days" : "hari",
     "weeks" : "minggu",
     "months" : "bulang",
@@ -61,6 +67,7 @@ OC.L10N.register(
     "Summary" : "Kesimpulan",
     "Newest first" : "Terbaru terlebih dahulu",
     "Oldest first" : "Terlama terlebih dahulu",
+    "More actions" : "Tindakan lainnya",
     "New list" : "Daftar baru",
     "Checklists" : "Daftar periksa",
     "No lists yet" : "Belum ada list",
@@ -68,6 +75,7 @@ OC.L10N.register(
     "New folder" : "Folder baru",
     "Back" : "Kembali",
     "Add a description" : "Tambah deskripsi",
-    "Remove folder" : "Hapus folder"
+    "Remove folder" : "Hapus folder",
+    "Uncategorized" : "Tidak terkategori"
 },
 "nplurals=1; plural=0;");

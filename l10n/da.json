@@ -38,6 +38,8 @@
     "Joined" : "Forbind",
     "Add a member" : "Tilføj et medlem",
     "Danger zone" : "Farezone",
+    "Close" : "Luk",
+    "Select all" : "Vælg alle",
     "Remove" : "Fjern",
     "Pin to top" : "Fastgør til toppen",
     "Unpin" : "Frigør",
@@ -45,7 +47,6 @@
     "Create folder" : "Opret mappe",
     "Folder name" : "Mappenavn",
     "Rename" : "Omdøb",
-    "Close" : "Luk",
     "days" : "dage",
     "weeks" : "uger",
     "months" : "måneder",
@@ -69,6 +70,7 @@
     "Back" : "Tilbage",
     "Caption" : "Overskrift",
     "Add a description" : "Tilføj en beskrivelse",
-    "Remove folder" : "Fjern mappe"
+    "Remove folder" : "Fjern mappe",
+    "Uncategorized" : "Udenfor kategori"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

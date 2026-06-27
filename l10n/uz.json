@@ -25,11 +25,14 @@
     "Save changes" : "Save changes",
     "Display" : "Displey",
     "Account" : "Akkaunt",
+    "Close" : "Yopish",
+    "Copy" : "Nusxa",
+    "Copied to clipboard" : "Buferga nusxalandi",
+    "Select all" : "Barchasini tanash",
     "Remove" : "O'chirish",
     "Preview" : "Ko‘rib chiqish",
     "Folder name" : "Papka nomi",
     "Rename" : "Nomini o'zgartirish",
-    "Close" : "Yopish",
     "days" : "kun",
     "weeks" : "hafta",
     "months" : "oy",
@@ -39,6 +42,7 @@
     "Monthly" : "Oylik",
     "Never" : "Hech qachon",
     "On date" : "Sanada",
+    "More actions" : "Ko'proq harakatlar",
     "Checklists" : "Tekshirish ro'yxatlari",
     "No lists yet" : "Hozircha roʻyxatlar yoʻq",
     "New note" : "Yangi eslatma",
@@ -46,6 +50,7 @@
     "Upload" : "Yuklash",
     "New folder" : "Yangi jild",
     "Back" : "Orqaga",
-    "Add a description" : "Tavsif qo'shing"
+    "Add a description" : "Tavsif qo'shing",
+    "Uncategorized" : "Kategoriyasiz"
 },"pluralForm" :"nplurals=1; plural=0;"
 }

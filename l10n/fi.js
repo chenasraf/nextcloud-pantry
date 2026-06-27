@@ -55,6 +55,13 @@ OC.L10N.register(
     "Add a member" : "Lisää jäsen",
     "No accounts found" : "Tilejä ei löytynyt",
     "Danger zone" : "Vaaravyöhyke",
+    "Export to Markdown" : "Vie Markdown-muotoon",
+    "Close" : "Sulje",
+    "Copy" : "Kopioi",
+    "Copied to clipboard" : "Kopioitu leikepöydälle",
+    "Could not copy to clipboard" : "Ei voitu kopioida leikepöydälle",
+    "Select all" : "Valitse kaikki",
+    "Deselect all" : "Poista valinnat",
     "Remove" : "Poista",
     "Pin to top" : "Kiinnitä ylös",
     "Unpin" : "Poista kiinnitys",
@@ -64,7 +71,6 @@ OC.L10N.register(
     "Create folder" : "Luo kansio",
     "Folder name" : "Kansion nimi",
     "Rename" : "Nimeä uudelleen",
-    "Close" : "Sulje",
     "days" : "päivän jälkeen",
     "weeks" : "viikkoa",
     "months" : "kuukautta",
@@ -79,6 +85,7 @@ OC.L10N.register(
     "Summary" : "Yhteenveto",
     "Newest first" : "Uusin ensin",
     "Oldest first" : "Vanhin ensin",
+    "More actions" : "Lisää toimintoja",
     "New list" : "Uusi luettelo",
     "Checklists" : "Tsekkilistat",
     "No lists yet" : "Ei vielä listoja",
@@ -90,6 +97,7 @@ OC.L10N.register(
     "Back" : "Takaisin",
     "Add a description" : "Lisää kuvaus",
     "Remove folder" : "Poista kansio",
-    "Move to folder" : "Siirrä kansioon"
+    "Move to folder" : "Siirrä kansioon",
+    "Uncategorized" : "Luokittelematon"
 },
 "nplurals=2; plural=(n != 1);");

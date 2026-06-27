@@ -41,6 +41,12 @@ OC.L10N.register(
     "Joined" : "Pripojený",
     "Add a member" : "Pridať člena",
     "Danger zone" : "Nebezpečná oblasť",
+    "Close" : "Zavrieť",
+    "Copy" : "Kopírovať",
+    "Copied to clipboard" : "Skopírované do schránky",
+    "Could not copy to clipboard" : "Nepodarilo sa skopírovať do schránky",
+    "Select all" : "Vybrať všetko",
+    "Deselect all" : "Odznačiť všetko",
     "Remove" : "Odobrať",
     "Pin to top" : "Pripnúť nahor",
     "Unpin" : "Odopnúť",
@@ -49,7 +55,6 @@ OC.L10N.register(
     "Rename folder" : "Premenovať adresár",
     "Folder name" : "Názov priečinka",
     "Rename" : "Premenovať",
-    "Close" : "Zavrieť",
     "days" : "dni",
     "weeks" : "týždňov",
     "months" : "mesiacov",
@@ -65,6 +70,7 @@ OC.L10N.register(
     "Summary" : "Súhrn",
     "Newest first" : "Najnovšie prvé",
     "Oldest first" : "Najstaršie prvé",
+    "More actions" : "Viac akcií",
     "New list" : "Nový zoznam",
     "Checklists" : "Kontrolné zoznamy",
     "No lists yet" : "Zatiaľ žiadne zoznamy",
@@ -76,6 +82,7 @@ OC.L10N.register(
     "Caption" : "Popis",
     "Add a description" : "Zadajte popis",
     "Remove folder" : "Odobrať Priečinok",
-    "Move to folder" : "Premiestniť do priečinku"
+    "Move to folder" : "Premiestniť do priečinku",
+    "Uncategorized" : "Nezaradené"
 },
 "nplurals=4; plural=(n % 1 == 0 && n == 1 ? 0 : n % 1 == 0 && n >= 2 && n <= 4 ? 1 : n % 1 != 0 ? 2: 3);");

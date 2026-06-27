@@ -27,12 +27,15 @@ OC.L10N.register(
     "Account" : "ანგარიში",
     "Joined" : "გაწევრიანდა",
     "Add a member" : "წევრის დამატება",
+    "Close" : "დახურვა",
+    "Copied to clipboard" : "კოპირებულია კლიპბორდში",
+    "Select all" : "ყველას არჩევა",
+    "Deselect all" : "ყველას წაშლა",
     "Pin to top" : "ზევით დამატება",
     "Preview" : "წინასწარი ჩვენება",
     "Rename folder" : "ფოლდერის სახელის გადარქმევა",
     "Folder name" : "დირექტორიის სახელი",
     "Rename" : "სახელის შეცვლა",
-    "Close" : "დახურვა",
     "days" : "დღე",
     "weeks" : "კვირა",
     "Daily" : "ყოველდღიური",
@@ -42,8 +45,10 @@ OC.L10N.register(
     "Summary" : "შეჯამება",
     "Newest first" : "ჯერ ახალი",
     "Oldest first" : "ჯერ ძველი",
+    "More actions" : "მეტი ქმედება",
     "Note restored" : "ჩანაწერი აღდგა",
     "Upload" : "ატვირთვა",
-    "New folder" : "ახალი დირექტორია"
+    "New folder" : "ახალი დირექტორია",
+    "Uncategorized" : "არაკატეგორიზირებული"
 },
 "nplurals=2; plural=(n!=1);");

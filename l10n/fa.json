@@ -191,6 +191,13 @@
     "Stays on the list after it is marked done." : "بعد از اینکه به عنوان «انجام شده» علامت‌گذاری شد، در لیست باقی می‌ماند.",
     "Removed from the list once marked done." : "پس از علامت‌گذاری به عنوان «انجام شده» از لیست حذف شد.",
     "Comes back on a schedule." : "طبق برنامه برمی‌گردد.",
+    "Export to Markdown" : "خروجی به Markdown",
+    "Close" : "بستن",
+    "Copy" : "کپی",
+    "Copied to clipboard" : "در کلیپ‌بورد کپی شد",
+    "Could not copy to clipboard" : "امکان کپی در کلیپ‌بورد وجود نداشت",
+    "Select all" : "انتخاب همه",
+    "Deselect all" : "لغو انتخاب همه",
     "Note actions" : "کنش‌های یادداشت",
     "Remove" : "حذف",
     "Pin to top" : "از این صفحه",
@@ -209,7 +216,6 @@
     "Photo actions" : "کنش‌های عکس",
     "Move to board" : "انتقال به تابلو",
     "Photo preview" : "پیش‌نمایش عکس",
-    "Close" : "بستن",
     "e.g. 2 L, 500 g" : "مثلاً ۲ لیتر، ۵۰۰ گرم",
     "Decrease quantity" : "کاهش مقدار",
     "Increase quantity" : "افزایش مقدار",
@@ -254,6 +260,7 @@
     "Add items using the form above." : "موارد را با استفاده از فرم بالا اضافه کنید.",
     "Trash is empty" : "زباله‌دان خالی است",
     "Deleted items will appear here." : "موارد حذف‌شده اینجا نمایش داده می‌شوند.",
+    "More actions" : "اقدامات بیشتر",
     "New list" : "لیست جدید",
     "Empty trash" : "خالی کردن زباله‌دان",
     "Empty trash?" : "زباله‌دان خالی شود؟",
@@ -340,6 +347,7 @@
     "Welcome to Pantry" : "به Pantry خوش آمدید",
     "Create a house to start organizing your checklists, photos and notes." : "برای شروع سازماندهی چک‌لیست‌ها، عکس‌ها و یادداشت‌های خود، یک خانه ایجاد کنید.",
     "Use the house picker at the bottom of the sidebar to create one." : "برای ایجاد یک خانه، از انتخابگر خانه در پایین نوار کناری استفاده کنید.",
+    "Uncategorized" : "بدون دسته‌بندی",
     "Starts after completion" : "پس از تکمیل آغاز می‌شود"
 },"pluralForm" :"nplurals=2; plural=(n > 1);"
 }

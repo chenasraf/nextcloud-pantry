@@ -42,6 +42,13 @@ OC.L10N.register(
     "Add a member" : "Gehitu kide bat",
     "No accounts found" : "Ez da konturik aurkitu",
     "Danger zone" : "Arrisku eremua",
+    "Export to Markdown" : "Esportatu Markdown gisa",
+    "Close" : "Itxi",
+    "Copy" : "Kopiatu",
+    "Copied to clipboard" : "Kopiatu arbelera",
+    "Could not copy to clipboard" : "Ezin izan da arbelera kopiatu",
+    "Select all" : "Hautatu dena",
+    "Deselect all" : "Deshautatu dena",
     "Remove" : "Kendu",
     "Pin to top" : "Ainguratu goian",
     "Unpin" : "Kendu aingura",
@@ -49,7 +56,6 @@ OC.L10N.register(
     "Untitled note" : "Izen gabeko oharra",
     "Folder name" : "Karpetaren izena",
     "Rename" : "Berrizendatu",
-    "Close" : "Itxi",
     "days" : "egun",
     "weeks" : "aste",
     "months" : "hilabete",
@@ -64,6 +70,7 @@ OC.L10N.register(
     "Summary" : "Laburpena",
     "Newest first" : "Berrienak lehenengo ",
     "Oldest first" : "Zaharrenak lehenengo",
+    "More actions" : "Ekintza gehiago",
     "New list" : "Zerrenda berria",
     "Checklists" : "Kontrol-zerrendak",
     "No lists yet" : "Ez dago zerrendarik",
@@ -75,6 +82,7 @@ OC.L10N.register(
     "Caption" : "Epigrafea",
     "Add a description" : "Gehitu deskribapena",
     "Remove folder" : "Kendu karpeta",
-    "Move to folder" : "Eraman karpetara"
+    "Move to folder" : "Eraman karpetara",
+    "Uncategorized" : "Kategoria gabe"
 },
 "nplurals=2; plural=(n != 1);");

@@ -40,6 +40,13 @@ OC.L10N.register(
     "Account" : "Akaunti",
     "Role" : "Role",
     "Danger zone" : "Eneo la hatari",
+    "Export to Markdown" : "Hamisha kwa Markdown",
+    "Close" : "Funga",
+    "Copy" : "Nakili",
+    "Copied to clipboard" : "Nakili katika ubao wa kunakili",
+    "Could not copy to clipboard" : "Haikuweza kunakili kwenye ubao wa kunakili",
+    "Select all" : "Chagua zote",
+    "Deselect all" : "Acha kuchagua zote",
     "Remove" : "Ondoa",
     "Pin to top" : "Weka mpaka juu",
     "Unpin" : "Bandua",
@@ -48,7 +55,6 @@ OC.L10N.register(
     "Create folder" : "Unda folda",
     "Folder name" : "Jina la kisanduku",
     "Rename" : "Badili jina",
-    "Close" : "Funga",
     "days" : "siku",
     "weeks" : "wiki",
     "months" : "months",
@@ -64,6 +70,7 @@ OC.L10N.register(
     "Summary" : "Muhtasari",
     "Newest first" : "Mpya kwanza",
     "Oldest first" : "Ya zamani kwanza",
+    "More actions" : "Vitendo zaidi",
     "New list" : "Orodha mpya",
     "Checklists" : "Orodha za ukaguzi",
     "No lists yet" : "Bado hakuna orodha",
@@ -73,6 +80,7 @@ OC.L10N.register(
     "New folder" : "Folda mpya",
     "Back" : "Rudi",
     "Caption" : "Manukuu",
-    "Remove folder" : "Ondoa folda"
+    "Remove folder" : "Ondoa folda",
+    "Uncategorized" : "Haitambuliki"
 },
 "nplurals=2; plural=(n != 1);");

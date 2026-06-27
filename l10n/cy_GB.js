@@ -18,9 +18,9 @@ OC.L10N.register(
     "General" : "Cyffredinol",
     "Trash" : "Sbwriel",
     "Account" : "Cyfrif",
+    "Close" : "Cau",
     "Preview" : "Rhagolwg",
     "Rename" : "Ailenwi",
-    "Close" : "Cau",
     "days" : "diwrnod",
     "weeks" : "wythnos",
     "months" : "mis",
@@ -37,6 +37,7 @@ OC.L10N.register(
     "Note restored" : "Nodyn wedi'i adfer",
     "Upload" : "Llwytho i fyny",
     "New folder" : "Ffolder newydd",
-    "Add a description" : "Ychwanegu disgrifiad"
+    "Add a description" : "Ychwanegu disgrifiad",
+    "Uncategorized" : "Dim categori"
 },
 "nplurals=4; plural=(n==1) ? 0 : (n==2) ? 1 : (n != 8 && n != 11) ? 2 : 3;");

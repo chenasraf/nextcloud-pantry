@@ -43,6 +43,12 @@ OC.L10N.register(
     "Add a member" : "Добавить участника",
     "No accounts found" : "Аккуант не найден",
     "Danger zone" : "Опасная зона",
+    "Close" : "Закрыть",
+    "Copy" : "Копировать",
+    "Copied to clipboard" : "Скопировано в буфер обмена",
+    "Could not copy to clipboard" : "Не удалось скопировать в буфер обмена.",
+    "Select all" : "Выбрать всё",
+    "Deselect all" : "Снять выбор со всех",
     "Remove" : "Удалить",
     "Pin to top" : "Прикрепить вверху",
     "Unpin" : "Открепить",
@@ -50,7 +56,6 @@ OC.L10N.register(
     "Untitled note" : "Заметка без названия",
     "Folder name" : "Имя папки",
     "Rename" : "Переименовать",
-    "Close" : "Закрыть",
     "Remove recurrence" : "Удалить повторение",
     "days" : "дней",
     "weeks" : "недель",
@@ -66,6 +71,7 @@ OC.L10N.register(
     "Summary" : "Всего",
     "Newest first" : "Самый новый первый",
     "Oldest first" : "Самый старый первый",
+    "More actions" : "Больше действий",
     "New list" : "Новый список",
     "Checklists" : "Чек-лист",
     "No lists yet" : "Нет ни одного списка",
@@ -78,6 +84,7 @@ OC.L10N.register(
     "Caption" : "Подпись",
     "Add a description" : "Добавить описание",
     "Remove folder" : "Удалить каталог",
-    "Move to folder" : "Переместить в папку"
+    "Move to folder" : "Переместить в папку",
+    "Uncategorized" : "Без категории"
 },
 "nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);");

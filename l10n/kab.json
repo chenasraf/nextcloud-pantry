@@ -31,12 +31,16 @@
     "Account" : "Amiḍan",
     "Role" : "Tamlilt",
     "Joined" : "Izeddi da seg ass n",
+    "Close" : "Mdel",
+    "Copy" : "Nɣel",
+    "Copied to clipboard" : "Aḍris yettwanγel γef afus",
+    "Select all" : "Fren-iten akk",
+    "Deselect all" : "Kkes afran i meṛṛa",
     "Remove" : "Kkes",
     "Unpin" : "Kkes anṭaḍ",
     "Preview" : "Pre-timeẓriwt",
     "Folder name" : "Isem n ukaram",
     "Rename" : "Beddel isem",
-    "Close" : "Mdel",
     "days" : "ussan",
     "weeks" : "imalasen",
     "months" : "ayyuren",
@@ -50,8 +54,10 @@
     "Summary" : "Agzul",
     "Newest first" : "Imaynuten d imezwura",
     "Oldest first" : "Iqbuṛen d imezwura",
+    "More actions" : "Ugar n tigawin",
     "Upload" : "Sili",
     "New folder" : "Akaram amaynut",
-    "Back" : "Tuɣalin"
+    "Back" : "Tuɣalin",
+    "Uncategorized" : "War-taggayt"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

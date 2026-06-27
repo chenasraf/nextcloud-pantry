@@ -39,6 +39,7 @@ OC.L10N.register(
     "Add a member" : "Afegeix un membre",
     "No accounts found" : "Cap compte trobat",
     "Danger zone" : "Zona perillosa",
+    "Close" : "Tanca",
     "Remove" : "Suprimir",
     "Pin to top" : "Ancora-ho a la part superior",
     "Unpin" : "No fixis",
@@ -47,7 +48,6 @@ OC.L10N.register(
     "Rename folder" : "Canvia el nom de la carpeta",
     "Folder name" : "Nom de la carpeta",
     "Rename" : "Canviar el nom",
-    "Close" : "Tanca",
     "days" : "dies",
     "weeks" : "setmanes",
     "months" : "mesos",
@@ -72,6 +72,7 @@ OC.L10N.register(
     "Back" : "Torna",
     "Caption" : "Subtítol",
     "Add a description" : "Afegir una descripció",
-    "Remove folder" : "Suprimeix la carpeta"
+    "Remove folder" : "Suprimeix la carpeta",
+    "Uncategorized" : "Sense categoria"
 },
 "nplurals=2; plural=(n != 1);");

@@ -32,6 +32,12 @@
     "Account" : "חשבון",
     "Role" : "תפקיד",
     "Add a member" : "הוספת חבר",
+    "Close" : "סגירה",
+    "Copy" : "העתקה",
+    "Copied to clipboard" : "הועתק ללוח הגזירים",
+    "Could not copy to clipboard" : "לא ניתן להעתיק ללוח הגזירים",
+    "Select all" : "בחר הכל",
+    "Deselect all" : "ביטול בחירה",
     "Remove" : "הסרה",
     "Pin to top" : "הצמדה למעלה",
     "Preview" : "תצוגה מקדימה",
@@ -39,7 +45,6 @@
     "Rename folder" : "שנה שם תיקייה",
     "Folder name" : "שם התיקייה",
     "Rename" : "שינוי שם",
-    "Close" : "סגירה",
     "days" : "ימים",
     "weeks" : "שבועיים",
     "months" : "חודשיים",
@@ -53,12 +58,14 @@
     "Summary" : "תקציר",
     "Newest first" : "החדש ביותר ראשון",
     "Oldest first" : "הישן ביותר ראשון",
+    "More actions" : "פעולות נוספות",
     "No lists yet" : "אין רשימות עדיין",
     "New note" : "פתק חדש",
     "Note restored" : "פתק שוחזר",
     "Upload" : "העלאה",
     "New folder" : "תיקייה חדשה",
     "Back" : "אחורה",
-    "Add a description" : "הוסף תיאור"
+    "Add a description" : "הוסף תיאור",
+    "Uncategorized" : "ללא קטגוריה"
 },"pluralForm" :"nplurals=3; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: 2;"
 }

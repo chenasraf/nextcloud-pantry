@@ -43,6 +43,13 @@ OC.L10N.register(
     "Role" : "رولى",
     "Joined" : "قوشۇلغان",
     "Danger zone" : "خەتەر رايونى",
+    "Export to Markdown" : "Markdown قىلىپ چىقىرىش",
+    "Close" : "ياپ",
+    "Copy" : "كۆچۈر",
+    "Copied to clipboard" : "چاپلاش تاختىسىغا كۆچۈرۈلدى",
+    "Could not copy to clipboard" : "چاپلاش تاختىسىغا كۆچۈرگىلى بولمايدۇ",
+    "Select all" : "ھەممىنى تاللاڭ",
+    "Deselect all" : "ھەممىنى تاللاڭ",
     "Remove" : "ئۆچۈرۈڭ",
     "Pin to top" : "ئۈستىدىن پىن",
     "Unpin" : "مىخلىما",
@@ -51,7 +58,6 @@ OC.L10N.register(
     "Create folder" : "قىسقۇچ قۇرۇش",
     "Folder name" : "ھۆججەت قىسقۇچنىڭ ئىسمى",
     "Rename" : "ئىسىم ئۆزگەرتىش",
-    "Close" : "ياپ",
     "days" : "كۈنلەر",
     "weeks" : "ھەپتە",
     "months" : "ئاي",
@@ -65,6 +71,7 @@ OC.L10N.register(
     "Summary" : "خۇلاسە",
     "Newest first" : "ئەڭ يېڭى",
     "Oldest first" : "ئەڭ كونا",
+    "More actions" : "تېخىمۇ كۆپ ھەرىكەت",
     "New list" : "يېڭى تىزىملىك",
     "Checklists" : "تەكشۈرۈش تىزىملىكى",
     "No lists yet" : "تېخى تىزىملىك يوق",
@@ -77,6 +84,7 @@ OC.L10N.register(
     "Caption" : "ئاستى ماۋزۇ",
     "Add a description" : "چۈشەندۈرۈش قوشۇڭ",
     "Remove folder" : "ھۆججەت قىسقۇچنى ئۆچۈرۈڭ",
-    "Move to folder" : "قىسقۇچقا يۆتكەڭ"
+    "Move to folder" : "قىسقۇچقا يۆتكەڭ",
+    "Uncategorized" : "تۈرگە ئايرىلمىغان"
 },
 "nplurals=2; plural=(n != 1);");

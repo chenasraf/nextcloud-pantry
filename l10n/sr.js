@@ -43,6 +43,13 @@ OC.L10N.register(
     "Add a member" : "Додај члана",
     "No accounts found" : "Није пронађен ниједан налог",
     "Danger zone" : "Зона опасности",
+    "Export to Markdown" : "Извези у Markdown",
+    "Close" : "Затвори",
+    "Copy" : "Копирај",
+    "Copied to clipboard" : "Копирано у клипборд",
+    "Could not copy to clipboard" : "Не могу да копирам у оставу",
+    "Select all" : "Означи све",
+    "Deselect all" : "Поништи цео избор",
     "Remove" : "Уклони",
     "Pin to top" : "Закачи на врх",
     "Unpin" : "Откачи",
@@ -52,7 +59,6 @@ OC.L10N.register(
     "Create folder" : "Креирај фолдер",
     "Folder name" : "Назив фасцикле",
     "Rename" : "Преименуј",
-    "Close" : "Затвори",
     "days" : "дана",
     "weeks" : "седмица",
     "months" : "месеци",
@@ -67,6 +73,7 @@ OC.L10N.register(
     "Summary" : "Сумарно",
     "Newest first" : "Прво новије",
     "Oldest first" : "Прво старије",
+    "More actions" : "Још акција",
     "New list" : "Нова листа",
     "Checklists" : "Листе за потврду",
     "No lists yet" : "Нема још спискова",
@@ -78,6 +85,7 @@ OC.L10N.register(
     "Caption" : "Наслов",
     "Add a description" : "Додај опис",
     "Remove folder" : "Уклони фолдер",
-    "Move to folder" : "Премести у фолдер"
+    "Move to folder" : "Премести у фолдер",
+    "Uncategorized" : "Некатегоризовано"
 },
 "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);");

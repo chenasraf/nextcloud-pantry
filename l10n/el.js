@@ -45,6 +45,9 @@ OC.L10N.register(
     "Joined" : "Εγγραφή",
     "Add a member" : "Προσθήκη μέλους",
     "Danger zone" : "Επικίνδυνη ζώνη",
+    "Export to Markdown" : "Εξαγωγή σε Markdown",
+    "Close" : "Κλείσιμο",
+    "Select all" : "Επιλογή όλων",
     "Remove" : "Αφαίρεση",
     "Pin to top" : "Καρφίτσωμα στην κορυφή",
     "Unpin" : "Ξεκαρφίτσωμα",
@@ -54,7 +57,6 @@ OC.L10N.register(
     "Create folder" : "Δημιουργία φακέλου",
     "Folder name" : "Όνομα φακέλου",
     "Rename" : "Μετονομασία",
-    "Close" : "Κλείσιμο",
     "days" : "ημέρες",
     "weeks" : "εβδομάδες",
     "months" : "μήνες",
@@ -70,6 +72,7 @@ OC.L10N.register(
     "Summary" : "Σύνοψη",
     "Newest first" : "Νεότερο πρώτα",
     "Oldest first" : "Παλαιότερο πρώτα",
+    "More actions" : "Περισσότερες ενέργειες",
     "New list" : "Νέα λίστα",
     "Checklists" : "Λίστες ελέγχου",
     "No lists yet" : "Χωρίς λίστες ακόμη",
@@ -80,6 +83,7 @@ OC.L10N.register(
     "Back" : "Επιστροφή",
     "Add a description" : "Προσθήκη περιγραφής",
     "Remove folder" : "Κατάργηση φακέλου",
-    "Move to folder" : "Μετακίνηση σε φάκελο"
+    "Move to folder" : "Μετακίνηση σε φάκελο",
+    "Uncategorized" : "Χωρίς κατηγορία"
 },
 "nplurals=2; plural=(n != 1);");
