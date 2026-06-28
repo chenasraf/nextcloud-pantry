@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.19.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.18.1...v0.19.0) (2026-06-28)
+
+
+### Features
+
+* **lists:** add persisted list filter to All lists view ([bf20caa](https://github.com/chenasraf/nextcloud-pantry/commit/bf20caa9708909951ff3d3b640b3c50b63f7c144)), closes [#142](https://github.com/chenasraf/nextcloud-pantry/issues/142)
+* **lists:** import/export lists as Markdown ([2923a56](https://github.com/chenasraf/nextcloud-pantry/commit/2923a56a99a862a8126aa4ecd952dc786f92361c)), closes [#137](https://github.com/chenasraf/nextcloud-pantry/issues/137)
+* **prefs:** add reuse-existing-items setting and add-time dedupe ([63c2320](https://github.com/chenasraf/nextcloud-pantry/commit/63c2320efdacece1581c23cc9a86b2dcacf441f0)), closes [#141](https://github.com/chenasraf/nextcloud-pantry/issues/141)
+
+
+### Bug Fixes
+
+* **checklist:** drag to reorder ([f580ef1](https://github.com/chenasraf/nextcloud-pantry/commit/f580ef10f4221e08e3d9c46af43507f9676ae26e))
+* **l10n:** Update translations from Transifex ([41174d9](https://github.com/chenasraf/nextcloud-pantry/commit/41174d90b4081e92813e778fd03749763995d988))
+* **l10n:** Update translations from Transifex ([09fdf1a](https://github.com/chenasraf/nextcloud-pantry/commit/09fdf1aafa3b564fd1ae5fa08d37f16e1a5e21e7))
+* **l10n:** Update translations from Transifex ([c197b3d](https://github.com/chenasraf/nextcloud-pantry/commit/c197b3d8c8c98cc57c913d967eb14cf2538ae0c0))
+* **l10n:** Update translations from Transifex ([3edc07c](https://github.com/chenasraf/nextcloud-pantry/commit/3edc07c8b623ccb2bc777b942b2df72bff57028d))
+* **l10n:** Update translations from Transifex ([f902268](https://github.com/chenasraf/nextcloud-pantry/commit/f9022685b6e48bf8f68c1b257d9637c13683554e))
+* **l10n:** Update translations from Transifex ([010961e](https://github.com/chenasraf/nextcloud-pantry/commit/010961e9df1f8a9a206d67e3f2a37f8ac1e69e45))
+* **l10n:** Update translations from Transifex ([6df11bd](https://github.com/chenasraf/nextcloud-pantry/commit/6df11bd69031f26efbbc6db8be67df5e55a8314a))
+* **l10n:** Update translations from Transifex ([dff50f6](https://github.com/chenasraf/nextcloud-pantry/commit/dff50f634a31cbdb9e495ca3f7958b0467a8794f))
+* **lists:** page through item endpoints to show all items ([956f781](https://github.com/chenasraf/nextcloud-pantry/commit/956f78130e4f86ab3e6fae7e9640494abd457cc8))
+* **lists:** relabel filter headings and show empty lists ([33fce4b](https://github.com/chenasraf/nextcloud-pantry/commit/33fce4b6b70093a9995266caef45b038d8c28ef7))
+
 ## [0.18.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.18.0...v0.18.1) (2026-06-19)
 
 
