@@ -39,6 +39,10 @@ OC.L10N.register(
     "No accounts found" : "Не е открит профил",
     "Danger zone" : "Зона на опасност",
     "Close" : "Затваряне",
+    "Copy" : "Копие",
+    "Copied to clipboard" : "Копирано в клипборда",
+    "Select all" : "Избери всички",
+    "Deselect all" : "Откажи всички избрани",
     "Remove" : "Премахване",
     "Pin to top" : "Закачи най-отгоре",
     "Unpin" : "Отмяна на закачване",
@@ -60,6 +64,7 @@ OC.L10N.register(
     "Summary" : "Резюме",
     "Newest first" : "Първо най-новият",
     "Oldest first" : "Първо най-старият",
+    "More actions" : "Повече действия",
     "New list" : "Нов списък",
     "Checklists" : "Контролни списъци",
     "No lists yet" : "Все още няма списъци",
@@ -71,6 +76,7 @@ OC.L10N.register(
     "Back" : "Назад",
     "Add a description" : "Добави описание",
     "Remove folder" : "Премахване на папка",
-    "Move to folder" : "Преместване в папка"
+    "Move to folder" : "Преместване в папка",
+    "Uncategorized" : "Некатегоризирани"
 },
 "nplurals=2; plural=(n != 1);");

@@ -37,7 +37,13 @@
     "Account" : "الحساب",
     "Role" : "الوظيفة",
     "Danger zone" : "منطقة خطر",
+    "Export to Markdown" : "تصدير إلى Markdown",
     "Close" : "إغلاق",
+    "Copy" : "إنسَخ",
+    "Copied to clipboard" : "تمّ النسخ إلى الحافظة",
+    "Could not copy to clipboard" : "لم يستطع النسخ الى الحافظة",
+    "Select all" : "تحديد الكل",
+    "Deselect all" : "إلغاء تحديد الكل",
     "Remove" : "حذف",
     "Pin to top" : "ثبتّ في الأعلى",
     "Unpin" : "فك التثبيت",
@@ -59,6 +65,7 @@
     "Summary" : "مُلخَّص",
     "Newest first" : "الأحدث أولاً",
     "Oldest first" : "الأقدم أولاً",
+    "More actions" : "إجراءات إضافية",
     "New list" : "قائمة جديدة",
     "Checklists" : "قائمة مراجعة",
     "No lists yet" : "لا توجد قائمة حتى الآن",
@@ -71,6 +78,7 @@
     "Caption" : "الشرح",
     "Add a description" : "إضافة وصف",
     "Remove folder" : "حذف المجلد",
-    "Move to folder" : "أنقُل إلى المجلد"
+    "Move to folder" : "أنقُل إلى المجلد",
+    "Uncategorized" : "غير مُصنّفة"
 },"pluralForm" :"nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;"
 }

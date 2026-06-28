@@ -29,6 +29,7 @@ OC.L10N.register(
     "Close" : "Close",
     "Copied to clipboard" : "Copiado al portapapeles",
     "Select all" : "Seleccionar todo",
+    "Deselect all" : "Deseleccionar todo",
     "Remove" : "Remover",
     "Pin to top" : "Anclar a la parte superior",
     "Preview" : "Previsualizar",

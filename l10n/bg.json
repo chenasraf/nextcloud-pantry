@@ -37,6 +37,10 @@
     "No accounts found" : "Не е открит профил",
     "Danger zone" : "Зона на опасност",
     "Close" : "Затваряне",
+    "Copy" : "Копие",
+    "Copied to clipboard" : "Копирано в клипборда",
+    "Select all" : "Избери всички",
+    "Deselect all" : "Откажи всички избрани",
     "Remove" : "Премахване",
     "Pin to top" : "Закачи най-отгоре",
     "Unpin" : "Отмяна на закачване",
@@ -58,6 +62,7 @@
     "Summary" : "Резюме",
     "Newest first" : "Първо най-новият",
     "Oldest first" : "Първо най-старият",
+    "More actions" : "Повече действия",
     "New list" : "Нов списък",
     "Checklists" : "Контролни списъци",
     "No lists yet" : "Все още няма списъци",
@@ -69,6 +74,7 @@
     "Back" : "Назад",
     "Add a description" : "Добави описание",
     "Remove folder" : "Премахване на папка",
-    "Move to folder" : "Преместване в папка"
+    "Move to folder" : "Преместване в папка",
+    "Uncategorized" : "Некатегоризирани"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

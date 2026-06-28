@@ -1,0 +1,26 @@
+OC.L10N.register(
+    "pantry",
+    {
+    "Save" : "Saklamak",
+    "Notifications" : "Duýduryşlar",
+    "Name" : "Ady",
+    "Cancel" : "Cancel",
+    "Create" : "Dörediň",
+    "Delete" : "Pozmak",
+    "Edit" : "Redaktirläň",
+    "General" : "Esasy",
+    "Close" : "Ýap",
+    "Copy" : "Göçüriň",
+    "Copied to clipboard" : "Panele göçürildi",
+    "Select all" : "Hemmesini saýlaň",
+    "Deselect all" : "Hemmesini aýyryň",
+    "Remove" : "Aýyrmak",
+    "Folder name" : "Papkanyň ady",
+    "Rename" : "Adyny üýtgetmek",
+    "Newest first" : "Täze ilkinji",
+    "Oldest first" : "Ilki bilen iň köne",
+    "Upload" : "Ýüklemek",
+    "New folder" : "Täze papka döretmek",
+    "Back" : "Yzyna"
+},
+"nplurals=2; plural=(n != 1);");

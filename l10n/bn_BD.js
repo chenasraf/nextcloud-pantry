@@ -15,6 +15,7 @@ OC.L10N.register(
     "General" : "সাধারণ",
     "Display" : "প্রদর্শন কর",
     "Close" : "বন্ধ",
+    "Copied to clipboard" : "ক্লিপবোর্ডে কপি করা হলো",
     "Rename folder" : "ফোল্ডার পূনঃনামকরণ কর",
     "Folder name" : "ফোলডারের নাম",
     "Rename" : "পূনঃনামকরণ",

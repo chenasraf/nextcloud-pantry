@@ -39,7 +39,13 @@ OC.L10N.register(
     "Account" : "الحساب",
     "Role" : "الوظيفة",
     "Danger zone" : "منطقة خطر",
+    "Export to Markdown" : "تصدير إلى Markdown",
     "Close" : "إغلاق",
+    "Copy" : "إنسَخ",
+    "Copied to clipboard" : "تمّ النسخ إلى الحافظة",
+    "Could not copy to clipboard" : "لم يستطع النسخ الى الحافظة",
+    "Select all" : "تحديد الكل",
+    "Deselect all" : "إلغاء تحديد الكل",
     "Remove" : "حذف",
     "Pin to top" : "ثبتّ في الأعلى",
     "Unpin" : "فك التثبيت",
@@ -61,6 +67,7 @@ OC.L10N.register(
     "Summary" : "مُلخَّص",
     "Newest first" : "الأحدث أولاً",
     "Oldest first" : "الأقدم أولاً",
+    "More actions" : "إجراءات إضافية",
     "New list" : "قائمة جديدة",
     "Checklists" : "قائمة مراجعة",
     "No lists yet" : "لا توجد قائمة حتى الآن",
@@ -73,6 +80,7 @@ OC.L10N.register(
     "Caption" : "الشرح",
     "Add a description" : "إضافة وصف",
     "Remove folder" : "حذف المجلد",
-    "Move to folder" : "أنقُل إلى المجلد"
+    "Move to folder" : "أنقُل إلى المجلد",
+    "Uncategorized" : "غير مُصنّفة"
 },
 "nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;");

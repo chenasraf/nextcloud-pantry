@@ -35,6 +35,9 @@ OC.L10N.register(
     "Role" : "Rol",
     "Danger zone" : "Zona de peligru",
     "Close" : "Zarrar",
+    "Copy" : "Copiar",
+    "Copied to clipboard" : "Copióse nel cartafueyu",
+    "Select all" : "Seleicionar too",
     "Remove" : "Quitar",
     "Pin to top" : "Fixar no cimero",
     "Unpin" : "Lliberar",
@@ -52,6 +55,7 @@ OC.L10N.register(
     "Summary" : "Resume",
     "Newest first" : "Primero lo nuevo",
     "Oldest first" : "Primero lo antiguo",
+    "More actions" : "Más aiciones",
     "New list" : "Llista nueva",
     "No lists yet" : "Nun hai nenguna llista",
     "New note" : "Nota nueva",
@@ -59,6 +63,7 @@ OC.L10N.register(
     "Upload" : "Xunir",
     "New folder" : "Carpeta nueva",
     "Back" : "Atrás",
-    "Remove folder" : "Quitar la carpeta"
+    "Remove folder" : "Quitar la carpeta",
+    "Uncategorized" : "Ensin categoría"
 },
 "nplurals=2; plural=(n != 1);");

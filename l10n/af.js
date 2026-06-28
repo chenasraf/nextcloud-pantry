@@ -18,6 +18,7 @@ OC.L10N.register(
     "Trash" : "Asblik",
     "Account" : "Rekening",
     "Close" : "Close",
+    "Select all" : "Kies alle",
     "days" : "dae",
     "weeks" : "weke",
     "Daily" : "Daagliks",

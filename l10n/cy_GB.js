@@ -19,6 +19,8 @@ OC.L10N.register(
     "Trash" : "Sbwriel",
     "Account" : "Cyfrif",
     "Close" : "Cau",
+    "Copied to clipboard" : "Wedi'i gopïo i'r clipfwrdd",
+    "Deselect all" : "Dad ddewis popeth",
     "Preview" : "Rhagolwg",
     "Rename" : "Ailenwi",
     "days" : "diwrnod",
