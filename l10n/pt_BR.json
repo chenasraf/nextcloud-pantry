@@ -212,7 +212,7 @@
     "Could not copy to clipboard" : "Não foi possível copiar para a área de transferência",
     "_%n item found_::_%n items found_" : ["%n item encontrado","%n de itens encontrados","%n itens encontrados"],
     "_Add %n item_::_Add %n items_" : ["Adicionar %n item","Adicionar %n de itens","Adicionar %n itens"],
-    "Import from Markdown" : "Importar a partir de Markdown",
+    "Import from Markdown" : "Importar do Markdown",
     "Upload .md file" : "Enviar arquivo .md",
     "Drop a Markdown file to import" : "Arraste e solte um arquivo Markdown para importá-lo",
     "Paste Markdown" : "Colar Markdown",
