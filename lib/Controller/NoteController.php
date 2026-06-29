@@ -10,6 +10,7 @@ namespace OCA\Pantry\Controller;
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
+use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
@@ -57,6 +58,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/notes')]
 	#[NoAdminRequired]
+	#[Permission(['canViewNotes'])]
 	public function indexNotes(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -81,6 +83,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/notes/trash')]
 	#[NoAdminRequired]
+	#[Permission(['canViewNotes'])]
 	public function indexDeletedNotes(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -101,6 +104,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/notes/trash')]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteNotes'])]
 	public function emptyTrash(int $houseId): DataResponse {
 		return $this->runAction(function () use ($houseId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -123,6 +127,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/notes')]
 	#[NoAdminRequired]
+	#[Permission(['canCreateNotes'])]
 	public function createNote(int $houseId, string $title, ?string $content = null, ?string $color = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $title, $content, $color): DataResponse {
 			$uid = $this->requireUid();
@@ -157,6 +162,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/notes/{noteId}', requirements: ['noteId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canUpdateNotes'])]
 	public function updateNote(int $houseId, int $noteId, ?string $title = null, ?string $content = null, ?string $color = null, ?int $sortOrder = null, ?bool $isPinned = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $noteId, $title, $content, $color, $sortOrder, $isPinned): DataResponse {
 			$uid = $this->requireUid();
@@ -207,6 +213,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/notes/{noteId}', requirements: ['noteId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteNotes'])]
 	public function deleteNote(int $houseId, int $noteId): DataResponse {
 		return $this->runAction(function () use ($houseId, $noteId): DataResponse {
 			$uid = $this->requireUid();
@@ -238,6 +245,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/notes/{noteId}/restore', requirements: ['noteId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteNotes'])]
 	public function restoreNote(int $houseId, int $noteId): DataResponse {
 		return $this->runAction(function () use ($houseId, $noteId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -262,6 +270,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/notes/{noteId}/permanent', requirements: ['noteId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteNotes'])]
 	public function permanentlyDeleteNote(int $houseId, int $noteId): DataResponse {
 		return $this->runAction(function () use ($houseId, $noteId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -284,6 +293,7 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/notes/reorder')]
 	#[NoAdminRequired]
+	#[Permission(['canUpdateNotes'])]
 	public function reorderNotes(int $houseId, array $items = []): DataResponse {
 		return $this->runAction(function () use ($houseId, $items): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());

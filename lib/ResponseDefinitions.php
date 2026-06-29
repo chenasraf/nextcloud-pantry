@@ -17,6 +17,8 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     trashRetentionDays: int,
  *     role: string,
+ *     isAdmin: bool,
+ *     permissions: array<string, bool>,
  * }
  *
  * @psalm-type PantryMember = array{
@@ -25,7 +27,33 @@ namespace OCA\Pantry;
  *     userId: string,
  *     displayName: string,
  *     role: string,
+ *     roleIds: list<int>,
  *     joinedAt: int,
+ * }
+ *
+ * @psalm-type PantryRole = array{
+ *     id: int,
+ *     houseId: int,
+ *     name: string,
+ *     roleType: string,
+ *     canViewLists: bool,
+ *     canCreateLists: bool,
+ *     canEditLists: bool,
+ *     canDeleteLists: bool,
+ *     canAddItems: bool,
+ *     canDeleteItems: bool,
+ *     canCopyItems: bool,
+ *     canMoveItems: bool,
+ *     canCheckItems: bool,
+ *     canViewPhotos: bool,
+ *     canUploadPhotos: bool,
+ *     canUpdatePhotos: bool,
+ *     canDeletePhotos: bool,
+ *     canMovePhotos: bool,
+ *     canViewNotes: bool,
+ *     canCreateNotes: bool,
+ *     canUpdateNotes: bool,
+ *     canDeleteNotes: bool,
  * }
  *
  * @psalm-type PantryChecklistColor = '#f44336'|'#e91e63'|'#9c27b0'|'#673ab7'|'#3f51b5'|'#2196f3'|'#03a9f4'|'#00bcd4'|'#009688'|'#4caf50'|'#8bc34a'|'#cddc39'|'#ffeb3b'|'#ffc107'|'#ff9800'|'#ff5722'

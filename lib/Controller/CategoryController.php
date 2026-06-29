@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Exception\ForbiddenException;
+use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\HouseAuthService;
@@ -51,6 +52,7 @@ final class CategoryController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/categories')]
 	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
 	public function index(int $houseId, int $limit = 100, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
 			$uid = $this->requireUid();
@@ -76,6 +78,7 @@ final class CategoryController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/categories')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function create(int $houseId, string $name, string $icon, string $color): DataResponse {
 		return $this->runAction(function () use ($houseId, $name, $icon, $color): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -100,6 +103,7 @@ final class CategoryController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/categories/{categoryId}')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function update(
 		int $houseId,
 		int $categoryId,
@@ -143,6 +147,7 @@ final class CategoryController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/categories/{categoryId}')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function destroy(int $houseId, int $categoryId): DataResponse {
 		return $this->runAction(function () use ($houseId, $categoryId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -164,6 +169,7 @@ final class CategoryController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/categories/reorder')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function reorder(int $houseId, array $items = []): DataResponse {
 		return $this->runAction(function () use ($houseId, $items): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());

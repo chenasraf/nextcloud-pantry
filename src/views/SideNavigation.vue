@@ -7,6 +7,7 @@
         </li>
 
         <NcAppNavigationItem
+          v-if="perms.canViewLists"
           :name="strings.lists"
           :to="{ name: 'lists', params: { houseId: String(currentHouseId) } }"
           :active="route.name === 'lists'"
@@ -47,6 +48,7 @@
         </NcAppNavigationItem>
 
         <NcAppNavigationItem
+          v-if="perms.canViewPhotos"
           :name="strings.photos"
           :to="{ name: 'photos', params: { houseId: String(currentHouseId) } }"
           :active="isNavActive(['photos', 'photo-'])"
@@ -57,6 +59,7 @@
         </NcAppNavigationItem>
 
         <NcAppNavigationItem
+          v-if="perms.canViewNotes"
           :name="strings.notes"
           :to="{ name: 'notes', params: { houseId: String(currentHouseId) } }"
           :active="isNavActive(['notes', 'note-'])"
@@ -77,7 +80,7 @@
         <NcAppNavigationItem
           v-if="currentHouseId !== null"
           :name="strings.houseSettings"
-          @click="showHouseSettings = true"
+          @click="openHouseSettings"
         >
           <template #icon>
             <CogIcon :size="20" />
@@ -86,7 +89,7 @@
         <NcAppNavigationItem
           v-if="currentHouseId !== null"
           :name="strings.accountSettings"
-          @click="showSettings = true"
+          @click="openAccountSettings"
         >
           <template #icon>
             <CogOutlineIcon :size="20" />
@@ -204,6 +207,8 @@ import ChevronDownIcon from '@icons/ChevronDown.vue'
 import CheckIcon from '@icons/Check.vue'
 import PlusIcon from '@icons/Plus.vue'
 import { useHouses } from '@/composables/useHouses'
+import { NO_CAPS } from '@/composables/useCurrentHouse'
+import type { Capabilities } from '@/api/types'
 import { useChecklists } from '@/composables/useChecklist'
 import { checklistIconComponent, contrastColor } from '@/components/ChecklistIconPicker'
 
@@ -235,6 +240,10 @@ const currentListId = computed<number | null>(() => {
 const house = computed(() =>
   currentHouseId.value !== null ? findById(currentHouseId.value) : undefined,
 )
+
+// Effective capabilities for gating sidebar sections. Defaults to all-false
+// until the house (with its permissions payload) is loaded.
+const perms = computed<Capabilities>(() => house.value?.permissions ?? NO_CAPS)
 
 // Checklists for the sidebar sub-items. The composable shares per-house
 // state, so creates/updates/deletes from other views are reflected here.
@@ -299,6 +308,17 @@ async function pickHouse(id: number) {
 // -------- Settings dialogs --------
 const showHouseSettings = ref(false)
 const showSettings = ref(false)
+
+// The nav items render as <a href="#">; prevent the default so opening a
+// settings dialog does not append "#" to the URL.
+function openHouseSettings(e?: Event) {
+  e?.preventDefault()
+  showHouseSettings.value = true
+}
+function openAccountSettings(e?: Event) {
+  e?.preventDefault()
+  showSettings.value = true
+}
 
 // -------- Create house dialog --------
 const showCreate = ref(false)

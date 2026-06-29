@@ -5,6 +5,33 @@ import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ChecklistItem, Category } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
+
+// The row reads its capabilities from useCurrentHouse; grant everything in unit tests.
+const { ALL_CAPS } = vi.hoisted(() => ({
+  ALL_CAPS: {
+    canViewLists: true,
+    canCreateLists: true,
+    canEditLists: true,
+    canDeleteLists: true,
+    canAddItems: true,
+    canDeleteItems: true,
+    canCopyItems: true,
+    canMoveItems: true,
+    canCheckItems: true,
+    canViewPhotos: true,
+    canUploadPhotos: true,
+    canUpdatePhotos: true,
+    canDeletePhotos: true,
+    canMovePhotos: true,
+    canViewNotes: true,
+    canCreateNotes: true,
+    canUpdateNotes: true,
+    canDeleteNotes: true,
+  },
+}))
+vi.mock('@/composables/useCurrentHouse', () => ({
+  useCurrentHouse: () => ({ can: ALL_CAPS }),
+}))
 vi.mock('@icons/Repeat.vue', () => createIconMock('RepeatIcon'))
 vi.mock('@icons/Pencil.vue', () => createIconMock('PencilIcon'))
 vi.mock('@icons/Eye.vue', () => createIconMock('EyeIcon'))

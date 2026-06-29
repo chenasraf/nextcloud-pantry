@@ -2,7 +2,28 @@ import { computed, watch, ref, type ComputedRef, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useHouses } from './useHouses'
 import * as api from '@/api/houses'
-import type { House } from '@/api/types'
+import type { Capabilities, CapabilityKey, House } from '@/api/types'
+
+const NO_CAPS: Capabilities = {
+  canViewLists: false,
+  canCreateLists: false,
+  canEditLists: false,
+  canDeleteLists: false,
+  canAddItems: false,
+  canDeleteItems: false,
+  canCopyItems: false,
+  canMoveItems: false,
+  canCheckItems: false,
+  canViewPhotos: false,
+  canUploadPhotos: false,
+  canUpdatePhotos: false,
+  canDeletePhotos: false,
+  canMovePhotos: false,
+  canViewNotes: false,
+  canCreateNotes: false,
+  canUpdateNotes: false,
+  canDeleteNotes: false,
+}
 
 export function useCurrentHouse(): {
   house: Ref<House | null>
@@ -10,7 +31,10 @@ export function useCurrentHouse(): {
   loading: Ref<boolean>
   canEdit: ComputedRef<boolean>
   canAdmin: ComputedRef<boolean>
+  isAdmin: ComputedRef<boolean>
   isOwner: ComputedRef<boolean>
+  /** The current user's effective capabilities in this house. */
+  can: ComputedRef<Capabilities>
   refresh: () => Promise<void>
 } {
   const route = useRoute()
@@ -48,16 +72,25 @@ export function useCurrentHouse(): {
 
   watch(houseId, refresh, { immediate: true })
 
+  const can = computed<Capabilities>(() => house.value?.permissions ?? NO_CAPS)
+  const isAdmin = computed(() => house.value?.isAdmin === true)
+
   return {
     house,
     houseId,
     loading,
     canEdit: computed(() => house.value !== null),
-    canAdmin: computed(() => {
-      const role = house.value?.role
-      return role === 'owner' || role === 'admin'
-    }),
+    // Admin status now comes from the resolved role permissions, falling back to
+    // the legacy role string for older payloads.
+    canAdmin: computed(
+      () => isAdmin.value || house.value?.role === 'owner' || house.value?.role === 'admin',
+    ),
+    isAdmin,
     isOwner: computed(() => house.value?.role === 'owner'),
+    can,
     refresh,
   }
 }
+
+export { NO_CAPS }
+export type { CapabilityKey }

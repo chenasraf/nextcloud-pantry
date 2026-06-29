@@ -18,20 +18,28 @@
     </div>
     <div class="photo-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
-        <NcActionButton v-if="trashMode" close-after-click @click.stop="$emit('restore', photo)">
+        <NcActionButton
+          v-if="trashMode && can.canDeletePhotos"
+          close-after-click
+          @click.stop="$emit('restore', photo)"
+        >
           <template #icon>
             <RestoreIcon :size="20" />
           </template>
           {{ strings.restore }}
         </NcActionButton>
-        <NcActionButton v-if="!trashMode" close-after-click @click.stop="$emit('edit', photo)">
+        <NcActionButton
+          v-if="!trashMode && can.canUpdatePhotos"
+          close-after-click
+          @click.stop="$emit('edit', photo)"
+        >
           <template #icon>
             <PencilIcon :size="20" />
           </template>
           {{ strings.edit }}
         </NcActionButton>
         <NcActionButton
-          v-if="!trashMode && photo.folderId !== null"
+          v-if="!trashMode && photo.folderId !== null && can.canMovePhotos"
           close-after-click
           @click.stop="$emit('move-to-root', photo)"
         >
@@ -40,7 +48,11 @@
           </template>
           {{ strings.moveToBoard }}
         </NcActionButton>
-        <NcActionButton close-after-click @click.stop="$emit('delete', photo)">
+        <NcActionButton
+          v-if="can.canDeletePhotos"
+          close-after-click
+          @click.stop="$emit('delete', photo)"
+        >
           <template #icon>
             <DeleteIcon :size="20" />
           </template>
@@ -63,7 +75,10 @@ import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import ArrowUpIcon from '@icons/ArrowUp.vue'
 import RestoreIcon from '@icons/Restore.vue'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import type { Photo } from '@/api/types'
+
+const { can } = useCurrentHouse()
 
 const props = withDefaults(
   defineProps<{

@@ -72,6 +72,7 @@ class Capabilities implements IPublicCapability {
 					'pref-tap-row-to-complete',
 					'pref-category-spacing',
 					'reuse-existing-items',
+					'roles',
 				],
 			],
 		];

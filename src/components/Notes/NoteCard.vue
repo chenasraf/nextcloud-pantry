@@ -8,7 +8,7 @@
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
-    @click="trashMode ? null : $emit('edit', note)"
+    @click="trashMode || !can.canUpdateNotes ? null : $emit('edit', note)"
   >
     <div v-if="!trashMode" class="note-card__select" @click.stop>
       <NcCheckboxRadioSwitch
@@ -18,18 +18,26 @@
     </div>
     <div class="note-card__actions" @click.stop>
       <NcActions :aria-label="strings.actions">
-        <NcActionButton v-if="trashMode" close-after-click @click.stop="$emit('restore', note)">
+        <NcActionButton
+          v-if="trashMode && can.canDeleteNotes"
+          close-after-click
+          @click.stop="$emit('restore', note)"
+        >
           <template #icon><RestoreIcon :size="20" /></template>
           {{ strings.restore }}
         </NcActionButton>
-        <NcActionButton close-after-click @click.stop="$emit('delete', note)">
+        <NcActionButton
+          v-if="can.canDeleteNotes"
+          close-after-click
+          @click.stop="$emit('delete', note)"
+        >
           <template #icon><DeleteIcon :size="20" /></template>
           {{ trashMode ? strings.deletePermanently : strings.removeNote }}
         </NcActionButton>
       </NcActions>
     </div>
     <button
-      v-if="!trashMode"
+      v-if="!trashMode && can.canUpdateNotes"
       type="button"
       class="note-card__pin"
       :class="{ 'note-card__pin--pinned': note.isPinned }"
@@ -59,7 +67,10 @@ import PinIcon from '@icons/Pin.vue'
 import PinOutlineIcon from '@icons/PinOutline.vue'
 import RestoreIcon from '@icons/Restore.vue'
 import { contrastColor } from './noteColors'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import type { Note } from '@/api/types'
+
+const { can } = useCurrentHouse()
 
 const props = withDefaults(
   defineProps<{

@@ -31,13 +31,21 @@
           </template>
           {{ strings.trashLabel }}
         </NcButton>
-        <NcButton v-if="!trashMode" variant="primary" @click="showCategoryManager = true">
+        <NcButton
+          v-if="!trashMode && can.canEditLists"
+          variant="primary"
+          @click="showCategoryManager = true"
+        >
           <template #icon>
             <TagIcon :size="20" />
           </template>
           {{ strings.manageCategories }}
         </NcButton>
-        <NcButton v-if="!trashMode" variant="primary" @click="showCreate = true">
+        <NcButton
+          v-if="!trashMode && can.canCreateLists"
+          variant="primary"
+          @click="showCreate = true"
+        >
           <template #icon>
             <PlusIcon :size="20" />
           </template>
@@ -107,7 +115,7 @@
           <ClipboardCheckIcon />
         </template>
         <template #action>
-          <NcButton variant="primary" @click="showCreate = true">
+          <NcButton v-if="can.canCreateLists" variant="primary" @click="showCreate = true">
             {{ strings.newList }}
           </NcButton>
         </template>
@@ -164,12 +172,24 @@
                 <p v-if="item.list.description">{{ item.list.description }}</p>
               </div>
             </router-link>
-            <NcActions class="pantry-list-card__actions" :aria-label="strings.listMenu">
-              <NcActionButton close-after-click @click="startEdit(item.list)">
+            <NcActions
+              v-if="can.canEditLists || can.canDeleteLists"
+              class="pantry-list-card__actions"
+              :aria-label="strings.listMenu"
+            >
+              <NcActionButton
+                v-if="can.canEditLists"
+                close-after-click
+                @click="startEdit(item.list)"
+              >
                 <template #icon><PencilIcon :size="20" /></template>
                 {{ strings.edit }}
               </NcActionButton>
-              <NcActionButton close-after-click @click="confirmDelete(item.list)">
+              <NcActionButton
+                v-if="can.canDeleteLists"
+                close-after-click
+                @click="confirmDelete(item.list)"
+              >
                 <template #icon><DeleteIcon :size="20" /></template>
                 {{ strings.remove }}
               </NcActionButton>
@@ -258,6 +278,7 @@ import type { Checklist } from '@/api/types'
 import type { ChecklistSort } from '@/api/prefs'
 import { getChecklistSort, setChecklistSort } from '@/api/prefs'
 import { useChecklists } from '@/composables/useChecklist'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import {
   checklistIconComponent,
@@ -290,6 +311,8 @@ const {
   sortBy,
   trashMode,
 } = useChecklists(houseIdNum.value)
+
+const { can } = useCurrentHouse()
 
 async function toggleTrash() {
   trashMode.value = !trashMode.value

@@ -14,9 +14,13 @@ use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\HouseMember;
 use OCA\Pantry\Db\HouseMemberMapper;
+use OCA\Pantry\Db\HouseMemberRoleMapper;
+use OCA\Pantry\Db\ListRoleMapper;
 use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Db\PhotoFolderMapper;
 use OCA\Pantry\Db\PhotoMapper;
+use OCA\Pantry\Db\Role;
+use OCA\Pantry\Db\RoleMapper;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -33,6 +37,10 @@ class HouseService {
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $photoFolderMapper,
 		private NoteMapper $noteMapper,
+		private RoleMapper $roleMapper,
+		private HouseMemberRoleMapper $memberRoleMapper,
+		private ListRoleMapper $listRoleMapper,
+		private RoleService $roles,
 		private IDBConnection $db,
 		private IUserManager $userManager,
 	) {
@@ -77,7 +85,11 @@ class HouseService {
 			$member->setUserId($uid);
 			$member->setRole(HouseMember::ROLE_OWNER);
 			$member->setJoinedAt($now);
-			$this->memberMapper->insert($member);
+			/** @var HouseMember $member */
+			$member = $this->memberMapper->insert($member);
+
+			[$adminRole] = $this->roles->seedBuiltins((int)$house->getId());
+			$this->memberRoleMapper->setRolesForMember((int)$member->getId(), [(int)$adminRole->getId()]);
 
 			$this->db->commit();
 			return $house;
@@ -131,15 +143,18 @@ class HouseService {
 
 		$this->db->beginTransaction();
 		try {
-			// Delete all items under all lists of this house
+			// Delete all items (and their role access rows) under all lists
 			foreach ($this->listMapper->findByHouse($houseId) as $list) {
 				$this->itemMapper->deleteByList((int)$list->getId());
+				$this->listRoleMapper->deleteByList((int)$list->getId());
 			}
 			$this->listMapper->deleteByHouse($houseId);
 			$this->categoryMapper->deleteByHouse($houseId);
 			$this->photoMapper->deleteByHouse($houseId);
 			$this->photoFolderMapper->deleteByHouse($houseId);
 			$this->noteMapper->deleteByHouse($houseId);
+			$this->memberRoleMapper->deleteByHouse($houseId);
+			$this->roleMapper->deleteByHouse($houseId);
 			$this->memberMapper->deleteByHouse($houseId);
 			$this->houseMapper->delete($house);
 			$this->db->commit();
@@ -174,6 +189,15 @@ class HouseService {
 		$member->setJoinedAt(time());
 		/** @var HouseMember $saved */
 		$saved = $this->memberMapper->insert($member);
+
+		// Seed the pivot with the built-in role matching the requested role so a
+		// newly added member starts with sensible permissions. Callers can refine
+		// the assignment afterwards via RoleService::setMemberRoles.
+		$builtinType = $role === HouseMember::ROLE_ADMIN ? Role::TYPE_ADMIN : Role::TYPE_DEFAULT;
+		$builtin = $this->roleMapper->findBuiltin($houseId, $builtinType);
+		if ($builtin !== null) {
+			$this->memberRoleMapper->setRolesForMember((int)$saved->getId(), [(int)$builtin->getId()]);
+		}
 		return $saved;
 	}
 
@@ -193,6 +217,7 @@ class HouseService {
 		if ($member->isOwner()) {
 			throw new ForbiddenException('Cannot remove the house owner');
 		}
+		$this->memberRoleMapper->deleteByMember($memberId);
 		$this->memberMapper->delete($member);
 	}
 
@@ -204,6 +229,7 @@ class HouseService {
 		if ($member->isOwner()) {
 			throw new ForbiddenException('Owner cannot leave the house. Transfer ownership or delete the house.');
 		}
+		$this->memberRoleMapper->deleteByMember((int)$member->getId());
 		$this->memberMapper->delete($member);
 	}
 
