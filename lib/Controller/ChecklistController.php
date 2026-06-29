@@ -10,6 +10,7 @@ namespace OCA\Pantry\Controller;
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
+use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\ChecklistService;
@@ -17,6 +18,7 @@ use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\NotificationService;
+use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -45,6 +47,7 @@ final class ChecklistController extends OCSController {
 		private NotificationService $notifications,
 		private ActivityPublisher $activity,
 		private PrefsService $prefs,
+		private PermissionService $permissions,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -64,10 +67,16 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists')]
 	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
 	public function indexLists(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$all = $this->lists->listForHouse($houseId, $sortBy);
+			$all = array_values(array_filter(
+				$all,
+				fn ($l) => $this->permissions->canAccessList($houseId, $uid, (int)$l->getId()),
+			));
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			$out = array_map(fn ($l) => $l->jsonSerialize(), $sliced);
 			return new DataResponse($out);
@@ -86,6 +95,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/reorder')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function reorderLists(int $houseId, array $items = []): DataResponse {
 		return $this->runAction(function () use ($houseId, $items): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -109,6 +119,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists')]
 	#[NoAdminRequired]
+	#[Permission(['canCreateLists'])]
 	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null, ?string $color = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $name, $description, $icon, $color): DataResponse {
 			$uid = $this->requireUid();
@@ -140,6 +151,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/trash')]
 	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
 	public function indexDeletedLists(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -160,6 +172,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/trash')]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteLists'])]
 	public function emptyListsTrash(int $houseId): DataResponse {
 		return $this->runAction(function () use ($houseId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -180,6 +193,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
 	public function showList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -207,6 +221,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?bool $deleteOnDoneDefault = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $color, $sortOrder, $deleteOnDoneDefault): DataResponse {
 			$uid = $this->requireUid();
@@ -259,6 +274,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteLists'])]
 	public function deleteList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
 			$uid = $this->requireUid();
@@ -290,6 +306,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/restore', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteLists'])]
 	public function restoreList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -315,6 +332,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/permanent', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteLists'])]
 	public function permanentlyDeleteList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -342,12 +360,23 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/items')]
 	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
 	public function indexHouseItems(int $houseId, string $sortBy = 'newest', int $limit = 1000, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
 			$all = $this->lists->listItemsForHouse($houseId, $sortBy, $categorySort);
+			// Items inherit their parent list's access; hide items in lists the
+			// caller cannot reach. Cache the verdict per list id.
+			$listAccess = [];
+			$all = array_values(array_filter($all, function ($i) use ($houseId, $uid, &$listAccess) {
+				$listId = (int)$i->getListId();
+				if (!isset($listAccess[$listId])) {
+					$listAccess[$listId] = $this->permissions->canAccessList($houseId, $uid, $listId);
+				}
+				return $listAccess[$listId];
+			}));
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
 			return new DataResponse($items);
@@ -371,6 +400,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/items')]
 	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
 	public function indexItems(int $houseId, int $listId, string $sortBy = 'custom', int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $sortBy, $limit, $offset): DataResponse {
 			$uid = $this->requireUid();
@@ -401,6 +431,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/items/trash')]
 	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
 	public function indexDeletedItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -433,6 +464,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items')]
 	#[NoAdminRequired]
+	#[Permission(['canAddItems'])]
 	public function addItem(
 		int $houseId,
 		int $listId,
@@ -500,6 +532,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function updateItem(
 		int $houseId,
 		int $listId,
@@ -558,7 +591,17 @@ final class ChecklistController extends OCSController {
 				$patch['sortOrder'] = $sortOrder;
 			}
 			$targetList = null;
-			if ($targetListId !== null) {
+			if ($targetListId !== null && $targetListId !== $listId) {
+				// Moving an item to another list needs the move capability and
+				// access to the destination list (admins bypass both).
+				if (!$this->permissions->isAdmin($houseId, $uid)) {
+					if (!$this->permissions->can($houseId, $uid, 'canMoveItems')) {
+						throw new ForbiddenException('Missing permission: canMoveItems');
+					}
+					if (!$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
+						throw new ForbiddenException('No access to the destination list');
+					}
+				}
 				$targetList = $this->lists->getList($targetListId);
 				$this->assertListInHouse($targetList->getHouseId(), $houseId);
 				$patch['listId'] = $targetListId;
@@ -611,6 +654,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/copy')]
 	#[NoAdminRequired]
+	#[Permission(['canCopyItems'])]
 	public function copyItem(int $houseId, int $listId, int $itemId, int $targetListId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId, $targetListId): DataResponse {
 			$uid = $this->requireUid();
@@ -623,6 +667,10 @@ final class ChecklistController extends OCSController {
 			}
 			$targetList = $this->lists->getList($targetListId);
 			$this->assertListInHouse($targetList->getHouseId(), $houseId);
+			if (!$this->permissions->isAdmin($houseId, $uid)
+				&& !$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
+				throw new ForbiddenException('No access to the destination list');
+			}
 
 			$newImageFileId = null;
 			$newImageOwner = null;
@@ -669,6 +717,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/toggle')]
 	#[NoAdminRequired]
+	#[Permission(['canCheckItems'])]
 	public function toggleItem(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$uid = $this->requireUid();
@@ -719,6 +768,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/items/trash')]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteItems'])]
 	public function emptyTrash(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -742,6 +792,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}', requirements: ['itemId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteItems'])]
 	public function deleteItem(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$uid = $this->requireUid();
@@ -780,6 +831,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/restore')]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteItems'])]
 	public function restoreItem(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$uid = $this->requireUid();
@@ -819,6 +871,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/permanent')]
 	#[NoAdminRequired]
+	#[Permission(['canDeleteItems'])]
 	public function permanentlyDeleteItem(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -846,6 +899,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/reorder')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function reorderItems(int $houseId, int $listId, array $items = []): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $items): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -872,6 +926,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/image')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function uploadItemImage(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$uid = $this->requireUid();
@@ -916,6 +971,7 @@ final class ChecklistController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/image')]
 	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
 	public function clearItemImage(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$uid = $this->requireUid();

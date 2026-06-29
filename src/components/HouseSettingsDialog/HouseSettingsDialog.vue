@@ -91,14 +91,19 @@
               <td>
                 <NcSelect
                   v-if="canAdmin && member.role !== 'owner'"
-                  :model-value="roleOptionFor(member.role)"
-                  :options="roleOptions"
+                  :model-value="memberRoleValue(member)"
+                  :options="roleSelectOptions"
+                  :multiple="true"
+                  :close-on-select="false"
                   :clearable="false"
                   :searchable="false"
+                  label="label"
                   autocomplete="off"
-                  @option:selected="(opt: RoleOption) => changeRole(member.id, opt.value)"
+                  @update:model-value="
+                    (opts: RoleSelectOption[]) => changeMemberRoles(member, opts)
+                  "
                 />
-                <span v-else>{{ roleLabel(member.role) }}</span>
+                <span v-else>{{ memberRoleNames(member) }}</span>
               </td>
               <td>
                 <NcDateTime :timestamp="member.joinedAt * 1000" />
@@ -134,6 +139,80 @@
           </NcButton>
         </div>
       </template>
+    </NcAppSettingsSection>
+
+    <NcAppSettingsSection
+      v-if="houseIdNum !== null && canAdmin"
+      id="house-roles"
+      :name="strings.rolesSection"
+    >
+      <p class="pantry-hint">{{ strings.rolesHint }}</p>
+      <div v-for="role in roles" :key="role.id" class="pantry-role">
+        <div class="pantry-role__head">
+          <NcTextField
+            :model-value="roleNameModel(role)"
+            :label="strings.roleNameLabel"
+            autocomplete="off"
+            @update:model-value="setDraftName(role, String($event))"
+          />
+          <span class="pantry-role__type">{{ roleTypeLabel(role.roleType) }}</span>
+          <NcButton
+            variant="tertiary"
+            :aria-label="strings.duplicateRole"
+            :title="strings.duplicateRole"
+            @click="duplicateRole(role)"
+          >
+            <template #icon>
+              <ContentCopyIcon :size="18" />
+            </template>
+          </NcButton>
+          <NcButton
+            v-if="role.roleType === 'normal'"
+            variant="tertiary"
+            :aria-label="strings.deleteRole"
+            :title="strings.deleteRole"
+            @click="deleteRole(role)"
+          >
+            <template #icon>
+              <DeleteIcon :size="18" />
+            </template>
+          </NcButton>
+        </div>
+        <p v-if="role.roleType === 'admin'" class="pantry-hint pantry-hint--small">
+          {{ strings.adminRoleHint }}
+        </p>
+        <div v-else class="pantry-role__caps">
+          <div v-for="group in capGroups" :key="group.label" class="pantry-role__group">
+            <div class="pantry-role__group-label">{{ group.label }}</div>
+            <NcCheckboxRadioSwitch
+              v-for="cap in group.caps"
+              :key="cap.key"
+              :model-value="roleCapModel(role, cap.key)"
+              :disabled="capDisabled(role, cap.key)"
+              @update:model-value="(v: boolean) => setDraftCap(role, cap.key, v)"
+            >
+              {{ cap.label }}
+            </NcCheckboxRadioSwitch>
+          </div>
+        </div>
+        <div class="pantry-role__save">
+          <NcButton
+            variant="primary"
+            :disabled="!isRoleDirty(role) || savingRole === role.id"
+            @click="saveRole(role)"
+          >
+            {{ savingRole === role.id ? strings.saving : strings.saveRole }}
+          </NcButton>
+        </div>
+      </div>
+      <div class="pantry-members-add">
+        <NcButton variant="secondary" :disabled="creatingRole" @click="addRole">
+          <template #icon>
+            <PlusIcon :size="20" />
+          </template>
+          {{ strings.addRole }}
+        </NcButton>
+      </div>
     </NcAppSettingsSection>
 
     <NcAppSettingsSection v-if="isOwner" id="house-danger" :name="strings.dangerSection">
@@ -226,11 +305,14 @@ import NcDateTime from '@nextcloud/vue/components/NcDateTime'
 import NcAvatar from '@nextcloud/vue/components/NcAvatar'
 import PlusIcon from '@icons/Plus.vue'
 import DeleteIcon from '@icons/Delete.vue'
+import ContentCopyIcon from '@icons/ContentCopy.vue'
 import * as houseApi from '@/api/houses'
+import { setMemberRoles, updateRole as updateRoleApi } from '@/api/roles'
 import type { UserAutocomplete } from '@/api/houses'
-import type { HouseMember, HouseRole } from '@/api/types'
+import type { CapabilityKey, HouseMember, HouseRole, Role } from '@/api/types'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useHouses } from '@/composables/useHouses'
+import { useRoles } from '@/composables/useRoles'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 
 const props = defineProps<{ open: boolean }>()
@@ -241,6 +323,222 @@ const { house, isOwner, canAdmin, refresh } = useCurrentHouse()
 const { update, remove } = useHouses()
 
 const houseIdNum = computed(() => house.value?.id ?? null)
+
+// -------- Roles --------
+const rolesApi = computed(() => (houseIdNum.value !== null ? useRoles(houseIdNum.value) : null))
+const roles = computed<Role[]>(() => rolesApi.value?.roles.value ?? [])
+
+interface CapGroup {
+  label: string
+  caps: { key: CapabilityKey; label: string }[]
+}
+const capGroups = computed<CapGroup[]>(() => [
+  {
+    label: t('pantry', 'Checklists'),
+    caps: [
+      { key: 'canViewLists', label: t('pantry', 'View') },
+      { key: 'canCreateLists', label: t('pantry', 'Create') },
+      { key: 'canEditLists', label: t('pantry', 'Edit') },
+      { key: 'canDeleteLists', label: t('pantry', 'Delete') },
+    ],
+  },
+  {
+    label: t('pantry', 'Checklist items'),
+    caps: [
+      { key: 'canAddItems', label: t('pantry', 'Add') },
+      { key: 'canCheckItems', label: t('pantry', 'Check off') },
+      { key: 'canCopyItems', label: t('pantry', 'Copy') },
+      { key: 'canMoveItems', label: t('pantry', 'Move') },
+      { key: 'canDeleteItems', label: t('pantry', 'Delete') },
+    ],
+  },
+  {
+    label: t('pantry', 'Photos'),
+    caps: [
+      { key: 'canViewPhotos', label: t('pantry', 'View') },
+      { key: 'canUploadPhotos', label: t('pantry', 'Upload') },
+      { key: 'canUpdatePhotos', label: t('pantry', 'Edit') },
+      { key: 'canMovePhotos', label: t('pantry', 'Organize') },
+      { key: 'canDeletePhotos', label: t('pantry', 'Delete') },
+    ],
+  },
+  {
+    label: t('pantry', 'Notes'),
+    caps: [
+      { key: 'canViewNotes', label: t('pantry', 'View') },
+      { key: 'canCreateNotes', label: t('pantry', 'Create') },
+      { key: 'canUpdateNotes', label: t('pantry', 'Edit') },
+      { key: 'canDeleteNotes', label: t('pantry', 'Delete') },
+    ],
+  },
+])
+
+function roleTypeLabel(roleType: Role['roleType']): string {
+  switch (roleType) {
+    case 'admin':
+      return t('pantry', 'Built-in admin')
+    case 'default':
+      return t('pantry', 'Built-in member')
+    default:
+      return t('pantry', 'Custom')
+  }
+}
+
+// Roles are edited locally and persisted together via the "Save role" button.
+// Each draft holds only the fields the admin has touched.
+interface RoleDraft {
+  name?: string
+  caps: Partial<Record<CapabilityKey, boolean>>
+}
+const roleDrafts = ref<Record<number, RoleDraft>>({})
+const savingRole = ref<number | null>(null)
+
+// Capability dependencies: a section's "view" capability gates the rest of that
+// section. Checklist view additionally gates the checklist-item capabilities.
+const CAP_PARENT: Partial<Record<CapabilityKey, CapabilityKey>> = {
+  canCreateLists: 'canViewLists',
+  canEditLists: 'canViewLists',
+  canDeleteLists: 'canViewLists',
+  canAddItems: 'canViewLists',
+  canCheckItems: 'canViewLists',
+  canCopyItems: 'canViewLists',
+  canMoveItems: 'canViewLists',
+  canDeleteItems: 'canViewLists',
+  canUploadPhotos: 'canViewPhotos',
+  canUpdatePhotos: 'canViewPhotos',
+  canDeletePhotos: 'canViewPhotos',
+  canMovePhotos: 'canViewPhotos',
+  canCreateNotes: 'canViewNotes',
+  canUpdateNotes: 'canViewNotes',
+  canDeleteNotes: 'canViewNotes',
+}
+const CAP_CHILDREN: Partial<Record<CapabilityKey, CapabilityKey[]>> = Object.entries(
+  CAP_PARENT,
+).reduce<Partial<Record<CapabilityKey, CapabilityKey[]>>>((acc, [child, parent]) => {
+  ;(acc[parent] ??= []).push(child as CapabilityKey)
+  return acc
+}, {})
+
+function roleNameModel(role: Role): string {
+  return roleDrafts.value[role.id]?.name ?? role.name
+}
+function roleCapModel(role: Role, key: CapabilityKey): boolean {
+  const caps = roleDrafts.value[role.id]?.caps
+  return caps && key in caps ? !!caps[key] : role[key]
+}
+function setDraftName(role: Role, value: string) {
+  const draft: RoleDraft = { ...(roleDrafts.value[role.id] ?? { caps: {} }) }
+  draft.name = value
+  roleDrafts.value = { ...roleDrafts.value, [role.id]: draft }
+}
+function setDraftCap(role: Role, key: CapabilityKey, value: boolean) {
+  const draft: RoleDraft = { ...(roleDrafts.value[role.id] ?? { caps: {} }) }
+  draft.caps = { ...draft.caps, [key]: value }
+  // Turning off a section's "view" cap forces its dependents off too.
+  if (!value) {
+    for (const child of CAP_CHILDREN[key] ?? []) {
+      draft.caps[child] = false
+    }
+  }
+  roleDrafts.value = { ...roleDrafts.value, [role.id]: draft }
+}
+function capDisabled(role: Role, key: CapabilityKey): boolean {
+  const parent = CAP_PARENT[key]
+  return parent !== undefined && !roleCapModel(role, parent)
+}
+function clearDraft(roleId: number) {
+  const next = { ...roleDrafts.value }
+  delete next[roleId]
+  roleDrafts.value = next
+}
+function isRoleDirty(role: Role): boolean {
+  const draft = roleDrafts.value[role.id]
+  if (!draft) return false
+  if (draft.name !== undefined && draft.name.trim() !== '' && draft.name.trim() !== role.name) {
+    return true
+  }
+  return Object.entries(draft.caps).some(([key, value]) => value !== role[key as CapabilityKey])
+}
+
+async function saveRole(role: Role) {
+  const id = houseIdNum.value
+  const draft = roleDrafts.value[role.id]
+  if (id === null || !draft || !isRoleDirty(role)) return
+
+  const patch: { name?: string; caps?: Partial<Record<CapabilityKey, boolean>> } = {}
+  if (draft.name !== undefined && draft.name.trim() !== '' && draft.name.trim() !== role.name) {
+    patch.name = draft.name.trim()
+  }
+  if (Object.keys(draft.caps).length > 0) {
+    patch.caps = draft.caps
+  }
+
+  // Optimistic: apply to the live role, persist, revert the whole change on failure.
+  const previous: { name: string; caps: Partial<Record<CapabilityKey, boolean>> } = {
+    name: role.name,
+    caps: {},
+  }
+  if (patch.name !== undefined) {
+    role.name = patch.name
+  }
+  if (patch.caps) {
+    for (const [key, value] of Object.entries(patch.caps)) {
+      const k = key as CapabilityKey
+      previous.caps[k] = role[k]
+      role[k] = !!value
+    }
+  }
+  clearDraft(role.id)
+
+  savingRole.value = role.id
+  try {
+    await updateRoleApi(id, role.id, patch)
+  } catch {
+    role.name = previous.name
+    for (const [key, value] of Object.entries(previous.caps)) {
+      role[key as CapabilityKey] = !!value
+    }
+  } finally {
+    savingRole.value = null
+  }
+}
+
+const creatingRole = ref(false)
+async function addRole() {
+  if (!rolesApi.value) return
+  creatingRole.value = true
+  try {
+    // Start a new role with every capability granted; admins can then pare it
+    // back to taste.
+    const allCaps: Partial<Record<CapabilityKey, boolean>> = {}
+    for (const group of capGroups.value) {
+      for (const cap of group.caps) {
+        allCaps[cap.key] = true
+      }
+    }
+    await rolesApi.value.create(t('pantry', 'New role'), allCaps)
+  } finally {
+    creatingRole.value = false
+  }
+}
+
+async function deleteRole(role: Role) {
+  if (!rolesApi.value) return
+  await rolesApi.value.remove(role.id)
+  await loadMembers()
+}
+
+async function duplicateRole(role: Role) {
+  if (!rolesApi.value) return
+  // Copy the source role's capabilities into a new custom (normal) role.
+  const caps: Partial<Record<CapabilityKey, boolean>> = {}
+  for (const group of capGroups.value) {
+    for (const cap of group.caps) {
+      caps[cap.key] = role[cap.key]
+    }
+  }
+  await rolesApi.value.create(t('pantry', 'Copy of {name}', { name: role.name }), caps)
+}
 
 // -------- General --------
 const name = ref('')
@@ -396,6 +694,33 @@ async function changeRole(memberId: number, role: string) {
   members.value = members.value.map((m) => (m.id === memberId ? updated : m))
 }
 
+// -------- Member role assignment (multi-role) --------
+interface RoleSelectOption {
+  id: number
+  label: string
+}
+const roleSelectOptions = computed<RoleSelectOption[]>(() =>
+  roles.value.map((r) => ({ id: r.id, label: r.name })),
+)
+
+function memberRoleValue(member: HouseMember): RoleSelectOption[] {
+  const ids = member.roleIds ?? []
+  return roleSelectOptions.value.filter((o) => ids.includes(o.id))
+}
+
+function memberRoleNames(member: HouseMember): string {
+  const names = memberRoleValue(member).map((o) => o.label)
+  return names.length > 0 ? names.join(', ') : t('pantry', 'No roles')
+}
+
+async function changeMemberRoles(member: HouseMember, options: RoleSelectOption[]) {
+  const id = houseIdNum.value
+  if (id === null) return
+  const roleIds = options.map((o) => o.id)
+  await setMemberRoles(id, member.id, roleIds)
+  members.value = members.value.map((m) => (m.id === member.id ? { ...m, roleIds } : m))
+}
+
 async function removeMember(memberId: number) {
   const id = houseIdNum.value
   if (id === null) return
@@ -440,21 +765,6 @@ async function deleteHouse() {
   await router.push({ name: 'home' })
 }
 
-function roleLabel(role: HouseRole): string {
-  switch (role) {
-    case 'owner':
-      return t('pantry', 'Owner')
-    case 'admin':
-      return t('pantry', 'Administrator')
-    default:
-      return t('pantry', 'Member')
-  }
-}
-
-function roleOptionFor(role: HouseRole): RoleOption {
-  return roleOptions.value.find((o) => o.value === role) ?? roleOptions.value[0]!
-}
-
 const strings = {
   title: t('pantry', 'House settings'),
   generalSection: t('pantry', 'General'),
@@ -490,6 +800,17 @@ const strings = {
     'Auto-delete disabled. Items stay in the trash until removed manually.',
   ),
   trashRetentionInvalid: t('pantry', 'Enter a whole number between 0 and 3650.'),
+  rolesSection: t('pantry', 'Roles'),
+  rolesHint: t(
+    'pantry',
+    'Define what each role can do. The Admin role always has full access; the Member role is the default for new members. Assign roles to members in the Members section.',
+  ),
+  roleNameLabel: t('pantry', 'Role name'),
+  adminRoleHint: t('pantry', 'The Admin role always has every permission and cannot be changed.'),
+  addRole: t('pantry', 'Add role'),
+  saveRole: t('pantry', 'Save role'),
+  duplicateRole: t('pantry', 'Duplicate role'),
+  deleteRole: t('pantry', 'Delete role'),
   membersSection: t('pantry', 'Members'),
   addMember: t('pantry', 'Add member'),
   removeMember: t('pantry', 'Remove member'),
@@ -558,6 +879,45 @@ const strings = {
 
 .pantry-members-add {
   margin-top: 1rem;
+}
+
+.pantry-role {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+
+  &__head {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+
+  &__type {
+    margin-inline-start: auto;
+    align-self: center;
+    font-size: 0.8em;
+    color: var(--color-text-maxcontrast);
+    white-space: nowrap;
+  }
+
+  &__caps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    margin-top: 0.5rem;
+  }
+
+  &__save {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+  }
+
+  &__group-label {
+    font-weight: 600;
+    font-size: 0.85em;
+    color: var(--color-text-maxcontrast);
+    margin-bottom: 0.25rem;
+  }
 }
 
 .pantry-members-leave {

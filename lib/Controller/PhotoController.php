@@ -10,11 +10,13 @@ namespace OCA\Pantry\Controller;
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
+use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\NotificationService;
+use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PhotoService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -41,6 +43,7 @@ final class PhotoController extends OCSController {
 		private ImageService $images,
 		private NotificationService $notifications,
 		private ActivityPublisher $activity,
+		private PermissionService $permissions,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -62,6 +65,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/photos/folders')]
 	#[NoAdminRequired]
+	#[Permission(['canViewPhotos'])]
 	public function indexFolders(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -83,6 +87,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/photos/folders')]
 	#[NoAdminRequired]
+	#[Permission(['canMovePhotos'])]
 	public function createFolder(int $houseId, string $name): DataResponse {
 		return $this->runAction(function () use ($houseId, $name): DataResponse {
 			$uid = $this->requireUid();
@@ -113,6 +118,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/photos/folders/{folderId}')]
 	#[NoAdminRequired]
+	#[Permission(['canMovePhotos'])]
 	public function updateFolder(int $houseId, int $folderId, ?string $name = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $folderId, $name, $sortOrder): DataResponse {
 			$uid = $this->requireUid();
@@ -158,6 +164,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/folders/{folderId}')]
 	#[NoAdminRequired]
+	#[Permission(['canDeletePhotos'])]
 	public function deleteFolder(int $houseId, int $folderId, bool $deleteContents = false): DataResponse {
 		return $this->runAction(function () use ($houseId, $folderId, $deleteContents): DataResponse {
 			$uid = $this->requireUid();
@@ -189,6 +196,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/photos/folders/reorder')]
 	#[NoAdminRequired]
+	#[Permission(['canMovePhotos'])]
 	public function reorderFolders(int $houseId, array $items = []): DataResponse {
 		return $this->runAction(function () use ($houseId, $items): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -213,6 +221,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/photos')]
 	#[NoAdminRequired]
+	#[Permission(['canViewPhotos'])]
 	public function indexPhotos(int $houseId, string $sortBy = 'custom', int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -237,6 +246,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/photos/trash')]
 	#[NoAdminRequired]
+	#[Permission(['canViewPhotos'])]
 	public function indexDeletedPhotos(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -257,6 +267,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/trash')]
 	#[NoAdminRequired]
+	#[Permission(['canDeletePhotos'])]
 	public function emptyTrash(int $houseId): DataResponse {
 		return $this->runAction(function () use ($houseId): DataResponse {
 			$uid = $this->requireUid();
@@ -283,6 +294,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/photos')]
 	#[NoAdminRequired]
+	#[Permission(['canUploadPhotos'])]
 	public function uploadPhoto(int $houseId, ?int $folderId = null, ?string $caption = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $folderId, $caption): DataResponse {
 			$uid = $this->requireUid();
@@ -348,6 +360,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/photos/{photoId}', requirements: ['photoId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canUpdatePhotos'])]
 	public function updatePhoto(int $houseId, int $photoId, ?string $caption = null, ?int $folderId = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId, $caption, $folderId, $sortOrder): DataResponse {
 			$uid = $this->requireUid();
@@ -361,6 +374,13 @@ final class PhotoController extends OCSController {
 				$patch['caption'] = $caption;
 			}
 			if ($folderId !== null) {
+				// Changing the folder is a move and needs the move capability.
+				$normalizedFolderId = $folderId > 0 ? $folderId : null;
+				if ($normalizedFolderId !== $previousFolderId
+					&& !$this->permissions->isAdmin($houseId, $uid)
+					&& !$this->permissions->can($houseId, $uid, 'canMovePhotos')) {
+					throw new ForbiddenException('Missing permission: canMovePhotos');
+				}
 				if ($folderId > 0) {
 					$folder = $this->photos->getFolder($folderId);
 					$this->assertInHouse($folder->getHouseId(), $houseId, 'Folder');
@@ -401,6 +421,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/{photoId}', requirements: ['photoId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeletePhotos'])]
 	public function deletePhoto(int $houseId, int $photoId): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId): DataResponse {
 			$uid = $this->requireUid();
@@ -436,6 +457,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/photos/{photoId}/restore', requirements: ['photoId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeletePhotos'])]
 	public function restorePhoto(int $houseId, int $photoId): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
@@ -461,6 +483,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/photos/{photoId}/permanent', requirements: ['photoId' => '\d+'])]
 	#[NoAdminRequired]
+	#[Permission(['canDeletePhotos'])]
 	public function permanentlyDeletePhoto(int $houseId, int $photoId): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId): DataResponse {
 			$uid = $this->requireUid();
@@ -484,6 +507,7 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/photos/reorder')]
 	#[NoAdminRequired]
+	#[Permission(['canMovePhotos'])]
 	public function reorderPhotos(int $houseId, array $items = []): DataResponse {
 		return $this->runAction(function () use ($houseId, $items): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());

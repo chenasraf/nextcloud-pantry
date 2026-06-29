@@ -13,10 +13,14 @@ use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\HouseMemberMapper;
+use OCA\Pantry\Db\HouseMemberRoleMapper;
+use OCA\Pantry\Db\ListRoleMapper;
 use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Db\PhotoFolderMapper;
 use OCA\Pantry\Db\PhotoMapper;
+use OCA\Pantry\Db\RoleMapper;
 use OCA\Pantry\Service\HouseService;
+use OCA\Pantry\Service\RoleService;
 use OCP\IDBConnection;
 use OCP\IUserManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -38,6 +42,10 @@ class HouseServiceTest extends TestCase {
 			$this->createMock(PhotoMapper::class),
 			$this->createMock(PhotoFolderMapper::class),
 			$this->createMock(NoteMapper::class),
+			$this->createMock(RoleMapper::class),
+			$this->createMock(HouseMemberRoleMapper::class),
+			$this->createMock(ListRoleMapper::class),
+			$this->createMock(RoleService::class),
 			$this->createMock(IDBConnection::class),
 			$this->createMock(IUserManager::class),
 		);

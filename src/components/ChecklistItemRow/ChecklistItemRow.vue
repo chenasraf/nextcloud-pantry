@@ -19,6 +19,7 @@
     <div class="checklist-row__check">
       <NcCheckboxRadioSwitch
         :model-value="item.done"
+        :disabled="!can.canCheckItems"
         :aria-label="tapRowToComplete ? undefined : item.name"
         :class="{ 'checklist-row__check-fill': tapRowToComplete }"
         @update:model-value="$emit('toggle', item.id)"
@@ -80,31 +81,39 @@
         </template>
       </NcButton>
       <NcActions :aria-label="strings.itemActions">
-        <NcActionButton close-after-click @click="$emit('edit', item)">
+        <NcActionButton v-if="can.canEditLists" close-after-click @click="$emit('edit', item)">
           <template #icon>
             <PencilIcon :size="20" />
           </template>
           {{ strings.editItem }}
         </NcActionButton>
-        <NcActionButton close-after-click @click="$emit('move', item)">
+        <NcActionButton v-if="can.canMoveItems" close-after-click @click="$emit('move', item)">
           <template #icon>
             <ArrowRightIcon :size="20" />
           </template>
           {{ strings.moveItem }}
         </NcActionButton>
-        <NcActionButton close-after-click @click="$emit('copy', item)">
+        <NcActionButton v-if="can.canCopyItems" close-after-click @click="$emit('copy', item)">
           <template #icon>
             <ContentCopyIcon :size="20" />
           </template>
           {{ strings.copyItem }}
         </NcActionButton>
-        <NcActionButton v-if="trashMode" close-after-click @click="$emit('restore', item.id)">
+        <NcActionButton
+          v-if="trashMode && can.canDeleteItems"
+          close-after-click
+          @click="$emit('restore', item.id)"
+        >
           <template #icon>
             <DeleteRestoreIcon :size="20" />
           </template>
           {{ strings.restoreItem }}
         </NcActionButton>
-        <NcActionButton close-after-click @click="$emit('remove', item.id)">
+        <NcActionButton
+          v-if="can.canDeleteItems"
+          close-after-click
+          @click="$emit('remove', item.id)"
+        >
           <template #icon>
             <DeleteIcon :size="20" />
           </template>
@@ -137,7 +146,10 @@ import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { useHouseMembers } from '@/composables/useHouseMembers'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import type { ChecklistItem, Category, Checklist } from '@/api/types'
+
+const { can } = useCurrentHouse()
 
 const props = withDefaults(
   defineProps<{

@@ -7,9 +7,45 @@ export interface House {
   updatedAt: number
   trashRetentionDays: number
   role: HouseRole
+  /** Whether the current user holds an admin role in this house. */
+  isAdmin: boolean
+  /** The current user's effective capabilities in this house. */
+  permissions: Capabilities
 }
 
 export type HouseRole = 'owner' | 'admin' | 'member'
+
+export type RoleType = 'admin' | 'default' | 'normal'
+
+/** Capability keys shared with the backend (Role::CAPABILITIES). */
+export type CapabilityKey =
+  | 'canViewLists'
+  | 'canCreateLists'
+  | 'canEditLists'
+  | 'canDeleteLists'
+  | 'canAddItems'
+  | 'canDeleteItems'
+  | 'canCopyItems'
+  | 'canMoveItems'
+  | 'canCheckItems'
+  | 'canViewPhotos'
+  | 'canUploadPhotos'
+  | 'canUpdatePhotos'
+  | 'canDeletePhotos'
+  | 'canMovePhotos'
+  | 'canViewNotes'
+  | 'canCreateNotes'
+  | 'canUpdateNotes'
+  | 'canDeleteNotes'
+
+export type Capabilities = Record<CapabilityKey, boolean>
+
+export interface Role extends Capabilities {
+  id: number
+  houseId: number
+  name: string
+  roleType: RoleType
+}
 
 export interface HouseMember {
   id: number
@@ -17,6 +53,7 @@ export interface HouseMember {
   userId: string
   displayName: string
   role: HouseRole
+  roleIds: number[]
   joinedAt: number
 }
 

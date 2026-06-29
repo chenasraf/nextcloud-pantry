@@ -51,13 +51,16 @@
           </template>
           {{ strings.trashLabel }}
         </NcButton>
-        <NcButton v-if="!trashMode && !activeFolderId" @click="showFolderDialog = true">
+        <NcButton
+          v-if="!trashMode && !activeFolderId && can.canMovePhotos"
+          @click="showFolderDialog = true"
+        >
           <template #icon>
             <FolderPlusIcon :size="20" />
           </template>
           {{ strings.newFolder }}
         </NcButton>
-        <NcButton v-if="!trashMode" variant="primary" @click="triggerUpload">
+        <NcButton v-if="!trashMode && can.canUploadPhotos" variant="primary" @click="triggerUpload">
           <template #icon>
             <UploadIcon :size="20" />
           </template>
@@ -136,7 +139,7 @@
             <ImageIcon />
           </template>
           <template #action>
-            <NcButton variant="primary" @click="triggerUpload">
+            <NcButton v-if="can.canUploadPhotos" variant="primary" @click="triggerUpload">
               {{ strings.upload }}
             </NcButton>
           </template>
@@ -210,7 +213,7 @@
             <ImageIcon />
           </template>
           <template #action>
-            <NcButton variant="primary" @click="triggerUpload">
+            <NcButton v-if="can.canUploadPhotos" variant="primary" @click="triggerUpload">
               {{ strings.upload }}
             </NcButton>
           </template>
@@ -467,6 +470,7 @@ import type { Photo, PhotoFolder } from '@/api/types'
 import type { PhotoSort, PhotoSortPrefs } from '@/api/prefs'
 import { getPhotoSort, setPhotoSort } from '@/api/prefs'
 import { usePhotos, type UploadEntry } from '@/composables/usePhotos'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 
 const props = defineProps<{ houseId: string; folderId?: string }>()
@@ -495,6 +499,8 @@ const {
   sortBy,
   trashMode,
 } = usePhotos(houseIdNum.value)
+
+const { can } = useCurrentHouse()
 
 async function toggleTrash() {
   trashMode.value = !trashMode.value

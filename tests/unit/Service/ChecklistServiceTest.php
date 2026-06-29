@@ -11,6 +11,7 @@ use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\ListRoleMapper;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\RecurrenceService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -30,6 +31,7 @@ class ChecklistServiceTest extends TestCase {
 			$this->listMapper,
 			$this->itemMapper,
 			new RecurrenceService(),
+			$this->createMock(ListRoleMapper::class),
 		);
 	}
 

@@ -13,6 +13,30 @@ vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 // Mock icon components
 vi.mock('@icons/Plus.vue', () => createIconMock('PlusIcon'))
 vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
+vi.mock('@icons/Check.vue', () => createIconMock('CheckIcon'))
+
+const { FULL_CAPS } = vi.hoisted(() => ({
+  FULL_CAPS: {
+    canViewLists: true,
+    canCreateLists: true,
+    canEditLists: true,
+    canDeleteLists: true,
+    canAddItems: true,
+    canDeleteItems: true,
+    canCopyItems: true,
+    canMoveItems: true,
+    canCheckItems: true,
+    canViewPhotos: true,
+    canUploadPhotos: true,
+    canUpdatePhotos: true,
+    canDeletePhotos: true,
+    canMovePhotos: true,
+    canViewNotes: true,
+    canCreateNotes: true,
+    canUpdateNotes: true,
+    canDeleteNotes: true,
+  },
+}))
 
 // Mock vue-router
 vi.mock('vue-router', () => ({
@@ -22,6 +46,7 @@ vi.mock('vue-router', () => ({
 
 // Mock composables
 vi.mock('@/composables/useCurrentHouse', () => ({
+  NO_CAPS: FULL_CAPS,
   useCurrentHouse: vi.fn(() => ({
     house: ref({
       id: 1,
@@ -32,12 +57,16 @@ vi.mock('@/composables/useCurrentHouse', () => ({
       createdAt: 0,
       updatedAt: 0,
       trashRetentionDays: 30,
+      isAdmin: true,
+      permissions: FULL_CAPS,
     }),
     houseId: computed(() => 1),
     loading: ref(false),
     canEdit: computed(() => true),
     canAdmin: computed(() => true),
+    isAdmin: computed(() => true),
     isOwner: computed(() => true),
+    can: computed(() => FULL_CAPS),
     refresh: vi.fn(),
   })),
 }))
@@ -47,6 +76,26 @@ vi.mock('@/composables/useHouses', () => ({
     update: vi.fn(),
     remove: vi.fn(),
   })),
+}))
+
+vi.mock('@/composables/useRoles', () => ({
+  useRoles: vi.fn(() => ({
+    roles: ref([]),
+    refresh: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+  })),
+}))
+
+vi.mock('@/api/roles', () => ({
+  setMemberRoles: vi.fn(() => Promise.resolve()),
+  getListRoles: vi.fn(() => Promise.resolve([])),
+  setListRoles: vi.fn(() => Promise.resolve()),
+  listRoles: vi.fn(() => Promise.resolve([])),
+  createRole: vi.fn(),
+  updateRole: vi.fn(),
+  deleteRole: vi.fn(),
 }))
 
 vi.mock('@/composables/useShowAddedBy', () => ({
@@ -193,12 +242,16 @@ describe('HouseSettingsDialog', () => {
         createdAt: 0,
         updatedAt: 0,
         trashRetentionDays: 30,
+        isAdmin: true,
+        permissions: FULL_CAPS,
       }),
       houseId: computed(() => 1),
       loading: ref(false),
       canEdit: computed(() => true),
       canAdmin: computed(() => true),
+      isAdmin: computed(() => true),
       isOwner: computed(() => true),
+      can: computed(() => FULL_CAPS),
       refresh: vi.fn(),
     })
   })
@@ -247,7 +300,15 @@ describe('HouseSettingsDialog', () => {
     it('renders member table headers', async () => {
       const { listMembers } = await import('@/api/houses')
       vi.mocked(listMembers).mockResolvedValueOnce([
-        { id: 1, houseId: 1, userId: 'alice', displayName: 'Alice', role: 'owner', joinedAt: 1000 },
+        {
+          id: 1,
+          houseId: 1,
+          userId: 'alice',
+          displayName: 'Alice',
+          role: 'owner',
+          roleIds: [],
+          joinedAt: 1000,
+        },
       ])
       const wrapper = mountDialog({ open: false })
       await wrapper.setProps({ open: true })
@@ -334,12 +395,16 @@ describe('HouseSettingsDialog', () => {
           createdAt: 0,
           updatedAt: 0,
           trashRetentionDays: 30,
+          isAdmin: false,
+          permissions: FULL_CAPS,
         }),
         houseId: computed(() => 1),
         loading: ref(false),
         canEdit: computed(() => true),
         canAdmin: computed(() => false),
+        isAdmin: computed(() => false),
         isOwner: computed(() => false),
+        can: computed(() => FULL_CAPS),
         refresh: vi.fn(),
       })
     })
@@ -380,12 +445,16 @@ describe('HouseSettingsDialog', () => {
           createdAt: 0,
           updatedAt: 0,
           trashRetentionDays: 30,
+          isAdmin: true,
+          permissions: FULL_CAPS,
         }),
         houseId: computed(() => 1),
         loading: ref(false),
         canEdit: computed(() => true),
         canAdmin: computed(() => true),
+        isAdmin: computed(() => true),
         isOwner: computed(() => false),
+        can: computed(() => FULL_CAPS),
         refresh: vi.fn(),
       })
     })

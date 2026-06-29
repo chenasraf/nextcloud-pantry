@@ -77,6 +77,7 @@
 
     <div class="pantry-detail__body">
       <ChecklistAddForm
+        v-if="can.canAddItems && !trashMode"
         :house-id="houseIdNum"
         :adding="adding"
         :delete-on-done-default="list?.deleteOnDoneDefault ?? false"
@@ -408,6 +409,7 @@ import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useCategorySpacing } from '@/composables/useCategorySpacing'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
 
 const props = defineProps<{ houseId: string; listId: string }>()
 
@@ -534,6 +536,7 @@ async function loadList() {
 
 const { tapRowToComplete } = useTapRowToComplete()
 const { categorySpacing } = useCategorySpacing()
+const { can } = useCurrentHouse()
 const showAddedBy = computed(() => useShowAddedBy(houseIdNum.value).showAddedBy.value)
 const showCategorySeparators = computed(
   () => currentSort.value === 'category' && categorySpacing.value !== 'disabled',

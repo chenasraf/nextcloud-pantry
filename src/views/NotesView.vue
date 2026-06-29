@@ -31,7 +31,11 @@
           </template>
           {{ strings.trashLabel }}
         </NcButton>
-        <NcButton v-if="!trashMode" variant="primary" @click="openCreateDialog">
+        <NcButton
+          v-if="!trashMode && can.canCreateNotes"
+          variant="primary"
+          @click="openCreateDialog"
+        >
           <template #icon><PlusIcon :size="20" /></template>
           {{ strings.newNote }}
         </NcButton>
@@ -52,7 +56,7 @@
           <TrashCanIcon v-if="trashMode" />
           <NoteIcon v-else />
         </template>
-        <template v-if="!trashMode" #action>
+        <template v-if="!trashMode && can.canCreateNotes" #action>
           <NcButton variant="primary" @click="openCreateDialog">
             {{ strings.newNote }}
           </NcButton>
@@ -185,6 +189,7 @@ import type { Note } from '@/api/types'
 import type { NoteSort } from '@/api/prefs'
 import { getNoteSort, setNoteSort } from '@/api/prefs'
 import { useNotes } from '@/composables/useNotes'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 
 const props = defineProps<{ houseId: string }>()
@@ -207,6 +212,8 @@ const {
   sortBy,
   trashMode,
 } = useNotes(houseIdNum.value)
+
+const { can } = useCurrentHouse()
 
 const visibleNotes = computed(() => (trashMode.value ? deletedNotes.value : notes.value))
 

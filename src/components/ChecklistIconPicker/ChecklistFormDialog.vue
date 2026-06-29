@@ -59,6 +59,20 @@
           />
         </div>
       </div>
+      <div v-if="showAccess">
+        <label class="pantry-icon-picker__label">{{ strings.accessLabel }}</label>
+        <NcSelect
+          :model-value="selectedAccessRoles"
+          :options="accessRoleOptions"
+          :multiple="true"
+          :close-on-select="false"
+          :placeholder="strings.accessEveryone"
+          label="label"
+          autocomplete="off"
+          @update:model-value="(opts: AccessOption[]) => changeAccess(opts)"
+        />
+        <p class="pantry-access-hint">{{ strings.accessHint }}</p>
+      </div>
     </form>
     <template #actions>
       <NcButton @click="$emit('update:open', false)">{{ strings.cancel }}</NcButton>
@@ -75,10 +89,14 @@ import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import CloseIcon from '@icons/Close.vue'
 import type { Checklist } from '@/api/types'
 import { CHECKLIST_ICONS, DEFAULT_CHECKLIST_ICON_KEY } from './checklistIcons'
 import { checklistColorOptions, contrastColor } from './checklistColors'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
+import { useRoles } from '@/composables/useRoles'
+import { getListRoles, setListRoles } from '@/api/roles'
 
 const props = defineProps<{
   open: boolean
@@ -96,6 +114,41 @@ const descriptionValue = ref('')
 const iconValue = ref(DEFAULT_CHECKLIST_ICON_KEY)
 const colorValue = ref('')
 
+// -------- Access (admin-only, edit mode) --------
+const { isAdmin, houseId } = useCurrentHouse()
+const showAccess = computed(() => !!props.list && isAdmin.value)
+interface AccessOption {
+  id: number
+  label: string
+}
+// Resolve the roles composable only when the house id changes — calling
+// useRoles() triggers a fetch, so it must NOT live inside the options getter
+// (that would re-fetch on every reactive read and loop endlessly).
+const rolesApi = computed(() => (houseId.value !== null ? useRoles(houseId.value) : null))
+const accessRoleOptions = computed<AccessOption[]>(
+  () => rolesApi.value?.roles.value.map((r) => ({ id: r.id, label: r.name })) ?? [],
+)
+const selectedAccessRoles = ref<AccessOption[]>([])
+
+async function loadListAccess() {
+  if (!props.list) {
+    selectedAccessRoles.value = []
+    return
+  }
+  const ids = await getListRoles(props.list.houseId, props.list.id)
+  selectedAccessRoles.value = accessRoleOptions.value.filter((o) => ids.includes(o.id))
+}
+
+async function changeAccess(options: AccessOption[]) {
+  if (!props.list) return
+  selectedAccessRoles.value = options
+  await setListRoles(
+    props.list.houseId,
+    props.list.id,
+    options.map((o) => o.id),
+  )
+}
+
 watch(
   () => props.open,
   (isOpen) => {
@@ -105,6 +158,7 @@ watch(
         descriptionValue.value = props.list.description ?? ''
         iconValue.value = props.list.icon ?? DEFAULT_CHECKLIST_ICON_KEY
         colorValue.value = props.list.color ?? ''
+        if (isAdmin.value) void loadListAccess()
       } else {
         nameValue.value = ''
         descriptionValue.value = ''
@@ -145,6 +199,12 @@ const strings = {
   iconLabel: t('pantry', 'Icon:'),
   colorLabel: t('pantry', 'Color:'),
   noColor: t('pantry', 'Default (no color)'),
+  accessLabel: t('pantry', 'Access:'),
+  accessEveryone: t('pantry', 'Everyone'),
+  accessHint: t(
+    'pantry',
+    'Leave empty to let every role access this list. Select roles to restrict access to their members (admins always have access).',
+  ),
   cancel: t('pantry', 'Cancel'),
   create: t('pantry', 'Create'),
   save: t('pantry', 'Save'),
@@ -157,6 +217,12 @@ const strings = {
   flex-direction: column;
   gap: 1rem;
   padding: 0.5rem 0;
+}
+
+.pantry-access-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85em;
+  color: var(--color-text-maxcontrast);
 }
 
 .pantry-icon-picker {

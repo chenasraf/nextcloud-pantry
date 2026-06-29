@@ -19,6 +19,7 @@ class ChecklistService {
 		private ChecklistMapper $listMapper,
 		private ChecklistItemMapper $itemMapper,
 		private RecurrenceService $recurrence,
+		private \OCA\Pantry\Db\ListRoleMapper $listRoleMapper,
 	) {
 	}
 
@@ -161,6 +162,7 @@ class ChecklistService {
 	public function permanentlyDeleteList(int $listId): void {
 		$list = $this->getList($listId, includeDeleted: true);
 		$this->itemMapper->deleteByList((int)$list->getId());
+		$this->listRoleMapper->deleteByList((int)$list->getId());
 		$this->listMapper->delete($list);
 	}
 

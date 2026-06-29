@@ -9,10 +9,13 @@ namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMember;
+use OCA\Pantry\Db\HouseMemberRoleMapper;
 use OCA\Pantry\Exception\ForbiddenException;
+use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
+use OCA\Pantry\Service\PermissionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -34,6 +37,8 @@ final class HouseController extends OCSController {
 		IRequest $request,
 		private HouseService $houseService,
 		private HouseAuthService $auth,
+		private PermissionService $permissions,
+		private HouseMemberRoleMapper $memberRoleMapper,
 		private IUserSession $userSession,
 		private \OCP\IUserManager $userManager,
 	) {
@@ -60,7 +65,7 @@ final class HouseController extends OCSController {
 			$out = [];
 			foreach ($sliced as $house) {
 				$member = $this->auth->requireMember((int)$house->getId(), $uid);
-				$out[] = $this->serializeHouseWithRole($house, $member->getRole());
+				$out[] = $this->serializeHouseWithRole($house, $member->getRole(), $uid);
 			}
 			return new DataResponse($out);
 		});
@@ -84,7 +89,7 @@ final class HouseController extends OCSController {
 		return $this->runAction(function () use ($name, $description): DataResponse {
 			$uid = $this->requireUid();
 			$house = $this->houseService->create($uid, $name, $description);
-			return new DataResponse($this->serializeHouseWithRole($house, HouseMember::ROLE_OWNER));
+			return new DataResponse($this->serializeHouseWithRole($house, HouseMember::ROLE_OWNER, $uid));
 		});
 	}
 
@@ -106,7 +111,7 @@ final class HouseController extends OCSController {
 			$uid = $this->requireUid();
 			$member = $this->auth->requireMember($houseId, $uid);
 			$house = $this->houseService->get($houseId);
-			return new DataResponse($this->serializeHouseWithRole($house, $member->getRole()));
+			return new DataResponse($this->serializeHouseWithRole($house, $member->getRole(), $uid));
 		});
 	}
 
@@ -126,6 +131,7 @@ final class HouseController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}')]
 	#[NoAdminRequired]
+	#[Permission(admin: true)]
 	public function update(int $houseId, ?string $name = null, ?string $description = null, ?int $trashRetentionDays = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $name, $description, $trashRetentionDays): DataResponse {
 			$uid = $this->requireUid();
@@ -141,7 +147,7 @@ final class HouseController extends OCSController {
 				$patch['trashRetentionDays'] = $trashRetentionDays;
 			}
 			$house = $this->houseService->update($houseId, $patch);
-			return new DataResponse($this->serializeHouseWithRole($house, $member->getRole()));
+			return new DataResponse($this->serializeHouseWithRole($house, $member->getRole(), $uid));
 		});
 	}
 
@@ -209,6 +215,7 @@ final class HouseController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/members')]
 	#[NoAdminRequired]
+	#[Permission(admin: true)]
 	public function addMember(int $houseId, string $userId, string $role = HouseMember::ROLE_MEMBER): DataResponse {
 		return $this->runAction(function () use ($houseId, $userId, $role): DataResponse {
 			$uid = $this->requireUid();
@@ -233,6 +240,7 @@ final class HouseController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/members/{memberId}')]
 	#[NoAdminRequired]
+	#[Permission(admin: true)]
 	public function updateMember(int $houseId, int $memberId, string $role): DataResponse {
 		return $this->runAction(function () use ($houseId, $memberId, $role): DataResponse {
 			$uid = $this->requireUid();
@@ -256,6 +264,7 @@ final class HouseController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/members/{memberId}')]
 	#[NoAdminRequired]
+	#[Permission(admin: true)]
 	public function removeMember(int $houseId, int $memberId): DataResponse {
 		return $this->runAction(function () use ($houseId, $memberId): DataResponse {
 			$uid = $this->requireUid();
@@ -332,9 +341,10 @@ final class HouseController extends OCSController {
 	/**
 	 * @return PantryHouse
 	 */
-	private function serializeHouseWithRole(House $house, string $role): array {
+	private function serializeHouseWithRole(House $house, string $role, string $uid): array {
+		$houseId = (int)$house->getId();
 		return [
-			'id' => (int)$house->getId(),
+			'id' => $houseId,
 			'name' => $house->getName(),
 			'description' => $house->getDescription(),
 			'ownerUid' => $house->getOwnerUid(),
@@ -342,6 +352,8 @@ final class HouseController extends OCSController {
 			'updatedAt' => $house->getUpdatedAt(),
 			'trashRetentionDays' => $house->getTrashRetentionDays(),
 			'role' => $role,
+			'isAdmin' => $this->permissions->isAdmin($houseId, $uid),
+			'permissions' => $this->permissions->effectiveCapabilities($houseId, $uid),
 		];
 	}
 
@@ -356,6 +368,7 @@ final class HouseController extends OCSController {
 			'userId' => $member->getUserId(),
 			'displayName' => $user !== null ? $user->getDisplayName() : $member->getUserId(),
 			'role' => $member->getRole(),
+			'roleIds' => $this->memberRoleMapper->findRoleIdsForMember((int)$member->getId()),
 			'joinedAt' => $member->getJoinedAt(),
 		];
 	}
