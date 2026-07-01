@@ -1,6 +1,6 @@
 <template>
   <div class="pantry-detail">
-    <PageToolbar :title="isMeta ? strings.allListsTitle : list?.name">
+    <PageToolbar :title="isMeta ? strings.allListsTitle : list?.name" :actions="toolbarActions">
       <template #before-title>
         <NcButton
           variant="tertiary"
@@ -17,61 +17,6 @@
         <span v-else-if="list" class="pantry-detail__title-icon" :style="iconWrapStyle(list.color)">
           <component :is="checklistIconComponent(list.icon)" :size="20" />
         </span>
-      </template>
-      <template #actions>
-        <NcActions :aria-label="strings.sortLabel" :title="strings.sortLabel" type="tertiary">
-          <template #icon>
-            <SortIcon :size="20" />
-          </template>
-          <NcActionButton
-            v-for="opt in itemSortOptions"
-            :key="opt.value"
-            :class="{ 'pantry-sort-active': currentSort === opt.value }"
-            @click="changeSort(opt.value)"
-          >
-            <template #icon>
-              <RadioboxMarkedIcon v-if="currentSort === opt.value" :size="20" />
-              <RadioboxBlankIcon v-else :size="20" />
-            </template>
-            {{ opt.label }}
-          </NcActionButton>
-        </NcActions>
-        <NcButton
-          v-if="!isMeta"
-          :variant="trashMode ? 'primary' : 'tertiary'"
-          :aria-label="strings.trashLabel"
-          :title="strings.trashLabel"
-          :aria-pressed="trashMode"
-          @click="toggleTrash"
-        >
-          <template #icon>
-            <TrashCanIcon :size="20" />
-          </template>
-          {{ strings.trashLabel }}
-        </NcButton>
-        <NcButton variant="primary" @click="showCategoryManager = true">
-          <template #icon>
-            <TagIcon :size="20" />
-          </template>
-          {{ strings.manageCategories }}
-        </NcButton>
-        <NcActions v-if="!isMeta" :aria-label="strings.moreActions" :title="strings.moreActions">
-          <template #icon>
-            <DotsHorizontalIcon :size="20" />
-          </template>
-          <NcActionButton @click="showExport = true">
-            <template #icon>
-              <FileExportIcon :size="20" />
-            </template>
-            {{ strings.exportMarkdown }}
-          </NcActionButton>
-          <NcActionButton @click="showImport = true">
-            <template #icon>
-              <FileImportIcon :size="20" />
-            </template>
-            {{ strings.importMarkdown }}
-          </NcActionButton>
-        </NcActions>
       </template>
     </PageToolbar>
 
@@ -239,6 +184,14 @@
       @update:open="(v) => !v && (previewing = null)"
     />
 
+    <ChecklistFormDialog
+      v-if="list"
+      :open="editingList"
+      :list="list"
+      @update:open="(v) => (editingList = v)"
+      @save="submitEditList"
+    />
+
     <CategoryManagerDialog
       :open="showCategoryManager"
       :house-id="houseIdNum"
@@ -364,20 +317,16 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
-import NcActions from '@nextcloud/vue/components/NcActions'
-import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import PlusIcon from '@icons/Plus.vue'
 import SortIcon from '@icons/Sort.vue'
-import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
-import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import TagIcon from '@icons/Tag.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import ViewListIcon from '@icons/ViewList.vue'
-import DotsHorizontalIcon from '@icons/DotsHorizontal.vue'
+import PencilIcon from '@icons/Pencil.vue'
 import FileExportIcon from '@icons/FileExport.vue'
 import FileImportIcon from '@icons/FileImport.vue'
-import PageToolbar from '@/components/PageToolbar'
+import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
 import { ChecklistFilter } from '@/components/ChecklistFilter'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
@@ -508,6 +457,11 @@ const allItemSortOptions: { value: ChecklistItemSort; label: string }[] = [
 const itemSortOptions = computed(() =>
   isMeta.value ? allItemSortOptions.filter((o) => o.value !== 'custom') : allItemSortOptions,
 )
+
+const sortMenuName = computed(() => {
+  const label = allItemSortOptions.find((o) => o.value === currentSort.value)?.label ?? ''
+  return t('pantry', 'Sort by: {value}', { value: label })
+})
 
 async function loadSortPref() {
   const prefs = await getChecklistItemSort(houseIdNum.value)
@@ -999,6 +953,28 @@ async function handleAdd(
   }
 }
 
+const editingList = ref(false)
+
+async function submitEditList(data: {
+  name: string
+  description: string
+  icon: string
+  color: string
+}) {
+  if (!list.value) return
+  try {
+    list.value = await apiUpdateList(houseIdNum.value, listIdNum.value, {
+      name: data.name,
+      description: data.description,
+      icon: data.icon,
+      color: data.color || null,
+    })
+    editingList.value = false
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
 async function handleDeleteOnDoneDefaultChange(value: boolean) {
   if (!list.value || list.value.deleteOnDoneDefault === value) return
   const prev = list.value
@@ -1232,9 +1208,9 @@ const strings = {
   trashLabel: t('pantry', 'Trash'),
   doneTitle: t('pantry', 'Done'),
   manageCategories: t('pantry', 'Manage categories'),
-  moreActions: t('pantry', 'More actions'),
-  exportMarkdown: t('pantry', 'Export to Markdown'),
-  importMarkdown: t('pantry', 'Import from Markdown'),
+  editList: t('pantry', 'Edit list'),
+  exportMarkdown: t('pantry', 'Export'),
+  importMarkdown: t('pantry', 'Import'),
   moveToList: t('pantry', 'Move to list'),
   copyToList: t('pantry', 'Copy to list'),
   newList: t('pantry', 'New list'),
@@ -1252,6 +1228,72 @@ const strings = {
   reuseAction: t('pantry', 'Reuse existing'),
   reuseAddAnyway: t('pantry', 'Add anyway'),
 }
+
+const toolbarActions = computed<ToolbarAction[]>(() => {
+  const actions: ToolbarAction[] = [
+    {
+      key: 'sort',
+      type: 'menu',
+      label: sortMenuName.value,
+      caption: strings.sortLabel,
+      icon: SortIcon,
+      priority: 5,
+      options: itemSortOptions.value.map((opt) => ({
+        key: opt.value,
+        label: opt.label,
+        active: currentSort.value === opt.value,
+        onClick: () => changeSort(opt.value),
+      })),
+    },
+  ]
+
+  if (!isMeta.value) {
+    if (can.value.canEditLists && list.value) {
+      actions.push({
+        key: 'edit',
+        label: strings.editList,
+        icon: PencilIcon,
+        priority: 4,
+        onClick: () => (editingList.value = true),
+      })
+    }
+    actions.push(
+      {
+        key: 'trash',
+        label: strings.trashLabel,
+        icon: TrashCanIcon,
+        variant: trashMode.value ? 'primary' : 'tertiary',
+        pressed: trashMode.value,
+        priority: 2,
+        onClick: toggleTrash,
+      },
+      {
+        key: 'export',
+        label: strings.exportMarkdown,
+        icon: FileExportIcon,
+        priority: 1,
+        onClick: () => (showExport.value = true),
+      },
+      {
+        key: 'import',
+        label: strings.importMarkdown,
+        icon: FileImportIcon,
+        priority: 1,
+        onClick: () => (showImport.value = true),
+      },
+    )
+  }
+
+  actions.push({
+    key: 'categories',
+    label: strings.manageCategories,
+    icon: TagIcon,
+    priority: 6,
+    onClick: () => (showCategoryManager.value = true),
+  })
+
+  return actions
+})
 </script>
 
 <style scoped lang="scss">

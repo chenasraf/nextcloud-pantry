@@ -1,46 +1,6 @@
 <template>
   <div ref="wallRef" class="pantry-notes">
-    <PageToolbar :title="strings.title">
-      <template #actions>
-        <NcActions v-if="!trashMode" :aria-label="strings.sortLabel" type="tertiary">
-          <template #icon>
-            <SortIcon :size="20" />
-          </template>
-          <NcActionButton
-            v-for="opt in noteSortOptions"
-            :key="opt.value"
-            :class="{ 'pantry-sort-active': currentSort === opt.value }"
-            @click="changeNoteSort(opt.value)"
-          >
-            <template #icon>
-              <RadioboxMarkedIcon v-if="currentSort === opt.value" :size="20" />
-              <RadioboxBlankIcon v-else :size="20" />
-            </template>
-            {{ opt.label }}
-          </NcActionButton>
-        </NcActions>
-        <NcButton
-          :variant="trashMode ? 'primary' : 'tertiary'"
-          :aria-label="strings.trashLabel"
-          :title="strings.trashLabel"
-          :aria-pressed="trashMode"
-          @click="toggleTrash"
-        >
-          <template #icon>
-            <TrashCanIcon :size="20" />
-          </template>
-          {{ strings.trashLabel }}
-        </NcButton>
-        <NcButton
-          v-if="!trashMode && can.canCreateNotes"
-          variant="primary"
-          @click="openCreateDialog"
-        >
-          <template #icon><PlusIcon :size="20" /></template>
-          {{ strings.newNote }}
-        </NcButton>
-      </template>
-    </PageToolbar>
+    <PageToolbar :title="strings.title" :actions="toolbarActions" />
 
     <div class="pantry-notes__body">
       <div v-if="loading" class="pantry-center">
@@ -174,17 +134,13 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
-import NcActions from '@nextcloud/vue/components/NcActions'
-import NcActionButton from '@nextcloud/vue/components/NcActionButton'
-import PageToolbar from '@/components/PageToolbar'
+import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { NoteCard, NoteDialog } from '@/components/Notes'
 import PlusIcon from '@icons/Plus.vue'
 import NoteIcon from '@icons/Note.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
-import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
-import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import type { Note } from '@/api/types'
 import type { NoteSort } from '@/api/prefs'
 import { getNoteSort, setNoteSort } from '@/api/prefs'
@@ -586,6 +542,55 @@ const strings = {
   notePermanentlyDeleted: t('pantry', 'Note permanently deleted'),
   restoreFailed: t('pantry', 'Could not restore from trash'),
 }
+
+const sortMenuName = computed(() => {
+  const label = noteSortOptions.find((o) => o.value === currentSort.value)?.label ?? ''
+  return t('pantry', 'Sort by: {value}', { value: label })
+})
+
+const toolbarActions = computed<ToolbarAction[]>(() => {
+  const actions: ToolbarAction[] = []
+
+  if (!trashMode.value) {
+    actions.push({
+      key: 'sort',
+      type: 'menu',
+      label: sortMenuName.value,
+      caption: strings.sortLabel,
+      icon: SortIcon,
+      priority: 5,
+      options: noteSortOptions.map((opt) => ({
+        key: opt.value,
+        label: opt.label,
+        active: currentSort.value === opt.value,
+        onClick: () => changeNoteSort(opt.value),
+      })),
+    })
+  }
+
+  actions.push({
+    key: 'trash',
+    label: strings.trashLabel,
+    icon: TrashCanIcon,
+    variant: trashMode.value ? 'primary' : 'tertiary',
+    pressed: trashMode.value,
+    priority: 2,
+    onClick: toggleTrash,
+  })
+
+  if (!trashMode.value && can.value.canCreateNotes) {
+    actions.push({
+      key: 'new-note',
+      label: strings.newNote,
+      icon: PlusIcon,
+      variant: 'primary',
+      priority: 6,
+      onClick: openCreateDialog,
+    })
+  }
+
+  return actions
+})
 </script>
 
 <style scoped lang="scss">

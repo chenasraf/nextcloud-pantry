@@ -9,62 +9,13 @@
   >
     <PageToolbar
       :title="trashMode ? strings.trashLabel : activeFolderId ? activeFolder?.name : strings.title"
+      :actions="toolbarActions"
     >
       <template v-if="!trashMode && activeFolderId" #before-title>
         <NcButton variant="tertiary" :aria-label="strings.back" @click="navigateToFolder(null)">
           <template #icon>
             <ArrowLeftIcon :size="20" />
           </template>
-        </NcButton>
-      </template>
-      <template #actions>
-        <NcActions v-if="!trashMode" :aria-label="strings.sortLabel" type="tertiary">
-          <template #icon>
-            <SortIcon :size="20" />
-          </template>
-          <NcActionCheckbox :checked="foldersFirst" @update:checked="toggleFoldersFirst">
-            {{ strings.foldersFirst }}
-          </NcActionCheckbox>
-          <NcActionSeparator />
-          <NcActionButton
-            v-for="opt in photoSortOptions"
-            :key="opt.value"
-            :class="{ 'pantry-sort-active': sortPrefs.sort === opt.value }"
-            @click="changePhotoSort(opt.value)"
-          >
-            <template #icon>
-              <RadioboxMarkedIcon v-if="sortPrefs.sort === opt.value" :size="20" />
-              <RadioboxBlankIcon v-else :size="20" />
-            </template>
-            {{ opt.label }}
-          </NcActionButton>
-        </NcActions>
-        <NcButton
-          :variant="trashMode ? 'primary' : 'tertiary'"
-          :aria-label="strings.trashLabel"
-          :title="strings.trashLabel"
-          :aria-pressed="trashMode"
-          @click="toggleTrash"
-        >
-          <template #icon>
-            <TrashCanIcon :size="20" />
-          </template>
-          {{ strings.trashLabel }}
-        </NcButton>
-        <NcButton
-          v-if="!trashMode && !activeFolderId && can.canMovePhotos"
-          @click="showFolderDialog = true"
-        >
-          <template #icon>
-            <FolderPlusIcon :size="20" />
-          </template>
-          {{ strings.newFolder }}
-        </NcButton>
-        <NcButton v-if="!trashMode && can.canUploadPhotos" variant="primary" @click="triggerUpload">
-          <template #icon>
-            <UploadIcon :size="20" />
-          </template>
-          {{ strings.upload }}
         </NcButton>
       </template>
     </PageToolbar>
@@ -449,11 +400,7 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcActions from '@nextcloud/vue/components/NcActions'
-import NcActionButton from '@nextcloud/vue/components/NcActionButton'
-import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
-import NcActionSeparator from '@nextcloud/vue/components/NcActionSeparator'
-import PageToolbar from '@/components/PageToolbar'
+import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { PhotoCard, FolderStack, FolderDialog, PhotoPreview } from '@/components/Photos'
 import UploadIcon from '@icons/Upload.vue'
 import ImageIcon from '@icons/Image.vue'
@@ -464,8 +411,6 @@ import FolderIcon from '@icons/Folder.vue'
 import FolderMoveIcon from '@icons/FolderMove.vue'
 import FolderPlusIcon from '@icons/FolderPlus.vue'
 import SortIcon from '@icons/Sort.vue'
-import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
-import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import type { Photo, PhotoFolder } from '@/api/types'
 import type { PhotoSort, PhotoSortPrefs } from '@/api/prefs'
 import { getPhotoSort, setPhotoSort } from '@/api/prefs'
@@ -1093,6 +1038,75 @@ const strings = {
   photoPermanentlyDeleted: t('pantry', 'Photo permanently deleted'),
   restoreFailed: t('pantry', 'Could not restore from trash'),
 }
+
+const sortMenuName = computed(() => {
+  const label = photoSortOptions.find((o) => o.value === sortPrefs.sort)?.label ?? ''
+  return t('pantry', 'Sort by: {value}', { value: label })
+})
+
+const toolbarActions = computed<ToolbarAction[]>(() => {
+  const actions: ToolbarAction[] = []
+
+  if (!trashMode.value) {
+    actions.push({
+      key: 'sort',
+      type: 'menu',
+      label: sortMenuName.value,
+      caption: strings.sortLabel,
+      icon: SortIcon,
+      priority: 5,
+      options: [
+        {
+          type: 'checkbox',
+          key: 'folders-first',
+          label: strings.foldersFirst,
+          checked: foldersFirst.value,
+          onChange: toggleFoldersFirst,
+        },
+        ...photoSortOptions.map((opt) => ({
+          key: opt.value,
+          label: opt.label,
+          active: sortPrefs.sort === opt.value,
+          onClick: () => changePhotoSort(opt.value),
+        })),
+      ],
+    })
+  }
+
+  actions.push({
+    key: 'trash',
+    label: strings.trashLabel,
+    icon: TrashCanIcon,
+    variant: trashMode.value ? 'primary' : 'tertiary',
+    pressed: trashMode.value,
+    priority: 2,
+    onClick: toggleTrash,
+  })
+
+  if (!trashMode.value && !activeFolderId.value && can.value.canMovePhotos) {
+    actions.push({
+      key: 'new-folder',
+      label: strings.newFolder,
+      icon: FolderPlusIcon,
+      variant: 'secondary',
+      priority: 3,
+      onClick: () => (showFolderDialog.value = true),
+    })
+  }
+
+  if (!trashMode.value && can.value.canUploadPhotos) {
+    actions.push({
+      key: 'upload',
+      label: strings.upload,
+      icon: UploadIcon,
+      variant: 'primary',
+      priority: 6,
+      onClick: triggerUpload,
+    })
+  }
+
+  return actions
+})
 </script>
 
 <style scoped lang="scss">
