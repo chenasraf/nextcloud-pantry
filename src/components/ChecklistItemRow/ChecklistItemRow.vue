@@ -317,8 +317,6 @@ const strings = {
 
   &--dragging {
     opacity: 0.35;
-    transform: scale(0.98);
-    pointer-events: none;
   }
 
   &[draggable='true'] {

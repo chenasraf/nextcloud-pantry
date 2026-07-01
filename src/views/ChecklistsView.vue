@@ -657,8 +657,6 @@ const strings = {
 
   &--dragging {
     opacity: 0.35;
-    transform: scale(0.95);
-    pointer-events: none;
   }
 }
 
