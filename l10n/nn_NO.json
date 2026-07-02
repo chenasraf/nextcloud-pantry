@@ -13,12 +13,17 @@
     "Description" : "Skildring",
     "Remove image" : "Fjern bilete",
     "All" : "Alle",
+    "Everyone" : "Alle",
     "Delete permanently" : "Slett for godt",
     "Restore" : "Gjenopprett",
     "Done" : "Ferdig",
+    "Checklists" : "Sjekkliste",
+    "Copy" : "Kopier",
+    "Move" : "Move",
+    "Photos" : "Foto",
+    "Upload" : "Last opp",
     "General" : "Generelt",
     "Close" : "Lat att",
-    "Copy" : "Kopier",
     "Select all" : "Merk alt",
     "Folder name" : "Katalognavn",
     "Rename" : "Endra namn",
@@ -29,8 +34,6 @@
     "Newest first" : "Nyaste fyrst",
     "Oldest first" : "Eldste fyrst",
     "More actions" : "Fleire handlingar",
-    "Checklists" : "Sjekkliste",
-    "Upload" : "Last opp",
     "New folder" : "Ny mappe"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

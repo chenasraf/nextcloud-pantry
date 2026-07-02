@@ -10,9 +10,12 @@ OC.L10N.register(
     "Description" : "Նկարագրություն",
     "Delete permanently" : "Ջնջել ընդմիշտ",
     "Restore" : "Վերականգնել",
+    "Copy" : "Պատճենել",
+    "Move" : "Տեղափոխել",
+    "Photos" : "Նկարներ",
+    "Upload" : "Բեռնել",
     "General" : "Ընդհանուր",
     "Close" : "Փակել",
-    "Copy" : "Պատճենել",
     "Select all" : "Նշել բոլորը",
     "Folder name" : "Պանակի անուն",
     "Rename" : "Վերանվանել",
@@ -21,7 +24,6 @@ OC.L10N.register(
     "Weekly" : "Շաբաթական",
     "Never" : "Երբեք",
     "New note" : "նոր գրառում",
-    "Upload" : "Բեռնել",
     "New folder" : "Նոր պանակ"
 },
 "nplurals=2; plural=(n != 1);");

@@ -13,8 +13,9 @@ OC.L10N.register(
     "Delete permanently" : "Dileu'n barhaol",
     "Restore" : "Adfer",
     "Status" : "Statws",
+    "Photos" : "Lluniau",
+    "Upload" : "Llwytho i fyny",
     "Member" : "Aelod",
-    "Owner" : "Perchennog",
     "General" : "Cyffredinol",
     "Trash" : "Sbwriel",
     "Account" : "Cyfrif",
@@ -37,7 +38,6 @@ OC.L10N.register(
     "Oldest first" : "Hynaf gyntaf",
     "New note" : "Nodyn newydd",
     "Note restored" : "Nodyn wedi'i adfer",
-    "Upload" : "Llwytho i fyny",
     "New folder" : "Ffolder newydd",
     "Add a description" : "Ychwanegu disgrifiad",
     "Uncategorized" : "Dim categori"

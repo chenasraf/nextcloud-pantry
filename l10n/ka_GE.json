@@ -12,10 +12,15 @@
     "Description" : "აღწერილობა",
     "Remove image" : "სურათის წაშლა",
     "All" : "ყველა",
+    "Everyone" : "ყველა",
     "Delete permanently" : "სამუდამოდ წაშლა",
     "Restore" : "აღდგენა",
     "Status" : "სტაუტის",
     "Done" : "დასრულდა",
+    "Move" : "გადატანა",
+    "Photos" : "სურათები",
+    "Upload" : "ატვირთვა",
+    "Notes" : "ჩანაწერები",
     "Member" : "წევრი",
     "General" : "ზოგადი",
     "Save changes" : "ცვილებების შენახვა",
@@ -45,7 +50,6 @@
     "Oldest first" : "ჯერ ძველი",
     "More actions" : "მეტი ქმედება",
     "Note restored" : "ჩანაწერი აღდგა",
-    "Upload" : "ატვირთვა",
     "New folder" : "ახალი დირექტორია",
     "Uncategorized" : "არაკატეგორიზირებული"
 },"pluralForm" :"nplurals=2; plural=(n!=1);"

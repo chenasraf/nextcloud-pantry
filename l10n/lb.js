@@ -13,10 +13,12 @@ OC.L10N.register(
     "All" : "All",
     "Delete permanently" : "Permanent läschen",
     "Restore" : "Zrécksetzen",
+    "Copy" : "Kopieren",
+    "Move" : "Verschieben",
+    "Upload" : "Eroplueden",
     "General" : "Allgemeng",
     "Save changes" : "Ännerunge späicheren",
     "Close" : "Zoumaachen",
-    "Copy" : "Kopieren",
     "Copied to clipboard" : "An d'Tëschenoflag kopéiert",
     "Select all" : "All auswielen",
     "Rename folder" : "Dossier ëmbenennen",
@@ -26,7 +28,6 @@ OC.L10N.register(
     "weeks" : "Wochen",
     "Daily" : "All Dag",
     "Weekly" : "All Woch",
-    "Upload" : "Eroplueden",
     "New folder" : "Neien Dossier"
 },
 "nplurals=2; plural=(n != 1);");

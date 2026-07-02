@@ -10,6 +10,7 @@
     "All" : "সবাই",
     "Restore" : "ফিরিয়ে দাও",
     "Done" : "শেষ হলো",
+    "Upload" : "আপলোড",
     "General" : "সাধারণ",
     "Display" : "প্রদর্শন কর",
     "Close" : "বন্ধ",
@@ -21,7 +22,6 @@
     "weeks" : "সপ্তাহসমূহ",
     "Daily" : "দৈনিক",
     "Weekly" : "সাপ্তাহিক",
-    "Upload" : "আপলোড",
     "New folder" : "নতুন ফোল্ডার"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

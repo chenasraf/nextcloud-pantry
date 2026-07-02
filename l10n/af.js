@@ -15,6 +15,7 @@ OC.L10N.register(
     "All" : "Alle",
     "Delete permanently" : "Skrap permanent",
     "Restore" : "Herstel",
+    "Upload" : "Oplaai",
     "Trash" : "Asblik",
     "Account" : "Rekening",
     "Close" : "Close",
@@ -27,7 +28,6 @@ OC.L10N.register(
     "Summary" : "Opsomming",
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
-    "Upload" : "Oplaai",
     "New folder" : "Nuwe gids"
 },
 "nplurals=2; plural=(n != 1);");

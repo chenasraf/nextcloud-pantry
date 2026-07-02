@@ -16,6 +16,7 @@ OC.L10N.register(
     "Delete permanently" : "Dilemel da viken",
     "Status" : "Statud",
     "Done" : "Graet",
+    "Upload" : "Enporzhiañ",
     "Member" : "Ezel",
     "General" : "Hollek",
     "Save changes" : "Enrollañ ar cheñchamantoù",
@@ -36,7 +37,6 @@ OC.L10N.register(
     "Newest first" : "An hini nevesañ da gentañ",
     "Oldest first" : "An hini kozhoñ da gentañ",
     "New note" : "Notenn nevez",
-    "Upload" : "Enporzhiañ",
     "New folder" : "Teuliad nevez",
     "Add a description" : "Ouzhpennañ un deskrivadur"
 },

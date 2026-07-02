@@ -6,9 +6,12 @@
     "Create" : "Dörediň",
     "Delete" : "Pozmak",
     "Edit" : "Redaktirläň",
+    "Copy" : "Göçüriň",
+    "Move" : "Göçüriň",
+    "Photos" : "Suratlar",
+    "Upload" : "Ýüklemek",
     "General" : "Esasy",
     "Close" : "Ýap",
-    "Copy" : "Göçüriň",
     "Copied to clipboard" : "Panele göçürildi",
     "Select all" : "Hemmesini saýlaň",
     "Deselect all" : "Hemmesini aýyryň",
@@ -17,7 +20,6 @@
     "Rename" : "Adyny üýtgetmek",
     "Newest first" : "Täze ilkinji",
     "Oldest first" : "Ilki bilen iň köne",
-    "Upload" : "Ýüklemek",
     "New folder" : "Täze papka döretmek",
     "Back" : "Yzyna"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

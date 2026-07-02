@@ -12,6 +12,7 @@ OC.L10N.register(
     "All" : "সবাই",
     "Restore" : "ফিরিয়ে দাও",
     "Done" : "শেষ হলো",
+    "Upload" : "আপলোড",
     "General" : "সাধারণ",
     "Display" : "প্রদর্শন কর",
     "Close" : "বন্ধ",
@@ -23,7 +24,6 @@ OC.L10N.register(
     "weeks" : "সপ্তাহসমূহ",
     "Daily" : "দৈনিক",
     "Weekly" : "সাপ্তাহিক",
-    "Upload" : "আপলোড",
     "New folder" : "নতুন ফোল্ডার"
 },
 "nplurals=2; plural=(n != 1);");

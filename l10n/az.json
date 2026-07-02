@@ -13,13 +13,14 @@
     "Restore" : "Geri qaytar",
     "Status" : "Status",
     "Done" : "Edildi",
+    "Copy" : "Kopyala",
+    "Upload" : "Serverə yüklə",
     "General" : "Ümumi",
     "Save changes" : "Dəyişiklikləri yaddaşa ver",
     "Display" : "Ekran",
     "Trash" : "Zibil",
     "Account" : "Hesab",
     "Close" : "Bağla",
-    "Copy" : "Kopyala",
     "Copied to clipboard" : "Mübadilə buferinə nüsxələndi",
     "Select all" : "Hamısıı seç",
     "Rename folder" : "Qovluğun adını dəyiş",
@@ -31,7 +32,6 @@
     "Weekly" : "Həftəlik",
     "Never" : "Heç vaxt",
     "Summary" : "Xülasə",
-    "Upload" : "Serverə yüklə",
     "New folder" : "Yeni qovluq",
     "Back" : "Geri"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

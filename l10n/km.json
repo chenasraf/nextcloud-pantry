@@ -11,6 +11,8 @@
     "All" : "ទាំងអស់",
     "Delete permanently" : "លុប​ជា​អចិន្ត្រៃយ៍",
     "Restore" : "ស្ដារ​មក​វិញ",
+    "Move" : "Move",
+    "Upload" : "ផ្ទុក​ឡើង",
     "General" : "ទូទៅ",
     "Display" : "ការបង្ហាញ",
     "Trash" : "ធុង​សំរាម",
@@ -20,7 +22,6 @@
     "Rename" : "ប្ដូរ​ឈ្មោះ",
     "Daily" : "រាល់ថ្ងៃ",
     "Weekly" : "រាល់​សប្ដាហ៍",
-    "Upload" : "ផ្ទុក​ឡើង",
     "New folder" : "ថត​ថ្មី"
 },"pluralForm" :"nplurals=1; plural=0;"
 }

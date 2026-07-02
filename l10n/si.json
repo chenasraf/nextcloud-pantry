@@ -11,9 +11,12 @@
     "Category" : "ප්‍රවර්ගය",
     "Description" : "විස්තරය",
     "All" : "සියල්ල",
+    "Everyone" : "සැවොම",
     "Restore" : "ප්‍රතිෂ්ථාපනය",
+    "Photos" : "ඡායාරූප",
+    "Upload" : "උඩුගත",
+    "Notes" : "සටහන්",
     "Member" : "සාමාජික",
-    "Owner" : "හිමිකරු",
     "General" : "සමාන්‍යය",
     "Save changes" : "වෙනස්කම් සුරකින්න",
     "Account" : "ගිණුම",
@@ -26,7 +29,6 @@
     "Weekly" : "සතිපතා",
     "Summary" : "සාරාංශය",
     "No notes yet" : "තවම සටහන් නැත",
-    "Upload" : "උඩුගත",
     "New folder" : "නව බහාලුම",
     "Back" : "ආපසු"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

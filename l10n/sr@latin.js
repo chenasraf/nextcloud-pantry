@@ -11,10 +11,13 @@ OC.L10N.register(
     "All" : "Sve",
     "Delete permanently" : "Obriši zauvek",
     "Done" : "Gotovo",
-    "Owner" : "Vlasnik",
+    "Copy" : "Kopiraj",
+    "Move" : "Premesti",
+    "Photos" : "Slike",
+    "Upload" : "Otpremi",
+    "Notes" : "Beleške",
     "Display" : "Prikaz",
     "Close" : "Zatvori",
-    "Copy" : "Kopiraj",
     "Copied to clipboard" : "Kopirano u klipbord",
     "Deselect all" : "Poništi ceo izbor",
     "Folder name" : "Naziv fascikle",
@@ -25,7 +28,6 @@ OC.L10N.register(
     "Newest first" : "Prvo novije",
     "Oldest first" : "prvo starije",
     "Note restored" : "Beleška vraćena",
-    "Upload" : "Otpremi",
     "New folder" : "Nova fascikla"
 },
 "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);");

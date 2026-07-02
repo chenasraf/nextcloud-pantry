@@ -10,9 +10,13 @@ OC.L10N.register(
     "Description" : "Description",
     "Remove image" : "Remover imagine",
     "All" : "Tote",
+    "Everyone" : "Totos",
     "Delete permanently" : "Deler permanentemente",
     "Restore" : "Restaurar",
     "Done" : "Preste",
+    "View" : "Vider",
+    "Move" : "Mover",
+    "Upload" : "Incargar",
     "General" : "General",
     "Members" : "Membros",
     "Close" : "Clauder",
@@ -28,7 +32,6 @@ OC.L10N.register(
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
-    "Upload" : "Incargar",
     "New folder" : "Nove dossier"
 },
 "nplurals=2; plural=(n != 1);");
