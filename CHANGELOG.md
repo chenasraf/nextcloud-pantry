@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.20.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.19.0...v0.20.0) (2026-07-02)
+
+
+### Features
+
+* **roles:** add roles & permissions system ([4b4060c](https://github.com/chenasraf/nextcloud-pantry/commit/4b4060c751fc065007cac2249d7813d1b436cf46)), closes [#138](https://github.com/chenasraf/nextcloud-pantry/issues/138)
+* **toolbar:** collapse actions into an overflow menu when space runs out ([8ed6997](https://github.com/chenasraf/nextcloud-pantry/commit/8ed6997c4a24f1295e639bf5dfed1167dd4fea8b))
+
+
+### Bug Fixes
+
+* **checklist:** don't cancel drag-reorder on Chromium ([469b40c](https://github.com/chenasraf/nextcloud-pantry/commit/469b40c140be5c90582a9451dd97d0663fb48b58)), closes [#146](https://github.com/chenasraf/nextcloud-pantry/issues/146)
+* **l10n:** Update translations from Transifex ([d63dbed](https://github.com/chenasraf/nextcloud-pantry/commit/d63dbede0d05f4e40b49b5ea952ff57ae1c76fee))
+* **l10n:** Update translations from Transifex ([20823af](https://github.com/chenasraf/nextcloud-pantry/commit/20823af6f56919b53bbbe735a58234edd780d203))
+* **l10n:** Update translations from Transifex ([9f746b7](https://github.com/chenasraf/nextcloud-pantry/commit/9f746b7bcb18945faec97e6efab2674f8f1adf62))
+* **l10n:** Update translations from Transifex ([b3655c5](https://github.com/chenasraf/nextcloud-pantry/commit/b3655c5eb971e1d79d63a466cf06e223864c0fef))
+
 ## [0.19.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.18.1...v0.19.0) (2026-06-28)
 
 
