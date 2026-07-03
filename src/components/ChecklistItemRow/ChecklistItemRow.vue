@@ -19,7 +19,7 @@
     <div class="checklist-row__check">
       <NcCheckboxRadioSwitch
         :model-value="item.done"
-        :disabled="!can.canCheckItems"
+        :disabled="!canCheck"
         :aria-label="tapRowToComplete ? undefined : item.name"
         :class="{ 'checklist-row__check-fill': tapRowToComplete }"
         @update:model-value="$emit('toggle', item.id)"
@@ -81,26 +81,26 @@
         </template>
       </NcButton>
       <NcActions :aria-label="strings.itemActions">
-        <NcActionButton v-if="can.canEditLists" close-after-click @click="$emit('edit', item)">
+        <NcActionButton v-if="canEditItem" close-after-click @click="$emit('edit', item)">
           <template #icon>
             <PencilIcon :size="20" />
           </template>
           {{ strings.editItem }}
         </NcActionButton>
-        <NcActionButton v-if="can.canMoveItems" close-after-click @click="$emit('move', item)">
+        <NcActionButton v-if="canMoveItem" close-after-click @click="$emit('move', item)">
           <template #icon>
             <ArrowRightIcon :size="20" />
           </template>
           {{ strings.moveItem }}
         </NcActionButton>
-        <NcActionButton v-if="can.canCopyItems" close-after-click @click="$emit('copy', item)">
+        <NcActionButton v-if="canCopyItem" close-after-click @click="$emit('copy', item)">
           <template #icon>
             <ContentCopyIcon :size="20" />
           </template>
           {{ strings.copyItem }}
         </NcActionButton>
         <NcActionButton
-          v-if="trashMode && can.canDeleteItems"
+          v-if="trashMode && canDeleteItem"
           close-after-click
           @click="$emit('restore', item.id)"
         >
@@ -109,11 +109,7 @@
           </template>
           {{ strings.restoreItem }}
         </NcActionButton>
-        <NcActionButton
-          v-if="can.canDeleteItems"
-          close-after-click
-          @click="$emit('remove', item.id)"
-        >
+        <NcActionButton v-if="canDeleteItem" close-after-click @click="$emit('remove', item.id)">
           <template #icon>
             <DeleteIcon :size="20" />
           </template>
@@ -161,6 +157,12 @@ const props = withDefaults(
     trashMode?: boolean
     tapRowToComplete?: boolean
     showAddedBy?: boolean
+    /**
+     * Whether the parent list accepts writes for the current user. False for a
+     * view-only shared list, which bounds every item action to read-only. When
+     * true (the default), the granular role capabilities apply as usual.
+     */
+    listWritable?: boolean
   }>(),
   {
     list: null,
@@ -168,8 +170,17 @@ const props = withDefaults(
     trashMode: false,
     tapRowToComplete: false,
     showAddedBy: false,
+    listWritable: true,
   },
 )
+
+// Write affordances require both the list to be writable (a view-only shared
+// list disables all of them) and the specific role capability.
+const canCheck = computed(() => props.listWritable && can.value.canCheckItems)
+const canEditItem = computed(() => props.listWritable && can.value.canEditLists)
+const canMoveItem = computed(() => props.listWritable && can.value.canMoveItems)
+const canCopyItem = computed(() => props.listWritable && can.value.canCopyItems)
+const canDeleteItem = computed(() => props.listWritable && can.value.canDeleteItems)
 
 const listChipStyle = computed(() => {
   if (!props.list?.color) return undefined

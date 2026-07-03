@@ -30,9 +30,10 @@ const { ALL_CAPS } = vi.hoisted(() => ({
     canDeleteNotes: true,
   },
 }))
-vi.mock('@/composables/useCurrentHouse', () => ({
-  useCurrentHouse: () => ({ can: ALL_CAPS }),
-}))
+vi.mock('@/composables/useCurrentHouse', async () => {
+  const { ref } = await import('vue')
+  return { useCurrentHouse: () => ({ can: ref(ALL_CAPS) }) }
+})
 
 vi.mock('@nextcloud/vue/components/NcActions', () => ({
   default: {

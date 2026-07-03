@@ -11,6 +11,8 @@ use OCA\Pantry\Db\HouseMemberRoleMapper;
 use OCA\Pantry\Db\ListRoleMapper;
 use OCA\Pantry\Db\Role;
 use OCA\Pantry\Db\RoleMapper;
+use OCA\Pantry\Db\Share;
+use OCA\Pantry\Db\ShareMapper;
 use OCA\Pantry\Service\PermissionService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -22,16 +24,20 @@ class PermissionServiceTest extends TestCase {
 	private HouseMemberRoleMapper $memberRoleMapper;
 	/** @var ListRoleMapper&MockObject */
 	private ListRoleMapper $listRoleMapper;
+	/** @var ShareMapper&MockObject */
+	private ShareMapper $shareMapper;
 	private PermissionService $svc;
 
 	protected function setUp(): void {
 		$this->roleMapper = $this->createMock(RoleMapper::class);
 		$this->memberRoleMapper = $this->createMock(HouseMemberRoleMapper::class);
 		$this->listRoleMapper = $this->createMock(ListRoleMapper::class);
+		$this->shareMapper = $this->createMock(ShareMapper::class);
 		$this->svc = new PermissionService(
 			$this->roleMapper,
 			$this->memberRoleMapper,
 			$this->listRoleMapper,
+			$this->shareMapper,
 		);
 	}
 
@@ -112,5 +118,21 @@ class PermissionServiceTest extends TestCase {
 		$this->memberRoleMapper->method('findRoleIdsForUserInHouse')->willReturn([1]);
 		$this->roleMapper->method('findByHouse')->willReturn([$this->makeRole(1, Role::TYPE_ADMIN)]);
 		$this->assertTrue($this->svc->canAccessList(1, 'alice', 99));
+	}
+
+	public function testCanAccessListAllowsSharedUserWithoutRole(): void {
+		// Restricted list, user holds no allowed role and is not an admin.
+		$this->listRoleMapper->method('findRoleIdsForList')->willReturn([11]);
+		$this->memberRoleMapper->method('findRoleIdsForUserInHouse')->willReturn([12]);
+		$this->roleMapper->method('findByHouse')->willReturn([$this->makeRole(12, Role::TYPE_NORMAL)]);
+		// But there is a direct share on the checklist.
+		$share = new Share();
+		$share->setPermission(Share::PERM_VIEW);
+		$this->shareMapper->method('findForUserAndEntity')
+			->with('alice', Share::TYPE_CHECKLIST, 99)
+			->willReturn($share);
+
+		$this->assertTrue($this->svc->canAccessList(1, 'alice', 99));
+		$this->assertSame(Share::PERM_VIEW, $this->svc->listShareLevel('alice', 99));
 	}
 }

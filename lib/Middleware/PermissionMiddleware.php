@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Middleware;
 
+use OCA\Pantry\Db\Share;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\Service\HouseAuthService;
@@ -71,9 +72,56 @@ class PermissionMiddleware extends Middleware {
 		}
 
 		$listId = (int)$this->request->getParam('listId', 0);
-		if ($listId > 0 && !$this->permissions->canAccessList($houseId, $uid, $listId)) {
+		if ($listId > 0) {
+			$this->enforceListAccess($houseId, $uid, $listId, $attr->caps);
+		}
+	}
+
+	/**
+	 * Enforce per-list access. Role-based access keeps its full capabilities
+	 * (already checked above). A user reaching the list only through a per-user
+	 * share is bounded by the share level: a viewer share allows read-only
+	 * actions, an editor share allows item edits, and neither grants deleting
+	 * the list itself.
+	 *
+	 * @param string[] $caps
+	 */
+	private function enforceListAccess(int $houseId, string $uid, int $listId, array $caps): void {
+		if ($this->permissions->hasRoleAccessToList($houseId, $uid, $listId)) {
+			return;
+		}
+		$shareLevel = $this->permissions->listShareLevel($uid, $listId);
+		if ($shareLevel === null) {
 			throw new OCSForbiddenException('No access to this list');
 		}
+		$needed = $this->requiredListLevel($caps);
+		if ($needed === 'listdelete') {
+			throw new OCSForbiddenException('Sharing does not grant deleting this list');
+		}
+		if ($needed === Share::PERM_EDIT && $shareLevel !== Share::PERM_EDIT) {
+			throw new OCSForbiddenException('This list is shared with you as view-only');
+		}
+	}
+
+	/**
+	 * Classify the strongest action the required capabilities represent for a
+	 * shared checklist: 'listdelete' (never granted by a share), edit, or view.
+	 *
+	 * @param string[] $caps
+	 * @return 'listdelete'|Share::PERM_EDIT|Share::PERM_VIEW
+	 */
+	private function requiredListLevel(array $caps): string {
+		$editCaps = ['canEditLists', 'canAddItems', 'canCheckItems', 'canCopyItems', 'canMoveItems', 'canDeleteItems'];
+		$level = Share::PERM_VIEW;
+		foreach ($caps as $cap) {
+			if ($cap === 'canDeleteLists') {
+				return 'listdelete';
+			}
+			if (in_array($cap, $editCaps, true)) {
+				$level = Share::PERM_EDIT;
+			}
+		}
+		return $level;
 	}
 
 	private function readAttribute(Controller $controller, string $methodName): ?Permission {

@@ -8,6 +8,9 @@ declare(strict_types=1);
 namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Activity\ActivityPublisher;
+use OCA\Pantry\Db\Photo;
+use OCA\Pantry\Db\PhotoFolder;
+use OCA\Pantry\Db\Share;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Permission\Permission;
@@ -18,6 +21,7 @@ use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PhotoService;
+use OCA\Pantry\Service\ShareService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -44,6 +48,7 @@ final class PhotoController extends OCSController {
 		private NotificationService $notifications,
 		private ActivityPublisher $activity,
 		private PermissionService $permissions,
+		private ShareService $shares,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -68,10 +73,13 @@ final class PhotoController extends OCSController {
 	#[Permission(['canViewPhotos'])]
 	public function indexFolders(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$all = $this->photos->listFolders($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			return new DataResponse(array_map(fn ($f) => $f->jsonSerialize(), $sliced));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canMovePhotos');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($f) => $this->folderJson($f, $roleEdit, $shareMap), $sliced));
 		});
 	}
 
@@ -100,7 +108,8 @@ final class PhotoController extends OCSController {
 				(int)$folder->getId(),
 				$folder->getName(),
 			);
-			return new DataResponse($folder->jsonSerialize());
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canMovePhotos');
+			return new DataResponse($this->folderJson($folder, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -118,13 +127,18 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/photos/folders/{folderId}')]
 	#[NoAdminRequired]
-	#[Permission(['canMovePhotos'])]
+	#[Permission(['canViewPhotos'])]
 	public function updateFolder(int $houseId, int $folderId, ?string $name = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $folderId, $name, $sortOrder): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getFolder($folderId);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Folder');
+			// Editing a folder needs the move capability or an editor share on it.
+			if (!$this->permissions->can($houseId, $uid, 'canMovePhotos')
+				&& !$this->shares->hasEditShare($uid, Share::TYPE_PHOTO_FOLDER, $folderId)) {
+				throw new ForbiddenException('Missing permission: canMovePhotos');
+			}
 			$oldName = $existing->getName();
 			$patch = [];
 			if ($name !== null) {
@@ -144,7 +158,8 @@ final class PhotoController extends OCSController {
 					$folder->getName(),
 				);
 			}
-			return new DataResponse($folder->jsonSerialize());
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canMovePhotos');
+			return new DataResponse($this->folderJson($folder, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -224,10 +239,13 @@ final class PhotoController extends OCSController {
 	#[Permission(['canViewPhotos'])]
 	public function indexPhotos(int $houseId, string $sortBy = 'custom', int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$all = $this->photos->listPhotos($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			return new DataResponse(array_map(fn ($p) => $p->jsonSerialize(), $sliced));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($p) => $this->photoJson($p, $roleEdit, $shareMap), $sliced));
 		});
 	}
 
@@ -249,10 +267,13 @@ final class PhotoController extends OCSController {
 	#[Permission(['canViewPhotos'])]
 	public function indexDeletedPhotos(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$all = $this->photos->listDeletedPhotos($houseId);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			return new DataResponse(array_map(fn ($p) => $p->jsonSerialize(), $sliced));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($p) => $this->photoJson($p, $roleEdit, $shareMap), $sliced));
 		});
 	}
 
@@ -341,7 +362,8 @@ final class PhotoController extends OCSController {
 				$folderId,
 				$folderName,
 			);
-			return new DataResponse($photo->jsonSerialize());
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			return new DataResponse($this->photoJson($photo, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -360,13 +382,19 @@ final class PhotoController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/photos/{photoId}', requirements: ['photoId' => '\d+'])]
 	#[NoAdminRequired]
-	#[Permission(['canUpdatePhotos'])]
+	#[Permission(['canViewPhotos'])]
 	public function updatePhoto(int $houseId, int $photoId, ?string $caption = null, ?int $folderId = null, ?int $sortOrder = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId, $caption, $folderId, $sortOrder): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getPhoto($photoId);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
+			// Editing needs the role capability or an editor share on the photo
+			// (or its containing folder).
+			if (!$this->permissions->can($houseId, $uid, 'canUpdatePhotos')
+				&& !$this->shares->hasEditShare($uid, Share::TYPE_PHOTO, $photoId)) {
+				throw new ForbiddenException('Missing permission: canUpdatePhotos');
+			}
 			$previousFolderId = $existing->getFolderId();
 
 			$patch = [];
@@ -405,7 +433,8 @@ final class PhotoController extends OCSController {
 					$this->safeFolderName($photo->getFolderId()),
 				);
 			}
-			return new DataResponse($photo->jsonSerialize());
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			return new DataResponse($this->photoJson($photo, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -460,11 +489,13 @@ final class PhotoController extends OCSController {
 	#[Permission(['canDeletePhotos'])]
 	public function restorePhoto(int $houseId, int $photoId): DataResponse {
 		return $this->runAction(function () use ($houseId, $photoId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->photos->getPhoto($photoId, includeDeleted: true);
 			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
 			$restored = $this->photos->restorePhoto($photoId);
-			return new DataResponse($restored->jsonSerialize());
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			return new DataResponse($this->photoJson($restored, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -514,6 +545,36 @@ final class PhotoController extends OCSController {
 			$this->photos->reorderPhotos($houseId, $items);
 			return new DataResponse(['success' => true]);
 		});
+	}
+
+	/**
+	 * Serialize a photo with the current user's effective `canEdit` flag (role
+	 * capability, or an editor share on the photo or its containing folder).
+	 *
+	 * @param array<string, array<int, string>> $shareMap
+	 */
+	private function photoJson(Photo $photo, bool $roleEdit, array $shareMap): array {
+		return array_merge($photo->jsonSerialize(), [
+			'canEdit' => $this->shares->canEditFromMap(
+				Share::TYPE_PHOTO,
+				(int)$photo->getId(),
+				$roleEdit,
+				$shareMap,
+				$photo->getFolderId(),
+			),
+		]);
+	}
+
+	/**
+	 * Serialize a folder with the current user's effective `canEdit` flag (the
+	 * move capability, or an editor share on the folder).
+	 *
+	 * @param array<string, array<int, string>> $shareMap
+	 */
+	private function folderJson(PhotoFolder $folder, bool $roleEdit, array $shareMap): array {
+		return array_merge($folder->jsonSerialize(), [
+			'canEdit' => $this->shares->canEditFromMap(Share::TYPE_PHOTO_FOLDER, (int)$folder->getId(), $roleEdit, $shareMap),
+		]);
 	}
 
 	private function requireUid(): string {

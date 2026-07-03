@@ -333,7 +333,9 @@
                     "deleteOnDoneDefault",
                     "createdAt",
                     "updatedAt",
-                    "deletedAt"
+                    "deletedAt",
+                    "canEdit",
+                    "sharedOnly"
                 ],
                 "properties": {
                     "id": {
@@ -381,6 +383,12 @@
                         "type": "integer",
                         "format": "int64",
                         "nullable": true
+                    },
+                    "canEdit": {
+                        "type": "boolean"
+                    },
+                    "sharedOnly": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -547,7 +555,8 @@
                     "isPinned",
                     "createdAt",
                     "updatedAt",
-                    "deletedAt"
+                    "deletedAt",
+                    "canEdit"
                 ],
                 "properties": {
                     "id": {
@@ -595,6 +604,9 @@
                         "type": "integer",
                         "format": "int64",
                         "nullable": true
+                    },
+                    "canEdit": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -655,7 +667,8 @@
                     "sortOrder",
                     "createdAt",
                     "updatedAt",
-                    "deletedAt"
+                    "deletedAt",
+                    "canEdit"
                 ],
                 "properties": {
                     "id": {
@@ -698,6 +711,9 @@
                         "type": "integer",
                         "format": "int64",
                         "nullable": true
+                    },
+                    "canEdit": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -709,7 +725,8 @@
                     "name",
                     "sortOrder",
                     "createdAt",
-                    "updatedAt"
+                    "updatedAt",
+                    "canEdit"
                 ],
                 "properties": {
                     "id": {
@@ -734,6 +751,9 @@
                     "updatedAt": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "canEdit": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -888,6 +908,54 @@
                     },
                     "canDeleteNotes": {
                         "type": "boolean"
+                    }
+                }
+            },
+            "Share": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "houseId",
+                    "entityType",
+                    "entityId",
+                    "sharedWithUid",
+                    "permission",
+                    "createdBy",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "houseId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "entityType": {
+                        "type": "string"
+                    },
+                    "entityId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "sharedWithUid": {
+                        "type": "string"
+                    },
+                    "permission": {
+                        "type": "string"
+                    },
+                    "createdBy": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "updatedAt": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             },
@@ -10431,6 +10499,278 @@
                 "responses": {
                     "200": {
                         "description": "List access updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/Success"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shares/{entityType}/{entityId}": {
+            "get": {
+                "operationId": "share-index",
+                "summary": "List the per-user shares on an entity",
+                "tags": [
+                    "share"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "entityType",
+                        "in": "path",
+                        "description": "Entity type (checklist, note, photo, photos-folder).",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^checklist|note|photo|photos-folder$"
+                        }
+                    },
+                    {
+                        "name": "entityId",
+                        "in": "path",
+                        "description": "Entity id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Shares returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Share"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "operationId": "share-set-shares",
+                "summary": "Replace the full set of shares on an entity",
+                "description": "Only the entity's creator or a house admin may manage shares, and every recipient must be a member of the house.",
+                "tags": [
+                    "share"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "shares": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Recipients and their permission ('view' or 'edit').",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "uid",
+                                                "permission"
+                                            ],
+                                            "properties": {
+                                                "uid": {
+                                                    "type": "string"
+                                                },
+                                                "permission": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "entityType",
+                        "in": "path",
+                        "description": "Entity type (checklist, note, photo, photos-folder).",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^checklist|note|photo|photos-folder$"
+                        }
+                    },
+                    {
+                        "name": "entityId",
+                        "in": "path",
+                        "description": "Entity id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Shares updated",
                         "content": {
                             "application/json": {
                                 "schema": {

@@ -9,6 +9,12 @@ type SavePayload = { title: string; content: string; color: string }
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@icons/Pencil.vue', () => createIconMock('PencilIcon'))
 vi.mock('@icons/Eye.vue', () => createIconMock('EyeIcon'))
+vi.mock('@/components/ShareEditor', () => ({
+  ShareEditor: { name: 'ShareEditor', template: '<div class="share-editor" />' },
+}))
+vi.mock('@/composables/useCurrentHouse', () => ({
+  useCurrentHouse: () => ({ isAdmin: { value: false } }),
+}))
 
 vi.mock('@nextcloud/vue/components/NcDialog', () => ({
   default: {

@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Activity\ActivityPublisher;
+use OCA\Pantry\Db\Checklist;
+use OCA\Pantry\Db\Share;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Permission\Permission;
@@ -20,6 +22,7 @@ use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
+use OCA\Pantry\Service\ShareService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -48,6 +51,7 @@ final class ChecklistController extends OCSController {
 		private ActivityPublisher $activity,
 		private PrefsService $prefs,
 		private PermissionService $permissions,
+		private ShareService $shares,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -78,7 +82,9 @@ final class ChecklistController extends OCSController {
 				fn ($l) => $this->permissions->canAccessList($houseId, $uid, (int)$l->getId()),
 			));
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$out = array_map(fn ($l) => $l->jsonSerialize(), $sliced);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			$out = array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $sliced);
 			return new DataResponse($out);
 		});
 	}
@@ -132,7 +138,8 @@ final class ChecklistController extends OCSController {
 				(int)$list->getId(),
 				$list->getName(),
 			);
-			return new DataResponse($list->jsonSerialize());
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -154,10 +161,13 @@ final class ChecklistController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function indexDeletedLists(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$all = $this->lists->listDeletedForHouse($houseId);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			return new DataResponse(array_map(fn ($l) => $l->jsonSerialize(), $sliced));
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $sliced));
 		});
 	}
 
@@ -196,10 +206,12 @@ final class ChecklistController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function showList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
-			return new DataResponse($list->jsonSerialize());
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -258,7 +270,8 @@ final class ChecklistController extends OCSController {
 					$list->getName(),
 				);
 			}
-			return new DataResponse($list->jsonSerialize());
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -309,11 +322,13 @@ final class ChecklistController extends OCSController {
 	#[Permission(['canDeleteLists'])]
 	public function restoreList(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->lists->getList($listId, includeDeleted: true);
 			$this->assertListInHouse($existing->getHouseId(), $houseId);
 			$restored = $this->lists->restoreList($listId);
-			return new DataResponse($restored->jsonSerialize());
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($restored, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -985,6 +1000,25 @@ final class ChecklistController extends OCSController {
 			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null, 'imageUploadedBy' => null]);
 			return new DataResponse($updated->jsonSerialize());
 		});
+	}
+
+	/**
+	 * Serialize a checklist with the current user's effective sharing flags:
+	 * - `canEdit`: an editor share, or role access to the list plus the
+	 *   edit-lists capability.
+	 * - `sharedOnly`: the user reaches this list only through a per-user share
+	 *   (no role grants access). A viewer share then bounds writes to read-only,
+	 *   while role-based access keeps the granular per-action capabilities.
+	 *
+	 * @param array<string, array<int, string>> $shareMap
+	 */
+	private function listJson(Checklist $list, bool $canEditLists, int $houseId, string $uid, array $shareMap): array {
+		$roleAccess = $this->permissions->hasRoleAccessToList($houseId, $uid, (int)$list->getId());
+		$roleEdit = $canEditLists && $roleAccess;
+		return array_merge($list->jsonSerialize(), [
+			'canEdit' => $this->shares->canEditFromMap(Share::TYPE_CHECKLIST, (int)$list->getId(), $roleEdit, $shareMap),
+			'sharedOnly' => !$roleAccess,
+		]);
 	}
 
 	private function requireUid(): string {

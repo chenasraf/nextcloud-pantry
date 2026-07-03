@@ -8,7 +8,7 @@
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
-    @click="trashMode || !can.canUpdateNotes ? null : $emit('edit', note)"
+    @click="trashMode || !canEditNote ? null : $emit('edit', note)"
   >
     <div v-if="!trashMode" class="note-card__select" @click.stop>
       <NcCheckboxRadioSwitch
@@ -37,7 +37,7 @@
       </NcActions>
     </div>
     <button
-      v-if="!trashMode && can.canUpdateNotes"
+      v-if="!trashMode && canEditNote"
       type="button"
       class="note-card__pin"
       :class="{ 'note-card__pin--pinned': note.isPinned }"
@@ -81,6 +81,10 @@ const props = withDefaults(
   }>(),
   { draggableEnabled: true, selected: false, trashMode: false },
 )
+
+// Prefer the per-note effective permission (covers editor-shares); fall back to
+// the house-level capability for older payloads without the field.
+const canEditNote = computed(() => props.note.canEdit ?? can.value.canUpdateNotes)
 const emit = defineEmits<{
   edit: [note: Note]
   delete: [note: Note]

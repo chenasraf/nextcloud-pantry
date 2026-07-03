@@ -29,9 +29,10 @@ const { ALL_CAPS } = vi.hoisted(() => ({
     canDeleteNotes: true,
   },
 }))
-vi.mock('@/composables/useCurrentHouse', () => ({
-  useCurrentHouse: () => ({ can: ALL_CAPS }),
-}))
+vi.mock('@/composables/useCurrentHouse', async () => {
+  const { ref } = await import('vue')
+  return { useCurrentHouse: () => ({ can: ref(ALL_CAPS) }) }
+})
 vi.mock('@icons/Repeat.vue', () => createIconMock('RepeatIcon'))
 vi.mock('@icons/Pencil.vue', () => createIconMock('PencilIcon'))
 vi.mock('@icons/Eye.vue', () => createIconMock('EyeIcon'))
@@ -50,8 +51,8 @@ vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
   default: {
     name: 'NcCheckboxRadioSwitch',
     template:
-      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', !modelValue)" /><slot /></label>',
-    props: ['modelValue'],
+      '<label class="nc-checkbox"><input type="checkbox" :checked="modelValue" :disabled="disabled" @change="$emit(\'update:modelValue\', !modelValue)" /><slot /></label>',
+    props: ['modelValue', 'disabled'],
   },
 }))
 vi.mock('@nextcloud/vue/components/NcActions', () => ({
@@ -209,6 +210,30 @@ describe('ChecklistItemRow', () => {
     it('does not show thumbnail when no imageFileId', () => {
       const wrapper = mount(ChecklistItemRow, { props: defaultProps })
       expect(wrapper.find('.checklist-row__thumb').exists()).toBe(false)
+    })
+  })
+
+  describe('view-only shared list (listWritable=false)', () => {
+    it('disables the checkbox and hides every write action', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, listWritable: false },
+      })
+      expect(wrapper.find('input[type="checkbox"]').attributes('disabled')).toBeDefined()
+      const actionTexts = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(actionTexts).not.toContain('Edit item')
+      expect(actionTexts).not.toContain('Move to list')
+      expect(actionTexts).not.toContain('Copy to list')
+      // The read-only "View item" button remains.
+      expect(
+        wrapper.findAll('.nc-button').some((b) => b.attributes('aria-label') === 'View item'),
+      ).toBe(true)
+    })
+
+    it('keeps write affordances when listWritable is true (default)', () => {
+      const wrapper = mount(ChecklistItemRow, { props: defaultProps })
+      expect(wrapper.find('input[type="checkbox"]').attributes('disabled')).toBeUndefined()
+      const actionTexts = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(actionTexts).toContain('Edit item')
     })
   })
 

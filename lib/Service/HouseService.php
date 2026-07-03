@@ -21,6 +21,7 @@ use OCA\Pantry\Db\PhotoFolderMapper;
 use OCA\Pantry\Db\PhotoMapper;
 use OCA\Pantry\Db\Role;
 use OCA\Pantry\Db\RoleMapper;
+use OCA\Pantry\Db\ShareMapper;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -40,6 +41,7 @@ class HouseService {
 		private RoleMapper $roleMapper,
 		private HouseMemberRoleMapper $memberRoleMapper,
 		private ListRoleMapper $listRoleMapper,
+		private ShareMapper $shareMapper,
 		private RoleService $roles,
 		private IDBConnection $db,
 		private IUserManager $userManager,
@@ -153,6 +155,7 @@ class HouseService {
 			$this->photoMapper->deleteByHouse($houseId);
 			$this->photoFolderMapper->deleteByHouse($houseId);
 			$this->noteMapper->deleteByHouse($houseId);
+			$this->shareMapper->deleteByHouse($houseId);
 			$this->memberRoleMapper->deleteByHouse($houseId);
 			$this->roleMapper->deleteByHouse($houseId);
 			$this->memberMapper->deleteByHouse($houseId);

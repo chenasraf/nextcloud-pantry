@@ -5,6 +5,12 @@ import { nextcloudL10nMock } from '@/test-utils'
 import type { PhotoFolder } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
+vi.mock('@/components/ShareEditor', () => ({
+  ShareEditor: { name: 'ShareEditor', template: '<div class="share-editor" />' },
+}))
+vi.mock('@/composables/useCurrentHouse', () => ({
+  useCurrentHouse: () => ({ isAdmin: { value: false } }),
+}))
 
 vi.mock('@nextcloud/vue/components/NcDialog', () => ({
   default: {
@@ -79,12 +85,12 @@ describe('FolderDialog', () => {
       expect((input.element as HTMLInputElement).value).toBe('Existing Folder')
     })
 
-    it('uses "Rename folder" as title', () => {
+    it('uses "Edit folder" as title', () => {
       const wrapper = mount(FolderDialog, {
         props: { open: true, folder: makeFolder() },
       })
       const dialog = wrapper.findComponent({ name: 'NcDialog' })
-      expect(dialog.props('name')).toBe('Rename folder')
+      expect(dialog.props('name')).toBe('Edit folder')
     })
   })
 

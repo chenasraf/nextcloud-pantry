@@ -69,6 +69,13 @@ export interface Checklist {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  /** Effective edit permission for the current user (role capability or an editor share). */
+  canEdit?: boolean
+  /**
+   * The current user reaches this list only through a per-user share (no role
+   * grants access). When true, a viewer share bounds all writes to read-only.
+   */
+  sharedOnly?: boolean
 }
 
 export interface Category {
@@ -117,6 +124,8 @@ export interface Note {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  /** Effective edit permission for the current user (role capability or an editor share). */
+  canEdit?: boolean
 }
 
 export interface PhotoFolder {
@@ -126,6 +135,8 @@ export interface PhotoFolder {
   sortOrder: number
   createdAt: number
   updatedAt: number
+  /** Effective edit permission for the current user (move capability or an editor share). */
+  canEdit?: boolean
 }
 
 export interface Photo {
@@ -139,4 +150,28 @@ export interface Photo {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  /** Effective edit permission for the current user (role capability or an editor share on the photo or its folder). */
+  canEdit?: boolean
+}
+
+/** Polymorphic per-user share target types (Share::TYPE_* on the backend). */
+export type ShareEntityType = 'checklist' | 'note' | 'photo' | 'photos-folder'
+
+export type SharePermission = 'view' | 'edit'
+
+export interface Share {
+  id: number
+  houseId: number
+  entityType: ShareEntityType
+  entityId: number
+  sharedWithUid: string
+  permission: SharePermission
+  createdBy: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface ShareInput {
+  uid: string
+  permission: SharePermission
 }

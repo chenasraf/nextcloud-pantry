@@ -173,12 +173,12 @@
               </div>
             </router-link>
             <NcActions
-              v-if="can.canEditLists || can.canDeleteLists"
+              v-if="(item.list.canEdit ?? can.canEditLists) || can.canDeleteLists"
               class="pantry-list-card__actions"
               :aria-label="strings.listMenu"
             >
               <NcActionButton
-                v-if="can.canEditLists"
+                v-if="item.list.canEdit ?? can.canEditLists"
                 close-after-click
                 @click="startEdit(item.list)"
               >

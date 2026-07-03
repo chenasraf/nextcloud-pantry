@@ -73,6 +73,7 @@ class Capabilities implements IPublicCapability {
 					'pref-category-spacing',
 					'reuse-existing-items',
 					'roles',
+					'share-users',
 				],
 			],
 		];

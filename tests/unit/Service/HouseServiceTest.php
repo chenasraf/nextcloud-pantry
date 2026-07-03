@@ -19,6 +19,7 @@ use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Db\PhotoFolderMapper;
 use OCA\Pantry\Db\PhotoMapper;
 use OCA\Pantry\Db\RoleMapper;
+use OCA\Pantry\Db\ShareMapper;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\RoleService;
 use OCP\IDBConnection;
@@ -45,6 +46,7 @@ class HouseServiceTest extends TestCase {
 			$this->createMock(RoleMapper::class),
 			$this->createMock(HouseMemberRoleMapper::class),
 			$this->createMock(ListRoleMapper::class),
+			$this->createMock(ShareMapper::class),
 			$this->createMock(RoleService::class),
 			$this->createMock(IDBConnection::class),
 			$this->createMock(IUserManager::class),

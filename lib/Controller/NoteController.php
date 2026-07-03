@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Activity\ActivityPublisher;
+use OCA\Pantry\Db\Note;
+use OCA\Pantry\Db\Share;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Permission\Permission;
@@ -16,6 +18,8 @@ use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\NoteService;
 use OCA\Pantry\Service\NotificationService;
+use OCA\Pantry\Service\PermissionService;
+use OCA\Pantry\Service\ShareService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -39,6 +43,8 @@ final class NoteController extends OCSController {
 		private HouseService $houses,
 		private NotificationService $notifications,
 		private ActivityPublisher $activity,
+		private PermissionService $permissions,
+		private ShareService $shares,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -61,10 +67,13 @@ final class NoteController extends OCSController {
 	#[Permission(['canViewNotes'])]
 	public function indexNotes(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$all = $this->notes->listNotes($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			return new DataResponse(array_map(fn ($n) => $n->jsonSerialize(), $sliced));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($n) => $this->noteJson($n, $roleEdit, $shareMap), $sliced));
 		});
 	}
 
@@ -86,10 +95,13 @@ final class NoteController extends OCSController {
 	#[Permission(['canViewNotes'])]
 	public function indexDeletedNotes(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$all = $this->notes->listDeletedNotes($houseId);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			return new DataResponse(array_map(fn ($n) => $n->jsonSerialize(), $sliced));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($n) => $this->noteJson($n, $roleEdit, $shareMap), $sliced));
 		});
 	}
 
@@ -141,7 +153,8 @@ final class NoteController extends OCSController {
 				(int)$note->getId(),
 				$note->getTitle(),
 			);
-			return new DataResponse($note->jsonSerialize());
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($note, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -162,13 +175,18 @@ final class NoteController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/notes/{noteId}', requirements: ['noteId' => '\d+'])]
 	#[NoAdminRequired]
-	#[Permission(['canUpdateNotes'])]
+	#[Permission(['canViewNotes'])]
 	public function updateNote(int $houseId, int $noteId, ?string $title = null, ?string $content = null, ?string $color = null, ?int $sortOrder = null, ?bool $isPinned = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $noteId, $title, $content, $color, $sortOrder, $isPinned): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->notes->getNote($noteId);
 			$this->assertInHouse($existing->getHouseId(), $houseId);
+			// Editing needs the role capability or an editor share on this note.
+			if (!$this->permissions->can($houseId, $uid, 'canUpdateNotes')
+				&& !$this->shares->hasEditShare($uid, Share::TYPE_NOTE, $noteId)) {
+				throw new ForbiddenException('Missing permission: canUpdateNotes');
+			}
 			$patch = [];
 			if ($title !== null) {
 				$patch['title'] = $title;
@@ -197,7 +215,8 @@ final class NoteController extends OCSController {
 					$note->getTitle(),
 				);
 			}
-			return new DataResponse($note->jsonSerialize());
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($note, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -248,11 +267,13 @@ final class NoteController extends OCSController {
 	#[Permission(['canDeleteNotes'])]
 	public function restoreNote(int $houseId, int $noteId): DataResponse {
 		return $this->runAction(function () use ($houseId, $noteId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->notes->getNote($noteId, includeDeleted: true);
 			$this->assertInHouse($existing->getHouseId(), $houseId);
 			$restored = $this->notes->restoreNote($noteId);
-			return new DataResponse($restored->jsonSerialize());
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($restored, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 
@@ -300,6 +321,18 @@ final class NoteController extends OCSController {
 			$this->notes->reorderNotes($houseId, $items);
 			return new DataResponse(['success' => true]);
 		});
+	}
+
+	/**
+	 * Serialize a note with the current user's effective `canEdit` flag
+	 * (role capability or an editor share on the note).
+	 *
+	 * @param array<string, array<int, string>> $shareMap
+	 */
+	private function noteJson(Note $note, bool $roleEdit, array $shareMap): array {
+		return array_merge($note->jsonSerialize(), [
+			'canEdit' => $this->shares->canEditFromMap(Share::TYPE_NOTE, (int)$note->getId(), $roleEdit, $shareMap),
+		]);
 	}
 
 	private function requireUid(): string {

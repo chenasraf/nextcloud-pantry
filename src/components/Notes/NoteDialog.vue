@@ -72,6 +72,16 @@
           />
         </div>
       </div>
+
+      <!-- Sharing -->
+      <ShareEditor
+        v-if="note"
+        class="note-dialog__share"
+        :house-id="note.houseId"
+        entity-type="note"
+        :entity-id="note.id"
+        :can-manage="canManageShares"
+      />
     </div>
 
     <template #actions>
@@ -100,6 +110,9 @@ import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
 import { contrastColor, noteColorOptions } from './noteColors'
 import type { Note } from '@/api/types'
+import { ShareEditor } from '@/components/ShareEditor'
+import { useCurrentHouse } from '@/composables/useCurrentHouse'
+import { getCurrentUserId } from '@/utils/currentUser'
 
 const props = defineProps<{
   open: boolean
@@ -122,7 +135,11 @@ const renderedContentRef = ref<HTMLElement | null>(null)
 
 const MAX_TEXTAREA_HEIGHT = 400
 
+const { isAdmin } = useCurrentHouse()
 const isExisting = computed(() => !!props.note)
+const canManageShares = computed(
+  () => isAdmin.value || props.note?.createdBy === getCurrentUserId(),
+)
 const swatchBorderColor = computed(() =>
   colorValue.value ? contrastColor(colorValue.value) : 'var(--color-main-text)',
 )

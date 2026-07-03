@@ -135,14 +135,14 @@ describe('FolderStack', () => {
         props: { houseId: 1, folder: makeFolder(), photos: [] },
       })
       const texts = wrapper.findAll('.nc-action-button').map((b) => b.text())
-      expect(texts).toContain('Rename')
+      expect(texts).toContain('Edit')
       expect(texts).toContain('Remove')
     })
 
-    it('emits rename when Rename action is clicked', async () => {
+    it('emits rename when Edit action is clicked', async () => {
       const folder = makeFolder()
       const wrapper = mount(FolderStack, { props: { houseId: 1, folder, photos: [] } })
-      const renameBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Rename')!
+      const renameBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Edit')!
       await renameBtn.trigger('click')
       expect(wrapper.emitted('rename')).toBeTruthy()
       expect(wrapper.emitted('rename')![0]).toEqual([folder])

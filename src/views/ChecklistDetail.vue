@@ -22,7 +22,7 @@
 
     <div class="pantry-detail__body">
       <ChecklistAddForm
-        v-if="can.canAddItems && !trashMode"
+        v-if="can.canAddItems && !trashMode && (isMeta || writableHere)"
         :house-id="houseIdNum"
         :adding="adding"
         :delete-on-done-default="list?.deleteOnDoneDefault ?? false"
@@ -94,8 +94,11 @@
               :item="gi.item"
               :category="categoryFor(gi.item.categoryId)"
               :list="isMeta ? listFor(gi.item.listId) : null"
+              :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
               :house-id="houseIdNum"
-              :reorder-enabled="isCustomSort"
+              :reorder-enabled="
+                isCustomSort && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
+              "
               :trash-mode="trashMode"
               :tap-row-to-complete="tapRowToComplete"
               :show-added-by="showAddedBy"
@@ -135,8 +138,11 @@
                 :item="gi.item"
                 :category="categoryFor(gi.item.categoryId)"
                 :list="isMeta ? listFor(gi.item.listId) : null"
+                :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
                 :house-id="houseIdNum"
-                :reorder-enabled="isCustomSort"
+                :reorder-enabled="
+                  isCustomSort && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
+                "
                 :tap-row-to-complete="tapRowToComplete"
                 :show-added-by="showAddedBy"
                 @toggle="handleToggle"
@@ -408,6 +414,15 @@ function categoryFor(id: number | null) {
 function listFor(id: number) {
   return allLists.value.find((l) => l.id === id) ?? null
 }
+
+// A list reached only through a view-only share blocks every write affordance;
+// role-based access (and editor shares) keep the granular capabilities.
+function listWritable(l?: Checklist | null): boolean {
+  return !(l?.sharedOnly && !l?.canEdit)
+}
+
+// Writability of the list currently in focus (single-list mode).
+const writableHere = computed(() => listWritable(list.value))
 
 // ----- Markdown import / export -----
 
@@ -1248,7 +1263,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   ]
 
   if (!isMeta.value) {
-    if (can.value.canEditLists && list.value) {
+    if (list.value && (list.value.canEdit ?? can.value.canEditLists)) {
       actions.push({
         key: 'edit',
         label: strings.editList,

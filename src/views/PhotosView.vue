@@ -234,6 +234,7 @@
       v-if="editingPhoto"
       :name="strings.editPhotoTitle"
       :open="!!editingPhoto"
+      size="normal"
       close-on-click-outside
       @update:open="(v) => !v && (editingPhoto = null)"
     >
@@ -248,6 +249,12 @@
           :label="strings.captionLabel"
           :placeholder="strings.captionPlaceholder"
           autocomplete="off"
+        />
+        <ShareEditor
+          :house-id="houseIdNum"
+          entity-type="photo"
+          :entity-id="editingPhoto.id"
+          :can-manage="canManagePhotoShares"
         />
       </form>
       <template #actions>
@@ -417,6 +424,8 @@ import { getPhotoSort, setPhotoSort } from '@/api/prefs'
 import { usePhotos, type UploadEntry } from '@/composables/usePhotos'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTouchReorder } from '@/composables/useTouchReorder'
+import { ShareEditor } from '@/components/ShareEditor'
+import { getCurrentUserId } from '@/utils/currentUser'
 
 const props = defineProps<{ houseId: string; folderId?: string }>()
 const router = useRouter()
@@ -445,7 +454,10 @@ const {
   trashMode,
 } = usePhotos(houseIdNum.value)
 
-const { can } = useCurrentHouse()
+const { can, isAdmin } = useCurrentHouse()
+const canManagePhotoShares = computed(
+  () => isAdmin.value || editingPhoto.value?.uploadedBy === getCurrentUserId(),
+)
 
 async function toggleTrash() {
   trashMode.value = !trashMode.value

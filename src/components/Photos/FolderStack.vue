@@ -149,7 +149,7 @@ function onDrop(e: DragEvent) {
 
 const strings = {
   actions: t('pantry', 'Folder actions'),
-  rename: t('pantry', 'Rename'),
+  rename: t('pantry', 'Edit'),
   remove: t('pantry', 'Remove'),
 }
 </script>

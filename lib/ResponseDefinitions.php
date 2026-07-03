@@ -70,6 +70,8 @@ namespace OCA\Pantry;
  *     createdAt: int,
  *     updatedAt: int,
  *     deletedAt: int|null,
+ *     canEdit: bool,
+ *     sharedOnly: bool,
  * }
  *
  * @psalm-type PantryListItem = array{
@@ -114,6 +116,18 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  * }
  *
+ * @psalm-type PantryShare = array{
+ *     id: int,
+ *     houseId: int,
+ *     entityType: string,
+ *     entityId: int,
+ *     sharedWithUid: string,
+ *     permission: string,
+ *     createdBy: string,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
+ *
  * @psalm-type PantrySuccess = array{success: true}
  *
  * @psalm-type PantryUserPrefs = array{
@@ -148,6 +162,7 @@ namespace OCA\Pantry;
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,
+ *     canEdit: bool,
  * }
  *
  * @psalm-type PantryNote = array{
@@ -162,6 +177,7 @@ namespace OCA\Pantry;
  *     createdAt: int,
  *     updatedAt: int,
  *     deletedAt: int|null,
+ *     canEdit: bool,
  * }
  *
  * @psalm-type PantryPhoto = array{
@@ -175,6 +191,7 @@ namespace OCA\Pantry;
  *     createdAt: int,
  *     updatedAt: int,
  *     deletedAt: int|null,
+ *     canEdit: bool,
  * }
  */
 class ResponseDefinitions {

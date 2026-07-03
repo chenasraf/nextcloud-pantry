@@ -2,6 +2,7 @@
   <NcDialog
     :name="dialogName"
     :open="open"
+    size="normal"
     close-on-click-outside
     @update:open="$emit('update:open', $event)"
   >
@@ -62,6 +63,7 @@
       <div v-if="showAccess">
         <label class="pantry-icon-picker__label">{{ strings.accessLabel }}</label>
         <NcSelect
+          class="pantry-access-select"
           :model-value="selectedAccessRoles"
           :options="accessRoleOptions"
           :multiple="true"
@@ -73,6 +75,13 @@
         />
         <p class="pantry-access-hint">{{ strings.accessHint }}</p>
       </div>
+      <ShareEditor
+        v-if="list"
+        :house-id="list.houseId"
+        entity-type="checklist"
+        :entity-id="list.id"
+        :can-manage="isAdmin"
+      />
     </form>
     <template #actions>
       <NcButton @click="$emit('update:open', false)">{{ strings.cancel }}</NcButton>
@@ -97,6 +106,7 @@ import { checklistColorOptions, contrastColor } from './checklistColors'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useRoles } from '@/composables/useRoles'
 import { getListRoles, setListRoles } from '@/api/roles'
+import { ShareEditor } from '@/components/ShareEditor'
 
 const props = defineProps<{
   open: boolean
@@ -223,6 +233,11 @@ const strings = {
   margin: 0.35rem 0 0;
   font-size: 0.85em;
   color: var(--color-text-maxcontrast);
+}
+
+// Match the full-width sharing picker below it.
+.pantry-access-select {
+  width: 100%;
 }
 
 .pantry-icon-picker {

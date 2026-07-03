@@ -29,7 +29,7 @@
           {{ strings.restore }}
         </NcActionButton>
         <NcActionButton
-          v-if="!trashMode && can.canUpdatePhotos"
+          v-if="!trashMode && canEditPhoto"
           close-after-click
           @click.stop="$emit('edit', photo)"
         >
@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { t } from '@nextcloud/l10n'
 import { photoPreviewUrl } from '@/api/images'
 import NcActions from '@nextcloud/vue/components/NcActions'
@@ -90,6 +90,10 @@ const props = withDefaults(
   }>(),
   { reorderEnabled: true, selected: false, trashMode: false },
 )
+
+// Prefer the per-photo effective permission (covers editor-shares, incl. via a
+// shared folder); fall back to the house-level capability.
+const canEditPhoto = computed(() => props.photo.canEdit ?? can.value.canUpdatePhotos)
 const emit = defineEmits<{
   preview: [photo: Photo]
   edit: [photo: Photo]

@@ -11,6 +11,8 @@ use OCA\Pantry\Db\HouseMemberRoleMapper;
 use OCA\Pantry\Db\ListRoleMapper;
 use OCA\Pantry\Db\Role;
 use OCA\Pantry\Db\RoleMapper;
+use OCA\Pantry\Db\Share;
+use OCA\Pantry\Db\ShareMapper;
 
 /**
  * Resolves a user's effective permissions within a house from the roles they
@@ -18,10 +20,15 @@ use OCA\Pantry\Db\RoleMapper;
  * short-circuits to "everything granted".
  */
 class PermissionService {
+	public const LEVEL_NONE = 'none';
+	public const LEVEL_VIEW = Share::PERM_VIEW;
+	public const LEVEL_EDIT = Share::PERM_EDIT;
+
 	public function __construct(
 		private RoleMapper $roleMapper,
 		private HouseMemberRoleMapper $memberRoleMapper,
 		private ListRoleMapper $listRoleMapper,
+		private ShareMapper $shareMapper,
 	) {
 	}
 
@@ -96,10 +103,31 @@ class PermissionService {
 
 	/**
 	 * Whether a user may access a specific checklist. Admins always may; a list
-	 * with no explicit role rows is open to everyone; otherwise the user must
-	 * hold at least one of the list's allowed roles.
+	 * with no explicit role rows is open to everyone; a user holding one of the
+	 * list's allowed roles may; and a user with a direct share on the list may.
 	 */
 	public function canAccessList(int $houseId, string $uid, int $listId): bool {
+		if ($this->hasRoleAccessToList($houseId, $uid, $listId)) {
+			return true;
+		}
+		return $this->listShareLevel($uid, $listId) !== null;
+	}
+
+	/**
+	 * The level of a direct per-user share on a checklist, or null if none.
+	 * One of LEVEL_VIEW, LEVEL_EDIT.
+	 */
+	public function listShareLevel(string $uid, int $listId): ?string {
+		$share = $this->shareMapper->findForUserAndEntity($uid, Share::TYPE_CHECKLIST, $listId);
+		return $share?->getPermission();
+	}
+
+	/**
+	 * Role-based access to a checklist, ignoring per-user shares. Admins always
+	 * may; a list with no explicit role rows is open to everyone; otherwise the
+	 * user must hold at least one of the list's allowed roles.
+	 */
+	public function hasRoleAccessToList(int $houseId, string $uid, int $listId): bool {
 		$allowed = $this->listRoleMapper->findRoleIdsForList($listId);
 		if ($allowed === []) {
 			return true;
@@ -109,5 +137,34 @@ class PermissionService {
 			return true;
 		}
 		return $this->isAdmin($houseId, $uid);
+	}
+
+	/**
+	 * The access level a user's roles alone grant on an entity, ignoring shares.
+	 * One of LEVEL_NONE, LEVEL_VIEW, LEVEL_EDIT.
+	 *
+	 * @param Share::TYPE_* $type
+	 */
+	public function roleLevel(int $houseId, string $uid, string $type, int $entityId): string {
+		switch ($type) {
+			case Share::TYPE_CHECKLIST:
+				if (!$this->hasRoleAccessToList($houseId, $uid, $entityId)) {
+					return self::LEVEL_NONE;
+				}
+				return $this->can($houseId, $uid, 'canEditLists') ? self::LEVEL_EDIT : self::LEVEL_VIEW;
+			case Share::TYPE_NOTE:
+				if ($this->can($houseId, $uid, 'canUpdateNotes')) {
+					return self::LEVEL_EDIT;
+				}
+				return $this->can($houseId, $uid, 'canViewNotes') ? self::LEVEL_VIEW : self::LEVEL_NONE;
+			case Share::TYPE_PHOTO:
+			case Share::TYPE_PHOTO_FOLDER:
+				if ($this->can($houseId, $uid, 'canUpdatePhotos')) {
+					return self::LEVEL_EDIT;
+				}
+				return $this->can($houseId, $uid, 'canViewPhotos') ? self::LEVEL_VIEW : self::LEVEL_NONE;
+			default:
+				return self::LEVEL_NONE;
+		}
 	}
 }
