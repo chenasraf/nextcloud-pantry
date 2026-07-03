@@ -24,6 +24,8 @@ OC.L10N.register(
     "Rename" : "ប្ដូរ​ឈ្មោះ",
     "Daily" : "រាល់ថ្ងៃ",
     "Weekly" : "រាល់​សប្ដាហ៍",
+    "Export" : "នាំចេញ",
+    "Import" : "នាំយកចូល",
     "New folder" : "ថត​ថ្មី"
 },
 "nplurals=1; plural=0;");

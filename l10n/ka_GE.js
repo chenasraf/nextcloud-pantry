@@ -38,6 +38,7 @@ OC.L10N.register(
     "Deselect all" : "ყველას წაშლა",
     "Pin to top" : "ზევით დამატება",
     "Preview" : "წინასწარი ჩვენება",
+    "More actions" : "მეტი ქმედება",
     "Rename folder" : "ფოლდერის სახელის გადარქმევა",
     "Folder name" : "დირექტორიის სახელი",
     "Rename" : "სახელის შეცვლა",
@@ -50,7 +51,8 @@ OC.L10N.register(
     "Summary" : "შეჯამება",
     "Newest first" : "ჯერ ახალი",
     "Oldest first" : "ჯერ ძველი",
-    "More actions" : "მეტი ქმედება",
+    "Export" : "ექსპორტი",
+    "Import" : "იმპორტი",
     "Note restored" : "ჩანაწერი აღდგა",
     "New folder" : "ახალი დირექტორია",
     "Uncategorized" : "არაკატეგორიზირებული"

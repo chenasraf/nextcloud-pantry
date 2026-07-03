@@ -18,7 +18,9 @@ OC.L10N.register(
     "Delete permanently" : "Borrar permanentemente",
     "Restore" : "Restaurar",
     "Done" : "Terminado",
+    "View" : "Ver",
     "Copy" : "Copiar",
+    "Move" : "Mover",
     "Photos" : "Fotos",
     "Upload" : "Cargar",
     "Notes" : "Notas",
@@ -51,6 +53,8 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Newest first" : "El más reciente primero",
     "Oldest first" : "Los más viejos primero",
+    "Export" : "Exportar",
+    "Import" : "Importar",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",
     "Back" : "Volver"

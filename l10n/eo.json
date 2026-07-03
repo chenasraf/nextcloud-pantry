@@ -18,6 +18,8 @@
     "Delete permanently" : "Forigi por ĉiam",
     "Restore" : "Restaŭri",
     "Done" : "Farita",
+    "View" : "Vidi",
+    "Move" : "Movi",
     "Photos" : "Fotoj",
     "Upload" : "Alŝuti",
     "Member" : "Membro",
@@ -34,6 +36,7 @@
     "Select all" : "Elekti ĉion",
     "Deselect all" : "Malelekti ĉion",
     "Preview" : "Antaŭvidi",
+    "More actions" : "Pliaj agoj",
     "Rename folder" : "Alinomigi dosierujon",
     "Folder name" : "Dosierujnomo",
     "Rename" : "Alinomi",
@@ -48,7 +51,8 @@
     "Summary" : "Resumo",
     "Newest first" : "Pli novaj unue",
     "Oldest first" : "Malpli novaj unue",
-    "More actions" : "Pliaj agoj",
+    "Export" : "Eksporti",
+    "Import" : "Importi",
     "New folder" : "Nova dosierujo",
     "Uncategorized" : "Senkategoria"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

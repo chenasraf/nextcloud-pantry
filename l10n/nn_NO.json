@@ -25,6 +25,7 @@
     "General" : "Generelt",
     "Close" : "Lat att",
     "Select all" : "Merk alt",
+    "More actions" : "Fleire handlingar",
     "Folder name" : "Katalognavn",
     "Rename" : "Endra namn",
     "days" : "dagar",
@@ -33,7 +34,8 @@
     "Summary" : "Oppsumering",
     "Newest first" : "Nyaste fyrst",
     "Oldest first" : "Eldste fyrst",
-    "More actions" : "Fleire handlingar",
+    "Export" : "Eksporter",
+    "Import" : "Importer",
     "New folder" : "Ny mappe"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

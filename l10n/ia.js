@@ -32,6 +32,7 @@ OC.L10N.register(
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
+    "Export" : "Exportar",
     "New folder" : "Nove dossier"
 },
 "nplurals=2; plural=(n != 1);");

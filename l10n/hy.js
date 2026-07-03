@@ -23,6 +23,8 @@ OC.L10N.register(
     "Daily" : "Օրական",
     "Weekly" : "Շաբաթական",
     "Never" : "Երբեք",
+    "Export" : "Արտահանում",
+    "Import" : "Ներմուծում",
     "New note" : "նոր գրառում",
     "New folder" : "Նոր պանակ"
 },

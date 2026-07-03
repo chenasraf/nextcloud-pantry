@@ -27,6 +27,7 @@ OC.L10N.register(
     "General" : "Generelt",
     "Close" : "Lat att",
     "Select all" : "Merk alt",
+    "More actions" : "Fleire handlingar",
     "Folder name" : "Katalognavn",
     "Rename" : "Endra namn",
     "days" : "dagar",
@@ -35,7 +36,8 @@ OC.L10N.register(
     "Summary" : "Oppsumering",
     "Newest first" : "Nyaste fyrst",
     "Oldest first" : "Eldste fyrst",
-    "More actions" : "Fleire handlingar",
+    "Export" : "Eksporter",
+    "Import" : "Importer",
     "New folder" : "Ny mappe"
 },
 "nplurals=2; plural=(n != 1);");

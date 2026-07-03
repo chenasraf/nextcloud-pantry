@@ -47,6 +47,7 @@ OC.L10N.register(
     "Remove" : "Kkes",
     "Unpin" : "Kkes anṭaḍ",
     "Preview" : "Pre-timeẓriwt",
+    "More actions" : "Ugar n tigawin",
     "Folder name" : "Isem n ukaram",
     "Rename" : "Beddel isem",
     "days" : "ussan",
@@ -62,7 +63,8 @@ OC.L10N.register(
     "Summary" : "Agzul",
     "Newest first" : "Imaynuten d imezwura",
     "Oldest first" : "Iqbuṛen d imezwura",
-    "More actions" : "Ugar n tigawin",
+    "Export" : "Sifeḍ",
+    "Import" : "Kter",
     "New folder" : "Akaram amaynut",
     "Back" : "Tuɣalin",
     "Uncategorized" : "War-taggayt"

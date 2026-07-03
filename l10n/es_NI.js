@@ -35,6 +35,7 @@ OC.L10N.register(
     "Deselect all" : "Deseleccionar todo",
     "Pin to top" : "Anclar a la parte superior",
     "Preview" : "Previsualizar",
+    "More actions" : "Más acciones",
     "Folder name" : "Nombre de la carpeta",
     "days" : "días",
     "weeks" : "semanas",
@@ -45,7 +46,8 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Newest first" : "Más reciente primero",
     "Oldest first" : "Más antiguo primero",
-    "More actions" : "Más acciones",
+    "Export" : "Exportar",
+    "Import" : "Importar",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",
     "Uncategorized" : "Sin categoría"

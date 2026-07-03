@@ -57,6 +57,8 @@ OC.L10N.register(
     "Summary" : "Kopsavilkums",
     "Newest first" : "Jaunākie pirms",
     "Oldest first" : "Vecākie pirms",
+    "Export" : "Izgūt",
+    "Import" : "Ievietot",
     "New folder" : "Jauna mape",
     "Add a description" : "Pievienot aprakstu",
     "Uncategorized" : "Bez kategorijas"

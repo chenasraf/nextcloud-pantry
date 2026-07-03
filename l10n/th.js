@@ -46,6 +46,8 @@ OC.L10N.register(
     "Never" : "ไม่เคย",
     "Newest first" : "ใหม่ที่สุดก่อน",
     "Oldest first" : "เก่าที่สุดก่อน",
+    "Export" : "ส่งออก",
+    "Import" : "นำเข้า",
     "New folder" : "โฟลเดอร์ใหม่",
     "Uncategorized" : "ไม่ได้จัดหมวดหมู่"
 },

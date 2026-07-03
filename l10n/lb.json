@@ -26,6 +26,8 @@
     "weeks" : "Wochen",
     "Daily" : "All Dag",
     "Weekly" : "All Woch",
+    "Export" : "Exportéieren",
+    "Import" : "Import",
     "New folder" : "Neien Dossier"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

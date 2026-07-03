@@ -21,6 +21,8 @@
     "Daily" : "Օրական",
     "Weekly" : "Շաբաթական",
     "Never" : "Երբեք",
+    "Export" : "Արտահանում",
+    "Import" : "Ներմուծում",
     "New note" : "նոր գրառում",
     "New folder" : "Նոր պանակ"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

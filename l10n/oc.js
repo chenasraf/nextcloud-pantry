@@ -38,6 +38,7 @@ OC.L10N.register(
     "Copied to clipboard" : "Copiat dins lo cartabèu",
     "Remove" : "Suprimir",
     "Preview" : "Apercebut",
+    "More actions" : "Mai d’accions",
     "Rename folder" : "Renomenar lo repertòri",
     "Folder name" : "Nom del dorsièr",
     "Rename" : "Tornar nommar",
@@ -49,7 +50,8 @@ OC.L10N.register(
     "Weekly" : "Setmanièr",
     "Monthly" : "Cada mes",
     "Never" : "Jamai",
-    "More actions" : "Mai d’accions",
+    "Export" : "Exportar",
+    "Import" : "Importar",
     "New folder" : "Novèl dorsièr",
     "Add a description" : "Apondre una descripcion",
     "Uncategorized" : "Desorganizadas"
