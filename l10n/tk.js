@@ -19,7 +19,6 @@ OC.L10N.register(
     "Deselect all" : "Hemmesini aýyryň",
     "Remove" : "Aýyrmak",
     "Folder name" : "Papkanyň ady",
-    "Rename" : "Adyny üýtgetmek",
     "Newest first" : "Täze ilkinji",
     "Oldest first" : "Ilki bilen iň köne",
     "New folder" : "Täze papka döretmek",

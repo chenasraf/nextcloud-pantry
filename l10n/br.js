@@ -32,7 +32,6 @@ OC.L10N.register(
     "Deselect all" : "Diziuzañ pep tra",
     "Preview" : "Ragwell",
     "Folder name" : "Anv teuliad",
-    "Rename" : "Adenvel",
     "days" : "devezh",
     "Daily" : "Pemdeziek",
     "Weekly" : "Sizhuniek",
@@ -41,6 +40,7 @@ OC.L10N.register(
     "Summary" : "Diverrañ",
     "Newest first" : "An hini nevesañ da gentañ",
     "Oldest first" : "An hini kozhoñ da gentañ",
+    "Import" : "Emporzhiañ ",
     "New note" : "Notenn nevez",
     "New folder" : "Teuliad nevez",
     "Add a description" : "Ouzhpennañ un deskrivadur"

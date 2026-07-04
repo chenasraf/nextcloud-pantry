@@ -25,15 +25,15 @@
     "Close" : "Bağla",
     "Copied to clipboard" : "Mübadilə buferinə nüsxələndi",
     "Select all" : "Hamısıı seç",
-    "Rename folder" : "Qovluğun adını dəyiş",
     "Folder name" : "Qovluq adı",
-    "Rename" : "Adı dəyiş",
     "days" : "günlər",
     "weeks" : "həftələr",
     "Daily" : "Günlük",
     "Weekly" : "Həftəlik",
     "Never" : "Heç vaxt",
     "Summary" : "Xülasə",
+    "Export" : "Çıxarış",
+    "Import" : "Əlavə et",
     "New folder" : "Yeni qovluq",
     "Back" : "Geri"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

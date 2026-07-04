@@ -21,7 +21,6 @@ OC.L10N.register(
     "Copied to clipboard" : "Kopirano u klipbord",
     "Deselect all" : "Poništi ceo izbor",
     "Folder name" : "Naziv fascikle",
-    "Rename" : "Preimenuj",
     "Daily" : "дневно",
     "Weekly" : "недељно",
     "Never" : "Nikad",

@@ -39,7 +39,6 @@ OC.L10N.register(
     "Preview" : "Previsualizar",
     "More actions" : "Más acciones",
     "Folder name" : "Nombre de la carpeta",
-    "Rename" : "Renombrar",
     "days" : "días",
     "weeks" : "semanas",
     "Daily" : "Diariamente",

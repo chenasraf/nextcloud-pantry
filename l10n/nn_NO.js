@@ -29,7 +29,6 @@ OC.L10N.register(
     "Select all" : "Merk alt",
     "More actions" : "Fleire handlingar",
     "Folder name" : "Katalognavn",
-    "Rename" : "Endra namn",
     "days" : "dagar",
     "Daily" : "Kvar dag",
     "Weekly" : "Kvar veke",

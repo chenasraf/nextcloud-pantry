@@ -19,14 +19,13 @@ OC.L10N.register(
     "Display" : "প্রদর্শন কর",
     "Close" : "বন্ধ",
     "Copied to clipboard" : "ক্লিপবোর্ডে কপি করা হলো",
-    "Rename folder" : "ফোল্ডার পূনঃনামকরণ কর",
     "Folder name" : "ফোলডারের নাম",
-    "Rename" : "পূনঃনামকরণ",
     "days" : "দিনগুলি",
     "weeks" : "সপ্তাহসমূহ",
     "Daily" : "দৈনিক",
     "Weekly" : "সাপ্তাহিক",
     "Export" : "রপ্তানি",
+    "Import" : "আমদানি",
     "New folder" : "নতুন ফোল্ডার"
 },
 "nplurals=2; plural=(n != 1);");

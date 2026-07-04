@@ -18,7 +18,6 @@ OC.L10N.register(
     "Close" : "Փակել",
     "Select all" : "Նշել բոլորը",
     "Folder name" : "Պանակի անուն",
-    "Rename" : "Վերանվանել",
     "days" : "օր",
     "Daily" : "Օրական",
     "Weekly" : "Շաբաթական",

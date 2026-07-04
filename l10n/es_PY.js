@@ -45,6 +45,7 @@ OC.L10N.register(
     "Ends" : "Termina",
     "Never" : "Nunca",
     "Summary" : "Resumen",
+    "Viewer" : "Visor",
     "Newest first" : "Más reciente primero",
     "Oldest first" : "Más antiguo primero",
     "Export" : "Exportar",

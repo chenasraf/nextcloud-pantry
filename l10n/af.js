@@ -31,6 +31,8 @@ OC.L10N.register(
     "Summary" : "Opsomming",
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
+    "Export" : "Voer uit",
+    "Import" : "Invoer",
     "New folder" : "Nuwe gids"
 },
 "nplurals=2; plural=(n != 1);");

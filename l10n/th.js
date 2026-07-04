@@ -37,7 +37,6 @@ OC.L10N.register(
     "Remove" : "ลบออก",
     "Preview" : "ตัวอย่าง",
     "Folder name" : "ชื่อโฟลเดอร์",
-    "Rename" : "เปลี่ยนชื่อ",
     "days" : "วัน",
     "weeks" : "สัปดาห์",
     "Daily" : "รายวัน",
