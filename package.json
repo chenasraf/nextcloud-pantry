@@ -32,7 +32,7 @@
     "date-fns": "^4.4.0",
     "linkifyjs": "^4.3.3",
     "rrule": "^2.8.1",
-    "vue": "^3.5.38",
+    "vue": "^3.5.39",
     "vue-material-design-icons": "^5.3.1"
   },
   "devDependencies": {
