@@ -5,18 +5,42 @@
       'checklist-row--done': item.done,
       'checklist-row--dragging': isDragging,
       'checklist-row--reorderable': reorderEnabled,
-      'checklist-row--with-added-by': showAddedBy,
+      'checklist-row--with-added-by': showAddedBy && !selectionMode,
+      'checklist-row--selecting': selectionMode,
+      'checklist-row--selected': selectionMode && selected,
     }"
     :data-drag-id="item.id"
     :draggable="reorderEnabled ? 'true' : 'false'"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
+    @click="onRowClick"
   >
+    <div v-if="selectionMode" class="checklist-row__select" @click.stop>
+      <NcCheckboxRadioSwitch
+        :model-value="selected"
+        :aria-label="strings.selectItem"
+        @update:model-value="$emit('toggle-select', item.id)"
+      />
+    </div>
     <span v-if="reorderEnabled" class="checklist-row__handle" :aria-label="strings.dragToReorder">
       <DragVerticalIcon :size="20" />
     </span>
-    <div class="checklist-row__check">
+    <div v-if="selectionMode" class="checklist-row__check">
+      <span class="checklist-row__label checklist-row__label--standalone">
+        <button
+          v-if="item.imageFileId"
+          type="button"
+          class="checklist-row__thumb"
+          :aria-label="strings.viewImage"
+          @click.stop.prevent="$emit('preview', item)"
+        >
+          <img :src="thumbUrl" :alt="item.name" />
+        </button>
+        <span class="checklist-row__name">{{ item.name }}</span>
+      </span>
+    </div>
+    <div v-else class="checklist-row__check">
       <NcCheckboxRadioSwitch
         :model-value="item.done"
         :disabled="!canCheck"
@@ -65,7 +89,7 @@
         {{ category.name }}
       </span>
     </div>
-    <div v-if="showAddedBy" class="checklist-row__added-by">
+    <div v-if="showAddedBy && !selectionMode" class="checklist-row__added-by">
       <NcAvatar
         v-if="item.addedBy"
         :user="item.addedBy"
@@ -74,7 +98,7 @@
         :tooltip-message="addedByTooltip"
       />
     </div>
-    <div class="checklist-row__actions">
+    <div v-if="!selectionMode" class="checklist-row__actions">
       <NcButton variant="tertiary" :aria-label="strings.viewItem" @click="$emit('view', item)">
         <template #icon>
           <EyeIcon :size="18" />
@@ -163,6 +187,10 @@ const props = withDefaults(
      * true (the default), the granular role capabilities apply as usual.
      */
     listWritable?: boolean
+    /** Multi-select mode: shows a selection checkbox and taps toggle selection. */
+    selectionMode?: boolean
+    /** Whether this row is currently selected (only meaningful in selection mode). */
+    selected?: boolean
   }>(),
   {
     list: null,
@@ -171,6 +199,8 @@ const props = withDefaults(
     tapRowToComplete: false,
     showAddedBy: false,
     listWritable: true,
+    selectionMode: false,
+    selected: false,
   },
 )
 
@@ -196,11 +226,21 @@ const emit = defineEmits<{
   remove: [id: number]
   restore: [id: number]
   preview: [item: ChecklistItem]
+  'toggle-select': [id: number]
   'drag-start': [itemId: number]
   'reorder-over': [itemId: number, event: MouseEvent]
 }>()
 
 const isDragging = ref(false)
+
+// In selection mode, a tap anywhere on the row body toggles selection. The
+// selection checkbox and the image thumb stop propagation so they keep their
+// own behavior.
+function onRowClick() {
+  if (props.selectionMode) {
+    emit('toggle-select', props.item.id)
+  }
+}
 
 function onDragStart(e: DragEvent) {
   if (!props.reorderEnabled || !e.dataTransfer) return
@@ -245,6 +285,7 @@ const recurrenceTooltip = computed(() => {
 
 const strings = {
   dragToReorder: t('pantry', 'Drag to reorder'),
+  selectItem: t('pantry', 'Select item'),
   viewImage: t('pantry', 'View image'),
   viewItem: t('pantry', 'View item'),
   itemActions: t('pantry', 'Item actions'),
@@ -283,6 +324,18 @@ const strings = {
     grid-template-columns: auto 1fr auto auto auto;
   }
 
+  // Selection mode drops the handle, actions and added-by, prepending a single
+  // selection checkbox track. It never co-occurs with the reorder handle.
+  &--selecting {
+    grid-template-columns: auto 1fr auto;
+    cursor: pointer;
+  }
+
+  &--selected {
+    background: var(--color-primary-element-light);
+    border-color: var(--color-primary-element);
+  }
+
   @media (max-width: 600px) {
     grid-template-columns: 1fr auto auto;
     grid-template-areas:
@@ -295,6 +348,17 @@ const strings = {
       grid-template-areas:
         'handle check added actions'
         'handle meta  meta  meta';
+    }
+
+    &.checklist-row--selecting {
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        'select check'
+        'meta   meta';
+    }
+
+    .checklist-row__select {
+      grid-area: select;
     }
 
     .checklist-row__handle {
@@ -437,6 +501,11 @@ const strings = {
   }
 
   &__added-by {
+    display: flex;
+    align-items: center;
+  }
+
+  &__select {
     display: flex;
     align-items: center;
   }

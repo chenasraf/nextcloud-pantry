@@ -21,8 +21,64 @@
     </PageToolbar>
 
     <div class="pantry-detail__body">
+      <div v-if="selectionMode" class="pantry-detail__selection-bar">
+        <NcButton variant="tertiary" :aria-label="strings.exitSelection" @click="exitSelection">
+          <template #icon>
+            <CloseIcon :size="20" />
+          </template>
+        </NcButton>
+        <span class="pantry-detail__selection-count">{{ selectionCountLabel }}</span>
+        <NcButton variant="tertiary" :disabled="allVisibleSelected" @click="selectAllVisible">
+          {{ strings.selectAll }}
+        </NcButton>
+        <NcButton v-if="selectedCount > 0" variant="tertiary" @click="clearSelection">
+          {{ strings.clearSelection }}
+        </NcButton>
+        <span class="pantry-detail__selection-spacer" />
+        <NcButton
+          variant="tertiary"
+          :disabled="!canBulkMove"
+          :aria-label="strings.moveSelected"
+          @click="openBulkMove"
+        >
+          <template #icon>
+            <ArrowRightIcon :size="20" />
+          </template>
+        </NcButton>
+        <NcButton
+          variant="tertiary"
+          :disabled="!canBulkCopy"
+          :aria-label="strings.copySelected"
+          @click="openBulkCopy"
+        >
+          <template #icon>
+            <ContentCopyIcon :size="20" />
+          </template>
+        </NcButton>
+        <NcButton
+          variant="tertiary"
+          :disabled="!canBulkCategory"
+          :aria-label="strings.assignCategory"
+          @click="openBulkCategory"
+        >
+          <template #icon>
+            <TagIcon :size="20" />
+          </template>
+        </NcButton>
+        <NcButton
+          variant="tertiary"
+          :disabled="!canBulkDelete"
+          :aria-label="strings.deleteSelected"
+          @click="bulkDelete"
+        >
+          <template #icon>
+            <DeleteIcon :size="20" />
+          </template>
+        </NcButton>
+      </div>
+
       <ChecklistAddForm
-        v-if="can.canAddItems && !trashMode && (isMeta || writableHere)"
+        v-if="!selectionMode && can.canAddItems && !trashMode && (isMeta || writableHere)"
         :house-id="houseIdNum"
         :adding="adding"
         :delete-on-done-default="list?.deleteOnDoneDefault ?? false"
@@ -97,12 +153,15 @@
               :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
               :house-id="houseIdNum"
               :reorder-enabled="
-                isCustomSort && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
+                reorderActive && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
               "
               :trash-mode="trashMode"
               :tap-row-to-complete="tapRowToComplete"
               :show-added-by="showAddedBy"
+              :selection-mode="selectionMode"
+              :selected="selectedIds.has(gi.item.id)"
               @toggle="handleToggle"
+              @toggle-select="toggleSelect"
               @view="openView"
               @edit="startEdit"
               @move="startMoveItem"
@@ -205,13 +264,13 @@
       @sort-changed="onCategorySortChanged"
     />
 
-    <!-- Move item to another list -->
+    <!-- Move item(s) to another list -->
     <NcDialog
-      v-if="movingItem"
+      v-if="moveDialogOpen"
       :name="strings.moveToList"
-      :open="!!movingItem"
+      :open="moveDialogOpen"
       close-on-click-outside
-      @update:open="(v) => !v && (movingItem = null)"
+      @update:open="(v) => !v && closeMoveDialog()"
     >
       <div class="pantry-move-list">
         <NcButton v-for="cl in otherLists" :key="cl.id" wide @click="submitMoveItem(cl.id)">
@@ -235,13 +294,13 @@
       @save="submitCreateListAndMove"
     />
 
-    <!-- Copy item to another list -->
+    <!-- Copy item(s) to another list -->
     <NcDialog
-      v-if="copyingItem"
+      v-if="copyDialogOpen"
       :name="strings.copyToList"
-      :open="!!copyingItem"
+      :open="copyDialogOpen"
       close-on-click-outside
-      @update:open="(v) => !v && (copyingItem = null)"
+      @update:open="(v) => !v && closeCopyDialog()"
     >
       <div class="pantry-move-list">
         <NcButton v-for="cl in copyTargetLists" :key="cl.id" wide @click="submitCopyItem(cl.id)">
@@ -264,6 +323,49 @@
       @update:open="showCreateForCopy = $event"
       @save="submitCreateListAndCopy"
     />
+
+    <!-- Assign category to selected items -->
+    <NcDialog
+      v-if="showBulkCategory"
+      :name="strings.assignCategoryTitle"
+      :open="showBulkCategory"
+      close-on-click-outside
+      @update:open="(v) => !v && (showBulkCategory = false)"
+    >
+      <div class="pantry-bulk-category">
+        <CategoryPicker v-model="bulkCategoryId" :house-id="houseIdNum" />
+      </div>
+      <template #actions>
+        <NcButton @click="showBulkCategory = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="tertiary" @click="applyBulkCategory(null)">
+          {{ strings.removeCategory }}
+        </NcButton>
+        <NcButton
+          variant="primary"
+          :disabled="bulkCategoryId == null"
+          @click="applyBulkCategory(bulkCategoryId)"
+        >
+          {{ strings.apply }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <!-- Permanently delete selected items (trash view) -->
+    <NcDialog
+      v-if="confirmingBulkDelete"
+      :name="strings.bulkDeleteTitle"
+      :open="confirmingBulkDelete"
+      close-on-click-outside
+      @update:open="(v) => !v && (confirmingBulkDelete = false)"
+    >
+      <p>{{ strings.bulkDeleteConfirm }}</p>
+      <template #actions>
+        <NcButton @click="confirmingBulkDelete = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" @click="submitBulkDeletePermanent">
+          {{ strings.deleteSelected }}
+        </NcButton>
+      </template>
+    </NcDialog>
 
     <NcDialog
       v-if="confirmingEmptyTrash"
@@ -324,8 +426,13 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
+import ArrowRightIcon from '@icons/ArrowRight.vue'
+import ContentCopyIcon from '@icons/ContentCopy.vue'
+import DeleteIcon from '@icons/Delete.vue'
 import PlusIcon from '@icons/Plus.vue'
 import SortIcon from '@icons/Sort.vue'
+import SelectMultipleIcon from '@icons/SelectMultiple.vue'
+import CloseIcon from '@icons/Close.vue'
 import TagIcon from '@icons/Tag.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import ViewListIcon from '@icons/ViewList.vue'
@@ -342,6 +449,7 @@ import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
 import { MarkdownExportDialog } from '@/components/MarkdownExportDialog'
 import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
+import CategoryPicker from '@/components/CategoryPicker'
 import {
   checklistIconComponent,
   ChecklistFormDialog,
@@ -355,6 +463,7 @@ function iconWrapStyle(color: string | null) {
 import { useChecklists, useChecklistItems, ALL_LISTS_ID } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { useTouchReorder } from '@/composables/useTouchReorder'
+import { useLongPress } from '@/composables/useLongPress'
 import { getList, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
@@ -390,11 +499,18 @@ const {
   emptyTrash,
   uploadImage,
   clearImage,
+  moveMany,
+  copyMany,
+  removeMany,
+  removeManyPermanent,
+  setCategoryMany,
+  undoRemoveMany,
   sortBy,
   trashMode,
 } = useChecklistItems(houseIdNum.value, listIdNum.value)
 
 async function toggleTrash() {
+  exitSelection()
   trashMode.value = !trashMode.value
   await load()
 }
@@ -524,6 +640,7 @@ onMounted(async () => {
 watch(
   () => [props.houseId, props.listId],
   async () => {
+    exitSelection()
     filterListIds.value = loadListFilter()
     await loadSortPref()
     const tasks: Promise<unknown>[] = [loadList(), load()]
@@ -646,6 +763,14 @@ const uncheckedItems = computed(() =>
   sortWithinPartition(filteredItems.value.filter((i) => !i.done)),
 )
 const checkedItems = computed(() => sortWithinPartition(filteredItems.value.filter((i) => i.done)))
+
+// ----- Multi-select state -----
+// Declared here (ahead of the drag/drop + long-press wiring that reads them) so
+// reorder can stand down while a selection is active. The rest of the
+// multi-select logic lives further down.
+const selectionMode = ref(false)
+const selectedIds = ref<Set<number>>(new Set())
+const reorderActive = computed(() => isCustomSort.value && !selectionMode.value)
 
 // ----- Drag/drop reorder (custom sort, per partition) -----
 
@@ -838,7 +963,7 @@ useTouchReorder(
       dropIndex.value = null
     },
   },
-  isCustomSort,
+  reorderActive,
 )
 
 useTouchReorder(
@@ -857,8 +982,17 @@ useTouchReorder(
       dropIndex.value = null
     },
   },
-  isCustomSort,
+  reorderActive,
 )
+
+// Long-press to enter multi-select on touch — only when reorder's own
+// long-press isn't in play (non-custom sort) and we're not already selecting.
+const longPressActive = computed(() => !isCustomSort.value && !selectionMode.value)
+function onRowLongPress(id: number) {
+  enterSelection(id)
+}
+useLongPress(uncheckedListRef, onRowLongPress, longPressActive)
+useLongPress(checkedListRef, onRowLongPress, longPressActive)
 
 // ----- Add -----
 
@@ -1121,19 +1255,40 @@ watch(allLists, (lists) => {
   if (pruned.length !== filterListIds.value.length) filterListIds.value = pruned
 })
 // In meta view, exclude the item's own current list (per movingItem); in a
-// regular view, exclude the current list.
+// regular view, exclude the current list. For a bulk move the source varies, so
+// offer every list (meta) or every list but the current one (single-list view).
 const otherLists = computed(() => {
+  if (moveIsBulk.value) {
+    return isMeta.value ? allLists.value : allLists.value.filter((l) => l.id !== listIdNum.value)
+  }
   const excludeId = isMeta.value ? (movingItem.value?.listId ?? null) : listIdNum.value
   return excludeId === null ? allLists.value : allLists.value.filter((l) => l.id !== excludeId)
 })
 const movingItem = ref<ChecklistItem | null>(null)
+const moveIsBulk = ref(false)
 const showCreateForMove = ref(false)
+const moveDialogOpen = computed(() => !!movingItem.value || moveIsBulk.value)
 
 function startMoveItem(item: ChecklistItem) {
+  moveIsBulk.value = false
   movingItem.value = item
 }
 
+function openBulkMove() {
+  if (!canBulkMove.value) return
+  moveIsBulk.value = true
+}
+
+function closeMoveDialog() {
+  movingItem.value = null
+  moveIsBulk.value = false
+}
+
 async function submitMoveItem(targetListId: number) {
+  if (moveIsBulk.value) {
+    await submitBulkMove(targetListId)
+    return
+  }
   if (!movingItem.value) return
   const itemName = movingItem.value.name
   const targetList = allLists.value.find((l) => l.id === targetListId)
@@ -1147,6 +1302,27 @@ async function submitMoveItem(targetListId: number) {
   showSuccess(
     t('pantry', '{item} moved to {list}', { item: itemName, list: targetList?.name ?? '' }),
   )
+}
+
+async function submitBulkMove(targetListId: number) {
+  const ids = writableSelectedIds.value
+  const targetList = allLists.value.find((l) => l.id === targetListId)
+  const total = selectedCount.value
+  closeMoveDialog()
+  if (ids.length === 0) return
+  try {
+    const result = await moveMany(ids, targetListId)
+    showSuccess(
+      n('pantry', 'Moved %n item to {list}', 'Moved %n items to {list}', result.items.length, {
+        list: targetList?.name ?? '',
+      }),
+    )
+    reportSkipped(total - ids.length + result.skipped.length)
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    exitSelection()
+  }
 }
 
 function createListForMove() {
@@ -1172,16 +1348,33 @@ async function submitCreateListAndMove(data: {
 // ----- Copy item to another list -----
 
 const copyingItem = ref<ChecklistItem | null>(null)
+const copyIsBulk = ref(false)
 const showCreateForCopy = ref(false)
+const copyDialogOpen = computed(() => !!copyingItem.value || copyIsBulk.value)
 // Copy can target the current list (creates a duplicate in place) as well as
 // any other list — unlike move, where the current list would be a no-op.
 const copyTargetLists = computed(() => allLists.value)
 
 function startCopyItem(item: ChecklistItem) {
+  copyIsBulk.value = false
   copyingItem.value = item
 }
 
+function openBulkCopy() {
+  if (!canBulkCopy.value) return
+  copyIsBulk.value = true
+}
+
+function closeCopyDialog() {
+  copyingItem.value = null
+  copyIsBulk.value = false
+}
+
 async function submitCopyItem(targetListId: number) {
+  if (copyIsBulk.value) {
+    await submitBulkCopy(targetListId)
+    return
+  }
   if (!copyingItem.value) return
   const itemName = copyingItem.value.name
   const targetList = allLists.value.find((l) => l.id === targetListId)
@@ -1190,6 +1383,27 @@ async function submitCopyItem(targetListId: number) {
   showSuccess(
     t('pantry', '{item} copied to {list}', { item: itemName, list: targetList?.name ?? '' }),
   )
+}
+
+async function submitBulkCopy(targetListId: number) {
+  // Copy operates on the whole selection (read-only sources are allowed).
+  const ids = selectedItems.value.map((i) => i.id)
+  const targetList = allLists.value.find((l) => l.id === targetListId)
+  closeCopyDialog()
+  if (ids.length === 0) return
+  try {
+    const result = await copyMany(ids, targetListId)
+    showSuccess(
+      n('pantry', 'Copied %n item to {list}', 'Copied %n items to {list}', result.items.length, {
+        list: targetList?.name ?? '',
+      }),
+    )
+    reportSkipped(result.skipped.length)
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    exitSelection()
+  }
 }
 
 function createListForCopy() {
@@ -1210,6 +1424,170 @@ async function submitCreateListAndCopy(data: {
   )
   showCreateForCopy.value = false
   await submitCopyItem(newList.id)
+}
+
+// ----- Multi-select (group actions) -----
+// (selectionMode / selectedIds / reorderActive are declared earlier.)
+
+const selectedItems = computed(() => items.value.filter((i) => selectedIds.value.has(i.id)))
+const selectedCount = computed(() => selectedItems.value.length)
+const selectionCountLabel = computed(() =>
+  n('pantry', '%n selected', '%n selected', selectedCount.value),
+)
+const allVisibleSelected = computed(
+  () =>
+    filteredItems.value.length > 0 && filteredItems.value.every((i) => selectedIds.value.has(i.id)),
+)
+
+// Whether the current user can write to the list an item lives on (in the meta
+// view lists vary per item; in a single-list view it's the list in focus).
+function itemWritable(item: ChecklistItem): boolean {
+  return isMeta.value ? listWritable(listFor(item.listId)) : writableHere.value
+}
+
+// Ids eligible for write actions (move / delete / assign category).
+const writableSelectedIds = computed(() =>
+  selectedItems.value.filter(itemWritable).map((i) => i.id),
+)
+
+const canBulkMove = computed(() => can.value.canMoveItems && writableSelectedIds.value.length > 0)
+// Copy only reads the source, so read-only items are eligible too.
+const canBulkCopy = computed(() => can.value.canCopyItems && selectedCount.value > 0)
+const canBulkDelete = computed(
+  () => can.value.canDeleteItems && writableSelectedIds.value.length > 0,
+)
+const canBulkCategory = computed(
+  () => can.value.canEditLists && writableSelectedIds.value.length > 0,
+)
+// Show the toolbar entry only when there's something to select and at least one
+// group action is reachable for this user.
+const canSelect = computed(
+  () =>
+    items.value.length > 0 &&
+    (can.value.canMoveItems ||
+      can.value.canCopyItems ||
+      can.value.canDeleteItems ||
+      can.value.canEditLists),
+)
+
+function enterSelection(seedId?: number) {
+  selectionMode.value = true
+  if (seedId !== undefined) {
+    selectedIds.value = new Set([seedId])
+  }
+}
+
+function exitSelection() {
+  selectionMode.value = false
+  selectedIds.value = new Set()
+}
+
+function toggleSelect(id: number) {
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
+  selectedIds.value = next
+}
+
+function selectAllVisible() {
+  selectedIds.value = new Set(filteredItems.value.map((i) => i.id))
+}
+
+function clearSelection() {
+  selectedIds.value = new Set()
+}
+
+// Drop ids that are no longer visible/present (filter change, silent poll,
+// completed bulk op) so the selection and its count stay honest.
+watch([filteredItems], () => {
+  if (!selectionMode.value || selectedIds.value.size === 0) return
+  const visible = new Set(filteredItems.value.map((i) => i.id))
+  const pruned = new Set([...selectedIds.value].filter((id) => visible.has(id)))
+  if (pruned.size !== selectedIds.value.size) selectedIds.value = pruned
+})
+
+function reportSkipped(skipped: number) {
+  if (skipped > 0) {
+    showError(
+      n(
+        'pantry',
+        '%n item was skipped because you cannot edit it.',
+        '%n items were skipped because you cannot edit them.',
+        skipped,
+      ),
+    )
+  }
+}
+
+// ----- Bulk assign category -----
+
+const showBulkCategory = ref(false)
+const bulkCategoryId = ref<number | null>(null)
+
+function openBulkCategory() {
+  bulkCategoryId.value = null
+  showBulkCategory.value = true
+}
+
+// Apply a category to the writable selection, or clear it when categoryId is null.
+async function applyBulkCategory(categoryId: number | null) {
+  const ids = writableSelectedIds.value
+  if (ids.length === 0) return
+  try {
+    const result = await setCategoryMany(ids, categoryId)
+    showSuccess(n('pantry', 'Updated %n item', 'Updated %n items', result.items.length))
+    reportSkipped(selectedCount.value - ids.length + result.skipped.length)
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    showBulkCategory.value = false
+    exitSelection()
+  }
+}
+
+// ----- Bulk delete -----
+
+const confirmingBulkDelete = ref(false)
+
+async function bulkDelete() {
+  const ids = writableSelectedIds.value
+  if (ids.length === 0) return
+  if (trashMode.value) {
+    confirmingBulkDelete.value = true
+    return
+  }
+  const snapshots = selectedItems.value.filter((i) => itemWritable(i)).map((i) => ({ ...i }))
+  try {
+    const result = await removeMany(ids)
+    const deleted = ids.length - result.skipped.length
+    reportSkipped(selectedCount.value - ids.length + result.skipped.length)
+    exitSelection()
+    showUndo(
+      n('pantry', 'Deleted %n item', 'Deleted %n items', deleted),
+      () => {
+        void undoRemoveMany(snapshots).catch(() => showError(strings.restoreFailed))
+      },
+      { timeout: 6000 },
+    )
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function submitBulkDeletePermanent() {
+  const ids = writableSelectedIds.value
+  confirmingBulkDelete.value = false
+  if (ids.length === 0) return
+  try {
+    const result = await removeManyPermanent(ids)
+    reportSkipped(selectedCount.value - ids.length + result.skipped.length)
+    exitSelection()
+  } catch (e) {
+    showError((e as Error).message)
+  }
 }
 
 const strings = {
@@ -1242,6 +1620,22 @@ const strings = {
   reuseTitle: t('pantry', 'Item already exists'),
   reuseAction: t('pantry', 'Reuse existing'),
   reuseAddAnyway: t('pantry', 'Add anyway'),
+  select: t('pantry', 'Select'),
+  selectAll: t('pantry', 'Select all'),
+  clearSelection: t('pantry', 'Clear selection'),
+  exitSelection: t('pantry', 'Exit selection'),
+  moveSelected: t('pantry', 'Move'),
+  copySelected: t('pantry', 'Copy'),
+  assignCategory: t('pantry', 'Assign category'),
+  deleteSelected: t('pantry', 'Delete'),
+  assignCategoryTitle: t('pantry', 'Assign category'),
+  apply: t('pantry', 'Apply'),
+  removeCategory: t('pantry', 'Remove category'),
+  bulkDeleteTitle: t('pantry', 'Delete items?'),
+  bulkDeleteConfirm: t(
+    'pantry',
+    'The selected items will be permanently removed. This cannot be undone.',
+  ),
 }
 
 const toolbarActions = computed<ToolbarAction[]>(() => {
@@ -1306,6 +1700,18 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     priority: 6,
     onClick: () => (showCategoryManager.value = true),
   })
+
+  if (canSelect.value) {
+    actions.push({
+      key: 'select',
+      label: strings.select,
+      icon: SelectMultipleIcon,
+      variant: selectionMode.value ? 'primary' : 'tertiary',
+      pressed: selectionMode.value,
+      priority: 3,
+      onClick: () => (selectionMode.value ? exitSelection() : enterSelection()),
+    })
+  }
 
   return actions
 })
@@ -1372,6 +1778,30 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     margin-bottom: 0.75rem;
   }
 
+  &__selection-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.5rem;
+    margin-bottom: 0.75rem;
+    border-radius: var(--border-radius, 8px);
+    background: var(--color-main-background);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  &__selection-count {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  &__selection-spacer {
+    flex: 1;
+  }
+
   &__placeholder {
     min-height: 48px;
     border: 3px dashed var(--color-primary-element);
@@ -1412,6 +1842,10 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem 0;
+}
+
+.pantry-bulk-category {
+  padding: 0.5rem 0 1rem;
 }
 
 .pantry-sort-active {

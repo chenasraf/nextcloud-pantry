@@ -14,6 +14,7 @@ use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Db\ListRoleMapper;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\RecurrenceService;
+use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -497,5 +498,83 @@ class ChecklistServiceTest extends TestCase {
 
 		$this->svc->emptyListsTrash(7);
 		$this->assertSame([1, 2], $deletedListIds);
+	}
+
+	// ----- Batch (group) actions -----
+
+	public function testMoveItemsSetsListIdOnEach(): void {
+		$a = $this->makeItem(['listId' => 1]);
+		$b = $this->makeItem(['listId' => 1]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findById')->willReturnOnConsecutiveCalls($a, $b);
+		$this->itemMapper->expects($this->exactly(2))->method('update');
+
+		$result = $this->svc->moveItems([10, 20], 5);
+
+		$this->assertCount(2, $result);
+		$this->assertSame(5, $a->getListId());
+		$this->assertSame(5, $b->getListId());
+	}
+
+	public function testMoveItemsSkipsMissing(): void {
+		$a = $this->makeItem(['listId' => 1]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findById')->willReturnCallback(function (int $id) use ($a) {
+			if ($id === 10) {
+				return $a;
+			}
+			throw new DoesNotExistException('missing');
+		});
+		$this->itemMapper->expects($this->once())->method('update');
+
+		$result = $this->svc->moveItems([10, 999], 5);
+
+		$this->assertCount(1, $result);
+	}
+
+	public function testSetItemsCategoryAssignsEach(): void {
+		$a = $this->makeItem(['categoryId' => null]);
+		$b = $this->makeItem(['categoryId' => 3]);
+		$this->itemMapper->method('findById')->willReturnOnConsecutiveCalls($a, $b);
+		$this->itemMapper->expects($this->exactly(2))->method('update');
+
+		$assigned = $this->svc->setItemsCategory([1, 2], 7);
+
+		$this->assertCount(2, $assigned);
+		$this->assertSame(7, $a->getCategoryId());
+		$this->assertSame(7, $b->getCategoryId());
+	}
+
+	public function testSetItemsCategoryClearsWhenNull(): void {
+		$c = $this->makeItem(['categoryId' => 7]);
+		$this->itemMapper->method('findById')->willReturn($c);
+		$this->itemMapper->expects($this->once())->method('update');
+
+		$this->svc->setItemsCategory([1], null);
+
+		$this->assertNull($c->getCategoryId());
+	}
+
+	public function testDeleteItemsSoftDeletesEach(): void {
+		$a = $this->makeItem();
+		$b = $this->makeItem();
+		$this->itemMapper->method('findById')->willReturnOnConsecutiveCalls($a, $b);
+		$this->itemMapper->expects($this->exactly(2))->method('update');
+		$this->itemMapper->expects($this->never())->method('delete');
+
+		$this->svc->deleteItems([1, 2]);
+
+		$this->assertNotNull($a->getDeletedAt());
+		$this->assertNotNull($b->getDeletedAt());
+	}
+
+	public function testPermanentlyDeleteItemsHardDeletesEach(): void {
+		$a = $this->makeItem();
+		$b = $this->makeItem();
+		$this->itemMapper->method('findById')->willReturnOnConsecutiveCalls($a, $b);
+		$this->itemMapper->expects($this->exactly(2))->method('delete');
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$this->svc->permanentlyDeleteItems([1, 2]);
 	}
 }

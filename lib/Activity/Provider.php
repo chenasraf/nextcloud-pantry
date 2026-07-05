@@ -180,6 +180,48 @@ class Provider implements IProvider {
 					compact('items', 'list', 'house'),
 				];
 
+			case ActivityPublisher::SUBJECT_ITEMS_MOVED:
+				$items = $this->highlight('items', $this->itemsLabel($l, $params));
+				$from = $this->highlight((string)($params['fromListId'] ?? ''), (string)($params['fromListName'] ?? ''));
+				$to = $this->highlight((string)($params['toListId'] ?? ''), (string)($params['toListName'] ?? ''));
+				return [
+					$isSelf
+						? $l->t('You moved {items} from {from} to {to} in {house}')
+						: $l->t('{author} moved {items} from {from} to {to} in {house}'),
+					$isSelf ? compact('items', 'from', 'to', 'house') : compact('author', 'items', 'from', 'to', 'house'),
+				];
+
+			case ActivityPublisher::SUBJECT_ITEMS_COPIED:
+				$items = $this->highlight('items', $this->itemsLabel($l, $params));
+				$from = $this->highlight((string)($params['fromListId'] ?? ''), (string)($params['fromListName'] ?? ''));
+				$to = $this->highlight((string)($params['toListId'] ?? ''), (string)($params['toListName'] ?? ''));
+				return [
+					$isSelf
+						? $l->t('You copied {items} from {from} to {to} in {house}')
+						: $l->t('{author} copied {items} from {from} to {to} in {house}'),
+					$isSelf ? compact('items', 'from', 'to', 'house') : compact('author', 'items', 'from', 'to', 'house'),
+				];
+
+			case ActivityPublisher::SUBJECT_ITEMS_DELETED:
+				$items = $this->highlight('items', $this->itemsLabel($l, $params));
+				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));
+				return [
+					$isSelf
+						? $l->t('You deleted {items} from {list} in {house}')
+						: $l->t('{author} deleted {items} from {list} in {house}'),
+					$isSelf ? compact('items', 'list', 'house') : compact('author', 'items', 'list', 'house'),
+				];
+
+			case ActivityPublisher::SUBJECT_ITEMS_CATEGORIZED:
+				$items = $this->highlight('items', $this->itemsLabel($l, $params));
+				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));
+				return [
+					$isSelf
+						? $l->t('You updated the category of {items} on {list} in {house}')
+						: $l->t('{author} updated the category of {items} on {list} in {house}'),
+					$isSelf ? compact('items', 'list', 'house') : compact('author', 'items', 'list', 'house'),
+				];
+
 			case ActivityPublisher::SUBJECT_ITEM_RESTORED:
 				$item = $this->highlight('item', (string)($params['itemName'] ?? ''));
 				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));
@@ -330,6 +372,24 @@ class Provider implements IProvider {
 			'id' => $id,
 			'name' => $name,
 		];
+	}
+
+	/**
+	 * Human label for a batch of item names: lists them inline when there are
+	 * three or fewer, otherwise falls back to a pluralized count. Mirrors the
+	 * SUBJECT_ITEMS_RECURRED rendering.
+	 *
+	 * @param array<string, mixed> $params
+	 */
+	private function itemsLabel(IL10N $l, array $params): string {
+		$names = array_values(array_filter(
+			(array)($params['itemNames'] ?? []),
+			fn ($v) => is_string($v),
+		));
+		$count = (int)($params['itemCount'] ?? count($names));
+		return $count <= 3 && !empty($names)
+			? implode(', ', $names)
+			: $l->n('%n item', '%n items', $count);
 	}
 
 	/**

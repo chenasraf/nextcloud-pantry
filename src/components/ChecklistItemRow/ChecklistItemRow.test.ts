@@ -295,6 +295,52 @@ describe('ChecklistItemRow', () => {
     })
   })
 
+  describe('selection mode', () => {
+    it('shows a selection checkbox and hides the actions', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, selectionMode: true },
+      })
+      expect(wrapper.find('.checklist-row__select').exists()).toBe(true)
+      expect(wrapper.find('.checklist-row').classes()).toContain('checklist-row--selecting')
+      // The eye/kebab actions cluster is gone in selection mode.
+      expect(wrapper.find('.checklist-row__actions').exists()).toBe(false)
+      expect(wrapper.find('.nc-actions').exists()).toBe(false)
+    })
+
+    it('reflects the selected prop and marks the row', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, selectionMode: true, selected: true },
+      })
+      expect(wrapper.find('.checklist-row').classes()).toContain('checklist-row--selected')
+      expect(
+        wrapper.find('.checklist-row__select input[type="checkbox"]').attributes('checked'),
+      ).toBeDefined()
+    })
+
+    it('emits toggle-select when the selection checkbox changes', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ id: 8 }), selectionMode: true },
+      })
+      await wrapper.find('.checklist-row__select input[type="checkbox"]').trigger('change')
+      expect(wrapper.emitted('toggle-select')).toBeTruthy()
+      expect(wrapper.emitted('toggle-select')![0]).toEqual([8])
+    })
+
+    it('emits toggle-select when the row body is tapped', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ id: 8 }), selectionMode: true },
+      })
+      await wrapper.find('.checklist-row').trigger('click')
+      expect(wrapper.emitted('toggle-select')).toBeTruthy()
+      expect(wrapper.emitted('toggle-select')![0]).toEqual([8])
+    })
+
+    it('has no selection checkbox when not in selection mode', () => {
+      const wrapper = mount(ChecklistItemRow, { props: defaultProps })
+      expect(wrapper.find('.checklist-row__select').exists()).toBe(false)
+    })
+  })
+
   describe('reorderEnabled', () => {
     it('is not draggable by default', () => {
       const wrapper = mount(ChecklistItemRow, { props: defaultProps })
