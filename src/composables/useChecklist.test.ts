@@ -18,9 +18,14 @@ const mockApi = vi.hoisted(() => ({
   copyItem: vi.fn(),
   toggleItem: vi.fn(),
   deleteItem: vi.fn(),
+  restoreItem: vi.fn(),
   reorderItems: vi.fn(),
   uploadItemImage: vi.fn(),
   clearItemImage: vi.fn(),
+  batchMoveItems: vi.fn(),
+  batchCopyItems: vi.fn(),
+  batchDeleteItems: vi.fn(),
+  batchSetCategory: vi.fn(),
 }))
 
 vi.mock('@/api/lists', () => mockApi)
@@ -521,6 +526,125 @@ describe('useChecklistItems', () => {
         { id: 2, sortOrder: 0 },
         { id: 1, sortOrder: 1 },
       ])
+    })
+  })
+
+  describe('batch actions', () => {
+    it('moveMany drops moved rows from a single-list view', async () => {
+      mockApi.listItems.mockResolvedValue([
+        makeItem({ id: 1 }),
+        makeItem({ id: 2 }),
+        makeItem({ id: 3 }),
+      ])
+      mockApi.batchMoveItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 1, listId: 99 }), makeItem({ id: 2, listId: 99 })],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      const result = await c.moveMany([1, 2], 99)
+
+      expect(mockApi.batchMoveItems).toHaveBeenCalledWith(1, [1, 2], 99)
+      expect(c.items.value.map((i) => i.id)).toEqual([3])
+      expect(result.items).toHaveLength(2)
+    })
+
+    it('moveMany keeps skipped rows in the view', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1 }), makeItem({ id: 2 })])
+      mockApi.batchMoveItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 1, listId: 99 })],
+        skipped: [2],
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.moveMany([1, 2], 99)
+
+      // Item 2 was skipped (no access) so it stays put; item 1 left the view.
+      expect(c.items.value.map((i) => i.id)).toEqual([2])
+    })
+
+    it('copyMany appends copies when targeting the current list', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1 })])
+      mockApi.batchCopyItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 5, name: 'Milk' })],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.copyMany([1], 10)
+
+      expect(mockApi.batchCopyItems).toHaveBeenCalledWith(1, [1], 10)
+      expect(c.items.value.map((i) => i.id)).toEqual([1, 5])
+    })
+
+    it('copyMany does not append when targeting another list', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1 })])
+      mockApi.batchCopyItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 5, listId: 99 })],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.copyMany([1], 99)
+
+      expect(c.items.value.map((i) => i.id)).toEqual([1])
+    })
+
+    it('removeMany drops processed rows and keeps skipped ones', async () => {
+      mockApi.listItems.mockResolvedValue([
+        makeItem({ id: 1 }),
+        makeItem({ id: 2 }),
+        makeItem({ id: 3 }),
+      ])
+      mockApi.batchDeleteItems.mockResolvedValue({ success: true, items: [], skipped: [3] })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.removeMany([1, 2, 3])
+
+      expect(mockApi.batchDeleteItems).toHaveBeenCalledWith(1, [1, 2, 3], false)
+      expect(c.items.value.map((i) => i.id)).toEqual([3])
+    })
+
+    it('setCategoryMany swaps in the updated rows', async () => {
+      mockApi.listItems.mockResolvedValue([
+        makeItem({ id: 1, categoryId: null }),
+        makeItem({ id: 2, categoryId: null }),
+      ])
+      mockApi.batchSetCategory.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 1, categoryId: 7 }), makeItem({ id: 2, categoryId: 7 })],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.setCategoryMany([1, 2], 7)
+
+      expect(mockApi.batchSetCategory).toHaveBeenCalledWith(1, [1, 2], 7)
+      expect(c.items.value.every((i) => i.categoryId === 7)).toBe(true)
+    })
+
+    it('undoRemoveMany restores each snapshot', async () => {
+      mockApi.listItems.mockResolvedValue([])
+      mockApi.restoreItem.mockImplementation((_h: number, _l: number, id: number) =>
+        Promise.resolve(makeItem({ id })),
+      )
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.undoRemoveMany([makeItem({ id: 1 }), makeItem({ id: 2 })])
+
+      expect(mockApi.restoreItem).toHaveBeenCalledTimes(2)
+      expect(c.items.value.map((i) => i.id)).toEqual([1, 2])
     })
   })
 

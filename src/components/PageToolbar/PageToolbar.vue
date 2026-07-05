@@ -67,6 +67,7 @@
 
       <NcActions
         v-if="!measuring && collapsedActions.length"
+        force-menu
         :aria-label="strings.moreActions"
         :title="strings.moreActions"
       >

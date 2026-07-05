@@ -204,6 +204,64 @@ export async function reorderItems(
   await ocs.post(`/houses/${houseId}/lists/${listId}/items/reorder`, { items })
 }
 
+// ----- Batch (group) actions -----
+
+export interface BatchResult {
+  success: boolean
+  // Processed items: updated (move/category) or created (copy). Empty for delete.
+  items: ChecklistItem[]
+  // Ids dropped because the caller could not reach the item's source list.
+  skipped: number[]
+}
+
+export async function batchMoveItems(
+  houseId: number,
+  itemIds: number[],
+  targetListId: number,
+): Promise<BatchResult> {
+  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/move`, {
+    itemIds,
+    targetListId,
+  })
+  return resp.data
+}
+
+export async function batchCopyItems(
+  houseId: number,
+  itemIds: number[],
+  targetListId: number,
+): Promise<BatchResult> {
+  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/copy`, {
+    itemIds,
+    targetListId,
+  })
+  return resp.data
+}
+
+export async function batchDeleteItems(
+  houseId: number,
+  itemIds: number[],
+  permanent = false,
+): Promise<BatchResult> {
+  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/delete`, {
+    itemIds,
+    permanent,
+  })
+  return resp.data
+}
+
+export async function batchSetCategory(
+  houseId: number,
+  itemIds: number[],
+  categoryId: number | null,
+): Promise<BatchResult> {
+  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/category`, {
+    itemIds,
+    categoryId,
+  })
+  return resp.data
+}
+
 export async function uploadItemImage(
   houseId: number,
   listId: number,

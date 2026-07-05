@@ -310,6 +310,69 @@ export function useChecklistItems(houseId: number, listId: number) {
     }
   }
 
+  // ----- Batch (group) actions -----
+  //
+  // Each returns the server's BatchResult (with the ids it skipped for access
+  // reasons) so the caller can report partial success, and reconciles the local
+  // items the same way the single-item ops do.
+
+  async function moveMany(ids: number[], targetListId: number): Promise<api.BatchResult> {
+    const result = await api.batchMoveItems(houseId, ids, targetListId)
+    if (isMeta) {
+      // Items stay in the meta view under their new list — swap in the updated rows.
+      const byId = new Map(result.items.map((i) => [i.id, i]))
+      items.value = items.value.map((i) => byId.get(i.id) ?? i)
+    } else {
+      // Moved items leave a single-list view.
+      const moved = new Set(ids.filter((id) => !result.skipped.includes(id)))
+      items.value = items.value.filter((i) => !moved.has(i.id))
+    }
+    return result
+  }
+
+  async function copyMany(ids: number[], targetListId: number): Promise<api.BatchResult> {
+    const result = await api.batchCopyItems(houseId, ids, targetListId)
+    if (isMeta || targetListId === listId) {
+      items.value = [...items.value, ...result.items]
+    }
+    return result
+  }
+
+  async function removeMany(ids: number[]): Promise<api.BatchResult> {
+    const result = await api.batchDeleteItems(houseId, ids, false)
+    const removed = new Set(ids.filter((id) => !result.skipped.includes(id)))
+    items.value = items.value.filter((i) => !removed.has(i.id))
+    return result
+  }
+
+  async function removeManyPermanent(ids: number[]): Promise<api.BatchResult> {
+    const result = await api.batchDeleteItems(houseId, ids, true)
+    const removed = new Set(ids.filter((id) => !result.skipped.includes(id)))
+    items.value = items.value.filter((i) => !removed.has(i.id))
+    return result
+  }
+
+  async function setCategoryMany(
+    ids: number[],
+    categoryId: number | null,
+  ): Promise<api.BatchResult> {
+    const result = await api.batchSetCategory(houseId, ids, categoryId)
+    const byId = new Map(result.items.map((i) => [i.id, i]))
+    items.value = items.value.map((i) => byId.get(i.id) ?? i)
+    return result
+  }
+
+  async function undoRemoveMany(prevItems: ChecklistItem[]): Promise<void> {
+    // Undo a bulk soft-delete by restoring each snapshot (undo is rare, so a
+    // per-item loop is fine — there is no batch-restore endpoint).
+    const restored: ChecklistItem[] = []
+    for (const prev of prevItems) {
+      const useListId = isMeta ? prev.listId : listId
+      restored.push(await api.restoreItem(houseId, useListId, prev.id))
+    }
+    items.value = [...items.value, ...restored]
+  }
+
   async function uploadImage(itemId: number, file: File): Promise<void> {
     const updated = await api.uploadItemImage(houseId, listIdFor(itemId), itemId, file)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
@@ -340,5 +403,11 @@ export function useChecklistItems(houseId: number, listId: number) {
     emptyTrash,
     uploadImage,
     clearImage,
+    moveMany,
+    copyMany,
+    removeMany,
+    removeManyPermanent,
+    setCategoryMany,
+    undoRemoveMany,
   }
 }

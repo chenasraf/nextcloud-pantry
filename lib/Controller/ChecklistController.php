@@ -9,6 +9,7 @@ namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Db\Checklist;
+use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\Share;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
@@ -35,6 +36,7 @@ use OCP\IUserSession;
  * @psalm-import-type PantryList from ResponseDefinitions
  * @psalm-import-type PantryListItem from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-import-type PantryBatchResult from ResponseDefinitions
  */
 final class ChecklistController extends OCSController {
 	use TranslatesDomainExceptions;
@@ -922,6 +924,292 @@ final class ChecklistController extends OCSController {
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$this->lists->reorderItems($listId, $items);
 			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Validate a batch of item ids for the given house/user.
+	 *
+	 * Keeps only items that exist, belong to the house, and whose source list
+	 * the caller can access; every other id is reported as skipped. Preserves
+	 * input order.
+	 *
+	 * @param list<int> $itemIds
+	 * @return array{items: list<ChecklistItem>, skipped: list<int>}
+	 */
+	private function collectAccessibleItems(int $houseId, string $uid, array $itemIds, bool $includeDeleted = false): array {
+		$valid = [];
+		$skipped = [];
+		$listAccess = [];
+		$isAdmin = $this->permissions->isAdmin($houseId, $uid);
+		foreach ($itemIds as $rawId) {
+			$itemId = (int)$rawId;
+			try {
+				$item = $this->lists->getItem($itemId, $includeDeleted);
+				$list = $this->lists->getList((int)$item->getListId());
+			} catch (NotFoundException) {
+				$skipped[] = $itemId;
+				continue;
+			}
+			if ($list->getHouseId() !== $houseId) {
+				$skipped[] = $itemId;
+				continue;
+			}
+			$listId = (int)$item->getListId();
+			if (!isset($listAccess[$listId])) {
+				$listAccess[$listId] = $isAdmin || $this->permissions->canAccessList($houseId, $uid, $listId);
+			}
+			if (!$listAccess[$listId]) {
+				$skipped[] = $itemId;
+				continue;
+			}
+			$valid[] = $item;
+		}
+		return ['items' => $valid, 'skipped' => $skipped];
+	}
+
+	/**
+	 * Group items by their source list id, returning per-list names for grouped
+	 * activity: `[listId => ['listName' => string, 'itemNames' => list<string>]]`.
+	 *
+	 * @param list<ChecklistItem> $items
+	 * @return array<int, array{listName: string, itemNames: list<string>}>
+	 */
+	private function groupItemsBySourceList(array $items): array {
+		$groups = [];
+		$listNames = [];
+		foreach ($items as $item) {
+			$listId = (int)$item->getListId();
+			if (!isset($listNames[$listId])) {
+				$listNames[$listId] = $this->lists->getList($listId)->getName();
+			}
+			$groups[$listId]['listName'] = $listNames[$listId];
+			$groups[$listId]['itemNames'][] = $item->getName();
+		}
+		return $groups;
+	}
+
+	/**
+	 * Move a batch of items to another list in one action
+	 *
+	 * @param int $houseId House id.
+	 * @param list<int> $itemIds Ids of the items to move.
+	 * @param int $targetListId Destination list id (must belong to the same house).
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 *
+	 * 200: Items moved
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/items/batch/move')]
+	#[NoAdminRequired]
+	#[Permission(['canMoveItems'])]
+	public function batchMoveItems(int $houseId, array $itemIds = [], int $targetListId = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $itemIds, $targetListId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$targetList = $this->lists->getList($targetListId);
+			$this->assertListInHouse($targetList->getHouseId(), $houseId);
+			if (!$this->permissions->isAdmin($houseId, $uid)
+				&& !$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
+				throw new ForbiddenException('No access to the destination list');
+			}
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			// Items already on the destination are a no-op — drop them so they
+			// neither move nor emit a spurious "moved" activity.
+			$toMove = array_values(array_filter(
+				$collected['items'],
+				fn (ChecklistItem $i) => (int)$i->getListId() !== $targetListId,
+			));
+			$groups = $this->groupItemsBySourceList($toMove);
+			$moved = $this->lists->moveItems(array_map(fn (ChecklistItem $i) => (int)$i->getId(), $toMove), $targetListId);
+
+			$houseName = $this->houses->get($houseId)->getName();
+			foreach ($groups as $fromListId => $group) {
+				$this->activity->publishItemsMoved(
+					$houseId,
+					$houseName,
+					$uid,
+					$fromListId,
+					$group['listName'],
+					$targetListId,
+					$targetList->getName(),
+					$group['itemNames'],
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => array_map(fn (ChecklistItem $i) => $i->jsonSerialize(), $moved),
+				'skipped' => $collected['skipped'],
+			]);
+		});
+	}
+
+	/**
+	 * Copy a batch of items to another list in one action
+	 *
+	 * @param int $houseId House id.
+	 * @param list<int> $itemIds Ids of the items to copy.
+	 * @param int $targetListId Destination list id (must belong to the same house).
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 *
+	 * 200: Items copied
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/items/batch/copy')]
+	#[NoAdminRequired]
+	#[Permission(['canCopyItems'])]
+	public function batchCopyItems(int $houseId, array $itemIds = [], int $targetListId = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $itemIds, $targetListId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$targetList = $this->lists->getList($targetListId);
+			$this->assertListInHouse($targetList->getHouseId(), $houseId);
+			if (!$this->permissions->isAdmin($houseId, $uid)
+				&& !$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
+				throw new ForbiddenException('No access to the destination list');
+			}
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$groups = $this->groupItemsBySourceList($collected['items']);
+			// Copy one item at a time — each may need its image file duplicated so
+			// the copy and source do not share a file (mirrors copyItem()).
+			$copies = [];
+			foreach ($collected['items'] as $source) {
+				$newImageFileId = null;
+				$newImageOwner = null;
+				if ($source->getImageFileId() !== null && $source->getImageUploadedBy() !== null) {
+					$newImageFileId = $this->images->duplicateItemImage(
+						$source->getImageUploadedBy(),
+						$source->getImageFileId(),
+						$uid,
+						$houseId,
+					);
+					if ($newImageFileId !== null) {
+						$newImageOwner = $uid;
+					}
+				}
+				$copies[] = $this->lists->copyItem((int)$source->getId(), $targetListId, $uid, $newImageFileId, $newImageOwner);
+			}
+
+			$houseName = $this->houses->get($houseId)->getName();
+			foreach ($groups as $fromListId => $group) {
+				$this->activity->publishItemsCopied(
+					$houseId,
+					$houseName,
+					$uid,
+					$fromListId,
+					$group['listName'],
+					$targetListId,
+					$targetList->getName(),
+					$group['itemNames'],
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => array_map(fn (ChecklistItem $i) => $i->jsonSerialize(), $copies),
+				'skipped' => $collected['skipped'],
+			]);
+		});
+	}
+
+	/**
+	 * Delete a batch of items in one action
+	 *
+	 * Soft-deletes to the list trash by default; pass permanent=true to erase
+	 * items outright (used when clearing selected items from the trash view).
+	 *
+	 * @param int $houseId House id.
+	 * @param list<int> $itemIds Ids of the items to delete.
+	 * @param bool $permanent If true, permanently delete instead of moving to trash.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 *
+	 * 200: Items deleted
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/items/batch/delete')]
+	#[NoAdminRequired]
+	#[Permission(['canDeleteItems'])]
+	public function batchDeleteItems(int $houseId, array $itemIds = [], bool $permanent = false): DataResponse {
+		return $this->runAction(function () use ($houseId, $itemIds, $permanent): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds, includeDeleted: $permanent);
+			$validIds = array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']);
+
+			if ($permanent) {
+				$this->lists->permanentlyDeleteItems($validIds);
+			} else {
+				// Group before deleting so the source list names are still resolvable.
+				$groups = $this->groupItemsBySourceList($collected['items']);
+				$this->lists->deleteItems($validIds);
+				$houseName = $this->houses->get($houseId)->getName();
+				foreach ($groups as $listId => $group) {
+					$this->activity->publishItemsDeleted(
+						$houseId,
+						$houseName,
+						$uid,
+						$listId,
+						$group['listName'],
+						$group['itemNames'],
+					);
+				}
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => [],
+				'skipped' => $collected['skipped'],
+			]);
+		});
+	}
+
+	/**
+	 * Assign (or clear) a category on a batch of items in one action
+	 *
+	 * @param int $houseId House id.
+	 * @param list<int> $itemIds Ids of the items to update.
+	 * @param int|null $categoryId Category id to assign (must belong to the same house); 0 or null clears.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 *
+	 * 200: Category assigned
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/items/batch/category')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function batchSetCategory(int $houseId, array $itemIds = [], ?int $categoryId = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $itemIds, $categoryId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$resolvedCategoryId = ($categoryId !== null && $categoryId > 0) ? $categoryId : null;
+			if ($resolvedCategoryId !== null) {
+				$this->categories->assertInHouse($resolvedCategoryId, $houseId);
+			}
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$groups = $this->groupItemsBySourceList($collected['items']);
+			$updated = $this->lists->setItemsCategory(
+				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
+				$resolvedCategoryId,
+			);
+
+			$houseName = $this->houses->get($houseId)->getName();
+			foreach ($groups as $listId => $group) {
+				$this->activity->publishItemsCategorized(
+					$houseId,
+					$houseName,
+					$uid,
+					$listId,
+					$group['listName'],
+					$group['itemNames'],
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => array_map(fn (ChecklistItem $i) => $i->jsonSerialize(), $updated),
+				'skipped' => $collected['skipped'],
+			]);
 		});
 	}
 

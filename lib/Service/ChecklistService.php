@@ -358,6 +358,78 @@ class ChecklistService {
 		}
 	}
 
+	/**
+	 * Move a batch of items to a target list. Missing items are skipped.
+	 * Target-list existence is validated once. Returns the updated items in the
+	 * same order as the input ids (skipping any that no longer exist).
+	 *
+	 * @param list<int> $itemIds
+	 * @return ChecklistItem[]
+	 */
+	public function moveItems(array $itemIds, int $targetListId): array {
+		// Validate the destination once; per-item updates then only touch list_id.
+		$this->getList($targetListId);
+		$updated = [];
+		foreach ($itemIds as $itemId) {
+			try {
+				$updated[] = $this->updateItem((int)$itemId, ['listId' => $targetListId]);
+			} catch (NotFoundException) {
+				continue;
+			}
+		}
+		return $updated;
+	}
+
+	/**
+	 * Assign (or clear, when $categoryId is null) a category on a batch of
+	 * items. Missing items are skipped. Returns the updated items.
+	 *
+	 * @param list<int> $itemIds
+	 * @return ChecklistItem[]
+	 */
+	public function setItemsCategory(array $itemIds, ?int $categoryId): array {
+		$updated = [];
+		foreach ($itemIds as $itemId) {
+			try {
+				$updated[] = $this->updateItem((int)$itemId, ['categoryId' => $categoryId]);
+			} catch (NotFoundException) {
+				continue;
+			}
+		}
+		return $updated;
+	}
+
+	/**
+	 * Soft-delete a batch of items. Missing items are skipped.
+	 *
+	 * @param list<int> $itemIds
+	 */
+	public function deleteItems(array $itemIds): void {
+		foreach ($itemIds as $itemId) {
+			try {
+				$this->deleteItem((int)$itemId);
+			} catch (NotFoundException) {
+				continue;
+			}
+		}
+	}
+
+	/**
+	 * Permanently delete a batch of items, bypassing the trash. Missing items
+	 * are skipped.
+	 *
+	 * @param list<int> $itemIds
+	 */
+	public function permanentlyDeleteItems(array $itemIds): void {
+		foreach ($itemIds as $itemId) {
+			try {
+				$this->permanentlyDeleteItem((int)$itemId);
+			} catch (NotFoundException) {
+				continue;
+			}
+		}
+	}
+
 	public function toggleItem(int $itemId, string $uid, ?int $now = null): ChecklistItem {
 		$item = $this->getItem($itemId);
 		$now ??= time();

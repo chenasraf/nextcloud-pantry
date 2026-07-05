@@ -35,6 +35,10 @@ class ActivityPublisher {
 	public const SUBJECT_ITEM_DELETED = 'item_deleted';
 	public const SUBJECT_ITEM_RESTORED = 'item_restored';
 	public const SUBJECT_ITEMS_RECURRED = 'items_recurred';
+	public const SUBJECT_ITEMS_MOVED = 'items_moved';
+	public const SUBJECT_ITEMS_COPIED = 'items_copied';
+	public const SUBJECT_ITEMS_DELETED = 'items_deleted';
+	public const SUBJECT_ITEMS_CATEGORIZED = 'items_categorized';
 
 	public const SUBJECT_PHOTO_UPLOADED = 'photo_uploaded';
 	public const SUBJECT_PHOTO_MOVED = 'photo_moved';
@@ -233,6 +237,115 @@ class ActivityPublisher {
 			$houseName,
 			'',
 			self::SUBJECT_ITEMS_RECURRED,
+			'list',
+			$listId,
+			[
+				'listId' => $listId,
+				'listName' => $listName,
+				'itemNames' => array_values($itemNames),
+				'itemCount' => count($itemNames),
+			],
+			$this->listLink($houseId, $listId),
+		);
+	}
+
+	/**
+	 * A batch of items was moved from one list to another in a single action.
+	 *
+	 * @param list<string> $itemNames
+	 */
+	public function publishItemsMoved(int $houseId, string $houseName, string $authorUid, int $fromListId, string $fromListName, int $toListId, string $toListName, array $itemNames): void {
+		if (empty($itemNames)) {
+			return;
+		}
+		$this->publish(
+			$houseId,
+			$houseName,
+			$authorUid,
+			self::SUBJECT_ITEMS_MOVED,
+			'list',
+			$toListId,
+			[
+				'fromListId' => $fromListId,
+				'fromListName' => $fromListName,
+				'toListId' => $toListId,
+				'toListName' => $toListName,
+				'itemNames' => array_values($itemNames),
+				'itemCount' => count($itemNames),
+			],
+			$this->listLink($houseId, $toListId),
+		);
+	}
+
+	/**
+	 * A batch of items was copied from one list to another in a single action.
+	 *
+	 * @param list<string> $itemNames
+	 */
+	public function publishItemsCopied(int $houseId, string $houseName, string $authorUid, int $fromListId, string $fromListName, int $toListId, string $toListName, array $itemNames): void {
+		if (empty($itemNames)) {
+			return;
+		}
+		$this->publish(
+			$houseId,
+			$houseName,
+			$authorUid,
+			self::SUBJECT_ITEMS_COPIED,
+			'list',
+			$toListId,
+			[
+				'fromListId' => $fromListId,
+				'fromListName' => $fromListName,
+				'toListId' => $toListId,
+				'toListName' => $toListName,
+				'itemNames' => array_values($itemNames),
+				'itemCount' => count($itemNames),
+			],
+			$this->listLink($houseId, $toListId),
+		);
+	}
+
+	/**
+	 * A batch of items was deleted from a list in a single action.
+	 *
+	 * @param list<string> $itemNames
+	 */
+	public function publishItemsDeleted(int $houseId, string $houseName, string $authorUid, int $listId, string $listName, array $itemNames): void {
+		if (empty($itemNames)) {
+			return;
+		}
+		$this->publish(
+			$houseId,
+			$houseName,
+			$authorUid,
+			self::SUBJECT_ITEMS_DELETED,
+			'list',
+			$listId,
+			[
+				'listId' => $listId,
+				'listName' => $listName,
+				'itemNames' => array_values($itemNames),
+				'itemCount' => count($itemNames),
+			],
+			$this->listLink($houseId, $listId),
+		);
+	}
+
+	/**
+	 * A batch of items in a list had their category assigned or cleared in a
+	 * single action.
+	 *
+	 * @param list<string> $itemNames
+	 */
+	public function publishItemsCategorized(int $houseId, string $houseName, string $authorUid, int $listId, string $listName, array $itemNames): void {
+		if (empty($itemNames)) {
+			return;
+		}
+		$this->publish(
+			$houseId,
+			$houseName,
+			$authorUid,
+			self::SUBJECT_ITEMS_CATEGORIZED,
 			'list',
 			$listId,
 			[

@@ -62,6 +62,7 @@ class Capabilities implements IPublicCapability {
 					'recurring-items',
 					'move-items',
 					'copy-items',
+					'batch-operations',
 					'one-off-items',
 					'item-authors',
 					'activity',

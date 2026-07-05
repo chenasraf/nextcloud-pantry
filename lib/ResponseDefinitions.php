@@ -130,6 +130,12 @@ namespace OCA\Pantry;
  *
  * @psalm-type PantrySuccess = array{success: true}
  *
+ * @psalm-type PantryBatchResult = array{
+ *     success: true,
+ *     items: list<PantryListItem>,
+ *     skipped: list<int>,
+ * }
+ *
  * @psalm-type PantryUserPrefs = array{
  *     lastHouseId: int|null,
  *     firstDayOfWeek: int,
