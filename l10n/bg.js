@@ -67,6 +67,8 @@ OC.L10N.register(
     "After" : "След",
     "On date" : "На дата",
     "Summary" : "Резюме",
+    "Viewer" : "Визуализатор",
+    "Editor" : "Редактор",
     "Newest first" : "Първо най-новият",
     "Oldest first" : "Първо най-старият",
     "Export" : "Експорт /изнасям/",

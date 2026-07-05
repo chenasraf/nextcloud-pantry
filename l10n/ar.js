@@ -70,6 +70,8 @@ OC.L10N.register(
     "After" : "بعد",
     "On date" : "في تاريخ",
     "Summary" : "مُلخَّص",
+    "Viewer" : "العارض",
+    "Editor" : "المحرر",
     "Newest first" : "الأحدث أولاً",
     "Oldest first" : "الأقدم أولاً",
     "Export" : "تصدير",

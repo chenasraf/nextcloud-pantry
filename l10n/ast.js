@@ -57,6 +57,8 @@ OC.L10N.register(
     "Weekly" : "Selmanalmente",
     "Never" : "Enxamás",
     "Summary" : "Resume",
+    "Viewer" : "Visor",
+    "Editor" : "Editor",
     "Newest first" : "Primero lo nuevo",
     "Oldest first" : "Primero lo antiguo",
     "Export" : "Esportar",

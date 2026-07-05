@@ -29,6 +29,7 @@ OC.L10N.register(
     "Weekly" : "Weekliks",
     "Ends" : "Eindig",
     "Summary" : "Opsomming",
+    "Viewer" : "Bekyker",
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
     "Export" : "Voer uit",

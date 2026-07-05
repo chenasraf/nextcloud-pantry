@@ -70,6 +70,8 @@ OC.L10N.register(
     "After" : "Després",
     "On date" : "A la data",
     "Summary" : "Resum",
+    "Viewer" : "Visor",
+    "Editor" : "Editor",
     "Newest first" : "Més nou primer",
     "Oldest first" : "Més antic primer",
     "Export" : "Exporta",
