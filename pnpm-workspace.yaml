@@ -1,2 +1,5 @@
-onlyBuiltDependencies:
-  - lefthook
+allowBuilds:
+  '@parcel/watcher': true
+  core-js: false
+  esbuild: true
+  lefthook: true
