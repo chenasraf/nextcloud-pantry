@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.20.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.19.0...v0.20.0) (2026-07-06)
+
+
+### Features
+
+* **checklists:** multi-select items for group actions ([63a8295](https://github.com/chenasraf/nextcloud-pantry/commit/63a82958630cfc6e5f44a416c46b271f840a34d3)), closes [#143](https://github.com/chenasraf/nextcloud-pantry/issues/143)
+* **roles:** add roles & permissions system ([4b4060c](https://github.com/chenasraf/nextcloud-pantry/commit/4b4060c751fc065007cac2249d7813d1b436cf46)), closes [#138](https://github.com/chenasraf/nextcloud-pantry/issues/138)
+* **sharing:** per-user sharing for checklists, notes, photos & folders ([7120d62](https://github.com/chenasraf/nextcloud-pantry/commit/7120d6243a584238f594183ea708c65aaa0f854c))
+* **toolbar:** collapse actions into an overflow menu when space runs out ([8ed6997](https://github.com/chenasraf/nextcloud-pantry/commit/8ed6997c4a24f1295e639bf5dfed1167dd4fea8b))
+
+
+### Bug Fixes
+
+* **checklist:** don't cancel drag-reorder on Chromium ([469b40c](https://github.com/chenasraf/nextcloud-pantry/commit/469b40c140be5c90582a9451dd97d0663fb48b58)), closes [#146](https://github.com/chenasraf/nextcloud-pantry/issues/146)
+* **l10n:** Update translations from Transifex ([40cedc8](https://github.com/chenasraf/nextcloud-pantry/commit/40cedc8940236f354515d02499f3cf48233d6385))
+* **l10n:** Update translations from Transifex ([0e0652b](https://github.com/chenasraf/nextcloud-pantry/commit/0e0652b4e68ae6a977f77d651c984da9d96f1a3e))
+* **l10n:** Update translations from Transifex ([c09ec99](https://github.com/chenasraf/nextcloud-pantry/commit/c09ec99a9a153d16e6458dcfb08ca52e9a4937ef))
+* **l10n:** Update translations from Transifex ([c6d18d1](https://github.com/chenasraf/nextcloud-pantry/commit/c6d18d1254deb9e28b6e590f1df6a48bb97ae619))
+* **l10n:** Update translations from Transifex ([d63dbed](https://github.com/chenasraf/nextcloud-pantry/commit/d63dbede0d05f4e40b49b5ea952ff57ae1c76fee))
+* **l10n:** Update translations from Transifex ([20823af](https://github.com/chenasraf/nextcloud-pantry/commit/20823af6f56919b53bbbe735a58234edd780d203))
+* **l10n:** Update translations from Transifex ([9f746b7](https://github.com/chenasraf/nextcloud-pantry/commit/9f746b7bcb18945faec97e6efab2674f8f1adf62))
+* **l10n:** Update translations from Transifex ([b3655c5](https://github.com/chenasraf/nextcloud-pantry/commit/b3655c5eb971e1d79d63a466cf06e223864c0fef))
+
 ## [0.19.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.18.1...v0.19.0) (2026-06-28)
 
 
