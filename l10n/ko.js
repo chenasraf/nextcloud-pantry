@@ -72,6 +72,8 @@ OC.L10N.register(
     "Oldest first" : "오래된순",
     "Export" : "내보내기",
     "Import" : "가져오기",
+    "Select" : "선택",
+    "Apply" : "적용",
     "No lists yet" : "리스트 없음",
     "Note restored" : "메모 복원됨",
     "New folder" : "새 폴더",

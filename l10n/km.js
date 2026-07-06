@@ -24,6 +24,7 @@ OC.L10N.register(
     "Weekly" : "រាល់​សប្ដាហ៍",
     "Export" : "នាំចេញ",
     "Import" : "នាំយកចូល",
+    "Apply" : "អនុវត្ត",
     "New folder" : "ថត​ថ្មី"
 },
 "nplurals=1; plural=0;");

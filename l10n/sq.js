@@ -55,6 +55,8 @@ OC.L10N.register(
     "Oldest first" : "Më i vjetri i pari",
     "Export" : "Eksport",
     "Import" : "Import",
+    "Select" : "Përzgjidh",
+    "Apply" : "Apliko",
     "Note restored" : "Shënimi i rivendos",
     "New folder" : "Dosje e re",
     "Back" : "Mbrapsht",

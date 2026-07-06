@@ -53,6 +53,7 @@ OC.L10N.register(
     "Editor" : "Tahrirchi",
     "Export" : "Eksport",
     "Import" : "Import",
+    "Select" : "Tanlash",
     "No lists yet" : "Hozircha roʻyxatlar yoʻq",
     "New note" : "Yangi eslatma",
     "No notes yet" : "Hozircha qaydlar yoʻq",

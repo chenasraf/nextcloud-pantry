@@ -78,6 +78,8 @@ OC.L10N.register(
     "Export" : "Izvezi",
     "Import" : "Uvezi",
     "New list" : "Novi popis",
+    "Select" : "Odaberi",
+    "Apply" : "Primijeni",
     "No lists yet" : "Još nema popisa",
     "Note restored" : "Bilješka je vraćena",
     "New folder" : "Nova mapa",

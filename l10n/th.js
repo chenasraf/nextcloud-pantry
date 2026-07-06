@@ -47,6 +47,8 @@ OC.L10N.register(
     "Oldest first" : "เก่าที่สุดก่อน",
     "Export" : "ส่งออก",
     "Import" : "นำเข้า",
+    "Select" : "เลือก",
+    "Apply" : "นำไปใช้",
     "New folder" : "โฟลเดอร์ใหม่",
     "Uncategorized" : "ไม่ได้จัดหมวดหมู่"
 },

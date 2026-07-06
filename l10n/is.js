@@ -76,6 +76,8 @@ OC.L10N.register(
     "Export" : "Flytja út",
     "Import" : "Flytja inn",
     "New list" : "Nýr listi",
+    "Select" : "Velja",
+    "Apply" : "Virkja",
     "No lists yet" : "Engir listar ennþá",
     "Note restored" : "Minnispunktur endurheimtur",
     "New folder" : "Ný mappa",

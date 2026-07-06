@@ -24,6 +24,7 @@ OC.L10N.register(
     "Never" : "Երբեք",
     "Export" : "Արտահանում",
     "Import" : "Ներմուծում",
+    "Select" : "Նշել",
     "New note" : "նոր գրառում",
     "New folder" : "Նոր պանակ"
 },

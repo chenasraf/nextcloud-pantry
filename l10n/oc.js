@@ -51,6 +51,7 @@ OC.L10N.register(
     "Viewer" : "Visualizaira",
     "Export" : "Exportar",
     "Import" : "Importar",
+    "Apply" : "Aplicar",
     "New folder" : "Novèl dorsièr",
     "Add a description" : "Apondre una descripcion",
     "Uncategorized" : "Desorganizadas"

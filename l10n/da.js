@@ -89,6 +89,7 @@ OC.L10N.register(
     "Export" : "Eksportér",
     "Import" : "Importér",
     "New list" : "Ny liste",
+    "Apply" : "Anvend",
     "No lists yet" : "Endnu ingen lister",
     "Note restored" : "Note gendannet",
     "New folder" : "Ny mappe",

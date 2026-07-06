@@ -21,6 +21,7 @@ OC.L10N.register(
     "Folder name" : "கோப்புறை பெயர்",
     "Export" : "ஏற்றுமதி",
     "Import" : "இறக்குமதி",
+    "Select" : "Select",
     "Back" : "பின்னுக்கு"
 },
 "nplurals=2; plural=(n != 1);");

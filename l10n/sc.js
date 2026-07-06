@@ -62,6 +62,8 @@ OC.L10N.register(
     "Export" : "Esporta",
     "Import" : "Importa",
     "New list" : "Lista noa",
+    "Select" : "Seletziona",
+    "Apply" : "Àplica",
     "No lists yet" : "Perunu elencu ancora",
     "New note" : "Notas noas",
     "New folder" : "Cartella noa",

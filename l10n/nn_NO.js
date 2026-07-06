@@ -37,6 +37,7 @@ OC.L10N.register(
     "Oldest first" : "Eldste fyrst",
     "Export" : "Eksporter",
     "Import" : "Importer",
+    "Apply" : "Anvend",
     "New folder" : "Ny mappe"
 },
 "nplurals=2; plural=(n != 1);");

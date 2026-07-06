@@ -63,6 +63,8 @@ OC.L10N.register(
     "Oldest first" : "Cel mai vechi mai întâi",
     "Export" : "Exportă",
     "Import" : "Importă",
+    "Select" : "Selectează",
+    "Apply" : "Aplică",
     "No lists yet" : "Nu există încă liste",
     "No notes yet" : "Nu există notițe încă ",
     "New folder" : "Director nou",

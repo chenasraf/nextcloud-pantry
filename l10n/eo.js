@@ -55,6 +55,8 @@ OC.L10N.register(
     "Oldest first" : "Malpli novaj unue",
     "Export" : "Eksporti",
     "Import" : "Importi",
+    "Select" : "Elekti",
+    "Apply" : "Validigi",
     "New folder" : "Nova dosierujo",
     "Uncategorized" : "Senkategoria"
 },

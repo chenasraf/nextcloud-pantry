@@ -79,6 +79,8 @@ OC.L10N.register(
     "Export" : "Ekspor",
     "Import" : "Impor",
     "New list" : "Daftar baru",
+    "Select" : "Pilih",
+    "Apply" : "Terapkan",
     "No lists yet" : "Belum ada list",
     "New folder" : "Folder baru",
     "Back" : "Kembali",

@@ -26,6 +26,7 @@ OC.L10N.register(
     "Never" : "Nikad",
     "Newest first" : "Prvo novije",
     "Oldest first" : "prvo starije",
+    "Select" : "Obeleži",
     "Note restored" : "Beleška vraćena",
     "New folder" : "Nova fascikla"
 },

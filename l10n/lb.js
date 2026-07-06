@@ -28,6 +28,8 @@ OC.L10N.register(
     "Weekly" : "All Woch",
     "Export" : "Exportéieren",
     "Import" : "Import",
+    "Select" : "Auswielen",
+    "Apply" : "Uwenden",
     "New folder" : "Neien Dossier"
 },
 "nplurals=2; plural=(n != 1);");

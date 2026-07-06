@@ -81,6 +81,8 @@ OC.L10N.register(
     "Export" : "Agiza",
     "Import" : "Ingiza",
     "New list" : "Orodha mpya",
+    "Select" : "Chagua",
+    "Apply" : "Omba",
     "No lists yet" : "Bado hakuna orodha",
     "New note" : "Dokezo jipya",
     "No notes yet" : "Bado hakuna madokezo",

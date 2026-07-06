@@ -64,6 +64,8 @@ OC.L10N.register(
     "Oldest first" : "Cũ nhất trước",
     "Export" : "Xuất ra",
     "Import" : "Nhập vào",
+    "Select" : "Chọn",
+    "Apply" : "Áp dụng",
     "No lists yet" : "Chưa có danh sách",
     "No notes yet" : "Chưa có ghi chú",
     "New folder" : "Thư mục mới",

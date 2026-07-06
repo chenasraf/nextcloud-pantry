@@ -80,6 +80,8 @@ OC.L10N.register(
     "Export" : "Exportera",
     "Import" : "Importera",
     "New list" : "Ny lista",
+    "Select" : "Välj",
+    "Apply" : "Tillämpa",
     "No lists yet" : "Inga listor än",
     "Note restored" : "Anteckningen återskapad",
     "New folder" : "Ny mapp",

@@ -53,6 +53,8 @@ OC.L10N.register(
     "Oldest first" : "Los más viejos primero",
     "Export" : "Exportar",
     "Import" : "Importar",
+    "Select" : "Seleccionar",
+    "Apply" : "Aplicar",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",
     "Back" : "Volver"

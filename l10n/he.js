@@ -67,6 +67,8 @@ OC.L10N.register(
     "Oldest first" : "הישן ביותר ראשון",
     "Export" : "ייצוא",
     "Import" : "ייבוא",
+    "Select" : "בחר",
+    "Apply" : "החלה",
     "No lists yet" : "אין רשימות עדיין",
     "New note" : "פתק חדש",
     "Note restored" : "פתק שוחזר",

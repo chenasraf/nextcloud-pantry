@@ -38,6 +38,7 @@ OC.L10N.register(
     "Monthly" : "Miziek",
     "Never" : "James",
     "Summary" : "Diverrañ",
+    "Viewer" : "Gweller",
     "Newest first" : "An hini nevesañ da gentañ",
     "Oldest first" : "An hini kozhoñ da gentañ",
     "Import" : "Emporzhiañ ",
