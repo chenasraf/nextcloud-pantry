@@ -77,6 +77,8 @@ OC.L10N.register(
     "Export" : "Exporta",
     "Import" : "Importa",
     "New list" : "Llista nova",
+    "Select" : "Seleccioneu",
+    "Apply" : "Aplica",
     "No lists yet" : "Encara no hi ha llistes",
     "No notes yet" : "No hi ha notes encara",
     "Note restored" : "S'ha restaurat la nota",

@@ -303,7 +303,7 @@ OC.L10N.register(
     "Summary" : "Zusammenfassung",
     "Shared with:" : "Geteilt mit:",
     "Add a person …" : "Person hinzufügen …",
-    "No more members to add" : "Keine weiteren Mitglieder hinzuzufügen",
+    "No more members to add" : "Keine weiteren Mitglieder zum Hinzufügen",
     "Not shared with anyone yet." : "Noch mit niemandem geteilt.",
     "Viewer" : "Betrachter",
     "Editor" : "Bearbeiter",

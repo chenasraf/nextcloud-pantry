@@ -42,6 +42,8 @@ OC.L10N.register(
     "Newest first" : "An hini nevesañ da gentañ",
     "Oldest first" : "An hini kozhoñ da gentañ",
     "Import" : "Emporzhiañ ",
+    "Select" : "Diuzañ",
+    "Apply" : "Lakaat",
     "New note" : "Notenn nevez",
     "New folder" : "Teuliad nevez",
     "Add a description" : "Ouzhpennañ un deskrivadur"

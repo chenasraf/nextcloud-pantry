@@ -59,6 +59,8 @@ OC.L10N.register(
     "Export" : "Экспарт",
     "Import" : "Імпарт",
     "New list" : "Новы спіс",
+    "Select" : "Выбраць",
+    "Apply" : "Прымяніць",
     "No lists yet" : "Пакуль няма спісаў",
     "No notes yet" : "Пакуль няма нататак",
     "New folder" : "Новая папка",

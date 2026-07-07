@@ -36,6 +36,7 @@ OC.L10N.register(
     "Summary" : "Xülasə",
     "Export" : "Çıxarış",
     "Import" : "Əlavə et",
+    "Select" : "Seç",
     "New folder" : "Yeni qovluq",
     "Back" : "Geri"
 },

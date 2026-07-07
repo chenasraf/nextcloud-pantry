@@ -26,6 +26,7 @@ OC.L10N.register(
     "Weekly" : "সাপ্তাহিক",
     "Export" : "রপ্তানি",
     "Import" : "আমদানি",
+    "Select" : "সিলেক্ট",
     "New folder" : "নতুন ফোল্ডার"
 },
 "nplurals=2; plural=(n != 1);");
