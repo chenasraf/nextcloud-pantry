@@ -27,6 +27,7 @@
     "{author} copied {items} from {from} to {to} in {house}" : "{author} hat {items} von {from} nach {to} in {house} kopiert",
     "You deleted {items} from {list} in {house}" : "Sie haben {items} in {list} im {house} gelöscht",
     "{author} deleted {items} from {list} in {house}" : "{author} hat {items} in {list} im {house} gelöscht",
+    "You updated the category of {items} on {list} in {house}" : "Sie haben {items} in {list} im {house} aktualisiert",
     "{author} updated the category of {items} on {list} in {house}" : "{author} hat die Kategorie von {items} in {list} im {house} aktualisiert",
     "You restored {item} on {list} in {house}" : "Sie haben {item} in {list} im {house} wiederhergestellt",
     "{author} restored {item} on {list} in {house}" : "{author} hat {item} in {list} im {house} wiederhergestellt",
