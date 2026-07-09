@@ -76,7 +76,7 @@ OC.L10N.register(
     "Editor" : "Редактор",
     "Newest first" : "Новіші спочатку",
     "Oldest first" : "Старіші спочатку",
-    "Export" : "Експортувати",
+    "Export" : "Експорт",
     "Import" : "Імпорт",
     "New list" : "Новий список",
     "Select" : "Вибрати",
