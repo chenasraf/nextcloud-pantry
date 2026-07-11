@@ -352,7 +352,7 @@ OC.L10N.register(
     "Add anyway" : "Lisa ikkagi",
     "Select" : "Vali",
     "Clear selection" : "Tühjenda valik",
-    "Exit selection" : "Välju valikust",
+    "Exit selection" : "Välju valimisvaatest",
     "Assign category" : "Määra kategooria",
     "Apply" : "Rakenda",
     "Remove category" : "Eemalda kategooria",

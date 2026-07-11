@@ -55,6 +55,7 @@ OC.L10N.register(
     "Add a member" : "Ajouter un membre",
     "Search for an account …" : "Chercher un compte...",
     "No accounts found" : "Aucun compte trouvé",
+    "Type to search for an account" : "Écrire pour rechercher un compte",
     "Danger zone" : "Zone de danger",
     "Export to Markdown" : "Exporter en Markdown",
     "Close" : "Fermer",
