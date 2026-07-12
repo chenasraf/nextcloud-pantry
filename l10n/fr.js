@@ -12,6 +12,7 @@ OC.L10N.register(
     "Notifications" : "Notifications",
     "Disabled" : "Désactivé",
     "Divider" : "Séparateur",
+    "Edit category" : "Éditer une catégorie",
     "Name" : "Nom",
     "Icon:" : "Icône :",
     "Cancel" : "Annuler",
