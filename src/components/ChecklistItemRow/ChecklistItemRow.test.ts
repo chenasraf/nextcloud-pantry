@@ -195,6 +195,22 @@ describe('ChecklistItemRow', () => {
       expect(rec.text()).toContain('FREQ=WEEKLY')
     })
 
+    it('shows description badge with the description as its tooltip', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ description: 'Organic, from the farm' }) },
+      })
+      const desc = wrapper.find('.checklist-row__description')
+      expect(desc.exists()).toBe(true)
+      expect(desc.attributes('title')).toBe('Organic, from the farm')
+    })
+
+    it('hides description badge when there is no description', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ description: null }) },
+      })
+      expect(wrapper.find('.checklist-row__description').exists()).toBe(false)
+    })
+
     it('shows image thumbnail when imageFileId is present', () => {
       const wrapper = mount(ChecklistItemRow, {
         props: {

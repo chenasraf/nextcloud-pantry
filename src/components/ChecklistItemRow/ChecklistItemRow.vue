@@ -76,6 +76,14 @@
     </div>
     <div class="checklist-row__meta">
       <span v-if="item.quantity" class="checklist-row__quantity">&times; {{ item.quantity }}</span>
+      <span
+        v-if="item.description"
+        class="checklist-row__description"
+        :title="item.description"
+        :aria-label="strings.hasDescription"
+      >
+        <TextBoxOutlineIcon :size="14" />
+      </span>
       <span v-if="item.rrule" class="checklist-row__recurrence" :title="recurrenceTooltip">
         <RepeatIcon :size="14" />
         {{ formatRrule(item.rrule) }}
@@ -154,6 +162,7 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcAvatar from '@nextcloud/vue/components/NcAvatar'
 import DragVerticalIcon from '@icons/DragVertical.vue'
 import RepeatIcon from '@icons/Repeat.vue'
+import TextBoxOutlineIcon from '@icons/TextBoxOutline.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
 import DeleteIcon from '@icons/Delete.vue'
@@ -285,6 +294,7 @@ const recurrenceTooltip = computed(() => {
 
 const strings = {
   dragToReorder: t('pantry', 'Drag to reorder'),
+  hasDescription: t('pantry', 'Has a description'),
   selectItem: t('pantry', 'Select item'),
   viewImage: t('pantry', 'View image'),
   viewItem: t('pantry', 'View item'),
@@ -513,6 +523,7 @@ const strings = {
   &__quantity,
   &__category,
   &__recurrence,
+  &__description,
   &__list {
     display: inline-flex;
     align-items: center;
@@ -520,6 +531,15 @@ const strings = {
     padding: 2px 8px;
     border-radius: 999px;
     background: var(--color-background-hover);
+  }
+
+  &__description {
+    cursor: help;
+
+    // The icon component renders its own span/svg which reset the cursor.
+    :deep(*) {
+      cursor: inherit;
+    }
   }
 }
 </style>
