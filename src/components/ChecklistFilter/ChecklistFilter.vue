@@ -91,6 +91,21 @@
             <NcCounterBubble :count="opt.count" />
           </span>
         </NcChip>
+        <NcChip
+          v-if="uncategorizedCount > 0"
+          :variant="selectedIds.includes(NO_CATEGORY_ID) ? 'primary' : 'secondary'"
+          class="pantry-filter__chip"
+          no-close
+          @click="toggleCategory(NO_CATEGORY_ID)"
+        >
+          <template #icon>
+            <TagOffOutlineIcon :size="16" />
+          </template>
+          <span class="pantry-filter__chip-content">
+            {{ strings.noCategory }}
+            <NcCounterBubble :count="uncategorizedCount" />
+          </span>
+        </NcChip>
       </div>
     </div>
   </div>
@@ -104,8 +119,10 @@ import NcChip from '@nextcloud/vue/components/NcChip'
 import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import MagnifyIcon from '@icons/Magnify.vue'
 import CheckIcon from '@icons/Check.vue'
+import TagOffOutlineIcon from '@icons/TagOffOutline.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker'
+import { NO_CATEGORY_ID } from './constants'
 import type { Category, Checklist, ChecklistItem } from '@/api/types'
 
 const props = defineProps<{
@@ -146,6 +163,10 @@ const categoryOptions = computed<CategoryOption[]>(() => {
     .filter((c) => counts.has(c.id))
     .map((c) => ({ category: c, count: counts.get(c.id)! }))
 })
+
+const uncategorizedCount = computed(
+  () => props.items.filter((item) => item.categoryId == null).length,
+)
 
 const selectedIds = computed(() => props.selectedCategoryIds)
 
@@ -200,6 +221,7 @@ function listIconFor(key: string) {
 const strings = {
   placeholder: t('pantry', 'Type to filter …'),
   all: t('pantry', 'All'),
+  noCategory: t('pantry', 'No category'),
   allLists: t('pantry', 'All lists'),
   visibleLists: t('pantry', 'Filter lists'),
   visibleCategories: t('pantry', 'Filter categories'),
@@ -233,6 +255,13 @@ const strings = {
 
   &__chip :deep(*) {
     cursor: pointer;
+  }
+
+  // The chip's leading icon sits flush against the rounded edge, leaving the
+  // left side visibly tighter than the right (after the counter). Nudge it in
+  // so both sides are balanced.
+  &__chip :deep(.nc-chip__icon) {
+    margin-inline-start: 4px;
   }
 
   &__chip#{&}__chip {

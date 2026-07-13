@@ -441,7 +441,7 @@ import FileExportIcon from '@icons/FileExport.vue'
 import FileImportIcon from '@icons/FileImport.vue'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
-import { ChecklistFilter } from '@/components/ChecklistFilter'
+import { ChecklistFilter, NO_CATEGORY_ID } from '@/components/ChecklistFilter'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
@@ -736,7 +736,10 @@ const filteredItems = computed(() => {
   }
   const catIds = filterCategoryIds.value
   if (catIds.length > 0) {
-    result = result.filter((i) => i.categoryId != null && catIds.includes(i.categoryId))
+    const wantUncategorized = catIds.includes(NO_CATEGORY_ID)
+    result = result.filter((i) =>
+      i.categoryId != null ? catIds.includes(i.categoryId) : wantUncategorized,
+    )
   }
   const q = filterQuery.value.trim().toLowerCase()
   if (q) {
