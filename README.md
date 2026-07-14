@@ -35,6 +35,11 @@ place.
   content.
 - **Modern UI**: Built with Vue 3 and Nextcloud Vue components.
 
+## Documentation
+
+- [Permissions](docs/permissions.md) — how roles and capabilities work, and which action needs which
+  permission.
+
 ## Companion Apps
 
 Pantry also has companion apps for mobile and desktop that let you manage your lists, photos and
