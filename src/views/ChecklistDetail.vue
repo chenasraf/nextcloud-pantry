@@ -22,7 +22,12 @@
 
     <div class="pantry-detail__body">
       <div v-if="selectionMode" class="pantry-detail__selection-bar">
-        <NcButton variant="tertiary" :aria-label="strings.exitSelection" @click="exitSelection">
+        <NcButton
+          variant="tertiary"
+          :aria-label="strings.exitSelection"
+          :title="strings.exitSelection"
+          @click="exitSelection"
+        >
           <template #icon>
             <CloseIcon :size="20" />
           </template>
@@ -39,6 +44,7 @@
           variant="tertiary"
           :disabled="!canBulkMove"
           :aria-label="strings.moveSelected"
+          :title="strings.moveSelected"
           @click="openBulkMove"
         >
           <template #icon>
@@ -49,6 +55,7 @@
           variant="tertiary"
           :disabled="!canBulkCopy"
           :aria-label="strings.copySelected"
+          :title="strings.copySelected"
           @click="openBulkCopy"
         >
           <template #icon>
@@ -59,6 +66,7 @@
           variant="tertiary"
           :disabled="!canBulkCategory"
           :aria-label="strings.assignCategory"
+          :title="strings.assignCategory"
           @click="openBulkCategory"
         >
           <template #icon>
@@ -70,6 +78,7 @@
           variant="tertiary"
           :disabled="!canBulkArchive"
           :aria-label="strings.archiveSelected"
+          :title="strings.archiveSelected"
           @click="bulkArchive"
         >
           <template #icon>
@@ -81,6 +90,7 @@
           variant="tertiary"
           :disabled="!canBulkArchive"
           :aria-label="strings.unarchiveSelected"
+          :title="strings.unarchiveSelected"
           @click="bulkUnarchive"
         >
           <template #icon>
@@ -91,6 +101,7 @@
           variant="tertiary"
           :disabled="!canBulkDelete"
           :aria-label="strings.deleteSelected"
+          :title="strings.deleteSelected"
           @click="bulkDelete"
         >
           <template #icon>
