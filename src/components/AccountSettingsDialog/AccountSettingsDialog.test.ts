@@ -13,8 +13,6 @@ vi.mock('@/api/prefs', () => ({
   setNotificationPrefs: vi.fn(),
   getTapRowToComplete: vi.fn(),
   setTapRowToComplete: vi.fn(),
-  getCategorySpacing: vi.fn(),
-  setCategorySpacing: vi.fn(),
   getReuseExistingItems: vi.fn(),
   setReuseExistingItems: vi.fn(),
 }))

@@ -178,17 +178,20 @@
               @drop.prevent.stop="onPlaceholderDrop"
             />
             <li
-              v-else-if="gi.type === 'separator'"
-              :class="[
-                'pantry-detail__category-separator',
-                `pantry-detail__category-separator--${categorySpacing}`,
-              ]"
-              aria-hidden="true"
-            />
+              v-else-if="gi.type === 'header'"
+              class="pantry-detail__category-header"
+              :style="gi.category ? { color: gi.category.color } : undefined"
+            >
+              <component :is="categoryIconComponent(gi.category?.icon)" :size="18" />
+              <span class="pantry-detail__category-header-name">
+                {{ gi.category?.name ?? strings.noCategory }}
+              </span>
+            </li>
             <ChecklistItemRow
               v-else
               :item="gi.item"
               :category="categoryFor(gi.item.categoryId)"
+              :hide-category="showCategoryHeaders"
               :list="isMeta ? listFor(gi.item.listId) : null"
               :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
               :house-id="houseIdNum"
@@ -228,17 +231,20 @@
                 @drop.prevent.stop="onPlaceholderDrop"
               />
               <li
-                v-else-if="gi.type === 'separator'"
-                :class="[
-                  'pantry-detail__category-separator',
-                  `pantry-detail__category-separator--${categorySpacing}`,
-                ]"
-                aria-hidden="true"
-              />
+                v-else-if="gi.type === 'header'"
+                class="pantry-detail__category-header"
+                :style="gi.category ? { color: gi.category.color } : undefined"
+              >
+                <component :is="categoryIconComponent(gi.category?.icon)" :size="18" />
+                <span class="pantry-detail__category-header-name">
+                  {{ gi.category?.name ?? strings.noCategory }}
+                </span>
+              </li>
               <ChecklistItemRow
                 v-else
                 :item="gi.item"
                 :category="categoryFor(gi.item.categoryId)"
+                :hide-category="showCategoryHeaders"
                 :list="isMeta ? listFor(gi.item.listId) : null"
                 :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
                 :house-id="houseIdNum"
@@ -500,7 +506,7 @@ import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
 import { MarkdownExportDialog } from '@/components/MarkdownExportDialog'
 import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
-import CategoryPicker from '@/components/CategoryPicker'
+import CategoryPicker, { categoryIconComponent } from '@/components/CategoryPicker'
 import {
   checklistIconComponent,
   ChecklistFormDialog,
@@ -517,11 +523,10 @@ import { useTouchReorder } from '@/composables/useTouchReorder'
 import { useLongPress } from '@/composables/useLongPress'
 import { getList, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
-import type { Checklist, ChecklistItem } from '@/api/types'
+import type { Checklist, ChecklistItem, Category } from '@/api/types'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
 import { getChecklistItemSort, setChecklistItemSort } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
-import { useCategorySpacing } from '@/composables/useCategorySpacing'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
@@ -696,12 +701,10 @@ async function loadList() {
 }
 
 const { tapRowToComplete } = useTapRowToComplete()
-const { categorySpacing } = useCategorySpacing()
 const { can } = useCurrentHouse()
 const showAddedBy = computed(() => useShowAddedBy(houseIdNum.value).showAddedBy.value)
-const showCategorySeparators = computed(
-  () => currentSort.value === 'category' && categorySpacing.value !== 'disabled',
-)
+// Sorting by category always groups items under category headers.
+const showCategoryHeaders = computed(() => currentSort.value === 'category')
 
 onMounted(async () => {
   await loadSortPref()
@@ -856,7 +859,7 @@ const reorderActive = computed(() => isCustomSort.value && !selectionMode.value)
 type ListGridItem =
   | { type: 'item'; key: string; item: ChecklistItem }
   | { type: 'placeholder'; key: string }
-  | { type: 'separator'; key: string }
+  | { type: 'header'; key: string; category: Category | null }
 
 type Partition = 'unchecked' | 'checked'
 
@@ -870,8 +873,8 @@ function partitionItems(p: Partition): ChecklistItem[] {
   return p === 'unchecked' ? uncheckedItems.value : checkedItems.value
 }
 
-function withCategorySeparators(items: ListGridItem[]): ListGridItem[] {
-  if (!showCategorySeparators.value) return items
+function withCategoryHeaders(items: ListGridItem[]): ListGridItem[] {
+  if (!showCategoryHeaders.value) return items
   const out: ListGridItem[] = []
   let prevCategoryId: number | null | undefined = undefined
   for (const gi of items) {
@@ -880,8 +883,8 @@ function withCategorySeparators(items: ListGridItem[]): ListGridItem[] {
       continue
     }
     const catId = gi.item.categoryId ?? null
-    if (prevCategoryId !== undefined && prevCategoryId !== catId) {
-      out.push({ type: 'separator', key: `sep-${gi.key}` })
+    if (prevCategoryId === undefined || prevCategoryId !== catId) {
+      out.push({ type: 'header', key: `hdr-${gi.key}`, category: categoryFor(catId) })
     }
     prevCategoryId = catId
     out.push(gi)
@@ -898,7 +901,7 @@ function buildGridItems(p: Partition): ListGridItem[] {
     dropIndex.value === null ||
     draggingPartition.value !== p
   ) {
-    return withCategorySeparators(
+    return withCategoryHeaders(
       source.map((i) => ({ type: 'item' as const, key: 'i-' + i.id, item: i })),
     )
   }
@@ -1741,6 +1744,7 @@ const strings = {
   trashLabel: t('pantry', 'Trash'),
   archiveLabel: t('pantry', 'Archive'),
   doneTitle: t('pantry', 'Done'),
+  noCategory: t('pantry', 'No category'),
   manageCategories: t('pantry', 'Manage categories'),
   editList: t('pantry', 'Edit list'),
   exportMarkdown: t('pantry', 'Export'),
@@ -1964,20 +1968,35 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     list-style: none;
   }
 
-  &__category-separator {
+  &__category-header {
     list-style: none;
-    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    // Stick each category header to the top of the scroll area so the group a
+    // row belongs to stays visible while scrolling through it. An opaque
+    // background and a z-index keep item rows from showing through as they
+    // scroll underneath. Top margin is avoided on purpose — a sticky element's
+    // transparent margin would leave a see-through strip above the stuck
+    // header; the internal top padding provides the separation instead.
+    position: sticky;
+    top: 0;
+    z-index: 2;
     margin: 0;
+    padding: 0.6rem 0.25rem 0.4rem;
+    background: var(--color-main-background);
+    border-bottom: 1px solid var(--color-border);
+    font-weight: 600;
+    // Falls back to the default text color for the "No category" header (no
+    // inline color set); real categories set their own color inline.
+    color: var(--color-text-maxcontrast);
+  }
 
-    &--divider {
-      border-top: 1px solid var(--color-border);
-      margin-top: 1rem;
-      padding-top: 1rem;
-    }
-
-    &--spacing {
-      height: 0.75rem;
-    }
+  &__category-header-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__section-title {

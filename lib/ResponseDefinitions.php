@@ -141,7 +141,6 @@ namespace OCA\Pantry;
  *     lastHouseId: int|null,
  *     firstDayOfWeek: int,
  *     tapRowToComplete: bool,
- *     categorySpacing: string,
  *     reuseExistingItems: string,
  * }
  *

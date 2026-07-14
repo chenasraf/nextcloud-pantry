@@ -2,7 +2,6 @@ import { ocs } from '@/axios'
 
 // ----- User-level prefs (not per-house) -----
 
-export type CategorySpacing = 'disabled' | 'divider' | 'spacing'
 export type ReuseExistingItems = 'ask' | 'reuse' | 'never'
 
 export interface UserPrefs {
@@ -11,8 +10,6 @@ export interface UserPrefs {
   firstDayOfWeek: number
   /** When true, clicking anywhere on a checklist row marks the item done. */
   tapRowToComplete: boolean
-  /** Separator style between categories when checklists are sorted by category. */
-  categorySpacing: CategorySpacing
   /** How to handle adding an item whose name already exists in the list. */
   reuseExistingItems: ReuseExistingItems
 }
@@ -21,7 +18,6 @@ const userPrefsDefaults: UserPrefs = {
   lastHouseId: null,
   firstDayOfWeek: 1,
   tapRowToComplete: false,
-  categorySpacing: 'disabled',
   reuseExistingItems: 'ask',
 }
 
@@ -65,16 +61,6 @@ export async function setTapRowToComplete(value: boolean): Promise<boolean> {
   return prefs.tapRowToComplete
 }
 
-export async function getCategorySpacing(): Promise<CategorySpacing> {
-  const prefs = await getUserPrefs()
-  return prefs.categorySpacing
-}
-
-export async function setCategorySpacing(value: CategorySpacing): Promise<CategorySpacing> {
-  const prefs = await setUserPrefs({ categorySpacing: value })
-  return prefs.categorySpacing
-}
-
 export async function getReuseExistingItems(): Promise<ReuseExistingItems> {
   const prefs = await getUserPrefs()
   return prefs.reuseExistingItems
@@ -92,12 +78,7 @@ export async function setReuseExistingItems(
 export type PhotoSort = 'custom' | 'newest' | 'oldest' | 'description_asc' | 'description_desc'
 export type NoteSort = 'custom' | 'newest' | 'oldest' | 'title_asc' | 'title_desc'
 export type ChecklistItemSort =
-  | 'custom'
-  | 'newest'
-  | 'oldest'
-  | 'name_asc'
-  | 'name_desc'
-  | 'category'
+  'custom' | 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'category'
 export type CategorySort = 'name_asc' | 'name_desc' | 'custom'
 export type ChecklistSort = 'name_asc' | 'name_desc' | 'custom'
 

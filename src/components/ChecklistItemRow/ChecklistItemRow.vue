@@ -92,7 +92,11 @@
         <component :is="checklistIconComponent(list.icon)" :size="14" />
         {{ list.name }}
       </span>
-      <span v-if="category" class="checklist-row__category" :style="{ color: category.color }">
+      <span
+        v-if="category && !hideCategory"
+        class="checklist-row__category"
+        :style="{ color: category.color }"
+      >
         <component :is="categoryIconComponent(category.icon)" :size="14" />
         {{ category.name }}
       </span>
@@ -206,6 +210,8 @@ const props = withDefaults(
   defineProps<{
     item: ChecklistItem
     category: Category | null
+    /** Hide the category chip (used when category headers already group rows). */
+    hideCategory?: boolean
     list?: Checklist | null
     houseId: number
     reorderEnabled?: boolean
@@ -225,6 +231,7 @@ const props = withDefaults(
     selected?: boolean
   }>(),
   {
+    hideCategory: false,
     list: null,
     reorderEnabled: false,
     trashMode: false,

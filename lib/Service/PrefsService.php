@@ -15,10 +15,8 @@ class PrefsService {
 	private const KEY_LAST_HOUSE = 'last_house_id';
 	private const KEY_IMAGE_FOLDER = 'image_folder';
 	private const KEY_TAP_ROW_TO_COMPLETE = 'tap_row_to_complete';
-	private const KEY_CATEGORY_SPACING = 'category_spacing';
 	private const KEY_REUSE_EXISTING_ITEMS = 'reuse_existing_items';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
-	public const CATEGORY_SPACING_OPTIONS = ['disabled', 'divider', 'spacing'];
 	public const REUSE_EXISTING_ITEMS_OPTIONS = ['ask', 'reuse', 'never'];
 
 	public function __construct(
@@ -86,27 +84,6 @@ class PrefsService {
 		);
 	}
 
-	public function getCategorySpacing(string $uid): string {
-		$value = $this->config->getUserValue(
-			$uid,
-			Application::APP_ID,
-			self::KEY_CATEGORY_SPACING,
-			'disabled',
-		);
-		return in_array($value, self::CATEGORY_SPACING_OPTIONS, true) ? $value : 'disabled';
-	}
-
-	public function setCategorySpacing(string $uid, string $value): string {
-		$normalized = in_array($value, self::CATEGORY_SPACING_OPTIONS, true) ? $value : 'disabled';
-		$this->config->setUserValue(
-			$uid,
-			Application::APP_ID,
-			self::KEY_CATEGORY_SPACING,
-			$normalized,
-		);
-		return $normalized;
-	}
-
 	public function getReuseExistingItems(string $uid): string {
 		$value = $this->config->getUserValue(
 			$uid,
@@ -138,7 +115,6 @@ class PrefsService {
 			'lastHouseId' => $this->getLastHouseId($uid),
 			'firstDayOfWeek' => $this->getFirstDayOfWeek($uid),
 			'tapRowToComplete' => $this->getTapRowToComplete($uid),
-			'categorySpacing' => $this->getCategorySpacing($uid),
 			'reuseExistingItems' => $this->getReuseExistingItems($uid),
 		];
 	}
@@ -153,9 +129,6 @@ class PrefsService {
 		}
 		if (array_key_exists('tapRowToComplete', $patch) && is_bool($patch['tapRowToComplete'])) {
 			$this->setTapRowToComplete($uid, $patch['tapRowToComplete']);
-		}
-		if (array_key_exists('categorySpacing', $patch) && is_string($patch['categorySpacing'])) {
-			$this->setCategorySpacing($uid, $patch['categorySpacing']);
 		}
 		if (array_key_exists('reuseExistingItems', $patch) && is_string($patch['reuseExistingItems'])) {
 			$this->setReuseExistingItems($uid, $patch['reuseExistingItems']);

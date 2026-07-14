@@ -44,18 +44,6 @@
         </p>
       </div>
       <div class="account-settings__field">
-        <label class="account-settings__label">{{ strings.categorySpacingLabel }}</label>
-        <p class="account-settings__hint">{{ strings.categorySpacingHint }}</p>
-        <NcSelect
-          :model-value="selectedCategorySpacingOption"
-          :options="categorySpacingOptions"
-          :clearable="false"
-          :searchable="false"
-          input-label=""
-          @update:model-value="updateCategorySpacing"
-        />
-      </div>
-      <div class="account-settings__field">
         <label class="account-settings__label">{{ strings.reuseExistingItemsLabel }}</label>
         <p class="account-settings__hint">{{ strings.reuseExistingItemsHint }}</p>
         <NcSelect
@@ -131,11 +119,9 @@ import {
   getNotificationPrefs,
   setNotificationPrefs,
   type NotificationPrefs,
-  type CategorySpacing,
   type ReuseExistingItems,
 } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
-import { useCategorySpacing } from '@/composables/useCategorySpacing'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 
 const props = defineProps<{ open: boolean; houseId: number | null }>()
@@ -244,34 +230,6 @@ async function updateTapRowToComplete(value: boolean) {
   }
 }
 
-const { categorySpacing, set: setCategorySpacingPref } = useCategorySpacing()
-
-interface CategorySpacingOption {
-  value: CategorySpacing
-  label: string
-}
-
-const categorySpacingOptions = computed<CategorySpacingOption[]>(() => [
-  { value: 'disabled', label: strings.categorySpacingDisabled },
-  { value: 'divider', label: strings.categorySpacingDivider },
-  { value: 'spacing', label: strings.categorySpacingSpacing },
-])
-
-const selectedCategorySpacingOption = computed<CategorySpacingOption>(
-  () =>
-    categorySpacingOptions.value.find((o) => o.value === categorySpacing.value) ??
-    categorySpacingOptions.value[0],
-)
-
-async function updateCategorySpacing(option: CategorySpacingOption | null) {
-  if (!option) return
-  try {
-    await setCategorySpacingPref(option.value)
-  } catch {
-    // Composable already reverted the optimistic update.
-  }
-}
-
 const { reuseExistingItems, set: setReuseExistingItemsPref } = useReuseExistingItems()
 
 interface ReuseExistingItemsOption {
@@ -330,11 +288,6 @@ const strings = {
     'pantry',
     'When off, items are only marked complete by clicking the checkbox.',
   ),
-  categorySpacingLabel: t('pantry', 'Show spacing between categories in list items'),
-  categorySpacingHint: t('pantry', 'Only visible when sorting by category.'),
-  categorySpacingDisabled: t('pantry', 'Disabled'),
-  categorySpacingDivider: t('pantry', 'Divider'),
-  categorySpacingSpacing: t('pantry', 'Spacing'),
   reuseExistingItemsLabel: t('pantry', 'Reuse existing items when adding'),
   reuseExistingItemsHint: t(
     'pantry',

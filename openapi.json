@@ -1014,7 +1014,6 @@
                     "lastHouseId",
                     "firstDayOfWeek",
                     "tapRowToComplete",
-                    "categorySpacing",
                     "reuseExistingItems"
                 ],
                 "properties": {
@@ -1029,9 +1028,6 @@
                     },
                     "tapRowToComplete": {
                         "type": "boolean"
-                    },
-                    "categorySpacing": {
-                        "type": "string"
                     },
                     "reuseExistingItems": {
                         "type": "string"
@@ -10263,12 +10259,6 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Whether clicking anywhere on a checklist row marks it done."
-                                    },
-                                    "categorySpacing": {
-                                        "type": "string",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "Separator between categories when sorting by category. One of: disabled, divider, spacing."
                                     },
                                     "reuseExistingItems": {
                                         "type": "string",
