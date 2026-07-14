@@ -111,6 +111,11 @@ export async function listDeletedItems(houseId: number, listId: number): Promise
   return resp.data ?? []
 }
 
+export async function listArchivedItems(houseId: number, listId: number): Promise<ChecklistItem[]> {
+  const resp = await ocs.get<ChecklistItem[]>(`/houses/${houseId}/lists/${listId}/items/archive`)
+  return resp.data ?? []
+}
+
 export interface ItemInput {
   name: string
   description?: string | null
@@ -196,6 +201,28 @@ export async function emptyTrash(houseId: number, listId: number): Promise<void>
   await ocs.delete(`/houses/${houseId}/lists/${listId}/items/trash`)
 }
 
+export async function archiveItem(
+  houseId: number,
+  listId: number,
+  itemId: number,
+): Promise<ChecklistItem> {
+  const resp = await ocs.post<ChecklistItem>(
+    `/houses/${houseId}/lists/${listId}/items/${itemId}/archive`,
+  )
+  return resp.data
+}
+
+export async function unarchiveItem(
+  houseId: number,
+  listId: number,
+  itemId: number,
+): Promise<ChecklistItem> {
+  const resp = await ocs.post<ChecklistItem>(
+    `/houses/${houseId}/lists/${listId}/items/${itemId}/unarchive`,
+  )
+  return resp.data
+}
+
 export async function reorderItems(
   houseId: number,
   listId: number,
@@ -246,6 +273,18 @@ export async function batchDeleteItems(
   const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/delete`, {
     itemIds,
     permanent,
+  })
+  return resp.data
+}
+
+export async function batchArchiveItems(
+  houseId: number,
+  itemIds: number[],
+  archive = true,
+): Promise<BatchResult> {
+  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/archive`, {
+    itemIds,
+    archive,
   })
   return resp.data
 }

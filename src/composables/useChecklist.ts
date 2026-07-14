@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import * as api from '@/api/lists'
 import type { Checklist, ChecklistItem } from '@/api/types'
 import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
@@ -156,7 +156,9 @@ export function useChecklistItems(houseId: number, listId: number) {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const sortBy = ref<ChecklistItemSort>('custom')
-  const trashMode = ref(false)
+  const viewMode = ref<'active' | 'trash' | 'archive'>('active')
+  const trashMode = computed(() => viewMode.value === 'trash')
+  const archiveMode = computed(() => viewMode.value === 'archive')
 
   const isMeta = listId === ALL_LISTS_ID
 
@@ -179,10 +181,12 @@ export function useChecklistItems(houseId: number, listId: number) {
     try {
       if (isMeta) {
         items.value = await api.listAllItems(houseId, s)
+      } else if (archiveMode.value) {
+        items.value = await api.listArchivedItems(houseId, listId)
+      } else if (trashMode.value) {
+        items.value = await api.listDeletedItems(houseId, listId)
       } else {
-        items.value = trashMode.value
-          ? await api.listDeletedItems(houseId, listId)
-          : await api.listItems(houseId, listId, s)
+        items.value = await api.listItems(houseId, listId, s)
       }
     } catch (e) {
       if (!silent) error.value = (e as Error).message
@@ -310,6 +314,25 @@ export function useChecklistItems(houseId: number, listId: number) {
     }
   }
 
+  async function archive(itemId: number): Promise<void> {
+    await api.archiveItem(houseId, listIdFor(itemId), itemId)
+    // The item leaves the active view for the archive.
+    items.value = items.value.filter((i) => i.id !== itemId)
+  }
+
+  async function unarchive(itemId: number): Promise<void> {
+    await api.unarchiveItem(houseId, listIdFor(itemId), itemId)
+    // The item leaves the archive view; it returns to the active list.
+    items.value = items.value.filter((i) => i.id !== itemId)
+  }
+
+  async function undoArchive(prevItem: ChecklistItem): Promise<void> {
+    // Reverses a just-archived item without changing its state.
+    const useListId = isMeta ? prevItem.listId : listId
+    const restored = await api.unarchiveItem(houseId, useListId, prevItem.id)
+    items.value = [...items.value, restored]
+  }
+
   // ----- Batch (group) actions -----
   //
   // Each returns the server's BatchResult (with the ids it skipped for access
@@ -352,6 +375,28 @@ export function useChecklistItems(houseId: number, listId: number) {
     return result
   }
 
+  async function archiveMany(ids: number[]): Promise<api.BatchResult> {
+    const result = await api.batchArchiveItems(houseId, ids, true)
+    const archived = new Set(ids.filter((id) => !result.skipped.includes(id)))
+    items.value = items.value.filter((i) => !archived.has(i.id))
+    return result
+  }
+
+  async function unarchiveMany(ids: number[]): Promise<api.BatchResult> {
+    const result = await api.batchArchiveItems(houseId, ids, false)
+    const unarchived = new Set(ids.filter((id) => !result.skipped.includes(id)))
+    items.value = items.value.filter((i) => !unarchived.has(i.id))
+    return result
+  }
+
+  async function undoArchiveMany(prevItems: ChecklistItem[]): Promise<void> {
+    // Undo a bulk archive by unarchiving each snapshot (no batch endpoint gap:
+    // unarchiveMany exists, but this restores into the active view in order).
+    const ids = prevItems.map((i) => i.id)
+    await api.batchArchiveItems(houseId, ids, false)
+    items.value = [...items.value, ...prevItems]
+  }
+
   async function setCategoryMany(
     ids: number[],
     categoryId: number | null,
@@ -388,7 +433,9 @@ export function useChecklistItems(houseId: number, listId: number) {
     loading,
     error,
     sortBy,
+    viewMode,
     trashMode,
+    archiveMode,
     load,
     add,
     update,
@@ -401,12 +448,18 @@ export function useChecklistItems(houseId: number, listId: number) {
     removePermanently,
     restore,
     emptyTrash,
+    archive,
+    unarchive,
+    undoArchive,
     uploadImage,
     clearImage,
     moveMany,
     copyMany,
     removeMany,
     removeManyPermanent,
+    archiveMany,
+    unarchiveMany,
+    undoArchiveMany,
     setCategoryMany,
     undoRemoveMany,
   }

@@ -47,6 +47,7 @@ class ChecklistItemMapper extends QBMapper {
 				)
 				->where($qb->expr()->eq('i.list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
 				->andWhere($qb->expr()->isNull('i.deleted_at'))
+				->andWhere($qb->expr()->isNull('i.archived_at'))
 				->orderBy(
 					$qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'),
 					'ASC',
@@ -71,7 +72,8 @@ class ChecklistItemMapper extends QBMapper {
 		$qb->select('*')
 			->from($items)
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'));
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
 
 		switch ($sortBy) {
 			case 'newest':
@@ -125,6 +127,7 @@ class ChecklistItemMapper extends QBMapper {
 				)
 				->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
 				->andWhere($qb->expr()->isNull('i.deleted_at'))
+				->andWhere($qb->expr()->isNull('i.archived_at'))
 				->orderBy(
 					$qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'),
 					'ASC',
@@ -153,7 +156,8 @@ class ChecklistItemMapper extends QBMapper {
 				$qb->expr()->isNull('l.deleted_at'),
 			))
 			->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('i.deleted_at'));
+			->andWhere($qb->expr()->isNull('i.deleted_at'))
+			->andWhere($qb->expr()->isNull('i.archived_at'));
 
 		switch ($sortBy) {
 			case 'oldest':
@@ -202,7 +206,8 @@ class ChecklistItemMapper extends QBMapper {
 			->where($qb->expr()->eq('done', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->isNotNull('next_due_at'))
 			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'));
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
 
 		return $this->findEntities($qb);
 	}
@@ -222,7 +227,8 @@ class ChecklistItemMapper extends QBMapper {
 			->andWhere($qb->expr()->isNotNull('rrule'))
 			->andWhere($qb->expr()->isNotNull('next_due_at'))
 			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'));
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
 
 		return $this->findEntities($qb);
 	}
@@ -239,6 +245,22 @@ class ChecklistItemMapper extends QBMapper {
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNotNull('deleted_at'))
 			->orderBy('deleted_at', 'DESC');
+
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Find archived items in a list, most recently archived first.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function findArchivedByList(int $listId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('archived_at'))
+			->orderBy('archived_at', 'DESC');
 
 		return $this->findEntities($qb);
 	}

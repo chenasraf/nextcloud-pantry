@@ -462,6 +462,35 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * List archived items in a checklist
+	 *
+	 * Returns items whose archived_at is set, most recently archived first.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int<1, 1000> $limit Maximum number of items to return.
+	 * @param int<0, max> $offset Number of items to skip.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>
+	 *
+	 * 200: Archived items returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/items/archive')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function indexArchivedItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $limit, $offset): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$all = $this->lists->listArchivedItems($listId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			return new DataResponse($items);
+		});
+	}
+
+	/**
 	 * Add an item to a list
 	 *
 	 * @param int $houseId House id.
@@ -904,6 +933,65 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * Archive an item
+	 *
+	 * Hides the item from the active list into the archive view. Archived items
+	 * are never auto-purged and there is no bulk "empty archive".
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int $itemId Item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
+	 *
+	 * 200: Item archived
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/archive')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function archiveItem(int $houseId, int $listId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$archived = $this->lists->archiveItem($itemId);
+			return new DataResponse($archived->jsonSerialize());
+		});
+	}
+
+	/**
+	 * Unarchive an item back into the active list
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int $itemId Item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
+	 *
+	 * 200: Item unarchived
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/unarchive')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function unarchiveItem(int $houseId, int $listId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$unarchived = $this->lists->unarchiveItem($itemId);
+			return new DataResponse($unarchived->jsonSerialize());
+		});
+	}
+
+	/**
 	 * Batch reorder items in a list
 	 *
 	 * @param int $houseId House id.
@@ -1155,6 +1243,41 @@ final class ChecklistController extends OCSController {
 						$group['itemNames'],
 					);
 				}
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => [],
+				'skipped' => $collected['skipped'],
+			]);
+		});
+	}
+
+	/**
+	 * Archive (or unarchive) a batch of items in one action
+	 *
+	 * @param int $houseId House id.
+	 * @param list<int> $itemIds Ids of the items to (un)archive.
+	 * @param bool $archive If true, archive the items; if false, unarchive them.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 *
+	 * 200: Items archived
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/items/batch/archive')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function batchArchiveItems(int $houseId, array $itemIds = [], bool $archive = true): DataResponse {
+		return $this->runAction(function () use ($houseId, $itemIds, $archive): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$validIds = array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']);
+
+			if ($archive) {
+				$this->lists->archiveItems($validIds);
+			} else {
+				$this->lists->unarchiveItems($validIds);
 			}
 			return new DataResponse([
 				'success' => true,

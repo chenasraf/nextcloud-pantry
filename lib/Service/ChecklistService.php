@@ -611,6 +611,69 @@ class ChecklistService {
 		$this->itemMapper->emptyTrashForList($listId);
 	}
 
+	/**
+	 * List archived items for a list. Most recently archived first.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function listArchivedItems(int $listId): array {
+		return $this->itemMapper->findArchivedByList($listId);
+	}
+
+	/**
+	 * Archive an item by stamping its archived_at marker. Archived items are
+	 * hidden from the active view but, unlike trash, are never auto-purged.
+	 */
+	public function archiveItem(int $itemId): ChecklistItem {
+		$item = $this->getItem($itemId);
+		$now = time();
+		$item->setArchivedAt($now);
+		$item->setUpdatedAt($now);
+		$this->itemMapper->update($item);
+		return $item;
+	}
+
+	/**
+	 * Unarchive an item by clearing its archived_at marker.
+	 */
+	public function unarchiveItem(int $itemId): ChecklistItem {
+		$item = $this->getItem($itemId);
+		$item->setArchivedAt(null);
+		$item->setUpdatedAt(time());
+		$this->itemMapper->update($item);
+		return $item;
+	}
+
+	/**
+	 * Archive a batch of items. Missing items are skipped.
+	 *
+	 * @param list<int> $itemIds
+	 */
+	public function archiveItems(array $itemIds): void {
+		foreach ($itemIds as $itemId) {
+			try {
+				$this->archiveItem((int)$itemId);
+			} catch (NotFoundException) {
+				continue;
+			}
+		}
+	}
+
+	/**
+	 * Unarchive a batch of items. Missing items are skipped.
+	 *
+	 * @param list<int> $itemIds
+	 */
+	public function unarchiveItems(array $itemIds): void {
+		foreach ($itemIds as $itemId) {
+			try {
+				$this->unarchiveItem((int)$itemId);
+			} catch (NotFoundException) {
+				continue;
+			}
+		}
+	}
+
 	private function strOrNull(mixed $v): ?string {
 		if (!is_string($v)) {
 			return null;

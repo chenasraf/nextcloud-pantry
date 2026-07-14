@@ -64,6 +64,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,
+    archivedAt: null,
     ...overrides,
   }
 }

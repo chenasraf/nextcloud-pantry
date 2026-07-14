@@ -110,6 +110,7 @@ export interface ChecklistItem {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  archivedAt: number | null
 }
 
 export interface Note {

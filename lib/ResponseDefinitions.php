@@ -95,6 +95,7 @@ namespace OCA\Pantry;
  *     createdAt: int,
  *     updatedAt: int,
  *     deletedAt: int|null,
+ *     archivedAt: int|null,
  * }
  *
  * @psalm-type PantryCategoryIcon = 'tag'|'food'|'fruit'|'vegetable'|'bakery'|'dairy'|'meat'|'fish'|'snacks'|'cookie'|'drinks'|'coffee'|'frozen'|'household'|'pets'|'baby'|'home'|'leaf'|'pizza'|'clipboard-check'|'clipboard-list'|'format-list-checks'|'cart'|'basket'|'star'|'heart'|'calendar'|'bell'|'flag'|'bookmark'|'pin'|'map-marker'|'briefcase'|'wrench'|'silverware'|'gift'|'book'|'school'|'palette'|'camera'|'music'|'gamepad'|'run'|'dumbbell'|'pill'|'paw'|'flower'|'tree'|'broom'|'lightbulb'|'package'|'car'|'bike'|'beach'

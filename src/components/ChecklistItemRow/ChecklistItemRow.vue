@@ -141,11 +141,31 @@
           </template>
           {{ strings.restoreItem }}
         </NcActionButton>
+        <NcActionButton
+          v-if="!trashMode && !archiveMode && canEditItem"
+          close-after-click
+          @click="$emit('archive', item.id)"
+        >
+          <template #icon>
+            <ArchiveArrowDownOutlineIcon :size="20" />
+          </template>
+          {{ strings.archiveItem }}
+        </NcActionButton>
+        <NcActionButton
+          v-if="archiveMode && canEditItem"
+          close-after-click
+          @click="$emit('unarchive', item.id)"
+        >
+          <template #icon>
+            <ArchiveArrowUpOutlineIcon :size="20" />
+          </template>
+          {{ strings.unarchiveItem }}
+        </NcActionButton>
         <NcActionButton v-if="canDeleteItem" close-after-click @click="$emit('remove', item.id)">
           <template #icon>
             <DeleteIcon :size="20" />
           </template>
-          {{ trashMode ? strings.deletePermanently : strings.removeItem }}
+          {{ trashMode || archiveMode ? strings.deletePermanently : strings.removeItem }}
         </NcActionButton>
       </NcActions>
     </div>
@@ -167,6 +187,8 @@ import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import DeleteRestoreIcon from '@icons/DeleteRestore.vue'
+import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
+import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
@@ -188,6 +210,7 @@ const props = withDefaults(
     houseId: number
     reorderEnabled?: boolean
     trashMode?: boolean
+    archiveMode?: boolean
     tapRowToComplete?: boolean
     showAddedBy?: boolean
     /**
@@ -205,6 +228,7 @@ const props = withDefaults(
     list: null,
     reorderEnabled: false,
     trashMode: false,
+    archiveMode: false,
     tapRowToComplete: false,
     showAddedBy: false,
     listWritable: true,
@@ -234,6 +258,8 @@ const emit = defineEmits<{
   copy: [item: ChecklistItem]
   remove: [id: number]
   restore: [id: number]
+  archive: [id: number]
+  unarchive: [id: number]
   preview: [item: ChecklistItem]
   'toggle-select': [id: number]
   'drag-start': [itemId: number]
@@ -305,6 +331,8 @@ const strings = {
   removeItem: t('pantry', 'Remove item'),
   deletePermanently: t('pantry', 'Delete permanently'),
   restoreItem: t('pantry', 'Restore'),
+  archiveItem: t('pantry', 'Archive'),
+  unarchiveItem: t('pantry', 'Unarchive'),
 }
 </script>
 

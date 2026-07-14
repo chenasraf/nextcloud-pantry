@@ -67,6 +67,7 @@ class Capabilities implements IPublicCapability {
 					'item-authors',
 					'activity',
 					'item-trash',
+					'item-archive',
 					'checklist-trash',
 					'note-trash',
 					'photo-trash',

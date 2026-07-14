@@ -52,6 +52,7 @@ class ChecklistServiceTest extends TestCase {
 		$item->setSortOrder($overrides['sortOrder'] ?? 0);
 		$item->setCreatedAt($overrides['createdAt'] ?? 0);
 		$item->setUpdatedAt($overrides['updatedAt'] ?? 0);
+		$item->setArchivedAt($overrides['archivedAt'] ?? null);
 		return $item;
 	}
 
@@ -576,5 +577,51 @@ class ChecklistServiceTest extends TestCase {
 		$this->itemMapper->expects($this->never())->method('update');
 
 		$this->svc->permanentlyDeleteItems([1, 2]);
+	}
+
+	public function testArchiveItemSetsArchivedAt(): void {
+		$item = $this->makeItem();
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->expects($this->never())->method('delete');
+		$this->itemMapper->expects($this->once())
+			->method('update')
+			->with($this->callback(fn (ChecklistItem $i) => $i->getArchivedAt() !== null));
+
+		$this->svc->archiveItem(42);
+		$this->assertNotNull($item->getArchivedAt());
+	}
+
+	public function testUnarchiveItemClearsArchivedAt(): void {
+		$item = $this->makeItem(['archivedAt' => 123]);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->expects($this->once())
+			->method('update')
+			->with($this->callback(fn (ChecklistItem $i) => $i->getArchivedAt() === null));
+
+		$unarchived = $this->svc->unarchiveItem(42);
+		$this->assertNull($unarchived->getArchivedAt());
+	}
+
+	public function testListArchivedItemsDelegatesToMapper(): void {
+		$items = [$this->makeItem(), $this->makeItem()];
+		$this->itemMapper->expects($this->once())
+			->method('findArchivedByList')
+			->with(7)
+			->willReturn($items);
+
+		$this->assertSame($items, $this->svc->listArchivedItems(7));
+	}
+
+	public function testArchiveItemsArchivesEach(): void {
+		$a = $this->makeItem();
+		$b = $this->makeItem();
+		$this->itemMapper->method('findById')->willReturnOnConsecutiveCalls($a, $b);
+		$this->itemMapper->expects($this->exactly(2))->method('update');
+		$this->itemMapper->expects($this->never())->method('delete');
+
+		$this->svc->archiveItems([1, 2]);
+
+		$this->assertNotNull($a->getArchivedAt());
+		$this->assertNotNull($b->getArchivedAt());
 	}
 }

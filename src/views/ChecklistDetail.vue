@@ -66,6 +66,28 @@
           </template>
         </NcButton>
         <NcButton
+          v-if="!trashMode && !archiveMode"
+          variant="tertiary"
+          :disabled="!canBulkArchive"
+          :aria-label="strings.archiveSelected"
+          @click="bulkArchive"
+        >
+          <template #icon>
+            <ArchiveArrowDownOutlineIcon :size="20" />
+          </template>
+        </NcButton>
+        <NcButton
+          v-if="archiveMode"
+          variant="tertiary"
+          :disabled="!canBulkArchive"
+          :aria-label="strings.unarchiveSelected"
+          @click="bulkUnarchive"
+        >
+          <template #icon>
+            <ArchiveArrowUpOutlineIcon :size="20" />
+          </template>
+        </NcButton>
+        <NcButton
           variant="tertiary"
           :disabled="!canBulkDelete"
           :aria-label="strings.deleteSelected"
@@ -78,7 +100,13 @@
       </div>
 
       <ChecklistAddForm
-        v-if="!selectionMode && can.canAddItems && !trashMode && (isMeta || writableHere)"
+        v-if="
+          !selectionMode &&
+          can.canAddItems &&
+          !trashMode &&
+          !archiveMode &&
+          (isMeta || writableHere)
+        "
         :house-id="houseIdNum"
         :adding="adding"
         :delete-on-done-default="list?.deleteOnDoneDefault ?? false"
@@ -105,11 +133,12 @@
 
       <NcEmptyContent
         v-else-if="items.length === 0"
-        :name="trashMode ? strings.trashEmptyTitle : strings.emptyTitle"
-        :description="trashMode ? strings.trashEmptyBody : strings.emptyBody"
+        :name="emptyStateTitle"
+        :description="emptyStateBody"
       >
         <template #icon>
           <TrashCanIcon v-if="trashMode" />
+          <ArchiveOutlineIcon v-else-if="archiveMode" />
           <span
             v-else
             class="pantry-detail__empty-icon"
@@ -156,6 +185,7 @@
                 reorderActive && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
               "
               :trash-mode="trashMode"
+              :archive-mode="archiveMode"
               :tap-row-to-complete="tapRowToComplete"
               :show-added-by="showAddedBy"
               :selection-mode="selectionMode"
@@ -168,6 +198,8 @@
               @copy="startCopyItem"
               @remove="handleRemove"
               @restore="handleRestore"
+              @archive="handleArchive"
+              @unarchive="handleUnarchive"
               @preview="openPreview"
               @drag-start="onItemDragStart"
               @reorder-over="onReorderOver"
@@ -202,6 +234,8 @@
                 :reorder-enabled="
                   isCustomSort && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
                 "
+                :trash-mode="trashMode"
+                :archive-mode="archiveMode"
                 :tap-row-to-complete="tapRowToComplete"
                 :show-added-by="showAddedBy"
                 @toggle="handleToggle"
@@ -210,6 +244,9 @@
                 @move="startMoveItem"
                 @copy="startCopyItem"
                 @remove="handleRemove"
+                @restore="handleRestore"
+                @archive="handleArchive"
+                @unarchive="handleUnarchive"
                 @preview="openPreview"
                 @drag-start="onItemDragStart"
                 @reorder-over="onReorderOver"
@@ -435,6 +472,9 @@ import SelectMultipleIcon from '@icons/SelectMultiple.vue'
 import CloseIcon from '@icons/Close.vue'
 import TagIcon from '@icons/Tag.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
+import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
+import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
+import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ViewListIcon from '@icons/ViewList.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import FileExportIcon from '@icons/FileExport.vue'
@@ -497,23 +537,48 @@ const {
   removePermanently,
   restore,
   emptyTrash,
+  archive,
+  unarchive,
+  undoArchive,
   uploadImage,
   clearImage,
   moveMany,
   copyMany,
   removeMany,
   removeManyPermanent,
+  archiveMany,
+  unarchiveMany,
+  undoArchiveMany,
   setCategoryMany,
   undoRemoveMany,
   sortBy,
+  viewMode,
   trashMode,
+  archiveMode,
 } = useChecklistItems(houseIdNum.value, listIdNum.value)
 
 async function toggleTrash() {
   exitSelection()
-  trashMode.value = !trashMode.value
+  viewMode.value = trashMode.value ? 'active' : 'trash'
   await load()
 }
+
+async function toggleArchive() {
+  exitSelection()
+  viewMode.value = archiveMode.value ? 'active' : 'archive'
+  await load()
+}
+
+const emptyStateTitle = computed(() => {
+  if (trashMode.value) return strings.trashEmptyTitle
+  if (archiveMode.value) return strings.archiveEmptyTitle
+  return strings.emptyTitle
+})
+const emptyStateBody = computed(() => {
+  if (trashMode.value) return strings.trashEmptyBody
+  if (archiveMode.value) return strings.archiveEmptyBody
+  return strings.emptyBody
+})
 
 const confirmingEmptyTrash = ref(false)
 
@@ -1163,7 +1228,7 @@ async function handleToggle(itemId: number) {
 }
 
 async function handleRemove(itemId: number) {
-  if (trashMode.value) {
+  if (trashMode.value || archiveMode.value) {
     await removePermanently(itemId)
     return
   }
@@ -1184,6 +1249,26 @@ async function handleRemove(itemId: number) {
 
 async function handleRestore(itemId: number) {
   await restore(itemId)
+}
+
+async function handleArchive(itemId: number) {
+  const prev = items.value.find((i) => i.id === itemId)
+  if (!prev) return
+  const snapshot = { ...prev }
+  await archive(itemId)
+  showUndo(
+    strings.itemArchived,
+    () => {
+      void undoArchive(snapshot).catch(() => {
+        showError(strings.unarchiveFailed)
+      })
+    },
+    { timeout: 6000 },
+  )
+}
+
+async function handleUnarchive(itemId: number) {
+  await unarchive(itemId)
 }
 
 // ----- Edit -----
@@ -1462,6 +1547,10 @@ const canBulkDelete = computed(
 const canBulkCategory = computed(
   () => can.value.canEditLists && writableSelectedIds.value.length > 0,
 )
+// Archive/unarchive is gated by canEditLists (an organizing action).
+const canBulkArchive = computed(
+  () => can.value.canEditLists && writableSelectedIds.value.length > 0,
+)
 // Show the toolbar entry only when there's something to select and at least one
 // group action is reachable for this user.
 const canSelect = computed(
@@ -1558,7 +1647,7 @@ const confirmingBulkDelete = ref(false)
 async function bulkDelete() {
   const ids = writableSelectedIds.value
   if (ids.length === 0) return
-  if (trashMode.value) {
+  if (trashMode.value || archiveMode.value) {
     confirmingBulkDelete.value = true
     return
   }
@@ -1593,6 +1682,41 @@ async function submitBulkDeletePermanent() {
   }
 }
 
+// ----- Bulk archive / unarchive -----
+
+async function bulkArchive() {
+  const ids = writableSelectedIds.value
+  if (ids.length === 0) return
+  const snapshots = selectedItems.value.filter((i) => itemWritable(i)).map((i) => ({ ...i }))
+  try {
+    const result = await archiveMany(ids)
+    const archived = ids.length - result.skipped.length
+    reportSkipped(selectedCount.value - ids.length + result.skipped.length)
+    exitSelection()
+    showUndo(
+      n('pantry', 'Archived %n item', 'Archived %n items', archived),
+      () => {
+        void undoArchiveMany(snapshots).catch(() => showError(strings.unarchiveFailed))
+      },
+      { timeout: 6000 },
+    )
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function bulkUnarchive() {
+  const ids = writableSelectedIds.value
+  if (ids.length === 0) return
+  try {
+    const result = await unarchiveMany(ids)
+    reportSkipped(selectedCount.value - ids.length + result.skipped.length)
+    exitSelection()
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
 const strings = {
   back: t('pantry', 'Back to lists'),
   allListsTitle: t('pantry', 'All lists'),
@@ -1600,8 +1724,11 @@ const strings = {
   emptyBody: t('pantry', 'Add items using the form above.'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
   trashEmptyBody: t('pantry', 'Deleted items will appear here.'),
+  archiveEmptyTitle: t('pantry', 'Archive is empty'),
+  archiveEmptyBody: t('pantry', 'Archived items will appear here.'),
   sortLabel: t('pantry', 'Sort order'),
   trashLabel: t('pantry', 'Trash'),
+  archiveLabel: t('pantry', 'Archive'),
   doneTitle: t('pantry', 'Done'),
   manageCategories: t('pantry', 'Manage categories'),
   editList: t('pantry', 'Edit list'),
@@ -1619,7 +1746,9 @@ const strings = {
   cancel: t('pantry', 'Cancel'),
   itemMarkedDone: t('pantry', 'Item marked as done'),
   itemRemoved: t('pantry', 'Item moved to trash'),
+  itemArchived: t('pantry', 'Item archived'),
   restoreFailed: t('pantry', 'Failed to restore item.'),
+  unarchiveFailed: t('pantry', 'Failed to unarchive item.'),
   reuseTitle: t('pantry', 'Item already exists'),
   reuseAction: t('pantry', 'Reuse existing'),
   reuseAddAnyway: t('pantry', 'Add anyway'),
@@ -1630,6 +1759,8 @@ const strings = {
   moveSelected: t('pantry', 'Move'),
   copySelected: t('pantry', 'Copy'),
   assignCategory: t('pantry', 'Assign category'),
+  archiveSelected: t('pantry', 'Archive'),
+  unarchiveSelected: t('pantry', 'Unarchive'),
   deleteSelected: t('pantry', 'Delete'),
   assignCategoryTitle: t('pantry', 'Assign category'),
   apply: t('pantry', 'Apply'),
@@ -1670,6 +1801,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
       })
     }
     actions.push(
+      {
+        key: 'archive',
+        label: strings.archiveLabel,
+        icon: ArchiveOutlineIcon,
+        variant: archiveMode.value ? 'primary' : 'tertiary',
+        pressed: archiveMode.value,
+        priority: 2,
+        onClick: toggleArchive,
+      },
       {
         key: 'trash',
         label: strings.trashLabel,
