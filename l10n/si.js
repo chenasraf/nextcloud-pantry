@@ -3,7 +3,6 @@ OC.L10N.register(
     {
     "Images" : "පින්තූර",
     "Save" : "Save",
-    "Disabled" : "අබල කර ඇත",
     "Name" : "නම",
     "Cancel" : "Cancel",
     "Create" : "සාදන්න",
@@ -13,8 +12,10 @@ OC.L10N.register(
     "Category" : "ප්‍රවර්ගය",
     "Description" : "විස්තරය",
     "All" : "සියල්ල",
+    "No category" : "ප්‍රවර්ග නැත",
     "Everyone" : "සැවොම",
     "Restore" : "ප්‍රතිෂ්ථාපනය",
+    "Archive" : "සංරක්ෂණය",
     "Photos" : "ඡායාරූප",
     "Upload" : "උඩුගත",
     "Notes" : "සටහන්",

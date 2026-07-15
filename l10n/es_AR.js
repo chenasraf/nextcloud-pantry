@@ -3,7 +3,6 @@ OC.L10N.register(
     {
     "Images" : "Imágenes",
     "Save" : "Guardar",
-    "Disabled" : "Deshabilitado",
     "Name" : "Nombre",
     "Cancel" : "Cancel",
     "Custom" : "Personalizado",
@@ -17,6 +16,8 @@ OC.L10N.register(
     "Everyone" : "Todos",
     "Delete permanently" : "Borrar permanentemente",
     "Restore" : "Restaurar",
+    "Archive" : "Archivar",
+    "Unarchive" : "Desarchivar",
     "Done" : "Terminado",
     "View" : "Ver",
     "Copy" : "Copiar",

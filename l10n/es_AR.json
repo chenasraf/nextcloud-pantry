@@ -1,7 +1,6 @@
 { "translations": {
     "Images" : "Imágenes",
     "Save" : "Guardar",
-    "Disabled" : "Deshabilitado",
     "Name" : "Nombre",
     "Cancel" : "Cancel",
     "Custom" : "Personalizado",
@@ -15,6 +14,8 @@
     "Everyone" : "Todos",
     "Delete permanently" : "Borrar permanentemente",
     "Restore" : "Restaurar",
+    "Archive" : "Archivar",
+    "Unarchive" : "Desarchivar",
     "Done" : "Terminado",
     "View" : "Ver",
     "Copy" : "Copiar",

@@ -17,6 +17,8 @@ OC.L10N.register(
     "Everyone" : "Todos",
     "Delete permanently" : "Borrar permanentemente",
     "Restore" : "Restaurar",
+    "Archive" : "Archivar",
+    "Unarchive" : "Desarchivar",
     "Move" : "Mover",
     "Photos" : "Fotos",
     "Upload" : "Cargar",

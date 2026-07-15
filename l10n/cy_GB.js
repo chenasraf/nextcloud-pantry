@@ -12,6 +12,7 @@ OC.L10N.register(
     "All" : "Popeth",
     "Delete permanently" : "Dileu'n barhaol",
     "Restore" : "Adfer",
+    "Archive" : "Archif",
     "Status" : "Statws",
     "View" : "Golwg",
     "Move" : "Symud",

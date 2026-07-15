@@ -9,7 +9,6 @@ OC.L10N.register(
     "Save" : "حفظ",
     "Saving …" : "الحفظ جارٍ …",
     "Notifications" : "الإشعارات",
-    "Disabled" : "مُعطّل",
     "Name" : "الاسم",
     "Cancel" : "Cancel",
     "Create" : "إنشاء",

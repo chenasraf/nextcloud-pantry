@@ -2,7 +2,6 @@ OC.L10N.register(
     "pantry",
     {
     "Save" : "Späicheren",
-    "Disabled" : "Deaktivéiert",
     "Name" : "Numm",
     "Cancel" : "Cancel",
     "Custom" : "Individualiséier",
