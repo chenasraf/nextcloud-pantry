@@ -13,6 +13,7 @@ OC.L10N.register(
     "Everyone" : "Hamı",
     "Delete permanently" : "Həmişəlik sil",
     "Restore" : "Geri qaytar",
+    "Archive" : "Arxiv",
     "Status" : "Status",
     "Done" : "Edildi",
     "Copy" : "Kopyala",

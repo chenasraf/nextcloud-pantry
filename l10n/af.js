@@ -16,6 +16,7 @@ OC.L10N.register(
     "Everyone" : "Almal",
     "Delete permanently" : "Skrap permanent",
     "Restore" : "Herstel",
+    "Archive" : "Argief",
     "View" : "Bekyk",
     "Move" : "Skuif",
     "Upload" : "Oplaai",

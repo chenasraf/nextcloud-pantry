@@ -30,6 +30,7 @@ OC.L10N.register(
     "Remove image" : "Šalinti paveikslą",
     "All" : "Visos",
     "No category" : "Be kategorijos",
+    "Description (optional)" : "Aprašymas (pasirenkama)",
     "Everyone" : "Visi",
     "Upload image" : "Įkelti paveikslą",
     "Delete permanently" : "Ištrinti visam laikui",
