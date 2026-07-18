@@ -211,6 +211,7 @@ const noteSortOptions: { value: NoteSort; label: string }[] = [
   { value: 'oldest', label: t('pantry', 'Oldest first') },
   { value: 'title_asc', label: t('pantry', 'Title A\u2013Z') },
   { value: 'title_desc', label: t('pantry', 'Title Z\u2013A') },
+  // TRANSLATORS: Sort option label (adjective) for a user-defined manual order.
   { value: 'custom', label: t('pantry', 'Custom') },
 ]
 
@@ -545,6 +546,7 @@ const strings = {
 
 const sortMenuName = computed(() => {
   const label = noteSortOptions.find((o) => o.value === currentSort.value)?.label ?? ''
+  // TRANSLATORS: {value} is the active sort option name, e.g. 'Newest first'.
   return t('pantry', 'Sort by: {value}', { value: label })
 })
 

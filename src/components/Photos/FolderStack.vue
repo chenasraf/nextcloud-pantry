@@ -149,6 +149,7 @@ function onDrop(e: DragEvent) {
 
 const strings = {
   actions: t('pantry', 'Folder actions'),
+  // TRANSLATORS: Menu action (verb) to edit/rename a photo folder.
   rename: t('pantry', 'Edit'),
   remove: t('pantry', 'Remove'),
 }

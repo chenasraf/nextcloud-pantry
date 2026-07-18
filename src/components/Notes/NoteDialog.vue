@@ -324,6 +324,7 @@ const strings = {
   titlePlaceholder: t('pantry', 'Note title'),
   contentPlaceholder: t('pantry', 'Write your note here …'),
   edit: t('pantry', 'Edit'),
+  // TRANSLATORS: Toggle button label to switch the note from editing into read-only preview mode.
   view: t('pantry', 'Preview'),
   untitled: t('pantry', 'Untitled note'),
   noContent: t('pantry', 'Click to add content …'),

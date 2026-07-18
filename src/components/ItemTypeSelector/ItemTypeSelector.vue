@@ -74,6 +74,7 @@ const currentType = computed<ItemType>(() => {
 
 const strings = {
   label: t('pantry', 'Item type'),
+  // TRANSLATORS: Item type (noun) — a pantry staple that stays on the list after being checked off, not the fastener.
   staple: t('pantry', 'Staple'),
   stapleHint: t('pantry', 'Stays on the list after it is marked done.'),
   oneTime: t('pantry', 'One-time'),

@@ -382,6 +382,7 @@ function submit() {
 const foundLabel = computed(() =>
   n('pantry', '%n item found', '%n items found', parsed.value.length),
 )
+// TRANSLATORS: Button that imports the selected items. %n is the number of items.
 const addLabel = computed(() => n('pantry', 'Add %n item', 'Add %n items', selectedCount.value))
 
 const strings = {
@@ -401,6 +402,7 @@ const strings = {
   descriptionLabel: t('pantry', 'Description'),
   descriptionPlaceholder: t('pantry', 'Notes, instructions, links …'),
   itemType: t('pantry', 'Item type'),
+  // TRANSLATORS: Item type (noun) for a pantry staple — an item that stays on the list after being checked off. Shown as a chip label.
   staple: t('pantry', 'Staple'),
   oneTime: t('pantry', 'One-time'),
   recurring: t('pantry', 'Recurring'),

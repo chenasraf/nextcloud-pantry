@@ -300,7 +300,9 @@ class Provider implements IProvider {
 			case ActivityPublisher::SUBJECT_PHOTO_MOVED:
 				$fromName = (string)($params['fromFolderName'] ?? '');
 				$toName = (string)($params['toFolderName'] ?? '');
+				// TRANSLATORS: "the board" is the photo board (top-level photo area) shown when a photo is not in a named folder.
 				$from = $this->highlight((string)($params['fromFolderId'] ?? 'root'), $fromName !== '' ? $fromName : $l->t('the board'));
+				// TRANSLATORS: "the board" is the photo board (top-level photo area) shown when a photo is not in a named folder.
 				$to = $this->highlight((string)($params['toFolderId'] ?? 'root'), $toName !== '' ? $toName : $l->t('the board'));
 				return [
 					$isSelf

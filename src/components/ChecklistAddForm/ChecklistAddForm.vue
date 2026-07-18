@@ -490,7 +490,9 @@ function submitAdd() {
 }
 
 const strings = {
+  // TRANSLATORS: Verb. Label of the button that adds the new item to the list.
   add: t('pantry', 'Add'),
+  // TRANSLATORS: Label of a toggle that switches the form to adding several items at once.
   multiple: t('pantry', 'Multiple'),
   multipleHint: t('pantry', 'Separate items by new lines'),
   nameLabel: t('pantry', 'Item name'),
@@ -502,6 +504,7 @@ const strings = {
   descriptionLabel: t('pantry', 'Description'),
   itemType: t('pantry', 'Item type'),
   descriptionPlaceholder: t('pantry', 'Notes, instructions, links …'),
+  // TRANSLATORS: An item type. A staple is a recurring household essential that stays on the list after being checked off (e.g. milk, bread).
   staple: t('pantry', 'Staple'),
   oneTime: t('pantry', 'One-time'),
   recurring: t('pantry', 'Recurring'),

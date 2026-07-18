@@ -1742,12 +1742,16 @@ const strings = {
   archiveEmptyBody: t('pantry', 'Archived items will appear here.'),
   sortLabel: t('pantry', 'Sort order'),
   trashLabel: t('pantry', 'Trash'),
+  // TRANSLATORS: Noun. Toolbar toggle that opens the view of archived items (not the "archive" action).
   archiveLabel: t('pantry', 'Archive'),
+  // TRANSLATORS: Section heading above the completed (checked-off) items.
   doneTitle: t('pantry', 'Done'),
   noCategory: t('pantry', 'No category'),
   manageCategories: t('pantry', 'Manage categories'),
   editList: t('pantry', 'Edit list'),
+  // TRANSLATORS: Verb. Toolbar button that exports the list as Markdown.
   exportMarkdown: t('pantry', 'Export'),
+  // TRANSLATORS: Verb. Toolbar button that imports items from Markdown.
   importMarkdown: t('pantry', 'Import'),
   moveToList: t('pantry', 'Move to list'),
   copyToList: t('pantry', 'Copy to list'),
@@ -1767,17 +1771,23 @@ const strings = {
   reuseTitle: t('pantry', 'Item already exists'),
   reuseAction: t('pantry', 'Reuse existing'),
   reuseAddAnyway: t('pantry', 'Add anyway'),
+  // TRANSLATORS: Verb. Toolbar toggle that enters multi-select mode to act on several items at once.
   select: t('pantry', 'Select'),
   selectAll: t('pantry', 'Select all'),
   clearSelection: t('pantry', 'Clear selection'),
   exitSelection: t('pantry', 'Exit selection'),
+  // TRANSLATORS: Verb. Button that moves the selected items to another list.
   moveSelected: t('pantry', 'Move'),
+  // TRANSLATORS: Verb. Button that copies the selected items to another list.
   copySelected: t('pantry', 'Copy'),
   assignCategory: t('pantry', 'Assign category'),
+  // TRANSLATORS: Verb. Button that archives the selected items.
   archiveSelected: t('pantry', 'Archive'),
   unarchiveSelected: t('pantry', 'Unarchive'),
+  // TRANSLATORS: Verb. Button that deletes the selected items.
   deleteSelected: t('pantry', 'Delete'),
   assignCategoryTitle: t('pantry', 'Assign category'),
+  // TRANSLATORS: Verb. Dialog button that applies the chosen category to the selected items.
   apply: t('pantry', 'Apply'),
   removeCategory: t('pantry', 'Remove category'),
   bulkDeleteTitle: t('pantry', 'Delete items?'),

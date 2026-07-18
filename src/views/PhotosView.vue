@@ -497,6 +497,7 @@ const photoSortOptions: { value: PhotoSort; label: string }[] = [
   { value: 'oldest', label: t('pantry', 'Oldest first') },
   { value: 'description_asc', label: t('pantry', 'By description A\u2013Z') },
   { value: 'description_desc', label: t('pantry', 'By description Z\u2013A') },
+  // TRANSLATORS: Sort option label (adjective) for a user-defined manual order.
   { value: 'custom', label: t('pantry', 'Custom') },
 ]
 
@@ -1028,6 +1029,7 @@ const strings = {
   clearSelection: t('pantry', 'Clear selection'),
   moveToFolder: t('pantry', 'Move to folder'),
   moveToFolderTitle: t('pantry', 'Move to folder'),
+  // TRANSLATORS: Button target for moving photos to the photo board's top level (out of any folder).
   board: t('pantry', 'Board (root)'),
   deletePermanently: t('pantry', 'Delete permanently'),
   deletePhotoPermanentlyTitle: t('pantry', 'Delete photo permanently'),
@@ -1053,6 +1055,7 @@ const strings = {
 
 const sortMenuName = computed(() => {
   const label = photoSortOptions.find((o) => o.value === sortPrefs.sort)?.label ?? ''
+  // TRANSLATORS: {value} is the active sort option name, e.g. 'Newest first'.
   return t('pantry', 'Sort by: {value}', { value: label })
 })
 

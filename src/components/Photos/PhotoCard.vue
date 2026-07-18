@@ -140,6 +140,7 @@ const strings = {
   removePhoto: t('pantry', 'Remove'),
   deletePermanently: t('pantry', 'Delete permanently'),
   restore: t('pantry', 'Restore'),
+  // TRANSLATORS: Menu action; moves a photo out of its folder onto the photo board's top level.
   moveToBoard: t('pantry', 'Move to board'),
 }
 </script>

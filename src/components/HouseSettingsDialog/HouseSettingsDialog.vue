@@ -336,38 +336,56 @@ const capGroups = computed<CapGroup[]>(() => [
   {
     label: t('pantry', 'Checklists'),
     caps: [
+      // TRANSLATORS: Verb, permission checkbox for viewing checklists.
       { key: 'canViewLists', label: t('pantry', 'View') },
+      // TRANSLATORS: Verb, permission checkbox for creating checklists.
       { key: 'canCreateLists', label: t('pantry', 'Create') },
+      // TRANSLATORS: Verb, permission checkbox for editing checklists.
       { key: 'canEditLists', label: t('pantry', 'Edit') },
+      // TRANSLATORS: Verb, permission checkbox for deleting checklists.
       { key: 'canDeleteLists', label: t('pantry', 'Delete') },
     ],
   },
   {
     label: t('pantry', 'Checklist items'),
     caps: [
+      // TRANSLATORS: Verb, permission checkbox for adding checklist items.
       { key: 'canAddItems', label: t('pantry', 'Add') },
+      // TRANSLATORS: Verb, permission checkbox for marking checklist items as done.
       { key: 'canCheckItems', label: t('pantry', 'Check off') },
+      // TRANSLATORS: Verb, permission checkbox for copying checklist items.
       { key: 'canCopyItems', label: t('pantry', 'Copy') },
+      // TRANSLATORS: Verb, permission checkbox for moving checklist items.
       { key: 'canMoveItems', label: t('pantry', 'Move') },
+      // TRANSLATORS: Verb, permission checkbox for deleting checklist items.
       { key: 'canDeleteItems', label: t('pantry', 'Delete') },
     ],
   },
   {
     label: t('pantry', 'Photos'),
     caps: [
+      // TRANSLATORS: Verb, permission checkbox for viewing photos.
       { key: 'canViewPhotos', label: t('pantry', 'View') },
+      // TRANSLATORS: Verb, permission checkbox for uploading photos.
       { key: 'canUploadPhotos', label: t('pantry', 'Upload') },
+      // TRANSLATORS: Verb, permission checkbox for editing photos.
       { key: 'canUpdatePhotos', label: t('pantry', 'Edit') },
+      // TRANSLATORS: Verb, permission checkbox for organizing (moving) photos.
       { key: 'canMovePhotos', label: t('pantry', 'Organize') },
+      // TRANSLATORS: Verb, permission checkbox for deleting photos.
       { key: 'canDeletePhotos', label: t('pantry', 'Delete') },
     ],
   },
   {
     label: t('pantry', 'Notes'),
     caps: [
+      // TRANSLATORS: Verb, permission checkbox for viewing notes.
       { key: 'canViewNotes', label: t('pantry', 'View') },
+      // TRANSLATORS: Verb, permission checkbox for creating notes.
       { key: 'canCreateNotes', label: t('pantry', 'Create') },
+      // TRANSLATORS: Verb, permission checkbox for editing notes.
       { key: 'canUpdateNotes', label: t('pantry', 'Edit') },
+      // TRANSLATORS: Verb, permission checkbox for deleting notes.
       { key: 'canDeleteNotes', label: t('pantry', 'Delete') },
     ],
   },
@@ -380,6 +398,7 @@ function roleTypeLabel(roleType: Role['roleType']): string {
     case 'default':
       return t('pantry', 'Built-in member')
     default:
+      // TRANSLATORS: Adjective, label marking a user-defined (non built-in) role.
       return t('pantry', 'Custom')
   }
 }

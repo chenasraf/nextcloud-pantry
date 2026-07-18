@@ -183,9 +183,13 @@ const emit = defineEmits<{
 const fromCompletionLocal = ref<boolean>(!!props.fromCompletion)
 
 const frequencyOptions = computed<FreqOption[]>(() => [
+  // TRANSLATORS: Unit shown in a dropdown after the interval number, e.g. 'Every 3 days'.
   { label: t('pantry', 'days'), value: 'DAILY' },
+  // TRANSLATORS: Unit shown in a dropdown after the interval number, e.g. 'Every 2 weeks'.
   { label: t('pantry', 'weeks'), value: 'WEEKLY' },
+  // TRANSLATORS: Unit shown in a dropdown after the interval number, e.g. 'Every 6 months'.
   { label: t('pantry', 'months'), value: 'MONTHLY' },
+  // TRANSLATORS: Unit shown in a dropdown after the interval number, e.g. 'Every 2 years'.
   { label: t('pantry', 'years'), value: 'YEARLY' },
 ])
 
@@ -457,15 +461,21 @@ watch(fromCompletionLocal, (v) => {
 
 const strings = {
   presetsLabel: t('pantry', 'Presets'),
+  // TRANSLATORS: Label of the frequency-unit dropdown (days/weeks/months/years).
   frequencyLabel: t('pantry', 'Unit'),
+  // TRANSLATORS: Label before the interval number input, forming 'Every N <unit>'.
   everyLabel: t('pantry', 'Every'),
   weekdaysLabel: t('pantry', 'Repeat on'),
   monthDaysLabel: t('pantry', 'Days of the month'),
   monthDaysHint: t('pantry', 'Leave empty to repeat on the same day each month.'),
+  // TRANSLATORS: Label for the group of radio options choosing when the recurrence stops.
   endsLabel: t('pantry', 'Ends'),
+  // TRANSLATORS: Radio option under 'Ends'; the recurrence never stops.
   endNever: t('pantry', 'Never'),
+  // TRANSLATORS: Radio option under 'Ends'; followed by a number input and 'occurrences', e.g. 'After 10 occurrences'.
   endAfter: t('pantry', 'After'),
   endAfterSuffix: t('pantry', 'occurrences'),
+  // TRANSLATORS: Radio option under 'Ends'; followed by a date picker, meaning the recurrence stops on that date.
   endOn: t('pantry', 'On date'),
   fromCompletionLabel: t('pantry', 'Count interval from when the item is ticked off'),
   summaryLabel: t('pantry', 'Summary'),

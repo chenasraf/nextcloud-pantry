@@ -106,6 +106,7 @@ const strings = {
   recurrence: t('pantry', 'Recurrence'),
   nextRecurrence: t('pantry', 'Next recurrence'),
   status: t('pantry', 'Status'),
+  // TRANSLATORS: Status value (adjective) shown next to "Status:" — the item is completed, not a button.
   done: t('pantry', 'Done'),
   editItem: t('pantry', 'Edit item'),
 }

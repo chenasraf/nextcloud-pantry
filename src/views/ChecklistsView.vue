@@ -464,8 +464,7 @@ async function submitDelete() {
 // ----- Reorder (custom sort only) -----
 
 type GridItem =
-  | { type: 'list'; key: string; list: Checklist }
-  | { type: 'placeholder'; key: string }
+  { type: 'list'; key: string; list: Checklist } | { type: 'placeholder'; key: string }
 
 const draggingListId = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
@@ -589,9 +588,12 @@ const strings = {
   newList: t('pantry', 'New list'),
   manageCategories: t('pantry', 'Manage categories'),
   cancel: t('pantry', 'Cancel'),
+  // TRANSLATORS: Verb, menu button that opens a checklist for editing.
   edit: t('pantry', 'Edit'),
+  // TRANSLATORS: Verb, menu button that moves a checklist to the trash.
   remove: t('pantry', 'Remove'),
   deletePermanently: t('pantry', 'Delete permanently'),
+  // TRANSLATORS: Verb, menu button that restores a checklist from the trash.
   restore: t('pantry', 'Restore'),
   listMenu: t('pantry', 'List actions'),
   deleteDialogTitle: t('pantry', 'Remove checklist'),
@@ -601,6 +603,7 @@ const strings = {
   allListsTitle: t('pantry', 'All lists'),
   allListsBody: t('pantry', 'Items from every list in this house.'),
   sortLabel: t('pantry', 'Sort order'),
+  // TRANSLATORS: Noun, label of the toggle button that shows deleted checklists.
   trashLabel: t('pantry', 'Trash'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
   trashEmptyBody: t('pantry', 'Deleted checklists will appear here.'),

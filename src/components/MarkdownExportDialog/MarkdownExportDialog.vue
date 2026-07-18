@@ -114,6 +114,7 @@ const strings = {
   includeChecked: t('pantry', 'Include completed items'),
   editHint: t('pantry', 'Edit the text below to modify the exported list'),
   close: t('pantry', 'Close'),
+  // TRANSLATORS: Button label, verb — copies the exported text to the clipboard.
   copy: t('pantry', 'Copy'),
   download: t('pantry', 'Download .md'),
   copied: t('pantry', 'Copied to clipboard'),

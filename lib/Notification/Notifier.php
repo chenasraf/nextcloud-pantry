@@ -196,6 +196,7 @@ class Notifier implements INotifier {
 				$reminderLabel = $count <= 3
 					? implode(', ', $names)
 					: $l->n('%n item', '%n items', $count);
+				// TRANSLATORS: {items} is either an inline list of item names ("Milk, Eggs") or a count ("5 items"); "still undone" means not yet completed.
 				$notification->setRichSubject(
 					$l->t('{items} still undone on {list} in {house}'),
 					[
@@ -224,6 +225,7 @@ class Notifier implements INotifier {
 				$itemLabel = $count <= 3
 					? implode(', ', $names)
 					: $l->n('%n item', '%n items', $count);
+				// TRANSLATORS: {items} is either an inline list of item names ("Milk, Eggs") or a count ("5 items"); "back on {list}" means the recurring items reappeared on the list.
 				$notification->setRichSubject(
 					$l->t('{items} back on {list} in {house}'),
 					[

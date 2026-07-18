@@ -101,8 +101,11 @@ const strings = {
   noMembers: t('pantry', 'No more members to add'),
   empty: t('pantry', 'Not shared with anyone yet.'),
   remove: t('pantry', 'Remove'),
+  // TRANSLATORS: Share permission level (noun) — a person who may only view the shared item, not edit it.
   view: t('pantry', 'Viewer'),
+  // TRANSLATORS: Share permission level (noun) — a person who may edit the shared item, not a text editor.
   edit: t('pantry', 'Editor'),
+  // TRANSLATORS: Share permission badge — this person can edit because their role grants it, not because of this share.
   viaRole: t('pantry', 'Editor (via role)'),
   viaRoleHint: t(
     'pantry',

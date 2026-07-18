@@ -356,6 +356,7 @@ watch(currentHouseId, closeMenu)
 const strings = {
   lists: t('pantry', 'Checklists'),
   allLists: t('pantry', 'All lists'),
+  // TRANSLATORS: Sidebar item, noun — the pinboard/corkboard view where photos are displayed, not a plank of wood.
   photos: t('pantry', 'Photo board'),
   notes: t('pantry', 'Notes wall'),
   houseSettings: t('pantry', 'House settings'),
