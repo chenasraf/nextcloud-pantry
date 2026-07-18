@@ -54,6 +54,7 @@ OC.L10N.register(
     "Trash" : "Šiukšlinė",
     "Roles" : "Vaidmenys",
     "Members" : "Nariai",
+    "Remove member" : "Šalinti narį",
     "Account" : "Paskyra",
     "Role" : "Vaidmuo",
     "Joined" : "Prisijungė",
