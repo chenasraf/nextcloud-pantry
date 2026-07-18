@@ -165,61 +165,106 @@ class Provider implements IProvider {
 				];
 
 			case ActivityPublisher::SUBJECT_ITEMS_RECURRED:
-				$names = array_values(array_filter(
-					(array)($params['itemNames'] ?? []),
-					fn ($v) => is_string($v),
-				));
-				$count = (int)($params['itemCount'] ?? count($names));
-				$label = $count <= 3 && !empty($names)
-					? implode(', ', $names)
-					: $l->n('%n item', '%n items', $count);
-				$items = $this->highlight('items', $label);
+				[$names, $count] = $this->itemsBatch($params);
 				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));
+				if ($this->itemsAsNames($names, $count)) {
+					$items = $this->highlight('items', implode(', ', $names));
+					// TRANSLATORS: {items} is an inline list of item names, e.g. "Milk, Eggs".
+					return [
+						$l->t('{items} due again on {list} in {house}'),
+						compact('items', 'list', 'house'),
+					];
+				}
+				// TRANSLATORS: %n is a number of items, e.g. "5 items".
 				return [
-					$l->t('{items} due again on {list} in {house}'),
-					compact('items', 'list', 'house'),
+					$l->n('%n item due again on {list} in {house}', '%n items due again on {list} in {house}', $count),
+					compact('list', 'house'),
 				];
 
 			case ActivityPublisher::SUBJECT_ITEMS_MOVED:
-				$items = $this->highlight('items', $this->itemsLabel($l, $params));
+				[$names, $count] = $this->itemsBatch($params);
 				$from = $this->highlight((string)($params['fromListId'] ?? ''), (string)($params['fromListName'] ?? ''));
 				$to = $this->highlight((string)($params['toListId'] ?? ''), (string)($params['toListName'] ?? ''));
+				if ($this->itemsAsNames($names, $count)) {
+					$items = $this->highlight('items', implode(', ', $names));
+					// TRANSLATORS: {items} is an inline list of item names, e.g. "Milk, Eggs".
+					return [
+						$isSelf
+							? $l->t('You moved {items} from {from} to {to} in {house}')
+							: $l->t('{author} moved {items} from {from} to {to} in {house}'),
+						$isSelf ? compact('items', 'from', 'to', 'house') : compact('author', 'items', 'from', 'to', 'house'),
+					];
+				}
+				// TRANSLATORS: %n is a number of items, e.g. "5 items".
 				return [
 					$isSelf
-						? $l->t('You moved {items} from {from} to {to} in {house}')
-						: $l->t('{author} moved {items} from {from} to {to} in {house}'),
-					$isSelf ? compact('items', 'from', 'to', 'house') : compact('author', 'items', 'from', 'to', 'house'),
+						? $l->n('You moved %n item from {from} to {to} in {house}', 'You moved %n items from {from} to {to} in {house}', $count)
+						: $l->n('{author} moved %n item from {from} to {to} in {house}', '{author} moved %n items from {from} to {to} in {house}', $count),
+					$isSelf ? compact('from', 'to', 'house') : compact('author', 'from', 'to', 'house'),
 				];
 
 			case ActivityPublisher::SUBJECT_ITEMS_COPIED:
-				$items = $this->highlight('items', $this->itemsLabel($l, $params));
+				[$names, $count] = $this->itemsBatch($params);
 				$from = $this->highlight((string)($params['fromListId'] ?? ''), (string)($params['fromListName'] ?? ''));
 				$to = $this->highlight((string)($params['toListId'] ?? ''), (string)($params['toListName'] ?? ''));
+				if ($this->itemsAsNames($names, $count)) {
+					$items = $this->highlight('items', implode(', ', $names));
+					// TRANSLATORS: {items} is an inline list of item names, e.g. "Milk, Eggs".
+					return [
+						$isSelf
+							? $l->t('You copied {items} from {from} to {to} in {house}')
+							: $l->t('{author} copied {items} from {from} to {to} in {house}'),
+						$isSelf ? compact('items', 'from', 'to', 'house') : compact('author', 'items', 'from', 'to', 'house'),
+					];
+				}
+				// TRANSLATORS: %n is a number of items, e.g. "5 items".
 				return [
 					$isSelf
-						? $l->t('You copied {items} from {from} to {to} in {house}')
-						: $l->t('{author} copied {items} from {from} to {to} in {house}'),
-					$isSelf ? compact('items', 'from', 'to', 'house') : compact('author', 'items', 'from', 'to', 'house'),
+						? $l->n('You copied %n item from {from} to {to} in {house}', 'You copied %n items from {from} to {to} in {house}', $count)
+						: $l->n('{author} copied %n item from {from} to {to} in {house}', '{author} copied %n items from {from} to {to} in {house}', $count),
+					$isSelf ? compact('from', 'to', 'house') : compact('author', 'from', 'to', 'house'),
 				];
 
 			case ActivityPublisher::SUBJECT_ITEMS_DELETED:
-				$items = $this->highlight('items', $this->itemsLabel($l, $params));
+				[$names, $count] = $this->itemsBatch($params);
 				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));
+				if ($this->itemsAsNames($names, $count)) {
+					$items = $this->highlight('items', implode(', ', $names));
+					// TRANSLATORS: {items} is an inline list of item names, e.g. "Milk, Eggs".
+					return [
+						$isSelf
+							? $l->t('You deleted {items} from {list} in {house}')
+							: $l->t('{author} deleted {items} from {list} in {house}'),
+						$isSelf ? compact('items', 'list', 'house') : compact('author', 'items', 'list', 'house'),
+					];
+				}
+				// TRANSLATORS: %n is a number of items, e.g. "5 items".
 				return [
 					$isSelf
-						? $l->t('You deleted {items} from {list} in {house}')
-						: $l->t('{author} deleted {items} from {list} in {house}'),
-					$isSelf ? compact('items', 'list', 'house') : compact('author', 'items', 'list', 'house'),
+						? $l->n('You deleted %n item from {list} in {house}', 'You deleted %n items from {list} in {house}', $count)
+						: $l->n('{author} deleted %n item from {list} in {house}', '{author} deleted %n items from {list} in {house}', $count),
+					$isSelf ? compact('list', 'house') : compact('author', 'list', 'house'),
 				];
 
 			case ActivityPublisher::SUBJECT_ITEMS_CATEGORIZED:
-				$items = $this->highlight('items', $this->itemsLabel($l, $params));
+				[$names, $count] = $this->itemsBatch($params);
 				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));
+				if ($this->itemsAsNames($names, $count)) {
+					$items = $this->highlight('items', implode(', ', $names));
+					// TRANSLATORS: {items} is an inline list of item names, e.g. "Milk, Eggs".
+					return [
+						$isSelf
+							? $l->t('You updated the category of {items} on {list} in {house}')
+							: $l->t('{author} updated the category of {items} on {list} in {house}'),
+						$isSelf ? compact('items', 'list', 'house') : compact('author', 'items', 'list', 'house'),
+					];
+				}
+				// TRANSLATORS: %n is a number of items, e.g. "5 items".
 				return [
 					$isSelf
-						? $l->t('You updated the category of {items} on {list} in {house}')
-						: $l->t('{author} updated the category of {items} on {list} in {house}'),
-					$isSelf ? compact('items', 'list', 'house') : compact('author', 'items', 'list', 'house'),
+						? $l->n('You updated the category of %n item on {list} in {house}', 'You updated the category of %n items on {list} in {house}', $count)
+						: $l->n('{author} updated the category of %n item on {list} in {house}', '{author} updated the category of %n items on {list} in {house}', $count),
+					$isSelf ? compact('list', 'house') : compact('author', 'list', 'house'),
 				];
 
 			case ActivityPublisher::SUBJECT_ITEM_RESTORED:
@@ -375,21 +420,29 @@ class Provider implements IProvider {
 	}
 
 	/**
-	 * Human label for a batch of item names: lists them inline when there are
-	 * three or fewer, otherwise falls back to a pluralized count. Mirrors the
-	 * SUBJECT_ITEMS_RECURRED rendering.
+	 * Resolve a batch of item names and their count from activity params.
+	 *
+	 * A batch renders in one of two grammatically distinct ways: inline as a
+	 * list of names ("Milk, Eggs") when there are three or fewer, or as a
+	 * pluralized count ("5 items") otherwise. Callers branch on this to pick a
+	 * matching source string, so translators can inflect each form separately
+	 * (some languages, e.g. Estonian, use different noun cases for the two).
 	 *
 	 * @param array<string, mixed> $params
+	 * @return array{0: list<string>, 1: int}
 	 */
-	private function itemsLabel(IL10N $l, array $params): string {
+	private function itemsBatch(array $params): array {
 		$names = array_values(array_filter(
 			(array)($params['itemNames'] ?? []),
 			fn ($v) => is_string($v),
 		));
 		$count = (int)($params['itemCount'] ?? count($names));
-		return $count <= 3 && !empty($names)
-			? implode(', ', $names)
-			: $l->n('%n item', '%n items', $count);
+		return [$names, $count];
+	}
+
+	/** Whether an item batch renders as an inline list of names rather than a count. */
+	private function itemsAsNames(array $names, int $count): bool {
+		return $count <= 3 && !empty($names);
 	}
 
 	/**

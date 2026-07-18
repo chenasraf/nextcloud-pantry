@@ -220,7 +220,11 @@ class ProviderTest extends TestCase {
 
 		$this->provider->parse('en', $event);
 
-		$this->assertSame('%n items', $captured['richParams']['items']['name']);
+		// Many items render as an inline pluralized count baked into the subject
+		// string (a separate source string from the named-list variant), not as
+		// an {items} rich placeholder.
+		$this->assertStringContainsString('%n items due again', $captured['rich']);
+		$this->assertArrayNotHasKey('items', $captured['richParams']);
 	}
 
 	public function testPhotoUploadedRendersFolderVariant(): void {
