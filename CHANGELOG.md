@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.21.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.20.0...v0.21.0) (2026-07-18)
+
+
+### Features
+
+* **checklists:** add "No category" filter chip ([40c9561](https://github.com/chenasraf/nextcloud-pantry/commit/40c956100d4d19a0d8298c52f55a561221707310)), closes [#170](https://github.com/chenasraf/nextcloud-pantry/issues/170)
+* **checklists:** archive checklist items ([67d58d3](https://github.com/chenasraf/nextcloud-pantry/commit/67d58d38a7b1ec70664393ece98ef563a4c07c6b)), closes [#126](https://github.com/chenasraf/nextcloud-pantry/issues/126)
+* **checklists:** badge with description tooltip on item rows ([f39af74](https://github.com/chenasraf/nextcloud-pantry/commit/f39af7443f4e165e5d46e334bda96613004d7e73)), closes [#171](https://github.com/chenasraf/nextcloud-pantry/issues/171)
+* **checklists:** sticky category headers replace divider setting ([d8e210e](https://github.com/chenasraf/nextcloud-pantry/commit/d8e210e0eb3bb021b11ef0bc61c3029d6c945e70)), closes [#173](https://github.com/chenasraf/nextcloud-pantry/issues/173)
+* **checklists:** tooltips on multi-select action buttons ([a98916e](https://github.com/chenasraf/nextcloud-pantry/commit/a98916e04fda57e162b32c9754b89d235cf449c5))
+* **img:** add app icon as static favicon and manifest ([ec01f7c](https://github.com/chenasraf/nextcloud-pantry/commit/ec01f7c0b421d0f87d1a980f4284f0bc6f6512a2)), closes [#172](https://github.com/chenasraf/nextcloud-pantry/issues/172)
+
+
+### Bug Fixes
+
+* **activity:** suppress duplicate bell notification on item done ([de2918a](https://github.com/chenasraf/nextcloud-pantry/commit/de2918a6b82e9a168a463c413b45715994d2a932))
+* **l10n:** split batch-item activity strings into name-list and count variants ([3502073](https://github.com/chenasraf/nextcloud-pantry/commit/3502073a8aa7f68613ac64c7f9f0937bd3147c6c))
+* **l10n:** Update translations from Transifex ([7a975c6](https://github.com/chenasraf/nextcloud-pantry/commit/7a975c665fb91c3e2f7501913a773f84a53a2da9))
+* **l10n:** Update translations from Transifex ([1276e00](https://github.com/chenasraf/nextcloud-pantry/commit/1276e0086deda99534e87c3a06125a4d5af2b5bc))
+* **l10n:** Update translations from Transifex ([1b63e49](https://github.com/chenasraf/nextcloud-pantry/commit/1b63e49ac5ea3f461d6028a429961e042925f19f))
+* **l10n:** Update translations from Transifex ([51de972](https://github.com/chenasraf/nextcloud-pantry/commit/51de9726b7c87290b188cb4b851df712f0dc8230))
+* **l10n:** Update translations from Transifex ([5c4b69c](https://github.com/chenasraf/nextcloud-pantry/commit/5c4b69cf5fe3e35170dff412a39436779f27e9f3))
+* **l10n:** Update translations from Transifex ([a38c211](https://github.com/chenasraf/nextcloud-pantry/commit/a38c211c7b26d0d4a40928f85b2a3642d73e8c9e))
+* **l10n:** Update translations from Transifex ([151240c](https://github.com/chenasraf/nextcloud-pantry/commit/151240c9b78596e4bb83fd7dc9dbe88eed4b83a5))
+* **l10n:** Update translations from Transifex ([b9844ec](https://github.com/chenasraf/nextcloud-pantry/commit/b9844ec2b51e63e31c005173d2ec09c9b0bdb71b))
+* **l10n:** Update translations from Transifex ([20e446e](https://github.com/chenasraf/nextcloud-pantry/commit/20e446e9914c3ec2b58a5015948355f58dde07da))
+* **l10n:** Update translations from Transifex ([5998779](https://github.com/chenasraf/nextcloud-pantry/commit/5998779b331bd186bab23439cf7a1d2e3c605d03))
+* **l10n:** Update translations from Transifex ([eabc7ca](https://github.com/chenasraf/nextcloud-pantry/commit/eabc7caae48e538c0998271675f7bdeb71ce5382))
+
 ## [0.20.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.19.0...v0.20.0) (2026-07-06)
 
 
