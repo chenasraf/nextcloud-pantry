@@ -133,6 +133,11 @@ class ActivityPublisher {
 	}
 
 	public function publishItemDone(int $houseId, string $houseName, string $authorUid, int $itemId, string $itemName, int $listId, string $listName): void {
+		// Completing an item also dispatches a curated Pantry notification
+		// ({@see NotificationService::notifyItemDone}). Suppress the per-event
+		// activity → notification bridge here so the bell does not receive a
+		// second, differently-formatted entry for the same action. The stream
+		// entry is unaffected.
 		$this->publish(
 			$houseId,
 			$houseName,
@@ -142,6 +147,7 @@ class ActivityPublisher {
 			$itemId,
 			['itemName' => $itemName, 'listId' => $listId, 'listName' => $listName],
 			$this->listLink($houseId, $listId),
+			generateNotification: false,
 		);
 	}
 
