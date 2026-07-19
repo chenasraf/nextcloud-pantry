@@ -21,6 +21,7 @@ OC.L10N.register(
     "Image" : "Изображение",
     "Remove image" : "Премахни изображението",
     "All" : "Всички",
+    "No category" : "Без категория",
     "Everyone" : "Всеки",
     "Delete permanently" : "Изтрий завинаги",
     "Restore" : "Възстановяне",

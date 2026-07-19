@@ -1,8 +1,8 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n položka","%n položky","%n položek","%n položky"],
     "Pantry" : "Pantry",
+    "_%n item_::_%n items_" : ["%n položka","%n položky","%n položek","%n položky"],
     "Account settings" : "Nastavení účtu",
     "Images" : "Obrázky",
     "Upload folder" : "Složka pro nahrávání",

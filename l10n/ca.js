@@ -23,6 +23,7 @@ OC.L10N.register(
     "Image" : "Imatge",
     "Remove image" : "Suprimir imatge",
     "All" : "Totes",
+    "No category" : "Sense categoria",
     "Everyone" : "Tothom",
     "Upload image" : "Pujada d'una imatge",
     "Delete permanently" : "Suprimir permanentment",
