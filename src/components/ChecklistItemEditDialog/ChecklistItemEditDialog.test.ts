@@ -79,6 +79,13 @@ vi.mock('@/components/CategoryPicker', () => ({
   },
   categoryIconComponent: { name: 'CategoryIcon', template: '<span />' },
 }))
+vi.mock('@/components/StoreMultiPicker', () => ({
+  default: {
+    name: 'StoreMultiPicker',
+    template: '<div class="mock-store-picker" />',
+    props: ['modelValue', 'houseId', 'label', 'placeholder'],
+  },
+}))
 vi.mock('@/api/images', () => ({
   itemImagePreviewUrl: (houseId: number, fileId: number, owner: string, size: number) =>
     `/preview/${houseId}/${fileId}/${owner}/${size}`,
@@ -93,6 +100,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     name: 'Milk',
     description: 'Whole milk',
     categoryId: 3,
+    storeIds: [],
     quantity: '2 L',
     done: false,
     doneAt: null,

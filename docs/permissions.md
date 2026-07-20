@@ -23,30 +23,33 @@ editing the Member role or introducing custom roles.
 
 ## Capability catalog
 
-| Capability        | Governs                                                                                   |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| `canViewLists`    | Viewing checklists and their items (incl. trash & archive views)                          |
-| `canCreateLists`  | Creating new checklists                                                                   |
-| `canEditLists`    | Editing list settings **and** editing/reordering/archiving items, categories, item images |
-| `canDeleteLists`  | Trashing, restoring, and permanently deleting checklists                                  |
-| `canAddItems`     | Adding items to a list                                                                    |
-| `canCheckItems`   | Toggling an item done/undone                                                              |
-| `canCopyItems`    | Copying items to another list                                                             |
-| `canMoveItems`    | Moving items to another list                                                              |
-| `canDeleteItems`  | Trashing, restoring, and permanently deleting items                                       |
-| `canViewPhotos`   | Viewing photos and folders (incl. trash view)                                             |
-| `canUploadPhotos` | Uploading photos                                                                          |
-| `canUpdatePhotos` | Editing a photo (caption)                                                                 |
-| `canMovePhotos`   | Managing folders (create/rename/reorder/delete) and moving/reordering photos              |
-| `canDeletePhotos` | Trashing, restoring, and permanently deleting photos                                      |
-| `canViewNotes`    | Viewing notes (incl. trash view)                                                          |
-| `canCreateNotes`  | Creating notes                                                                            |
-| `canUpdateNotes`  | Editing notes (title/content/color/pin) and reordering                                    |
-| `canDeleteNotes`  | Trashing, restoring, and permanently deleting notes                                       |
+| Capability        | Governs                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| `canViewLists`    | Viewing checklists and their items (incl. trash & archive views)                                  |
+| `canCreateLists`  | Creating new checklists                                                                           |
+| `canEditLists`    | Editing list settings **and** editing/reordering/archiving items, categories, stores, item images |
+| `canDeleteLists`  | Trashing, restoring, and permanently deleting checklists                                          |
+| `canAddItems`     | Adding items to a list                                                                            |
+| `canCheckItems`   | Toggling an item done/undone                                                                      |
+| `canCopyItems`    | Copying items to another list                                                                     |
+| `canMoveItems`    | Moving items to another list                                                                      |
+| `canDeleteItems`  | Trashing, restoring, and permanently deleting items                                               |
+| `canViewPhotos`   | Viewing photos and folders (incl. trash view)                                                     |
+| `canUploadPhotos` | Uploading photos                                                                                  |
+| `canUpdatePhotos` | Editing a photo (caption)                                                                         |
+| `canMovePhotos`   | Managing folders (create/rename/reorder/delete) and moving/reordering photos                      |
+| `canDeletePhotos` | Trashing, restoring, and permanently deleting photos                                              |
+| `canViewNotes`    | Viewing notes (incl. trash view)                                                                  |
+| `canCreateNotes`  | Creating notes                                                                                    |
+| `canUpdateNotes`  | Editing notes (title/content/color/pin) and reordering                                            |
+| `canDeleteNotes`  | Trashing, restoring, and permanently deleting notes                                               |
 
 > Note: there is no separate "edit item" or "archive item" capability. Editing an item, reordering,
-> setting its category, changing its image, and **archiving/unarchiving** are all governed by
-> `canEditLists`. Trashing an item is governed separately by `canDeleteItems`.
+> setting its category or stores, changing its image, and **archiving/unarchiving** are all governed
+> by `canEditLists`. Trashing an item is governed separately by `canDeleteItems`.
+>
+> Managing **categories** and **stores** (creating, editing, deleting them) is likewise governed by
+> `canEditLists`; listing them requires `canViewLists`. Neither has its own capability.
 
 ## How enforcement works
 
@@ -131,6 +134,7 @@ Columns: **View** = `canViewLists`, **Add** = `canAddItems`, **Check** = `canChe
 | Edit an item                                        |      |     |       |  ✅  |      |      |        |
 | Reorder items                                       |      |     |       |  ✅  |      |      |        |
 | Set / clear an item's category                      |      |     |       |  ✅  |      |      |        |
+| Set / clear an item's stores (incl. in bulk)        |      |     |       |  ✅  |      |      |        |
 | Upload / clear an item image                        |      |     |       |  ✅  |      |      |        |
 | Archive an item                                     |      |     |       |  ✅  |      |      |        |
 | Unarchive an item                                   |      |     |       |  ✅  |      |      |        |

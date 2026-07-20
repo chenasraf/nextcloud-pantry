@@ -10,6 +10,7 @@ namespace OCA\Pantry\Controller;
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
+use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Db\Share;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
@@ -24,6 +25,7 @@ use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ShareService;
+use OCA\Pantry\Service\StoreService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -46,6 +48,8 @@ final class ChecklistController extends OCSController {
 		IRequest $request,
 		private ChecklistService $lists,
 		private CategoryService $categories,
+		private StoreService $stores,
+		private ItemStoreMapper $itemStores,
 		private HouseAuthService $auth,
 		private HouseService $houses,
 		private ImageService $images,
@@ -57,6 +61,34 @@ final class ChecklistController extends OCSController {
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
+	}
+
+	/**
+	 * Serialize a batch of items, embedding each item's attached store ids.
+	 * The store-id lookup is batched into a single query to avoid N+1.
+	 *
+	 * @param ChecklistItem[] $items
+	 * @return list<array<string, mixed>>
+	 */
+	private function serializeItems(array $items): array {
+		$ids = array_map(static fn ($i) => (int)$i->getId(), $items);
+		$storeMap = $this->itemStores->findStoreIdsForItems($ids);
+		return array_values(array_map(static function ($i) use ($storeMap) {
+			$data = $i->jsonSerialize();
+			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
+			return $data;
+		}, $items));
+	}
+
+	/**
+	 * Serialize a single item, embedding its attached store ids.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function serializeItem(ChecklistItem $item): array {
+		$data = $item->jsonSerialize();
+		$data['storeIds'] = $this->itemStores->findStoreIdsForItem((int)$item->getId());
+		return $data;
 	}
 
 	/**
@@ -395,7 +427,7 @@ final class ChecklistController extends OCSController {
 				return $listAccess[$listId];
 			}));
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			$items = $this->serializeItems($sliced);
 			return new DataResponse($items);
 		});
 	}
@@ -427,7 +459,7 @@ final class ChecklistController extends OCSController {
 			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
 			$all = $this->lists->listItems($listId, $sortBy, $categorySort);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			$items = $this->serializeItems($sliced);
 			return new DataResponse($items);
 		});
 	}
@@ -456,7 +488,7 @@ final class ChecklistController extends OCSController {
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$all = $this->lists->listDeletedItems($listId);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			$items = $this->serializeItems($sliced);
 			return new DataResponse($items);
 		});
 	}
@@ -485,7 +517,7 @@ final class ChecklistController extends OCSController {
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$all = $this->lists->listArchivedItems($listId);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = array_map(fn ($i) => $i->jsonSerialize(), $sliced);
+			$items = $this->serializeItems($sliced);
 			return new DataResponse($items);
 		});
 	}
@@ -503,6 +535,7 @@ final class ChecklistController extends OCSController {
 	 * @param bool $repeatFromCompletion If true, the next occurrence is measured from when the item is marked done; if false, the schedule is anchored at item creation.
 	 * @param bool $deleteOnDone If true, the item is deleted when marked done.
 	 * @param int|null $sortOrder Optional sort order.
+	 * @param list<int> $storeIds Optional store ids to attach (must belong to the same house).
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -522,8 +555,9 @@ final class ChecklistController extends OCSController {
 		bool $repeatFromCompletion = false,
 		bool $deleteOnDone = false,
 		?int $sortOrder = null,
+		array $storeIds = [],
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
@@ -531,6 +565,8 @@ final class ChecklistController extends OCSController {
 			if ($categoryId !== null) {
 				$this->categories->assertInHouse($categoryId, $houseId);
 			}
+			$storeIds = array_map('intval', $storeIds);
+			$this->stores->assertStoresInHouse($houseId, $storeIds);
 			$item = $this->lists->addItem($listId, [
 				'name' => $name,
 				'description' => $description,
@@ -540,6 +576,7 @@ final class ChecklistController extends OCSController {
 				'repeatFromCompletion' => $repeatFromCompletion,
 				'deleteOnDone' => $deleteOnDone,
 				'sortOrder' => $sortOrder ?? 0,
+				'storeIds' => $storeIds,
 			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
@@ -551,7 +588,7 @@ final class ChecklistController extends OCSController {
 				$listId,
 				$list->getName(),
 			);
-			return new DataResponse($item->jsonSerialize());
+			return new DataResponse($this->serializeItem($item));
 		});
 	}
 
@@ -571,6 +608,7 @@ final class ChecklistController extends OCSController {
 	 * @param int|null $imageFileId File id of attached image (0 or negative clears).
 	 * @param int|null $sortOrder New sort order.
 	 * @param int|null $targetListId Move item to a different list (must belong to the same house).
+	 * @param list<int>|null $storeIds New set of store ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -593,8 +631,9 @@ final class ChecklistController extends OCSController {
 		?int $imageFileId = null,
 		?int $sortOrder = null,
 		?int $targetListId = null,
+		?array $storeIds = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId);
@@ -636,6 +675,11 @@ final class ChecklistController extends OCSController {
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
 			}
+			if ($storeIds !== null) {
+				$ids = array_map('intval', $storeIds);
+				$this->stores->assertStoresInHouse($houseId, $ids);
+				$patch['storeIds'] = $ids;
+			}
 			$targetList = null;
 			if ($targetListId !== null && $targetListId !== $listId) {
 				// Moving an item to another list needs the move capability and
@@ -667,7 +711,7 @@ final class ChecklistController extends OCSController {
 					(int)$targetList->getId(),
 					$targetList->getName(),
 				);
-			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null) {
+			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null) {
 				$this->activity->publishItemUpdated(
 					$houseId,
 					$houseName,
@@ -678,7 +722,7 @@ final class ChecklistController extends OCSController {
 					$list->getName(),
 				);
 			}
-			return new DataResponse($updated->jsonSerialize());
+			return new DataResponse($this->serializeItem($updated));
 		});
 	}
 
@@ -746,7 +790,7 @@ final class ChecklistController extends OCSController {
 				(int)$targetList->getId(),
 				$targetList->getName(),
 			);
-			return new DataResponse($copy->jsonSerialize());
+			return new DataResponse($this->serializeItem($copy));
 		});
 	}
 
@@ -798,7 +842,7 @@ final class ChecklistController extends OCSController {
 					$list->getName(),
 				);
 			}
-			return new DataResponse($toggled->jsonSerialize());
+			return new DataResponse($this->serializeItem($toggled));
 		});
 	}
 
@@ -898,7 +942,7 @@ final class ChecklistController extends OCSController {
 				(int)$list->getId(),
 				$list->getName(),
 			);
-			return new DataResponse($restored->jsonSerialize());
+			return new DataResponse($this->serializeItem($restored));
 		});
 	}
 
@@ -959,7 +1003,7 @@ final class ChecklistController extends OCSController {
 				throw new NotFoundException('Item does not belong to this list');
 			}
 			$archived = $this->lists->archiveItem($itemId);
-			return new DataResponse($archived->jsonSerialize());
+			return new DataResponse($this->serializeItem($archived));
 		});
 	}
 
@@ -987,7 +1031,7 @@ final class ChecklistController extends OCSController {
 				throw new NotFoundException('Item does not belong to this list');
 			}
 			$unarchived = $this->lists->unarchiveItem($itemId);
-			return new DataResponse($unarchived->jsonSerialize());
+			return new DataResponse($this->serializeItem($unarchived));
 		});
 	}
 
@@ -1127,7 +1171,7 @@ final class ChecklistController extends OCSController {
 			}
 			return new DataResponse([
 				'success' => true,
-				'items' => array_map(fn (ChecklistItem $i) => $i->jsonSerialize(), $moved),
+				'items' => $this->serializeItems($moved),
 				'skipped' => $collected['skipped'],
 			]);
 		});
@@ -1195,7 +1239,7 @@ final class ChecklistController extends OCSController {
 			}
 			return new DataResponse([
 				'success' => true,
-				'items' => array_map(fn (ChecklistItem $i) => $i->jsonSerialize(), $copies),
+				'items' => $this->serializeItems($copies),
 				'skipped' => $collected['skipped'],
 			]);
 		});
@@ -1330,7 +1374,63 @@ final class ChecklistController extends OCSController {
 			}
 			return new DataResponse([
 				'success' => true,
-				'items' => array_map(fn (ChecklistItem $i) => $i->jsonSerialize(), $updated),
+				'items' => $this->serializeItems($updated),
+				'skipped' => $collected['skipped'],
+			]);
+		});
+	}
+
+	/**
+	 * Set the stores attached to a batch of items in one action
+	 *
+	 * Replaces the store set on every targeted item (an empty list clears them).
+	 *
+	 * @param int $houseId House id.
+	 * @param list<int> $itemIds Ids of the items to update.
+	 * @param list<int> $storeIds Store ids to assign (must belong to the same house); empty clears.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 *
+	 * 200: Stores assigned
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/items/batch/stores')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function batchSetStores(int $houseId, array $itemIds = [], array $storeIds = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $itemIds, $storeIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$storeIds = array_map('intval', $storeIds);
+			$this->stores->assertStoresInHouse($houseId, $storeIds);
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$groups = $this->groupItemsBySourceList($collected['items']);
+			$updated = $this->lists->setItemsStore(
+				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
+				$storeIds,
+			);
+
+			// Attaching stores reuses the generic "item updated" activity rather
+			// than a dedicated subject.
+			$houseName = $this->houses->get($houseId)->getName();
+			$listNames = [];
+			foreach ($groups as $listId => $group) {
+				$listNames[$listId] = $group['listName'];
+			}
+			foreach ($updated as $item) {
+				$this->activity->publishItemUpdated(
+					$houseId,
+					$houseName,
+					$uid,
+					(int)$item->getId(),
+					$item->getName(),
+					(int)$item->getListId(),
+					$listNames[(int)$item->getListId()] ?? '',
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($updated),
 				'skipped' => $collected['skipped'],
 			]);
 		});
@@ -1380,7 +1480,7 @@ final class ChecklistController extends OCSController {
 			$fileId = $this->images->uploadForUser($uid, $houseId, $original, $bytes);
 
 			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId, 'imageUploadedBy' => $uid]);
-			return new DataResponse($updated->jsonSerialize());
+			return new DataResponse($this->serializeItem($updated));
 		});
 	}
 
@@ -1409,7 +1509,7 @@ final class ChecklistController extends OCSController {
 				throw new NotFoundException('Item does not belong to this list');
 			}
 			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null, 'imageUploadedBy' => null]);
-			return new DataResponse($updated->jsonSerialize());
+			return new DataResponse($this->serializeItem($updated));
 		});
 	}
 

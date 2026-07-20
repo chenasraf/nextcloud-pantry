@@ -120,6 +120,7 @@ export interface ItemInput {
   name: string
   description?: string | null
   categoryId?: number | null
+  storeIds?: number[]
   quantity?: string | null
   rrule?: string | null
   repeatFromCompletion?: boolean
@@ -297,6 +298,18 @@ export async function batchSetCategory(
   const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/category`, {
     itemIds,
     categoryId,
+  })
+  return resp.data
+}
+
+export async function batchSetStores(
+  houseId: number,
+  itemIds: number[],
+  storeIds: number[],
+): Promise<BatchResult> {
+  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/stores`, {
+    itemIds,
+    storeIds,
   })
   return resp.data
 }

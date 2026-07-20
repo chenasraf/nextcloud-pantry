@@ -74,6 +74,17 @@
           </template>
         </NcButton>
         <NcButton
+          variant="tertiary"
+          :disabled="!canBulkCategory"
+          :aria-label="strings.assignStores"
+          :title="strings.assignStores"
+          @click="openBulkStores"
+        >
+          <template #icon>
+            <StoreOutlineIcon :size="20" />
+          </template>
+        </NcButton>
+        <NcButton
           v-if="!trashMode && !archiveMode"
           variant="tertiary"
           :disabled="!canBulkArchive"
@@ -131,9 +142,11 @@
         v-if="items.length > 0"
         v-model:query="filterQuery"
         v-model:selected-category-ids="filterCategoryIds"
+        v-model:selected-store-ids="filterStoreIds"
         v-model:selected-list-ids="filterListIds"
         :items="items"
         :categories="categories.items.value"
+        :stores="stores.items.value"
         :lists="isMeta ? allLists : undefined"
         class="pantry-detail__filter"
       />
@@ -191,6 +204,7 @@
               v-else
               :item="gi.item"
               :category="categoryFor(gi.item.categoryId)"
+              :stores="storesFor(gi.item.storeIds)"
               :hide-category="showCategoryHeaders"
               :list="isMeta ? listFor(gi.item.listId) : null"
               :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
@@ -244,6 +258,7 @@
                 v-else
                 :item="gi.item"
                 :category="categoryFor(gi.item.categoryId)"
+                :stores="storesFor(gi.item.storeIds)"
                 :hide-category="showCategoryHeaders"
                 :list="isMeta ? listFor(gi.item.listId) : null"
                 :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
@@ -289,6 +304,7 @@
       :open="!!viewing"
       :item="viewing"
       :category="categoryFor(viewing.categoryId)"
+      :stores="storesFor(viewing.storeIds)"
       :house-id="houseIdNum"
       @update:open="(v) => !v && (viewing = null)"
       @edit="viewToEdit"
@@ -316,6 +332,12 @@
       :house-id="houseIdNum"
       @update:open="showCategoryManager = $event"
       @sort-changed="onCategorySortChanged"
+    />
+
+    <StoreManagerDialog
+      :open="showStoreManager"
+      :house-id="houseIdNum"
+      @update:open="showStoreManager = $event"
     />
 
     <!-- Move item(s) to another list -->
@@ -399,6 +421,28 @@
           :disabled="bulkCategoryId == null"
           @click="applyBulkCategory(bulkCategoryId)"
         >
+          {{ strings.apply }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <!-- Assign stores to selected items -->
+    <NcDialog
+      v-if="showBulkStores"
+      :name="strings.assignStoresTitle"
+      :open="showBulkStores"
+      close-on-click-outside
+      @update:open="(v) => !v && (showBulkStores = false)"
+    >
+      <div class="pantry-bulk-category">
+        <StoreMultiPicker v-model="bulkStoreIds" :house-id="houseIdNum" />
+      </div>
+      <template #actions>
+        <NcButton @click="showBulkStores = false">{{ strings.cancel }}</NcButton>
+        <NcButton variant="tertiary" @click="applyBulkStores([])">
+          {{ strings.removeStores }}
+        </NcButton>
+        <NcButton variant="primary" @click="applyBulkStores(bulkStoreIds)">
           {{ strings.apply }}
         </NcButton>
       </template>
@@ -488,6 +532,7 @@ import SortIcon from '@icons/Sort.vue'
 import SelectMultipleIcon from '@icons/SelectMultiple.vue'
 import CloseIcon from '@icons/Close.vue'
 import TagIcon from '@icons/Tag.vue'
+import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
 import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
@@ -498,15 +543,17 @@ import FileExportIcon from '@icons/FileExport.vue'
 import FileImportIcon from '@icons/FileImport.vue'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
-import { ChecklistFilter, NO_CATEGORY_ID } from '@/components/ChecklistFilter'
+import { ChecklistFilter, NO_CATEGORY_ID, NO_STORE_ID } from '@/components/ChecklistFilter'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
+import { StoreManagerDialog } from '@/components/StoreManager'
 import { MarkdownExportDialog } from '@/components/MarkdownExportDialog'
 import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
 import CategoryPicker, { categoryIconComponent } from '@/components/CategoryPicker'
+import StoreMultiPicker from '@/components/StoreMultiPicker'
 import {
   checklistIconComponent,
   ChecklistFormDialog,
@@ -519,11 +566,12 @@ function iconWrapStyle(color: string | null) {
 }
 import { useChecklists, useChecklistItems, ALL_LISTS_ID } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
+import { useStores } from '@/composables/useStores'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { useLongPress } from '@/composables/useLongPress'
 import { getList, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
-import type { Checklist, ChecklistItem, Category } from '@/api/types'
+import type { Checklist, ChecklistItem, Category, Store } from '@/api/types'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
 import { getChecklistItemSort, setChecklistItemSort } from '@/api/prefs'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
@@ -566,6 +614,7 @@ const {
   unarchiveMany,
   undoArchiveMany,
   setCategoryMany,
+  setStoresMany,
   undoRemoveMany,
   sortBy,
   viewMode,
@@ -606,6 +655,13 @@ const categories = useCategories(houseIdNum.value)
 
 function categoryFor(id: number | null) {
   return categories.findById(id) ?? null
+}
+
+const stores = useStores(houseIdNum.value)
+
+function storesFor(ids: number[] | null | undefined): Store[] {
+  if (!ids || ids.length === 0) return []
+  return ids.map((id) => stores.findById(id)).filter((s): s is Store => s != null)
 }
 
 function listFor(id: number) {
@@ -711,7 +767,7 @@ onMounted(async () => {
   // Meta view needs the full list catalog to render per-item chips and the
   // required list picker; non-meta views read it lazily for move/copy dialogs,
   // by which time the sidebar has already populated the shared state.
-  const tasks: Promise<unknown>[] = [loadList(), load(), categories.load()]
+  const tasks: Promise<unknown>[] = [loadList(), load(), categories.load(), stores.load()]
   if (isMeta.value) tasks.push(loadLists())
   await Promise.all(tasks)
 })
@@ -778,6 +834,7 @@ onBeforeUnmount(() => {
 
 const filterQuery = ref('')
 const filterCategoryIds = ref<number[]>([])
+const filterStoreIds = ref<number[]>([])
 
 // List filter is only meaningful in the meta "All lists" view. Its selection is
 // persisted per house in localStorage so it survives navigation and reloads.
@@ -819,6 +876,15 @@ const filteredItems = computed(() => {
     result = result.filter((i) =>
       i.categoryId != null ? catIds.includes(i.categoryId) : wantUncategorized,
     )
+  }
+  const storeIds = filterStoreIds.value
+  if (storeIds.length > 0) {
+    const wantStoreless = storeIds.includes(NO_STORE_ID)
+    result = result.filter((i) => {
+      const attached = i.storeIds ?? []
+      if (attached.length === 0) return wantStoreless
+      return attached.some((id) => storeIds.includes(id))
+    })
   }
   const q = filterQuery.value.trim().toLowerCase()
   if (q) {
@@ -1335,6 +1401,7 @@ function openPreview(item: ChecklistItem) {
 // ----- Category manager -----
 
 const showCategoryManager = ref(false)
+const showStoreManager = ref(false)
 
 async function onCategorySortChanged() {
   // The list endpoint groups items by category, so changing category order
@@ -1654,6 +1721,32 @@ async function applyBulkCategory(categoryId: number | null) {
   }
 }
 
+// ----- Bulk stores -----
+
+const showBulkStores = ref(false)
+const bulkStoreIds = ref<number[]>([])
+
+function openBulkStores() {
+  bulkStoreIds.value = []
+  showBulkStores.value = true
+}
+
+// Replace the stores on the writable selection (empty array clears them).
+async function applyBulkStores(storeIds: number[]) {
+  const ids = writableSelectedIds.value
+  if (ids.length === 0) return
+  try {
+    const result = await setStoresMany(ids, storeIds)
+    showSuccess(n('pantry', 'Updated %n item', 'Updated %n items', result.items.length))
+    reportSkipped(selectedCount.value - ids.length + result.skipped.length)
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    showBulkStores.value = false
+    exitSelection()
+  }
+}
+
 // ----- Bulk delete -----
 
 const confirmingBulkDelete = ref(false)
@@ -1748,6 +1841,8 @@ const strings = {
   doneTitle: t('pantry', 'Done'),
   noCategory: t('pantry', 'No category'),
   manageCategories: t('pantry', 'Manage categories'),
+  // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
+  manageStores: t('pantry', 'Manage stores'),
   editList: t('pantry', 'Edit list'),
   // TRANSLATORS: Verb. Toolbar button that exports the list as Markdown.
   exportMarkdown: t('pantry', 'Export'),
@@ -1781,6 +1876,8 @@ const strings = {
   // TRANSLATORS: Verb. Button that copies the selected items to another list.
   copySelected: t('pantry', 'Copy'),
   assignCategory: t('pantry', 'Assign category'),
+  // TRANSLATORS: Verb. Button that sets which stores the selected items can be bought at.
+  assignStores: t('pantry', 'Assign stores'),
   // TRANSLATORS: Verb. Button that archives the selected items.
   archiveSelected: t('pantry', 'Archive'),
   unarchiveSelected: t('pantry', 'Unarchive'),
@@ -1790,6 +1887,10 @@ const strings = {
   // TRANSLATORS: Verb. Dialog button that applies the chosen category to the selected items.
   apply: t('pantry', 'Apply'),
   removeCategory: t('pantry', 'Remove category'),
+  // TRANSLATORS: Noun (plural), shops where items are bought. Dialog title for bulk assignment.
+  assignStoresTitle: t('pantry', 'Assign stores'),
+  // TRANSLATORS: Verb. Dialog button that detaches all stores from the selected items.
+  removeStores: t('pantry', 'Remove stores'),
   bulkDeleteTitle: t('pantry', 'Delete items?'),
   bulkDeleteConfirm: t(
     'pantry',
@@ -1867,6 +1968,14 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     icon: TagIcon,
     priority: 6,
     onClick: () => (showCategoryManager.value = true),
+  })
+
+  actions.push({
+    key: 'stores',
+    label: strings.manageStores,
+    icon: StoreOutlineIcon,
+    priority: 6,
+    onClick: () => (showStoreManager.value = true),
   })
 
   if (canSelect.value) {

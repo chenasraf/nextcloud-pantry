@@ -23,16 +23,20 @@ class ChecklistServiceTest extends TestCase {
 	private ChecklistMapper $listMapper;
 	/** @var ChecklistItemMapper&MockObject */
 	private ChecklistItemMapper $itemMapper;
+	/** @var \OCA\Pantry\Db\ItemStoreMapper&MockObject */
+	private \OCA\Pantry\Db\ItemStoreMapper $itemStoreMapper;
 	private ChecklistService $svc;
 
 	protected function setUp(): void {
 		$this->listMapper = $this->createMock(ChecklistMapper::class);
 		$this->itemMapper = $this->createMock(ChecklistItemMapper::class);
+		$this->itemStoreMapper = $this->createMock(\OCA\Pantry\Db\ItemStoreMapper::class);
 		$this->svc = new ChecklistService(
 			$this->listMapper,
 			$this->itemMapper,
 			new RecurrenceService(),
 			$this->createMock(ListRoleMapper::class),
+			$this->itemStoreMapper,
 		);
 	}
 
@@ -356,6 +360,54 @@ class ChecklistServiceTest extends TestCase {
 		$this->svc->addItem(1, ['name' => 'Eggs'], 'alice');
 		$this->assertNotNull($captured);
 		$this->assertSame('alice', $captured->getAddedBy());
+	}
+
+	public function testAddItemAttachesStoresWhenProvided(): void {
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$saved = $this->withId($this->makeItem(), 42);
+		$this->itemMapper->method('insert')->willReturn($saved);
+
+		$this->itemStoreMapper->expects($this->once())
+			->method('setStoresForItem')
+			->with(42, [3, 7]);
+
+		$this->svc->addItem(1, ['name' => 'Milk', 'storeIds' => [3, 7]]);
+	}
+
+	public function testAddItemSkipsStoreWriteWhenKeyAbsent(): void {
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('insert')->willReturn($this->withId($this->makeItem(), 42));
+
+		$this->itemStoreMapper->expects($this->never())->method('setStoresForItem');
+
+		$this->svc->addItem(1, ['name' => 'Milk']);
+	}
+
+	public function testUpdateItemReplacesStoresWhenKeyPresent(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->itemStoreMapper->expects($this->once())
+			->method('setStoresForItem')
+			->with(9, [1]);
+
+		$this->svc->updateItem(9, ['storeIds' => [1]]);
+	}
+
+	public function testPermanentlyDeleteItemRemovesStoreLinks(): void {
+		$item = $this->withId($this->makeItem(), 12);
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->itemStoreMapper->expects($this->once())->method('deleteByItem')->with(12);
+		$this->itemMapper->expects($this->once())->method('delete')->with($item);
+
+		$this->svc->permanentlyDeleteItem(12);
+	}
+
+	private function withId(ChecklistItem $item, int $id): ChecklistItem {
+		$ref = new \ReflectionProperty($item, 'id');
+		$ref->setValue($item, $id);
+		return $item;
 	}
 
 	public function testListForHousePassesSortBy(): void {

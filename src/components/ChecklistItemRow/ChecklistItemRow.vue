@@ -100,6 +100,15 @@
         <component :is="categoryIconComponent(category.icon)" :size="14" />
         {{ category.name }}
       </span>
+      <span
+        v-for="store in stores"
+        :key="store.id"
+        class="checklist-row__store"
+        :style="{ color: store.color }"
+      >
+        <component :is="storeIconComponent(store.icon)" :size="14" />
+        {{ store.name }}
+      </span>
     </div>
     <div v-if="showAddedBy && !selectionMode" class="checklist-row__added-by">
       <NcAvatar
@@ -196,13 +205,14 @@ import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
+import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { useHouseMembers } from '@/composables/useHouseMembers'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
-import type { ChecklistItem, Category, Checklist } from '@/api/types'
+import type { ChecklistItem, Category, Checklist, Store } from '@/api/types'
 
 const { can } = useCurrentHouse()
 
@@ -212,6 +222,8 @@ const props = withDefaults(
     category: Category | null
     /** Hide the category chip (used when category headers already group rows). */
     hideCategory?: boolean
+    /** Stores attached to this item, resolved to entities by the parent. */
+    stores?: Store[]
     list?: Checklist | null
     houseId: number
     reorderEnabled?: boolean
@@ -232,6 +244,7 @@ const props = withDefaults(
   }>(),
   {
     hideCategory: false,
+    stores: () => [],
     list: null,
     reorderEnabled: false,
     trashMode: false,
@@ -558,6 +571,7 @@ const strings = {
 
   &__quantity,
   &__category,
+  &__store,
   &__recurrence,
   &__description,
   &__list {

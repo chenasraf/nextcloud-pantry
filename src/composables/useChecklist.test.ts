@@ -56,6 +56,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     name: 'Milk',
     description: null,
     categoryId: null,
+    storeIds: [],
     quantity: null,
     done: false,
     doneAt: null,

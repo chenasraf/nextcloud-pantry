@@ -89,12 +89,23 @@ export interface Category {
   updatedAt: number
 }
 
+export interface Store {
+  id: number
+  houseId: number
+  name: string
+  icon: string
+  color: string
+  createdAt: number
+  updatedAt: number
+}
+
 export interface ChecklistItem {
   id: number
   listId: number
   name: string
   description: string | null
   categoryId: number | null
+  storeIds: number[]
   quantity: string | null
   done: boolean
   doneAt: number | null

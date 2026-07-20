@@ -5,6 +5,7 @@
       :placeholder="strings.placeholder"
       :show-trailing-button="localQuery.length > 0"
       trailing-button-icon="close"
+      class="pantry-filter__search"
       @trailing-button-click="localQuery = ''"
     >
       <template #icon>
@@ -12,101 +13,34 @@
       </template>
     </NcTextField>
 
-    <div v-if="listOptions.length > 0" class="pantry-filter__group">
-      <span class="pantry-filter__label">{{ strings.visibleLists }}</span>
-      <div class="pantry-filter__categories">
-        <NcChip
-          :variant="selectedListIdsLocal.length === 0 ? 'primary' : 'secondary'"
-          class="pantry-filter__chip"
-          no-close
-          @click="$emit('update:selectedListIds', [])"
-        >
-          <template #icon>
-            <CheckIcon v-if="selectedListIdsLocal.length === 0" :size="16" />
-          </template>
-          <span class="pantry-filter__chip-content">
-            {{ strings.allLists }}
-            <NcCounterBubble :count="totalCount" />
-          </span>
-        </NcChip>
-        <NcChip
-          v-for="opt in listOptions"
-          :key="opt.list.id"
-          :variant="selectedListIdsLocal.includes(opt.list.id) ? 'primary' : 'secondary'"
-          class="pantry-filter__chip"
-          no-close
-          @click="toggleList(opt.list.id)"
-        >
-          <template #icon>
-            <component
-              :is="listIconFor(opt.list.icon)"
-              :size="16"
-              :style="opt.list.color ? { color: opt.list.color } : undefined"
-            />
-          </template>
-          <span class="pantry-filter__chip-content">
-            {{ opt.list.name }}
-            <NcCounterBubble :count="opt.count" />
-          </span>
-        </NcChip>
-      </div>
-    </div>
-
-    <div v-if="categoryOptions.length > 0" class="pantry-filter__group">
-      <span v-if="listOptions.length > 0" class="pantry-filter__label">
-        {{ strings.visibleCategories }}
-      </span>
-      <div class="pantry-filter__categories">
-        <NcChip
-          :variant="selectedIds.length === 0 ? 'primary' : 'secondary'"
-          class="pantry-filter__chip"
-          no-close
-          @click="$emit('update:selectedCategoryIds', [])"
-        >
-          <template #icon>
-            <CheckIcon v-if="selectedIds.length === 0" :size="16" />
-          </template>
-          <span class="pantry-filter__chip-content">
-            {{ strings.all }}
-            <NcCounterBubble :count="totalCount" />
-          </span>
-        </NcChip>
-        <NcChip
-          v-for="opt in categoryOptions"
-          :key="opt.category.id"
-          :variant="selectedIds.includes(opt.category.id) ? 'primary' : 'secondary'"
-          class="pantry-filter__chip"
-          no-close
-          @click="toggleCategory(opt.category.id)"
-        >
-          <template #icon>
-            <component
-              :is="iconFor(opt.category.icon)"
-              :size="16"
-              :style="{ color: opt.category.color }"
-            />
-          </template>
-          <span class="pantry-filter__chip-content">
-            {{ opt.category.name }}
-            <NcCounterBubble :count="opt.count" />
-          </span>
-        </NcChip>
-        <NcChip
-          v-if="uncategorizedCount > 0"
-          :variant="selectedIds.includes(NO_CATEGORY_ID) ? 'primary' : 'secondary'"
-          class="pantry-filter__chip"
-          no-close
-          @click="toggleCategory(NO_CATEGORY_ID)"
-        >
-          <template #icon>
-            <TagOffOutlineIcon :size="16" />
-          </template>
-          <span class="pantry-filter__chip-content">
-            {{ strings.noCategory }}
-            <NcCounterBubble :count="uncategorizedCount" />
-          </span>
-        </NcChip>
-      </div>
+    <div class="pantry-filter__dropdowns">
+      <FilterDropdown
+        v-if="listOptions.length > 0"
+        :label="strings.lists"
+        :all-label="strings.allLists"
+        :model-value="selectedListIdsLocal"
+        :options="listOptions"
+        :total-count="totalCount"
+        @update:model-value="$emit('update:selectedListIds', $event)"
+      />
+      <FilterDropdown
+        v-if="categoryOptions.length > 0"
+        :label="strings.categories"
+        :all-label="strings.all"
+        :model-value="selectedCategoryIds"
+        :options="categoryOptions"
+        :total-count="totalCount"
+        @update:model-value="$emit('update:selectedCategoryIds', $event)"
+      />
+      <FilterDropdown
+        v-if="storeOptions.length > 0"
+        :label="strings.stores"
+        :all-label="strings.allStores"
+        :model-value="selectedStoreIdsLocal"
+        :options="storeOptions"
+        :total-count="totalCount"
+        @update:model-value="$emit('update:selectedStoreIds', $event)"
+      />
     </div>
   </div>
 </template>
@@ -115,28 +49,31 @@
 import { computed } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import NcChip from '@nextcloud/vue/components/NcChip'
-import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import MagnifyIcon from '@icons/Magnify.vue'
-import CheckIcon from '@icons/Check.vue'
 import TagOffOutlineIcon from '@icons/TagOffOutline.vue'
+import StoreOffOutlineIcon from '@icons/StoreOffOutline.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
+import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker'
-import { NO_CATEGORY_ID } from './constants'
-import type { Category, Checklist, ChecklistItem } from '@/api/types'
+import FilterDropdown, { type FilterOption } from './FilterDropdown.vue'
+import { NO_CATEGORY_ID, NO_STORE_ID } from './constants'
+import type { Category, Checklist, ChecklistItem, Store } from '@/api/types'
 
 const props = defineProps<{
   query: string
   selectedCategoryIds: number[]
+  selectedStoreIds?: number[]
   selectedListIds?: number[]
   items: ChecklistItem[]
   categories: Category[]
+  stores?: Store[]
   lists?: Checklist[]
 }>()
 
 const emit = defineEmits<{
   (e: 'update:query', v: string): void
   (e: 'update:selectedCategoryIds', v: number[]): void
+  (e: 'update:selectedStoreIds', v: number[]): void
   (e: 'update:selectedListIds', v: number[]): void
 }>()
 
@@ -147,84 +84,109 @@ const localQuery = computed({
 
 const totalCount = computed(() => props.items.length)
 
-interface CategoryOption {
-  category: Category
-  count: number
-}
+// ----- Categories -----
 
-const categoryOptions = computed<CategoryOption[]>(() => {
+const categoryOptions = computed<FilterOption[]>(() => {
   const counts = new Map<number, number>()
   for (const item of props.items) {
     if (item.categoryId != null) {
       counts.set(item.categoryId, (counts.get(item.categoryId) ?? 0) + 1)
     }
   }
-  return props.categories
+  const options: FilterOption[] = props.categories
     .filter((c) => counts.has(c.id))
-    .map((c) => ({ category: c, count: counts.get(c.id)! }))
+    .map((c) => ({
+      id: c.id,
+      label: c.name,
+      count: counts.get(c.id)!,
+      icon: categoryIconComponent(c.icon),
+      color: c.color,
+    }))
+  const uncategorized = props.items.filter((i) => i.categoryId == null).length
+  if (uncategorized > 0) {
+    options.push({
+      id: NO_CATEGORY_ID,
+      label: strings.noCategory,
+      count: uncategorized,
+      icon: TagOffOutlineIcon,
+    })
+  }
+  return options
 })
 
-const uncategorizedCount = computed(
-  () => props.items.filter((item) => item.categoryId == null).length,
-)
+// ----- Stores -----
 
-const selectedIds = computed(() => props.selectedCategoryIds)
+const selectedStoreIdsLocal = computed(() => props.selectedStoreIds ?? [])
 
-function toggleCategory(id: number) {
-  const current = selectedIds.value
-  if (current.includes(id)) {
-    emit(
-      'update:selectedCategoryIds',
-      current.filter((cid) => cid !== id),
-    )
-  } else {
-    emit('update:selectedCategoryIds', [...current, id])
+const storeOptions = computed<FilterOption[]>(() => {
+  const stores = props.stores ?? []
+  const counts = new Map<number, number>()
+  let storeless = 0
+  for (const item of props.items) {
+    const ids = item.storeIds ?? []
+    if (ids.length === 0) {
+      storeless += 1
+      continue
+    }
+    for (const id of ids) {
+      counts.set(id, (counts.get(id) ?? 0) + 1)
+    }
   }
-}
+  const options: FilterOption[] = stores
+    .filter((s) => counts.has(s.id))
+    .map((s) => ({
+      id: s.id,
+      label: s.name,
+      count: counts.get(s.id)!,
+      icon: storeIconComponent(s.icon),
+      color: s.color,
+    }))
+  if (storeless > 0) {
+    options.push({
+      id: NO_STORE_ID,
+      label: strings.noStore,
+      count: storeless,
+      icon: StoreOffOutlineIcon,
+    })
+  }
+  return options
+})
 
-function iconFor(key: string) {
-  return categoryIconComponent(key)
-}
+// ----- Lists (meta "All lists" view only) -----
 
-interface ListOption {
-  list: Checklist
-  count: number
-}
+const selectedListIdsLocal = computed(() => props.selectedListIds ?? [])
 
-const listOptions = computed<ListOption[]>(() => {
+const listOptions = computed<FilterOption[]>(() => {
   if (!props.lists || props.lists.length === 0) return []
   const counts = new Map<number, number>()
   for (const item of props.items) {
     counts.set(item.listId, (counts.get(item.listId) ?? 0) + 1)
   }
-  return props.lists.map((l) => ({ list: l, count: counts.get(l.id) ?? 0 }))
+  return props.lists.map((l) => ({
+    id: l.id,
+    label: l.name,
+    count: counts.get(l.id) ?? 0,
+    icon: checklistIconComponent(l.icon),
+    color: l.color ?? undefined,
+  }))
 })
-
-const selectedListIdsLocal = computed(() => props.selectedListIds ?? [])
-
-function toggleList(id: number) {
-  const current = selectedListIdsLocal.value
-  if (current.includes(id)) {
-    emit(
-      'update:selectedListIds',
-      current.filter((lid) => lid !== id),
-    )
-  } else {
-    emit('update:selectedListIds', [...current, id])
-  }
-}
-
-function listIconFor(key: string) {
-  return checklistIconComponent(key)
-}
 
 const strings = {
   placeholder: t('pantry', 'Type to filter …'),
+  // TRANSLATORS: Adjective/label meaning "no category filter — show all". Option that clears the category filter.
   all: t('pantry', 'All'),
   noCategory: t('pantry', 'No category'),
+  // TRANSLATORS: Noun (plural). Label of the list filter dropdown.
+  lists: t('pantry', 'Lists'),
   allLists: t('pantry', 'All lists'),
-  visibleLists: t('pantry', 'Filter lists'),
-  visibleCategories: t('pantry', 'Filter categories'),
+  // TRANSLATORS: Noun (plural). Label of the category filter dropdown.
+  categories: t('pantry', 'Categories'),
+  // TRANSLATORS: Noun (plural), shops where items are bought. Label of the store filter dropdown.
+  stores: t('pantry', 'Stores'),
+  // TRANSLATORS: Option that clears the store filter to show items from all stores.
+  allStores: t('pantry', 'All stores'),
+  // TRANSLATORS: Filter option matching items with no store attached.
+  noStore: t('pantry', 'No store'),
 }
 </script>
 
@@ -234,52 +196,20 @@ const strings = {
   flex-direction: column;
   gap: 0.5rem;
 
-  &__group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  &__label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--color-text-maxcontrast);
-  }
-
-  &__categories {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    align-items: center;
-  }
-
-  &__chip :deep(*) {
-    cursor: pointer;
-  }
-
-  // The chip's leading icon sits flush against the rounded edge, leaving the
-  // left side visibly tighter than the right (after the counter). Nudge it in
-  // so both sides are balanced.
-  &__chip :deep(.nc-chip__icon) {
-    margin-inline-start: 4px;
-  }
-
-  &__chip#{&}__chip {
-    transition: background-color 0.15s ease;
-  }
-
-  &__chip#{&}__chip:hover {
-    background-color: color-mix(
-      in srgb,
-      var(--color-primary-element) 50%,
-      var(--color-background-hover)
-    );
-  }
-
-  &__chip-content {
-    display: inline-flex;
-    align-items: center;
+  &__dropdowns {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.5rem;
+    align-items: start;
+
+    // Tablet: drop to two columns, then a single full-width column on mobile.
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>
