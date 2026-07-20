@@ -42,6 +42,16 @@
           {{ strings.manageCategories }}
         </NcButton>
         <NcButton
+          v-if="!trashMode && can.canEditLists"
+          variant="primary"
+          @click="showStoreManager = true"
+        >
+          <template #icon>
+            <StoreOutlineIcon :size="20" />
+          </template>
+          {{ strings.manageStores }}
+        </NcButton>
+        <NcButton
           v-if="!trashMode && can.canCreateLists"
           variant="primary"
           @click="showCreate = true"
@@ -247,6 +257,12 @@
       :house-id="houseIdNum"
       @update:open="showCategoryManager = $event"
     />
+
+    <StoreManagerDialog
+      :open="showStoreManager"
+      :house-id="houseIdNum"
+      @update:open="showStoreManager = $event"
+    />
   </div>
 </template>
 
@@ -263,8 +279,10 @@ import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import PageToolbar from '@/components/PageToolbar'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
+import { StoreManagerDialog } from '@/components/StoreManager'
 import PlusIcon from '@icons/Plus.vue'
 import TagIcon from '@icons/Tag.vue'
+import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
@@ -377,6 +395,7 @@ watch(
 )
 
 const showCategoryManager = ref(false)
+const showStoreManager = ref(false)
 
 const showCreate = ref(false)
 
@@ -587,6 +606,8 @@ const strings = {
   trashTitle: t('pantry', 'Checklists trash'),
   newList: t('pantry', 'New list'),
   manageCategories: t('pantry', 'Manage categories'),
+  // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar button opening the store manager.
+  manageStores: t('pantry', 'Manage stores'),
   cancel: t('pantry', 'Cancel'),
   // TRANSLATORS: Verb, menu button that opens a checklist for editing.
   edit: t('pantry', 'Edit'),

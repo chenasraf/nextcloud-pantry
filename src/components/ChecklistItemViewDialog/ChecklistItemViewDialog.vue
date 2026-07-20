@@ -33,6 +33,20 @@
             {{ category.name }}
           </span>
         </div>
+        <div v-if="stores.length > 0" class="item-view__row">
+          <span class="item-view__label">{{ strings.stores }}:</span>
+          <span class="item-view__stores">
+            <span
+              v-for="store in stores"
+              :key="store.id"
+              class="item-view__badge"
+              :style="{ color: store.color }"
+            >
+              <component :is="storeIconComponent(store.icon)" :size="14" />
+              {{ store.name }}
+            </span>
+          </span>
+        </div>
         <div v-if="item.rrule" class="item-view__row">
           <span class="item-view__label">{{ strings.recurrence }}:</span>
           <span class="item-view__badge">
@@ -70,16 +84,21 @@ import NcRichText from '@nextcloud/vue/components/NcRichText'
 import RepeatIcon from '@icons/Repeat.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
+import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
-import type { ChecklistItem, Category } from '@/api/types'
+import type { ChecklistItem, Category, Store } from '@/api/types'
 
-const props = defineProps<{
-  open: boolean
-  item: ChecklistItem
-  category: Category | null
-  houseId: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    item: ChecklistItem
+    category: Category | null
+    stores?: Store[]
+    houseId: number
+  }>(),
+  { stores: () => [] },
+)
 
 defineEmits<{
   'update:open': [value: boolean]
@@ -103,6 +122,8 @@ const strings = {
   viewImage: t('pantry', 'View image'),
   quantity: t('pantry', 'Quantity'),
   category: t('pantry', 'Category'),
+  // TRANSLATORS: Noun (plural), shops where this item can be bought. Detail row label.
+  stores: t('pantry', 'Stores'),
   recurrence: t('pantry', 'Recurrence'),
   nextRecurrence: t('pantry', 'Next recurrence'),
   status: t('pantry', 'Status'),
@@ -171,6 +192,12 @@ const strings = {
     padding: 2px 8px;
     border-radius: 999px;
     background: var(--color-background-hover);
+  }
+
+  &__stores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
   }
 }
 </style>

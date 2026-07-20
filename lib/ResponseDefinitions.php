@@ -80,6 +80,7 @@ namespace OCA\Pantry;
  *     name: string,
  *     description: string|null,
  *     categoryId: int|null,
+ *     storeIds: list<int>,
  *     quantity: string|null,
  *     done: bool,
  *     doneAt: int|null,
@@ -113,6 +114,20 @@ namespace OCA\Pantry;
  *     icon: PantryCategoryIcon,
  *     color: PantryCategoryColor,
  *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
+ *
+ * @psalm-type PantryStoreIcon = 'store'|'storefront'|'market'|'supermarket'|'convenience'|'cart'|'basket'|'shopping'|'online'|'warehouse'|'pharmacy'|'health'|'bakery'|'butcher'|'seafood'|'produce'|'garden'|'florist'|'hardware'|'tools'|'wrench'|'electronics'|'phone'|'clothing'|'shoes'|'furniture'|'homegoods'|'home'|'books'|'toys'|'pets'|'liquor'|'coffee'|'gas'|'gift'|'jewelry'|'sports'|'beauty'|'office'|'baby'|'deli'
+ *
+ * @psalm-type PantryStoreColor = '#e11d48'|'#ea580c'|'#ca8a04'|'#16a34a'|'#0891b2'|'#2563eb'|'#7c3aed'|'#c026d3'|'#db2777'|'#57534e'
+ *
+ * @psalm-type PantryStore = array{
+ *     id: int,
+ *     houseId: int,
+ *     name: string,
+ *     icon: PantryStoreIcon,
+ *     color: PantryStoreColor,
  *     createdAt: int,
  *     updatedAt: int,
  * }

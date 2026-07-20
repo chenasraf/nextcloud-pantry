@@ -36,6 +36,12 @@
         :label="strings.categoryLabel"
         :placeholder="strings.categoryPlaceholder"
       />
+      <StoreMultiPicker
+        v-model="editStoreIds"
+        :house-id="houseId"
+        :label="strings.storesLabel"
+        :placeholder="strings.storesPlaceholder"
+      />
       <div class="edit-item-form__type">
         <span class="edit-item-form__label">{{ strings.typeLabel }}</span>
         <ItemTypeSelector
@@ -110,6 +116,7 @@ import DeleteIcon from '@icons/Delete.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
+import StoreMultiPicker from '@/components/StoreMultiPicker'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import { itemImagePreviewUrl } from '@/api/images'
 import type { ChecklistItem } from '@/api/types'
@@ -131,6 +138,7 @@ const editName = ref('')
 const editDescription = ref('')
 const editQuantity = ref('')
 const editCategoryId = ref<number | null>(null)
+const editStoreIds = ref<number[]>([])
 const editRrule = ref<string | null>(null)
 const editRepeatFromCompletion = ref(false)
 const editDeleteOnDone = ref(false)
@@ -179,6 +187,7 @@ watch(
       editDescription.value = props.item.description ?? ''
       editQuantity.value = props.item.quantity ?? ''
       editCategoryId.value = props.item.categoryId ?? null
+      editStoreIds.value = [...(props.item.storeIds ?? [])]
       editRrule.value = props.item.rrule ?? null
       editRepeatFromCompletion.value = props.item.repeatFromCompletion ?? false
       editDeleteOnDone.value = props.item.deleteOnDone ?? false
@@ -220,6 +229,7 @@ function submitEdit() {
       description: editDescription.value.trim(),
       quantity: editQuantity.value.trim(),
       categoryId: editCategoryId.value,
+      storeIds: editStoreIds.value,
       rrule: once ? null : editRrule.value,
       repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
       deleteOnDone: once,
@@ -262,6 +272,10 @@ const strings = {
   quantityPlaceholder: t('pantry', 'e.g. 2 L'),
   categoryLabel: t('pantry', 'Category'),
   categoryPlaceholder: t('pantry', 'Category'),
+  // TRANSLATORS: Noun (plural), shops where this item can be bought. Field label.
+  storesLabel: t('pantry', 'Stores'),
+  // TRANSLATORS: Noun (plural), shops where this item can be bought. Field placeholder.
+  storesPlaceholder: t('pantry', 'Stores'),
   typeLabel: t('pantry', 'Item type'),
   imageLabel: t('pantry', 'Image'),
   uploadImage: t('pantry', 'Upload image'),

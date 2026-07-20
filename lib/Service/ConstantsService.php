@@ -103,6 +103,65 @@ class ConstantsService {
 		'#78716c',
 	];
 
+	/** Store icon keys, mirrored in src/components/StoreMultiPicker/storeIcons.ts */
+	public const STORE_ICON_KEYS = [
+		'store',
+		'storefront',
+		'market',
+		'supermarket',
+		'convenience',
+		'cart',
+		'basket',
+		'shopping',
+		'online',
+		'warehouse',
+		'pharmacy',
+		'health',
+		'bakery',
+		'butcher',
+		'seafood',
+		'produce',
+		'garden',
+		'florist',
+		'hardware',
+		'tools',
+		'wrench',
+		'electronics',
+		'phone',
+		'clothing',
+		'shoes',
+		'furniture',
+		'homegoods',
+		'home',
+		'books',
+		'toys',
+		'pets',
+		'liquor',
+		'coffee',
+		'gas',
+		'gift',
+		'jewelry',
+		'sports',
+		'beauty',
+		'office',
+		'baby',
+		'deli',
+	];
+
+	/** Default store color palette, mirrored in the frontend. */
+	public const STORE_COLORS = [
+		'#e11d48',
+		'#ea580c',
+		'#ca8a04',
+		'#16a34a',
+		'#0891b2',
+		'#2563eb',
+		'#7c3aed',
+		'#c026d3',
+		'#db2777',
+		'#57534e',
+	];
+
 	/** Checklist icon keys, mirrored in src/components/ChecklistIconPicker/checklistIcons.ts */
 	public const CHECKLIST_ICON_KEYS = [
 		'clipboard-check',
@@ -186,6 +245,8 @@ class ConstantsService {
 	 * @return array{
 	 *     categoryIcons: list<string>,
 	 *     categoryColors: list<string>,
+	 *     storeIcons: list<string>,
+	 *     storeColors: list<string>,
 	 *     checklistIcons: list<string>,
 	 *     noteColors: list<string>,
 	 * }
@@ -194,6 +255,8 @@ class ConstantsService {
 		return [
 			'categoryIcons' => self::CATEGORY_ICON_KEYS,
 			'categoryColors' => self::CATEGORY_COLORS,
+			'storeIcons' => self::STORE_ICON_KEYS,
+			'storeColors' => self::STORE_COLORS,
 			'checklistIcons' => self::CHECKLIST_ICON_KEYS,
 			'noteColors' => self::NOTE_COLORS,
 		];

@@ -40,6 +40,8 @@ class HouseServiceTest extends TestCase {
 			$this->createMock(ChecklistMapper::class),
 			$this->createMock(ChecklistItemMapper::class),
 			$this->createMock(CategoryMapper::class),
+			$this->createMock(\OCA\Pantry\Db\StoreMapper::class),
+			$this->createMock(\OCA\Pantry\Db\ItemStoreMapper::class),
 			$this->createMock(PhotoMapper::class),
 			$this->createMock(PhotoFolderMapper::class),
 			$this->createMock(NoteMapper::class),

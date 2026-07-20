@@ -90,6 +90,9 @@
         :house-id="houseId"
       />
 
+      <!-- Stores -->
+      <StoreChipList v-else-if="openSection === 'stores'" v-model="storeIds" :house-id="houseId" />
+
       <!-- Quantity -->
       <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
 
@@ -159,13 +162,14 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
-import { t } from '@nextcloud/l10n'
+import { t, n } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
 import TagOutlineIcon from '@icons/TagOutline.vue'
+import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import FormatListBulletedIcon from '@icons/FormatListBulleted.vue'
 import TextIcon from '@icons/Text.vue'
 import PinIcon from '@icons/Pin.vue'
@@ -177,18 +181,21 @@ import UploadIcon from '@icons/Upload.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { RecurrenceForm } from '@/components/RecurrenceEditor'
 import CategoryChipList from '@/components/CategoryChipList'
+import StoreChipList from '@/components/StoreChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
 import PantryChip from '@/components/PantryChip'
 import { useCategories } from '@/composables/useCategories'
+import { useStores } from '@/composables/useStores'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
+import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { formatRrule } from '@/utils/rrule'
 import type { ItemInput } from '@/api/lists'
 import type { Checklist } from '@/api/types'
 
-type SectionKey = 'category' | 'quantity' | 'description' | 'type' | 'image'
+type SectionKey = 'category' | 'stores' | 'quantity' | 'description' | 'type' | 'image'
 
 const props = withDefaults(
   defineProps<{
@@ -211,6 +218,7 @@ const multiple = ref(false)
 const description = ref('')
 const quantity = ref('')
 const categoryId = ref<number | null>(null)
+const storeIds = ref<number[]>([])
 const targetListId = ref<number | null>(null)
 const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
@@ -253,9 +261,15 @@ const userPickedType = ref(false)
 const { items: categories, load: loadCategories } = useCategories(props.houseId)
 void loadCategories()
 
+const { items: stores, load: loadStores } = useStores(props.houseId)
+void loadStores()
+
 watch(
   () => props.houseId,
-  () => void useCategories(props.houseId).load(),
+  () => {
+    void useCategories(props.houseId).load()
+    void useStores(props.houseId).load()
+  },
 )
 
 watch(
@@ -359,6 +373,8 @@ const selectedCategory = computed(() =>
     : null,
 )
 
+const selectedStores = computed(() => stores.value.filter((s) => storeIds.value.includes(s.id)))
+
 interface Chip {
   key: SectionKey
   text: string
@@ -395,6 +411,20 @@ const chips = computed<Chip[]>(() => {
       : TagOutlineIcon,
     iconStyle: selectedCategory.value ? { color: selectedCategory.value.color } : undefined,
     filled: selectedCategory.value !== null,
+  })
+
+  const stored = selectedStores.value
+  list.push({
+    key: 'stores',
+    text:
+      stored.length === 0
+        ? strings.stores
+        : stored.length === 1
+          ? stored[0]!.name
+          : n('pantry', '%n store', '%n stores', stored.length),
+    icon: stored.length === 1 ? storeIconComponent(stored[0]!.icon) : StoreOutlineIcon,
+    iconStyle: stored.length === 1 ? { color: stored[0]!.color } : undefined,
+    filled: stored.length > 0,
   })
 
   list.push({
@@ -466,6 +496,7 @@ function submitAdd() {
         description: description.value.trim() || null,
         quantity: quantity.value.trim() || null,
         categoryId: categoryId.value,
+        storeIds: storeIds.value,
         rrule: once ? null : rrule.value,
         repeatFromCompletion: once ? false : repeatFromCompletion.value,
         deleteOnDone: once,
@@ -479,6 +510,7 @@ function submitAdd() {
   description.value = ''
   quantity.value = ''
   categoryId.value = null
+  storeIds.value = []
   rrule.value = null
   repeatFromCompletion.value = false
   // Keep the user's last-chosen list default.
@@ -499,6 +531,8 @@ const strings = {
   namePlaceholder: t('pantry', 'e.g. Milk'),
   list: t('pantry', 'Pick a list …'),
   category: t('pantry', 'Category'),
+  // TRANSLATORS: Noun (plural), shops where the item can be bought. Chip label.
+  stores: t('pantry', 'Stores'),
   quantity: t('pantry', 'Quantity'),
   description: t('pantry', 'Description'),
   descriptionLabel: t('pantry', 'Description'),

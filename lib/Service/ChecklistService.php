@@ -11,6 +11,7 @@ use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
@@ -20,6 +21,7 @@ class ChecklistService {
 		private ChecklistItemMapper $itemMapper,
 		private RecurrenceService $recurrence,
 		private \OCA\Pantry\Db\ListRoleMapper $listRoleMapper,
+		private ItemStoreMapper $itemStoreMapper,
 	) {
 	}
 
@@ -262,6 +264,9 @@ class ChecklistService {
 		$item->setUpdatedAt($now);
 		/** @var ChecklistItem $saved */
 		$saved = $this->itemMapper->insert($item);
+		if (array_key_exists('storeIds', $data)) {
+			$this->itemStoreMapper->setStoresForItem((int)$saved->getId(), (array)$data['storeIds']);
+		}
 		return $saved;
 	}
 
@@ -328,6 +333,9 @@ class ChecklistService {
 
 		$item->setUpdatedAt(time());
 		$this->itemMapper->update($item);
+		if (array_key_exists('storeIds', $patch)) {
+			$this->itemStoreMapper->setStoresForItem((int)$item->getId(), (array)$patch['storeIds']);
+		}
 		return $item;
 	}
 
@@ -392,6 +400,26 @@ class ChecklistService {
 		foreach ($itemIds as $itemId) {
 			try {
 				$updated[] = $this->updateItem((int)$itemId, ['categoryId' => $categoryId]);
+			} catch (NotFoundException) {
+				continue;
+			}
+		}
+		return $updated;
+	}
+
+	/**
+	 * Replace the set of stores attached to a batch of items. Missing items are
+	 * skipped. Returns the updated items.
+	 *
+	 * @param list<int> $itemIds
+	 * @param int[] $storeIds
+	 * @return ChecklistItem[]
+	 */
+	public function setItemsStore(array $itemIds, array $storeIds): array {
+		$updated = [];
+		foreach ($itemIds as $itemId) {
+			try {
+				$updated[] = $this->updateItem((int)$itemId, ['storeIds' => $storeIds]);
 			} catch (NotFoundException) {
 				continue;
 			}
@@ -573,6 +601,10 @@ class ChecklistService {
 		$copy->setUpdatedAt($now);
 		/** @var ChecklistItem $saved */
 		$saved = $this->itemMapper->insert($copy);
+		$this->itemStoreMapper->setStoresForItem(
+			(int)$saved->getId(),
+			$this->itemStoreMapper->findStoreIdsForItem((int)$source->getId()),
+		);
 		return $saved;
 	}
 
@@ -590,6 +622,7 @@ class ChecklistService {
 	 */
 	public function permanentlyDeleteItem(int $itemId): void {
 		$item = $this->getItem($itemId, includeDeleted: true);
+		$this->itemStoreMapper->deleteByItem((int)$item->getId());
 		$this->itemMapper->delete($item);
 	}
 
