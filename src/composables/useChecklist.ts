@@ -153,7 +153,7 @@ export const ALL_LISTS_ID = 0
 
 export function useChecklistItems(houseId: number, listId: number) {
   const items = ref<ChecklistItem[]>([])
-  const loading = ref(false)
+  const loading = ref(true)
   const error = ref<string | null>(null)
   const sortBy = ref<ChecklistItemSort>('custom')
   const viewMode = ref<'active' | 'trash' | 'archive'>('active')
