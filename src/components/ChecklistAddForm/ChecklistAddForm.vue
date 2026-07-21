@@ -157,11 +157,31 @@
         />
       </div>
     </div>
+
+    <!-- Live "reuse existing item" suggestions. Mutually exclusive with an open
+         meta tray (they share this vertical slot) — only shown while typing a
+         single item name. -->
+    <div v-if="reuseMatches.length > 0" class="checklist-add__suggestions">
+      <span class="checklist-add__suggestions-header">{{ strings.suggestionsHeader }}</span>
+      <ul class="checklist-add__suggestions-list">
+        <ChecklistItemRow
+          v-for="match in reuseMatches"
+          :key="match.id"
+          :item="match"
+          :category="categoryForItem(match.categoryId)"
+          :stores="storesForItem(match.storeIds)"
+          :house-id="houseId"
+          suggestion
+          @select="$emit('reuse-existing', $event)"
+        />
+      </ul>
+    </div>
   </form>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
+import { extract, token_set_ratio } from 'fuzzball'
 import { t, n } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -185,6 +205,7 @@ import StoreChipList from '@/components/StoreChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
 import PantryChip from '@/components/PantryChip'
+import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { useCategories } from '@/composables/useCategories'
 import { useStores } from '@/composables/useStores'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
@@ -193,7 +214,7 @@ import { checklistIconComponent } from '@/components/ChecklistIconPicker/checkli
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { formatRrule } from '@/utils/rrule'
 import type { ItemInput } from '@/api/lists'
-import type { Checklist } from '@/api/types'
+import type { Checklist, ChecklistItem, Category, Store } from '@/api/types'
 
 type SectionKey = 'category' | 'stores' | 'quantity' | 'description' | 'type' | 'image'
 
@@ -204,13 +225,29 @@ const props = withDefaults(
     deleteOnDoneDefault?: boolean
     requireListSelector?: boolean
     availableLists?: Checklist[]
+    /**
+     * Active items eligible to be surfaced as live reuse suggestions. In the meta
+     * "All lists" view this spans every list; the form narrows them to the
+     * currently-picked target list. Empty disables suggestions (e.g. no check
+     * permission).
+     */
+    reuseCandidates?: ChecklistItem[]
+    /** The list id in single-list mode, used to scope reuse suggestions. */
+    currentListId?: number | null
   }>(),
-  { deleteOnDoneDefault: false, requireListSelector: false, availableLists: () => [] },
+  {
+    deleteOnDoneDefault: false,
+    requireListSelector: false,
+    availableLists: () => [],
+    reuseCandidates: () => [],
+    currentListId: null,
+  },
 )
 
 const emit = defineEmits<{
   add: [input: ItemInput, pendingImage: File | null, targetListId: number | null]
   'update:deleteOnDoneDefault': [value: boolean]
+  'reuse-existing': [item: ChecklistItem]
 }>()
 
 const name = ref('')
@@ -481,6 +518,56 @@ function chipVariant(chip: Chip): 'primary' | 'secondary' | 'tertiary' {
   return 'tertiary'
 }
 
+// ----- Reuse suggestions -----
+//
+// While the user types a single item name (and no meta tray is open), surface
+// existing items on the target list that fuzzily match. Tapping one emits
+// `reuse-existing`; the parent confirms and reuses it.
+
+// Candidates on the list the new item would be added to: the picked target in
+// meta mode, otherwise the list in focus.
+const reuseTargetListId = computed<number | null>(() =>
+  props.requireListSelector ? targetListId.value : props.currentListId,
+)
+
+const reuseMatches = computed<ChecklistItem[]>(() => {
+  // Never in bulk mode, only while typing a name, and never while a meta tray
+  // occupies the same slot.
+  if (multiple.value || openSection.value !== null) return []
+  const query = name.value.trim()
+  if (!query) return []
+  const listId = reuseTargetListId.value
+  if (listId == null || listId <= 0) return []
+  const candidates = props.reuseCandidates.filter((i) => i.listId === listId)
+  if (candidates.length === 0) return []
+  // token_set_ratio is the fuzzball scorer that reproduces the intended ranking
+  // (e.g. "Organic milk" surfaces "Milk" as the top match). Cutoff 60 lets weak
+  // single-word overlaps through; results come back sorted best-first.
+  const results = extract(query, candidates, {
+    processor: (i: ChecklistItem) => i.name,
+    scorer: token_set_ratio,
+    limit: 6,
+    cutoff: 60,
+  })
+  return results.map((r) => r[0] as ChecklistItem)
+})
+
+function categoryForItem(id: number | null): Category | null {
+  return id == null ? null : (categories.value.find((c) => c.id === id) ?? null)
+}
+
+function storesForItem(ids: number[] | null | undefined): Store[] {
+  if (!ids || ids.length === 0) return []
+  return ids.map((id) => stores.value.find((s) => s.id === id)).filter((s): s is Store => s != null)
+}
+
+// The parent clears the name (and keeps focus) after a confirmed reuse.
+function clearName() {
+  name.value = ''
+}
+
+defineExpose({ clearName })
+
 // ----- Submit -----
 
 function submitAdd() {
@@ -548,6 +635,8 @@ const strings = {
   replaceImage: t('pantry', 'Replace image'),
   removeImage: t('pantry', 'Remove image'),
   imageAlt: t('pantry', 'Selected image'),
+  // TRANSLATORS: Header above the list of existing items that match what the user is typing, offered so they can reuse one instead of adding a duplicate.
+  suggestionsHeader: t('pantry', 'Already on this list'),
 }
 </script>
 
@@ -691,6 +780,38 @@ const strings = {
 
   &__image-input {
     display: none;
+  }
+
+  &__suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-large, 8px);
+    background: var(--color-background-hover);
+  }
+
+  &__suggestions-header {
+    padding: 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-maxcontrast);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__suggestions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+
+    // Divide the suggestion rows so they read as a compact panel.
+    > :not(:last-child) {
+      border-bottom: 1px solid var(--color-border);
+    }
   }
 }
 </style>

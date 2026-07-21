@@ -29,6 +29,9 @@ importers:
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
+      fuzzball:
+        specifier: ^2.2.6
+        version: 2.2.6
       linkifyjs:
         specifier: ^4.3.3
         version: 4.3.3
@@ -2312,6 +2315,9 @@ packages:
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
+  fuzzball@2.2.6:
+    resolution: {integrity: sha512-RFYKY0GGDOmocz6rYmvOk9qOnV2UCsLHbVPl5zfZVvcdBlilDg/84WSgAvOCGDq+UEnpnqjZMHk6a/hamC5VuQ==}
+
   generator-function@2.0.1:
     resolution: {integrity: sha512-SFdFmIJi+ybC0vjlHN0ZGVGHc3lgE0DxPAT0djjVg+kjOnSqclqmj0KQ7ykTOLP6YxoqOvuAODGdcHJn+43q3g==}
     engines: {node: '>= 0.4'}
@@ -2423,6 +2429,9 @@ packages:
   he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
+
+  heap@0.2.7:
+    resolution: {integrity: sha512-2bsegYkkHO+h/9MGbn6KWcE45cHZgPANo5LXF7EvWdT0yT2EguSVO1nDgU5c8+ZOPwp2vMNa7YFsJhVcDR9Sdg==}
 
   highlight.js@11.11.1:
     resolution: {integrity: sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==}
@@ -6608,6 +6617,12 @@ snapshots:
 
   function-bind@1.1.2: {}
 
+  fuzzball@2.2.6:
+    dependencies:
+      heap: 0.2.7
+      lodash: 4.18.1
+      setimmediate: 1.0.5
+
   generator-function@2.0.1: {}
 
   get-caller-file@2.0.5: {}
@@ -6760,6 +6775,8 @@ snapshots:
       '@types/hast': 3.0.5
 
   he@1.2.0: {}
+
+  heap@0.2.7: {}
 
   highlight.js@11.11.1: {}
 

@@ -5,12 +5,13 @@
       'checklist-row--done': item.done,
       'checklist-row--dragging': isDragging,
       'checklist-row--reorderable': reorderEnabled,
-      'checklist-row--with-added-by': showAddedBy && !selectionMode,
+      'checklist-row--with-added-by': showAddedBy && !selectionMode && !suggestion,
       'checklist-row--selecting': selectionMode,
       'checklist-row--selected': selectionMode && selected,
+      'checklist-row--suggestion': suggestion,
     }"
     :data-drag-id="item.id"
-    :draggable="reorderEnabled ? 'true' : 'false'"
+    :draggable="reorderEnabled && !suggestion ? 'true' : 'false'"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
@@ -26,7 +27,7 @@
     <span v-if="reorderEnabled" class="checklist-row__handle" :aria-label="strings.dragToReorder">
       <DragVerticalIcon :size="20" />
     </span>
-    <div v-if="selectionMode" class="checklist-row__check">
+    <div v-if="suggestion || selectionMode" class="checklist-row__check">
       <span class="checklist-row__label checklist-row__label--standalone">
         <button
           v-if="item.imageFileId"
@@ -110,7 +111,7 @@
         {{ store.name }}
       </span>
     </div>
-    <div v-if="showAddedBy && !selectionMode" class="checklist-row__added-by">
+    <div v-if="showAddedBy && !selectionMode && !suggestion" class="checklist-row__added-by">
       <NcAvatar
         v-if="item.addedBy"
         :user="item.addedBy"
@@ -119,7 +120,7 @@
         :tooltip-message="addedByTooltip"
       />
     </div>
-    <div v-if="!selectionMode" class="checklist-row__actions">
+    <div v-if="!selectionMode && !suggestion" class="checklist-row__actions">
       <NcButton variant="tertiary" :aria-label="strings.viewItem" @click="$emit('view', item)">
         <template #icon>
           <EyeIcon :size="18" />
@@ -241,6 +242,12 @@ const props = withDefaults(
     selectionMode?: boolean
     /** Whether this row is currently selected (only meaningful in selection mode). */
     selected?: boolean
+    /**
+     * Renders the row as a checkbox-less reuse suggestion: no checkbox, drag
+     * handle, added-by avatar or actions — just the name and meta chips, with the
+     * whole row a single tap target that emits `select`.
+     */
+    suggestion?: boolean
   }>(),
   {
     hideCategory: false,
@@ -254,6 +261,7 @@ const props = withDefaults(
     listWritable: true,
     selectionMode: false,
     selected: false,
+    suggestion: false,
   },
 )
 
@@ -281,6 +289,7 @@ const emit = defineEmits<{
   archive: [id: number]
   unarchive: [id: number]
   preview: [item: ChecklistItem]
+  select: [item: ChecklistItem]
   'toggle-select': [id: number]
   'drag-start': [itemId: number]
   'reorder-over': [itemId: number, event: MouseEvent]
@@ -292,6 +301,10 @@ const isDragging = ref(false)
 // selection checkbox and the image thumb stop propagation so they keep their
 // own behavior.
 function onRowClick() {
+  if (props.suggestion) {
+    emit('select', props.item)
+    return
+  }
   if (props.selectionMode) {
     emit('toggle-select', props.item.id)
   }
@@ -393,6 +406,35 @@ const strings = {
   &--selected {
     background: var(--color-primary-element-light);
     border-color: var(--color-primary-element);
+  }
+
+  // Reuse suggestion: no checkbox/handle/actions tracks — just the name and its
+  // meta chips. Transparent so it blends into the surrounding suggestions panel.
+  &--suggestion {
+    grid-template-columns: 1fr auto;
+    background: transparent;
+    border-color: transparent;
+    cursor: pointer;
+
+    // The whole row is a single tap target — force every descendant (name, meta
+    // chips, icons) to follow the pointer instead of their own cursors.
+    :deep(*) {
+      cursor: pointer;
+    }
+
+    // The panel itself sits on --color-background-hover, so hover uses the
+    // darker shade to stay visible against it.
+    &:hover,
+    &:focus-visible {
+      background: var(--color-background-dark);
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'check'
+        'meta';
+    }
   }
 
   @media (max-width: 600px) {

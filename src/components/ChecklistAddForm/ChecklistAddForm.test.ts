@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ItemInput } from '@/api/lists'
+import type { ChecklistItem } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@icons/Plus.vue', () => createIconMock('PlusIcon'))
@@ -138,17 +139,61 @@ vi.mock('@/composables/useStores', () => ({
 vi.mock('@/utils/rrule', () => ({
   formatRrule: (s: string) => `text(${s})`,
 }))
+vi.mock('@/components/ChecklistItemRow', () => ({
+  ChecklistItemRow: {
+    name: 'ChecklistItemRow',
+    template: '<li class="mock-item-row" @click="$emit(\'select\', item)">{{ item.name }}</li>',
+    props: ['item', 'category', 'stores', 'houseId', 'suggestion'],
+    emits: ['select'],
+  },
+}))
 
 import ChecklistAddForm from './ChecklistAddForm.vue'
 
+function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
+  return {
+    id: 1,
+    listId: 10,
+    name: 'Milk',
+    description: null,
+    categoryId: null,
+    storeIds: [],
+    quantity: null,
+    done: false,
+    doneAt: null,
+    doneBy: null,
+    rrule: null,
+    repeatFromCompletion: false,
+    deleteOnDone: false,
+    nextDueAt: null,
+    imageFileId: null,
+    imageUploadedBy: null,
+    addedBy: null,
+    sortOrder: 0,
+    createdAt: 0,
+    updatedAt: 0,
+    deletedAt: null,
+    archivedAt: null,
+    ...overrides,
+  }
+}
+
 function mountForm(
-  props: { houseId?: number; adding?: boolean; deleteOnDoneDefault?: boolean } = {},
+  props: {
+    houseId?: number
+    adding?: boolean
+    deleteOnDoneDefault?: boolean
+    reuseCandidates?: ChecklistItem[]
+    currentListId?: number | null
+  } = {},
 ) {
   return mount(ChecklistAddForm, {
     props: {
       houseId: props.houseId ?? 1,
       adding: props.adding ?? false,
       deleteOnDoneDefault: props.deleteOnDoneDefault ?? false,
+      reuseCandidates: props.reuseCandidates ?? [],
+      currentListId: props.currentListId ?? null,
     },
   })
 }
@@ -366,5 +411,69 @@ describe('ChecklistAddForm', () => {
     expect(wrapper.find('.mock-quantity-input').exists()).toBe(false)
     // Name field is cleared
     expect((wrapper.find('.nc-text-field').element as HTMLInputElement).value).toBe('')
+  })
+
+  describe('reuse suggestions', () => {
+    const candidates = [
+      makeItem({ id: 1, name: 'Milk' }),
+      makeItem({ id: 2, name: 'Almond Milk' }),
+      makeItem({ id: 3, name: 'Milk Chocolate' }),
+      makeItem({ id: 4, name: 'Organic Eggs' }),
+    ]
+
+    it('shows matching suggestions while typing a single item name, ranked best-first', async () => {
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      expect(wrapper.find('.checklist-add__suggestions').exists()).toBe(true)
+      const rows = wrapper.findAll('.mock-item-row')
+      expect(rows.length).toBeGreaterThan(0)
+      expect(rows[0].text()).toBe('Milk')
+    })
+
+    it('ranks "Organic milk" with Milk as the top match (parity requirement)', async () => {
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('Organic milk')
+      const rows = wrapper.findAll('.mock-item-row')
+      expect(rows.length).toBeGreaterThan(0)
+      expect(rows[0].text()).toBe('Milk')
+    })
+
+    it('shows no suggestions when the query is empty', async () => {
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('')
+      expect(wrapper.find('.checklist-add__suggestions').exists()).toBe(false)
+    })
+
+    it('shows no suggestions in Multiple mode', async () => {
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-checkbox input').setValue(true)
+      await wrapper.find('.nc-text-area').setValue('milk')
+      expect(wrapper.find('.checklist-add__suggestions').exists()).toBe(false)
+    })
+
+    it('hides suggestions while a meta tray is open', async () => {
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      expect(wrapper.find('.checklist-add__suggestions').exists()).toBe(true)
+      await chipForKey(wrapper, 'Quantity').trigger('click')
+      expect(wrapper.find('.checklist-add__suggestions').exists()).toBe(false)
+    })
+
+    it('does not suggest items from other lists', async () => {
+      const wrapper = mountForm({
+        reuseCandidates: [makeItem({ id: 9, name: 'Milk', listId: 999 })],
+        currentListId: 10,
+      })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      expect(wrapper.find('.checklist-add__suggestions').exists()).toBe(false)
+    })
+
+    it('emits reuse-existing with the tapped item', async () => {
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      await wrapper.find('.mock-item-row').trigger('click')
+      expect(wrapper.emitted('reuse-existing')).toBeTruthy()
+      expect((wrapper.emitted('reuse-existing')![0][0] as ChecklistItem).name).toBe('Milk')
+    })
   })
 })

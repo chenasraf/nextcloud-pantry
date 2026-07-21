@@ -359,6 +359,48 @@ describe('ChecklistItemRow', () => {
     })
   })
 
+  describe('suggestion mode', () => {
+    it('renders the name and meta chips but no checkbox or actions', () => {
+      const category = makeCategory({ name: 'Dairy' })
+      const wrapper = mount(ChecklistItemRow, {
+        props: {
+          ...defaultProps,
+          item: makeItem({ name: 'Milk', categoryId: category.id, quantity: '2' }),
+          category,
+          suggestion: true,
+        },
+      })
+      expect(wrapper.find('.checklist-row').classes()).toContain('checklist-row--suggestion')
+      expect(wrapper.find('.checklist-row__name').text()).toBe('Milk')
+      // Meta chips still render.
+      expect(wrapper.find('.checklist-row__category').text()).toContain('Dairy')
+      expect(wrapper.find('.checklist-row__quantity').text()).toContain('2')
+      // No checkbox, no selection control, no actions cluster.
+      expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+      expect(wrapper.find('.checklist-row__select').exists()).toBe(false)
+      expect(wrapper.find('.checklist-row__actions').exists()).toBe(false)
+    })
+
+    it('is not draggable even when reorderEnabled is set', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, suggestion: true, reorderEnabled: true },
+      })
+      expect(wrapper.find('.checklist-row').attributes('draggable')).toBe('false')
+    })
+
+    it('emits select with the item on row click (not toggle)', async () => {
+      const item = makeItem({ id: 12 })
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item, suggestion: true },
+      })
+      await wrapper.find('.checklist-row').trigger('click')
+      expect(wrapper.emitted('select')).toBeTruthy()
+      expect(wrapper.emitted('select')![0]).toEqual([item])
+      expect(wrapper.emitted('toggle')).toBeFalsy()
+      expect(wrapper.emitted('toggle-select')).toBeFalsy()
+    })
+  })
+
   describe('reorderEnabled', () => {
     it('is not draggable by default', () => {
       const wrapper = mount(ChecklistItemRow, { props: defaultProps })

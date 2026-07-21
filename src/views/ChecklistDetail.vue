@@ -129,13 +129,17 @@
           !archiveMode &&
           (isMeta || writableHere)
         "
+        ref="addForm"
         :house-id="houseIdNum"
         :adding="adding"
         :delete-on-done-default="list?.deleteOnDoneDefault ?? false"
         :require-list-selector="isMeta"
         :available-lists="isMeta ? allLists : []"
+        :reuse-candidates="reuseCandidates"
+        :current-list-id="isMeta ? null : listIdNum"
         @add="handleAdd"
         @update:delete-on-done-default="handleDeleteOnDoneDefaultChange"
+        @reuse-existing="onReuseFromSuggestion"
       />
 
       <ChecklistFilter
@@ -493,6 +497,22 @@
         <NcButton @click="resolveCurrentReuse('cancel')">{{ strings.cancel }}</NcButton>
         <NcButton @click="resolveCurrentReuse('add')">{{ strings.reuseAddAnyway }}</NcButton>
         <NcButton variant="primary" @click="resolveCurrentReuse('reuse')">
+          {{ strings.reuseAction }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <NcDialog
+      v-if="reuseConfirm"
+      :name="strings.reuseTitle"
+      :open="!!reuseConfirm"
+      close-on-click-outside
+      @update:open="(v) => !v && resolveReuseConfirm(false)"
+    >
+      <p>{{ reuseConfirmPrompt }}</p>
+      <template #actions>
+        <NcButton @click="resolveReuseConfirm(false)">{{ strings.cancel }}</NcButton>
+        <NcButton variant="primary" @click="resolveReuseConfirm(true)">
           {{ strings.reuseAction }}
         </NcButton>
       </template>
@@ -1209,6 +1229,52 @@ function resolveCurrentReuse(decision: ReuseDecision) {
   if (!req) return
   reuseQueue.value = reuseQueue.value.slice(1)
   req.resolve(decision)
+}
+
+// ----- Live reuse suggestions -----
+//
+// The add form surfaces existing items on the target list that fuzzily match
+// what's being typed. Tapping one asks for a plain confirm (Cancel / Reuse
+// existing) — no "add anyway", since the user picked a specific item — then
+// reuses it (unchecking if done) and clears the input.
+
+const addForm = ref<{ clearName: () => void } | null>(null)
+
+// Only active items, and only when the user can check items. No pref check:
+// the panel is a manual discovery affordance, distinct from on-submit dedup.
+const reuseCandidates = computed<ChecklistItem[]>(() =>
+  can.value.canCheckItems ? items.value.filter((i) => !i.deletedAt) : [],
+)
+
+const reuseConfirm = ref<{ item: ChecklistItem; resolve: (ok: boolean) => void } | null>(null)
+const reuseConfirmPrompt = computed(() =>
+  reuseConfirm.value
+    ? t(
+        'pantry',
+        'An item named "{name}" already exists in this list. Reuse it instead of adding a new one?',
+        { name: reuseConfirm.value.item.name },
+      )
+    : '',
+)
+
+function confirmReuseSuggestion(item: ChecklistItem): Promise<boolean> {
+  return new Promise((resolve) => {
+    reuseConfirm.value = { item, resolve }
+  })
+}
+
+function resolveReuseConfirm(ok: boolean) {
+  const req = reuseConfirm.value
+  if (!req) return
+  reuseConfirm.value = null
+  req.resolve(ok)
+}
+
+async function onReuseFromSuggestion(item: ChecklistItem) {
+  const ok = await confirmReuseSuggestion(item)
+  if (!ok) return
+  await reuseItem(item)
+  addForm.value?.clearName()
 }
 
 async function handleAdd(

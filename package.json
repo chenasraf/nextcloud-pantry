@@ -30,6 +30,7 @@
     "@nextcloud/vite-config": "^2.5.4",
     "@nextcloud/vue": "^9.9.0",
     "date-fns": "^4.4.0",
+    "fuzzball": "^2.2.6",
     "linkifyjs": "^4.3.3",
     "rrule": "^2.8.1",
     "vue": "^3.5.40",
