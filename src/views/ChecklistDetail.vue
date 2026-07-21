@@ -268,13 +268,16 @@
                 :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
                 :house-id="houseIdNum"
                 :reorder-enabled="
-                  isCustomSort && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
+                  reorderActive && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
                 "
                 :trash-mode="trashMode"
                 :archive-mode="archiveMode"
                 :tap-row-to-complete="tapRowToComplete"
                 :show-added-by="showAddedBy"
+                :selection-mode="selectionMode"
+                :selected="selectedIds.has(gi.item.id)"
                 @toggle="handleToggle"
+                @toggle-select="toggleSelect"
                 @view="openView"
                 @edit="startEdit"
                 @move="startMoveItem"
