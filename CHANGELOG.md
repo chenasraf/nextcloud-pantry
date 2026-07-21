@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.22.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.21.0...v0.22.0) (2026-07-21)
+
+
+### Features
+
+* **stores:** user-defined stores attachable to checklist items ([4cad616](https://github.com/chenasraf/nextcloud-pantry/commit/4cad616749f3af345ef6e418ff82317bcb3f838e))
+* suggest existing items while adding so you can reuse them ([a06a3b1](https://github.com/chenasraf/nextcloud-pantry/commit/a06a3b13b3fd540ff62c3934c94b0d402f4ca0e9))
+
+
+### Bug Fixes
+
+* **checklist:** select done items in multi-select instead of checking them ([aa82bc6](https://github.com/chenasraf/nextcloud-pantry/commit/aa82bc6b00431e7ea1c522e60a3bd7567c595832))
+* **l10n:** Update translations from Transifex ([8859ca5](https://github.com/chenasraf/nextcloud-pantry/commit/8859ca5f5bc7bc4274ba4c4d143410c646b72c61))
+* **l10n:** Update translations from Transifex ([d5550cb](https://github.com/chenasraf/nextcloud-pantry/commit/d5550cba05a4e6369e5efc2892dbcfcac094a1f8))
+* **l10n:** Update translations from Transifex ([01d233f](https://github.com/chenasraf/nextcloud-pantry/commit/01d233f4da42310da6e12dac6ca5bb7b817c9f91))
+
 ## [0.21.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.20.0...v0.21.0) (2026-07-18)
 
 
