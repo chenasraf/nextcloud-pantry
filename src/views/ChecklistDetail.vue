@@ -1947,11 +1947,10 @@ const strings = {
   assignCategory: t('pantry', 'Assign category'),
   // TRANSLATORS: Verb. Button that sets which stores the selected items can be bought at.
   assignStores: t('pantry', 'Assign stores'),
-  // TRANSLATORS: Verb. Button that archives the selected items.
-  archiveSelected: t('pantry', 'Archive'),
-  unarchiveSelected: t('pantry', 'Unarchive'),
+  archiveSelected: t('pantry', 'Archive items'),
+  unarchiveSelected: t('pantry', 'Unarchive items'),
   // TRANSLATORS: Verb. Button that deletes the selected items.
-  deleteSelected: t('pantry', 'Delete'),
+  deleteSelected: t('pantry', 'Delete items'),
   assignCategoryTitle: t('pantry', 'Assign category'),
   // TRANSLATORS: Verb. Dialog button that applies the chosen category to the selected items.
   apply: t('pantry', 'Apply'),

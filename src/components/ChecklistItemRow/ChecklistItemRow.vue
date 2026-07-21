@@ -365,7 +365,7 @@ const strings = {
   deletePermanently: t('pantry', 'Delete permanently'),
   restoreItem: t('pantry', 'Restore'),
   // TRANSLATORS: Verb. Menu action that moves this item to the archive.
-  archiveItem: t('pantry', 'Archive'),
+  archiveItem: t('pantry', 'Archive item'),
   unarchiveItem: t('pantry', 'Unarchive'),
 }
 </script>
