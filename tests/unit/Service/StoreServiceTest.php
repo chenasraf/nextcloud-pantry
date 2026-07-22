@@ -89,6 +89,103 @@ class StoreServiceTest extends TestCase {
 		$this->assertSame('#e11d48', $store->getColor());
 	}
 
+	public function testCreateNormalizesInfoFields(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(fn (Store $s) => $s);
+
+		$store = $this->svc->create(1, 'Corner Shop', 'store', '#e11d48', [
+			'location' => '  12 Main Street  ',
+			'contact' => "  555-1234\n",
+			'responsible' => '   ',
+			'notes' => '',
+			'openingHours' => [
+				['day' => 1, 'start' => '16:00', 'end' => '20:00'],
+				['day' => 1, 'start' => '09:00', 'end' => '13:00'],
+			],
+		]);
+
+		$this->assertSame('12 Main Street', $store->getLocation());
+		$this->assertSame('555-1234', $store->getContact());
+		// Empty / whitespace-only values collapse to null.
+		$this->assertNull($store->getResponsible());
+		$this->assertNull($store->getNotes());
+
+		$decoded = json_decode((string)$store->getOpeningHours(), true);
+		// Sorted by day then start.
+		$this->assertSame([
+			['day' => 1, 'start' => '09:00', 'end' => '13:00'],
+			['day' => 1, 'start' => '16:00', 'end' => '20:00'],
+		], $decoded);
+
+		// The API output decodes opening hours back into a structured list.
+		$json = $store->jsonSerialize();
+		$this->assertSame($decoded, $json['openingHours']);
+		$this->assertSame('12 Main Street', $json['location']);
+		$this->assertNull($json['notes']);
+	}
+
+	public function testCreateEmptyOpeningHoursStoresNull(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->mapper->method('insert')->willReturnCallback(fn (Store $s) => $s);
+
+		$store = $this->svc->create(1, 'Shop', 'store', '#e11d48', ['openingHours' => []]);
+		$this->assertNull($store->getOpeningHours());
+	}
+
+	public function testCreateRejectsBadOpeningHoursDay(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->expectException(\InvalidArgumentException::class);
+		// 0 is out of the ISO-8601 range (1 = Monday .. 7 = Sunday).
+		$this->svc->create(1, 'Shop', 'store', '#e11d48', [
+			'openingHours' => [['day' => 0, 'start' => '09:00', 'end' => '17:00']],
+		]);
+	}
+
+	public function testCreateRejectsBadOpeningHoursTime(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->create(1, 'Shop', 'store', '#e11d48', [
+			'openingHours' => [['day' => 1, 'start' => '9am', 'end' => '17:00']],
+		]);
+	}
+
+	public function testCreateRejectsOpeningHoursEndBeforeStart(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->create(1, 'Shop', 'store', '#e11d48', [
+			'openingHours' => [['day' => 1, 'start' => '17:00', 'end' => '09:00']],
+		]);
+	}
+
+	public function testUpdateAppliesInfoFields(): void {
+		$store = $this->makeStore(['id' => 4]);
+		$this->mapper->method('findById')->with(4)->willReturn($store);
+		$this->mapper->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$updated = $this->svc->update(4, [
+			'location' => 'Downtown',
+			'openingHours' => [['day' => 7, 'start' => '10:00', 'end' => '14:00']],
+		]);
+
+		$this->assertSame('Downtown', $updated->getLocation());
+		$this->assertSame(
+			[['day' => 7, 'start' => '10:00', 'end' => '14:00']],
+			json_decode((string)$updated->getOpeningHours(), true),
+		);
+	}
+
+	public function testUpdateClearsFieldWithEmptyValue(): void {
+		$store = $this->makeStore(['id' => 4]);
+		$store->setLocation('Old address');
+		$this->mapper->method('findById')->with(4)->willReturn($store);
+		$this->mapper->method('update')->willReturnArgument(0);
+
+		$updated = $this->svc->update(4, ['location' => '']);
+		$this->assertNull($updated->getLocation());
+	}
+
 	public function testDeleteDetachesFromItemsBeforeDeletingRow(): void {
 		$store = $this->makeStore(['id' => 7]);
 		$this->mapper->method('findById')->with(7)->willReturn($store);

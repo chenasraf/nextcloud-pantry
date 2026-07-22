@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
-import type { ChecklistItem, Category } from '@/api/types'
+import type { ChecklistItem, Category, Store } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 
@@ -146,6 +146,24 @@ function makeCategory(overrides: Partial<Category> = {}): Category {
   }
 }
 
+function makeStore(overrides: Partial<Store> = {}): Store {
+  return {
+    id: 1,
+    houseId: 1,
+    name: 'Supermarket',
+    icon: 'store',
+    color: '#22c55e',
+    location: null,
+    openingHours: null,
+    contact: null,
+    responsible: null,
+    notes: null,
+    createdAt: 0,
+    updatedAt: 0,
+    ...overrides,
+  }
+}
+
 const defaultProps = {
   item: makeItem(),
   category: null as Category | null,
@@ -186,6 +204,30 @@ describe('ChecklistItemRow', () => {
       expect(cat.exists()).toBe(true)
       expect(cat.text()).toContain('Dairy')
       expect(cat.attributes('style')).toContain('color: #ff0000')
+    })
+
+    it('renders a store chip for each store and emits view-store on click', async () => {
+      const store = makeStore({ id: 7, name: 'Pharmacy', color: '#ff0000' })
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ storeIds: [7] }), stores: [store] },
+      })
+      const chip = wrapper.find('.checklist-row__store')
+      expect(chip.exists()).toBe(true)
+      expect(chip.text()).toContain('Pharmacy')
+      expect(chip.attributes('style')).toContain('color: #ff0000')
+
+      await chip.trigger('click')
+      expect(wrapper.emitted('view-store')).toBeTruthy()
+      expect(wrapper.emitted('view-store')![0]).toEqual([store])
+    })
+
+    it('does not emit view when a store chip is clicked', async () => {
+      const store = makeStore({ id: 7 })
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ storeIds: [7] }), stores: [store] },
+      })
+      await wrapper.find('.checklist-row__store').trigger('click')
+      expect(wrapper.emitted('view')).toBeFalsy()
     })
 
     it('shows recurrence badge when rrule is present', () => {

@@ -68,6 +68,11 @@ final class StoreController extends OCSController {
 	 * @param string $name Store name.
 	 * @param string $icon Icon key from the palette.
 	 * @param string $color Hex color (e.g. "#4caf50").
+	 * @param string|null $location Store address or location.
+	 * @param list<array{day: int, start: string, end: string}>|null $openingHours Opening-hours intervals.
+	 * @param string|null $contact Phone, social or other contact details.
+	 * @param string|null $responsible Person responsible for the store.
+	 * @param string|null $notes Free-form notes.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryStore, array{}>
 	 *
@@ -76,10 +81,21 @@ final class StoreController extends OCSController {
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/stores')]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
-	public function create(int $houseId, string $name, string $icon, string $color): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $icon, $color): DataResponse {
+	public function create(
+		int $houseId,
+		string $name,
+		string $icon,
+		string $color,
+		?string $location = null,
+		?array $openingHours = null,
+		?string $contact = null,
+		?string $responsible = null,
+		?string $notes = null,
+	): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $icon, $color, $location, $openingHours, $contact, $responsible, $notes): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$store = $this->stores->create($houseId, $name, $icon, $color);
+			$info = $this->collectInfo($location, $openingHours, $contact, $responsible, $notes);
+			$store = $this->stores->create($houseId, $name, $icon, $color, $info);
 			return new DataResponse($store->jsonSerialize());
 		});
 	}
@@ -92,6 +108,11 @@ final class StoreController extends OCSController {
 	 * @param string|null $name New name.
 	 * @param string|null $icon New icon key.
 	 * @param string|null $color New hex color.
+	 * @param string|null $location Store address or location. Empty string clears it.
+	 * @param list<array{day: int, start: string, end: string}>|null $openingHours Opening-hours intervals. Empty list clears them.
+	 * @param string|null $contact Phone, social or other contact details. Empty string clears it.
+	 * @param string|null $responsible Person responsible for the store. Empty string clears it.
+	 * @param string|null $notes Free-form notes. Empty string clears it.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryStore, array{}>
 	 *
@@ -106,8 +127,13 @@ final class StoreController extends OCSController {
 		?string $name = null,
 		?string $icon = null,
 		?string $color = null,
+		?string $location = null,
+		?array $openingHours = null,
+		?string $contact = null,
+		?string $responsible = null,
+		?string $notes = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $storeId, $name, $icon, $color): DataResponse {
+		return $this->runAction(function () use ($houseId, $storeId, $name, $icon, $color, $location, $openingHours, $contact, $responsible, $notes): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$this->stores->assertInHouse($storeId, $houseId);
 			$patch = [];
@@ -120,9 +146,44 @@ final class StoreController extends OCSController {
 			if ($color !== null) {
 				$patch['color'] = $color;
 			}
+			$patch += $this->collectInfo($location, $openingHours, $contact, $responsible, $notes);
 			$updated = $this->stores->update($storeId, $patch);
 			return new DataResponse($updated->jsonSerialize());
 		});
+	}
+
+	/**
+	 * Builds a partial info-fields map, including only the fields that were provided
+	 * (non-null). Empty strings/arrays are kept so the service can clear the field.
+	 *
+	 * @param list<array{day: int, start: string, end: string}>|null $openingHours
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function collectInfo(
+		?string $location,
+		?array $openingHours,
+		?string $contact,
+		?string $responsible,
+		?string $notes,
+	): array {
+		$info = [];
+		if ($location !== null) {
+			$info['location'] = $location;
+		}
+		if ($openingHours !== null) {
+			$info['openingHours'] = $openingHours;
+		}
+		if ($contact !== null) {
+			$info['contact'] = $contact;
+		}
+		if ($responsible !== null) {
+			$info['responsible'] = $responsible;
+		}
+		if ($notes !== null) {
+			$info['notes'] = $notes;
+		}
+		return $info;
 	}
 
 	/**

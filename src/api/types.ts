@@ -89,12 +89,24 @@ export interface Category {
   updatedAt: number
 }
 
+/** A single opening-hours interval. `day` is 1-7 with 1 = Monday, 7 = Sunday (ISO-8601). */
+export interface OpeningHoursInterval {
+  day: number
+  start: string
+  end: string
+}
+
 export interface Store {
   id: number
   houseId: number
   name: string
   icon: string
   color: string
+  location: string | null
+  openingHours: OpeningHoursInterval[] | null
+  contact: string | null
+  responsible: string | null
+  notes: string | null
   createdAt: number
   updatedAt: number
 }

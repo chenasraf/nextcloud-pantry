@@ -225,6 +225,7 @@
               @toggle="handleToggle"
               @toggle-select="toggleSelect"
               @view="openView"
+              @view-store="openStoreView"
               @edit="startEdit"
               @move="startMoveItem"
               @copy="startCopyItem"
@@ -279,6 +280,7 @@
                 @toggle="handleToggle"
                 @toggle-select="toggleSelect"
                 @view="openView"
+                @view-store="openStoreView"
                 @edit="startEdit"
                 @move="startMoveItem"
                 @copy="startCopyItem"
@@ -341,10 +343,19 @@
       @sort-changed="onCategorySortChanged"
     />
 
+    <StoreViewDialog
+      v-if="viewingStore"
+      :open="!!viewingStore"
+      :store="viewingStore"
+      @update:open="(v) => !v && (viewingStore = null)"
+      @edit="editStoreFromView"
+    />
+
     <StoreManagerDialog
       :open="showStoreManager"
       :house-id="houseIdNum"
-      @update:open="showStoreManager = $event"
+      :edit-store="storeManagerEditStore"
+      @update:open="onStoreManagerToggle"
     />
 
     <!-- Move item(s) to another list -->
@@ -572,7 +583,7 @@ import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
-import { StoreManagerDialog } from '@/components/StoreManager'
+import { StoreManagerDialog, StoreViewDialog } from '@/components/StoreManager'
 import { MarkdownExportDialog } from '@/components/MarkdownExportDialog'
 import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
 import CategoryPicker, { categoryIconComponent } from '@/components/CategoryPicker'
@@ -1471,6 +1482,28 @@ function openPreview(item: ChecklistItem) {
 
 const showCategoryManager = ref(false)
 const showStoreManager = ref(false)
+
+// ----- Store details (opened from a store chip on an item) -----
+
+const viewingStore = ref<Store | null>(null)
+const storeManagerEditStore = ref<Store | null>(null)
+
+function openStoreView(store: Store) {
+  viewingStore.value = store
+}
+
+function editStoreFromView(store: Store) {
+  viewingStore.value = null
+  storeManagerEditStore.value = store
+  showStoreManager.value = true
+}
+
+function onStoreManagerToggle(open: boolean) {
+  showStoreManager.value = open
+  if (!open) {
+    storeManagerEditStore.value = null
+  }
+}
 
 async function onCategorySortChanged() {
   // The list endpoint groups items by category, so changing category order

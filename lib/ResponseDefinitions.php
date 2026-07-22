@@ -122,12 +122,19 @@ namespace OCA\Pantry;
  *
  * @psalm-type PantryStoreColor = '#e11d48'|'#ea580c'|'#ca8a04'|'#16a34a'|'#0891b2'|'#2563eb'|'#7c3aed'|'#c026d3'|'#db2777'|'#57534e'
  *
+ * @psalm-type PantryStoreOpeningHours = list<array{day: int<1, 7>, start: string, end: string}>
+ *
  * @psalm-type PantryStore = array{
  *     id: int,
  *     houseId: int,
  *     name: string,
  *     icon: PantryStoreIcon,
  *     color: PantryStoreColor,
+ *     location: string|null,
+ *     openingHours: PantryStoreOpeningHours|null,
+ *     contact: string|null,
+ *     responsible: string|null,
+ *     notes: string|null,
  *     createdAt: int,
  *     updatedAt: int,
  * }
