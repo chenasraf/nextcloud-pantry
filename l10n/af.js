@@ -16,7 +16,6 @@ OC.L10N.register(
     "Everyone" : "Almal",
     "Delete permanently" : "Skrap permanent",
     "Restore" : "Herstel",
-    "Archive" : "Argief",
     "View" : "Bekyk",
     "Move" : "Skuif",
     "Upload" : "Oplaai",
@@ -33,6 +32,7 @@ OC.L10N.register(
     "Viewer" : "Bekyker",
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
+    "Archive" : "Argief",
     "Export" : "Voer uit",
     "Import" : "Invoer",
     "New folder" : "Nuwe gids"

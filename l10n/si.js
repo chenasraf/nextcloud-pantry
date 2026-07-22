@@ -15,7 +15,6 @@ OC.L10N.register(
     "No category" : "ප්‍රවර්ග නැත",
     "Everyone" : "සැවොම",
     "Restore" : "ප්‍රතිෂ්ථාපනය",
-    "Archive" : "සංරක්ෂණය",
     "Photos" : "ඡායාරූප",
     "Upload" : "උඩුගත",
     "Notes" : "සටහන්",
@@ -31,6 +30,7 @@ OC.L10N.register(
     "Daily" : "දිනපතා",
     "Weekly" : "සතිපතා",
     "Summary" : "සාරාංශය",
+    "Archive" : "සංරක්ෂණය",
     "No notes yet" : "තවම සටහන් නැත",
     "New folder" : "නව බහාලුම",
     "Back" : "ආපසු"
