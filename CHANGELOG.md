@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.22.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.22.0...v0.22.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **checklist:** show spinner instead of empty state while items load ([e12b4e2](https://github.com/chenasraf/nextcloud-pantry/commit/e12b4e260dcec3fc67db3db8dc6e023bf58d09e2))
+* **checklist:** tolerate store-lookup failure when serializing items ([1637e06](https://github.com/chenasraf/nextcloud-pantry/commit/1637e068141943b469cfff93a04db3707f3d7e26))
+* **l10n:** update multi archive/delete action labels ([e5c0312](https://github.com/chenasraf/nextcloud-pantry/commit/e5c03126e7838eaa8783b68304f110c488cddf13))
+* **l10n:** Update translations from Transifex ([dcbc7ab](https://github.com/chenasraf/nextcloud-pantry/commit/dcbc7ab6a66980069ce76cf1f1d7b3fda659029f))
+
 ## [0.22.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.21.0...v0.22.0) (2026-07-21)
 
 
