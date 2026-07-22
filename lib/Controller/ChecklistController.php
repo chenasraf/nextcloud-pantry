@@ -33,6 +33,7 @@ use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
 
 /**
  * @psalm-import-type PantryList from ResponseDefinitions
@@ -59,6 +60,7 @@ final class ChecklistController extends OCSController {
 		private PermissionService $permissions,
 		private ShareService $shares,
 		private IUserSession $userSession,
+		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -67,12 +69,23 @@ final class ChecklistController extends OCSController {
 	 * Serialize a batch of items, embedding each item's attached store ids.
 	 * The store-id lookup is batched into a single query to avoid N+1.
 	 *
+	 * Stores are an optional feature layered on top of items. If the lookup
+	 * fails (e.g. the item-stores table is missing because its migration did
+	 * not apply), we must not let that sink the whole item list — items render
+	 * with no attached stores rather than the endpoint returning a 500. See
+	 * issue #188.
+	 *
 	 * @param ChecklistItem[] $items
 	 * @return list<array<string, mixed>>
 	 */
 	private function serializeItems(array $items): array {
 		$ids = array_map(static fn ($i) => (int)$i->getId(), $items);
-		$storeMap = $this->itemStores->findStoreIdsForItems($ids);
+		try {
+			$storeMap = $this->itemStores->findStoreIdsForItems($ids);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to load store ids for items; serializing without stores', ['exception' => $e]);
+			$storeMap = [];
+		}
 		return array_values(array_map(static function ($i) use ($storeMap) {
 			$data = $i->jsonSerialize();
 			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
@@ -83,11 +96,19 @@ final class ChecklistController extends OCSController {
 	/**
 	 * Serialize a single item, embedding its attached store ids.
 	 *
+	 * As with {@see serializeItems()}, a store-lookup failure degrades to an
+	 * empty store list rather than failing the request.
+	 *
 	 * @return array<string, mixed>
 	 */
 	private function serializeItem(ChecklistItem $item): array {
 		$data = $item->jsonSerialize();
-		$data['storeIds'] = $this->itemStores->findStoreIdsForItem((int)$item->getId());
+		try {
+			$data['storeIds'] = $this->itemStores->findStoreIdsForItem((int)$item->getId());
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to load store ids for item; serializing without stores', ['exception' => $e]);
+			$data['storeIds'] = [];
+		}
 		return $data;
 	}
 
