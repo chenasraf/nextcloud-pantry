@@ -2,6 +2,7 @@
   <NcDialog
     :name="dialogName"
     :open="open"
+    size="normal"
     close-on-click-outside
     @update:open="$emit('update:open', $event)"
   >
@@ -44,6 +45,44 @@
           />
         </div>
       </div>
+
+      <NcTextField
+        v-model="locationValue"
+        :label="strings.locationLabel"
+        :placeholder="strings.locationPlaceholder"
+        autocomplete="off"
+      />
+
+      <div>
+        <label class="pantry-store-form__sub">{{ strings.openingHoursLabel }}</label>
+        <OpeningHoursEditor v-model="openingHoursValue" />
+      </div>
+
+      <div>
+        <label class="pantry-store-form__sub">{{ strings.contactLabel }}</label>
+        <AutoResizeTextarea
+          v-model="contactValue"
+          :placeholder="strings.contactPlaceholder"
+          :rows="2"
+        />
+      </div>
+
+      <NcTextField
+        v-model="responsibleValue"
+        :label="strings.responsibleLabel"
+        :placeholder="strings.responsiblePlaceholder"
+        autocomplete="off"
+      />
+
+      <div>
+        <label class="pantry-store-form__sub">{{ strings.notesLabel }}</label>
+        <AutoResizeTextarea
+          v-model="notesValue"
+          :placeholder="strings.notesPlaceholder"
+          :rows="3"
+        />
+      </div>
+
       <p v-if="error" class="pantry-store-form__error">{{ error }}</p>
     </form>
     <template #actions>
@@ -61,12 +100,15 @@ import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import type { Store } from '@/api/types'
+import AutoResizeTextarea from '@/components/AutoResizeTextarea/AutoResizeTextarea.vue'
+import type { OpeningHoursInterval, Store } from '@/api/types'
+import type { StoreInput } from '@/api/stores'
 import {
   STORE_COLORS,
   STORE_ICONS,
   DEFAULT_STORE_ICON_KEY,
 } from '@/components/StoreMultiPicker/storeIcons'
+import OpeningHoursEditor from './OpeningHoursEditor.vue'
 
 const props = defineProps<{
   open: boolean
@@ -78,12 +120,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [data: { name: string; icon: string; color: string }]
+  save: [data: StoreInput]
 }>()
 
 const nameValue = ref('')
 const iconValue = ref<string>(DEFAULT_STORE_ICON_KEY)
 const colorValue = ref<string>(STORE_COLORS[3]!)
+const locationValue = ref('')
+const openingHoursValue = ref<OpeningHoursInterval[]>([])
+const contactValue = ref('')
+const responsibleValue = ref('')
+const notesValue = ref('')
 
 watch(
   () => props.open,
@@ -93,10 +140,22 @@ watch(
         nameValue.value = props.store.name
         iconValue.value = props.store.icon
         colorValue.value = props.store.color
+        locationValue.value = props.store.location ?? ''
+        openingHoursValue.value = props.store.openingHours
+          ? props.store.openingHours.map((r) => ({ ...r }))
+          : []
+        contactValue.value = props.store.contact ?? ''
+        responsibleValue.value = props.store.responsible ?? ''
+        notesValue.value = props.store.notes ?? ''
       } else {
         nameValue.value = ''
         iconValue.value = DEFAULT_STORE_ICON_KEY
         colorValue.value = STORE_COLORS[3]!
+        locationValue.value = ''
+        openingHoursValue.value = []
+        contactValue.value = ''
+        responsibleValue.value = ''
+        notesValue.value = ''
       }
     }
   },
@@ -108,7 +167,16 @@ const dialogName = computed(() => (props.store ? strings.editTitle : strings.cre
 function submit() {
   const name = nameValue.value.trim()
   if (!name) return
-  emit('save', { name, icon: iconValue.value, color: colorValue.value })
+  emit('save', {
+    name,
+    icon: iconValue.value,
+    color: colorValue.value,
+    location: locationValue.value.trim(),
+    openingHours: openingHoursValue.value,
+    contact: contactValue.value.trim(),
+    responsible: responsibleValue.value.trim(),
+    notes: notesValue.value.trim(),
+  })
 }
 
 const strings = {
@@ -120,6 +188,17 @@ const strings = {
   namePlaceholder: t('pantry', 'e.g. Supermarket, Pharmacy'),
   iconLabel: t('pantry', 'Icon:'),
   colorLabel: t('pantry', 'Color:'),
+  locationLabel: t('pantry', 'Location'),
+  locationPlaceholder: t('pantry', 'e.g. 12 Main Street'),
+  openingHoursLabel: t('pantry', 'Opening hours:'),
+  // TRANSLATORS: Contact details of a store (phone, social media, etc.).
+  contactLabel: t('pantry', 'Contact:'),
+  contactPlaceholder: t('pantry', 'e.g. phone, website, social media'),
+  // TRANSLATORS: Person responsible for the store.
+  responsibleLabel: t('pantry', 'Responsible'),
+  responsiblePlaceholder: t('pantry', 'e.g. store manager'),
+  notesLabel: t('pantry', 'Notes:'),
+  notesPlaceholder: t('pantry', 'Anything else worth remembering'),
   cancel: t('pantry', 'Cancel'),
   create: t('pantry', 'Create'),
   save: t('pantry', 'Save'),

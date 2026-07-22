@@ -1010,6 +1010,11 @@
                     "name",
                     "icon",
                     "color",
+                    "location",
+                    "openingHours",
+                    "contact",
+                    "responsible",
+                    "notes",
                     "createdAt",
                     "updatedAt"
                 ],
@@ -1030,6 +1035,30 @@
                     },
                     "color": {
                         "$ref": "#/components/schemas/StoreColor"
+                    },
+                    "location": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "openingHours": {
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StoreOpeningHours"
+                            }
+                        ]
+                    },
+                    "contact": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "responsible": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
                     },
                     "createdAt": {
                         "type": "integer",
@@ -1101,6 +1130,31 @@
                     "baby",
                     "deli"
                 ]
+            },
+            "StoreOpeningHours": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": [
+                        "day",
+                        "start",
+                        "end"
+                    ],
+                    "properties": {
+                        "day": {
+                            "type": "integer",
+                            "format": "int64",
+                            "minimum": 1,
+                            "maximum": 7
+                        },
+                        "start": {
+                            "type": "string"
+                        },
+                        "end": {
+                            "type": "string"
+                        }
+                    }
+                }
             },
             "Success": {
                 "type": "object",
@@ -12278,6 +12332,56 @@
                                     "color": {
                                         "type": "string",
                                         "description": "Hex color (e.g. \"#4caf50\")."
+                                    },
+                                    "location": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Store address or location."
+                                    },
+                                    "openingHours": {
+                                        "type": "array",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Opening-hours intervals.",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "day",
+                                                "start",
+                                                "end"
+                                            ],
+                                            "properties": {
+                                                "day": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                },
+                                                "start": {
+                                                    "type": "string"
+                                                },
+                                                "end": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "contact": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Phone, social or other contact details."
+                                    },
+                                    "responsible": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Person responsible for the store."
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Free-form notes."
                                     }
                                 }
                             }
@@ -12407,6 +12511,56 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New hex color."
+                                    },
+                                    "location": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Store address or location. Empty string clears it."
+                                    },
+                                    "openingHours": {
+                                        "type": "array",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Opening-hours intervals. Empty list clears them.",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "day",
+                                                "start",
+                                                "end"
+                                            ],
+                                            "properties": {
+                                                "day": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                },
+                                                "start": {
+                                                    "type": "string"
+                                                },
+                                                "end": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "contact": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Phone, social or other contact details. Empty string clears it."
+                                    },
+                                    "responsible": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Person responsible for the store. Empty string clears it."
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Free-form notes. Empty string clears it."
                                     }
                                 }
                             }

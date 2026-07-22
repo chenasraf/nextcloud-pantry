@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import * as api from '@/api/stores'
+import type { StoreInput } from '@/api/stores'
 import type { Store } from '@/api/types'
 
 // Cache per house id so multiple components sharing the same house stay in sync.
@@ -30,7 +31,7 @@ function build(houseId: number) {
     }
   }
 
-  async function create(input: { name: string; icon: string; color: string }): Promise<Store> {
+  async function create(input: StoreInput): Promise<Store> {
     const created = await api.createStore(houseId, input)
     items.value = sortItems([...items.value, created])
     return created

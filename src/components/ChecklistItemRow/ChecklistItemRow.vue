@@ -101,15 +101,18 @@
         <component :is="categoryIconComponent(category.icon)" :size="14" />
         {{ category.name }}
       </span>
-      <span
+      <button
         v-for="store in stores"
         :key="store.id"
+        type="button"
         class="checklist-row__store"
         :style="{ color: store.color }"
+        :aria-label="storeLabel(store.name)"
+        @click.stop.prevent="$emit('view-store', store)"
       >
         <component :is="storeIconComponent(store.icon)" :size="14" />
         {{ store.name }}
-      </span>
+      </button>
     </div>
     <div v-if="showAddedBy && !selectionMode && !suggestion" class="checklist-row__added-by">
       <NcAvatar
@@ -281,6 +284,7 @@ const listChipStyle = computed(() => {
 const emit = defineEmits<{
   toggle: [id: number]
   view: [item: ChecklistItem]
+  'view-store': [store: Store]
   edit: [item: ChecklistItem]
   move: [item: ChecklistItem]
   copy: [item: ChecklistItem]
@@ -367,6 +371,11 @@ const strings = {
   // TRANSLATORS: Verb. Menu action that moves this item to the archive.
   archiveItem: t('pantry', 'Archive item'),
   unarchiveItem: t('pantry', 'Unarchive'),
+}
+
+function storeLabel(name: string): string {
+  // TRANSLATORS: Accessible label for a store chip that opens the store details. The placeholder is the store name.
+  return t('pantry', 'View store {name}', { name })
 }
 </script>
 
@@ -589,6 +598,7 @@ const strings = {
 
   &__meta {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
     color: var(--color-text-maxcontrast);
@@ -631,6 +641,25 @@ const strings = {
     // The icon component renders its own span/svg which reset the cursor.
     :deep(*) {
       cursor: inherit;
+    }
+  }
+
+  // Reset the global button styles so the chip keeps the same box as the
+  // other (span-based) meta chips instead of the 44px clickable-area height.
+  &__store {
+    appearance: none;
+    margin: 0;
+    min-height: 0;
+    height: auto;
+    border: none;
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-background-dark);
     }
   }
 }

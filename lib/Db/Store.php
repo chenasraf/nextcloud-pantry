@@ -18,6 +18,16 @@ use OCP\AppFramework\Db\Entity;
  * @method void setIcon(string $icon)
  * @method string getColor()
  * @method void setColor(string $color)
+ * @method string|null getLocation()
+ * @method void setLocation(?string $location)
+ * @method string|null getOpeningHours()
+ * @method void setOpeningHours(?string $openingHours)
+ * @method string|null getContact()
+ * @method void setContact(?string $contact)
+ * @method string|null getResponsible()
+ * @method void setResponsible(?string $responsible)
+ * @method string|null getNotes()
+ * @method void setNotes(?string $notes)
  * @method int getCreatedAt()
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
@@ -28,6 +38,11 @@ class Store extends Entity implements \JsonSerializable {
 	protected string $name = '';
 	protected string $icon = '';
 	protected string $color = '';
+	protected ?string $location = null;
+	protected ?string $openingHours = null;
+	protected ?string $contact = null;
+	protected ?string $responsible = null;
+	protected ?string $notes = null;
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
 
@@ -44,6 +59,13 @@ class Store extends Entity implements \JsonSerializable {
 			'name' => $this->name,
 			'icon' => $this->icon,
 			'color' => $this->color,
+			'location' => $this->location,
+			'openingHours' => $this->openingHours !== null && $this->openingHours !== ''
+				? json_decode($this->openingHours, true)
+				: null,
+			'contact' => $this->contact,
+			'responsible' => $this->responsible,
+			'notes' => $this->notes,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,
 		];

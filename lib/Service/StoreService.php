@@ -35,7 +35,11 @@ class StoreService {
 		}
 	}
 
-	public function create(int $houseId, string $name, string $icon, string $color): Store {
+	/**
+	 * @param array<string, mixed> $info Optional info fields: location, openingHours, contact,
+	 *                                   responsible, notes.
+	 */
+	public function create(int $houseId, string $name, string $icon, string $color, array $info = []): Store {
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('Store name cannot be empty');
@@ -53,6 +57,7 @@ class StoreService {
 		$store->setName($name);
 		$store->setIcon($icon);
 		$store->setColor($color);
+		$this->applyInfoFields($store, $info);
 		$store->setCreatedAt($now);
 		$store->setUpdatedAt($now);
 		/** @var Store $saved */
@@ -81,6 +86,7 @@ class StoreService {
 		if (isset($patch['color'])) {
 			$store->setColor($this->normalizeColor((string)$patch['color']));
 		}
+		$this->applyInfoFields($store, $patch);
 		$store->setUpdatedAt(time());
 		$this->mapper->update($store);
 		return $store;
@@ -126,6 +132,78 @@ class StoreService {
 				throw new NotFoundException('Store does not belong to this house: ' . $id);
 			}
 		}
+	}
+
+	/**
+	 * Applies the optional info fields present in the given data to the store.
+	 * A field is only touched when its key is present, so callers can send partial patches.
+	 * An empty string (or empty array for opening hours) clears the field.
+	 *
+	 * @param array<string, mixed> $data
+	 */
+	private function applyInfoFields(Store $store, array $data): void {
+		if (array_key_exists('location', $data)) {
+			$store->setLocation($this->normalizeText($data['location']));
+		}
+		if (array_key_exists('openingHours', $data)) {
+			$store->setOpeningHours($this->normalizeOpeningHours($data['openingHours']));
+		}
+		if (array_key_exists('contact', $data)) {
+			$store->setContact($this->normalizeText($data['contact']));
+		}
+		if (array_key_exists('responsible', $data)) {
+			$store->setResponsible($this->normalizeText($data['responsible']));
+		}
+		if (array_key_exists('notes', $data)) {
+			$store->setNotes($this->normalizeText($data['notes']));
+		}
+	}
+
+	private function normalizeText(mixed $value): ?string {
+		if ($value === null) {
+			return null;
+		}
+		$value = trim((string)$value);
+		return $value === '' ? null : $value;
+	}
+
+	/**
+	 * Validates a list of opening-hours intervals and encodes them as a JSON string for storage.
+	 * Each interval is {day: 1-7 (ISO-8601: 1 = Monday, 7 = Sunday), start: "HH:MM", end: "HH:MM"}.
+	 * Returns null when there are no intervals.
+	 */
+	private function normalizeOpeningHours(mixed $intervals): ?string {
+		if ($intervals === null || $intervals === []) {
+			return null;
+		}
+		if (!is_array($intervals)) {
+			throw new \InvalidArgumentException('Opening hours must be a list of intervals');
+		}
+		$clean = [];
+		foreach ($intervals as $interval) {
+			if (!is_array($interval)) {
+				throw new \InvalidArgumentException('Invalid opening hours interval');
+			}
+			$day = filter_var($interval['day'] ?? null, FILTER_VALIDATE_INT);
+			if ($day === false || $day < 1 || $day > 7) {
+				throw new \InvalidArgumentException('Opening hours day must be between 1 and 7');
+			}
+			$start = $this->normalizeTime($interval['start'] ?? null);
+			$end = $this->normalizeTime($interval['end'] ?? null);
+			if ($start >= $end) {
+				throw new \InvalidArgumentException('Opening hours start must be before end');
+			}
+			$clean[] = ['day' => $day, 'start' => $start, 'end' => $end];
+		}
+		usort($clean, static fn (array $a, array $b): int => [$a['day'], $a['start']] <=> [$b['day'], $b['start']]);
+		return json_encode($clean);
+	}
+
+	private function normalizeTime(mixed $value): string {
+		if (!is_string($value) || !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $value)) {
+			throw new \InvalidArgumentException('Opening hours time must be in HH:MM format');
+		}
+		return $value;
 	}
 
 	private function normalizeIcon(string $icon): string {
