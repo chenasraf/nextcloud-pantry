@@ -24,6 +24,7 @@ OC.L10N.register(
     "Remove image" : "Suprimir imatge",
     "All" : "Totes",
     "No category" : "Sense categoria",
+    "Lists" : "Llistes",
     "Categories" : "Categories",
     "Everyone" : "Tothom",
     "Upload image" : "Pujada d'una imatge",

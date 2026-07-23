@@ -19,6 +19,8 @@ OC.L10N.register(
     "Description" : "Апісанне",
     "All" : "Усе",
     "No category" : "Няма катэгорыі",
+    "Lists" : "Спісы",
+    "Categories" : "Катэгорыі",
     "Everyone" : "Усе",
     "Delete permanently" : "Выдаліць назаўжды",
     "Restore" : "Аднавіць",

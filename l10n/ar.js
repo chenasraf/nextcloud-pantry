@@ -24,6 +24,8 @@ OC.L10N.register(
     "Remove image" : "إزالة الصورة",
     "All" : "الكل",
     "No category" : "لا تصنيف",
+    "Lists" : "قوائم",
+    "Categories" : "التصنيفات",
     "Everyone" : "الكل",
     "Upload image" : "رفع صورة",
     "Delete permanently" : "حذف نهائي",

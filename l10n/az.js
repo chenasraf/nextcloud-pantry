@@ -10,6 +10,7 @@ OC.L10N.register(
     "Description" : "Açıqlanma",
     "Remove image" : "Şəkili sil",
     "All" : "Hamısı",
+    "Categories" : "Kateqoriyalar",
     "Everyone" : "Hamı",
     "Delete permanently" : "Həmişəlik sil",
     "Restore" : "Geri qaytar",

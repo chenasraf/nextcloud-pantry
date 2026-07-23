@@ -21,6 +21,8 @@ OC.L10N.register(
     "Image" : "Imaxe",
     "All" : "Too",
     "No category" : "Nun hai nenguna categoría",
+    "Lists" : "Llistes",
+    "Categories" : "Categories",
     "Everyone" : "Tol mundu",
     "Delete permanently" : "Desaniciar permanentemente",
     "Restore" : "Restaurar",

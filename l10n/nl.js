@@ -49,6 +49,7 @@ OC.L10N.register(
     "Display" : "Weergeven",
     "Trash" : "Verwijderen",
     "Members" : "Leden",
+    "Remove member" : "Verwijder lid",
     "Account" : "Account",
     "Role" : "Rol",
     "Joined" : "Toegetreden",
