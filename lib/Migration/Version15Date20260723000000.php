@@ -15,14 +15,21 @@ use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
 
 /**
- * Re-assert the store tables introduced in Version14.
+ * Reconcile schema that earlier migrations declared but that never actually
+ * landed on some instances.
  *
- * On some upgrades to 0.22.0 the Version14 migration was recorded as executed
- * without its tables actually being created (a partial/failed upgrade), which
- * left every item-list request failing because it queries pantry_item_stores.
- * See issue #188. Version14 is already marked executed on those instances, so
- * it will not run again — this migration re-creates the tables if (and only if)
- * they are missing. It is a no-op on healthy installs.
+ * On certain upgrades a migration gets recorded as executed in oc_migrations
+ * while its schema changes are missing (partial/interrupted upgrade). Because
+ * the version is already marked executed, the original migration will not run
+ * again, so the drift is permanent until reconciled. The item-list queries
+ * filter on archived_at and read pantry_item_stores on every request, so the
+ * missing schema takes the whole checklist down with a hard SQL error (see
+ * issue #188).
+ *
+ * This migration re-asserts the affected objects — the archived_at column and
+ * its index (Version13) and the store tables (Version14) — but only when they
+ * are actually missing, so it is a no-op on healthy installs and safe on
+ * instances that were patched by hand.
  */
 class Version15Date20260723000000 extends SimpleMigrationStep {
 	/**
@@ -31,6 +38,21 @@ class Version15Date20260723000000 extends SimpleMigrationStep {
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
 		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
+
+		$itemsTable = Application::tableName('list_items');
+		if ($schema->hasTable($itemsTable)) {
+			$table = $schema->getTable($itemsTable);
+			if (!$table->hasColumn('archived_at')) {
+				$output->warning('Pantry: list_items.archived_at column was missing; recreating it (see issue #188)');
+				$table->addColumn('archived_at', Types::BIGINT, [
+					'notnull' => false,
+					'length' => 20,
+				]);
+			}
+			if (!$table->hasIndex('pantry_items_archived_idx')) {
+				$table->addIndex(['archived_at'], 'pantry_items_archived_idx');
+			}
+		}
 
 		$storesTable = Application::tableName('stores');
 		if (!$schema->hasTable($storesTable)) {
