@@ -48,6 +48,22 @@ class CategoryMapper extends QBMapper {
 	}
 
 	/**
+	 * Highest sort_order currently used in a house, or -1 when the house has
+	 * no categories yet — so a caller can assign `max + 1` to append a new
+	 * category at the end of the custom order.
+	 */
+	public function findMaxSortOrder(int $houseId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->max('sort_order'))
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+		$result = $qb->executeQuery();
+		$max = $result->fetchOne();
+		$result->closeCursor();
+		return $max === null || $max === false ? -1 : (int)$max;
+	}
+
+	/**
 	 * @throws DoesNotExistException
 	 */
 	public function findById(int $id): Category {

@@ -98,4 +98,24 @@ class CategoryServiceTest extends TestCase {
 
 		$this->svc->reorder(1, [['id' => 0, 'sortOrder' => 0]]);
 	}
+
+	public function testCreateAppendsAfterHighestSortOrder(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(4);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Aisle 8', 'tag', '#ef4444');
+
+		$this->assertSame(5, $created->getSortOrder());
+	}
+
+	public function testCreateInEmptyHouseStartsAtZero(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(-1);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Produce', 'tag', '#22c55e');
+
+		$this->assertSame(0, $created->getSortOrder());
+	}
 }
