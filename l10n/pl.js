@@ -27,6 +27,7 @@ OC.L10N.register(
     "No category" : "Bez kategorii",
     "Lists" : "Listy",
     "Categories" : "Kategorie",
+    "Description (optional)" : "Opis (opcjonalny)",
     "Everyone" : "Wszyscy",
     "Upload image" : "Prześlij obraz",
     "Delete permanently" : "Usuń bezpowrotnie",
