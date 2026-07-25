@@ -57,6 +57,6 @@
     "vite-plugin-checker": "^0.14.4",
     "vitest": "^4.1.10",
     "vue-router": "^5.2.0",
-    "vue-tsc": "^3.3.7"
+    "vue-tsc": "^3.3.8"
   }
 }
