@@ -24,6 +24,8 @@ OC.L10N.register(
     "Daily" : "дневно",
     "Weekly" : "недељно",
     "Never" : "Nikad",
+    "From:" : "Od:",
+    "To:" : "Za:",
     "Newest first" : "Prvo novije",
     "Oldest first" : "prvo starije",
     "Select" : "Obeleži",

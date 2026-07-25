@@ -30,6 +30,7 @@ OC.L10N.register(
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
+    "Location" : "Loco",
     "Export" : "Exportar",
     "Select" : "Selectionar",
     "Apply" : "Applicar",

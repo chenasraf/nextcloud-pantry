@@ -21,6 +21,8 @@ OC.L10N.register(
     "Remove" : "Thoir air falbh",
     "Preview" : "Ro-sheall",
     "Folder name" : "Ainm a’ phasgain",
+    "From:" : "O:",
+    "To:" : "Gu:",
     "Newest first" : "As ùire an toiseach",
     "Oldest first" : "As sine an toiseach",
     "New note" : "Nòta ùr",

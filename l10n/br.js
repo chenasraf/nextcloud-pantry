@@ -39,6 +39,8 @@ OC.L10N.register(
     "Never" : "James",
     "Summary" : "Diverrañ",
     "Viewer" : "Gweller",
+    "From:" : "Eus :",
+    "To:" : "Da :",
     "Newest first" : "An hini nevesañ da gentañ",
     "Oldest first" : "An hini kozhoñ da gentañ",
     "Import" : "Emporzhiañ ",

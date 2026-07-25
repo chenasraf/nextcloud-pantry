@@ -76,6 +76,8 @@ OC.L10N.register(
     "Summary" : "Sažetak",
     "Viewer" : "Preglednik",
     "Editor" : "Uređivač",
+    "From:" : "Od:",
+    "Contact" : "Kontakt",
     "Newest first" : "Najnoviji prvi",
     "Oldest first" : "Najstariji prvi",
     "Archive" : "Arhiva",

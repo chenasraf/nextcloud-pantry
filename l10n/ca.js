@@ -75,6 +75,8 @@ OC.L10N.register(
     "Summary" : "Resum",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "From:" : "De:",
+    "To:" : "A:",
     "Newest first" : "Més nou primer",
     "Oldest first" : "Més antic primer",
     "Archive" : "Arxiu",
