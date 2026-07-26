@@ -25,6 +25,7 @@ OC.L10N.register(
     "Weekly" : "সাপ্তাহিক",
     "From:" : "হইতে:",
     "To:" : "প্রতি:",
+    "Location" : "অবস্থান",
     "Export" : "রপ্তানি",
     "Import" : "আমদানি",
     "Select" : "সিলেক্ট",

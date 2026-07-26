@@ -22,6 +22,7 @@ OC.L10N.register(
     "weeks" : "sedmica",
     "Daily" : "Dnevno",
     "Weekly" : "Sedmično",
+    "Location" : "Lokacija",
     "Export" : "Izvezi",
     "Import" : "Uvezi",
     "Select" : "Izaberi",
