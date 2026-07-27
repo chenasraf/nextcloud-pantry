@@ -130,6 +130,7 @@ namespace OCA\Pantry;
  *     name: string,
  *     icon: PantryStoreIcon,
  *     color: PantryStoreColor,
+ *     brand: string|null,
  *     location: string|null,
  *     openingHours: PantryStoreOpeningHours|null,
  *     contact: string|null,

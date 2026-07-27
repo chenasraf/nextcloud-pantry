@@ -96,6 +96,7 @@ class StoreServiceTest extends TestCase {
 			->willReturnCallback(fn (Store $s) => $s);
 
 		$store = $this->svc->create(1, 'Corner Shop', 'store', '#e11d48', [
+			'brand' => '  Walmart  ',
 			'location' => '  12 Main Street  ',
 			'contact' => "  555-1234\n",
 			'responsible' => '   ',
@@ -106,6 +107,7 @@ class StoreServiceTest extends TestCase {
 			],
 		]);
 
+		$this->assertSame('Walmart', $store->getBrand());
 		$this->assertSame('12 Main Street', $store->getLocation());
 		$this->assertSame('555-1234', $store->getContact());
 		// Empty / whitespace-only values collapse to null.
@@ -122,6 +124,7 @@ class StoreServiceTest extends TestCase {
 		// The API output decodes opening hours back into a structured list.
 		$json = $store->jsonSerialize();
 		$this->assertSame($decoded, $json['openingHours']);
+		$this->assertSame('Walmart', $json['brand']);
 		$this->assertSame('12 Main Street', $json['location']);
 		$this->assertNull($json['notes']);
 	}

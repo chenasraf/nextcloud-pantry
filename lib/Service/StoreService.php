@@ -142,6 +142,9 @@ class StoreService {
 	 * @param array<string, mixed> $data
 	 */
 	private function applyInfoFields(Store $store, array $data): void {
+		if (array_key_exists('brand', $data)) {
+			$store->setBrand($this->normalizeText($data['brand']));
+		}
 		if (array_key_exists('location', $data)) {
 			$store->setLocation($this->normalizeText($data['location']));
 		}

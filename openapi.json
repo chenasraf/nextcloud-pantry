@@ -1010,6 +1010,7 @@
                     "name",
                     "icon",
                     "color",
+                    "brand",
                     "location",
                     "openingHours",
                     "contact",
@@ -1035,6 +1036,10 @@
                     },
                     "color": {
                         "$ref": "#/components/schemas/StoreColor"
+                    },
+                    "brand": {
+                        "type": "string",
+                        "nullable": true
                     },
                     "location": {
                         "type": "string",
@@ -12333,6 +12338,12 @@
                                         "type": "string",
                                         "description": "Hex color (e.g. \"#4caf50\")."
                                     },
+                                    "brand": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Brand or chain name (e.g. \"Walmart\")."
+                                    },
                                     "location": {
                                         "type": "string",
                                         "nullable": true,
@@ -12511,6 +12522,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New hex color."
+                                    },
+                                    "brand": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Brand or chain name (e.g. \"Walmart\"). Empty string clears it."
                                     },
                                     "location": {
                                         "type": "string",

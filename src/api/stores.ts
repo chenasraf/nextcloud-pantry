@@ -5,6 +5,7 @@ export interface StoreInput {
   name: string
   icon: string
   color: string
+  brand?: string | null
   location?: string | null
   openingHours?: OpeningHoursInterval[] | null
   contact?: string | null

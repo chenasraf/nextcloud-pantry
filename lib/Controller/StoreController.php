@@ -68,6 +68,7 @@ final class StoreController extends OCSController {
 	 * @param string $name Store name.
 	 * @param string $icon Icon key from the palette.
 	 * @param string $color Hex color (e.g. "#4caf50").
+	 * @param string|null $brand Brand or chain name (e.g. "Walmart").
 	 * @param string|null $location Store address or location.
 	 * @param list<array{day: int, start: string, end: string}>|null $openingHours Opening-hours intervals.
 	 * @param string|null $contact Phone, social or other contact details.
@@ -86,15 +87,16 @@ final class StoreController extends OCSController {
 		string $name,
 		string $icon,
 		string $color,
+		?string $brand = null,
 		?string $location = null,
 		?array $openingHours = null,
 		?string $contact = null,
 		?string $responsible = null,
 		?string $notes = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $icon, $color, $location, $openingHours, $contact, $responsible, $notes): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $icon, $color, $brand, $location, $openingHours, $contact, $responsible, $notes): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$info = $this->collectInfo($location, $openingHours, $contact, $responsible, $notes);
+			$info = $this->collectInfo($brand, $location, $openingHours, $contact, $responsible, $notes);
 			$store = $this->stores->create($houseId, $name, $icon, $color, $info);
 			return new DataResponse($store->jsonSerialize());
 		});
@@ -108,6 +110,7 @@ final class StoreController extends OCSController {
 	 * @param string|null $name New name.
 	 * @param string|null $icon New icon key.
 	 * @param string|null $color New hex color.
+	 * @param string|null $brand Brand or chain name (e.g. "Walmart"). Empty string clears it.
 	 * @param string|null $location Store address or location. Empty string clears it.
 	 * @param list<array{day: int, start: string, end: string}>|null $openingHours Opening-hours intervals. Empty list clears them.
 	 * @param string|null $contact Phone, social or other contact details. Empty string clears it.
@@ -127,13 +130,14 @@ final class StoreController extends OCSController {
 		?string $name = null,
 		?string $icon = null,
 		?string $color = null,
+		?string $brand = null,
 		?string $location = null,
 		?array $openingHours = null,
 		?string $contact = null,
 		?string $responsible = null,
 		?string $notes = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $storeId, $name, $icon, $color, $location, $openingHours, $contact, $responsible, $notes): DataResponse {
+		return $this->runAction(function () use ($houseId, $storeId, $name, $icon, $color, $brand, $location, $openingHours, $contact, $responsible, $notes): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$this->stores->assertInHouse($storeId, $houseId);
 			$patch = [];
@@ -146,7 +150,7 @@ final class StoreController extends OCSController {
 			if ($color !== null) {
 				$patch['color'] = $color;
 			}
-			$patch += $this->collectInfo($location, $openingHours, $contact, $responsible, $notes);
+			$patch += $this->collectInfo($brand, $location, $openingHours, $contact, $responsible, $notes);
 			$updated = $this->stores->update($storeId, $patch);
 			return new DataResponse($updated->jsonSerialize());
 		});
@@ -161,6 +165,7 @@ final class StoreController extends OCSController {
 	 * @return array<string, mixed>
 	 */
 	private function collectInfo(
+		?string $brand,
 		?string $location,
 		?array $openingHours,
 		?string $contact,
@@ -168,6 +173,9 @@ final class StoreController extends OCSController {
 		?string $notes,
 	): array {
 		$info = [];
+		if ($brand !== null) {
+			$info['brand'] = $brand;
+		}
 		if ($location !== null) {
 			$info['location'] = $location;
 		}

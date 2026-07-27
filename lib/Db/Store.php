@@ -18,6 +18,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setIcon(string $icon)
  * @method string getColor()
  * @method void setColor(string $color)
+ * @method string|null getBrand()
+ * @method void setBrand(?string $brand)
  * @method string|null getLocation()
  * @method void setLocation(?string $location)
  * @method string|null getOpeningHours()
@@ -38,6 +40,7 @@ class Store extends Entity implements \JsonSerializable {
 	protected string $name = '';
 	protected string $icon = '';
 	protected string $color = '';
+	protected ?string $brand = null;
 	protected ?string $location = null;
 	protected ?string $openingHours = null;
 	protected ?string $contact = null;
@@ -59,6 +62,7 @@ class Store extends Entity implements \JsonSerializable {
 			'name' => $this->name,
 			'icon' => $this->icon,
 			'color' => $this->color,
+			'brand' => $this->brand,
 			'location' => $this->location,
 			'openingHours' => $this->openingHours !== null && $this->openingHours !== ''
 				? json_decode($this->openingHours, true)

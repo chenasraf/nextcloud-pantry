@@ -47,6 +47,13 @@
       </div>
 
       <NcTextField
+        v-model="brandValue"
+        :label="strings.brandLabel"
+        :placeholder="strings.brandPlaceholder"
+        autocomplete="off"
+      />
+
+      <NcTextField
         v-model="locationValue"
         :label="strings.locationLabel"
         :placeholder="strings.locationPlaceholder"
@@ -126,6 +133,7 @@ const emit = defineEmits<{
 const nameValue = ref('')
 const iconValue = ref<string>(DEFAULT_STORE_ICON_KEY)
 const colorValue = ref<string>(STORE_COLORS[3]!)
+const brandValue = ref('')
 const locationValue = ref('')
 const openingHoursValue = ref<OpeningHoursInterval[]>([])
 const contactValue = ref('')
@@ -140,6 +148,7 @@ watch(
         nameValue.value = props.store.name
         iconValue.value = props.store.icon
         colorValue.value = props.store.color
+        brandValue.value = props.store.brand ?? ''
         locationValue.value = props.store.location ?? ''
         openingHoursValue.value = props.store.openingHours
           ? props.store.openingHours.map((r) => ({ ...r }))
@@ -151,6 +160,7 @@ watch(
         nameValue.value = ''
         iconValue.value = DEFAULT_STORE_ICON_KEY
         colorValue.value = STORE_COLORS[3]!
+        brandValue.value = ''
         locationValue.value = ''
         openingHoursValue.value = []
         contactValue.value = ''
@@ -171,6 +181,7 @@ function submit() {
     name,
     icon: iconValue.value,
     color: colorValue.value,
+    brand: brandValue.value.trim(),
     location: locationValue.value.trim(),
     openingHours: openingHoursValue.value,
     contact: contactValue.value.trim(),
@@ -188,6 +199,9 @@ const strings = {
   namePlaceholder: t('pantry', 'e.g. Supermarket, Pharmacy'),
   iconLabel: t('pantry', 'Icon:'),
   colorLabel: t('pantry', 'Color:'),
+  // TRANSLATORS: Label for the store's brand or chain name (e.g. "Walmart"), grouping stores of the same brand.
+  brandLabel: t('pantry', 'Brand/chain'),
+  brandPlaceholder: t('pantry', 'e.g. Walmart, IKEA'),
   locationLabel: t('pantry', 'Location'),
   locationPlaceholder: t('pantry', 'e.g. 12 Main Street'),
   openingHoursLabel: t('pantry', 'Opening hours:'),

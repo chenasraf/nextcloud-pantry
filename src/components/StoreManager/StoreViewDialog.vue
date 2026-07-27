@@ -15,6 +15,11 @@
       </div>
 
       <div class="store-view__details">
+        <div v-if="store.brand" class="store-view__row">
+          <span class="store-view__label">{{ strings.brand }}:</span>
+          <span dir="auto">{{ store.brand }}</span>
+        </div>
+
         <div v-if="store.location" class="store-view__row">
           <span class="store-view__label">{{ strings.location }}:</span>
           <span dir="auto">{{ store.location }}</span>
@@ -87,6 +92,7 @@ const openingHoursDays = computed(() =>
 
 const isEmpty = computed(
   () =>
+    !props.store.brand &&
     !props.store.location &&
     openingHoursDays.value.length === 0 &&
     !props.store.contact &&
@@ -95,6 +101,8 @@ const isEmpty = computed(
 )
 
 const strings = {
+  // TRANSLATORS: Detail row label for the store's brand or chain name (e.g. "Walmart").
+  brand: t('pantry', 'Brand/chain'),
   location: t('pantry', 'Location'),
   // TRANSLATORS: Detail row label listing a store's opening hours.
   openingHours: t('pantry', 'Opening hours'),

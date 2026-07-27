@@ -153,6 +153,7 @@ function makeStore(overrides: Partial<Store> = {}): Store {
     name: 'Supermarket',
     icon: 'store',
     color: '#22c55e',
+    brand: null,
     location: null,
     openingHours: null,
     contact: null,
