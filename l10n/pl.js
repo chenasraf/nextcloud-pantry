@@ -10,6 +10,8 @@ OC.L10N.register(
     "Saving …" : "Zapisuję…",
     "Saved." : "Zapisano.",
     "Notifications" : "Powiadomienia",
+    "Interface" : "Interfejs",
+    "Always ask" : "Zawsze pytaj",
     "Name" : "Nazwa",
     "Cancel" : "Anuluj",
     "Create" : "Utwórz",
