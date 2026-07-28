@@ -40,6 +40,7 @@ OC.L10N.register(
     "From:" : "Oddi wrth:",
     "To:" : "At:",
     "Location" : "Lleoliad",
+    "Contact" : "Cysylltu",
     "Newest first" : "Diweddaraf gyntaf",
     "Oldest first" : "Hynaf gyntaf",
     "Archive" : "Archif",
