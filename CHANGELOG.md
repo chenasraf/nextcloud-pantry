@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.23.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.22.1...v0.23.0) (2026-07-28)
+
+
+### Features
+
+* **stores:** add brand/chain field ([4bcfab1](https://github.com/chenasraf/nextcloud-pantry/commit/4bcfab1780040e5f67e9896d76d21e8b29903dfa))
+* **stores:** add location, opening hours, contact, responsible and notes fields ([202c27d](https://github.com/chenasraf/nextcloud-pantry/commit/202c27ddd627f76edffb4bd476997df6308ab2b8))
+
+
+### Bug Fixes
+
+* **categories:** assign incrementing sort order on create ([c2f5c65](https://github.com/chenasraf/nextcloud-pantry/commit/c2f5c65ef71702c28b1a235b44073748a0a0b839))
+* **l10n:** Update translations from Transifex ([69dbfa6](https://github.com/chenasraf/nextcloud-pantry/commit/69dbfa6371156cf5bb1a75e317fc2cb7908e6dc6))
+* **l10n:** Update translations from Transifex ([a757a75](https://github.com/chenasraf/nextcloud-pantry/commit/a757a75e2b0fb7310328158cdc1472d6c79f3242))
+* **l10n:** Update translations from Transifex ([5f05560](https://github.com/chenasraf/nextcloud-pantry/commit/5f05560df16021a6593b47f9f26278bcc2ca928d))
+* **l10n:** Update translations from Transifex ([54a93f2](https://github.com/chenasraf/nextcloud-pantry/commit/54a93f25fc5f4be3c3123cb613a1601cf00ef7f2))
+* **l10n:** Update translations from Transifex ([9e169bb](https://github.com/chenasraf/nextcloud-pantry/commit/9e169bbe0b68c3ff987810ba95cd9419066f26f3))
+* **l10n:** Update translations from Transifex ([ce0d42f](https://github.com/chenasraf/nextcloud-pantry/commit/ce0d42fadee4496604f9f9b9fb2288a3cca3897c))
+* **migration:** recreate missing store tables and flag them post-upgrade ([52e7b2b](https://github.com/chenasraf/nextcloud-pantry/commit/52e7b2b4e1fdb29ce82efc82c52822ca87c85ca2))
+* **schema:** reconcile missing archived_at column and index ([#188](https://github.com/chenasraf/nextcloud-pantry/issues/188)) ([926fc5b](https://github.com/chenasraf/nextcloud-pantry/commit/926fc5b70831de0685d3007af71d0a3bf8ec4224))
+
 ## [0.22.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.22.0...v0.22.1) (2026-07-22)
 
 
