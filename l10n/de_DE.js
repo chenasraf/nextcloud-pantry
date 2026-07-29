@@ -342,6 +342,8 @@ OC.L10N.register(
     "New store" : "Neues Geschäft",
     "Edit store" : "Geschäft bearbeiten",
     "e.g. Supermarket, Pharmacy" : "Z. B. Supermarkt, Apotheke",
+    "Brand/chain" : "Marke/Kette",
+    "e.g. Walmart, IKEA" : "Z. B. Rewe, IKEA",
     "Location" : "Ort",
     "e.g. 12 Main Street" : "Z. B. Hauptstraße 12",
     "Opening hours:" : "Öffnungszeiten:",

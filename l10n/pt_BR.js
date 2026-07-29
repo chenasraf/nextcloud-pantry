@@ -342,6 +342,8 @@ OC.L10N.register(
     "New store" : "Nova loja",
     "Edit store" : "Editar loja",
     "e.g. Supermarket, Pharmacy" : "p. ex., supermercado, farmácia",
+    "Brand/chain" : "Marca/rede",
+    "e.g. Walmart, IKEA" : "p. ex., Pão de Açúcar, IKEA",
     "Location" : "Localização",
     "e.g. 12 Main Street" : "p. ex., Rua Principal, 12",
     "Opening hours:" : "Horário de funcionamento",

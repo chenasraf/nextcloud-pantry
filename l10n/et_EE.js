@@ -342,6 +342,8 @@ OC.L10N.register(
     "New store" : "Uus pood",
     "Edit store" : "Muuda poodi",
     "e.g. Supermarket, Pharmacy" : "nt. lähipood, apteek",
+    "Brand/chain" : "Kaubamärk/kett",
+    "e.g. Walmart, IKEA" : "nt. Selver, Coop",
     "Location" : "Asukoht",
     "e.g. 12 Main Street" : "nt. Kuuse 12",
     "Opening hours:" : "Lahtiolekuaeg:",
