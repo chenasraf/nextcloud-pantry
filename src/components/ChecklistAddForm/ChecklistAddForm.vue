@@ -80,6 +80,17 @@
         </template>
         {{ chip.text }}
       </PantryChip>
+      <PantryChip
+        v-if="!multiple"
+        :variant="barcode ? 'secondary' : 'tertiary'"
+        class="checklist-add__chip"
+        @click="barcodeDialogOpen = true"
+      >
+        <template #icon>
+          <BarcodeScanIcon :size="14" />
+        </template>
+        {{ barcode ? strings.barcodeAttached : strings.barcode }}
+      </PantryChip>
     </div>
 
     <div v-if="openSection" class="checklist-add__section">
@@ -176,6 +187,8 @@
         />
       </ul>
     </div>
+
+    <BarcodeLookupDialog v-model:open="barcodeDialogOpen" @resolved="onBarcodeResolved" />
   </form>
 </template>
 
@@ -183,6 +196,7 @@
 import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
 import { extract, token_set_ratio } from 'fuzzball'
 import { t, n } from '@nextcloud/l10n'
+import { showWarning } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
@@ -198,6 +212,7 @@ import RepeatIcon from '@icons/Repeat.vue'
 import ImageIcon from '@icons/Image.vue'
 import ImagePlusIcon from '@icons/ImagePlus.vue'
 import UploadIcon from '@icons/Upload.vue'
+import BarcodeScanIcon from '@icons/BarcodeScan.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { RecurrenceForm } from '@/components/RecurrenceEditor'
 import CategoryChipList from '@/components/CategoryChipList'
@@ -205,7 +220,9 @@ import StoreChipList from '@/components/StoreChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
 import PantryChip from '@/components/PantryChip'
+import BarcodeLookupDialog from '@/components/BarcodeLookupDialog'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
+import { type BarcodeResult } from '@/api/barcode'
 import { useCategories } from '@/composables/useCategories'
 import { useStores } from '@/composables/useStores'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
@@ -261,6 +278,8 @@ const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
 const deleteOnDone = ref(props.deleteOnDoneDefault)
 const openSection = ref<SectionKey | null>(null)
+const barcode = ref<string | null>(null)
+const barcodeDialogOpen = ref(false)
 
 interface ListOption {
   value: number
@@ -401,6 +420,65 @@ function clearPendingImage() {
 }
 
 onBeforeUnmount(revokeObjectUrl)
+
+// ----- Barcode -----
+//
+// A resolved barcode prefills the draft: name, a best-match category, and the
+// product image. On an unknown barcode we still stamp the code as the name so
+// the user can rename it — the raw EAN is never lost.
+
+function onBarcodeResolved(ean: string, result: BarcodeResult | null) {
+  if (!result) {
+    // Unknown barcode: leave the form untouched (cleared or with whatever the
+    // user had already typed) and just let them know.
+    showWarning(t('pantry', 'No product found for barcode {ean}.', { ean }))
+    return
+  }
+  barcode.value = ean
+  name.value = result.name
+  const matched = matchCategory(result.category)
+  if (matched && categoryId.value == null) {
+    categoryId.value = matched.id
+  }
+  if (result.imageUrl && !multiple.value) {
+    void prefillImageFromUrl(result.imageUrl)
+  }
+}
+
+/**
+ * Fuzzy-match a provider category hint (e.g. "Beverages") against the house's
+ * own categories, reusing the fuzzball scorer used for reuse suggestions.
+ */
+function matchCategory(hint: string | null): Category | null {
+  if (!hint || categories.value.length === 0) return null
+  const results = extract(hint, categories.value, {
+    processor: (c: Category) => c.name,
+    scorer: token_set_ratio,
+    limit: 1,
+    cutoff: 65,
+  })
+  return results.length > 0 ? (results[0]![0] as Category) : null
+}
+
+/**
+ * Download the product image from its URL and stage it as the pending item
+ * image. Best-effort: a CORS failure or non-image response is silently ignored.
+ */
+async function prefillImageFromUrl(url: string) {
+  try {
+    const resp = await fetch(url)
+    if (!resp.ok) return
+    const blob = await resp.blob()
+    if (!blob.type.startsWith('image/')) return
+    const ext = blob.type.split('/')[1] || 'jpg'
+    const file = new File([blob], `barcode-product.${ext}`, { type: blob.type })
+    revokeObjectUrl()
+    pendingImage.value = file
+    pendingImageObjectUrl.value = URL.createObjectURL(file)
+  } catch {
+    // Ignore — image prefill is a bonus, never a blocker.
+  }
+}
 
 // ----- Chips -----
 
@@ -587,6 +665,9 @@ function submitAdd() {
         rrule: once ? null : rrule.value,
         repeatFromCompletion: once ? false : repeatFromCompletion.value,
         deleteOnDone: once,
+        // A barcode identifies a single product, so only the first line of a
+        // bulk add carries it.
+        barcode: index === 0 ? barcode.value : null,
       },
       index === 0 ? pendingImage.value : null,
       targetListId.value,
@@ -600,6 +681,7 @@ function submitAdd() {
   storeIds.value = []
   rrule.value = null
   repeatFromCompletion.value = false
+  barcode.value = null
   // Keep the user's last-chosen list default.
   deleteOnDone.value = props.deleteOnDoneDefault
   userPickedType.value = false
@@ -635,6 +717,10 @@ const strings = {
   replaceImage: t('pantry', 'Replace image'),
   removeImage: t('pantry', 'Remove image'),
   imageAlt: t('pantry', 'Selected image'),
+  // TRANSLATORS: Noun, chip button that opens the barcode lookup dialog to fill in the item from a product barcode.
+  barcode: t('pantry', 'Barcode'),
+  // TRANSLATORS: State of the barcode chip once a barcode has been attached to the item being added.
+  barcodeAttached: t('pantry', 'Barcode attached'),
   // TRANSLATORS: Header above the list of existing items that match what the user is typing, offered so they can reuse one instead of adding a duplicate.
   suggestionsHeader: t('pantry', 'Already on this list'),
 }

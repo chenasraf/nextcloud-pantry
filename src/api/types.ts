@@ -130,6 +130,7 @@ export interface ChecklistItem {
   imageFileId: number | null
   imageUploadedBy: string | null
   addedBy: string | null
+  barcode: string | null
   sortOrder: number
   createdAt: number
   updatedAt: number

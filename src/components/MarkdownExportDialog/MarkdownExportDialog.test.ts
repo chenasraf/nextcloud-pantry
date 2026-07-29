@@ -60,6 +60,7 @@ function item(partial: Partial<ChecklistItem>): ChecklistItem {
     imageFileId: null,
     imageUploadedBy: null,
     addedBy: null,
+    barcode: null,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

@@ -92,6 +92,7 @@ namespace OCA\Pantry;
  *     imageFileId: int|null,
  *     imageUploadedBy: string|null,
  *     addedBy: string|null,
+ *     barcode: string|null,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,
@@ -150,6 +151,15 @@ namespace OCA\Pantry;
  *     createdBy: string,
  *     createdAt: int,
  *     updatedAt: int,
+ * }
+ *
+ * @psalm-type PantryBarcode = array{
+ *     ean: string,
+ *     name: string,
+ *     brand: string|null,
+ *     category: string|null,
+ *     imageUrl: string|null,
+ *     provider: string,
  * }
  *
  * @psalm-type PantrySuccess = array{success: true}
