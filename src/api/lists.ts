@@ -127,6 +127,7 @@ export interface ItemInput {
   deleteOnDone?: boolean
   sortOrder?: number
   targetListId?: number
+  barcode?: string | null
 }
 
 export async function addItem(

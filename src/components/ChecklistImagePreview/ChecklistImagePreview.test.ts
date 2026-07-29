@@ -39,6 +39,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     imageFileId: 77,
     imageUploadedBy: 'admin',
     addedBy: null,
+    barcode: null,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

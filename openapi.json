@@ -20,6 +20,40 @@
             }
         },
         "schemas": {
+            "Barcode": {
+                "type": "object",
+                "required": [
+                    "ean",
+                    "name",
+                    "brand",
+                    "category",
+                    "imageUrl",
+                    "provider"
+                ],
+                "properties": {
+                    "ean": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "brand": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "category": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "imageUrl": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "provider": {
+                        "type": "string"
+                    }
+                }
+            },
             "BatchResult": {
                 "type": "object",
                 "required": [
@@ -441,6 +475,7 @@
                     "imageFileId",
                     "imageUploadedBy",
                     "addedBy",
+                    "barcode",
                     "sortOrder",
                     "createdAt",
                     "updatedAt",
@@ -516,6 +551,10 @@
                         "nullable": true
                     },
                     "addedBy": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "barcode": {
                         "type": "string",
                         "nullable": true
                     },
@@ -1204,6 +1243,249 @@
         }
     },
     "paths": {
+        "/ocs/v2.php/apps/pantry/api/barcode/{ean}": {
+            "get": {
+                "operationId": "barcode-show",
+                "summary": "Look up a barcode in the shared cache",
+                "description": "Cache-only: never makes an external call. A miss returns 404 so the client resolves it from its own IP and writes the result back.",
+                "tags": [
+                    "barcode"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "ean",
+                        "in": "path",
+                        "description": "Barcode digits (EAN/UPC).",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^\\d+$"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Barcode found in cache",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/Barcode"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/barcode": {
+            "post": {
+                "operationId": "barcode-store",
+                "summary": "Write a resolved barcode back to the shared cache",
+                "tags": [
+                    "barcode"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "ean",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "ean": {
+                                        "type": "string",
+                                        "description": "Barcode digits (EAN/UPC)."
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "Resolved product name."
+                                    },
+                                    "brand": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Brand name."
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Provider category hint (for best-match)."
+                                    },
+                                    "imageUrl": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Product image URL."
+                                    },
+                                    "provider": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Id of the source that resolved it."
+                                    },
+                                    "raw": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Raw provider payload."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Barcode cached",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/Barcode"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/categories": {
             "get": {
                 "operationId": "category-index",
@@ -3414,6 +3696,12 @@
                                             "type": "integer",
                                             "format": "int64"
                                         }
+                                    },
+                                    "barcode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Optional barcode (EAN/UPC) the item was created from."
                                     }
                                 }
                             }
@@ -3988,6 +4276,12 @@
                                             "type": "integer",
                                             "format": "int64"
                                         }
+                                    },
+                                    "barcode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New barcode (EAN/UPC); empty string clears."
                                     }
                                 }
                             }

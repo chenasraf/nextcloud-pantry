@@ -259,6 +259,7 @@ class ChecklistService {
 		}
 		$item->setImageFileId($this->intOrNull($data['imageFileId'] ?? null));
 		$item->setAddedBy($addedBy);
+		$item->setBarcode($this->strOrNull($data['barcode'] ?? null));
 		$item->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : 0);
 		$item->setCreatedAt($now);
 		$item->setUpdatedAt($now);
@@ -311,6 +312,9 @@ class ChecklistService {
 		}
 		if (array_key_exists('imageFileId', $patch)) {
 			$item->setImageFileId($this->intOrNull($patch['imageFileId']));
+		}
+		if (array_key_exists('barcode', $patch)) {
+			$item->setBarcode($this->strOrNull($patch['barcode']));
 		}
 		if (array_key_exists('imageUploadedBy', $patch)) {
 			$v = $patch['imageUploadedBy'];

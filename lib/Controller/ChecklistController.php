@@ -557,6 +557,7 @@ final class ChecklistController extends OCSController {
 	 * @param bool $deleteOnDone If true, the item is deleted when marked done.
 	 * @param int|null $sortOrder Optional sort order.
 	 * @param list<int> $storeIds Optional store ids to attach (must belong to the same house).
+	 * @param string|null $barcode Optional barcode (EAN/UPC) the item was created from.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -577,8 +578,9 @@ final class ChecklistController extends OCSController {
 		bool $deleteOnDone = false,
 		?int $sortOrder = null,
 		array $storeIds = [],
+		?string $barcode = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
@@ -598,6 +600,7 @@ final class ChecklistController extends OCSController {
 				'deleteOnDone' => $deleteOnDone,
 				'sortOrder' => $sortOrder ?? 0,
 				'storeIds' => $storeIds,
+				'barcode' => $barcode,
 			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
@@ -630,6 +633,7 @@ final class ChecklistController extends OCSController {
 	 * @param int|null $sortOrder New sort order.
 	 * @param int|null $targetListId Move item to a different list (must belong to the same house).
 	 * @param list<int>|null $storeIds New set of store ids (empty array clears; null leaves unchanged). All must belong to the same house.
+	 * @param string|null $barcode New barcode (EAN/UPC); empty string clears.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -653,8 +657,9 @@ final class ChecklistController extends OCSController {
 		?int $sortOrder = null,
 		?int $targetListId = null,
 		?array $storeIds = null,
+		?string $barcode = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId);
@@ -695,6 +700,9 @@ final class ChecklistController extends OCSController {
 			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($barcode !== null) {
+				$patch['barcode'] = $barcode;
 			}
 			if ($storeIds !== null) {
 				$ids = array_map('intval', $storeIds);

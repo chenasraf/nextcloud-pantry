@@ -6,6 +6,10 @@ import type { ItemInput } from '@/api/lists'
 import type { ChecklistItem } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
+vi.mock('@nextcloud/dialogs', () => ({
+  showWarning: vi.fn(),
+  showError: vi.fn(),
+}))
 vi.mock('@icons/Plus.vue', () => createIconMock('PlusIcon'))
 vi.mock('@icons/TagOutline.vue', () => createIconMock('TagOutlineIcon'))
 vi.mock('@icons/ScaleBalance.vue', () => createIconMock('ScaleBalanceIcon'))
@@ -16,6 +20,18 @@ vi.mock('@icons/Repeat.vue', () => createIconMock('RepeatIcon'))
 vi.mock('@icons/Image.vue', () => createIconMock('ImageIcon'))
 vi.mock('@icons/ImagePlus.vue', () => createIconMock('ImagePlusIcon'))
 vi.mock('@icons/Upload.vue', () => createIconMock('UploadIcon'))
+vi.mock('@icons/BarcodeScan.vue', () => createIconMock('BarcodeScanIcon'))
+
+// Stub the barcode dialog so the add-form test doesn't pull in NcDialog (and
+// its CSS asset, which Vitest can't parse).
+vi.mock('@/components/BarcodeLookupDialog', () => ({
+  default: {
+    name: 'BarcodeLookupDialog',
+    template: '<div class="barcode-dialog-stub"></div>',
+    props: ['open'],
+    emits: ['update:open', 'resolved'],
+  },
+}))
 
 vi.mock('@nextcloud/vue/components/NcButton', () => ({
   default: {
@@ -169,6 +185,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     imageFileId: null,
     imageUploadedBy: null,
     addedBy: null,
+    barcode: null,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
@@ -216,13 +233,14 @@ describe('ChecklistAddForm', () => {
   it('renders one chip per field section', () => {
     const wrapper = mountForm()
     const chips = wrapper.findAll('.nc-chip')
-    expect(chips).toHaveLength(6)
+    expect(chips).toHaveLength(7)
     expect(chips[0].text()).toContain('Category')
     expect(chips[1].text()).toContain('Stores')
     expect(chips[2].text()).toContain('Quantity')
     expect(chips[3].text()).toContain('Description')
     expect(chips[4].text()).toContain('Item type')
     expect(chips[5].text()).toContain('Image')
+    expect(chips[6].text()).toContain('Barcode')
   })
 
   it('item type chip shows the chosen type text only after explicit selection', async () => {
@@ -270,6 +288,7 @@ describe('ChecklistAddForm', () => {
       rrule: null,
       repeatFromCompletion: false,
       deleteOnDone: false,
+      barcode: null,
     })
     expect(pendingImage).toBeNull()
   })
