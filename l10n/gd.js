@@ -3,8 +3,8 @@ OC.L10N.register(
     {
     "Save" : "Sàbhail",
     "Notifications" : "Brathan",
-    "Name" : "Ainm",
     "Cancel" : "Cancel",
+    "Name" : "Ainm",
     "Create" : "Cruthaich",
     "Delete" : "Sguab às",
     "Edit" : "Deasaich",

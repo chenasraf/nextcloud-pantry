@@ -3,8 +3,8 @@ OC.L10N.register(
     {
     "Images" : "Imágenes",
     "Save" : "Guardar",
-    "Name" : "Nombre",
     "Cancel" : "Cancel",
+    "Name" : "Nombre",
     "Custom" : "Personalizado",
     "Delete" : "Eliminar",
     "Edit" : "Editar",

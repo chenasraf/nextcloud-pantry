@@ -2,8 +2,8 @@ OC.L10N.register(
     "pantry",
     {
     "Save" : "Saxla",
-    "Name" : "Ad",
     "Cancel" : "Cancel",
+    "Name" : "Ad",
     "Delete" : "Sil",
     "Edit" : "Dəyişiklik et",
     "Category" : "Kateqoriya",

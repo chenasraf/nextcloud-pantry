@@ -2,8 +2,8 @@ OC.L10N.register(
     "pantry",
     {
     "Save" : "Spremi",
-    "Name" : "Ime",
     "Cancel" : "Cancel",
+    "Name" : "Ime",
     "Create" : "Kreiraj",
     "Delete" : "Obriši",
     "Edit" : "Izmjeni",

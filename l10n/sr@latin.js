@@ -2,8 +2,8 @@ OC.L10N.register(
     "pantry",
     {
     "Save" : "Sačuvaj",
-    "Name" : "Ime",
     "Cancel" : "Poništi",
+    "Name" : "Ime",
     "Delete" : "Obriši",
     "Edit" : "Izmeni",
     "Category" : "Kategorija",

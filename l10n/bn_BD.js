@@ -2,8 +2,8 @@ OC.L10N.register(
     "pantry",
     {
     "Save" : "সংরক্ষণ",
-    "Name" : "নাম",
     "Cancel" : "Cancel",
+    "Name" : "নাম",
     "Delete" : "মুছে",
     "Edit" : "সম্পাদনা",
     "Add" : "যোগ কর",

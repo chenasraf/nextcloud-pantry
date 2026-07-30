@@ -2,8 +2,8 @@ OC.L10N.register(
     "pantry",
     {
     "Save" : "Cadw",
-    "Name" : "Enw",
     "Cancel" : "Cancel",
+    "Name" : "Enw",
     "Custom" : "Cyfaddas",
     "Delete" : "Dileu",
     "Edit" : "Golygu",

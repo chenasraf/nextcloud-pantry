@@ -3,8 +3,8 @@ OC.L10N.register(
     {
     "Save" : "Պահպանել",
     "Notifications" : "Ծանուցում",
-    "Name" : "Անուն",
     "Cancel" : "Cancel",
+    "Name" : "Անուն",
     "Delete" : "հեռացնել",
     "Edit" : "մշակել",
     "Description" : "Նկարագրություն",
