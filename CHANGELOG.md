@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.24.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.23.0...v0.24.0) (2026-07-30)
+
+
+### Features
+
+* **barcode:** EAN/barcode lookup with shared cache and web entry ([1c33818](https://github.com/chenasraf/nextcloud-pantry/commit/1c338189fcca77ec5e21eb3ab67bc2b762748093))
+* **checklist:** add price to checklist items ([4b7c0fe](https://github.com/chenasraf/nextcloud-pantry/commit/4b7c0fede2a02bc8b0d0c59cff8588c964ca2730)), closes [#184](https://github.com/chenasraf/nextcloud-pantry/issues/184)
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([040adf0](https://github.com/chenasraf/nextcloud-pantry/commit/040adf0b783bf8752f34ea809e89e811f1f786a0))
+* **l10n:** Update translations from Transifex ([e76ea53](https://github.com/chenasraf/nextcloud-pantry/commit/e76ea5304f7a9f9332caf4996e955716ab94884f))
+
 ## [0.23.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.22.1...v0.23.0) (2026-07-28)
 
 
