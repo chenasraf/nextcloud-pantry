@@ -131,6 +131,10 @@ export interface ChecklistItem {
   imageUploadedBy: string | null
   addedBy: string | null
   barcode: string | null
+  priceType: 'set' | 'range' | null
+  priceMin: number | null
+  priceMax: number | null
+  priceCurrency: string | null
   sortOrder: number
   createdAt: number
   updatedAt: number

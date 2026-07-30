@@ -16,6 +16,14 @@ vi.mock('@/components/CategoryPicker/categoryIcons', () => ({
 vi.mock('@/components/ChecklistIconPicker', () => ({
   checklistIconComponent: () => ({ name: 'ListIcon', template: '<span class="list-icon" />' }),
 }))
+vi.mock('./PriceFilter.vue', () => ({
+  default: {
+    name: 'PriceFilter',
+    template: '<div class="mock-price-filter" />',
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
+}))
 
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({
   default: {
@@ -86,6 +94,10 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     imageUploadedBy: null,
     addedBy: null,
     barcode: null,
+    priceType: null,
+    priceMin: null,
+    priceMax: null,
+    priceCurrency: null,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

@@ -26,6 +26,10 @@
           <span class="item-view__label">{{ strings.quantity }}:</span>
           <span>&times; {{ item.quantity }}</span>
         </div>
+        <div v-if="priceText" class="item-view__row">
+          <span class="item-view__label">{{ strings.price }}:</span>
+          <span>{{ priceText }}</span>
+        </div>
         <div v-if="category" class="item-view__row">
           <span class="item-view__label">{{ strings.category }}:</span>
           <span class="item-view__badge" :style="{ color: category.color }">
@@ -87,6 +91,7 @@ import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
+import { formatPrice } from '@/utils/price'
 import type { ChecklistItem, Category, Store } from '@/api/types'
 
 const props = withDefaults(
@@ -112,6 +117,8 @@ const largeUrl = computed(() =>
     : '',
 )
 
+const priceText = computed(() => formatPrice(props.item))
+
 const nextRecurrence = computed(() =>
   props.item.rrule
     ? formatNextRecurrence(props.item.nextDueAt, props.item.repeatFromCompletion, props.item.done)
@@ -121,6 +128,7 @@ const nextRecurrence = computed(() =>
 const strings = {
   viewImage: t('pantry', 'View image'),
   quantity: t('pantry', 'Quantity'),
+  price: t('pantry', 'Price'),
   category: t('pantry', 'Category'),
   // TRANSLATORS: Noun (plural), shops where this item can be bought. Detail row label.
   stores: t('pantry', 'Stores'),

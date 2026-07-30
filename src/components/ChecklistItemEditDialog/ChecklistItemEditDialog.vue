@@ -42,6 +42,10 @@
         :label="strings.storesLabel"
         :placeholder="strings.storesPlaceholder"
       />
+      <div class="edit-item-form__price">
+        <span class="edit-item-form__label">{{ strings.priceLabel }}</span>
+        <PriceInput v-model="editPrice" :default-currency="defaultCurrency" />
+      </div>
       <div class="edit-item-form__type">
         <span class="edit-item-form__label">{{ strings.typeLabel }}</span>
         <ItemTypeSelector
@@ -118,16 +122,24 @@ import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
 import StoreMultiPicker from '@/components/StoreMultiPicker'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
+import PriceInput from '@/components/PriceInput'
 import { itemImagePreviewUrl } from '@/api/images'
+import { DEFAULT_CURRENCY } from '@/utils/currencies'
+import type { PriceValue } from '@/utils/price'
 import type { ChecklistItem } from '@/api/types'
 import type { ItemInput } from '@/api/lists'
 
-const props = defineProps<{
-  open: boolean
-  item: ChecklistItem
-  houseId: number
-  saving: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    item: ChecklistItem
+    houseId: number
+    saving: boolean
+    /** Currency preselected when the item has no price yet (house's last-used). */
+    defaultCurrency?: string
+  }>(),
+  { defaultCurrency: DEFAULT_CURRENCY },
+)
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
@@ -142,6 +154,12 @@ const editStoreIds = ref<number[]>([])
 const editRrule = ref<string | null>(null)
 const editRepeatFromCompletion = ref(false)
 const editDeleteOnDone = ref(false)
+const editPrice = ref<PriceValue>({
+  priceType: null,
+  priceMin: null,
+  priceMax: null,
+  priceCurrency: props.defaultCurrency,
+})
 const showRecurrenceEditor = ref(false)
 const imageInputRef = ref<HTMLInputElement | null>(null)
 
@@ -191,6 +209,12 @@ watch(
       editRrule.value = props.item.rrule ?? null
       editRepeatFromCompletion.value = props.item.repeatFromCompletion ?? false
       editDeleteOnDone.value = props.item.deleteOnDone ?? false
+      editPrice.value = {
+        priceType: props.item.priceType ?? null,
+        priceMin: props.item.priceMin ?? null,
+        priceMax: props.item.priceMax ?? null,
+        priceCurrency: props.item.priceCurrency ?? props.defaultCurrency,
+      }
       resetImageState()
     }
   },
@@ -233,6 +257,12 @@ function submitEdit() {
       rrule: once ? null : editRrule.value,
       repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
       deleteOnDone: once,
+      // '' clears the price server-side; a type sets it. Currency is always sent
+      // so the house's last-used currency can be remembered.
+      priceType: editPrice.value.priceType ?? '',
+      priceMin: editPrice.value.priceMin,
+      priceMax: editPrice.value.priceMax,
+      priceCurrency: editPrice.value.priceCurrency,
     },
     pendingImageFile.value,
     pendingClearImage.value,
@@ -276,6 +306,7 @@ const strings = {
   storesLabel: t('pantry', 'Stores'),
   // TRANSLATORS: Noun (plural), shops where this item can be bought. Field placeholder.
   storesPlaceholder: t('pantry', 'Stores'),
+  priceLabel: t('pantry', 'Price'),
   typeLabel: t('pantry', 'Item type'),
   imageLabel: t('pantry', 'Image'),
   uploadImage: t('pantry', 'Upload image'),
@@ -321,7 +352,8 @@ const strings = {
     display: none;
   }
 
-  &__type {
+  &__type,
+  &__price {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;

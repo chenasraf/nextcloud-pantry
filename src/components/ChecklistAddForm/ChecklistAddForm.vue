@@ -107,6 +107,13 @@
       <!-- Quantity -->
       <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
 
+      <!-- Price -->
+      <PriceInput
+        v-else-if="openSection === 'price'"
+        v-model="price"
+        :default-currency="defaultCurrency"
+      />
+
       <!-- Description -->
       <AutoResizeTextarea
         v-else-if="openSection === 'description'"
@@ -213,12 +220,14 @@ import ImageIcon from '@icons/Image.vue'
 import ImagePlusIcon from '@icons/ImagePlus.vue'
 import UploadIcon from '@icons/Upload.vue'
 import BarcodeScanIcon from '@icons/BarcodeScan.vue'
+import CashIcon from '@icons/Cash.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { RecurrenceForm } from '@/components/RecurrenceEditor'
 import CategoryChipList from '@/components/CategoryChipList'
 import StoreChipList from '@/components/StoreChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
+import PriceInput from '@/components/PriceInput'
 import PantryChip from '@/components/PantryChip'
 import BarcodeLookupDialog from '@/components/BarcodeLookupDialog'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
@@ -230,10 +239,12 @@ import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { formatRrule } from '@/utils/rrule'
+import { formatPrice, hasPrice, type PriceValue } from '@/utils/price'
+import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ItemInput } from '@/api/lists'
 import type { Checklist, ChecklistItem, Category, Store } from '@/api/types'
 
-type SectionKey = 'category' | 'stores' | 'quantity' | 'description' | 'type' | 'image'
+type SectionKey = 'category' | 'stores' | 'quantity' | 'price' | 'description' | 'type' | 'image'
 
 const props = withDefaults(
   defineProps<{
@@ -251,6 +262,8 @@ const props = withDefaults(
     reuseCandidates?: ChecklistItem[]
     /** The list id in single-list mode, used to scope reuse suggestions. */
     currentListId?: number | null
+    /** Currency preselected for new prices (house's last-used). */
+    defaultCurrency?: string
   }>(),
   {
     deleteOnDoneDefault: false,
@@ -258,6 +271,7 @@ const props = withDefaults(
     availableLists: () => [],
     reuseCandidates: () => [],
     currentListId: null,
+    defaultCurrency: DEFAULT_CURRENCY,
   },
 )
 
@@ -271,6 +285,12 @@ const name = ref('')
 const multiple = ref(false)
 const description = ref('')
 const quantity = ref('')
+const price = ref<PriceValue>({
+  priceType: null,
+  priceMin: null,
+  priceMax: null,
+  priceCurrency: props.defaultCurrency,
+})
 const categoryId = ref<number | null>(null)
 const storeIds = ref<number[]>([])
 const targetListId = ref<number | null>(null)
@@ -332,6 +352,17 @@ watch(
   () => props.deleteOnDoneDefault,
   (value) => {
     deleteOnDone.value = value
+  },
+)
+
+// The house's last-used currency may resolve after mount. Adopt it as long as
+// the user has not entered a price yet.
+watch(
+  () => props.defaultCurrency,
+  (value) => {
+    if (!hasPrice(price.value)) {
+      price.value = { ...price.value, priceCurrency: value }
+    }
   },
 )
 
@@ -490,6 +521,8 @@ const selectedCategory = computed(() =>
 
 const selectedStores = computed(() => stores.value.filter((s) => storeIds.value.includes(s.id)))
 
+const priceText = computed(() => formatPrice(price.value))
+
 interface Chip {
   key: SectionKey
   text: string
@@ -547,6 +580,13 @@ const chips = computed<Chip[]>(() => {
     text: quantity.value.trim() || strings.quantity,
     icon: FormatListBulletedIcon,
     filled: quantity.value.trim().length > 0,
+  })
+
+  list.push({
+    key: 'price',
+    text: priceText.value ?? strings.price,
+    icon: CashIcon,
+    filled: priceText.value !== null,
   })
 
   list.push({
@@ -662,6 +702,10 @@ function submitAdd() {
         quantity: quantity.value.trim() || null,
         categoryId: categoryId.value,
         storeIds: storeIds.value,
+        priceType: price.value.priceType,
+        priceMin: price.value.priceMin,
+        priceMax: price.value.priceMax,
+        priceCurrency: price.value.priceCurrency,
         rrule: once ? null : rrule.value,
         repeatFromCompletion: once ? false : repeatFromCompletion.value,
         deleteOnDone: once,
@@ -677,6 +721,13 @@ function submitAdd() {
   name.value = ''
   description.value = ''
   quantity.value = ''
+  // Keep the chosen currency as the next item's default, drop the amounts.
+  price.value = {
+    priceType: null,
+    priceMin: null,
+    priceMax: null,
+    priceCurrency: price.value.priceCurrency,
+  }
   categoryId.value = null
   storeIds.value = []
   rrule.value = null
@@ -703,6 +754,7 @@ const strings = {
   // TRANSLATORS: Noun (plural), shops where the item can be bought. Chip label.
   stores: t('pantry', 'Stores'),
   quantity: t('pantry', 'Quantity'),
+  price: t('pantry', 'Price'),
   description: t('pantry', 'Description'),
   descriptionLabel: t('pantry', 'Description'),
   itemType: t('pantry', 'Item type'),

@@ -42,6 +42,14 @@ use OCP\AppFramework\Db\Entity;
  * @method void setAddedBy(?string $addedBy)
  * @method string|null getBarcode()
  * @method void setBarcode(?string $barcode)
+ * @method string|null getPriceType()
+ * @method void setPriceType(?string $priceType)
+ * @method float|null getPriceMin()
+ * @method void setPriceMin(?float $priceMin)
+ * @method float|null getPriceMax()
+ * @method void setPriceMax(?float $priceMax)
+ * @method string|null getPriceCurrency()
+ * @method void setPriceCurrency(?string $priceCurrency)
  * @method int getSortOrder()
  * @method void setSortOrder(int $sortOrder)
  * @method int getCreatedAt()
@@ -70,6 +78,10 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?string $imageUploadedBy = null;
 	protected ?string $addedBy = null;
 	protected ?string $barcode = null;
+	protected ?string $priceType = null;
+	protected ?float $priceMin = null;
+	protected ?float $priceMax = null;
+	protected ?string $priceCurrency = null;
 	protected int $sortOrder = 0;
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
@@ -85,6 +97,8 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		$this->addType('deleteOnDone', 'boolean');
 		$this->addType('nextDueAt', 'integer');
 		$this->addType('imageFileId', 'integer');
+		$this->addType('priceMin', 'float');
+		$this->addType('priceMax', 'float');
 		$this->addType('sortOrder', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
@@ -118,6 +132,10 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'imageUploadedBy' => $this->imageUploadedBy,
 			'addedBy' => $this->addedBy,
 			'barcode' => $this->barcode,
+			'priceType' => $this->priceType,
+			'priceMin' => $this->priceMin,
+			'priceMax' => $this->priceMax,
+			'priceCurrency' => $this->priceCurrency,
 			'sortOrder' => $this->sortOrder,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,

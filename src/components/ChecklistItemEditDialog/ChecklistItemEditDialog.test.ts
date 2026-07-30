@@ -45,6 +45,14 @@ vi.mock('@/components/ItemTypeSelector', () => ({
     emits: ['select-staple', 'select-one-time', 'select-recurring'],
   },
 }))
+vi.mock('@/components/PriceInput', () => ({
+  default: {
+    name: 'PriceInput',
+    template: '<div class="mock-price-input" />',
+    props: ['modelValue', 'defaultCurrency'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/components/AutoResizeTextarea', () => ({
   AutoResizeTextarea: {
     name: 'AutoResizeTextarea',
@@ -113,6 +121,10 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     imageUploadedBy: null,
     addedBy: null,
     barcode: null,
+    priceType: null,
+    priceMin: null,
+    priceMax: null,
+    priceCurrency: null,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

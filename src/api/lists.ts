@@ -128,6 +128,11 @@ export interface ItemInput {
   sortOrder?: number
   targetListId?: number
   barcode?: string | null
+  /** '' clears the price on update; 'set'/'range' set it; null leaves unchanged. */
+  priceType?: 'set' | 'range' | '' | null
+  priceMin?: number | null
+  priceMax?: number | null
+  priceCurrency?: string | null
 }
 
 export async function addItem(

@@ -186,6 +186,10 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     imageUploadedBy: null,
     addedBy: null,
     barcode: null,
+    priceType: null,
+    priceMin: null,
+    priceMax: null,
+    priceCurrency: null,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
@@ -233,14 +237,15 @@ describe('ChecklistAddForm', () => {
   it('renders one chip per field section', () => {
     const wrapper = mountForm()
     const chips = wrapper.findAll('.nc-chip')
-    expect(chips).toHaveLength(7)
+    expect(chips).toHaveLength(8)
     expect(chips[0].text()).toContain('Category')
     expect(chips[1].text()).toContain('Stores')
     expect(chips[2].text()).toContain('Quantity')
-    expect(chips[3].text()).toContain('Description')
-    expect(chips[4].text()).toContain('Item type')
-    expect(chips[5].text()).toContain('Image')
-    expect(chips[6].text()).toContain('Barcode')
+    expect(chips[3].text()).toContain('Price')
+    expect(chips[4].text()).toContain('Description')
+    expect(chips[5].text()).toContain('Item type')
+    expect(chips[6].text()).toContain('Image')
+    expect(chips[7].text()).toContain('Barcode')
   })
 
   it('item type chip shows the chosen type text only after explicit selection', async () => {
@@ -285,6 +290,10 @@ describe('ChecklistAddForm', () => {
       quantity: null,
       categoryId: null,
       storeIds: [],
+      priceType: null,
+      priceMin: null,
+      priceMax: null,
+      priceCurrency: 'USD',
       rrule: null,
       repeatFromCompletion: false,
       deleteOnDone: false,

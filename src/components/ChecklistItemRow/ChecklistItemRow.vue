@@ -77,6 +77,7 @@
     </div>
     <div class="checklist-row__meta">
       <span v-if="item.quantity" class="checklist-row__quantity">&times; {{ item.quantity }}</span>
+      <span v-if="priceText" class="checklist-row__price">{{ priceText }}</span>
       <span
         v-if="item.description"
         class="checklist-row__description"
@@ -214,6 +215,7 @@ import { checklistIconComponent } from '@/components/ChecklistIconPicker/checkli
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
+import { formatPrice } from '@/utils/price'
 import { useHouseMembers } from '@/composables/useHouseMembers'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import type { ChecklistItem, Category, Checklist, Store } from '@/api/types'
@@ -345,6 +347,8 @@ const addedByTooltip = computed(() => {
   const name = displayNameByUid.value[uid] ?? uid
   return t('pantry', 'Added by {user}', { user: name })
 })
+
+const priceText = computed(() => formatPrice(props.item))
 
 const recurrenceTooltip = computed(() => {
   const next = formatNextRecurrence(
@@ -622,6 +626,7 @@ function storeLabel(name: string): string {
   }
 
   &__quantity,
+  &__price,
   &__category,
   &__store,
   &__recurrence,

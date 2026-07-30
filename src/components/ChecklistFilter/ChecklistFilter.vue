@@ -41,6 +41,11 @@
         :total-count="totalCount"
         @update:model-value="$emit('update:selectedStoreIds', $event)"
       />
+      <PriceFilter
+        v-if="anyPriced"
+        :model-value="priceFilterLocal"
+        @update:model-value="$emit('update:priceFilter', $event)"
+      />
     </div>
   </div>
 </template>
@@ -56,7 +61,9 @@ import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker'
 import FilterDropdown, { type FilterOption } from './FilterDropdown.vue'
+import PriceFilter, { type PriceFilterValue } from './PriceFilter.vue'
 import { NO_CATEGORY_ID, NO_STORE_ID } from './constants'
+import { hasPrice } from '@/utils/price'
 import type { Category, Checklist, ChecklistItem, Store } from '@/api/types'
 
 const props = defineProps<{
@@ -64,6 +71,7 @@ const props = defineProps<{
   selectedCategoryIds: number[]
   selectedStoreIds?: number[]
   selectedListIds?: number[]
+  priceFilter?: PriceFilterValue
   items: ChecklistItem[]
   categories: Category[]
   stores?: Store[]
@@ -75,7 +83,12 @@ const emit = defineEmits<{
   (e: 'update:selectedCategoryIds', v: number[]): void
   (e: 'update:selectedStoreIds', v: number[]): void
   (e: 'update:selectedListIds', v: number[]): void
+  (e: 'update:priceFilter', v: PriceFilterValue): void
 }>()
+
+const emptyPriceFilter: PriceFilterValue = { min: null, max: null, currency: null }
+const priceFilterLocal = computed(() => props.priceFilter ?? emptyPriceFilter)
+const anyPriced = computed(() => props.items.some((i) => hasPrice(i)))
 
 const localQuery = computed({
   get: () => props.query,

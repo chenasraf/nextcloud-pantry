@@ -260,6 +260,11 @@ class ChecklistService {
 		$item->setImageFileId($this->intOrNull($data['imageFileId'] ?? null));
 		$item->setAddedBy($addedBy);
 		$item->setBarcode($this->strOrNull($data['barcode'] ?? null));
+		$price = $this->normalizePrice($data);
+		$item->setPriceType($price['priceType']);
+		$item->setPriceMin($price['priceMin']);
+		$item->setPriceMax($price['priceMax']);
+		$item->setPriceCurrency($price['priceCurrency']);
 		$item->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : 0);
 		$item->setCreatedAt($now);
 		$item->setUpdatedAt($now);
@@ -315,6 +320,16 @@ class ChecklistService {
 		}
 		if (array_key_exists('barcode', $patch)) {
 			$item->setBarcode($this->strOrNull($patch['barcode']));
+		}
+		// Price is a compound field: the presence of 'priceType' in the patch
+		// means the whole price group is being (re)set — normalize and apply all
+		// four columns together.
+		if (array_key_exists('priceType', $patch)) {
+			$price = $this->normalizePrice($patch);
+			$item->setPriceType($price['priceType']);
+			$item->setPriceMin($price['priceMin']);
+			$item->setPriceMax($price['priceMax']);
+			$item->setPriceCurrency($price['priceCurrency']);
 		}
 		if (array_key_exists('imageUploadedBy', $patch)) {
 			$v = $patch['imageUploadedBy'];
@@ -733,5 +748,57 @@ class ChecklistService {
 			return (int)$v;
 		}
 		return null;
+	}
+
+	private function floatOrNull(mixed $v): ?float {
+		if ($v === null || $v === '' || $v === false) {
+			return null;
+		}
+		if (is_numeric($v)) {
+			$f = (float)$v;
+			return $f < 0 ? null : $f;
+		}
+		return null;
+	}
+
+	/**
+	 * Normalize price fields from an input array into their stored form.
+	 *
+	 * Returns the four price columns. A missing/blank amount collapses the price
+	 * to "none" (all null). 'set' keeps only the min; 'range' keeps both, and
+	 * falls back to 'set' if no max is given. The currency is retained only when
+	 * a price actually exists.
+	 *
+	 * @param array<string, mixed> $data
+	 * @return array{priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}
+	 */
+	private function normalizePrice(array $data): array {
+		$none = ['priceType' => null, 'priceMin' => null, 'priceMax' => null, 'priceCurrency' => null];
+
+		$type = is_string($data['priceType'] ?? null) ? $data['priceType'] : null;
+		if ($type !== 'set' && $type !== 'range') {
+			return $none;
+		}
+		$min = $this->floatOrNull($data['priceMin'] ?? null);
+		if ($min === null) {
+			return $none;
+		}
+		$currency = $this->strOrNull($data['priceCurrency'] ?? null);
+		$currency = $currency !== null ? strtoupper($currency) : null;
+
+		if ($type === 'range') {
+			$max = $this->floatOrNull($data['priceMax'] ?? null);
+			if ($max === null) {
+				// Range without an upper bound is just a single price.
+				return ['priceType' => 'set', 'priceMin' => $min, 'priceMax' => null, 'priceCurrency' => $currency];
+			}
+			// Keep min <= max regardless of the order they came in.
+			if ($max < $min) {
+				[$min, $max] = [$max, $min];
+			}
+			return ['priceType' => 'range', 'priceMin' => $min, 'priceMax' => $max, 'priceCurrency' => $currency];
+		}
+
+		return ['priceType' => 'set', 'priceMin' => $min, 'priceMax' => null, 'priceCurrency' => $currency];
 	}
 }

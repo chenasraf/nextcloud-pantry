@@ -558,6 +558,10 @@ final class ChecklistController extends OCSController {
 	 * @param int|null $sortOrder Optional sort order.
 	 * @param list<int> $storeIds Optional store ids to attach (must belong to the same house).
 	 * @param string|null $barcode Optional barcode (EAN/UPC) the item was created from.
+	 * @param string|null $priceType Price kind: 'set' (single amount), 'range' (min..max), or null/empty for no price.
+	 * @param float|null $priceMin Price amount for 'set', or the lower bound for 'range'.
+	 * @param float|null $priceMax Upper bound for 'range' (ignored for 'set').
+	 * @param string|null $priceCurrency ISO 4217 currency code (e.g. USD, ILS) the amounts are in.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -579,8 +583,12 @@ final class ChecklistController extends OCSController {
 		?int $sortOrder = null,
 		array $storeIds = [],
 		?string $barcode = null,
+		?string $priceType = null,
+		?float $priceMin = null,
+		?float $priceMax = null,
+		?string $priceCurrency = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $priceType, $priceMin, $priceMax, $priceCurrency): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
@@ -601,6 +609,10 @@ final class ChecklistController extends OCSController {
 				'sortOrder' => $sortOrder ?? 0,
 				'storeIds' => $storeIds,
 				'barcode' => $barcode,
+				'priceType' => $priceType,
+				'priceMin' => $priceMin,
+				'priceMax' => $priceMax,
+				'priceCurrency' => $priceCurrency,
 			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
@@ -634,6 +646,10 @@ final class ChecklistController extends OCSController {
 	 * @param int|null $targetListId Move item to a different list (must belong to the same house).
 	 * @param list<int>|null $storeIds New set of store ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 * @param string|null $barcode New barcode (EAN/UPC); empty string clears.
+	 * @param string|null $priceType Price kind: 'set', 'range', or empty string to clear the price. Null leaves the price unchanged.
+	 * @param float|null $priceMin Price amount for 'set', or the lower bound for 'range'.
+	 * @param float|null $priceMax Upper bound for 'range' (ignored for 'set').
+	 * @param string|null $priceCurrency ISO 4217 currency code (e.g. USD, ILS) the amounts are in.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -658,8 +674,12 @@ final class ChecklistController extends OCSController {
 		?int $targetListId = null,
 		?array $storeIds = null,
 		?string $barcode = null,
+		?string $priceType = null,
+		?float $priceMin = null,
+		?float $priceMax = null,
+		?string $priceCurrency = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $priceType, $priceMin, $priceMax, $priceCurrency): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId);
@@ -704,6 +724,14 @@ final class ChecklistController extends OCSController {
 			if ($barcode !== null) {
 				$patch['barcode'] = $barcode;
 			}
+			// Price is a compound field. A non-null priceType (including the empty
+			// string, which clears) means the whole group is being set.
+			if ($priceType !== null) {
+				$patch['priceType'] = $priceType === '' ? null : $priceType;
+				$patch['priceMin'] = $priceMin;
+				$patch['priceMax'] = $priceMax;
+				$patch['priceCurrency'] = $priceCurrency;
+			}
 			if ($storeIds !== null) {
 				$ids = array_map('intval', $storeIds);
 				$this->stores->assertStoresInHouse($houseId, $ids);
@@ -740,7 +768,7 @@ final class ChecklistController extends OCSController {
 					(int)$targetList->getId(),
 					$targetList->getName(),
 				);
-			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null) {
+			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $priceType !== null) {
 				$this->activity->publishItemUpdated(
 					$houseId,
 					$houseName,

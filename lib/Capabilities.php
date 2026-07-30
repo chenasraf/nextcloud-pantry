@@ -56,6 +56,7 @@ class Capabilities implements IPublicCapability {
 					'category-sort',
 					'stores',
 					'barcode',
+					'item-price',
 					'photos',
 					'notes',
 					'note-pinning',

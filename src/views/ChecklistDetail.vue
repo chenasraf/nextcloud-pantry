@@ -137,6 +137,7 @@
         :available-lists="isMeta ? allLists : []"
         :reuse-candidates="reuseCandidates"
         :current-list-id="isMeta ? null : listIdNum"
+        :default-currency="defaultCurrency"
         @add="handleAdd"
         @update:delete-on-done-default="handleDeleteOnDoneDefaultChange"
         @reuse-existing="onReuseFromSuggestion"
@@ -148,6 +149,7 @@
         v-model:selected-category-ids="filterCategoryIds"
         v-model:selected-store-ids="filterStoreIds"
         v-model:selected-list-ids="filterListIds"
+        v-model:price-filter="filterPrice"
         :items="items"
         :categories="categories.items.value"
         :stores="stores.items.value"
@@ -304,6 +306,7 @@
       :item="editing"
       :house-id="houseIdNum"
       :saving="savingEdit"
+      :default-currency="defaultCurrency"
       @update:open="(v) => !v && (editing = null)"
       @save="handleSaveEdit"
     />
@@ -577,7 +580,12 @@ import FileExportIcon from '@icons/FileExport.vue'
 import FileImportIcon from '@icons/FileImport.vue'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
-import { ChecklistFilter, NO_CATEGORY_ID, NO_STORE_ID } from '@/components/ChecklistFilter'
+import {
+  ChecklistFilter,
+  NO_CATEGORY_ID,
+  NO_STORE_ID,
+  type PriceFilterValue,
+} from '@/components/ChecklistFilter'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
@@ -607,7 +615,14 @@ import { getList, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
 import type { Checklist, ChecklistItem, Category, Store } from '@/api/types'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
-import { getChecklistItemSort, setChecklistItemSort } from '@/api/prefs'
+import {
+  getChecklistItemSort,
+  setChecklistItemSort,
+  getLastCurrency,
+  setLastCurrency,
+} from '@/api/prefs'
+import { hasPrice } from '@/utils/price'
+import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
@@ -869,6 +884,29 @@ onBeforeUnmount(() => {
 const filterQuery = ref('')
 const filterCategoryIds = ref<number[]>([])
 const filterStoreIds = ref<number[]>([])
+const filterPrice = ref<PriceFilterValue>({ min: null, max: null, currency: null })
+
+// ----- Last-used currency (per house) -----
+// Preselected for new/edited prices, and updated whenever an item is saved with
+// a currency so the next one defaults to it.
+const defaultCurrency = ref(DEFAULT_CURRENCY)
+
+async function loadDefaultCurrency() {
+  try {
+    defaultCurrency.value = await getLastCurrency(houseIdNum.value)
+  } catch {
+    // Keep the fallback currency on failure.
+  }
+}
+void loadDefaultCurrency()
+watch(houseIdNum, () => void loadDefaultCurrency())
+
+function rememberCurrency(currency: string | null | undefined) {
+  const code = (currency ?? '').toUpperCase()
+  if (!code || code === defaultCurrency.value) return
+  defaultCurrency.value = code
+  void setLastCurrency(houseIdNum.value, code).catch(() => {})
+}
 
 // List filter is only meaningful in the meta "All lists" view. Its selection is
 // persisted per house in localStorage so it survives navigation and reloads.
@@ -920,6 +958,10 @@ const filteredItems = computed(() => {
       return attached.some((id) => storeIds.includes(id))
     })
   }
+  const price = filterPrice.value
+  if (price.min != null || price.max != null || price.currency != null) {
+    result = result.filter((i) => matchesPriceFilter(i, price))
+  }
   const q = filterQuery.value.trim().toLowerCase()
   if (q) {
     result = result.filter(
@@ -930,6 +972,22 @@ const filteredItems = computed(() => {
   }
   return result
 })
+
+// An item passes the price filter when its price overlaps [min, max]. A single
+// "set" price is treated as a zero-width range. When a currency is chosen, only
+// items in that currency match; otherwise amounts compare verbatim across all
+// currencies (no conversion). Items with no price never match an active filter.
+function matchesPriceFilter(item: ChecklistItem, price: PriceFilterValue): boolean {
+  if (!hasPrice(item)) return false
+  if (price.currency != null && (item.priceCurrency ?? '').toUpperCase() !== price.currency) {
+    return false
+  }
+  const lo = item.priceMin!
+  const hi = item.priceType === 'range' && item.priceMax != null ? item.priceMax : lo
+  if (price.min != null && hi < price.min) return false
+  if (price.max != null && lo > price.max) return false
+  return true
+}
 
 // ----- Partitioned items -----
 
@@ -1315,6 +1373,9 @@ async function handleAdd(
       // 'add' falls through to a normal add below.
     }
   }
+  if (input.priceType === 'set' || input.priceType === 'range') {
+    rememberCurrency(input.priceCurrency)
+  }
   adding.value = true
   try {
     const created = await add(input, targetListId ?? undefined)
@@ -1446,6 +1507,9 @@ async function handleSaveEdit(
   pendingImage: File | null,
   shouldClearImage: boolean,
 ) {
+  if (patch.priceType === 'set' || patch.priceType === 'range') {
+    rememberCurrency(patch.priceCurrency)
+  }
   savingEdit.value = true
   try {
     await update(itemId, patch)

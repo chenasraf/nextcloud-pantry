@@ -106,6 +106,8 @@ export interface HousePrefs extends NotificationPrefs {
   categorySort: CategorySort
   /** When true, show the avatar of the user who added each checklist item. */
   showAddedBy: boolean
+  /** Last-used currency code (ISO 4217) for item prices in this house. */
+  lastCurrency: string
 }
 
 const housePrefsDefaults: HousePrefs = {
@@ -117,6 +119,7 @@ const housePrefsDefaults: HousePrefs = {
   checklistSort: 'custom',
   categorySort: 'name_asc',
   showAddedBy: false,
+  lastCurrency: 'USD',
   notifyPhoto: true,
   notifyNoteCreate: true,
   notifyNoteEdit: true,
@@ -215,6 +218,16 @@ export async function setCategorySort(
 ): Promise<{ sort: CategorySort }> {
   const p = await setHousePrefs(houseId, { categorySort: sort })
   return { sort: p.categorySort }
+}
+
+export async function getLastCurrency(houseId: number): Promise<string> {
+  const p = await getHousePrefs(houseId)
+  return p.lastCurrency
+}
+
+export async function setLastCurrency(houseId: number, currency: string): Promise<string> {
+  const p = await setHousePrefs(houseId, { lastCurrency: currency })
+  return p.lastCurrency
 }
 
 export async function getImageFolder(houseId: number): Promise<string> {

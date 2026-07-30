@@ -281,6 +281,30 @@ class PrefsService {
 		return $value;
 	}
 
+	// ----- Last-used currency (per house) -----
+
+	private const KEY_LAST_CURRENCY = 'last_currency';
+	public const DEFAULT_CURRENCY = 'USD';
+
+	public function getLastCurrency(string $uid, int $houseId): string {
+		$value = $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_LAST_CURRENCY . '_' . $houseId,
+			self::DEFAULT_CURRENCY,
+		);
+		return $value !== '' ? $value : self::DEFAULT_CURRENCY;
+	}
+
+	public function setLastCurrency(string $uid, int $houseId, string $currency): string {
+		$normalized = strtoupper(trim($currency));
+		if ($normalized === '') {
+			$normalized = self::DEFAULT_CURRENCY;
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_LAST_CURRENCY . '_' . $houseId, $normalized);
+		return $normalized;
+	}
+
 	// ----- Notification preferences -----
 
 	public function getNotificationPref(string $uid, int $houseId, string $prefKey): bool {
@@ -331,6 +355,7 @@ class PrefsService {
 			'checklistSort' => $this->getChecklistSort($uid, $houseId),
 			'categorySort' => $this->getCategorySort($uid, $houseId),
 			'showAddedBy' => $this->getShowAddedBy($uid, $houseId),
+			'lastCurrency' => $this->getLastCurrency($uid, $houseId),
 			...$this->getNotificationPrefs($uid, $houseId),
 		];
 	}
@@ -362,6 +387,9 @@ class PrefsService {
 		}
 		if (array_key_exists('showAddedBy', $patch) && is_bool($patch['showAddedBy'])) {
 			$this->setShowAddedBy($uid, $houseId, $patch['showAddedBy']);
+		}
+		if (array_key_exists('lastCurrency', $patch) && is_string($patch['lastCurrency'])) {
+			$this->setLastCurrency($uid, $houseId, $patch['lastCurrency']);
 		}
 		// Notification prefs
 		$notifKeys = [

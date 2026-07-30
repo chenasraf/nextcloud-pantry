@@ -132,6 +132,7 @@ final class PrefsController extends OCSController {
 	 * @param string|null $checklistSort Checklist (list) sort mode (name_asc, name_desc, custom).
 	 * @param string|null $categorySort Category sort mode (name_asc, name_desc, custom).
 	 * @param bool|null $showAddedBy Show the avatar of the user that added each checklist item.
+	 * @param string|null $lastCurrency Last-used currency code (ISO 4217) for item prices in this house.
 	 * @param bool|null $notifyPhoto Photo upload notifications.
 	 * @param bool|null $notifyNoteCreate Note creation notifications.
 	 * @param bool|null $notifyNoteEdit Note edit notifications.
@@ -155,6 +156,7 @@ final class PrefsController extends OCSController {
 		?string $checklistSort = null,
 		?string $categorySort = null,
 		?bool $showAddedBy = null,
+		?string $lastCurrency = null,
 		?bool $notifyPhoto = null,
 		?bool $notifyNoteCreate = null,
 		?bool $notifyNoteEdit = null,
@@ -162,7 +164,7 @@ final class PrefsController extends OCSController {
 		?bool $notifyItemRecur = null,
 		?bool $notifyItemDone = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $showAddedBy, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $showAddedBy, $lastCurrency, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$patch = array_filter([
@@ -174,6 +176,7 @@ final class PrefsController extends OCSController {
 				'checklistSort' => $checklistSort,
 				'categorySort' => $categorySort,
 				'showAddedBy' => $showAddedBy,
+				'lastCurrency' => $lastCurrency,
 				'notifyPhoto' => $notifyPhoto,
 				'notifyNoteCreate' => $notifyNoteCreate,
 				'notifyNoteEdit' => $notifyNoteEdit,
