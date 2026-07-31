@@ -14,6 +14,7 @@ OC.L10N.register(
     "Remove image" : "Eliminar imagen",
     "All" : "Todos",
     "Categories" : "Categoría",
+    "Clear" : "Borrar",
     "Everyone" : "Todos",
     "Delete permanently" : "Borrar permanentemente",
     "Restore" : "Restaurar",

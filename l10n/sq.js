@@ -17,6 +17,7 @@ OC.L10N.register(
     "Remove image" : "Hiqe figurën",
     "All" : "Të gjithë",
     "Categories" : "Kategoritë",
+    "Clear" : "Pastro",
     "Everyone" : "Kushdo",
     "Delete permanently" : "Fshije përgjithmonë",
     "Restore" : "Rikthe",

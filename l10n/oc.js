@@ -20,6 +20,8 @@ OC.L10N.register(
     "All" : "Tot",
     "No category" : "Cap de categoria",
     "Categories" : "Categorias",
+    "Max" : "Max",
+    "Clear" : "Escafar",
     "Everyone" : "Tot lo monde",
     "Delete permanently" : "Suprimir definitivament",
     "Restore" : "Restaurar",

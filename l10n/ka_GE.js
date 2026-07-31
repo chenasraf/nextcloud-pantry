@@ -14,6 +14,7 @@ OC.L10N.register(
     "Remove image" : "სურათის წაშლა",
     "All" : "ყველა",
     "Categories" : "კატეგორიები",
+    "Clear" : "გასუფთავება",
     "Everyone" : "ყველა",
     "Delete permanently" : "სამუდამოდ წაშლა",
     "Restore" : "აღდგენა",

@@ -289,6 +289,7 @@ OC.L10N.register(
     "Photo actions" : "Bilethandlingar",
     "Move to board" : "Flytt til vegg",
     "Photo preview" : "Førehandsvisning",
+    "Set" : "Sett",
     "e.g. 2 L, 500 g" : "t.d. 2 l, 500 g",
     "Decrease quantity" : "Auk mengd",
     "Increase quantity" : "Minsk mengd",

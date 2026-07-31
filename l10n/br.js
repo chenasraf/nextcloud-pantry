@@ -13,6 +13,7 @@ OC.L10N.register(
     "Remove image" : "Lemel skeudenn",
     "All" : "Pep tra",
     "Categories" : "Rummadoù",
+    "Clear" : "Netaat",
     "Everyone" : "Toud an dud",
     "Delete permanently" : "Dilemel da viken",
     "Status" : "Statud",

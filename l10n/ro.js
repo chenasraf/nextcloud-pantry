@@ -21,6 +21,7 @@ OC.L10N.register(
     "No category" : "Fără categorie ",
     "Lists" : "Liste",
     "Categories" : "Categori",
+    "Clear" : "Șterge ",
     "Everyone" : "Toți",
     "Delete permanently" : "Șterge permanent",
     "Restore" : "Restaurare",

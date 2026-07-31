@@ -15,6 +15,7 @@ OC.L10N.register(
     "Remove image" : "ลบรูปภาพ",
     "All" : "ทั้งหมด",
     "Categories" : "หมวดหมู่",
+    "Clear" : "ล้าง",
     "Everyone" : "ทุกคน",
     "Delete permanently" : "ลบแบบถาวร",
     "Restore" : "คืนค่า",

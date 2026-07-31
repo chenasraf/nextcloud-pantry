@@ -13,6 +13,7 @@ OC.L10N.register(
     "Description" : "විස්තරය",
     "All" : "සියල්ල",
     "No category" : "ප්‍රවර්ග නැත",
+    "Max" : "උපරිම",
     "Everyone" : "සැවොම",
     "Restore" : "ප්‍රතිෂ්ථාපනය",
     "Photos" : "ඡායාරූප",
