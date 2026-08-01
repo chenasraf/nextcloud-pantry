@@ -40,7 +40,7 @@ Pantry also has companion apps for mobile and desktop that let you manage your l
 	<screenshot>https://raw.githubusercontent.com/chenasraf/nextcloud-pantry/refs/heads/master/screenshots/screenshot-02.png</screenshot>
 	<screenshot>https://raw.githubusercontent.com/chenasraf/nextcloud-pantry/refs/heads/master/screenshots/screenshot-03.png</screenshot>
 	<dependencies>
-		<nextcloud min-version="29" max-version="34"/>
+		<nextcloud min-version="29" max-version="35"/>
 	</dependencies>
 	<background-jobs>
 		<job>OCA\Pantry\BackgroundJob\ReopenRecurringItemsJob</job>
