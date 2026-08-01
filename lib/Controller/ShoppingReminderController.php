@@ -100,7 +100,7 @@ final class ShoppingReminderController extends OCSController {
 	 *
 	 * 200: Reminder updated
 	 */
-	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-reminders/{reminderId}')]
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-reminders/{reminderId}', requirements: ['reminderId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function update(int $houseId, int $reminderId, ?string $text = null, ?string $showOn = null, ?bool $enabled = null): DataResponse {
@@ -156,7 +156,7 @@ final class ShoppingReminderController extends OCSController {
 	 *
 	 * 200: Reminder deleted
 	 */
-	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/shopping-reminders/{reminderId}')]
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/shopping-reminders/{reminderId}', requirements: ['reminderId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function destroy(int $houseId, int $reminderId): DataResponse {
