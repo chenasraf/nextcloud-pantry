@@ -16,7 +16,6 @@
         class="shop-review__reminders"
         :house-id="houseId"
         :moment="reminderMoment"
-        manageable
         @manage="remindersOpen = true"
       />
 

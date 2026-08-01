@@ -4,11 +4,7 @@
       <header class="shop-start__head">
         <CartIcon :size="28" />
         <h2>{{ strings.title }}</h2>
-        <NcButton class="shop-start__head-action" variant="tertiary" @click="remindersOpen = true">
-          <template #icon><BellRingIcon :size="20" /></template>
-          {{ strings.reminders }}
-        </NcButton>
-        <NcButton variant="tertiary" @click="goToHistory">
+        <NcButton class="shop-start__head-action" variant="tertiary" @click="goToHistory">
           <template #icon><HistoryIcon :size="20" /></template>
           {{ strings.pastTrips }}
         </NcButton>
@@ -37,6 +33,7 @@
             class="shop-start__reminders"
             :house-id="houseIdNum"
             moment="on_start"
+            @manage="remindersOpen = true"
           />
 
           <section class="shop-start__section">
@@ -153,7 +150,6 @@ import CartIcon from '@icons/Cart.vue'
 import ClipboardListIcon from '@icons/ClipboardList.vue'
 import DragVerticalIcon from '@icons/DragVertical.vue'
 import HistoryIcon from '@icons/History.vue'
-import BellRingIcon from '@icons/BellRing.vue'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { ShoppingReminderBlock, ShoppingRemindersDialog } from '@/components/ShoppingReminders'
 import { useChecklists } from '@/composables/useChecklist'
@@ -456,7 +452,6 @@ function goToSession(session: ShoppingSession) {
 const strings = {
   title: t('pantry', 'Start shopping'),
   pastTrips: t('pantry', 'Shopping history'),
-  reminders: t('pantry', 'Reminders'),
   listsTitle: t('pantry', 'Lists to shop'),
   // TRANSLATORS: Button that selects every checklist in the list-picker.
   selectAll: t('pantry', 'Select all'),

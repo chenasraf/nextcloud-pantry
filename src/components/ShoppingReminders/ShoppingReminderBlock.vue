@@ -1,10 +1,10 @@
 <template>
-  <section v-if="reminders.length > 0" class="reminder-block">
+  <section class="reminder-block" :class="{ 'reminder-block--empty': reminders.length === 0 }">
     <header class="reminder-block__head">
       <BellRingIcon :size="18" />
       <span class="reminder-block__title">{{ strings.title }}</span>
       <NcButton
-        v-if="manageable"
+        v-if="reminders.length > 0"
         class="reminder-block__manage"
         variant="tertiary"
         :aria-label="strings.manage"
@@ -14,7 +14,8 @@
         <template #icon><PencilIcon :size="16" /></template>
       </NcButton>
     </header>
-    <ul class="reminder-block__list">
+
+    <ul v-if="reminders.length > 0" class="reminder-block__list">
       <li v-for="reminder in reminders" :key="reminder.id" class="reminder-block__item">
         <NcCheckboxRadioSwitch
           :model-value="acked.has(reminder.id)"
@@ -26,6 +27,14 @@
         </NcCheckboxRadioSwitch>
       </li>
     </ul>
+
+    <div v-else class="reminder-block__empty">
+      <span class="reminder-block__empty-text">{{ strings.empty }}</span>
+      <NcButton variant="secondary" @click="$emit('manage')">
+        <template #icon><PlusIcon :size="18" /></template>
+        {{ strings.addCta }}
+      </NcButton>
+    </div>
   </section>
 </template>
 
@@ -36,14 +45,13 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcButton from '@nextcloud/vue/components/NcButton'
 import BellRingIcon from '@icons/BellRing.vue'
 import PencilIcon from '@icons/Pencil.vue'
+import PlusIcon from '@icons/Plus.vue'
 import { useReminders } from '@/composables/useReminders'
 import type { ShoppingReminderMoment } from '@/api/types'
 
 const props = defineProps<{
   houseId: number
   moment: ShoppingReminderMoment
-  /** When true, show a pencil that emits `manage` to edit reminders in place. */
-  manageable?: boolean
 }>()
 defineEmits<{
   manage: []
@@ -72,6 +80,10 @@ const strings = {
   title: t('pantry', 'Reminders'),
   // TRANSLATORS: Button that opens the reminder manager to edit prompts.
   manage: t('pantry', 'Manage reminders'),
+  // TRANSLATORS: Shown in the reminders area when this step has no reminders yet.
+  empty: t('pantry', 'No reminders for this step yet.'),
+  // TRANSLATORS: Button that opens the manager to create the first reminders.
+  addCta: t('pantry', 'Add reminders'),
 }
 </script>
 
@@ -113,6 +125,25 @@ const strings = {
   &__done {
     text-decoration: line-through;
     color: var(--color-text-maxcontrast);
+  }
+
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  &__empty-text {
+    color: var(--color-text-maxcontrast);
+    font-weight: 400;
+  }
+
+  // A moment with no reminders is a quiet prompt, not a callout.
+  &--empty {
+    background: transparent;
+    border-style: dashed;
   }
 }
 </style>
