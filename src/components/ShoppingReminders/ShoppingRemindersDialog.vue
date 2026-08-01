@@ -305,6 +305,7 @@ const strings = {
     gap: 0.5rem;
     flex-wrap: wrap;
     padding-top: 0.5rem;
+    margin-bottom: 0.5rem;
 
     .reminders__text {
       flex: 1;
