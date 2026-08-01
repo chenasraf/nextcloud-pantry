@@ -28,6 +28,14 @@ use OCP\AppFramework\Db\DoesNotExistException;
  * Lifecycle is timestamp-driven and enforced here.
  */
 class ShoppingSessionService {
+	/**
+	 * Presence staleness cutoff (ADR 0004): a live session is "present" only if
+	 * its last_seen_at is within this window. Chosen forgiving (~15 min) so a
+	 * ~1-min heartbeat never flickers from dropped beats, yet a genuinely-gone
+	 * shopper clears well before the ~4h abandonment auto-close.
+	 */
+	public const PRESENCE_STALE_SECONDS = 900;
+
 	public function __construct(
 		private ShoppingSessionMapper $sessions,
 		private ShoppingSessionListMapper $sessionLists,
@@ -53,6 +61,45 @@ class ShoppingSessionService {
 	 */
 	public function findCurrentForUser(string $uid): ?ShoppingSession {
 		return $this->sessions->findLiveByUser($uid);
+	}
+
+	/**
+	 * Presence heartbeat (ADR 0004): stamp the caller's live session as seen now
+	 * if it belongs to this house. Pure liveness — it does not touch
+	 * `active_store_id` (advancing is a separate explicit action). A caller with
+	 * no live session here (or whose only live session is in another house) simply
+	 * doesn't stamp; the presence read still returns.
+	 */
+	public function heartbeat(int $houseId, string $uid, ?int $now = null): void {
+		$session = $this->sessions->findLiveByUser($uid);
+		if ($session === null || $session->getHouseId() !== $houseId) {
+			return;
+		}
+		$now ??= time();
+		$session->setLastSeenAt($now);
+		$session->setUpdatedAt($now);
+		$this->sessions->update($session);
+	}
+
+	/**
+	 * Derived house presence (ADR 0004): the live, fresh, opted-in sessions in the
+	 * house, each attributed to its active store. Not self-filtered — the caller's
+	 * own session is included; the client decides whether to render it.
+	 *
+	 * @return list<array{userId: string, activeStoreId: int|null, lastSeenAt: int}>
+	 */
+	public function presence(int $houseId, ?int $now = null): array {
+		$now ??= time();
+		$cutoff = $now - self::PRESENCE_STALE_SECONDS;
+		$out = [];
+		foreach ($this->sessions->findPresentInHouse($houseId, $cutoff) as $session) {
+			$out[] = [
+				'userId' => $session->getUserId(),
+				'activeStoreId' => $session->getActiveStoreId(),
+				'lastSeenAt' => (int)$session->getLastSeenAt(),
+			];
+		}
+		return $out;
 	}
 
 	/**
@@ -587,6 +634,18 @@ class ShoppingSessionService {
 		$store->setBilledCurrency($this->normalizeCurrency($billedCurrency));
 		$this->sessionStores->update($store);
 		return $store;
+	}
+
+	/**
+	 * Toggle the per-session "shop privately" opt-out (ADR 0004). A private trip
+	 * is hidden from housemates' presence and (per ADR 0008) from their history.
+	 * A contextual, per-trip visibility choice — not a lifecycle transition.
+	 */
+	public function setPrivacy(ShoppingSession $session, bool $isPrivate): ShoppingSession {
+		$session->setIsPrivate($isPrivate);
+		$session->setUpdatedAt(time());
+		$this->sessions->update($session);
+		return $session;
 	}
 
 	/**

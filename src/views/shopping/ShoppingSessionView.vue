@@ -23,6 +23,16 @@
                 <component :is="storeIcon(entry.storeId)" :size="18" />
               </span>
               <span class="shop__store-name">{{ storeName(entry.storeId) }}</span>
+              <span v-if="shoppersAt(entry.storeId).length" class="shop__store-avatars">
+                <NcAvatar
+                  v-for="uid in shoppersAt(entry.storeId)"
+                  :key="uid"
+                  :user="uid"
+                  :size="20"
+                  :show-user-status="false"
+                  disable-menu
+                />
+              </span>
             </button>
           </div>
           <div class="shop__progress">
@@ -30,6 +40,19 @@
             <div class="shop__progress-track">
               <div class="shop__progress-fill" :style="{ width: progressPct + '%' }" />
             </div>
+            <button
+              type="button"
+              class="shop__privacy"
+              :class="{ 'shop__privacy--on': isPrivate }"
+              :disabled="savingPrivacy"
+              :aria-pressed="isPrivate"
+              :aria-label="privacyLabel"
+              :title="privacyLabel"
+              @click="togglePrivacy"
+            >
+              <IncognitoIcon v-if="isPrivate" :size="18" />
+              <IncognitoOffIcon v-else :size="18" />
+            </button>
           </div>
         </div>
       </header>
@@ -126,11 +149,14 @@ import { t, n } from '@nextcloud/l10n'
 import { showError, showInfo } from '@nextcloud/dialogs'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcAvatar from '@nextcloud/vue/components/NcAvatar'
 import CartCheckIcon from '@icons/CartCheck.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import FlagCheckeredIcon from '@icons/FlagCheckered.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
 import ChevronRightIcon from '@icons/ChevronRight.vue'
+import IncognitoIcon from '@icons/Incognito.vue'
+import IncognitoOffIcon from '@icons/IncognitoOff.vue'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { ShoppingReviewDialog } from '@/components/ShoppingReview'
@@ -141,6 +167,7 @@ import { useCategories } from '@/composables/useCategories'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { formatEstimate } from '@/utils/price'
+import { getCurrentUserId } from '@/utils/currentUser'
 import {
   getCurrentSession,
   listSessionItems,
@@ -149,8 +176,10 @@ import {
   checkSessionItem,
   uncheckSessionItem,
   getReview,
+  sendHeartbeat,
+  setSessionPrivacy,
 } from '@/api/shopping'
-import type { Category, ChecklistItem, ShoppingSession } from '@/api/types'
+import type { Category, ChecklistItem, ShoppingPresenceEntry, ShoppingSession } from '@/api/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -176,6 +205,30 @@ const previewing = ref<ChecklistItem | null>(null)
 const doneOpen = ref(false)
 const reviewOpen = ref(false)
 const reviewMode = ref<'advance' | 'close'>('close')
+// Derived presence of housemates out shopping (ADR 0004), refreshed on the same
+// focused poll as the item list. The caller's own entry is filtered client-side.
+const presence = ref<ShoppingPresenceEntry[]>([])
+const savingPrivacy = ref(false)
+
+const selfUid = getCurrentUserId()
+
+const isPrivate = computed(() => session.value?.isPrivate ?? false)
+const privacyLabel = computed(() => (isPrivate.value ? strings.privacyOn : strings.privacyOff))
+
+// Housemates (not the caller) attributed to each store, for the store-bar avatars.
+const presenceByStore = computed(() => {
+  const map = new Map<number, string[]>()
+  for (const entry of presence.value) {
+    if (entry.userId === selfUid || entry.activeStoreId == null) continue
+    const list = map.get(entry.activeStoreId) ?? []
+    list.push(entry.userId)
+    map.set(entry.activeStoreId, list)
+  }
+  return map
+})
+function shoppersAt(storeId: number): string[] {
+  return presenceByStore.value.get(storeId) ?? []
+}
 
 const sequence = computed(() => session.value?.stores ?? [])
 const activeIndex = computed(() =>
@@ -317,6 +370,32 @@ async function goToStore(storeId: number) {
   }
 }
 
+// Heartbeat: stamp our liveness and pull the fresh house presence in one round
+// trip. Non-critical — a failure just leaves the last-known avatars in place.
+async function pollPresence() {
+  if (!session.value) return
+  try {
+    presence.value = await sendHeartbeat(houseIdNum.value)
+  } catch {
+    /* keep the last-known presence */
+  }
+}
+
+// Toggle "shop privately": hide (or re-show) our trip in housemates' presence and
+// history. Optimistic on the session flag, then refresh presence to reflect it.
+async function togglePrivacy() {
+  if (!session.value || savingPrivacy.value) return
+  savingPrivacy.value = true
+  try {
+    session.value = await setSessionPrivacy(houseIdNum.value, session.value.id, !isPrivate.value)
+    await pollPresence()
+  } catch (e) {
+    showError((e as Error).message || strings.privacyFailed)
+  } finally {
+    savingPrivacy.value = false
+  }
+}
+
 // The primary action opens the review first: a per-store till summary before
 // advancing, or the full grouped review before finishing.
 function onPrimaryAction() {
@@ -352,8 +431,13 @@ async function finish() {
 let pollTimer: ReturnType<typeof setInterval> | null = null
 const POLL_MS = 60000
 
+function pollTick() {
+  void loadItems()
+  void pollPresence()
+}
+
 function onVisibility() {
-  if (document.visibilityState === 'visible') void loadItems()
+  if (document.visibilityState === 'visible') pollTick()
 }
 
 onMounted(async () => {
@@ -381,8 +465,10 @@ onMounted(async () => {
       // Non-critical; the drawer just starts from this view's checks.
     }
     await loadItems()
+    // Seed presence immediately (also stamps our first heartbeat), then poll.
+    await pollPresence()
     pollTimer = setInterval(() => {
-      if (document.visibilityState === 'visible') void loadItems()
+      if (document.visibilityState === 'visible') pollTick()
     }, POLL_MS)
     document.addEventListener('visibilitychange', onVisibility)
   } catch (e) {
@@ -410,6 +496,13 @@ const strings = {
   advanceFailed: t('pantry', 'Could not switch store.'),
   finishFailed: t('pantry', 'Could not finish the trip.'),
   loadFailed: t('pantry', 'Could not load the shopping trip.'),
+  // TRANSLATORS: Toggle button label; the trip is currently private (hidden from
+  // housemates). Activating it makes the trip visible again.
+  privacyOn: t('pantry', 'Shopping privately'),
+  // TRANSLATORS: Toggle button label; the trip is currently visible to
+  // housemates. Activating it hides the trip (shop privately).
+  privacyOff: t('pantry', 'Shop privately'),
+  privacyFailed: t('pantry', 'Could not change privacy.'),
 }
 </script>
 
@@ -477,6 +570,56 @@ const strings = {
   &__store-icon {
     display: inline-flex;
     flex-shrink: 0;
+  }
+
+  // Overlapping avatar stack of housemates attributed to this store.
+  &__store-avatars {
+    display: inline-flex;
+    align-items: center;
+    margin-inline-start: 0.25rem;
+
+    :deep(.avatardiv) {
+      box-shadow: 0 0 0 2px var(--color-main-background);
+
+      &:not(:first-child) {
+        margin-inline-start: -8px;
+      }
+    }
+  }
+
+  &__privacy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: var(--border-radius, 8px);
+    background: transparent;
+    color: var(--color-text-maxcontrast);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-background-hover);
+    }
+
+    &--on {
+      color: var(--color-primary-element-text);
+      background: var(--color-primary-element);
+
+      &:hover,
+      &:focus-visible {
+        background: var(--color-primary-element-hover);
+      }
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
   }
 
   &__progress {

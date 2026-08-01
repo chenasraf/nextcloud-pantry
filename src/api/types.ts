@@ -217,6 +217,14 @@ export interface ShoppingHistoryRow {
   grandTotal: ShoppingHistoryTotal[]
 }
 
+/** One present shopper in a house's derived shopping presence (ADR 0004). */
+export interface ShoppingPresenceEntry {
+  userId: string
+  /** The store the shopper is attributed to; null = live but no store chosen. */
+  activeStoreId: number | null
+  lastSeenAt: number
+}
+
 export interface Note {
   id: number
   houseId: number

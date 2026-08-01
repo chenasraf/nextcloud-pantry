@@ -496,6 +496,58 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame(1, $this->svc->purgeAgedSessions(180, 100000000));
 	}
 
+	public function testHeartbeatStampsOwnLiveSessionInHouse(): void {
+		$session = $this->makeSession(['id' => 5, 'houseId' => 1, 'userId' => 'alice', 'lastSeenAt' => 100]);
+		$this->sessions->method('findLiveByUser')->with('alice')->willReturn($session);
+		$this->sessions->method('findPresentInHouse')->willReturn([]);
+		$this->sessions->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$this->svc->heartbeat(1, 'alice', 5000);
+		$this->assertSame(5000, $session->getLastSeenAt());
+	}
+
+	public function testHeartbeatSkipsWhenLiveSessionInAnotherHouse(): void {
+		$session = $this->makeSession(['id' => 5, 'houseId' => 2, 'userId' => 'alice']);
+		$this->sessions->method('findLiveByUser')->with('alice')->willReturn($session);
+		$this->sessions->expects($this->never())->method('update');
+
+		// House 1 heartbeat, but the caller's only live trip is in house 2.
+		$this->svc->heartbeat(1, 'alice', 5000);
+	}
+
+	public function testHeartbeatSkipsWhenNoLiveSession(): void {
+		$this->sessions->method('findLiveByUser')->with('alice')->willReturn(null);
+		$this->sessions->expects($this->never())->method('update');
+
+		$this->svc->heartbeat(1, 'alice', 5000);
+	}
+
+	public function testPresenceMapsFreshSessionsAndCutoff(): void {
+		$now = 100000;
+		$this->sessions->expects($this->once())
+			->method('findPresentInHouse')
+			->with(1, $now - ShoppingSessionService::PRESENCE_STALE_SECONDS)
+			->willReturn([
+				$this->makeSession(['userId' => 'alice', 'activeStoreId' => 3, 'lastSeenAt' => 99000]),
+				$this->makeSession(['userId' => 'bob', 'activeStoreId' => null, 'lastSeenAt' => 99500]),
+			]);
+
+		$presence = $this->svc->presence(1, $now);
+
+		$this->assertSame([
+			['userId' => 'alice', 'activeStoreId' => 3, 'lastSeenAt' => 99000],
+			['userId' => 'bob', 'activeStoreId' => null, 'lastSeenAt' => 99500],
+		], $presence);
+	}
+
+	public function testSetPrivacyPersistsFlag(): void {
+		$session = $this->makeSession(['id' => 5, 'isPrivate' => false]);
+		$this->sessions->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$updated = $this->svc->setPrivacy($session, true);
+		$this->assertTrue($updated->getIsPrivate());
+	}
+
 	public function testGetWrapsMissingInNotFound(): void {
 		$this->sessions->method('findById')->willThrowException(new DoesNotExistException(''));
 		$this->expectException(NotFoundException::class);

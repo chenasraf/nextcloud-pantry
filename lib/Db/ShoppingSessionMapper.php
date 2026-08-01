@@ -85,6 +85,30 @@ class ShoppingSessionMapper extends QBMapper {
 	}
 
 	/**
+	 * Derived house presence (ADR 0004): live sessions in the house whose
+	 * last_seen_at is fresh (>= cutoff) and which have opted in (is_private
+	 * false or null). Newest heartbeat first. Not self-filtered — the caller's
+	 * own session is included; the client decides whether to render it.
+	 *
+	 * @return ShoppingSession[]
+	 */
+	public function findPresentInHouse(int $houseId, int $cutoff): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('closed_at'))
+			->andWhere($qb->expr()->gte('last_seen_at', $qb->createNamedParameter($cutoff, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->eq('is_private', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)),
+				$qb->expr()->isNull('is_private'),
+			))
+			->orderBy('last_seen_at', 'DESC')
+			->addOrderBy('id', 'DESC');
+		return $this->findEntities($qb);
+	}
+
+	/**
 	 * Live sessions whose last_seen_at predates the cutoff — abandoned trips the
 	 * lifecycle job auto-closes (ADR 0001).
 	 *

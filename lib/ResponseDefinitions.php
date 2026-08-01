@@ -198,6 +198,12 @@ namespace OCA\Pantry;
  *     count: int,
  * }
  *
+ * @psalm-type PantryShoppingPresenceEntry = array{
+ *     userId: string,
+ *     activeStoreId: int|null,
+ *     lastSeenAt: int,
+ * }
+ *
  * @psalm-type PantryShoppingHistoryRow = array{
  *     id: int,
  *     userId: string,

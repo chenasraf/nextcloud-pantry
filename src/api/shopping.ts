@@ -3,6 +3,7 @@ import type {
   ChecklistItem,
   ShoppingDoneToday,
   ShoppingHistoryRow,
+  ShoppingPresenceEntry,
   ShoppingReview,
   ShoppingSession,
 } from './types'
@@ -127,6 +128,36 @@ export async function getSessionSummary(
 ): Promise<ShoppingReview> {
   const resp = await ocs.get<ShoppingReview>(
     `/houses/${houseId}/shopping-sessions/${sessionId}/summary`,
+  )
+  return resp.data
+}
+
+/**
+ * Presence heartbeat: stamp the caller's live session as seen and return the
+ * current house presence in the same round-trip (ADR 0004).
+ */
+export async function sendHeartbeat(houseId: number): Promise<ShoppingPresenceEntry[]> {
+  const resp = await ocs.post<ShoppingPresenceEntry[]>(
+    `/houses/${houseId}/shopping-presence/heartbeat`,
+  )
+  return resp.data ?? []
+}
+
+/** Read-only house presence; requires no live session of the caller's own. */
+export async function getPresence(houseId: number): Promise<ShoppingPresenceEntry[]> {
+  const resp = await ocs.get<ShoppingPresenceEntry[]>(`/houses/${houseId}/shopping-presence`)
+  return resp.data ?? []
+}
+
+/** Toggle "shop privately" on a trip (per-session presence + history opt-out). */
+export async function setSessionPrivacy(
+  houseId: number,
+  sessionId: number,
+  isPrivate: boolean,
+): Promise<ShoppingSession> {
+  const resp = await ocs.patch<ShoppingSession>(
+    `/houses/${houseId}/shopping-sessions/${sessionId}/privacy`,
+    { isPrivate },
   )
   return resp.data
 }

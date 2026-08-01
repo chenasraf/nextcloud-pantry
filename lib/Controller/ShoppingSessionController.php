@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * @psalm-import-type PantryShoppingReview from ResponseDefinitions
  * @psalm-import-type PantryShoppingDoneToday from ResponseDefinitions
  * @psalm-import-type PantryShoppingHistoryRow from ResponseDefinitions
+ * @psalm-import-type PantryShoppingPresenceEntry from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  */
 final class ShoppingSessionController extends OCSController {
@@ -330,6 +331,80 @@ final class ShoppingSessionController extends OCSController {
 		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
 			$session = $this->loadViewableSession($sessionId, $houseId);
 			return new DataResponse($this->sessions->review($session));
+		});
+	}
+
+	/**
+	 * Presence heartbeat for a house
+	 *
+	 * Stamps the caller's live-session `last_seen_at` (if their trip is in this
+	 * house) and returns the current house presence in the same round-trip. Pure
+	 * liveness — it does not change the active store. ADR 0004.
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryShoppingPresenceEntry>, array{}>
+	 *
+	 * 200: Presence returned
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-presence/heartbeat')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function heartbeat(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$this->sessions->heartbeat($houseId, $uid);
+			return new DataResponse($this->sessions->presence($houseId));
+		});
+	}
+
+	/**
+	 * Read the current shopping presence in a house
+	 *
+	 * The live, fresh (within the ~15-min cutoff), opted-in trips in the house,
+	 * each attributed to its active store. Read-only and requires no live session,
+	 * so a housemate at home can see a trip is underway. ADR 0004.
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryShoppingPresenceEntry>, array{}>
+	 *
+	 * 200: Presence returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-presence')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function presence(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			return new DataResponse($this->sessions->presence($houseId));
+		});
+	}
+
+	/**
+	 * Toggle "shop privately" on a shopping session
+	 *
+	 * A per-trip visibility opt-out: a private trip is hidden from housemates'
+	 * presence and history. Owner-only. ADR 0004.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 * @param bool $isPrivate Whether the trip is private.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingSession, array{}>
+	 *
+	 * 200: Privacy updated
+	 */
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/privacy')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function setPrivacy(int $houseId, int $sessionId, bool $isPrivate): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId, $isPrivate): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$updated = $this->sessions->setPrivacy($session, $isPrivate);
+			return new DataResponse($this->sessions->composeDto($updated));
 		});
 	}
 
