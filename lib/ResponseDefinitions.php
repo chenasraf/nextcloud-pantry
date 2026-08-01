@@ -145,6 +145,31 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  * }
  *
+ * @psalm-type PantryShoppingSessionStore = array{
+ *     storeId: int,
+ *     position: int,
+ *     billedTotal: float|null,
+ *     billedCurrency: string|null,
+ * }
+ *
+ * @psalm-type PantryShoppingSession = array{
+ *     id: int,
+ *     houseId: int,
+ *     userId: string,
+ *     activeStoreId: int|null,
+ *     lastSeenAt: int,
+ *     closedAt: int|null,
+ *     includeUnassigned: bool,
+ *     isPrivate: bool,
+ *     billedTotal: float|null,
+ *     billedCurrency: string|null,
+ *     live: bool,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     listIds: list<int>,
+ *     stores: list<PantryShoppingSessionStore>,
+ * }
+ *
  * @psalm-type PantryShare = array{
  *     id: int,
  *     houseId: int,

@@ -86,7 +86,11 @@
       >
         <TextBoxOutlineIcon :size="14" />
       </span>
-      <span v-if="item.rrule" class="checklist-row__recurrence" :title="recurrenceTooltip">
+      <span
+        v-if="item.rrule && !compact"
+        class="checklist-row__recurrence"
+        :title="recurrenceTooltip"
+      >
         <RepeatIcon :size="14" />
         {{ formatRrule(item.rrule) }}
       </span>
@@ -124,7 +128,7 @@
         :tooltip-message="addedByTooltip"
       />
     </div>
-    <div v-if="!selectionMode && !suggestion" class="checklist-row__actions">
+    <div v-if="!selectionMode && !suggestion && !compact" class="checklist-row__actions">
       <NcButton variant="tertiary" :aria-label="strings.viewItem" @click="$emit('view', item)">
         <template #icon>
           <EyeIcon :size="18" />
@@ -253,6 +257,12 @@ const props = withDefaults(
      * whole row a single tap target that emits `select`.
      */
     suggestion?: boolean
+    /**
+     * Hides the per-row actions (view / edit / move / archive / delete). Used
+     * where those operations do not belong, e.g. the shopping view, while
+     * keeping the check control, image, and meta chips.
+     */
+    compact?: boolean
   }>(),
   {
     hideCategory: false,
@@ -267,6 +277,7 @@ const props = withDefaults(
     selectionMode: false,
     selected: false,
     suggestion: false,
+    compact: false,
   },
 )
 

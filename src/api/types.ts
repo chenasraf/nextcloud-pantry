@@ -142,6 +142,33 @@ export interface ChecklistItem {
   archivedAt: number | null
 }
 
+/** One store in a shopping session's ordered sequence. */
+export interface ShoppingSessionStore {
+  storeId: number
+  position: number
+  billedTotal: number | null
+  billedCurrency: string | null
+}
+
+/** A shopper's persisted trip. `live` mirrors `closedAt === null`. */
+export interface ShoppingSession {
+  id: number
+  houseId: number
+  userId: string
+  activeStoreId: number | null
+  lastSeenAt: number
+  closedAt: number | null
+  includeUnassigned: boolean
+  isPrivate: boolean
+  billedTotal: number | null
+  billedCurrency: string | null
+  live: boolean
+  createdAt: number
+  updatedAt: number
+  listIds: number[]
+  stores: ShoppingSessionStore[]
+}
+
 export interface Note {
   id: number
   houseId: number

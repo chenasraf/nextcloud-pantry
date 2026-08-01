@@ -180,6 +180,64 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Aggregate the unchecked, in-scope items to shop for a session.
+	 *
+	 * Scope is the union of the given list ids. Active-store narrowing: when
+	 * $activeStoreId is set, keep items assigned to that store, plus — when
+	 * $includeUnassigned — items with no store assignment at all (buy-anywhere);
+	 * items assigned only to other stores are hidden. With no active store, no
+	 * narrowing is applied. The item_stores LEFT JOIN is only added when
+	 * narrowing so multi-store items are not duplicated.
+	 *
+	 * Ordered by category sort_order then item sort_order, with uncategorized
+	 * items trailing. Returns a flat array the caller groups by category.
+	 *
+	 * @param int[] $listIds
+	 * @return ChecklistItem[]
+	 */
+	public function findForShoppingScope(array $listIds, ?int $activeStoreId, bool $includeUnassigned): array {
+		$listIds = array_values(array_unique(array_map('intval', $listIds)));
+		if ($listIds === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$items = $this->getTableName();
+		$categories = Application::tableName('categories');
+
+		$qb->select('i.*')
+			->from($items, 'i')
+			->leftJoin('i', $categories, 'c', $qb->expr()->eq('i.category_id', 'c.id'))
+			->where($qb->expr()->in('i.list_id', $qb->createNamedParameter($listIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->andWhere($qb->expr()->eq('i.done', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->isNull('i.deleted_at'))
+			->andWhere($qb->expr()->isNull('i.archived_at'));
+
+		if ($activeStoreId !== null) {
+			$itemStores = Application::tableName('item_stores');
+			$qb->leftJoin('i', $itemStores, 's', $qb->expr()->eq('i.id', 's.item_id'));
+			$storeMatch = $qb->expr()->eq('s.store_id', $qb->createNamedParameter($activeStoreId, IQueryBuilder::PARAM_INT));
+			if ($includeUnassigned) {
+				// s.store_id IS NULL only occurs for items with no item_stores row
+				// (the LEFT JOIN's null side), i.e. truly buy-anywhere items.
+				$qb->andWhere($qb->expr()->orX($storeMatch, $qb->expr()->isNull('s.store_id')));
+			} else {
+				$qb->andWhere($storeMatch);
+			}
+		}
+
+		$qb->orderBy(
+			$qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'),
+			'ASC',
+		)
+			->addOrderBy('c.sort_order', 'ASC')
+			->addOrderBy('i.sort_order', 'ASC')
+			->addOrderBy('i.id', 'ASC');
+
+		return $this->findEntities($qb);
+	}
+
+	/**
 	 * @throws DoesNotExistException
 	 */
 	public function findById(int $id, bool $includeDeleted = false): ChecklistItem {
