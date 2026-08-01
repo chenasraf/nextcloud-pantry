@@ -36,11 +36,7 @@
 
       <div class="shop__scroll">
         <div class="shop__body">
-          <NcEmptyContent
-            v-if="groups.length === 0 && doneItems.length === 0"
-            :name="emptyTitle"
-            :description="emptyBody"
-          >
+          <NcEmptyContent v-if="groups.length === 0" :name="emptyTitle" :description="emptyBody">
             <template #icon><CartCheckIcon /></template>
           </NcEmptyContent>
 
@@ -71,9 +67,14 @@
             </template>
           </ul>
 
-          <template v-if="doneItems.length > 0">
-            <h3 class="shop__section-title">{{ doneTitle }}</h3>
-            <ul class="shop__items shop__items--done">
+          <section v-if="doneItems.length > 0" class="shop__done">
+            <button type="button" class="shop__done-toggle" @click="doneOpen = !doneOpen">
+              <ChevronDownIcon v-if="doneOpen" :size="20" />
+              <ChevronRightIcon v-else :size="20" />
+              <span class="shop__done-title">{{ doneTitle }}</span>
+              <span class="shop__done-total">{{ doneEstimateText }}</span>
+            </button>
+            <ul v-if="doneOpen" class="shop__items shop__items--done">
               <ChecklistItemRow
                 v-for="item in doneItems"
                 :key="item.id"
@@ -86,7 +87,7 @@
                 @preview="openPreview"
               />
             </ul>
-          </template>
+          </section>
         </div>
       </div>
 
@@ -103,6 +104,17 @@
         :house-id="houseIdNum"
         @update:open="(v) => !v && (previewing = null)"
       />
+
+      <ShoppingReviewDialog
+        v-if="reviewOpen"
+        :open="reviewOpen"
+        :house-id="houseIdNum"
+        :session-id="session.id"
+        :mode="reviewMode"
+        :store-id="session.activeStoreId"
+        @update:open="reviewOpen = $event"
+        @confirm="onReviewConfirm"
+      />
     </template>
   </div>
 </template>
@@ -117,20 +129,26 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import CartCheckIcon from '@icons/CartCheck.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import FlagCheckeredIcon from '@icons/FlagCheckered.vue'
+import ChevronDownIcon from '@icons/ChevronDown.vue'
+import ChevronRightIcon from '@icons/ChevronRight.vue'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
+import { ShoppingReviewDialog } from '@/components/ShoppingReview'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { useStores } from '@/composables/useStores'
 import { useCategories } from '@/composables/useCategories'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
-import { toggleItem } from '@/api/lists'
+import { formatEstimate } from '@/utils/price'
 import {
   getCurrentSession,
   listSessionItems,
   advanceStore,
   closeSession as apiCloseSession,
+  checkSessionItem,
+  uncheckSessionItem,
+  getReview,
 } from '@/api/shopping'
 import type { Category, ChecklistItem, ShoppingSession } from '@/api/types'
 
@@ -155,6 +173,9 @@ const doneItems = ref<ChecklistItem[]>([])
 const loading = ref(true)
 const busy = ref(false)
 const previewing = ref<ChecklistItem | null>(null)
+const doneOpen = ref(false)
+const reviewOpen = ref(false)
+const reviewMode = ref<'advance' | 'close'>('close')
 
 const sequence = computed(() => session.value?.stores ?? [])
 const activeIndex = computed(() =>
@@ -172,6 +193,22 @@ const progressLabel = computed(() =>
   n('pantry', '%n in cart', '%n in cart', doneItems.value.length),
 )
 const doneTitle = computed(() => n('pantry', 'Done (%n)', 'Done (%n)', doneItems.value.length))
+
+// Client-side estimate of what's in the cart this trip, shown in the drawer
+// header. Range-aware, per-currency; the authoritative totals live in the review.
+const doneEstimateText = computed(() => {
+  const byCurrency = new Map<string, { min: number; max: number }>()
+  for (const item of doneItems.value) {
+    if ((item.priceType !== 'set' && item.priceType !== 'range') || item.priceMin == null) continue
+    const cur = item.priceCurrency ?? ''
+    const max = item.priceType === 'range' && item.priceMax != null ? item.priceMax : item.priceMin
+    const entry = byCurrency.get(cur) ?? { min: 0, max: 0 }
+    entry.min += item.priceMin
+    entry.max += max
+    byCurrency.set(cur, entry)
+  }
+  return formatEstimate([...byCurrency].map(([currency, r]) => ({ currency, ...r })))
+})
 
 interface Group {
   key: number | null
@@ -230,17 +267,19 @@ async function loadItems() {
   items.value = fetched.filter((i) => !doneIds.has(i.id))
 }
 
-// Whole-row check reuses the existing item toggle. Checked items move into the
-// Done section (kept visible so they can be un-checked); un-checking moves them
-// back. Optimistic, with a revert on failure.
+// Whole-row check records the item in the session log against the active store.
+// Checked items move into the Done drawer (kept visible so they can be
+// un-checked); un-checking moves them back. Optimistic, with a revert on failure.
 async function handleToggle(id: number) {
+  if (!session.value) return
+  const sessionId = session.value.id
   const uncheckedIdx = items.value.findIndex((i) => i.id === id)
   if (uncheckedIdx !== -1) {
     const [item] = items.value.splice(uncheckedIdx, 1)
     item.done = true
     doneItems.value = [item, ...doneItems.value]
     try {
-      await toggleItem(houseIdNum.value, item.listId, item.id)
+      await checkSessionItem(houseIdNum.value, sessionId, item.id)
     } catch (e) {
       doneItems.value = doneItems.value.filter((i) => i.id !== id)
       item.done = false
@@ -255,7 +294,7 @@ async function handleToggle(id: number) {
     item.done = false
     items.value = [...items.value, item]
     try {
-      await toggleItem(houseIdNum.value, item.listId, item.id)
+      await uncheckSessionItem(houseIdNum.value, sessionId, item.id)
     } catch (e) {
       items.value = items.value.filter((i) => i.id !== id)
       item.done = true
@@ -278,11 +317,19 @@ async function goToStore(storeId: number) {
   }
 }
 
-async function onPrimaryAction() {
+// The primary action opens the review first: a per-store till summary before
+// advancing, or the full grouped review before finishing.
+function onPrimaryAction() {
   if (busy.value) return
-  if (hasNextStore.value) {
+  reviewMode.value = hasNextStore.value ? 'advance' : 'close'
+  reviewOpen.value = true
+}
+
+async function onReviewConfirm() {
+  reviewOpen.value = false
+  if (reviewMode.value === 'advance') {
     const next = sequence.value[activeIndex.value + 1]
-    await goToStore(next.storeId)
+    if (next) await goToStore(next.storeId)
   } else {
     await finish()
   }
@@ -324,6 +371,15 @@ onMounted(async () => {
       return
     }
     session.value = current
+    // Seed the Done drawer from THIS session's checked log (not the cross-session
+    // done-today roll-up, which would pull in earlier trips), so it survives
+    // reloads. Then load the still-to-buy items (excluding anything already done).
+    try {
+      const review = await getReview(houseIdNum.value, current.id)
+      doneItems.value = review.stores.flatMap((s) => s.items)
+    } catch {
+      // Non-critical; the drawer just starts from this view's checks.
+    }
     await loadItems()
     pollTimer = setInterval(() => {
       if (document.visibilityState === 'visible') void loadItems()
@@ -346,7 +402,7 @@ const strings = {
   nextStore: t('pantry', 'Next store'),
   finish: t('pantry', 'Finish'),
   finished: t('pantry', 'Shopping trip finished'),
-  emptyStoreTitle: t('pantry', 'Nothing left here'),
+  emptyStoreTitle: t('pantry', 'All checked off here'),
   emptyStoreBody: t('pantry', 'Move on to the next store when you are ready.'),
   emptyDoneTitle: t('pantry', 'All done'),
   emptyDoneBody: t('pantry', 'Everything on your list is in the cart.'),
@@ -504,14 +560,36 @@ const strings = {
     font-weight: 700;
   }
 
-  &__section-title {
-    margin: 1.5rem 0 0.5rem;
-    padding: 0 0.5rem;
+  &__done {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  &__done-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.6rem 0.25rem;
+    border: none;
+    background: transparent;
+    color: var(--color-text-maxcontrast);
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--color-text-maxcontrast);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+
+  &__done-title {
+    white-space: nowrap;
+  }
+
+  &__done-total {
+    margin-inline-start: auto;
+    text-transform: none;
+    letter-spacing: normal;
+    font-variant-numeric: tabular-nums;
   }
 
   &__fab {

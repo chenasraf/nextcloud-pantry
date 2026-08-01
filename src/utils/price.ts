@@ -28,6 +28,27 @@ function place(symbol: string, body: string, position: 'before' | 'after'): stri
   return position === 'before' ? `${symbol}${body}` : `${body}${symbol}`
 }
 
+/** Format a single amount in a currency, e.g. "$1", "1.5₪". */
+export function formatMoney(amount: number, currency: string | null): string {
+  const c = resolveCurrency(currency)
+  return place(c.symbol, formatAmount(amount, c.decimals), c.position)
+}
+
+/**
+ * Format one per-currency total. A point value (min === max) renders as a single
+ * amount; a range renders as "≈ X–Y".
+ */
+export function formatEstimateEntry(entry: { currency: string; min: number; max: number }): string {
+  if (entry.min === entry.max) return formatMoney(entry.min, entry.currency)
+  return `≈ ${formatMoney(entry.min, entry.currency)}–${formatMoney(entry.max, entry.currency)}`
+}
+
+/** Format a per-currency total list into one string (currencies never summed). */
+export function formatEstimate(entries: { currency: string; min: number; max: number }[]): string {
+  if (entries.length === 0) return '—'
+  return entries.map(formatEstimateEntry).join(' · ')
+}
+
 /**
  * Render a price chip label, e.g. "$1", "$1-10", "1₪", "1-10₪".
  * Returns null when there is no price to show.

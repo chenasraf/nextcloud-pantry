@@ -238,6 +238,26 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Fetch items by id regardless of their deleted/archived state. Used by the
+	 * shopping review, which must still show items checked off during the trip
+	 * even when a "delete on done" item was soft-deleted by that check.
+	 *
+	 * @param int[] $ids
+	 * @return ChecklistItem[]
+	 */
+	public function findByIds(array $ids): array {
+		$ids = array_values(array_unique(array_map('intval', $ids)));
+		if ($ids === []) {
+			return [];
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->in('id', $qb->createNamedParameter($ids, IQueryBuilder::PARAM_INT_ARRAY)));
+		return $this->findEntities($qb);
+	}
+
+	/**
 	 * @throws DoesNotExistException
 	 */
 	public function findById(int $id, bool $includeDeleted = false): ChecklistItem {

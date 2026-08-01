@@ -169,6 +169,36 @@ export interface ShoppingSession {
   stores: ShoppingSessionStore[]
 }
 
+/** A per-currency total, range-aware (min === max for a point value). */
+export interface ShoppingEstimateEntry {
+  currency: string
+  min: number
+  max: number
+}
+
+/** Items checked at one store during a trip, with the store's totals. */
+export interface ShoppingReviewStore {
+  storeId: number | null
+  items: ChecklistItem[]
+  estimate: ShoppingEstimateEntry[]
+  noPriceCount: number
+  billedTotal: number | null
+  billedCurrency: string | null
+}
+
+export interface ShoppingReview {
+  stores: ShoppingReviewStore[]
+  grandTotal: ShoppingEstimateEntry[]
+  uncheckedCount: number
+}
+
+export interface ShoppingDoneToday {
+  items: ChecklistItem[]
+  estimate: ShoppingEstimateEntry[]
+  noPriceCount: number
+  count: number
+}
+
 export interface Note {
   id: number
   houseId: number

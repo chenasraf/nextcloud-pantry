@@ -170,6 +170,34 @@ namespace OCA\Pantry;
  *     stores: list<PantryShoppingSessionStore>,
  * }
  *
+ * @psalm-type PantryShoppingEstimate = list<array{
+ *     currency: string,
+ *     min: float,
+ *     max: float,
+ * }>
+ *
+ * @psalm-type PantryShoppingReviewStore = array{
+ *     storeId: int|null,
+ *     items: list<PantryListItem>,
+ *     estimate: PantryShoppingEstimate,
+ *     noPriceCount: int,
+ *     billedTotal: float|null,
+ *     billedCurrency: string|null,
+ * }
+ *
+ * @psalm-type PantryShoppingReview = array{
+ *     stores: list<PantryShoppingReviewStore>,
+ *     grandTotal: PantryShoppingEstimate,
+ *     uncheckedCount: int,
+ * }
+ *
+ * @psalm-type PantryShoppingDoneToday = array{
+ *     items: list<PantryListItem>,
+ *     estimate: PantryShoppingEstimate,
+ *     noPriceCount: int,
+ *     count: int,
+ * }
+ *
  * @psalm-type PantryShare = array{
  *     id: int,
  *     houseId: int,

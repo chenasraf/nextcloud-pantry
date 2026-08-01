@@ -1,5 +1,5 @@
 import { ocs } from '@/axios'
-import type { ChecklistItem, ShoppingSession } from './types'
+import type { ChecklistItem, ShoppingDoneToday, ShoppingReview, ShoppingSession } from './types'
 
 export interface CreateSessionInput {
   /** Checklist ids in scope (at least one). */
@@ -71,4 +71,62 @@ export async function listSessionItems(
     `/houses/${houseId}/shopping-sessions/${sessionId}/items`,
   )
   return resp.data ?? []
+}
+
+export async function checkSessionItem(
+  houseId: number,
+  sessionId: number,
+  itemId: number,
+): Promise<void> {
+  await ocs.post(`/houses/${houseId}/shopping-sessions/${sessionId}/items/${itemId}/check`)
+}
+
+export async function uncheckSessionItem(
+  houseId: number,
+  sessionId: number,
+  itemId: number,
+): Promise<void> {
+  await ocs.post(`/houses/${houseId}/shopping-sessions/${sessionId}/items/${itemId}/uncheck`)
+}
+
+export async function getReview(houseId: number, sessionId: number): Promise<ShoppingReview> {
+  const resp = await ocs.get<ShoppingReview>(
+    `/houses/${houseId}/shopping-sessions/${sessionId}/review`,
+  )
+  return resp.data
+}
+
+export async function getDoneToday(houseId: number): Promise<ShoppingDoneToday> {
+  const resp = await ocs.get<ShoppingDoneToday>(`/houses/${houseId}/shopping-sessions/done-today`)
+  return resp.data
+}
+
+export interface BilledInput {
+  billedTotal: number | null
+  billedCurrency: string | null
+}
+
+export async function patchStoreBilled(
+  houseId: number,
+  sessionId: number,
+  storeId: number,
+  input: BilledInput,
+): Promise<ShoppingSession> {
+  const resp = await ocs.patch<ShoppingSession>(
+    `/houses/${houseId}/shopping-sessions/${sessionId}/stores/${storeId}`,
+    input,
+  )
+  return resp.data
+}
+
+export async function patchSessionBilled(
+  houseId: number,
+  sessionId: number,
+  input: BilledInput,
+): Promise<ShoppingSession> {
+  const resp = await ocs.patch<ShoppingSession>(
+    `/houses/${houseId}/shopping-sessions/${sessionId}`,
+    input,
+  )
+  return resp.data
 }

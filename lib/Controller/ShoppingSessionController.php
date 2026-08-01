@@ -25,17 +25,22 @@ use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
+use OCP\IDateTimeZone;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
- * Shopping Mode — session lifecycle (create/current/advance/close) plus the
- * live, store-narrowed shopping list. Checking an item off reuses the existing
- * item toggle endpoint; a checked item leaves scope on the next `items` fetch.
+ * Shopping Mode — session lifecycle (create/current/advance/close), the live
+ * store-narrowed shopping list, per-store check logging, and the review + price
+ * totals. Checking an item off marks it done and records it in the session log
+ * against the active store.
  *
  * @psalm-import-type PantryShoppingSession from ResponseDefinitions
  * @psalm-import-type PantryListItem from ResponseDefinitions
+ * @psalm-import-type PantryShoppingReview from ResponseDefinitions
+ * @psalm-import-type PantryShoppingDoneToday from ResponseDefinitions
+ * @psalm-import-type PantrySuccess from ResponseDefinitions
  */
 final class ShoppingSessionController extends OCSController {
 	use TranslatesDomainExceptions;
@@ -50,6 +55,7 @@ final class ShoppingSessionController extends OCSController {
 		private HouseAuthService $auth,
 		private ItemStoreMapper $itemStores,
 		private IUserSession $userSession,
+		private IDateTimeZone $dateTimeZone,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
@@ -196,6 +202,162 @@ final class ShoppingSessionController extends OCSController {
 			$items = $this->sessions->itemsForSession($session);
 			return new DataResponse($this->serializeItems($items));
 		});
+	}
+
+	/**
+	 * Check an item off during a shopping session
+	 *
+	 * Marks the item done and records it in the session log against the active
+	 * store.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 * @param int $itemId Item id (must be in the session's scope).
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Item checked
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/items/{itemId}/check')]
+	#[NoAdminRequired]
+	#[Permission(['canCheckItems'])]
+	public function checkItem(int $houseId, int $sessionId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$this->assertItemInScope($session, $itemId);
+			$this->sessions->checkItem($session, $itemId, $this->requireUid());
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Undo an item check during a shopping session
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 * @param int $itemId Item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Item unchecked
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/items/{itemId}/uncheck')]
+	#[NoAdminRequired]
+	#[Permission(['canCheckItems'])]
+	public function uncheckItem(int $houseId, int $sessionId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$this->sessions->uncheckItem($session, $itemId);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Review a shopping session
+	 *
+	 * Items checked this trip grouped by the store they were checked at, each
+	 * with a per-currency estimate, no-price count and any amended billed total;
+	 * plus the blended grand total and a soft count of items still unchecked.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingReview, array{}>
+	 *
+	 * 200: Review returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/review')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function review(int $houseId, int $sessionId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			return new DataResponse($this->sessions->review($session));
+		});
+	}
+
+	/**
+	 * My shopping-mode checks logged today
+	 *
+	 * Per-user, house-scoped, within the caller's timezone day; carries a
+	 * per-currency estimate. Polled live in the dense view.
+	 *
+	 * @param int $houseId House id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingDoneToday, array{}>
+	 *
+	 * 200: Done-today returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/done-today')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function doneToday(int $houseId): DataResponse {
+		return $this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$tz = $this->dateTimeZone->getTimeZone();
+			$startOfDay = (new \DateTimeImmutable('today', $tz))->getTimestamp();
+			$startOfTomorrow = (new \DateTimeImmutable('tomorrow', $tz))->getTimestamp();
+			return new DataResponse($this->sessions->doneToday($uid, $houseId, $startOfDay, $startOfTomorrow));
+		});
+	}
+
+	/**
+	 * Amend the actual paid amount for a store in a session
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 * @param int $storeId Store id (must be in the session's sequence).
+	 * @param float|null $billedTotal Actual paid; null (or negative) clears it.
+	 * @param string|null $billedCurrency Currency of the amount.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingSession, array{}>
+	 *
+	 * 200: Store billed amount amended
+	 */
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/stores/{storeId}')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function amendStoreBilled(int $houseId, int $sessionId, int $storeId, ?float $billedTotal = null, ?string $billedCurrency = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId, $storeId, $billedTotal, $billedCurrency): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$this->sessions->amendStoreBilled($session, $storeId, $billedTotal, $billedCurrency);
+			return new DataResponse($this->sessions->composeDto($session));
+		});
+	}
+
+	/**
+	 * Amend the storeless-session grand total
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 * @param float|null $billedTotal Actual paid; null (or negative) clears it.
+	 * @param string|null $billedCurrency Currency of the amount.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingSession, array{}>
+	 *
+	 * 200: Session billed amount amended
+	 */
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function amendSessionBilled(int $houseId, int $sessionId, ?float $billedTotal = null, ?string $billedCurrency = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId, $billedTotal, $billedCurrency): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$updated = $this->sessions->amendSessionBilled($session, $billedTotal, $billedCurrency);
+			return new DataResponse($this->sessions->composeDto($updated));
+		});
+	}
+
+	/**
+	 * Assert the item belongs to one of the session's scope lists.
+	 */
+	private function assertItemInScope(ShoppingSession $session, int $itemId): void {
+		$item = $this->lists->getItem($itemId);
+		$listIds = $this->sessions->listIdsForSession((int)$session->getId());
+		if (!in_array((int)$item->getListId(), $listIds, true)) {
+			throw new NotFoundException('Item is not part of this session');
+		}
 	}
 
 	/**
