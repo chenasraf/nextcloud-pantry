@@ -51,4 +51,66 @@ class ShoppingSessionMapper extends QBMapper {
 			return null;
 		}
 	}
+
+	/**
+	 * Closed sessions for the history view, newest first (by closed_at). ADR 0008.
+	 *  - 'mine'  → house AND user_id = me
+	 *  - 'house' → house AND (user_id = me OR is_private = false)
+	 *
+	 * The `is_private` widening (a private trip is hidden from housemates even
+	 * after close) is implemented purely by this predicate — no schema change.
+	 *
+	 * @param 'mine'|'house' $scope
+	 * @return ShoppingSession[]
+	 */
+	public function findClosedForHistory(int $houseId, string $uid, string $scope, int $limit, int $offset): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('closed_at'));
+		if ($scope === 'house') {
+			$qb->andWhere($qb->expr()->orX(
+				$qb->expr()->eq('user_id', $qb->createNamedParameter($uid, IQueryBuilder::PARAM_STR)),
+				$qb->expr()->eq('is_private', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)),
+			));
+		} else {
+			$qb->andWhere($qb->expr()->eq('user_id', $qb->createNamedParameter($uid, IQueryBuilder::PARAM_STR)));
+		}
+		$qb->orderBy('closed_at', 'DESC')
+			->addOrderBy('id', 'DESC')
+			->setMaxResults($limit)
+			->setFirstResult($offset);
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Live sessions whose last_seen_at predates the cutoff — abandoned trips the
+	 * lifecycle job auto-closes (ADR 0001).
+	 *
+	 * @return ShoppingSession[]
+	 */
+	public function findIdleLive(int $cutoff): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->isNull('closed_at'))
+			->andWhere($qb->expr()->lt('last_seen_at', $qb->createNamedParameter($cutoff, IQueryBuilder::PARAM_INT)));
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Closed sessions whose closed_at predates the cutoff — the retention purge
+	 * horizon (ADR 0008).
+	 *
+	 * @return ShoppingSession[]
+	 */
+	public function findClosedBefore(int $cutoff): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->isNotNull('closed_at'))
+			->andWhere($qb->expr()->lt('closed_at', $qb->createNamedParameter($cutoff, IQueryBuilder::PARAM_INT)));
+		return $this->findEntities($qb);
+	}
 }

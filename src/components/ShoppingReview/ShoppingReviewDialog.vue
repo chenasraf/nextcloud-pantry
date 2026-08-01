@@ -21,7 +21,9 @@
             <component :is="storeIcon(grp.storeId)" :size="18" />
           </span>
           <span class="shop-review__store-name">{{ storeLabel(grp.storeId) }}</span>
-          <span class="shop-review__store-est">{{ formatEstimate(grp.estimate) }}</span>
+          <span class="shop-review__store-est">{{
+            readOnly ? storeHeadTotal(grp) : formatEstimate(grp.estimate)
+          }}</span>
         </h4>
 
         <ul class="shop-review__items">
@@ -36,7 +38,7 @@
           {{ noPriceText(grp.noPriceCount) }}
         </p>
 
-        <div class="shop-review__billed">
+        <div v-if="!readOnly" class="shop-review__billed">
           <label class="shop-review__billed-label" :for="'billed-' + storeKey(grp.storeId)">
             {{ strings.actualPaid }}
           </label>
@@ -64,7 +66,7 @@
         </div>
       </section>
 
-      <div v-if="mode === 'close'" class="shop-review__grand">
+      <div v-if="mode !== 'advance'" class="shop-review__grand">
         <div class="shop-review__grand-row">
           <span>{{ strings.grandTotal }}</span>
           <strong>{{ formatEstimate(review.grandTotal) }}</strong>
@@ -76,8 +78,10 @@
     </template>
 
     <template #actions>
-      <NcButton @click="$emit('update:open', false)">{{ strings.back }}</NcButton>
-      <NcButton variant="primary" :disabled="saving" @click="confirm">
+      <NcButton @click="$emit('update:open', false)">
+        {{ readOnly ? strings.close : strings.back }}
+      </NcButton>
+      <NcButton v-if="!readOnly" variant="primary" :disabled="saving" @click="confirm">
         {{ mode === 'close' ? strings.finish : strings.nextStore }}
       </NcButton>
     </template>
@@ -95,19 +99,25 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { useStores } from '@/composables/useStores'
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/utils/currencies'
-import { formatPrice, formatEstimate } from '@/utils/price'
-import { getReview, patchStoreBilled, patchSessionBilled } from '@/api/shopping'
+import { formatPrice, formatEstimate, formatMoney } from '@/utils/price'
+import { getReview, getSessionSummary, patchStoreBilled, patchSessionBilled } from '@/api/shopping'
 import type { ChecklistItem, ShoppingReview, ShoppingReviewStore } from '@/api/types'
 
 const props = defineProps<{
   open: boolean
   houseId: number
   sessionId: number
-  /** 'advance' shows a single store's till summary; 'close' shows the whole trip. */
-  mode: 'advance' | 'close'
+  /**
+   * 'advance' shows a single store's till summary; 'close' shows the whole trip
+   * with amendable totals; 'history' is a read-only view of a past trip.
+   */
+  mode: 'advance' | 'close' | 'history'
   /** In 'advance' mode, the store whose till is being reviewed. */
   storeId?: number | null
 }>()
+
+/** History is look-only: no billed inputs, no confirm action (ADR 0008). */
+const readOnly = computed(() => props.mode === 'history')
 const emit = defineEmits<{
   'update:open': [value: boolean]
   confirm: []
@@ -127,7 +137,9 @@ watch(
     loading.value = true
     try {
       await loadStores()
-      review.value = await getReview(props.houseId, props.sessionId)
+      review.value = readOnly.value
+        ? await getSessionSummary(props.houseId, props.sessionId)
+        : await getReview(props.houseId, props.sessionId)
       seedBilled()
     } catch (e) {
       showError((e as Error).message || strings.loadFailed)
@@ -140,8 +152,11 @@ watch(
 
 const visibleStores = computed<ShoppingReviewStore[]>(() => {
   if (!review.value) return []
-  if (props.mode === 'close') return review.value.stores
-  return review.value.stores.filter((s) => s.storeId === (props.storeId ?? null))
+  // 'advance' shows only the current store; 'close'/'history' show the whole trip.
+  if (props.mode === 'advance') {
+    return review.value.stores.filter((s) => s.storeId === (props.storeId ?? null))
+  }
+  return review.value.stores
 })
 
 function storeKey(storeId: number | null): string {
@@ -196,6 +211,13 @@ function itemPrice(item: ChecklistItem): string | null {
   return formatPrice(item)
 }
 
+// Read-only store total: the actual paid amount when the shopper amended one,
+// otherwise the range-aware estimate.
+function storeHeadTotal(grp: ShoppingReviewStore): string {
+  if (grp.billedTotal != null) return formatMoney(grp.billedTotal, grp.billedCurrency)
+  return formatEstimate(grp.estimate)
+}
+
 interface CurrencyOption {
   id: string
   label: string
@@ -248,13 +270,16 @@ function uncheckedText(count: number): string {
   return n('pantry', '%n item still unchecked', '%n items still unchecked', count)
 }
 
-const title = computed(() =>
-  props.mode === 'close' ? strings.reviewTitle : strings.storeSummaryTitle,
-)
+const title = computed(() => {
+  if (props.mode === 'history') return strings.tripSummaryTitle
+  return props.mode === 'close' ? strings.reviewTitle : strings.storeSummaryTitle
+})
 
 const strings = {
   reviewTitle: t('pantry', 'Review your trip'),
   storeSummaryTitle: t('pantry', 'Store summary'),
+  tripSummaryTitle: t('pantry', 'Trip summary'),
+  close: t('pantry', 'Close'),
   grandTotal: t('pantry', 'Grand total:'),
   actualPaid: t('pantry', 'Actual paid:'),
   estimatePlaceholder: t('pantry', 'e.g. 9.99'),

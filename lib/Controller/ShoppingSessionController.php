@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @psalm-import-type PantryListItem from ResponseDefinitions
  * @psalm-import-type PantryShoppingReview from ResponseDefinitions
  * @psalm-import-type PantryShoppingDoneToday from ResponseDefinitions
+ * @psalm-import-type PantryShoppingHistoryRow from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  */
 final class ShoppingSessionController extends OCSController {
@@ -277,6 +278,62 @@ final class ShoppingSessionController extends OCSController {
 	}
 
 	/**
+	 * List closed shopping trips (history)
+	 *
+	 * Read-only history of finished trips, newest first. `scope=mine` (default)
+	 * shows only the caller's; `scope=house` adds housemates' non-private trips.
+	 * Each row carries the store-sequence names, checked-item count, and a
+	 * per-currency grand total collapsed to a single figure.
+	 *
+	 * @param int $houseId House id.
+	 * @param 'mine'|'house' $scope Whose trips to include.
+	 * @param int<1, 100> $limit Page size (default 30).
+	 * @param int $offset Rows to skip.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryShoppingHistoryRow>, array{}>
+	 *
+	 * 200: History returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/history')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function history(int $houseId, string $scope = 'mine', int $limit = 30, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $scope, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$scope = $scope === 'house' ? 'house' : 'mine';
+			$limit = max(1, min(100, $limit));
+			$offset = max(0, $offset);
+			return new DataResponse($this->sessions->history($houseId, $uid, $scope, $limit, $offset));
+		});
+	}
+
+	/**
+	 * Read-only summary of a shopping trip
+	 *
+	 * The history detail view: the same grouped review computation as `/review`,
+	 * exposed under its own route so history's read-only intent stays independent
+	 * of the mid-trip amend contract. Viewable by the trip's owner, or by any
+	 * house member when the trip is not private.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingReview, array{}>
+	 *
+	 * 200: Summary returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/summary')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function summary(int $houseId, int $sessionId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadViewableSession($sessionId, $houseId);
+			return new DataResponse($this->sessions->review($session));
+		});
+	}
+
+	/**
 	 * My shopping-mode checks logged today
 	 *
 	 * Per-user, house-scoped, within the caller's timezone day; carries a
@@ -369,6 +426,24 @@ final class ShoppingSessionController extends OCSController {
 		$this->auth->requireMember($houseId, $uid);
 		$session = $this->sessions->get($sessionId);
 		if ($session->getHouseId() !== $houseId || $session->getUserId() !== $uid) {
+			throw new NotFoundException('Shopping session not found');
+		}
+		return $session;
+	}
+
+	/**
+	 * Load a session for read-only viewing (history detail): house member, and
+	 * either the caller's own trip or a non-private one. Unlike loadOwnedSession,
+	 * a housemate may view another member's non-private trip (ADR 0008).
+	 */
+	private function loadViewableSession(int $sessionId, int $houseId): ShoppingSession {
+		$uid = $this->requireUid();
+		$this->auth->requireMember($houseId, $uid);
+		$session = $this->sessions->get($sessionId);
+		if ($session->getHouseId() !== $houseId) {
+			throw new NotFoundException('Shopping session not found');
+		}
+		if ($session->getUserId() !== $uid && $session->getIsPrivate()) {
 			throw new NotFoundException('Shopping session not found');
 		}
 		return $session;

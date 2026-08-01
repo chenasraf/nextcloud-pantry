@@ -17,6 +17,7 @@ use OCA\Pantry\Db\ShoppingSessionListMapper;
 use OCA\Pantry\Db\ShoppingSessionMapper;
 use OCA\Pantry\Db\ShoppingSessionStore;
 use OCA\Pantry\Db\ShoppingSessionStoreMapper;
+use OCA\Pantry\Db\StoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Exception\ShoppingSessionConflictException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -35,6 +36,7 @@ class ShoppingSessionService {
 		private ChecklistItemMapper $items,
 		private ItemStoreMapper $itemStores,
 		private ChecklistService $checklists,
+		private StoreMapper $storeMapper,
 	) {
 	}
 
@@ -128,12 +130,60 @@ class ShoppingSessionService {
 		if ($session->getClosedAt() !== null) {
 			throw new ShoppingSessionConflictException($session, 'Shopping session is already closed');
 		}
+		$this->snapshotSessionItems($session);
 		$now = time();
 		$session->setClosedAt($now);
 		$session->setLastSeenAt($now);
 		$session->setUpdatedAt($now);
 		$this->sessions->update($session);
 		return $session;
+	}
+
+	/**
+	 * Auto-close abandoned live sessions: those whose last activity
+	 * (`last_seen_at`) predates now − $idleSeconds. The trip is stamped closed at
+	 * its last-seen time (the truthful end), so its history duration reflects real
+	 * activity rather than when the job happened to run. Runs from the lifecycle
+	 * {@see \OCA\Pantry\BackgroundJob\ShoppingSessionLifecycleJob}. ADR 0001.
+	 *
+	 * @return int Number of sessions closed.
+	 */
+	public function closeIdleSessions(int $idleSeconds, ?int $now = null): int {
+		$now ??= time();
+		$cutoff = $now - $idleSeconds;
+		$stale = $this->sessions->findIdleLive($cutoff);
+		foreach ($stale as $session) {
+			$this->snapshotSessionItems($session);
+			$session->setClosedAt((int)$session->getLastSeenAt());
+			$session->setUpdatedAt($now);
+			$this->sessions->update($session);
+		}
+		return count($stale);
+	}
+
+	/**
+	 * Retention purge (ADR 0008): permanently delete closed sessions whose
+	 * `closed_at` predates now − $retentionDays, cascading their child rows
+	 * (lists/stores/items). A retention of 0 (or less) means "keep forever" and
+	 * short-circuits. Runs as the second pass of the lifecycle job.
+	 *
+	 * @return int Number of sessions purged.
+	 */
+	public function purgeAgedSessions(int $retentionDays, ?int $now = null): int {
+		if ($retentionDays <= 0) {
+			return 0;
+		}
+		$now ??= time();
+		$cutoff = $now - $retentionDays * 86400;
+		$aged = $this->sessions->findClosedBefore($cutoff);
+		foreach ($aged as $session) {
+			$sessionId = (int)$session->getId();
+			$this->sessionItems->deleteBySession($sessionId);
+			$this->sessionStores->deleteBySession($sessionId);
+			$this->sessionLists->deleteBySession($sessionId);
+			$this->sessions->delete($session);
+		}
+		return count($aged);
 	}
 
 	/**
@@ -218,42 +268,20 @@ class ShoppingSessionService {
 	 */
 	public function review(ShoppingSession $session): array {
 		$sessionId = (int)$session->getId();
-		$logs = $this->sessionItems->findBySession($sessionId);
-		$itemIds = array_map(static fn (ShoppingSessionItem $l) => (int)$l->getItemId(), $logs);
-		$itemsById = [];
-		foreach ($this->items->findByIds($itemIds) as $item) {
-			$itemsById[(int)$item->getId()] = $item;
-		}
-
-		// Bucket the checked items by the store they were checked at.
-		/** @var array<int|string, ChecklistItem[]> $byStore */
-		$byStore = [];
-		foreach ($logs as $log) {
-			$item = $itemsById[(int)$log->getItemId()] ?? null;
-			// Drop items hard-deleted since, or un-done outside shopping mode
-			// (which leaves the log row stale) — the review reflects the real cart.
-			if ($item === null || !$item->getDone()) {
-				continue;
-			}
-			$key = $log->getStoreId() === null ? 'none' : (int)$log->getStoreId();
-			$byStore[$key][] = $item;
-		}
-
-		$sequence = $this->sessionStores->findBySession($sessionId);
+		$byStore = $this->bucketCheckedItems($session);
 		$grand = [];
 		$groups = [];
 
-		foreach ($sequence as $store) {
+		foreach ($this->sessionStores->findBySession($sessionId) as $store) {
 			$sid = (int)$store->getStoreId();
-			$items = $byStore[$sid] ?? [];
+			$groups[] = $this->buildReviewGroup($sid, $byStore[$sid] ?? [], $store, null, $grand);
 			unset($byStore[$sid]);
-			$groups[] = $this->buildReviewGroup($sid, $items, $store, $grand);
 		}
 
 		// Checks with no active store (storeless sessions). The session-level
 		// billed total is the fallback here.
 		if (isset($byStore['none'])) {
-			$groups[] = $this->buildReviewGroup(null, $byStore['none'], null, $grand, $session);
+			$groups[] = $this->buildReviewGroup(null, $byStore['none'], null, $session, $grand);
 			unset($byStore['none']);
 		}
 
@@ -261,25 +289,209 @@ class ShoppingSessionService {
 		// last with an estimate (no billed override target).
 		foreach ($byStore as $key => $items) {
 			$sid = $key === 'none' ? null : (int)$key;
-			$groups[] = $this->buildReviewGroup($sid, $items, null, $grand);
+			$groups[] = $this->buildReviewGroup($sid, $items, null, null, $grand);
 		}
 
 		return [
 			'stores' => $groups,
 			'grandTotal' => $this->formatEstimate($grand),
-			'uncheckedCount' => $this->uncheckedCount($session),
+			// "Still to buy" is a live, mid-trip prompt computed from the scope's
+			// currently-unchecked items. It is meaningless once the trip is closed
+			// (recurring items reappear, lists change), so a finished trip reports 0.
+			'uncheckedCount' => $session->getClosedAt() !== null ? 0 : $this->uncheckedCount($session),
 		];
 	}
 
 	/**
+	 * Read-only history of closed trips, newest first (ADR 0008). Each row carries
+	 * cheap roll-ups: the store-sequence names, the checked-item count, and the
+	 * blended grand total collapsed to a single figure per currency (the ≈X–Y
+	 * range and no-price count are detail-view only, so a row stays glanceable).
+	 *
+	 * @param 'mine'|'house' $scope
+	 * @return list<array<string, mixed>>
+	 */
+	public function history(int $houseId, string $uid, string $scope, int $limit, int $offset): array {
+		$sessions = $this->sessions->findClosedForHistory($houseId, $uid, $scope, $limit, $offset);
+		if ($sessions === []) {
+			return [];
+		}
+		$storeNames = $this->storeNamesForHouse($houseId);
+		$rows = [];
+		foreach ($sessions as $session) {
+			$sessionId = (int)$session->getId();
+			$names = [];
+			foreach ($this->sessionStores->findBySession($sessionId) as $store) {
+				$name = $storeNames[(int)$store->getStoreId()] ?? null;
+				// A store deleted since the trip drops out of the sequence label.
+				if ($name !== null) {
+					$names[] = $name;
+				}
+			}
+			$rows[] = [
+				'id' => $sessionId,
+				'userId' => $session->getUserId(),
+				'createdAt' => $session->getCreatedAt(),
+				'closedAt' => $session->getClosedAt(),
+				'stores' => $names,
+				'itemCount' => $this->sessionItems->countBySession($sessionId),
+				'grandTotal' => $this->collapseTotal($this->computeGrandTotal($session)),
+			];
+		}
+		return $rows;
+	}
+
+	/**
+	 * Bucket a session's checked items by the store they were checked at. Keys are
+	 * store ids; storeless checks bucket under `'none'`.
+	 *
+	 * A **closed** trip is frozen history: it renders from the per-row snapshot
+	 * captured at close, independent of the live item (which may since have been
+	 * edited, un-done, or hard-deleted). A **live** trip reads the live items and
+	 * drops any un-done outside shopping mode (a stale log row) so the roll-up
+	 * reflects the real cart.
+	 *
+	 * @return array<int|string, ChecklistItem[]>
+	 */
+	private function bucketCheckedItems(ShoppingSession $session): array {
+		$logs = $this->sessionItems->findBySession((int)$session->getId());
+		/** @var array<int|string, ChecklistItem[]> $byStore */
+		$byStore = [];
+
+		if ($session->getClosedAt() !== null) {
+			foreach ($logs as $log) {
+				// A row with no snapshot (checked before this feature and its item
+				// already gone at migration time) has nothing to render.
+				if ($log->getItemName() === null) {
+					continue;
+				}
+				$key = $log->getStoreId() === null ? 'none' : (int)$log->getStoreId();
+				$byStore[$key][] = $this->hydrateFromSnapshot($log);
+			}
+			return $byStore;
+		}
+
+		$itemIds = array_map(static fn (ShoppingSessionItem $l) => (int)$l->getItemId(), $logs);
+		$itemsById = [];
+		foreach ($this->items->findByIds($itemIds) as $item) {
+			$itemsById[(int)$item->getId()] = $item;
+		}
+		foreach ($logs as $log) {
+			$item = $itemsById[(int)$log->getItemId()] ?? null;
+			if ($item === null || !$item->getDone()) {
+				continue;
+			}
+			$key = $log->getStoreId() === null ? 'none' : (int)$log->getStoreId();
+			$byStore[$key][] = $item;
+		}
+		return $byStore;
+	}
+
+	/**
+	 * Freeze an item snapshot (name/quantity/price) onto each of the session's
+	 * check-log rows, from the live item at this moment. Called when a trip closes
+	 * (normal close or idle auto-close) so the finished trip stands alone. A log
+	 * row whose item is already gone is left as-is.
+	 */
+	private function snapshotSessionItems(ShoppingSession $session): void {
+		$logs = $this->sessionItems->findBySession((int)$session->getId());
+		if ($logs === []) {
+			return;
+		}
+		$itemIds = array_map(static fn (ShoppingSessionItem $l) => (int)$l->getItemId(), $logs);
+		$itemsById = [];
+		foreach ($this->items->findByIds($itemIds) as $item) {
+			$itemsById[(int)$item->getId()] = $item;
+		}
+		foreach ($logs as $log) {
+			$item = $itemsById[(int)$log->getItemId()] ?? null;
+			if ($item === null) {
+				continue;
+			}
+			$log->setItemName($item->getName());
+			$log->setQuantity($item->getQuantity());
+			$log->setPriceType($item->getPriceType());
+			$log->setPriceMin($item->getPriceMin());
+			$log->setPriceMax($item->getPriceMax());
+			$log->setPriceCurrency($item->getPriceCurrency());
+			$this->sessionItems->update($log);
+		}
+	}
+
+	/**
+	 * Build a display-only {@see ChecklistItem} from a closed trip's frozen log
+	 * snapshot, so the existing serialize/estimate paths work uniformly whether or
+	 * not the underlying item still exists. Marked done — it is historical.
+	 */
+	private function hydrateFromSnapshot(ShoppingSessionItem $log): ChecklistItem {
+		$item = new ChecklistItem();
+		(new \ReflectionProperty($item, 'id'))->setValue($item, (int)$log->getItemId());
+		$item->setName((string)$log->getItemName());
+		$item->setQuantity($log->getQuantity());
+		$item->setPriceType($log->getPriceType());
+		$item->setPriceMin($log->getPriceMin());
+		$item->setPriceMax($log->getPriceMax());
+		$item->setPriceCurrency($log->getPriceCurrency());
+		$item->setDone(true);
+		return $item;
+	}
+
+	/**
+	 * The blended grand total for a session (billed where set, otherwise the
+	 * range-aware estimate), per currency. Shared by review() and the history
+	 * roll-up; does not serialize items.
+	 *
+	 * @return array<string, array{min: float, max: float}>
+	 */
+	private function computeGrandTotal(ShoppingSession $session): array {
+		$sessionId = (int)$session->getId();
+		$byStore = $this->bucketCheckedItems($session);
+		$grand = [];
+		foreach ($this->sessionStores->findBySession($sessionId) as $store) {
+			$this->foldGroupIntoTotal($byStore[(int)$store->getStoreId()] ?? [], $store, null, $grand);
+			unset($byStore[(int)$store->getStoreId()]);
+		}
+		if (isset($byStore['none'])) {
+			$this->foldGroupIntoTotal($byStore['none'], null, $session, $grand);
+			unset($byStore['none']);
+		}
+		foreach ($byStore as $items) {
+			$this->foldGroupIntoTotal($items, null, null, $grand);
+		}
+		return $grand;
+	}
+
+	/**
 	 * Build one review group and fold its contribution into the running grand
-	 * total (billed amount when set, otherwise the estimate).
+	 * total.
 	 *
 	 * @param ChecklistItem[] $items
 	 * @param array<string, array{min: float, max: float}> $grand accumulator, by reference
 	 * @return array<string, mixed>
 	 */
-	private function buildReviewGroup(?int $storeId, array $items, ?ShoppingSessionStore $store, array &$grand, ?ShoppingSession $session = null): array {
+	private function buildReviewGroup(?int $storeId, array $items, ?ShoppingSessionStore $store, ?ShoppingSession $session, array &$grand): array {
+		$folded = $this->foldGroupIntoTotal($items, $store, $session, $grand);
+		return [
+			'storeId' => $storeId,
+			'items' => $this->serializeItems($items),
+			'estimate' => $this->formatEstimate($folded['estimate']['byCurrency']),
+			'noPriceCount' => $folded['estimate']['noPrice'],
+			'billedTotal' => $folded['billedTotal'] !== null ? (float)$folded['billedTotal'] : null,
+			'billedCurrency' => $folded['billedCurrency'],
+		];
+	}
+
+	/**
+	 * Fold one store/storeless group's contribution into the running grand total:
+	 * the billed amount when set (a point), otherwise the range-aware estimate.
+	 * Returns the group's estimate + resolved billed fields for callers that also
+	 * render the group.
+	 *
+	 * @param ChecklistItem[] $items
+	 * @param array<string, array{min: float, max: float}> $grand accumulator, by reference
+	 * @return array{estimate: array{byCurrency: array<string, array{min: float, max: float}>, noPrice: int}, billedTotal: float|null, billedCurrency: string|null}
+	 */
+	private function foldGroupIntoTotal(array $items, ?ShoppingSessionStore $store, ?ShoppingSession $session, array &$grand): array {
 		$estimate = $this->estimateForItems($items);
 		$billedTotal = $store?->getBilledTotal() ?? $session?->getBilledTotal();
 		$billedCurrency = $store?->getBilledCurrency() ?? $session?->getBilledCurrency();
@@ -293,13 +505,38 @@ class ShoppingSessionService {
 		}
 
 		return [
-			'storeId' => $storeId,
-			'items' => $this->serializeItems($items),
-			'estimate' => $this->formatEstimate($estimate['byCurrency']),
-			'noPriceCount' => $estimate['noPrice'],
+			'estimate' => $estimate,
 			'billedTotal' => $billedTotal !== null ? (float)$billedTotal : null,
 			'billedCurrency' => $billedCurrency,
 		];
+	}
+
+	/**
+	 * Collapse a per-currency min/max total to a single amount per currency (the
+	 * range midpoint) for the glanceable history row.
+	 *
+	 * @param array<string, array{min: float, max: float}> $totals
+	 * @return list<array{currency: string, amount: float}>
+	 */
+	private function collapseTotal(array $totals): array {
+		$out = [];
+		foreach ($totals as $currency => $range) {
+			$out[] = ['currency' => (string)$currency, 'amount' => ($range['min'] + $range['max']) / 2];
+		}
+		return $out;
+	}
+
+	/**
+	 * A house's store id → name map, for cheap sequence labelling.
+	 *
+	 * @return array<int, string>
+	 */
+	private function storeNamesForHouse(int $houseId): array {
+		$names = [];
+		foreach ($this->storeMapper->findByHouse($houseId) as $store) {
+			$names[(int)$store->getId()] = $store->getName();
+		}
+		return $names;
 	}
 
 	/**

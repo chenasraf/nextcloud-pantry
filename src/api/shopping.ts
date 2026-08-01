@@ -1,5 +1,11 @@
 import { ocs } from '@/axios'
-import type { ChecklistItem, ShoppingDoneToday, ShoppingReview, ShoppingSession } from './types'
+import type {
+  ChecklistItem,
+  ShoppingDoneToday,
+  ShoppingHistoryRow,
+  ShoppingReview,
+  ShoppingSession,
+} from './types'
 
 export interface CreateSessionInput {
   /** Checklist ids in scope (at least one). */
@@ -98,6 +104,30 @@ export async function getReview(houseId: number, sessionId: number): Promise<Sho
 
 export async function getDoneToday(houseId: number): Promise<ShoppingDoneToday> {
   const resp = await ocs.get<ShoppingDoneToday>(`/houses/${houseId}/shopping-sessions/done-today`)
+  return resp.data
+}
+
+/** Closed trips for the history view, newest first (ADR 0008). */
+export async function getHistory(
+  houseId: number,
+  scope: 'mine' | 'house' = 'mine',
+  limit = 30,
+  offset = 0,
+): Promise<ShoppingHistoryRow[]> {
+  const resp = await ocs.get<ShoppingHistoryRow[]>(`/houses/${houseId}/shopping-sessions/history`, {
+    params: { scope, limit, offset },
+  })
+  return resp.data ?? []
+}
+
+/** Read-only detail of a (usually closed) trip — the shared review computation. */
+export async function getSessionSummary(
+  houseId: number,
+  sessionId: number,
+): Promise<ShoppingReview> {
+  const resp = await ocs.get<ShoppingReview>(
+    `/houses/${houseId}/shopping-sessions/${sessionId}/summary`,
+  )
   return resp.data
 }
 

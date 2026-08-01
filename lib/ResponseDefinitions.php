@@ -198,6 +198,16 @@ namespace OCA\Pantry;
  *     count: int,
  * }
  *
+ * @psalm-type PantryShoppingHistoryRow = array{
+ *     id: int,
+ *     userId: string,
+ *     createdAt: int,
+ *     closedAt: int|null,
+ *     stores: list<string>,
+ *     itemCount: int,
+ *     grandTotal: list<array{currency: string, amount: float}>,
+ * }
+ *
  * @psalm-type PantryShare = array{
  *     id: int,
  *     houseId: int,

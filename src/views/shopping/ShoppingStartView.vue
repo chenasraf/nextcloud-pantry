@@ -4,6 +4,10 @@
       <header class="shop-start__head">
         <CartIcon :size="28" />
         <h2>{{ strings.title }}</h2>
+        <NcButton class="shop-start__history-link" variant="tertiary" @click="goToHistory">
+          <template #icon><HistoryIcon :size="20" /></template>
+          {{ strings.pastTrips }}
+        </NcButton>
       </header>
 
       <div v-if="loading" class="shop-start__center">
@@ -131,6 +135,7 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import CartIcon from '@icons/Cart.vue'
 import ClipboardListIcon from '@icons/ClipboardList.vue'
 import DragVerticalIcon from '@icons/DragVertical.vue'
+import HistoryIcon from '@icons/History.vue'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { useChecklists } from '@/composables/useChecklist'
 import { useStores } from '@/composables/useStores'
@@ -399,6 +404,10 @@ async function start() {
   }
 }
 
+function goToHistory() {
+  void router.push({ name: 'shopping-history', params: { houseId: String(houseIdNum.value) } })
+}
+
 function resumeExisting() {
   if (existing.value) void goToSession(existing.value)
 }
@@ -426,6 +435,7 @@ function goToSession(session: ShoppingSession) {
 
 const strings = {
   title: t('pantry', 'Start shopping'),
+  pastTrips: t('pantry', 'Shopping history'),
   listsTitle: t('pantry', 'Lists to shop'),
   // TRANSLATORS: Button that selects every checklist in the list-picker.
   selectAll: t('pantry', 'Select all'),
@@ -470,6 +480,10 @@ const strings = {
     h2 {
       margin: 0;
     }
+  }
+
+  &__history-link {
+    margin-inline-start: auto;
   }
 
   &__center {

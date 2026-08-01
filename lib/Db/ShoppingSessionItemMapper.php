@@ -36,6 +36,20 @@ class ShoppingSessionItemMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * Count of check-log rows for a session (the trip's checked-item count).
+	 */
+	public function countBySession(int $sessionId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*', 'cnt'))
+			->from($this->getTableName())
+			->where($qb->expr()->eq('session_id', $qb->createNamedParameter($sessionId, IQueryBuilder::PARAM_INT)));
+		$result = $qb->executeQuery();
+		$count = (int)$result->fetchOne();
+		$result->closeCursor();
+		return $count;
+	}
+
 	public function findBySessionAndItem(int $sessionId, int $itemId): ?ShoppingSessionItem {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')

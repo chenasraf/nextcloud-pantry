@@ -1119,6 +1119,65 @@
                     }
                 }
             },
+            "ShoppingHistoryRow": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "userId",
+                    "createdAt",
+                    "closedAt",
+                    "stores",
+                    "itemCount",
+                    "grandTotal"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "userId": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "closedAt": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "stores": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "itemCount": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "grandTotal": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "currency",
+                                "amount"
+                            ],
+                            "properties": {
+                                "currency": {
+                                    "type": "string"
+                                },
+                                "amount": {
+                                    "type": "number",
+                                    "format": "double"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "ShoppingReview": {
                 "type": "object",
                 "required": [
@@ -13716,6 +13775,254 @@
                 "responses": {
                     "200": {
                         "description": "Review returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ShoppingReview"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/history": {
+            "get": {
+                "operationId": "shopping_session-history",
+                "summary": "List closed shopping trips (history)",
+                "description": "Read-only history of finished trips, newest first. `scope=mine` (default) shows only the caller's; `scope=house` adds housemates' non-private trips. Each row carries the store-sequence names, checked-item count, and a per-currency grand total collapsed to a single figure.",
+                "tags": [
+                    "shopping_session"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "scope",
+                        "in": "query",
+                        "description": "Whose trips to include.",
+                        "schema": {
+                            "type": "string",
+                            "default": "mine",
+                            "enum": [
+                                "mine",
+                                "house"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Page size (default 30).",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 30,
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Rows to skip.",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "History returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/ShoppingHistoryRow"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/summary": {
+            "get": {
+                "operationId": "shopping_session-summary",
+                "summary": "Read-only summary of a shopping trip",
+                "description": "The history detail view: the same grouped review computation as `/review`, exposed under its own route so history's read-only intent stays independent of the mid-trip amend contract. Viewable by the trip's owner, or by any house member when the trip is not private.",
+                "tags": [
+                    "shopping_session"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "description": "Session id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Summary returned",
                         "content": {
                             "application/json": {
                                 "schema": {

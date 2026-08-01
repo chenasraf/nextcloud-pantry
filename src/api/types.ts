@@ -199,6 +199,24 @@ export interface ShoppingDoneToday {
   count: number
 }
 
+/** A history row's grand total, collapsed to a single amount per currency. */
+export interface ShoppingHistoryTotal {
+  currency: string
+  amount: number
+}
+
+/** One closed trip in the history list (ADR 0008). */
+export interface ShoppingHistoryRow {
+  id: number
+  userId: string
+  createdAt: number
+  closedAt: number | null
+  /** Store-sequence names in order; empty for a storeless trip. */
+  stores: string[]
+  itemCount: number
+  grandTotal: ShoppingHistoryTotal[]
+}
+
 export interface Note {
   id: number
   houseId: number

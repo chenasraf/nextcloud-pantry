@@ -17,6 +17,8 @@ use OCA\Pantry\Db\ShoppingSessionListMapper;
 use OCA\Pantry\Db\ShoppingSessionMapper;
 use OCA\Pantry\Db\ShoppingSessionStore;
 use OCA\Pantry\Db\ShoppingSessionStoreMapper;
+use OCA\Pantry\Db\Store;
+use OCA\Pantry\Db\StoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Exception\ShoppingSessionConflictException;
 use OCA\Pantry\Service\ChecklistService;
@@ -40,6 +42,8 @@ class ShoppingSessionServiceTest extends TestCase {
 	private ItemStoreMapper $itemStores;
 	/** @var ChecklistService&MockObject */
 	private ChecklistService $checklists;
+	/** @var StoreMapper&MockObject */
+	private StoreMapper $storeMapper;
 	private ShoppingSessionService $svc;
 
 	protected function setUp(): void {
@@ -50,6 +54,7 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->items = $this->createMock(ChecklistItemMapper::class);
 		$this->itemStores = $this->createMock(ItemStoreMapper::class);
 		$this->checklists = $this->createMock(ChecklistService::class);
+		$this->storeMapper = $this->createMock(StoreMapper::class);
 		$this->svc = new ShoppingSessionService(
 			$this->sessions,
 			$this->sessionLists,
@@ -58,6 +63,7 @@ class ShoppingSessionServiceTest extends TestCase {
 			$this->items,
 			$this->itemStores,
 			$this->checklists,
+			$this->storeMapper,
 		);
 	}
 
@@ -77,11 +83,19 @@ class ShoppingSessionServiceTest extends TestCase {
 		return $i;
 	}
 
-	private function makeLog(int $itemId, ?int $storeId): ShoppingSessionItem {
+	private function makeLog(int $itemId, ?int $storeId, array $snap = []): ShoppingSessionItem {
 		$l = new ShoppingSessionItem();
 		$l->setItemId($itemId);
 		$l->setStoreId($storeId);
 		$l->setCheckedAt(1000);
+		if ($snap !== []) {
+			$l->setItemName($snap['name'] ?? 'Item');
+			$l->setQuantity($snap['quantity'] ?? null);
+			$l->setPriceType($snap['priceType'] ?? null);
+			$l->setPriceMin($snap['priceMin'] ?? null);
+			$l->setPriceMax($snap['priceMax'] ?? null);
+			$l->setPriceCurrency($snap['priceCurrency'] ?? null);
+		}
 		return $l;
 	}
 
@@ -90,12 +104,23 @@ class ShoppingSessionServiceTest extends TestCase {
 		$s->setHouseId($overrides['houseId'] ?? 1);
 		$s->setUserId($overrides['userId'] ?? 'alice');
 		$s->setActiveStoreId($overrides['activeStoreId'] ?? null);
+		$s->setLastSeenAt($overrides['lastSeenAt'] ?? 0);
 		$s->setClosedAt($overrides['closedAt'] ?? null);
 		$s->setIncludeUnassigned($overrides['includeUnassigned'] ?? true);
+		$s->setIsPrivate($overrides['isPrivate'] ?? false);
+		$s->setCreatedAt($overrides['createdAt'] ?? 0);
 		if (isset($overrides['id'])) {
 			$ref = new \ReflectionProperty($s, 'id');
 			$ref->setValue($s, $overrides['id']);
 		}
+		return $s;
+	}
+
+	private function makeStore(int $id, string $name): Store {
+		$s = new Store();
+		$s->setName($name);
+		$ref = new \ReflectionProperty($s, 'id');
+		$ref->setValue($s, $id);
 		return $s;
 	}
 
@@ -342,11 +367,133 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame([['currency' => 'USD', 'min' => 2.0, 'max' => 2.0]], $review['grandTotal']);
 	}
 
+	public function testClosedReviewRendersFromSnapshotEvenIfItemDeleted(): void {
+		// A closed trip is frozen history: it renders from the per-row snapshot,
+		// so it survives the item being hard-deleted (findByIds returns nothing).
+		$session = $this->makeSession(['id' => 5, 'closedAt' => 500]);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([
+			$this->makeLog(10, 3, ['name' => 'Bread', 'priceType' => 'set', 'priceMin' => 4.0, 'priceCurrency' => 'USD']),
+		]);
+		$this->items->method('findByIds')->willReturn([]);
+		$this->itemStores->method('findStoreIdsForItems')->willReturn([]);
+		$this->sessionStores->method('findBySession')->with(5)->willReturn([$this->makeSessionStore(3, 0)]);
+		// A closed trip must not recompute a live "still to buy" count.
+		$this->items->expects($this->never())->method('findForShoppingScope');
+
+		$review = $this->svc->review($session);
+		$this->assertCount(1, $review['stores'][0]['items']);
+		$this->assertSame('Bread', $review['stores'][0]['items'][0]['name']);
+		$this->assertSame([['currency' => 'USD', 'min' => 4.0, 'max' => 4.0]], $review['grandTotal']);
+		$this->assertSame(0, $review['uncheckedCount']);
+	}
+
+	public function testCloseSnapshotsCheckedItemsFromLiveItem(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(10, 3)]);
+		$this->items->method('findByIds')->willReturn([
+			$this->makeItem(['id' => 10, 'name' => 'Milk', 'done' => true, 'priceType' => 'set', 'priceMin' => 2.5, 'priceCurrency' => 'USD']),
+		]);
+		$this->sessionItems->expects($this->once())
+			->method('update')
+			->willReturnCallback(function (ShoppingSessionItem $log) {
+				$this->assertSame('Milk', $log->getItemName());
+				$this->assertSame(2.5, $log->getPriceMin());
+				$this->assertSame('USD', $log->getPriceCurrency());
+				return $log;
+			});
+		$this->sessions->method('update')->willReturnArgument(0);
+
+		$closed = $this->svc->close($session);
+		$this->assertNotNull($closed->getClosedAt());
+	}
+
 	public function testAmendStoreBilledRejectsUnknownStore(): void {
 		$session = $this->makeSession(['id' => 5]);
 		$this->sessionStores->method('findBySession')->with(5)->willReturn([$this->makeSessionStore(3, 0)]);
 		$this->expectException(NotFoundException::class);
 		$this->svc->amendStoreBilled($session, 99, 10.0, 'USD');
+	}
+
+	public function testHistoryRollsUpRowFields(): void {
+		$session = $this->makeSession([
+			'id' => 5, 'houseId' => 1, 'userId' => 'alice', 'createdAt' => 100, 'closedAt' => 500,
+		]);
+		$this->sessions->method('findClosedForHistory')->with(1, 'alice', 'mine', 30, 0)->willReturn([$session]);
+		$this->storeMapper->method('findByHouse')->with(1)->willReturn([
+			$this->makeStore(3, 'Aldi'),
+			$this->makeStore(7, 'Rewe'),
+		]);
+		$this->sessionStores->method('findBySession')->with(5)->willReturn([
+			$this->makeSessionStore(3, 0),
+			$this->makeSessionStore(7, 1),
+		]);
+		$this->sessionItems->method('countBySession')->with(5)->willReturn(4);
+		// A closed trip rolls up from the frozen per-row snapshot, one per store.
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([
+			$this->makeLog(10, 3, ['name' => 'A', 'priceType' => 'set', 'priceMin' => 2.0, 'priceCurrency' => 'USD']),
+			$this->makeLog(11, 7, ['name' => 'B', 'priceType' => 'set', 'priceMin' => 3.0, 'priceCurrency' => 'USD']),
+		]);
+
+		$rows = $this->svc->history(1, 'alice', 'mine', 30, 0);
+
+		$this->assertCount(1, $rows);
+		$row = $rows[0];
+		$this->assertSame(5, $row['id']);
+		$this->assertSame('alice', $row['userId']);
+		$this->assertSame(100, $row['createdAt']);
+		$this->assertSame(500, $row['closedAt']);
+		$this->assertSame(['Aldi', 'Rewe'], $row['stores']);
+		$this->assertSame(4, $row['itemCount']);
+		// Point estimates collapse to their own amount (min === max midpoint).
+		$this->assertSame([['currency' => 'USD', 'amount' => 5.0]], $row['grandTotal']);
+	}
+
+	public function testHistoryCollapsesRangeToMidpoint(): void {
+		$session = $this->makeSession(['id' => 5, 'houseId' => 1, 'userId' => 'alice', 'closedAt' => 500]);
+		$this->sessions->method('findClosedForHistory')->willReturn([$session]);
+		$this->storeMapper->method('findByHouse')->willReturn([$this->makeStore(3, 'Aldi')]);
+		$this->sessionStores->method('findBySession')->with(5)->willReturn([$this->makeSessionStore(3, 0)]);
+		$this->sessionItems->method('countBySession')->willReturn(1);
+		$this->sessionItems->method('findBySession')->willReturn([
+			$this->makeLog(10, 3, ['name' => 'A', 'priceType' => 'range', 'priceMin' => 2.0, 'priceMax' => 6.0, 'priceCurrency' => 'USD']),
+		]);
+
+		$rows = $this->svc->history(1, 'alice', 'mine', 30, 0);
+		// Range 2–6 collapses to its midpoint 4 for the glanceable row.
+		$this->assertSame([['currency' => 'USD', 'amount' => 4.0]], $rows[0]['grandTotal']);
+	}
+
+	public function testHistoryReturnsEmptyWithoutTouchingStores(): void {
+		$this->sessions->method('findClosedForHistory')->willReturn([]);
+		$this->storeMapper->expects($this->never())->method('findByHouse');
+		$this->assertSame([], $this->svc->history(1, 'alice', 'house', 30, 0));
+	}
+
+	public function testCloseIdleSessionsStampsLastSeenAsClosed(): void {
+		$idle = $this->makeSession(['id' => 5, 'lastSeenAt' => 1000]);
+		$this->sessions->method('findIdleLive')->willReturn([$idle]);
+		$this->sessions->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$count = $this->svc->closeIdleSessions(4 * 3600, 100000);
+		$this->assertSame(1, $count);
+		// Closed at the last-seen time, not the job's "now".
+		$this->assertSame(1000, $idle->getClosedAt());
+	}
+
+	public function testPurgeAgedSessionsKeepsForeverWhenRetentionOff(): void {
+		$this->sessions->expects($this->never())->method('findClosedBefore');
+		$this->assertSame(0, $this->svc->purgeAgedSessions(0));
+	}
+
+	public function testPurgeAgedSessionsCascadesChildRows(): void {
+		$aged = $this->makeSession(['id' => 5, 'closedAt' => 10]);
+		$this->sessions->method('findClosedBefore')->willReturn([$aged]);
+		$this->sessionItems->expects($this->once())->method('deleteBySession')->with(5);
+		$this->sessionStores->expects($this->once())->method('deleteBySession')->with(5);
+		$this->sessionLists->expects($this->once())->method('deleteBySession')->with(5);
+		$this->sessions->expects($this->once())->method('delete')->with($aged);
+
+		$this->assertSame(1, $this->svc->purgeAgedSessions(180, 100000000));
 	}
 
 	public function testGetWrapsMissingInNotFound(): void {
