@@ -217,6 +217,21 @@ export interface ShoppingHistoryRow {
   grandTotal: ShoppingHistoryTotal[]
 }
 
+/** The moment a reminder surfaces during a trip (ADR 0002). */
+export type ShoppingReminderMoment = 'on_start' | 'on_store_advance' | 'on_close'
+
+/** A house-scoped, user-defined shopping reminder (ADR 0002). */
+export interface ShoppingReminder {
+  id: number
+  houseId: number
+  text: string
+  showOn: ShoppingReminderMoment
+  position: number
+  enabled: boolean
+  createdAt: number
+  updatedAt: number
+}
+
 /** One present shopper in a house's derived shopping presence (ADR 0004). */
 export interface ShoppingPresenceEntry {
   userId: string

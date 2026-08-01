@@ -11,6 +11,15 @@
     </div>
 
     <template v-else-if="review">
+      <ShoppingReminderBlock
+        v-if="reminderMoment"
+        class="shop-review__reminders"
+        :house-id="houseId"
+        :moment="reminderMoment"
+        manageable
+        @manage="remindersOpen = true"
+      />
+
       <p v-if="visibleStores.length === 0" class="shop-review__empty">
         {{ strings.nothingChecked }}
       </p>
@@ -86,6 +95,13 @@
       </NcButton>
     </template>
   </NcDialog>
+
+  <ShoppingRemindersDialog
+    v-if="remindersOpen"
+    :open="remindersOpen"
+    :house-id="houseId"
+    @update:open="remindersOpen = $event"
+  />
 </template>
 
 <script setup lang="ts">
@@ -97,11 +113,17 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
+import { ShoppingReminderBlock, ShoppingRemindersDialog } from '@/components/ShoppingReminders'
 import { useStores } from '@/composables/useStores'
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/utils/currencies'
 import { formatPrice, formatEstimate, formatMoney } from '@/utils/price'
 import { getReview, getSessionSummary, patchStoreBilled, patchSessionBilled } from '@/api/shopping'
-import type { ChecklistItem, ShoppingReview, ShoppingReviewStore } from '@/api/types'
+import type {
+  ChecklistItem,
+  ShoppingReminderMoment,
+  ShoppingReview,
+  ShoppingReviewStore,
+} from '@/api/types'
 
 const props = defineProps<{
   open: boolean
@@ -129,6 +151,15 @@ const review = ref<ShoppingReview | null>(null)
 const loading = ref(false)
 const saving = ref(false)
 const billed = ref<Record<string, { total: string; currency: string }>>({})
+const remindersOpen = ref(false)
+
+// Which reminder moment this dialog surfaces: the next-store confirm shows
+// `on_store_advance`, the close review shows `on_close`; history shows none.
+const reminderMoment = computed<ShoppingReminderMoment | null>(() => {
+  if (props.mode === 'advance') return 'on_store_advance'
+  if (props.mode === 'close') return 'on_close'
+  return null
+})
 
 watch(
   () => props.open,
@@ -300,6 +331,10 @@ const strings = {
     display: flex;
     justify-content: center;
     padding: 2rem;
+  }
+
+  &__reminders {
+    margin-bottom: 1rem;
   }
 
   &__empty {

@@ -198,6 +198,17 @@ namespace OCA\Pantry;
  *     count: int,
  * }
  *
+ * @psalm-type PantryShoppingReminder = array{
+ *     id: int,
+ *     houseId: int,
+ *     text: string,
+ *     showOn: string,
+ *     position: int,
+ *     enabled: bool,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
+ *
  * @psalm-type PantryShoppingPresenceEntry = array{
  *     userId: string,
  *     activeStoreId: int|null,

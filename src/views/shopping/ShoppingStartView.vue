@@ -4,7 +4,11 @@
       <header class="shop-start__head">
         <CartIcon :size="28" />
         <h2>{{ strings.title }}</h2>
-        <NcButton class="shop-start__history-link" variant="tertiary" @click="goToHistory">
+        <NcButton class="shop-start__head-action" variant="tertiary" @click="remindersOpen = true">
+          <template #icon><BellRingIcon :size="20" /></template>
+          {{ strings.reminders }}
+        </NcButton>
+        <NcButton variant="tertiary" @click="goToHistory">
           <template #icon><HistoryIcon :size="20" /></template>
           {{ strings.pastTrips }}
         </NcButton>
@@ -29,6 +33,12 @@
         </div>
 
         <template v-else>
+          <ShoppingReminderBlock
+            class="shop-start__reminders"
+            :house-id="houseIdNum"
+            moment="on_start"
+          />
+
           <section class="shop-start__section">
             <div class="shop-start__section-head">
               <h3>{{ strings.listsTitle }}</h3>
@@ -120,6 +130,13 @@
         </template>
       </template>
     </div>
+
+    <ShoppingRemindersDialog
+      v-if="remindersOpen"
+      :open="remindersOpen"
+      :house-id="houseIdNum"
+      @update:open="remindersOpen = $event"
+    />
   </div>
 </template>
 
@@ -136,7 +153,9 @@ import CartIcon from '@icons/Cart.vue'
 import ClipboardListIcon from '@icons/ClipboardList.vue'
 import DragVerticalIcon from '@icons/DragVertical.vue'
 import HistoryIcon from '@icons/History.vue'
+import BellRingIcon from '@icons/BellRing.vue'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
+import { ShoppingReminderBlock, ShoppingRemindersDialog } from '@/components/ShoppingReminders'
 import { useChecklists } from '@/composables/useChecklist'
 import { useStores } from '@/composables/useStores'
 import { useHouses } from '@/composables/useHouses'
@@ -161,6 +180,7 @@ const { load: loadHouses, findById: findHouse } = useHouses()
 const loading = ref(true)
 const starting = ref(false)
 const ending = ref(false)
+const remindersOpen = ref(false)
 
 const selectedListIds = ref<number[]>([])
 const houseItems = ref<ChecklistItem[]>([])
@@ -436,6 +456,7 @@ function goToSession(session: ShoppingSession) {
 const strings = {
   title: t('pantry', 'Start shopping'),
   pastTrips: t('pantry', 'Shopping history'),
+  reminders: t('pantry', 'Reminders'),
   listsTitle: t('pantry', 'Lists to shop'),
   // TRANSLATORS: Button that selects every checklist in the list-picker.
   selectAll: t('pantry', 'Select all'),
@@ -482,8 +503,12 @@ const strings = {
     }
   }
 
-  &__history-link {
+  &__head-action {
     margin-inline-start: auto;
+  }
+
+  &__reminders {
+    margin-bottom: 1.5rem;
   }
 
   &__center {
