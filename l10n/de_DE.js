@@ -313,7 +313,7 @@ OC.L10N.register(
     "Price type" : "Preistyp",
     "Set" : "Setzen",
     "Range" : "Bereich",
-    "e.g. 9.99" : "z. B. 9,99",
+    "e.g. 9.99" : "z. B. 9,99",
     "Clear price" : "Preis leeren",
     "e.g. 2 L, 500 g" : "z. B. 2l, 500g",
     "Decrease quantity" : "Menge verringern",
