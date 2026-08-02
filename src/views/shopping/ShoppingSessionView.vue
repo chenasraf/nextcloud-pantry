@@ -455,8 +455,7 @@ onMounted(async () => {
       return
     }
     session.value = current
-    // Seed the Done drawer from THIS session's checked log (not the cross-session
-    // done-today roll-up, which would pull in earlier trips), so it survives
+    // Seed the Done drawer from THIS session's checked log, so it survives
     // reloads. Then load the still-to-buy items (excluding anything already done).
     try {
       const review = await getReview(houseIdNum.value, current.id)

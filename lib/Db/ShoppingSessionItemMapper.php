@@ -77,24 +77,4 @@ class ShoppingSessionItemMapper extends QBMapper {
 			->where($qb->expr()->eq('session_id', $qb->createNamedParameter($sessionId, IQueryBuilder::PARAM_INT)));
 		$qb->executeStatement();
 	}
-
-	/**
-	 * A user's checks logged within [from, to) (epoch seconds), across all their
-	 * sessions in the house. Joins sessions for the owner + house scope.
-	 *
-	 * @return ShoppingSessionItem[]
-	 */
-	public function findForUserBetween(string $uid, int $houseId, int $from, int $to): array {
-		$qb = $this->db->getQueryBuilder();
-		$sessions = Application::tableName('shopping_sessions');
-		$qb->select('si.*')
-			->from($this->getTableName(), 'si')
-			->innerJoin('si', $sessions, 's', $qb->expr()->eq('si.session_id', 's.id'))
-			->where($qb->expr()->eq('s.user_id', $qb->createNamedParameter($uid, IQueryBuilder::PARAM_STR)))
-			->andWhere($qb->expr()->eq('s.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->gte('si.checked_at', $qb->createNamedParameter($from, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->lt('si.checked_at', $qb->createNamedParameter($to, IQueryBuilder::PARAM_INT)))
-			->orderBy('si.checked_at', 'DESC');
-		return $this->findEntities($qb);
-	}
 }

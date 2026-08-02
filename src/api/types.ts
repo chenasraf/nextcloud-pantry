@@ -192,13 +192,6 @@ export interface ShoppingReview {
   uncheckedCount: number
 }
 
-export interface ShoppingDoneToday {
-  items: ChecklistItem[]
-  estimate: ShoppingEstimateEntry[]
-  noPriceCount: number
-  count: number
-}
-
 /** A history row's grand total, collapsed to a single amount per currency. */
 export interface ShoppingHistoryTotal {
   currency: string

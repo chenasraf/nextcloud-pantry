@@ -25,7 +25,6 @@ use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
-use OCP\IDateTimeZone;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -39,7 +38,6 @@ use Psr\Log\LoggerInterface;
  * @psalm-import-type PantryShoppingSession from ResponseDefinitions
  * @psalm-import-type PantryListItem from ResponseDefinitions
  * @psalm-import-type PantryShoppingReview from ResponseDefinitions
- * @psalm-import-type PantryShoppingDoneToday from ResponseDefinitions
  * @psalm-import-type PantryShoppingHistoryRow from ResponseDefinitions
  * @psalm-import-type PantryShoppingPresenceEntry from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
@@ -57,7 +55,6 @@ final class ShoppingSessionController extends OCSController {
 		private HouseAuthService $auth,
 		private ItemStoreMapper $itemStores,
 		private IUserSession $userSession,
-		private IDateTimeZone $dateTimeZone,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
@@ -405,32 +402,6 @@ final class ShoppingSessionController extends OCSController {
 			$session = $this->loadOwnedSession($sessionId, $houseId);
 			$updated = $this->sessions->setPrivacy($session, $isPrivate);
 			return new DataResponse($this->sessions->composeDto($updated));
-		});
-	}
-
-	/**
-	 * My shopping-mode checks logged today
-	 *
-	 * Per-user, house-scoped, within the caller's timezone day; carries a
-	 * per-currency estimate. Polled live in the dense view.
-	 *
-	 * @param int $houseId House id.
-	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryShoppingDoneToday, array{}>
-	 *
-	 * 200: Done-today returned
-	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/sessions/done-today')]
-	#[NoAdminRequired]
-	#[Permission(['canViewLists'])]
-	public function doneToday(int $houseId): DataResponse {
-		return $this->runAction(function () use ($houseId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$tz = $this->dateTimeZone->getTimeZone();
-			$startOfDay = (new \DateTimeImmutable('today', $tz))->getTimestamp();
-			$startOfTomorrow = (new \DateTimeImmutable('tomorrow', $tz))->getTimestamp();
-			return new DataResponse($this->sessions->doneToday($uid, $houseId, $startOfDay, $startOfTomorrow));
 		});
 	}
 

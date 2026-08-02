@@ -587,36 +587,6 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * My shopping-mode checks logged within [from, to) (epoch seconds), newest
-	 * first, with a per-currency estimate. Powers the live "Done today" surface.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function doneToday(string $uid, int $houseId, int $from, int $to): array {
-		$logs = $this->sessionItems->findForUserBetween($uid, $houseId, $from, $to);
-		$itemIds = array_map(static fn (ShoppingSessionItem $l) => (int)$l->getItemId(), $logs);
-		$itemsById = [];
-		foreach ($this->items->findByIds($itemIds) as $item) {
-			$itemsById[(int)$item->getId()] = $item;
-		}
-		$items = [];
-		foreach ($logs as $log) {
-			$item = $itemsById[(int)$log->getItemId()] ?? null;
-			// Skip items un-done since the check (stale log rows).
-			if ($item !== null && $item->getDone()) {
-				$items[] = $item;
-			}
-		}
-		$estimate = $this->estimateForItems($items);
-		return [
-			'items' => $this->serializeItems($items),
-			'estimate' => $this->formatEstimate($estimate['byCurrency']),
-			'noPriceCount' => $estimate['noPrice'],
-			'count' => count($items),
-		];
-	}
-
-	/**
 	 * Amend the actual paid amount for a store in the session's sequence.
 	 */
 	public function amendStoreBilled(ShoppingSession $session, int $storeId, ?float $billedTotal, ?string $billedCurrency): ShoppingSessionStore {

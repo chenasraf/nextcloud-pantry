@@ -191,13 +191,6 @@ namespace OCA\Pantry;
  *     uncheckedCount: int,
  * }
  *
- * @psalm-type PantryShoppingDoneToday = array{
- *     items: list<PantryListItem>,
- *     estimate: PantryShoppingEstimate,
- *     noPriceCount: int,
- *     count: int,
- * }
- *
  * @psalm-type PantryShoppingReminder = array{
  *     id: int,
  *     houseId: int,

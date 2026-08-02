@@ -1,7 +1,6 @@
 import { ocs } from '@/axios'
 import type {
   ChecklistItem,
-  ShoppingDoneToday,
   ShoppingHistoryRow,
   ShoppingPresenceEntry,
   ShoppingReview,
@@ -100,11 +99,6 @@ export async function getReview(houseId: number, sessionId: number): Promise<Sho
   const resp = await ocs.get<ShoppingReview>(
     `/houses/${houseId}/shopping/sessions/${sessionId}/review`,
   )
-  return resp.data
-}
-
-export async function getDoneToday(houseId: number): Promise<ShoppingDoneToday> {
-  const resp = await ocs.get<ShoppingDoneToday>(`/houses/${houseId}/shopping/sessions/done-today`)
   return resp.data
 }
 
