@@ -2022,8 +2022,8 @@ const strings = {
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
   editList: t('pantry', 'Edit list'),
-  // TRANSLATORS: Verb, toolbar button that opens Shopping Mode for this list.
-  shop: t('pantry', 'Shop'),
+  // TRANSLATORS: Button that opens Shopping Mode for this list.
+  shop: t('pantry', 'Start shopping'),
   // TRANSLATORS: Verb. Toolbar button that exports the list as Markdown.
   exportMarkdown: t('pantry', 'Export'),
   // TRANSLATORS: Verb. Toolbar button that imports items from Markdown.

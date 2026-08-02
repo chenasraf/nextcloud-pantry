@@ -620,8 +620,8 @@ const strings = {
   title: t('pantry', 'Checklists'),
   trashTitle: t('pantry', 'Checklists trash'),
   newList: t('pantry', 'New list'),
-  // TRANSLATORS: Verb, button that opens Shopping Mode to shop the house's lists.
-  shop: t('pantry', 'Shop'),
+  // TRANSLATORS: Button that opens Shopping Mode to shop the house's lists.
+  shop: t('pantry', 'Start shopping'),
   manageCategories: t('pantry', 'Manage categories'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar button opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
