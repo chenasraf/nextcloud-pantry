@@ -21,7 +21,7 @@ use OCP\Migration\SimpleMigrationStep;
  *
  * The review/history read an item's name + price off the live checklist item,
  * so hard-deleting an item (emptying trash) erased it from finished trips. This
- * adds snapshot columns to shopping_session_items; the session-close path fills
+ * adds snapshot columns to shopsess_items; the session-close path fills
  * them from the item at close time, and closed trips render from the snapshot —
  * so a finished trip is self-contained and survives the item being edited,
  * un-done, or deleted.
@@ -43,7 +43,7 @@ class Version21Date20260802000000 extends SimpleMigrationStep {
 		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
-		$items = Application::tableName('shopping_session_items');
+		$items = Application::tableName('shopsess_items');
 		if (!$schema->hasTable($items)) {
 			return null;
 		}
@@ -77,7 +77,7 @@ class Version21Date20260802000000 extends SimpleMigrationStep {
 	 * @param Closure():ISchemaWrapper $schemaClosure
 	 */
 	public function postSchemaChange(IOutput $output, Closure $schemaClosure, array $options): void {
-		$logs = Application::tableName('shopping_session_items');
+		$logs = Application::tableName('shopsess_items');
 		$items = Application::tableName('list_items');
 
 		$select = $this->connection->getQueryBuilder();

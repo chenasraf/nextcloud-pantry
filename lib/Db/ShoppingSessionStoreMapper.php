@@ -17,7 +17,7 @@ use OCP\IDBConnection;
  */
 class ShoppingSessionStoreMapper extends QBMapper {
 	public function __construct(IDBConnection $db) {
-		parent::__construct($db, Application::tableName('shopping_session_stores'), ShoppingSessionStore::class);
+		parent::__construct($db, Application::tableName('shopsess_stores'), ShoppingSessionStore::class);
 	}
 
 	/**

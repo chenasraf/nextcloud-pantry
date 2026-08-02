@@ -19,7 +19,7 @@ use OCP\Migration\SimpleMigrationStep;
  *
  * Five tables: a shopper's session, its checklist scope, its ordered store
  * sequence, its per-trip check log, and house-scoped reminders. Some columns
- * (`is_private`, `billed_*`, the `shopping_session_items` and
+ * (`is_private`, `billed_*`, the `shopsess_items` and
  * `shopping_reminders` tables) are not read yet; they are created up front so
  * later work needs no follow-up migration.
  *
@@ -28,7 +28,10 @@ use OCP\Migration\SimpleMigrationStep;
  *
  * Index/constraint names are kept <= 30 chars for Oracle compatibility, and
  * primary keys carry explicit short names because the auto-derived
- * "oc_pantry_shopping_*_pkey" would exceed that limit.
+ * "oc_pantry_shopping_*_pkey" would exceed that limit. For the same reason the
+ * session child tables use the `shopsess_` shorthand (for `shopping_session_`):
+ * the full `oc_pantry_shopping_session_lists` (32) exceeds the 30-char table
+ * name limit, whereas `oc_pantry_shopsess_lists` (24) fits.
  */
 class Version20Date20260731000000 extends SimpleMigrationStep {
 	/**
@@ -61,7 +64,7 @@ class Version20Date20260731000000 extends SimpleMigrationStep {
 			$table->addIndex(['user_id'], 'pantry_shopsess_user');
 		}
 
-		$lists = Application::tableName('shopping_session_lists');
+		$lists = Application::tableName('shopsess_lists');
 		if (!$schema->hasTable($lists)) {
 			$table = $schema->createTable($lists);
 			$table->addColumn('id', Types::BIGINT, ['autoincrement' => true, 'notnull' => true]);
@@ -72,7 +75,7 @@ class Version20Date20260731000000 extends SimpleMigrationStep {
 			$table->addIndex(['session_id'], 'pantry_shopsl_sess');
 		}
 
-		$stores = Application::tableName('shopping_session_stores');
+		$stores = Application::tableName('shopsess_stores');
 		if (!$schema->hasTable($stores)) {
 			$table = $schema->createTable($stores);
 			$table->addColumn('id', Types::BIGINT, ['autoincrement' => true, 'notnull' => true]);
@@ -86,7 +89,7 @@ class Version20Date20260731000000 extends SimpleMigrationStep {
 			$table->addIndex(['session_id'], 'pantry_shopss_sess');
 		}
 
-		$items = Application::tableName('shopping_session_items');
+		$items = Application::tableName('shopsess_items');
 		if (!$schema->hasTable($items)) {
 			$table = $schema->createTable($items);
 			$table->addColumn('id', Types::BIGINT, ['autoincrement' => true, 'notnull' => true]);
