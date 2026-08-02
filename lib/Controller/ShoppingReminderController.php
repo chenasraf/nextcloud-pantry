@@ -53,7 +53,7 @@ final class ShoppingReminderController extends OCSController {
 	 *
 	 * 200: Reminders returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-reminders')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/reminders')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function index(int $houseId): DataResponse {
@@ -76,7 +76,7 @@ final class ShoppingReminderController extends OCSController {
 	 *
 	 * 200: Reminder created
 	 */
-	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-reminders')]
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/reminders')]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function create(int $houseId, string $text, string $showOn, bool $enabled = true): DataResponse {
@@ -100,7 +100,7 @@ final class ShoppingReminderController extends OCSController {
 	 *
 	 * 200: Reminder updated
 	 */
-	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-reminders/{reminderId}', requirements: ['reminderId' => '\d+'])]
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping/reminders/{reminderId}', requirements: ['reminderId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function update(int $houseId, int $reminderId, ?string $text = null, ?string $showOn = null, ?bool $enabled = null): DataResponse {
@@ -134,7 +134,7 @@ final class ShoppingReminderController extends OCSController {
 	 *
 	 * 200: Reminders reordered
 	 */
-	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-reminders/reorder')]
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping/reminders/reorder')]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function reorder(int $houseId, array $reminderIds = []): DataResponse {
@@ -156,7 +156,7 @@ final class ShoppingReminderController extends OCSController {
 	 *
 	 * 200: Reminder deleted
 	 */
-	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/shopping-reminders/{reminderId}', requirements: ['reminderId' => '\d+'])]
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/shopping/reminders/{reminderId}', requirements: ['reminderId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function destroy(int $houseId, int $reminderId): DataResponse {

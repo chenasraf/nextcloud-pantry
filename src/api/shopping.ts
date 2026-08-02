@@ -26,7 +26,7 @@ export type CreateSessionResult =
 
 /** The caller's live session across all houses, or null. */
 export async function getCurrentSession(): Promise<ShoppingSession | null> {
-  const resp = await ocs.get<ShoppingSession | null>('/shopping-sessions/current')
+  const resp = await ocs.get<ShoppingSession | null>('/shopping/sessions/current')
   const data = resp.data as unknown
   // A null `data` payload is a real answer ("no live session"), but the ocs
   // interceptor's `ocsData ?? response.data` fallback turns it back into the raw
@@ -42,7 +42,7 @@ export async function createSession(
   houseId: number,
   input: CreateSessionInput,
 ): Promise<CreateSessionResult> {
-  const resp = await ocs.post<ShoppingSession>(`/houses/${houseId}/shopping-sessions`, input, {
+  const resp = await ocs.post<ShoppingSession>(`/houses/${houseId}/shopping/sessions`, input, {
     validateStatus: (s) => s === 200 || s === 409,
   })
   return { status: resp.status === 409 ? 'conflict' : 'created', session: resp.data }
@@ -54,7 +54,7 @@ export async function advanceStore(
   storeId: number,
 ): Promise<ShoppingSession> {
   const resp = await ocs.post<ShoppingSession>(
-    `/houses/${houseId}/shopping-sessions/${sessionId}/advance`,
+    `/houses/${houseId}/shopping/sessions/${sessionId}/advance`,
     { storeId },
   )
   return resp.data
@@ -63,7 +63,7 @@ export async function advanceStore(
 export async function closeSession(houseId: number, sessionId: number): Promise<ShoppingSession> {
   // A 409 (already closed) is treated as success — the trip is over either way.
   const resp = await ocs.post<ShoppingSession>(
-    `/houses/${houseId}/shopping-sessions/${sessionId}/close`,
+    `/houses/${houseId}/shopping/sessions/${sessionId}/close`,
     {},
     { validateStatus: (s) => s === 200 || s === 409 },
   )
@@ -75,7 +75,7 @@ export async function listSessionItems(
   sessionId: number,
 ): Promise<ChecklistItem[]> {
   const resp = await ocs.get<ChecklistItem[]>(
-    `/houses/${houseId}/shopping-sessions/${sessionId}/items`,
+    `/houses/${houseId}/shopping/sessions/${sessionId}/items`,
   )
   return resp.data ?? []
 }
@@ -85,7 +85,7 @@ export async function checkSessionItem(
   sessionId: number,
   itemId: number,
 ): Promise<void> {
-  await ocs.post(`/houses/${houseId}/shopping-sessions/${sessionId}/items/${itemId}/check`)
+  await ocs.post(`/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/check`)
 }
 
 export async function uncheckSessionItem(
@@ -93,18 +93,18 @@ export async function uncheckSessionItem(
   sessionId: number,
   itemId: number,
 ): Promise<void> {
-  await ocs.post(`/houses/${houseId}/shopping-sessions/${sessionId}/items/${itemId}/uncheck`)
+  await ocs.post(`/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/uncheck`)
 }
 
 export async function getReview(houseId: number, sessionId: number): Promise<ShoppingReview> {
   const resp = await ocs.get<ShoppingReview>(
-    `/houses/${houseId}/shopping-sessions/${sessionId}/review`,
+    `/houses/${houseId}/shopping/sessions/${sessionId}/review`,
   )
   return resp.data
 }
 
 export async function getDoneToday(houseId: number): Promise<ShoppingDoneToday> {
-  const resp = await ocs.get<ShoppingDoneToday>(`/houses/${houseId}/shopping-sessions/done-today`)
+  const resp = await ocs.get<ShoppingDoneToday>(`/houses/${houseId}/shopping/sessions/done-today`)
   return resp.data
 }
 
@@ -115,7 +115,7 @@ export async function getHistory(
   limit = 30,
   offset = 0,
 ): Promise<ShoppingHistoryRow[]> {
-  const resp = await ocs.get<ShoppingHistoryRow[]>(`/houses/${houseId}/shopping-sessions/history`, {
+  const resp = await ocs.get<ShoppingHistoryRow[]>(`/houses/${houseId}/shopping/sessions/history`, {
     params: { scope, limit, offset },
   })
   return resp.data ?? []
@@ -127,7 +127,7 @@ export async function getSessionSummary(
   sessionId: number,
 ): Promise<ShoppingReview> {
   const resp = await ocs.get<ShoppingReview>(
-    `/houses/${houseId}/shopping-sessions/${sessionId}/summary`,
+    `/houses/${houseId}/shopping/sessions/${sessionId}/summary`,
   )
   return resp.data
 }
@@ -138,14 +138,14 @@ export async function getSessionSummary(
  */
 export async function sendHeartbeat(houseId: number): Promise<ShoppingPresenceEntry[]> {
   const resp = await ocs.post<ShoppingPresenceEntry[]>(
-    `/houses/${houseId}/shopping-presence/heartbeat`,
+    `/houses/${houseId}/shopping/presence/heartbeat`,
   )
   return resp.data ?? []
 }
 
 /** Read-only house presence; requires no live session of the caller's own. */
 export async function getPresence(houseId: number): Promise<ShoppingPresenceEntry[]> {
-  const resp = await ocs.get<ShoppingPresenceEntry[]>(`/houses/${houseId}/shopping-presence`)
+  const resp = await ocs.get<ShoppingPresenceEntry[]>(`/houses/${houseId}/shopping/presence`)
   return resp.data ?? []
 }
 
@@ -156,7 +156,7 @@ export async function setSessionPrivacy(
   isPrivate: boolean,
 ): Promise<ShoppingSession> {
   const resp = await ocs.patch<ShoppingSession>(
-    `/houses/${houseId}/shopping-sessions/${sessionId}/privacy`,
+    `/houses/${houseId}/shopping/sessions/${sessionId}/privacy`,
     { isPrivate },
   )
   return resp.data
@@ -174,7 +174,7 @@ export async function patchStoreBilled(
   input: BilledInput,
 ): Promise<ShoppingSession> {
   const resp = await ocs.patch<ShoppingSession>(
-    `/houses/${houseId}/shopping-sessions/${sessionId}/stores/${storeId}`,
+    `/houses/${houseId}/shopping/sessions/${sessionId}/stores/${storeId}`,
     input,
   )
   return resp.data
@@ -186,7 +186,7 @@ export async function patchSessionBilled(
   input: BilledInput,
 ): Promise<ShoppingSession> {
   const resp = await ocs.patch<ShoppingSession>(
-    `/houses/${houseId}/shopping-sessions/${sessionId}`,
+    `/houses/${houseId}/shopping/sessions/${sessionId}`,
     input,
   )
   return resp.data

@@ -8,7 +8,7 @@ export interface ReminderInput {
 }
 
 export async function listReminders(houseId: number): Promise<ShoppingReminder[]> {
-  const resp = await ocs.get<ShoppingReminder[]>(`/houses/${houseId}/shopping-reminders`)
+  const resp = await ocs.get<ShoppingReminder[]>(`/houses/${houseId}/shopping/reminders`)
   return resp.data ?? []
 }
 
@@ -16,7 +16,7 @@ export async function createReminder(
   houseId: number,
   input: ReminderInput,
 ): Promise<ShoppingReminder> {
-  const resp = await ocs.post<ShoppingReminder>(`/houses/${houseId}/shopping-reminders`, input)
+  const resp = await ocs.post<ShoppingReminder>(`/houses/${houseId}/shopping/reminders`, input)
   return resp.data
 }
 
@@ -26,14 +26,14 @@ export async function updateReminder(
   patch: Partial<ReminderInput>,
 ): Promise<ShoppingReminder> {
   const resp = await ocs.patch<ShoppingReminder>(
-    `/houses/${houseId}/shopping-reminders/${reminderId}`,
+    `/houses/${houseId}/shopping/reminders/${reminderId}`,
     patch,
   )
   return resp.data
 }
 
 export async function deleteReminder(houseId: number, reminderId: number): Promise<void> {
-  await ocs.delete(`/houses/${houseId}/shopping-reminders/${reminderId}`)
+  await ocs.delete(`/houses/${houseId}/shopping/reminders/${reminderId}`)
 }
 
 /** Batch reorder: the ordered ids become positions 0..n-1. Returns the new order. */
@@ -42,7 +42,7 @@ export async function reorderReminders(
   reminderIds: number[],
 ): Promise<ShoppingReminder[]> {
   const resp = await ocs.patch<ShoppingReminder[]>(
-    `/houses/${houseId}/shopping-reminders/reorder`,
+    `/houses/${houseId}/shopping/reminders/reorder`,
     { reminderIds },
   )
   return resp.data ?? []

@@ -73,7 +73,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Live session (or null) returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/shopping-sessions/current')]
+	#[ApiRoute(verb: 'GET', url: '/api/shopping/sessions/current')]
 	#[NoAdminRequired]
 	public function current(): DataResponse {
 		return $this->runAction(function (): DataResponse {
@@ -99,7 +99,7 @@ final class ShoppingSessionController extends OCSController {
 	 * 200: Session started
 	 * 409: A live session already exists
 	 */
-	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-sessions')]
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function create(int $houseId, array $listIds = [], array $storeIds = [], bool $includeUnassigned = true): DataResponse {
@@ -141,7 +141,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Active store set
 	 */
-	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/advance')]
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/advance')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function advance(int $houseId, int $sessionId, int $storeId): DataResponse {
@@ -166,7 +166,7 @@ final class ShoppingSessionController extends OCSController {
 	 * 200: Session closed
 	 * 409: Session was already closed
 	 */
-	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/close')]
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/close')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function close(int $houseId, int $sessionId): DataResponse {
@@ -195,7 +195,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Items returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/items')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/items')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function items(int $houseId, int $sessionId): DataResponse {
@@ -220,7 +220,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Item checked
 	 */
-	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/items/{itemId}/check')]
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/items/{itemId}/check')]
 	#[NoAdminRequired]
 	#[Permission(['canCheckItems'])]
 	public function checkItem(int $houseId, int $sessionId, int $itemId): DataResponse {
@@ -243,7 +243,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Item unchecked
 	 */
-	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/items/{itemId}/uncheck')]
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/items/{itemId}/uncheck')]
 	#[NoAdminRequired]
 	#[Permission(['canCheckItems'])]
 	public function uncheckItem(int $houseId, int $sessionId, int $itemId): DataResponse {
@@ -268,7 +268,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Review returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/review')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/review')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function review(int $houseId, int $sessionId): DataResponse {
@@ -295,7 +295,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: History returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/history')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/sessions/history')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function history(int $houseId, string $scope = 'mine', int $limit = 30, int $offset = 0): DataResponse {
@@ -324,7 +324,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Summary returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/summary')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/summary')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function summary(int $houseId, int $sessionId): DataResponse {
@@ -347,7 +347,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Presence returned
 	 */
-	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping-presence/heartbeat')]
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/presence/heartbeat')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function heartbeat(int $houseId): DataResponse {
@@ -372,7 +372,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Presence returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-presence')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/presence')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function presence(int $houseId): DataResponse {
@@ -397,7 +397,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Privacy updated
 	 */
-	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/privacy')]
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/privacy')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function setPrivacy(int $houseId, int $sessionId, bool $isPrivate): DataResponse {
@@ -420,7 +420,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Done-today returned
 	 */
-	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping-sessions/done-today')]
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/sessions/done-today')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function doneToday(int $houseId): DataResponse {
@@ -447,7 +447,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Store billed amount amended
 	 */
-	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}/stores/{storeId}')]
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/stores/{storeId}')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function amendStoreBilled(int $houseId, int $sessionId, int $storeId, ?float $billedTotal = null, ?string $billedCurrency = null): DataResponse {
@@ -470,7 +470,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * 200: Session billed amount amended
 	 */
-	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping-sessions/{sessionId}')]
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function amendSessionBilled(int $houseId, int $sessionId, ?float $billedTotal = null, ?string $billedCurrency = null): DataResponse {

@@ -12908,7 +12908,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-reminders": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/reminders": {
             "get": {
                 "operationId": "shopping_reminder-index",
                 "summary": "List all shopping reminders in a house",
@@ -13137,7 +13137,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-reminders/{reminderId}": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/reminders/{reminderId}": {
             "patch": {
                 "operationId": "shopping_reminder-update",
                 "summary": "Update a shopping reminder",
@@ -13383,7 +13383,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-reminders/reorder": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/reminders/reorder": {
             "patch": {
                 "operationId": "shopping_reminder-reorder",
                 "summary": "Reorder a house's shopping reminders",
@@ -13507,7 +13507,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/shopping-sessions/current": {
+        "/ocs/v2.php/apps/pantry/api/shopping/sessions/current": {
             "get": {
                 "operationId": "shopping_session-current",
                 "summary": "Get the caller's live shopping session (across all houses)",
@@ -13602,7 +13602,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions": {
             "post": {
                 "operationId": "shopping_session-create",
                 "summary": "Start a shopping session in a house",
@@ -13767,7 +13767,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/advance": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/advance": {
             "post": {
                 "operationId": "shopping_session-advance",
                 "summary": "Set the active store of a shopping session",
@@ -13897,7 +13897,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/close": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/close": {
             "post": {
                 "operationId": "shopping_session-close",
                 "summary": "Close a shopping session",
@@ -14037,7 +14037,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/items": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/items": {
             "get": {
                 "operationId": "shopping_session-items",
                 "summary": "List the items to shop for a session",
@@ -14150,7 +14150,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/items/{itemId}/check": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/items/{itemId}/check": {
             "post": {
                 "operationId": "shopping_session-check-item",
                 "summary": "Check an item off during a shopping session",
@@ -14270,7 +14270,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/items/{itemId}/uncheck": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/items/{itemId}/uncheck": {
             "post": {
                 "operationId": "shopping_session-uncheck-item",
                 "summary": "Undo an item check during a shopping session",
@@ -14389,7 +14389,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/review": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/review": {
             "get": {
                 "operationId": "shopping_session-review",
                 "summary": "Review a shopping session",
@@ -14499,7 +14499,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/history": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/history": {
             "get": {
                 "operationId": "shopping_session-history",
                 "summary": "List closed shopping trips (history)",
@@ -14637,7 +14637,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/summary": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/summary": {
             "get": {
                 "operationId": "shopping_session-summary",
                 "summary": "Read-only summary of a shopping trip",
@@ -14747,7 +14747,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-presence/heartbeat": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/presence/heartbeat": {
             "post": {
                 "operationId": "shopping_session-heartbeat",
                 "summary": "Presence heartbeat for a house",
@@ -14850,7 +14850,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-presence": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/presence": {
             "get": {
                 "operationId": "shopping_session-presence",
                 "summary": "Read the current shopping presence in a house",
@@ -14953,7 +14953,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/privacy": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/privacy": {
             "patch": {
                 "operationId": "shopping_session-set-privacy",
                 "summary": "Toggle \"shop privately\" on a shopping session",
@@ -15082,7 +15082,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/done-today": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/done-today": {
             "get": {
                 "operationId": "shopping_session-done-today",
                 "summary": "My shopping-mode checks logged today",
@@ -15182,7 +15182,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}/stores/{storeId}": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/stores/{storeId}": {
             "patch": {
                 "operationId": "shopping_session-amend-store-billed",
                 "summary": "Amend the actual paid amount for a store in a session",
@@ -15326,7 +15326,7 @@
                 }
             }
         },
-        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping-sessions/{sessionId}": {
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}": {
             "patch": {
                 "operationId": "shopping_session-amend-session-billed",
                 "summary": "Amend the storeless-session grand total",
