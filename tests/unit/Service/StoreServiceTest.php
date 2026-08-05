@@ -48,7 +48,7 @@ class StoreServiceTest extends TestCase {
 		$stores = [$this->makeStore()];
 		$this->mapper->expects($this->once())
 			->method('findByHouse')
-			->with(1)
+			->with(1, 'name_asc')
 			->willReturn($stores);
 
 		$this->assertSame($stores, $this->svc->listForHouse(1));
@@ -237,5 +237,68 @@ class StoreServiceTest extends TestCase {
 		$this->mapper->method('findById')->willThrowException(new DoesNotExistException(''));
 		$this->expectException(NotFoundException::class);
 		$this->svc->get(123);
+	}
+
+	public function testListForHousePassesSortByToMapper(): void {
+		$stores = [$this->makeStore()];
+		$this->mapper->expects($this->once())
+			->method('findByHouse')
+			->with(1, 'custom')
+			->willReturn($stores);
+
+		$this->assertSame($stores, $this->svc->listForHouse(1, 'custom'));
+	}
+
+	public function testCreateAppendsAfterHighestSortOrder(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(4);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Aisle 8', 'store', '#e11d48');
+
+		$this->assertSame(5, $created->getSortOrder());
+	}
+
+	public function testCreateInEmptyHouseStartsAtZero(): void {
+		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(-1);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Produce', 'store', '#22c55e');
+
+		$this->assertSame(0, $created->getSortOrder());
+	}
+
+	public function testReorderUpdatesEachInHouse(): void {
+		$s1 = $this->makeStore(['id' => 1, 'houseId' => 1]);
+		$s2 = $this->makeStore(['id' => 2, 'houseId' => 1]);
+		$foreign = $this->makeStore(['id' => 3, 'houseId' => 99]);
+
+		$this->mapper->method('findById')->willReturnCallback(function (int $id) use ($s1, $s2, $foreign) {
+			return match ($id) {
+				1 => $s1,
+				2 => $s2,
+				3 => $foreign,
+				default => throw new DoesNotExistException(''),
+			};
+		});
+
+		$this->mapper->expects($this->exactly(2))->method('update');
+
+		$this->svc->reorder(1, [
+			['id' => 2, 'sortOrder' => 0],
+			['id' => 1, 'sortOrder' => 1],
+			['id' => 3, 'sortOrder' => 2], // wrong house, ignored
+		]);
+
+		$this->assertSame(1, $s1->getSortOrder());
+		$this->assertSame(0, $s2->getSortOrder());
+	}
+
+	public function testReorderSkipsMissingId(): void {
+		$this->mapper->method('findById')->willThrowException(new DoesNotExistException(''));
+		$this->mapper->expects($this->never())->method('update');
+
+		$this->svc->reorder(1, [['id' => 999, 'sortOrder' => 0]]);
 	}
 }

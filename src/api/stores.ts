@@ -26,7 +26,7 @@ export async function createStore(houseId: number, input: StoreInput): Promise<S
 export async function updateStore(
   houseId: number,
   storeId: number,
-  patch: Partial<StoreInput>,
+  patch: Partial<StoreInput> & { sortOrder?: number },
 ): Promise<Store> {
   const resp = await ocs.patch<Store>(`/houses/${houseId}/stores/${storeId}`, patch)
   return resp.data
@@ -34,4 +34,11 @@ export async function updateStore(
 
 export async function deleteStore(houseId: number, storeId: number): Promise<void> {
   await ocs.delete(`/houses/${houseId}/stores/${storeId}`)
+}
+
+export async function reorderStores(
+  houseId: number,
+  items: { id: number; sortOrder: number }[],
+): Promise<void> {
+  await ocs.post(`/houses/${houseId}/stores/reorder`, { items })
 }

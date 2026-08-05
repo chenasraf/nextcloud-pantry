@@ -170,7 +170,7 @@ const { houseId } = useCurrentHouse()
 const houseIdNum = computed(() => houseId.value ?? 0)
 
 const { lists, load: loadLists } = useChecklists(houseIdNum.value)
-const { load: loadStores, findById: findStore } = useStores(houseIdNum.value)
+const { items: storeCatalog, load: loadStores, findById: findStore } = useStores(houseIdNum.value)
 const { load: loadHouses, findById: findHouse } = useHouses()
 
 const loading = ref(true)
@@ -196,7 +196,9 @@ const allSelected = computed(
 )
 
 // Stores worth planning a route to: those with at least one un-done item on a
-// selected list. Sorted by name for a stable default order.
+// selected list. Ordered by the house's own store order (the storeSort pref —
+// name or custom) so the default route matches how stores are arranged
+// everywhere else; the shopper can then reorder them for this trip only.
 const availableStoreIds = computed<number[]>(() => {
   const selected = new Set(selectedListIds.value)
   const ids = new Set<number>()
@@ -204,7 +206,10 @@ const availableStoreIds = computed<number[]>(() => {
     if (item.done || !selected.has(item.listId)) continue
     for (const storeId of item.storeIds) ids.add(storeId)
   }
-  return [...ids].sort((a, b) => (storeName(a) || '').localeCompare(storeName(b) || ''))
+  const rank = new Map(storeCatalog.value.map((s, i) => [s.id, i]))
+  return [...ids].sort(
+    (a, b) => (rank.get(a) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b) ?? Number.MAX_SAFE_INTEGER),
+  )
 })
 
 // The user's route: the available stores in a chosen order, each on/off.

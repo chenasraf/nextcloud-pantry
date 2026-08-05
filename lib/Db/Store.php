@@ -30,6 +30,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setResponsible(?string $responsible)
  * @method string|null getNotes()
  * @method void setNotes(?string $notes)
+ * @method int getSortOrder()
+ * @method void setSortOrder(int $sortOrder)
  * @method int getCreatedAt()
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
@@ -46,11 +48,13 @@ class Store extends Entity implements \JsonSerializable {
 	protected ?string $contact = null;
 	protected ?string $responsible = null;
 	protected ?string $notes = null;
+	protected int $sortOrder = 0;
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
+		$this->addType('sortOrder', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 	}
@@ -70,6 +74,7 @@ class Store extends Entity implements \JsonSerializable {
 			'contact' => $this->contact,
 			'responsible' => $this->responsible,
 			'notes' => $this->notes,
+			'sortOrder' => $this->sortOrder,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,
 		];

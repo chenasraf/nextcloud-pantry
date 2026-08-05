@@ -11,6 +11,7 @@ use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
+use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\StoreService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -32,6 +33,7 @@ final class StoreController extends OCSController {
 		IRequest $request,
 		private StoreService $stores,
 		private HouseAuthService $auth,
+		private PrefsService $prefs,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -55,7 +57,8 @@ final class StoreController extends OCSController {
 		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$all = $this->stores->listForHouse($houseId);
+			$sortBy = $this->prefs->getStoreSort($uid, $houseId);
+			$all = $this->stores->listForHouse($houseId, $sortBy);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			return new DataResponse(array_map(fn ($s) => $s->jsonSerialize(), $sliced));
 		});
@@ -116,6 +119,7 @@ final class StoreController extends OCSController {
 	 * @param string|null $contact Phone, social or other contact details. Empty string clears it.
 	 * @param string|null $responsible Person responsible for the store. Empty string clears it.
 	 * @param string|null $notes Free-form notes. Empty string clears it.
+	 * @param int|null $sortOrder New sort order.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryStore, array{}>
 	 *
@@ -136,8 +140,9 @@ final class StoreController extends OCSController {
 		?string $contact = null,
 		?string $responsible = null,
 		?string $notes = null,
+		?int $sortOrder = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $storeId, $name, $icon, $color, $brand, $location, $openingHours, $contact, $responsible, $notes): DataResponse {
+		return $this->runAction(function () use ($houseId, $storeId, $name, $icon, $color, $brand, $location, $openingHours, $contact, $responsible, $notes, $sortOrder): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$this->stores->assertInHouse($storeId, $houseId);
 			$patch = [];
@@ -149,6 +154,9 @@ final class StoreController extends OCSController {
 			}
 			if ($color !== null) {
 				$patch['color'] = $color;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
 			}
 			$patch += $this->collectInfo($brand, $location, $openingHours, $contact, $responsible, $notes);
 			$updated = $this->stores->update($storeId, $patch);
@@ -192,6 +200,27 @@ final class StoreController extends OCSController {
 			$info['notes'] = $notes;
 		}
 		return $info;
+	}
+
+	/**
+	 * Batch reorder stores
+	 *
+	 * @param int $houseId House id.
+	 * @param list<array{id: int, sortOrder: int}> $items Reorder entries.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Stores reordered
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/stores/reorder')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function reorder(int $houseId, array $items = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $items): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->stores->reorder($houseId, $items);
+			return new DataResponse(['success' => true]);
+		});
 	}
 
 	/**
