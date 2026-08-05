@@ -37,6 +37,7 @@ class HouseService {
 		private CategoryMapper $categoryMapper,
 		private \OCA\Pantry\Db\StoreMapper $storeMapper,
 		private \OCA\Pantry\Db\ItemStoreMapper $itemStoreMapper,
+		private \OCA\Pantry\Db\ShoppingReminderMapper $shoppingReminderMapper,
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $photoFolderMapper,
 		private NoteMapper $noteMapper,
@@ -158,6 +159,7 @@ class HouseService {
 			$this->listMapper->deleteByHouse($houseId);
 			$this->categoryMapper->deleteByHouse($houseId);
 			$this->storeMapper->deleteByHouse($houseId);
+			$this->shoppingReminderMapper->deleteByHouse($houseId);
 			$this->photoMapper->deleteByHouse($houseId);
 			$this->photoFolderMapper->deleteByHouse($houseId);
 			$this->noteMapper->deleteByHouse($houseId);

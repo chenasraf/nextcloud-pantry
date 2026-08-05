@@ -142,6 +142,104 @@ export interface ChecklistItem {
   archivedAt: number | null
 }
 
+/** One store in a shopping session's ordered sequence. */
+export interface ShoppingSessionStore {
+  storeId: number
+  position: number
+  billedTotal: number | null
+  billedCurrency: string | null
+}
+
+/** A shopper's persisted trip. `live` mirrors `closedAt === null`. */
+export interface ShoppingSession {
+  id: number
+  houseId: number
+  userId: string
+  activeStoreId: number | null
+  lastSeenAt: number
+  closedAt: number | null
+  includeUnassigned: boolean
+  isPrivate: boolean
+  billedTotal: number | null
+  billedCurrency: string | null
+  live: boolean
+  createdAt: number
+  updatedAt: number
+  listIds: number[]
+  stores: ShoppingSessionStore[]
+}
+
+/** A per-currency total, range-aware (min === max for a point value). */
+export interface ShoppingEstimateEntry {
+  currency: string
+  min: number
+  max: number
+}
+
+/** Items checked at one store during a trip, with the store's totals. */
+export interface ShoppingReviewStore {
+  storeId: number | null
+  items: ChecklistItem[]
+  estimate: ShoppingEstimateEntry[]
+  noPriceCount: number
+  billedTotal: number | null
+  billedCurrency: string | null
+}
+
+export interface ShoppingReview {
+  stores: ShoppingReviewStore[]
+  grandTotal: ShoppingEstimateEntry[]
+  uncheckedCount: number
+}
+
+export interface ShoppingDoneToday {
+  items: ChecklistItem[]
+  estimate: ShoppingEstimateEntry[]
+  noPriceCount: number
+  count: number
+}
+
+/** A history row's grand total, collapsed to a single amount per currency. */
+export interface ShoppingHistoryTotal {
+  currency: string
+  amount: number
+}
+
+/** One closed trip in the history list (ADR 0008). */
+export interface ShoppingHistoryRow {
+  id: number
+  userId: string
+  createdAt: number
+  closedAt: number | null
+  /** Store-sequence names in order; empty for a storeless trip. */
+  stores: string[]
+  itemCount: number
+  grandTotal: ShoppingHistoryTotal[]
+}
+
+/** The moment a reminder surfaces during a trip (ADR 0002). */
+export type ShoppingReminderMoment = 'on_start' | 'on_store_advance' | 'on_close'
+
+/** A house-scoped, user-defined shopping reminder (ADR 0002). */
+export interface ShoppingReminder {
+  id: number
+  houseId: number
+  text: string
+  showOn: ShoppingReminderMoment
+  position: number
+  enabled: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+/** One present shopper in a house's derived shopping presence (ADR 0004). */
+export interface ShoppingPresenceEntry {
+  userId: string
+  /** The store the shopper is attributed to; null = live but no store chosen. */
+  activeStoreId: number | null
+  lastSeenAt: number
+}
+
 export interface Note {
   id: number
   houseId: number

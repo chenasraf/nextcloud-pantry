@@ -10,6 +10,16 @@ import HouseSettingsDialog from './HouseSettingsDialog.vue'
 // Mock @nextcloud/l10n
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 
+// The reminders manager (reached from the Shopping section) imports
+// @nextcloud/dialogs, whose dist transitively pulls an @nextcloud/vue chunk that
+// eagerly imports a .css asset Node's ESM loader rejects in tests ("Unknown file
+// extension .css"). Mock it — the same pattern the other dialog tests use.
+vi.mock('@nextcloud/dialogs', () => ({
+  showError: vi.fn(),
+  showSuccess: vi.fn(),
+  showWarning: vi.fn(),
+}))
+
 // Mock icon components
 vi.mock('@icons/Plus.vue', () => createIconMock('PlusIcon'))
 vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))

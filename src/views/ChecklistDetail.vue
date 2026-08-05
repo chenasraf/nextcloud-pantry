@@ -554,6 +554,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { t, n } from '@nextcloud/l10n'
 import { showUndo, showError, showSuccess } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -562,6 +563,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
+import CartIcon from '@icons/Cart.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PlusIcon from '@icons/Plus.vue'
@@ -629,6 +631,16 @@ import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 
 const props = defineProps<{ houseId: string; listId: string }>()
+const router = useRouter()
+
+function startShopping() {
+  void router.push({
+    name: 'shopping-start',
+    params: { houseId: String(houseIdNum.value) },
+    // Preselect this list on the start screen; the "All lists" view preselects all.
+    query: { lists: isMeta.value ? 'all' : String(listIdNum.value) },
+  })
+}
 
 const houseIdNum = computed(() => Number(props.houseId))
 const isMeta = computed(() => props.listId === 'all')
@@ -2010,6 +2022,8 @@ const strings = {
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
   editList: t('pantry', 'Edit list'),
+  // TRANSLATORS: Button that opens Shopping Mode for this list.
+  shop: t('pantry', 'Start shopping'),
   // TRANSLATORS: Verb. Toolbar button that exports the list as Markdown.
   exportMarkdown: t('pantry', 'Export'),
   // TRANSLATORS: Verb. Toolbar button that imports items from Markdown.
@@ -2065,6 +2079,14 @@ const strings = {
 
 const toolbarActions = computed<ToolbarAction[]>(() => {
   const actions: ToolbarAction[] = [
+    {
+      key: 'shop',
+      label: strings.shop,
+      icon: CartIcon,
+      variant: 'primary',
+      priority: 7,
+      onClick: startShopping,
+    },
     {
       key: 'sort',
       type: 'menu',

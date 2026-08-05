@@ -145,6 +145,86 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  * }
  *
+ * @psalm-type PantryShoppingSessionStore = array{
+ *     storeId: int,
+ *     position: int,
+ *     billedTotal: float|null,
+ *     billedCurrency: string|null,
+ * }
+ *
+ * @psalm-type PantryShoppingSession = array{
+ *     id: int,
+ *     houseId: int,
+ *     userId: string,
+ *     activeStoreId: int|null,
+ *     lastSeenAt: int,
+ *     closedAt: int|null,
+ *     includeUnassigned: bool,
+ *     isPrivate: bool,
+ *     billedTotal: float|null,
+ *     billedCurrency: string|null,
+ *     live: bool,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     listIds: list<int>,
+ *     stores: list<PantryShoppingSessionStore>,
+ * }
+ *
+ * @psalm-type PantryShoppingEstimate = list<array{
+ *     currency: string,
+ *     min: float,
+ *     max: float,
+ * }>
+ *
+ * @psalm-type PantryShoppingReviewStore = array{
+ *     storeId: int|null,
+ *     items: list<PantryListItem>,
+ *     estimate: PantryShoppingEstimate,
+ *     noPriceCount: int,
+ *     billedTotal: float|null,
+ *     billedCurrency: string|null,
+ * }
+ *
+ * @psalm-type PantryShoppingReview = array{
+ *     stores: list<PantryShoppingReviewStore>,
+ *     grandTotal: PantryShoppingEstimate,
+ *     uncheckedCount: int,
+ * }
+ *
+ * @psalm-type PantryShoppingDoneToday = array{
+ *     items: list<PantryListItem>,
+ *     estimate: PantryShoppingEstimate,
+ *     noPriceCount: int,
+ *     count: int,
+ * }
+ *
+ * @psalm-type PantryShoppingReminder = array{
+ *     id: int,
+ *     houseId: int,
+ *     text: string,
+ *     showOn: string,
+ *     position: int,
+ *     enabled: bool,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
+ *
+ * @psalm-type PantryShoppingPresenceEntry = array{
+ *     userId: string,
+ *     activeStoreId: int|null,
+ *     lastSeenAt: int,
+ * }
+ *
+ * @psalm-type PantryShoppingHistoryRow = array{
+ *     id: int,
+ *     userId: string,
+ *     createdAt: int,
+ *     closedAt: int|null,
+ *     stores: list<string>,
+ *     itemCount: int,
+ *     grandTotal: list<array{currency: string, amount: float}>,
+ * }
+ *
  * @psalm-type PantryShare = array{
  *     id: int,
  *     houseId: int,

@@ -51,6 +51,12 @@
           </template>
           {{ strings.manageStores }}
         </NcButton>
+        <NcButton v-if="!trashMode && lists.length > 0" variant="primary" @click="startShopping">
+          <template #icon>
+            <CartIcon :size="20" />
+          </template>
+          {{ strings.shop }}
+        </NcButton>
         <NcButton
           v-if="!trashMode && can.canCreateLists"
           variant="primary"
@@ -281,6 +287,7 @@ import PageToolbar from '@/components/PageToolbar'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
 import { StoreManagerDialog } from '@/components/StoreManager'
 import PlusIcon from '@icons/Plus.vue'
+import CartIcon from '@icons/Cart.vue'
 import TagIcon from '@icons/Tag.vue'
 import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
@@ -393,6 +400,14 @@ watch(
     await load(true)
   },
 )
+
+function startShopping() {
+  void router.push({
+    name: 'shopping-start',
+    params: { houseId: String(houseIdNum.value) },
+    query: { lists: 'all' },
+  })
+}
 
 const showCategoryManager = ref(false)
 const showStoreManager = ref(false)
@@ -605,6 +620,8 @@ const strings = {
   title: t('pantry', 'Checklists'),
   trashTitle: t('pantry', 'Checklists trash'),
   newList: t('pantry', 'New list'),
+  // TRANSLATORS: Button that opens Shopping Mode to shop the house's lists.
+  shop: t('pantry', 'Start shopping'),
   manageCategories: t('pantry', 'Manage categories'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar button opening the store manager.
   manageStores: t('pantry', 'Manage stores'),

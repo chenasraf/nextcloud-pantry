@@ -44,6 +44,18 @@
     </NcAppSettingsSection>
 
     <NcAppSettingsSection
+      v-if="houseIdNum !== null && canEditReminders"
+      id="house-shopping"
+      :name="strings.shoppingSection"
+    >
+      <p class="pantry-hint">{{ strings.remindersHint }}</p>
+      <NcButton @click="remindersOpen = true">
+        <template #icon><BellRingIcon :size="20" /></template>
+        {{ strings.manageReminders }}
+      </NcButton>
+    </NcAppSettingsSection>
+
+    <NcAppSettingsSection
       v-if="houseIdNum !== null && canAdmin"
       id="house-trash"
       :name="strings.trashSection"
@@ -287,6 +299,13 @@
       <NcButton variant="error" @click="deleteHouse">{{ strings.deleteButton }}</NcButton>
     </template>
   </NcDialog>
+
+  <ShoppingRemindersDialog
+    v-if="remindersOpen && houseIdNum !== null"
+    :open="remindersOpen"
+    :house-id="houseIdNum"
+    @update:open="remindersOpen = $event"
+  />
 </template>
 
 <script setup lang="ts">
@@ -306,6 +325,8 @@ import NcAvatar from '@nextcloud/vue/components/NcAvatar'
 import PlusIcon from '@icons/Plus.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
+import BellRingIcon from '@icons/BellRing.vue'
+import { ShoppingRemindersDialog } from '@/components/ShoppingReminders'
 import * as houseApi from '@/api/houses'
 import { setMemberRoles, updateRole as updateRoleApi } from '@/api/roles'
 import type { UserAutocomplete } from '@/api/houses'
@@ -323,6 +344,10 @@ const { house, isOwner, canAdmin, refresh } = useCurrentHouse()
 const { update, remove } = useHouses()
 
 const houseIdNum = computed(() => house.value?.id ?? null)
+
+// Shopping reminders are house shopping-config; gate the manager on list-edit.
+const remindersOpen = ref(false)
+const canEditReminders = computed(() => house.value?.permissions?.canEditLists ?? false)
 
 // -------- Roles --------
 const rolesApi = computed(() => (houseIdNum.value !== null ? useRoles(houseIdNum.value) : null))
@@ -808,6 +833,12 @@ const strings = {
     'pantry',
     'Display the avatar of the person who added each checklist item on the right of the row.',
   ),
+  shoppingSection: t('pantry', 'Shopping'),
+  remindersHint: t(
+    'pantry',
+    'Reminders pop up while you shop — at the start, when changing store, or at the end.',
+  ),
+  manageReminders: t('pantry', 'Manage reminders'),
   trashSection: t('pantry', 'Trash'),
   trashRetentionLabel: t('pantry', 'Days to keep items in the trash'),
   trashRetentionHint: t(

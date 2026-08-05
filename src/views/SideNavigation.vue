@@ -29,6 +29,7 @@
               </span>
             </template>
           </NcAppNavigationItem>
+          <li v-if="checklists.length > 0" class="pantry-nav__separator" role="separator"></li>
           <NcAppNavigationItem
             v-for="list in checklists"
             :key="list.id"
@@ -42,6 +43,18 @@
             <template #icon>
               <span class="pantry-nav__list-icon" :style="iconWrapStyle(list.color)">
                 <component :is="checklistIconComponent(list.icon)" :size="16" />
+              </span>
+            </template>
+          </NcAppNavigationItem>
+          <li class="pantry-nav__separator" role="separator"></li>
+          <NcAppNavigationItem
+            :name="strings.pastTrips"
+            :to="{ name: 'shopping-history', params: { houseId: String(currentHouseId) } }"
+            :active="route.name === 'shopping-history'"
+          >
+            <template #icon>
+              <span class="pantry-nav__list-icon pantry-nav__list-icon--meta">
+                <HistoryIcon :size="16" />
               </span>
             </template>
           </NcAppNavigationItem>
@@ -198,6 +211,7 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import HomeIcon from '@icons/Home.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import ViewListIcon from '@icons/ViewList.vue'
+import HistoryIcon from '@icons/History.vue'
 import ImageIcon from '@icons/Image.vue'
 import NoteIcon from '@icons/Note.vue'
 import CogIcon from '@icons/Cog.vue'
@@ -356,6 +370,7 @@ watch(currentHouseId, closeMenu)
 const strings = {
   lists: t('pantry', 'Checklists'),
   allLists: t('pantry', 'All lists'),
+  pastTrips: t('pantry', 'Shopping history'),
   // TRANSLATORS: Sidebar item, noun — the pinboard/corkboard view where photos are displayed, not a plank of wood.
   photos: t('pantry', 'Photo board'),
   notes: t('pantry', 'Notes wall'),
@@ -382,6 +397,7 @@ const strings = {
   justify-content: center;
   width: 24px;
   height: 24px;
+  margin-inline-start: 8px;
   margin-inline-end: 6px;
   border-radius: 8px;
   background: var(--color-background-dark);
@@ -391,6 +407,13 @@ const strings = {
     background: var(--color-primary-element);
     color: var(--color-primary-element-text);
   }
+}
+
+.pantry-nav__separator {
+  height: 1px;
+  background: var(--color-border-maxcontrast, var(--color-border-dark));
+  margin: 1px 12px 1px 4px;
+  list-style: none;
 }
 
 .pantry-nav__house-label {

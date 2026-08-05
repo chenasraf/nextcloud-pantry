@@ -66,6 +66,23 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/NotesView.vue'),
         props: true,
       },
+      {
+        // Both views read the house id (and session id) from the route via
+        // useCurrentHouse / useRoute, so no props coercion is needed here.
+        path: 'shopping',
+        name: 'shopping-start',
+        component: () => import('@/views/shopping/ShoppingStartView.vue'),
+      },
+      {
+        path: 'shopping/history',
+        name: 'shopping-history',
+        component: () => import('@/views/shopping/ShoppingHistoryView.vue'),
+      },
+      {
+        path: 'shopping/:sessionId',
+        name: 'shopping-session',
+        component: () => import('@/views/shopping/ShoppingSessionView.vue'),
+      },
     ],
   },
 ]
