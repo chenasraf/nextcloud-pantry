@@ -59,5 +59,10 @@
     "vitest": "^4.1.10",
     "vue-router": "^5.2.0",
     "vue-tsc": "^3.3.8"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": "2.1.3"
+    }
   }
 }
