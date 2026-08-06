@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.25.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.24.0...v0.25.0) (2026-08-06)
+
+
+### Features
+
+* **lists:** export and import from the All lists view ([f0f3b85](https://github.com/chenasraf/nextcloud-pantry/commit/f0f3b85d746f1c8a13f035d7a15dd752789ea955))
+* nextcloud 35 support ([1dd134a](https://github.com/chenasraf/nextcloud-pantry/commit/1dd134af6f52587d727ae014475d65f53ecaf191))
+* **recurrence:** per-house time of day for reopening recurring items ([699364c](https://github.com/chenasraf/nextcloud-pantry/commit/699364c2a1f3b8063d671c50fbf261952d9159da)), closes [#207](https://github.com/chenasraf/nextcloud-pantry/issues/207)
+* **shopping:** add Shopping Mode ([#204](https://github.com/chenasraf/nextcloud-pantry/issues/204)) ([aa67082](https://github.com/chenasraf/nextcloud-pantry/commit/aa6708283aa9439ab11921c89612038d168d9580))
+* **stores:** sort and group checklist by store with manual reorder ([#205](https://github.com/chenasraf/nextcloud-pantry/issues/205)) ([1b859c6](https://github.com/chenasraf/nextcloud-pantry/commit/1b859c6da650c66a3320af8f6d7f845f6a77c6d7))
+* **toolbar:** make some buttons always collapsed into popup menu ([9c5b384](https://github.com/chenasraf/nextcloud-pantry/commit/9c5b384e9864e23ab8b1ceb7f19d32cfc449b040))
+
+
+### Bug Fixes
+
+* **filters:** constrain NcSelect dropdown height so long lists scroll on mobile ([4603588](https://github.com/chenasraf/nextcloud-pantry/commit/46035883cf8091dc035bdad0a844ed60a87ae913)), closes [#174](https://github.com/chenasraf/nextcloud-pantry/issues/174)
+* **l10n:** Update translations from Transifex ([3385fa6](https://github.com/chenasraf/nextcloud-pantry/commit/3385fa6c2aa3c1bcbe6d717cebacc6ad7947f01b))
+* **l10n:** Update translations from Transifex ([b58ff85](https://github.com/chenasraf/nextcloud-pantry/commit/b58ff85bd7d4b165978a2a6ca918297bbdf9ca31))
+* **l10n:** Update translations from Transifex ([4d85b0f](https://github.com/chenasraf/nextcloud-pantry/commit/4d85b0f8e0f6c78739f0477f8e2379b7b43bc807))
+* **l10n:** Update translations from Transifex ([98d5bd5](https://github.com/chenasraf/nextcloud-pantry/commit/98d5bd56149679952972fe19979f286257f50eb7))
+* **l10n:** Update translations from Transifex ([a50a19f](https://github.com/chenasraf/nextcloud-pantry/commit/a50a19ff64a12d2f3e39484c177e0e35c4291823))
+* **l10n:** Update translations from Transifex ([9a9a4c2](https://github.com/chenasraf/nextcloud-pantry/commit/9a9a4c237b168a66d6728a0cc9683c76b74e45b1))
+
 ## [0.24.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.23.0...v0.24.0) (2026-07-30)
 
 
