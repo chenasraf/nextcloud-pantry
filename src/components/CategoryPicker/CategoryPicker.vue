@@ -8,6 +8,7 @@
       :placeholder="placeholder ?? strings.placeholder"
       :input-label="''"
       label="label"
+      :calculate-position="ncSelectCalculatePosition"
       @option:selected="onSelect"
     >
       <template #option="option">
@@ -59,6 +60,7 @@ import { t } from '@nextcloud/l10n'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import PlusIcon from '@icons/Plus.vue'
 import { useCategories } from '@/composables/useCategories'
+import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
 import { categoryIconComponent } from './categoryIcons'
 import CategoryFormDialog from '@/components/CategoryManager/CategoryFormDialog.vue'
 import type { Category } from '@/api/types'

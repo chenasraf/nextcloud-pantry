@@ -10,6 +10,7 @@
       :placeholder="placeholder ?? strings.placeholder"
       :input-label="''"
       label="label"
+      :calculate-position="ncSelectCalculatePosition"
       @update:model-value="onUpdate"
     >
       <template #option="option">
@@ -61,6 +62,7 @@ import { t } from '@nextcloud/l10n'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import PlusIcon from '@icons/Plus.vue'
 import { useStores } from '@/composables/useStores'
+import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
 import { storeIconComponent } from './storeIcons'
 import { StoreFormDialog } from '@/components/StoreManager'
 import type { Store } from '@/api/types'

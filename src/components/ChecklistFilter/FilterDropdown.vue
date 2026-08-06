@@ -10,6 +10,7 @@
     :placeholder="label"
     :input-label="label"
     label="label"
+    :calculate-position="ncSelectCalculatePosition"
     @update:model-value="onUpdate"
   >
     <template #option="option">
@@ -45,6 +46,7 @@
 import { computed, type Component } from 'vue'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
+import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
 
 export interface FilterOption {
   id: number
