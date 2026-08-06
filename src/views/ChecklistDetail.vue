@@ -559,7 +559,7 @@
 
     <MarkdownExportDialog
       v-model:open="showExport"
-      :list-name="list?.name ?? ''"
+      :list-name="isMeta ? strings.allListsTitle : (list?.name ?? '')"
       :items="items"
       :category-for="categoryFor"
     />
@@ -569,6 +569,8 @@
       :house-id="houseIdNum"
       :importing="importing"
       :reuse-pref="reuseExistingItems"
+      :require-list-selector="isMeta"
+      :lists="isMeta ? allLists : []"
       @import="handleImportItems"
     />
   </div>
@@ -767,7 +769,11 @@ const showExport = ref(false)
 const showImport = ref(false)
 const importing = ref(false)
 
-async function handleImportItems(inputs: ItemInput[], forceReuse: boolean) {
+async function handleImportItems(
+  inputs: ItemInput[],
+  forceReuse: boolean,
+  targetListId: number | null,
+) {
   // Close the import dialog first so the reuse-existing-items prompts (when the
   // pref is set to "ask") render cleanly over the list instead of stacking on
   // top of this dialog.
@@ -781,8 +787,10 @@ async function handleImportItems(inputs: ItemInput[], forceReuse: boolean) {
     // reuse-existing-items pref: reuse silently, prompt per duplicate, or add.
     // Sequential awaiting also resolves any "ask" prompts one at a time and
     // dedupes names that repeat within the imported batch itself.
+    // In the meta view the dialog supplies a target list; in a single-list view
+    // it stays null and handleAdd falls back to the currently open list.
     for (const input of inputs) {
-      await handleAdd(input, null, null, modeOverride)
+      await handleAdd(input, null, targetListId, modeOverride)
     }
     showSuccess(n('pantry', 'Imported %n item', 'Imported %n items', inputs.length))
   } catch (e) {
@@ -2206,22 +2214,27 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         priority: 2,
         onClick: toggleTrash,
       },
-      {
-        key: 'export',
-        label: strings.exportMarkdown,
-        icon: FileExportIcon,
-        alwaysCollapsed: true,
-        onClick: () => (showExport.value = true),
-      },
-      {
-        key: 'import',
-        label: strings.importMarkdown,
-        icon: FileImportIcon,
-        alwaysCollapsed: true,
-        onClick: () => (showImport.value = true),
-      },
     )
   }
+
+  // Export/import are available in both single-list and "All lists" views.
+  // In the meta view, export bundles every list and import prompts for a target.
+  actions.push(
+    {
+      key: 'export',
+      label: strings.exportMarkdown,
+      icon: FileExportIcon,
+      alwaysCollapsed: true,
+      onClick: () => (showExport.value = true),
+    },
+    {
+      key: 'import',
+      label: strings.importMarkdown,
+      icon: FileImportIcon,
+      alwaysCollapsed: true,
+      onClick: () => (showImport.value = true),
+    },
+  )
 
   actions.push({
     key: 'categories',

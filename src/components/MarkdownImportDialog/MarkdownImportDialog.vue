@@ -17,6 +17,37 @@
       <div v-if="dragActive" class="md-import__drop-overlay">
         {{ strings.dropHint }}
       </div>
+
+      <div v-if="requireListSelector" class="md-import__list-picker">
+        <label class="md-import__list-label">{{ strings.importInto }}</label>
+        <NcSelect
+          class="md-import__list-select"
+          :model-value="selectedListOption"
+          :options="listOptions"
+          :clearable="false"
+          :placeholder="strings.pickList"
+          input-label=""
+          @update:model-value="onListSelected"
+        >
+          <template #option="opt">
+            <span class="md-import__list-option">
+              <span class="md-import__list-option-icon" :style="listIconStyle(opt.list)">
+                <component :is="checklistIconComponent(opt.list.icon)" :size="14" />
+              </span>
+              {{ opt.label }}
+            </span>
+          </template>
+          <template #selected-option="opt">
+            <span class="md-import__list-option">
+              <span class="md-import__list-option-icon" :style="listIconStyle(opt.list)">
+                <component :is="checklistIconComponent(opt.list.icon)" :size="14" />
+              </span>
+              {{ opt.label }}
+            </span>
+          </template>
+        </NcSelect>
+      </div>
+
       <div class="md-import__source">
         <NcButton variant="secondary" type="button" @click="triggerFilePick">
           <template #icon>
@@ -117,7 +148,11 @@
 
     <template #actions>
       <NcButton @click="$emit('update:open', false)">{{ strings.cancel }}</NcButton>
-      <NcButton variant="primary" :disabled="selectedCount === 0 || importing" @click="submit">
+      <NcButton
+        variant="primary"
+        :disabled="selectedCount === 0 || importing || needsListPick"
+        @click="submit"
+      >
         {{ addLabel }}
       </NcButton>
     </template>
@@ -129,6 +164,7 @@ import { computed, ref, watch, type Component } from 'vue'
 import { t, n } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import FileUploadIcon from '@icons/FileUpload.vue'
 import TagOutlineIcon from '@icons/TagOutline.vue'
@@ -143,25 +179,40 @@ import CategoryChipList from '@/components/CategoryChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
 import PantryChip from '@/components/PantryChip'
+import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
+import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { useCategories } from '@/composables/useCategories'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { formatRrule } from '@/utils/rrule'
 import { parseMarkdownItems } from '@/utils/markdownList'
 import type { ItemInput } from '@/api/lists'
+import type { Checklist } from '@/api/types'
 import type { ReuseExistingItems } from '@/api/prefs'
 
 type SectionKey = 'category' | 'quantity' | 'description' | 'type'
 
-const props = defineProps<{
-  open: boolean
-  houseId: number
-  importing: boolean
-  reusePref: ReuseExistingItems
-}>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    houseId: number
+    importing: boolean
+    reusePref: ReuseExistingItems
+    // When true (the "All lists" view), the user must pick which list to import
+    // into. When false, the caller supplies the target implicitly (current list).
+    requireListSelector?: boolean
+    lists?: Checklist[]
+  }>(),
+  {
+    requireListSelector: false,
+    lists: () => [],
+  },
+)
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  import: [inputs: ItemInput[], forceReuse: boolean]
+  // targetListId is the picked list when requireListSelector is set, else null
+  // (the caller defaults to the currently open list).
+  import: [inputs: ItemInput[], forceReuse: boolean, targetListId: number | null]
 }>()
 
 // Only offer the override when the global pref would not already reuse on its
@@ -171,6 +222,33 @@ const canForceReuse = computed(() => props.reusePref !== 'reuse')
 const rawText = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const selected = ref<boolean[]>([])
+
+// ----- Target list picker (meta "All lists" view) -----
+
+const targetListId = ref<number | null>(null)
+
+interface ListOption {
+  value: number
+  label: string
+  list: Checklist
+}
+
+const listOptions = computed<ListOption[]>(() =>
+  props.lists.map((l) => ({ value: l.id, label: l.name, list: l })),
+)
+
+const selectedListOption = computed<ListOption | null>(
+  () => listOptions.value.find((o) => o.value === targetListId.value) ?? null,
+)
+
+function onListSelected(option: ListOption | null) {
+  targetListId.value = option?.value ?? null
+}
+
+function listIconStyle(list: Checklist) {
+  if (!list.color) return undefined
+  return { background: list.color, color: contrastColor(list.color) }
+}
 
 const description = ref('')
 const quantity = ref('')
@@ -213,6 +291,7 @@ watch(
     openSection.value = null
     forceReuse.value = false
     dragActive.value = false
+    targetListId.value = null
   },
 )
 
@@ -362,7 +441,10 @@ function chipVariant(chip: Chip): 'primary' | 'secondary' | 'tertiary' {
 
 // ----- Submit -----
 
+const needsListPick = computed(() => props.requireListSelector && targetListId.value === null)
+
 function submit() {
+  if (needsListPick.value) return
   const once = deleteOnDone.value
   const inputs: ItemInput[] = parsed.value
     .filter((_, i) => selected.value[i])
@@ -376,7 +458,7 @@ function submit() {
       deleteOnDone: once,
     }))
   if (inputs.length === 0) return
-  emit('import', inputs, canForceReuse.value && forceReuse.value)
+  emit('import', inputs, canForceReuse.value && forceReuse.value, targetListId.value)
 }
 
 const foundLabel = computed(() =>
@@ -387,6 +469,8 @@ const addLabel = computed(() => n('pantry', 'Add %n item', 'Add %n items', selec
 
 const strings = {
   title: t('pantry', 'Import from Markdown'),
+  importInto: t('pantry', 'Import into:'),
+  pickList: t('pantry', 'Pick a list …'),
   uploadFile: t('pantry', 'Upload .md file'),
   dropHint: t('pantry', 'Drop a Markdown file to import'),
   pasteLabel: t('pantry', 'Paste Markdown'),
@@ -436,6 +520,40 @@ const strings = {
     color: var(--color-primary-element);
     background: var(--color-primary-element-light, var(--color-background-hover));
     border-radius: var(--border-radius-large, 8px);
+  }
+
+  &__list-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__list-label {
+    font-size: 0.85rem;
+    color: var(--color-text-maxcontrast);
+  }
+
+  &__list-select {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  &__list-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__list-option-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--color-background-dark);
+    color: var(--color-primary-element);
+    flex-shrink: 0;
   }
 
   &__source {

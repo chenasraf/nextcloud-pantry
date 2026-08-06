@@ -30,6 +30,14 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
     emits: ['click'],
   },
 }))
+vi.mock('@nextcloud/vue/components/NcSelect', () => ({
+  default: {
+    name: 'NcSelect',
+    template: '<div class="nc-select"></div>',
+    props: ['modelValue', 'options', 'clearable', 'placeholder', 'inputLabel'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
   default: {
     name: 'NcCheckboxRadioSwitch',
@@ -266,5 +274,74 @@ describe('MarkdownImportDialog', () => {
 
     expect(wrapper.findAll('.md-import__row')).toHaveLength(0)
     expect((pasteTextarea(wrapper).element as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('emits a null target list when no list selector is shown', async () => {
+    const wrapper = mountDialog()
+    await pasteTextarea(wrapper).setValue('- Milk')
+    await addButton(wrapper).trigger('click')
+    expect(wrapper.emitted('import')![0][2]).toBeNull()
+  })
+
+  describe('target list selector', () => {
+    const LISTS = [
+      { id: 5, name: 'Groceries', icon: null, color: null },
+      { id: 9, name: 'Hardware', icon: null, color: null },
+    ] as unknown as import('@/api/types').Checklist[]
+
+    function mountWithSelector() {
+      return mount(MarkdownImportDialog, {
+        props: {
+          open: true,
+          houseId: 1,
+          importing: false,
+          reusePref: 'ask' as const,
+          requireListSelector: true,
+          lists: LISTS,
+        },
+      })
+    }
+
+    function pickList(wrapper: ReturnType<typeof mountWithSelector>, id: number) {
+      const opt = { value: id, label: '', list: LISTS.find((l) => l.id === id)! }
+      return wrapper.findComponent({ name: 'NcSelect' }).vm.$emit('update:modelValue', opt)
+    }
+
+    it('renders the list picker only when required', () => {
+      expect(mountDialog().find('.md-import__list-picker').exists()).toBe(false)
+      expect(mountWithSelector().find('.md-import__list-picker').exists()).toBe(true)
+    })
+
+    it('keeps the add button disabled until a list is picked', async () => {
+      const wrapper = mountWithSelector()
+      await pasteTextarea(wrapper).setValue('- Milk')
+      expect(addButton(wrapper).attributes('disabled')).toBeDefined()
+
+      await pickList(wrapper, 9)
+      await wrapper.vm.$nextTick()
+      expect(addButton(wrapper).attributes('disabled')).toBeUndefined()
+    })
+
+    it('emits the picked list id as the import target', async () => {
+      const wrapper = mountWithSelector()
+      await pasteTextarea(wrapper).setValue('- Milk')
+      await pickList(wrapper, 9)
+      await wrapper.vm.$nextTick()
+      await addButton(wrapper).trigger('click')
+      expect(wrapper.emitted('import')![0][2]).toBe(9)
+    })
+
+    it('clears the picked list when reopened', async () => {
+      const wrapper = mountWithSelector()
+      await pasteTextarea(wrapper).setValue('- Milk')
+      await pickList(wrapper, 9)
+      await wrapper.vm.$nextTick()
+
+      await wrapper.setProps({ open: false })
+      await wrapper.setProps({ open: true })
+      await pasteTextarea(wrapper).setValue('- Milk')
+
+      expect(addButton(wrapper).attributes('disabled')).toBeDefined()
+    })
   })
 })
