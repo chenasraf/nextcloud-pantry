@@ -46,7 +46,7 @@
     "Upload image" : "Įkelti paveikslą",
     "Delete permanently" : "Ištrinti visam laikui",
     "Restore" : "Atkurti",
-    "Unarchive" : "Išskleisti",
+    "Unarchive" : "Išarchyvuoti",
     "Status" : "Būsena",
     "Done" : "Atlikta",
     "Checklists" : "Kontrolinis sąrašas",
@@ -61,6 +61,7 @@
     "General" : "Bendra",
     "Save changes" : "Įrašyti pakeitimus",
     "Display" : "Ekranas",
+    "Shopping" : "Apsipirkti",
     "Trash" : "Šiukšlinė",
     "A daily background job permanently deletes checklists, items, notes and photos whose deleted-at timestamp is older than this many days. Set to 0 to never auto-delete — items stay in the trash until removed manually." : "Kasdienė foninė užduotis visam laikui ištrina kontrolinius sąrašus, elementus, užrašus ir nuotraukas, kurių ištrynimo laiko žyma yra senesnė nei nurodytas dienų skaičius. Nustačius reikšmę „0“, automatinis ištrynimas nevyks – elementai liks šiukšlinėje, kol bus pašalinti rankiniu būdu.",
     "Roles" : "Vaidmenys",
@@ -104,8 +105,11 @@
     "occurrences" : "paplitimas",
     "On date" : "data",
     "Summary" : "Santrauka",
+    "Resume" : "Pratęsti",
     "Viewer" : "Žiūryklė",
     "Editor" : "Redaktorius",
+    "Enabled" : "Įjungta",
+    "Back" : "Atgal",
     "Days" : "Dienos",
     "From:" : "Nuo:",
     "To:" : "Iki:",
@@ -129,7 +133,6 @@
     "Deleted notes will appear here." : "Čia bus rodomi ištrinti užrašai.",
     "Note restored" : "Užrašai atkurti",
     "New folder" : "Naujas aplankas",
-    "Back" : "Atgal",
     "Caption" : "Antraštė",
     "Add a description" : "Pridėti aprašą",
     "Drop files to upload" : "Įkelkite failus juos čia įmesdami",
@@ -137,6 +140,9 @@
     "Move to folder" : "Perkelti į aplanką",
     "This will permanently delete every photo in the trash, including their underlying files. This cannot be undone." : "Tai visam laikui ištrins visas šiukšlinėje esančias nuotraukas, įskaitant jas sudarančius failus. Šio veiksmo atšaukti neįmanoma.",
     "Create a house to start organizing your checklists, photos and notes." : "Sukurkite „namus“, kad pradėtumėte tvarkyti savo kontrolinius sąrašus, nuotraukas ir užrašus.",
-    "Uncategorized" : "Nekategorizuotas"
+    "Mine" : "Mano",
+    "Load more" : "Įkelti daugiau",
+    "Uncategorized" : "Nekategorizuotas",
+    "Finish" : "Užbaigti"
 },"pluralForm" :"nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < 11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? 1 : n % 1 != 0 ? 2: 3);"
 }

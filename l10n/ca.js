@@ -88,6 +88,7 @@ OC.L10N.register(
     "Summary" : "Resum",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "Back" : "Torna",
     "Days" : "Dies",
     "From:" : "De:",
     "To:" : "A:",
@@ -105,10 +106,10 @@ OC.L10N.register(
     "No notes yet" : "No hi ha notes encara",
     "Note restored" : "S'ha restaurat la nota",
     "New folder" : "Carpeta nova",
-    "Back" : "Torna",
     "Caption" : "Subtítol",
     "Add a description" : "Afegir una descripció",
     "Remove folder" : "Suprimeix la carpeta",
+    "Load more" : "Carrega'n més",
     "Uncategorized" : "Sense categoria"
 },
 "nplurals=2; plural=(n != 1);");

@@ -49,6 +49,7 @@ OC.L10N.register(
     "Ends" : "მთავრდება",
     "Never" : "არასდროს",
     "Summary" : "შეჯამება",
+    "Enabled" : "მოქმედია",
     "From:" : "ვისგან:",
     "To:" : "ვის:",
     "Location" : "ადგილმდებარეობა",
@@ -61,6 +62,7 @@ OC.L10N.register(
     "Apply" : "გამოყენება",
     "Note restored" : "ჩანაწერი აღდგა",
     "New folder" : "ახალი დირექტორია",
-    "Uncategorized" : "არაკატეგორიზირებული"
+    "Uncategorized" : "არაკატეგორიზირებული",
+    "Finish" : "დასრულება"
 },
 "nplurals=2; plural=(n!=1);");

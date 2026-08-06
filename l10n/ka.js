@@ -36,6 +36,7 @@ OC.L10N.register(
     "Member" : "Member",
     "General" : "General",
     "Save changes" : "Save changes",
+    "Shopping" : "Shopping",
     "Trash" : "Trash",
     "Members" : "Members",
     "Account" : "Account",
@@ -63,6 +64,8 @@ OC.L10N.register(
     "On date" : "On date",
     "Summary" : "Summary",
     "Editor" : "Editor",
+    "Enabled" : "Enabled",
+    "Back" : "უკან",
     "From:" : "From:",
     "To:" : "To:",
     "Location" : "Location",
@@ -78,8 +81,8 @@ OC.L10N.register(
     "New note" : "New note",
     "No notes yet" : "No notes yet",
     "New folder" : "New folder",
-    "Back" : "უკან",
     "Add a description" : "Add a description",
+    "Load more" : "Load more",
     "Uncategorized" : "Uncategorized"
 },
 "nplurals=2; plural=(n!=1);");

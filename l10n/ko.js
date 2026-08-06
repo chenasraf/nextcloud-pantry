@@ -44,6 +44,7 @@ OC.L10N.register(
     "General" : "일반",
     "Save changes" : "설정 저장",
     "Display" : "표시",
+    "Shopping" : "쇼핑",
     "Trash" : "휴지통",
     "Members" : "구성원",
     "Account" : "계정",
@@ -74,8 +75,11 @@ OC.L10N.register(
     "After" : "이후",
     "On date" : "날짜",
     "Summary" : "요약",
+    "Resume" : "다시 시작",
     "Viewer" : "뷰어",
     "Editor" : "편집기",
+    "Enabled" : "활성화",
+    "Back" : "뒤로",
     "Days" : "일",
     "From:" : "시작:",
     "To:" : "끝:",
@@ -91,9 +95,10 @@ OC.L10N.register(
     "No lists yet" : "리스트 없음",
     "Note restored" : "메모 복원됨",
     "New folder" : "새 폴더",
-    "Back" : "뒤로",
     "Add a description" : "설명 추가",
     "Move to folder" : "폴더로 이동",
-    "Uncategorized" : "분류되지 않음"
+    "Load more" : "더 불러오기",
+    "Uncategorized" : "분류되지 않음",
+    "Finish" : "끝내기"
 },
 "nplurals=1; plural=0;");

@@ -333,6 +333,8 @@ OC.L10N.register(
     "Editor" : "Redigerar",
     "Editor (via role)" : "Redigerar (via rolle)",
     "This person's role already grants edit access, which overrides the share." : "Denne personen har ein rolle som allereie gir dei redigeringstilgang, som overstyrer denne delinga.",
+    "Reminders" : "Påminningar",
+    "Back" : "Tilbake",
     "Could not create store." : "Klarte ikkje opprette butikk",
     "Create store …" : "Opprett butikk…",
     "No opening hours set." : "Inga opningstid er satt.",
@@ -457,7 +459,6 @@ OC.L10N.register(
     "_%n photo moved to trash_::_%n photos moved to trash_" : ["%n bilete flytta til papirkorga","%n bilete flytta til papirkorga"],
     "Photo board" : "Fotovegg",
     "New folder" : "Ny mappe",
-    "Back" : "Tilbake",
     "Edit photo" : "Rediger bilete",
     "Caption" : "Bilettekst",
     "Add a description" : "Legg til ei skildring",
@@ -493,8 +494,8 @@ OC.L10N.register(
     "Welcome to Pantry" : "Velkomen til Pantry",
     "Create a house to start organizing your checklists, photos and notes." : "Opprett eit hus for å byrje å organisere sjekklistene, bileta og notata dine",
     "Use the house picker at the bottom of the sidebar to create one." : "Bruk husveljaren nedst i sidestolpen for å lage eit.",
-    "Exported {date}" : "Eksportert {date}",
     "Uncategorized" : "Ukategorisert",
+    "Exported {date}" : "Eksportert {date}",
     "Starts after completion" : "Startar etter fullføring"
 },
 "nplurals=2; plural=(n != 1);");

@@ -91,6 +91,7 @@
     "Summary" : "Sammendrag",
     "Viewer" : "Fremviser",
     "Editor" : "Editor",
+    "Back" : "Tilbage",
     "Days" : "Dage",
     "From:" : "Fra:",
     "To:" : "Til:",
@@ -107,10 +108,10 @@
     "No lists yet" : "Endnu ingen lister",
     "Note restored" : "Note gendannet",
     "New folder" : "Ny mappe",
-    "Back" : "Tilbage",
     "Caption" : "Overskrift",
     "Add a description" : "Tilføj en beskrivelse",
     "Remove folder" : "Fjern mappe",
+    "Load more" : "Hent flere",
     "Uncategorized" : "Udenfor kategori"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

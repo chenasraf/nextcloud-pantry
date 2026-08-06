@@ -32,6 +32,7 @@
     "Weekly" : "Həftəlik",
     "Never" : "Heç vaxt",
     "Summary" : "Xülasə",
+    "Back" : "Geri",
     "From:" : "Kimdən:",
     "To:" : "Kimə:",
     "Location" : "Yerləşdiyiniz ünvan",
@@ -39,7 +40,6 @@
     "Export" : "Çıxarış",
     "Import" : "Əlavə et",
     "Select" : "Seç",
-    "New folder" : "Yeni qovluq",
-    "Back" : "Geri"
+    "New folder" : "Yeni qovluq"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

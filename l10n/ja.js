@@ -48,6 +48,7 @@ OC.L10N.register(
     "General" : "一般",
     "Save changes" : "変更を保存",
     "Display" : "表示",
+    "Shopping" : "買い物",
     "Trash" : "ゴミ箱",
     "Members" : "メンバー",
     "Remove member" : "メンバーを削除",
@@ -83,8 +84,11 @@ OC.L10N.register(
     "After" : "後",
     "On date" : "日時指定",
     "Summary" : "要約",
+    "Resume" : "再開",
     "Viewer" : "ビューア",
     "Editor" : "エディタ",
+    "Enabled" : "有効",
+    "Back" : "戻る",
     "Days" : "日",
     "From:" : "元:",
     "To:" : "先:",
@@ -101,10 +105,11 @@ OC.L10N.register(
     "No lists yet" : "まだリストがありません",
     "Note restored" : "ノートが復元されました",
     "New folder" : "新しいフォルダー",
-    "Back" : "戻る",
     "Caption" : "カプション",
     "Add a description" : "説明を追加",
     "Remove folder" : "フォルダーを削除",
-    "Uncategorized" : "未分類"
+    "Load more" : "さらに読み込む",
+    "Uncategorized" : "未分類",
+    "Finish" : "完了"
 },
 "nplurals=1; plural=0;");

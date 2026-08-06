@@ -63,7 +63,10 @@ OC.L10N.register(
     "Never" : "Weṛǧin",
     "After" : "Sdeffir",
     "Summary" : "Agzul",
+    "Resume" : "Agzul",
     "Editor" : "Amaẓrag",
+    "Enabled" : "Yermed",
+    "Back" : "Tuɣalin",
     "Days" : "Ussan",
     "From:" : "Sɣur:",
     "To:" : "Ɣer:",
@@ -77,7 +80,9 @@ OC.L10N.register(
     "Select" : "Fren",
     "Apply" : "Snes",
     "New folder" : "Akaram amaynut",
-    "Back" : "Tuɣalin",
-    "Uncategorized" : "War-taggayt"
+    "Mine" : "Inu",
+    "Load more" : "Sali-d ugar",
+    "Uncategorized" : "War-taggayt",
+    "Finish" : "Fak"
 },
 "nplurals=2; plural=(n != 1);");

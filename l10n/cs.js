@@ -153,6 +153,7 @@ OC.L10N.register(
     "Add a person …" : "Přidat osobu …",
     "Viewer" : "Prohlížeč",
     "Editor" : "Editor",
+    "Back" : "Zpět",
     "Could not create store." : "Nepodařilo se vytvořit obchod.",
     "Create store …" : "Vytvořit obchod …",
     "Days" : "Dny",
@@ -198,7 +199,6 @@ OC.L10N.register(
     "By description Z–A" : "Podle popisu od Z do A",
     "Photo board" : "Tabule fotek",
     "New folder" : "Nová složka",
-    "Back" : "Zpět",
     "Edit photo" : "Upravit fotku",
     "Caption" : "Titulek",
     "Add a description" : "Přidat popis",
@@ -228,6 +228,8 @@ OC.L10N.register(
     "e.g. Home, Beach house" : "např. Chalupa",
     "Creating …" : "Vytváření …",
     "Welcome to Pantry" : "Vítejte ve Spíži",
+    "Mine" : "Moje",
+    "Load more" : "Načíst více",
     "Uncategorized" : "Nezařazeno"
 },
 "nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n >= 2 && n <= 4 && n % 1 == 0) ? 1: (n % 1 != 0 ) ? 2 : 3;");

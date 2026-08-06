@@ -59,6 +59,7 @@ OC.L10N.register(
     "Weekly" : "Штотыдзень",
     "Monthly" : "Штомесяц",
     "Never" : "Ніколі",
+    "Back" : "Назад",
     "From:" : "З:",
     "To:" : "Да:",
     "Location" : "Месцазнаходжанне",
@@ -74,7 +75,6 @@ OC.L10N.register(
     "No lists yet" : "Пакуль няма спісаў",
     "No notes yet" : "Пакуль няма нататак",
     "New folder" : "Новая папка",
-    "Back" : "Назад",
     "Caption" : "Подпіс",
     "Creating …" : "Стварэнне …"
 },

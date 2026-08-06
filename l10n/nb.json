@@ -47,6 +47,7 @@
     "General" : "Generell",
     "Save changes" : "Lagre endringer",
     "Display" : "Vis",
+    "Shopping" : "Shoppe",
     "Trash" : "Papirkurv",
     "Members" : "Medlemmer",
     "Account" : "Konto",
@@ -79,8 +80,12 @@
     "After" : "Etter",
     "On date" : "På dato",
     "Summary" : "Oppsummering",
+    "Resume" : "Gjenoppta",
     "Viewer" : "Fremviser",
     "Editor" : "Tekstredigerer",
+    "Reminders" : "Varsler",
+    "Enabled" : "Aktivert",
+    "Back" : "Tilbake",
     "Days" : "Dager",
     "From:" : "Fra:",
     "To:" : "Til:",
@@ -98,11 +103,12 @@
     "No lists yet" : "Ingen lister enda",
     "Note restored" : "Notat gjenopprettet",
     "New folder" : "Ny mappe",
-    "Back" : "Tilbake",
     "Caption" : "Bildetekst",
     "Add a description" : "Legg til en beskrivelse",
     "Remove folder" : "Fjern mappe",
     "Move to folder" : "Flytt til mappe",
-    "Uncategorized" : "Ukategorisert"
+    "Load more" : "Last mer",
+    "Uncategorized" : "Ukategorisert",
+    "Finish" : "Fullfør"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

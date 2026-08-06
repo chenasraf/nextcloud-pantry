@@ -46,6 +46,7 @@
     "General" : "常规",
     "Save changes" : "保存更改",
     "Display" : "展示",
+    "Shopping" : "购物",
     "Trash" : "回收站",
     "Members" : "成员",
     "Account" : "账号",
@@ -81,8 +82,12 @@
     "After" : "之后",
     "On date" : "在特定日期",
     "Summary" : "总结",
+    "Resume" : "继续",
     "Viewer" : "查看器",
     "Editor" : "编辑器",
+    "Reminders" : "提醒",
+    "Enabled" : "已启用",
+    "Back" : "返回",
     "Days" : "天",
     "From:" : "从：",
     "To:" : "到：",
@@ -100,10 +105,11 @@
     "No lists yet" : "尚无名单",
     "Note restored" : "已恢复便签",
     "New folder" : "新文件夹",
-    "Back" : "返回",
     "Add a description" : "添加描述",
     "Remove folder" : "移除文件夹",
     "Move to folder" : "移动到文件夹",
-    "Uncategorized" : "未分类"
+    "Load more" : "加载更多",
+    "Uncategorized" : "未分类",
+    "Finish" : "完成"
 },"pluralForm" :"nplurals=1; plural=0;"
 }

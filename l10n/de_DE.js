@@ -358,6 +358,7 @@ OC.L10N.register(
     "Editor" : "Bearbeiter",
     "Editor (via role)" : "Bearbeiter (über Rolle)",
     "This person's role already grants edit access, which overrides the share." : "Die Rolle dieser Person gewährt bereits Bearbeitungszugriff, was die Freigabe außer Kraft setzt.",
+    "Back" : "Zurück",
     "Could not create store." : "Geschäft konnte nicht erstellt werden.",
     "Create store …" : "Erstelle Geschäft …",
     "No opening hours set." : "Keine Öffnungszeiten festgelegt.",
@@ -484,7 +485,6 @@ OC.L10N.register(
     "_%n photo moved to trash_::_%n photos moved to trash_" : ["%n Foto in den Papierkorb verschoben","%n Fotos in den Papierkorb verschoben"],
     "Photo board" : "Fotowand",
     "New folder" : "Neuer Ordner",
-    "Back" : "Zurück",
     "Edit photo" : "Foto bearbeiten",
     "Caption" : "Untertitel",
     "Add a description" : "Beschreibung hinzufügen",
@@ -520,8 +520,10 @@ OC.L10N.register(
     "Welcome to Pantry" : "Willkommen in Pantry",
     "Create a house to start organizing your checklists, photos and notes." : "Ein Haushalt erstellen, um Ihre Checklisten, Fotos und Notizen zu organisieren.",
     "Use the house picker at the bottom of the sidebar to create one." : "Nutzen Sie die Haushaltsauswahl am unteren Rand der Seitenleiste, um einen Haushalt zu erstellen.",
-    "Exported {date}" : "Exportiert am {date}",
+    "Mine" : "Meine",
+    "Load more" : "Mehr laden",
     "Uncategorized" : "Ohne Kategorie",
+    "Exported {date}" : "Exportiert am {date}",
     "Starts after completion" : "Beginnt nach Fertigstellung"
 },
 "nplurals=2; plural=(n != 1);");

@@ -34,6 +34,7 @@ OC.L10N.register(
     "Weekly" : "Həftəlik",
     "Never" : "Heç vaxt",
     "Summary" : "Xülasə",
+    "Back" : "Geri",
     "From:" : "Kimdən:",
     "To:" : "Kimə:",
     "Location" : "Yerləşdiyiniz ünvan",
@@ -41,7 +42,6 @@ OC.L10N.register(
     "Export" : "Çıxarış",
     "Import" : "Əlavə et",
     "Select" : "Seç",
-    "New folder" : "Yeni qovluq",
-    "Back" : "Geri"
+    "New folder" : "Yeni qovluq"
 },
 "nplurals=2; plural=(n != 1);");

@@ -77,6 +77,7 @@ OC.L10N.register(
     "Summary" : "Резюме",
     "Viewer" : "Визуализатор",
     "Editor" : "Редактор",
+    "Back" : "Назад",
     "From:" : "От:",
     "Location" : "Местоположение",
     "Contact" : "Контакт",
@@ -93,10 +94,10 @@ OC.L10N.register(
     "No notes yet" : "Няма открити бележки",
     "Note restored" : "Бележката е възстановена",
     "New folder" : "Нова папка",
-    "Back" : "Назад",
     "Add a description" : "Добави описание",
     "Remove folder" : "Премахване на папка",
     "Move to folder" : "Преместване в папка",
+    "Load more" : "Зареждане на още",
     "Uncategorized" : "Некатегоризирани"
 },
 "nplurals=2; plural=(n != 1);");

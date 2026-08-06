@@ -56,6 +56,7 @@
     "General" : "Yleiset",
     "Save changes" : "Tallenna muutokset",
     "Display" : "Näyttö",
+    "Shopping" : "Ostokset",
     "Trash" : "Roskakori",
     "Members" : "Jäsenet",
     "Add member" : "Lisää jäsen",
@@ -93,8 +94,10 @@
     "After" : "Jälkeen",
     "On date" : "Päivänä",
     "Summary" : "Yhteenveto",
+    "Resume" : "Palauta",
     "Viewer" : "Katselin",
     "Editor" : "Muokkain",
+    "Back" : "Takaisin",
     "Days" : "Päivää",
     "From:" : "Alkaen:",
     "To:" : "Päättyen:",
@@ -113,10 +116,11 @@
     "New note" : "Uusi muistiinpano",
     "Note restored" : "Muistiinpano palautettu",
     "New folder" : "Uusi kansio",
-    "Back" : "Takaisin",
     "Add a description" : "Lisää kuvaus",
     "Remove folder" : "Poista kansio",
     "Move to folder" : "Siirrä kansioon",
+    "Mine" : "Omat",
+    "Load more" : "Lataa lisää",
     "Uncategorized" : "Luokittelematon"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

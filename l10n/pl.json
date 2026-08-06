@@ -50,6 +50,7 @@
     "General" : "Ogólne",
     "Save changes" : "Zapisz zmiany",
     "Display" : "Wygląd",
+    "Shopping" : "Zakupy",
     "Trash" : "Kosz",
     "Members" : "Członkowie",
     "Remove member" : "Usuń członka",
@@ -86,8 +87,12 @@
     "After" : "Po",
     "On date" : "O czasie",
     "Summary" : "Podsumowanie",
+    "Resume" : "Wznów",
     "Viewer" : "Przeglądarka",
     "Editor" : "Edytor",
+    "Reminders" : "Przypomnienia",
+    "Enabled" : "Włączone",
+    "Back" : "Poprzednia",
     "Days" : "Dni",
     "From:" : "Od:",
     "To:" : "Do:",
@@ -106,11 +111,13 @@
     "No notes yet" : "Nie ma jeszcze notatek",
     "Note restored" : "Notatka przywrócona",
     "New folder" : "Nowy katalog",
-    "Back" : "Poprzednia",
     "Caption" : "Podpis",
     "Add a description" : "Dodaj opis",
     "Remove folder" : "Usuń katalog",
     "Move to folder" : "Przenieś do katalogu",
-    "Uncategorized" : "Bez kategorii"
+    "Mine" : "Moje",
+    "Load more" : "Wczytaj więcej",
+    "Uncategorized" : "Bez kategorii",
+    "Finish" : "Koniec"
 },"pluralForm" :"nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);"
 }

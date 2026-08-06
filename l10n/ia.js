@@ -30,6 +30,7 @@ OC.L10N.register(
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
+    "Enabled" : "Activate",
     "Location" : "Loco",
     "Export" : "Exportar",
     "Select" : "Selectionar",

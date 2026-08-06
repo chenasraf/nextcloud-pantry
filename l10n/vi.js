@@ -37,6 +37,7 @@ OC.L10N.register(
     "General" : "Cài đặt chung",
     "Save changes" : "Lưu thay đổi",
     "Display" : "Hiển th",
+    "Shopping" : "Đi mua sắm",
     "Trash" : "Thùng rác",
     "Members" : "Thành viên",
     "Account" : "Tài khoản",
@@ -66,6 +67,9 @@ OC.L10N.register(
     "Summary" : "Tóm tắt",
     "Viewer" : "Trình xem",
     "Editor" : "Trình biên tập",
+    "Reminders" : "Nhắc nhở",
+    "Enabled" : "Đá kích hoạt",
+    "Back" : "Trở lại",
     "Days" : "Ngày",
     "From:" : "Từ :",
     "To:" : "Tới :",
@@ -81,9 +85,9 @@ OC.L10N.register(
     "No lists yet" : "Chưa có danh sách",
     "No notes yet" : "Chưa có ghi chú",
     "New folder" : "Thư mục mới",
-    "Back" : "Trở lại",
     "Add a description" : "Thêm vào một mô tả",
     "Remove folder" : "Xoá thư mục",
+    "Load more" : "Xem thêm",
     "Uncategorized" : "Chưa phân loại"
 },
 "nplurals=1; plural=0;");

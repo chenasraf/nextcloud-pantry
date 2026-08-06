@@ -31,11 +31,12 @@ OC.L10N.register(
     "Daily" : "දිනපතා",
     "Weekly" : "සතිපතා",
     "Summary" : "සාරාංශය",
+    "Enabled" : "සබල කර ඇත",
+    "Back" : "ආපසු",
     "Days" : "දින",
     "Location" : "ස්ථානය",
     "Archive" : "සංරක්ෂණය",
     "No notes yet" : "තවම සටහන් නැත",
-    "New folder" : "නව බහාලුම",
-    "Back" : "ආපසු"
+    "New folder" : "නව බහාලුම"
 },
 "nplurals=2; plural=(n != 1);");

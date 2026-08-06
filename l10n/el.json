@@ -320,6 +320,7 @@
     "Editor" : "Επεξεργαστής",
     "Editor (via role)" : "Επεξεργαστής (μέσω ρόλου)",
     "This person's role already grants edit access, which overrides the share." : "Ο ρόλος αυτού του ατόμου παρέχει ήδη δικαιώματα επεξεργασίας, τα οποία υπερισχύουν της κοινής χρήσης.",
+    "Back" : "Επιστροφή",
     "Days" : "Ημέρες",
     "From:" : "Από:",
     "To:" : "Προς:",
@@ -416,7 +417,6 @@
     "_%n photo moved to trash_::_%n photos moved to trash_" : ["%n φωτογραφία μεταφέρθηκε στα απορρίμματα","%n φωτογραφίες μεταφέρθηκαν στα απορρίμματα"],
     "Photo board" : "Πίνακας φωτογραφιών",
     "New folder" : "Νέος φάκελος",
-    "Back" : "Επιστροφή",
     "Edit photo" : "Επεξεργασία φωτογραφίας",
     "Caption" : "Λεζάντα",
     "Add a description" : "Προσθήκη περιγραφής",
@@ -452,8 +452,10 @@
     "Welcome to Pantry" : "Καλώς ορίσατε στο Pantry",
     "Create a house to start organizing your checklists, photos and notes." : "Δημιουργήστε ένα σπίτι για να ξεκινήσετε την οργάνωση των λιστών ελέγχου, των φωτογραφιών και των σημειώσεών σας.",
     "Use the house picker at the bottom of the sidebar to create one." : "Χρησιμοποιήστε τον επιλογέα σπιτιού στο κάτω μέρος της πλευρικής εργαλειοθήκης για να δημιουργήσετε ένα.",
-    "Exported {date}" : "Εξήχθη στις {date}",
+    "Mine" : "Δικά μου",
+    "Load more" : "Φόρτωση περισσότερων",
     "Uncategorized" : "Χωρίς κατηγορία",
+    "Exported {date}" : "Εξήχθη στις {date}",
     "Starts after completion" : "Ξεκινά μετά την ολοκλήρωση"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

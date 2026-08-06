@@ -57,6 +57,7 @@ OC.L10N.register(
     "Never" : "Hech qachon",
     "On date" : "Sanada",
     "Editor" : "Tahrirchi",
+    "Back" : "Orqaga",
     "Days" : "Kunlar",
     "Location" : "Joylashuv",
     "Contact" : "Aloqa",
@@ -68,7 +69,6 @@ OC.L10N.register(
     "New note" : "Yangi eslatma",
     "No notes yet" : "Hozircha qaydlar yoʻq",
     "New folder" : "Yangi jild",
-    "Back" : "Orqaga",
     "Add a description" : "Tavsif qo'shing",
     "Uncategorized" : "Kategoriyasiz"
 },

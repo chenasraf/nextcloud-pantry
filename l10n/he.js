@@ -40,6 +40,7 @@ OC.L10N.register(
     "General" : "כללי",
     "Save changes" : "שמירת השינויים",
     "Display" : "תצוגה",
+    "Shopping" : "קניות",
     "Trash" : "פח אשפה",
     "Roles" : "תפקידים",
     "Members" : "חברים",
@@ -69,7 +70,9 @@ OC.L10N.register(
     "Never" : "מעולם לא",
     "On date" : "בתאריך",
     "Summary" : "תקציר",
+    "Resume" : "להמשיך",
     "Viewer" : "מציג",
+    "Back" : "אחורה",
     "Days" : "ימים",
     "From:" : "התחלה:",
     "To:" : "סיום:",
@@ -86,8 +89,9 @@ OC.L10N.register(
     "New note" : "פתק חדש",
     "Note restored" : "פתק שוחזר",
     "New folder" : "תיקייה חדשה",
-    "Back" : "אחורה",
     "Add a description" : "הוסף תיאור",
-    "Uncategorized" : "ללא קטגוריה"
+    "Load more" : "לטעון עוד",
+    "Uncategorized" : "ללא קטגוריה",
+    "Finish" : "סיים"
 },
 "nplurals=3; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: 2;");

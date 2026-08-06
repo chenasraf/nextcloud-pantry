@@ -93,6 +93,7 @@ OC.L10N.register(
     "Summary" : "Sammendrag",
     "Viewer" : "Fremviser",
     "Editor" : "Editor",
+    "Back" : "Tilbage",
     "Days" : "Dage",
     "From:" : "Fra:",
     "To:" : "Til:",
@@ -109,10 +110,10 @@ OC.L10N.register(
     "No lists yet" : "Endnu ingen lister",
     "Note restored" : "Note gendannet",
     "New folder" : "Ny mappe",
-    "Back" : "Tilbage",
     "Caption" : "Overskrift",
     "Add a description" : "Tilføj en beskrivelse",
     "Remove folder" : "Fjern mappe",
+    "Load more" : "Hent flere",
     "Uncategorized" : "Udenfor kategori"
 },
 "nplurals=2; plural=(n != 1);");

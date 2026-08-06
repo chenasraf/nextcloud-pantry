@@ -46,6 +46,7 @@
     "General" : "Generale",
     "Save changes" : "Salva modifiche",
     "Display" : "Visualizza",
+    "Shopping" : "Acquisti",
     "Trash" : "Cestino",
     "Members" : "Partecipanti",
     "Account" : "Account",
@@ -81,8 +82,11 @@
     "After" : "Dopo",
     "On date" : "In data",
     "Summary" : "Riepilogo",
+    "Resume" : "Riprendi",
     "Viewer" : "Visualizzatore",
     "Editor" : "Editor",
+    "Enabled" : "Abilitata",
+    "Back" : "Indietro",
     "Days" : "Giorni",
     "From:" : "Da:",
     "To:" : "A: ",
@@ -101,10 +105,11 @@
     "No notes yet" : "Nessuna nota",
     "Note restored" : "Nota ripristinata",
     "New folder" : "Nuova cartella",
-    "Back" : "Indietro",
     "Caption" : "Sottotitolo",
     "Add a description" : "Aggiungi una descrizione",
     "Remove folder" : "Rimuovi cartella",
-    "Uncategorized" : "Senza categoria"
+    "Load more" : "Carica altro",
+    "Uncategorized" : "Senza categoria",
+    "Finish" : "Fine"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

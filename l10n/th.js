@@ -44,6 +44,8 @@ OC.L10N.register(
     "Weekly" : "รายสัปดาห์",
     "Monthly" : "ทุก ๆ เดือน",
     "Never" : "ไม่เคย",
+    "Reminders" : "การแจ้งเตือน",
+    "Enabled" : "เปิดใช้งาน",
     "From:" : "จาก:",
     "To:" : "ถึง:",
     "Location" : "ตำแหน่ง",

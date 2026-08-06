@@ -37,6 +37,7 @@ OC.L10N.register(
     "Notes" : "Notas",
     "Save changes" : "Sarva càmbios",
     "Display" : "Ischermu",
+    "Shopping" : "Còmporas",
     "Trash" : "Àliga",
     "Members" : "Membros",
     "Account" : "Contu",
@@ -62,7 +63,11 @@ OC.L10N.register(
     "Never" : "Mai",
     "On date" : "In data",
     "Summary" : "Resumu",
+    "Resume" : "Torra a cumintzare",
     "Viewer" : "Visualizadore",
+    "Reminders" : "Promemòrias",
+    "Enabled" : "Ativadu",
+    "Back" : "In segus",
     "From:" : "Dae:",
     "Location" : "Positzione",
     "Contact" : "Cuntata",
@@ -77,7 +82,7 @@ OC.L10N.register(
     "No lists yet" : "Perunu elencu ancora",
     "New note" : "Notas noas",
     "New folder" : "Cartella noa",
-    "Back" : "In segus",
-    "Add a description" : "Agiunghe una descritzione"
+    "Add a description" : "Agiunghe una descritzione",
+    "Load more" : "Càrriga àteru"
 },
 "nplurals=2; plural=(n != 1);");

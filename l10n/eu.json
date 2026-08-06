@@ -47,6 +47,7 @@
     "General" : "Orokorra",
     "Save changes" : "Gorde aldaketak",
     "Display" : "Bistaratzea",
+    "Shopping" : "Erosketak",
     "Trash" : "Zakarrontzia",
     "Members" : "Partaideak",
     "Account" : "Kontua",
@@ -81,8 +82,10 @@
     "After" : "Gero",
     "On date" : "Epean",
     "Summary" : "Laburpena",
+    "Resume" : "Jarraitu",
     "Viewer" : "Ikustailea",
     "Editor" : "Editorea",
+    "Back" : "Itzuli",
     "Days" : "Egunak",
     "From:" : "Noiztik:",
     "To:" : "Noiz arte:",
@@ -100,11 +103,11 @@
     "No lists yet" : "Ez dago zerrendarik",
     "Note restored" : "Oharra berreskuratuta",
     "New folder" : "Karpeta berria",
-    "Back" : "Itzuli",
     "Caption" : "Epigrafea",
     "Add a description" : "Gehitu deskribapena",
     "Remove folder" : "Kendu karpeta",
     "Move to folder" : "Eraman karpetara",
+    "Load more" : "Kargatu gehiago",
     "Uncategorized" : "Kategoria gabe"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

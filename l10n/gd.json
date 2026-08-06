@@ -19,13 +19,13 @@
     "Remove" : "Thoir air falbh",
     "Preview" : "Ro-sheall",
     "Folder name" : "Ainm a’ phasgain",
+    "Back" : "Air ais",
     "From:" : "O:",
     "To:" : "Gu:",
     "Newest first" : "As ùire an toiseach",
     "Oldest first" : "As sine an toiseach",
     "New note" : "Nòta ùr",
     "New folder" : "Pasgan ùr",
-    "Back" : "Air ais",
     "Uncategorized" : "Gun seòrsachadh"
 },"pluralForm" :"nplurals=4; plural=(n==1 || n==11) ? 0 : (n==2 || n==12) ? 1 : (n > 2 && n < 20) ? 2 : 3;"
 }

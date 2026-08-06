@@ -85,8 +85,12 @@ OC.L10N.register(
     "After" : "كىيىن",
     "On date" : "چېسلا",
     "Summary" : "خۇلاسە",
+    "Resume" : "ئەسلىگە كەلتۈرۈش",
     "Viewer" : "كۆرگۈچى",
     "Editor" : "تەھرىر",
+    "Reminders" : "ئەسكەرتىش",
+    "Enabled" : "قوزغىتىلدى",
+    "Back" : "قايتىش",
     "Days" : "كۈنلەر",
     "From:" : "دىن:",
     "To:" : "غا:",
@@ -105,11 +109,12 @@ OC.L10N.register(
     "New note" : "يېڭى خاتىرە",
     "No notes yet" : "تېخى خاتىرە يوق",
     "New folder" : "يېڭى ھۆججەت قىسقۇچ",
-    "Back" : "قايتىش",
     "Caption" : "ئاستى ماۋزۇ",
     "Add a description" : "چۈشەندۈرۈش قوشۇڭ",
     "Remove folder" : "ھۆججەت قىسقۇچنى ئۆچۈرۈڭ",
     "Move to folder" : "قىسقۇچقا يۆتكەڭ",
-    "Uncategorized" : "تۈرگە ئايرىلمىغان"
+    "Load more" : "تېخىمۇ كۆپ يۈكلەڭ",
+    "Uncategorized" : "تۈرگە ئايرىلمىغان",
+    "Finish" : "تامام"
 },
 "nplurals=2; plural=(n != 1);");

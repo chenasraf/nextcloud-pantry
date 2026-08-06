@@ -331,6 +331,7 @@ OC.L10N.register(
     "Editor" : "Editor",
     "Editor (via role)" : "Editor (via role)",
     "This person's role already grants edit access, which overrides the share." : "This person's role already grants edit access, which overrides the share.",
+    "Back" : "Back",
     "Days" : "Days",
     "From:" : "From:",
     "To:" : "To:",
@@ -427,7 +428,6 @@ OC.L10N.register(
     "_%n photo moved to trash_::_%n photos moved to trash_" : ["%n photo moved to trash","%n photos moved to trash"],
     "Photo board" : "Photo board",
     "New folder" : "New folder",
-    "Back" : "Back",
     "Edit photo" : "Edit photo",
     "Caption" : "Caption",
     "Add a description" : "Add a description",
@@ -463,8 +463,10 @@ OC.L10N.register(
     "Welcome to Pantry" : "Welcome to Pantry",
     "Create a house to start organizing your checklists, photos and notes." : "Create a house to start organising your checklists, photos and notes.",
     "Use the house picker at the bottom of the sidebar to create one." : "Use the house picker at the bottom of the sidebar to create one.",
-    "Exported {date}" : "Exported {date}",
+    "Mine" : "Mine",
+    "Load more" : "Load more",
     "Uncategorized" : "Uncategorised",
+    "Exported {date}" : "Exported {date}",
     "Starts after completion" : "Starts after completion"
 },
 "nplurals=2; plural=(n != 1);");

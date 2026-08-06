@@ -53,6 +53,7 @@
     "General" : "Xeral",
     "Save changes" : "Gardar os cambios",
     "Display" : "Presentar",
+    "Shopping" : "Compras",
     "Trash" : "Cesto do lixo",
     "Roles" : "Roles",
     "Members" : "Membros",
@@ -91,8 +92,10 @@
     "occurrences" : "ocorrencias",
     "On date" : "Na data",
     "Summary" : "Resumo",
+    "Resume" : "Continuar",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "Back" : "Atrás",
     "Days" : "Días",
     "From:" : "Desde:",
     "To:" : "Ata:",
@@ -111,12 +114,13 @@
     "New note" : "Nova nota",
     "Note restored" : "A nota foi restaurada",
     "New folder" : "Novo cartafol",
-    "Back" : "Atrás",
     "Caption" : "Lenda",
     "Add a description" : "Engadir unha descrición",
     "Remove folder" : "Retirar o cartafol",
     "Move to folder" : "Mover ao cartafol",
     "Creating …" : "Creando…",
-    "Uncategorized" : "Sen categorizar"
+    "Load more" : "Cargar máis",
+    "Uncategorized" : "Sen categorizar",
+    "Finish" : "Rematar"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

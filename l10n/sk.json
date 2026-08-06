@@ -47,6 +47,7 @@
     "General" : "Všeobecné",
     "Save changes" : "Uložiť zmeny",
     "Display" : "Zobrazenie",
+    "Shopping" : "Nakupovanie",
     "Trash" : "Kôš",
     "Members" : "Členovia",
     "Account" : "Účet",
@@ -80,8 +81,12 @@
     "occurrences" : "výskyty",
     "On date" : "Dňa",
     "Summary" : "Súhrn",
+    "Resume" : "Obnoviť",
     "Viewer" : "Prehliadač",
     "Editor" : "Editor",
+    "Reminders" : "Pripomienky",
+    "Enabled" : "Zapnuté",
+    "Back" : "Späť",
     "Days" : "Dni",
     "From:" : "Z:",
     "To:" : "Do: ",
@@ -99,11 +104,13 @@
     "No lists yet" : "Zatiaľ žiadne zoznamy",
     "Note restored" : "Poznámka obnovená",
     "New folder" : "Nový priečinok",
-    "Back" : "Späť",
     "Caption" : "Popis",
     "Add a description" : "Zadajte popis",
     "Remove folder" : "Odobrať Priečinok",
     "Move to folder" : "Premiestniť do priečinku",
-    "Uncategorized" : "Nezaradené"
+    "Mine" : "Moje",
+    "Load more" : "Načítať viac",
+    "Uncategorized" : "Nezaradené",
+    "Finish" : "Dokončiť"
 },"pluralForm" :"nplurals=4; plural=(n % 1 == 0 && n == 1 ? 0 : n % 1 == 0 && n >= 2 && n <= 4 ? 1 : n % 1 != 0 ? 2: 3);"
 }

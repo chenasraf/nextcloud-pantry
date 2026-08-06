@@ -65,6 +65,7 @@ OC.L10N.register(
     "Summary" : "Resume",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "Back" : "Atrás",
     "Days" : "Díes",
     "From:" : "De:",
     "To:" : "A:",
@@ -82,7 +83,6 @@ OC.L10N.register(
     "New note" : "Nota nueva",
     "No notes yet" : "Nun hai nenguna nota",
     "New folder" : "Carpeta nueva",
-    "Back" : "Atrás",
     "Remove folder" : "Quitar la carpeta",
     "Uncategorized" : "Ensin categoría"
 },

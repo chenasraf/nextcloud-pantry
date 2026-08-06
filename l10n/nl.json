@@ -49,6 +49,7 @@
     "General" : "Algemeen",
     "Save changes" : "Wijzigingen opslaan",
     "Display" : "Weergeven",
+    "Shopping" : "Winkelen",
     "Trash" : "Verwijderen",
     "Members" : "Leden",
     "Remove member" : "Verwijder lid",
@@ -85,8 +86,12 @@
     "After" : "Na",
     "On date" : "Op datum",
     "Summary" : "Samenvatting",
+    "Resume" : "Hervat",
     "Viewer" : "Viewer",
     "Editor" : "Editor",
+    "Reminders" : "Herinneringen",
+    "Enabled" : "Ingeschakeld",
+    "Back" : "Terug",
     "Days" : "Dagen",
     "From:" : "Van:",
     "To:" : "Aan:",
@@ -105,11 +110,12 @@
     "No notes yet" : "Begin de eerste notitie",
     "Note restored" : "Notitie hersteld",
     "New folder" : "Nieuwe map",
-    "Back" : "Terug",
     "Caption" : "Bijschrift",
     "Add a description" : "Voeg een omschrijving toe",
     "Remove folder" : "Map verwijderen",
     "Move to folder" : "Verplaatsen naar map",
-    "Uncategorized" : "Niet gecategoriseerd"
+    "Load more" : "Laad meer",
+    "Uncategorized" : "Niet gecategoriseerd",
+    "Finish" : "Afronden"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

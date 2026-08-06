@@ -44,6 +44,7 @@ OC.L10N.register(
     "General" : "Almennt",
     "Save changes" : "Vista breytingar",
     "Display" : "Birting",
+    "Shopping" : "Versla",
     "Trash" : "Rusl",
     "Members" : "Meðlimir",
     "Account" : "Aðgangur",
@@ -76,8 +77,11 @@ OC.L10N.register(
     "After" : "Á eftir",
     "On date" : "Þann",
     "Summary" : "Samantekt",
+    "Resume" : "Halda áfram",
     "Viewer" : "Skoðari",
     "Editor" : "Ritill",
+    "Enabled" : "Virkt",
+    "Back" : "Til baka",
     "Days" : "Dagar",
     "From:" : "Frá:",
     "To:" : "Til:",
@@ -94,9 +98,10 @@ OC.L10N.register(
     "No lists yet" : "Engir listar ennþá",
     "Note restored" : "Minnispunktur endurheimtur",
     "New folder" : "Ný mappa",
-    "Back" : "Til baka",
     "Add a description" : "Settu inn lýsingu",
     "Remove folder" : "Fjarlægja möppu",
-    "Uncategorized" : "Óflokkað"
+    "Load more" : "Hlaða inn fleiri",
+    "Uncategorized" : "Óflokkað",
+    "Finish" : "Ljúka"
 },
 "nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);");

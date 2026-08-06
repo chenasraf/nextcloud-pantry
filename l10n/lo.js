@@ -76,7 +76,10 @@ OC.L10N.register(
     "occurrences" : "ຄັ້ງ",
     "On date" : "ໃນວັນທີ",
     "Summary" : "ສະຫຼຸບ",
+    "Resume" : "ສືບຕໍ່",
     "Editor" : "Editor",
+    "Enabled" : "ເປີດໃຊ້ງານ",
+    "Back" : "ກັບຄືນ",
     "Days" : "ມື້",
     "From:" : "ຈາກ:",
     "To:" : "ເຖິງ:",
@@ -95,10 +98,11 @@ OC.L10N.register(
     "New note" : "New note",
     "No notes yet" : "No notes yet",
     "New folder" : "ໂຟນເດີໃໝ່",
-    "Back" : "ກັບຄືນ",
     "Caption" : "Caption",
     "Remove folder" : "Remove folder",
     "Move to folder" : "ຍ້າຍໄປທີ່ໂຟນເດີ",
-    "Uncategorized" : "Uncategorized"
+    "Load more" : "Load more",
+    "Uncategorized" : "Uncategorized",
+    "Finish" : "ສຳເລັດ"
 },
 "nplurals=1; plural=0;");

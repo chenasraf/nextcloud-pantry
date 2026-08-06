@@ -78,8 +78,11 @@ OC.L10N.register(
     "Never" : "Tidak pernah",
     "On date" : "Pada tanggal",
     "Summary" : "Kesimpulan",
+    "Resume" : "Lanjutkan",
     "Viewer" : "Penampil",
     "Editor" : "Editor",
+    "Enabled" : "Diaktifkan",
+    "Back" : "Kembali",
     "Days" : "Hari",
     "From:" : "Dari:",
     "To:" : "Untuk:",
@@ -95,9 +98,10 @@ OC.L10N.register(
     "Apply" : "Terapkan",
     "No lists yet" : "Belum ada list",
     "New folder" : "Folder baru",
-    "Back" : "Kembali",
     "Add a description" : "Tambah deskripsi",
     "Remove folder" : "Hapus folder",
-    "Uncategorized" : "Tidak terkategori"
+    "Load more" : "Muat lebih banyak",
+    "Uncategorized" : "Tidak terkategori",
+    "Finish" : "Selesai"
 },
 "nplurals=1; plural=0;");

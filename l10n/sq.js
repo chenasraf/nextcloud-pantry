@@ -53,6 +53,9 @@ OC.L10N.register(
     "Ends" : "Mbarim",
     "Never" : "Kurrë",
     "Summary" : "Përmbledhje",
+    "Reminders" : "Kujtesë",
+    "Enabled" : "E aktivizuar",
+    "Back" : "Mbrapsht",
     "From:" : "Nga:",
     "To:" : "Deri më:",
     "Location" : "Vendndodhje",
@@ -66,7 +69,7 @@ OC.L10N.register(
     "Apply" : "Apliko",
     "Note restored" : "Shënimi i rivendos",
     "New folder" : "Dosje e re",
-    "Back" : "Mbrapsht",
-    "Uncategorized" : "Të pakategorizuara"
+    "Uncategorized" : "Të pakategorizuara",
+    "Finish" : "Përfundo"
 },
 "nplurals=2; plural=(n != 1);");

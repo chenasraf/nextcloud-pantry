@@ -34,6 +34,7 @@ OC.L10N.register(
     "Notes" : "Piezīmes",
     "General" : "Vispārīgi",
     "Save changes" : "Saglabāt izmaiņas",
+    "Shopping" : "Iepirkšanās",
     "Trash" : "Atkritne",
     "Members" : "Dalībnieki",
     "Account" : "Konts",
@@ -59,6 +60,7 @@ OC.L10N.register(
     "Summary" : "Kopsavilkums",
     "Viewer" : "Skatītājs",
     "Editor" : "Redaktors",
+    "Enabled" : "Iespējots",
     "Days" : "Dienas",
     "From:" : "No:",
     "To:" : "Kam:",
@@ -73,6 +75,8 @@ OC.L10N.register(
     "Apply" : "Apstiprināt",
     "New folder" : "Jauna mape",
     "Add a description" : "Pievienot aprakstu",
-    "Uncategorized" : "Bez kategorijas"
+    "Load more" : "Ielādēt vairāk",
+    "Uncategorized" : "Bez kategorijas",
+    "Finish" : "Pabeigt"
 },
 "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);");

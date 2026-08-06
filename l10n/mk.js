@@ -36,6 +36,7 @@ OC.L10N.register(
     "General" : "Општо",
     "Save changes" : "Зачувај ги промените",
     "Display" : "Прикажи",
+    "Shopping" : "Купување",
     "Trash" : "Корпа",
     "Members" : "Членови",
     "Account" : "Сметка",
@@ -62,8 +63,11 @@ OC.L10N.register(
     "Never" : "Никогаш",
     "On date" : "На датум",
     "Summary" : "Резиме",
+    "Resume" : "Продолжи",
     "Viewer" : "Прегледувач",
     "Editor" : "Уредник",
+    "Enabled" : "Овозможено",
+    "Back" : "Назад",
     "Days" : "Дена",
     "From:" : "Од:",
     "To:" : "До:",
@@ -81,8 +85,9 @@ OC.L10N.register(
     "No lists yet" : "Сеуште нема листи",
     "No notes yet" : "Сеуште нема забелешки",
     "New folder" : "Нова папка",
-    "Back" : "Назад",
     "Add a description" : "Додади опис",
-    "Move to folder" : "Помести во папка"
+    "Move to folder" : "Помести во папка",
+    "Load more" : "Вчитај повеќе",
+    "Finish" : "Крај"
 },
 "nplurals=2; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : 1;");

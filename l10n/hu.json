@@ -46,6 +46,7 @@
     "General" : "Általános",
     "Save changes" : "Változások mentése",
     "Display" : "Kiállítás",
+    "Shopping" : "Bevásárlás",
     "Trash" : "Lomtár",
     "Members" : "Tagok",
     "Account" : "Fiók",
@@ -79,8 +80,10 @@
     "After" : "Utána",
     "On date" : "Időpontban",
     "Summary" : "Összefoglalás",
+    "Resume" : "Folytatás",
     "Viewer" : "Megjelenítő",
     "Editor" : "Szerkesztő",
+    "Back" : "Vissza",
     "Days" : "Nap",
     "From:" : "Ettől a dátumtól:",
     "To:" : "Eddig a dátumig:",
@@ -98,11 +101,13 @@
     "No lists yet" : "Még nincsenek listák",
     "Note restored" : "Jegyzet visszaállítva",
     "New folder" : "Új mappa",
-    "Back" : "Vissza",
     "Caption" : "Felirat",
     "Add a description" : "Leírás hozzáadása",
     "Remove folder" : "Mappa eltávolítása",
     "Move to folder" : "Áthelyezés mappába",
-    "Uncategorized" : "Kategorizálatlan"
+    "Mine" : "Saját",
+    "Load more" : "Továbbiak betöltése",
+    "Uncategorized" : "Kategorizálatlan",
+    "Finish" : "Befejez"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

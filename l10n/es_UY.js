@@ -59,6 +59,7 @@ OC.L10N.register(
     "New note" : "Nota nueva",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",
-    "Uncategorized" : "Sin categoría"
+    "Uncategorized" : "Sin categoría",
+    "Finish" : "Terminar"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

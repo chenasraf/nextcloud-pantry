@@ -21,6 +21,7 @@ OC.L10N.register(
     "Folder name" : "ឈ្មោះ​ថត",
     "Daily" : "រាល់ថ្ងៃ",
     "Weekly" : "រាល់​សប្ដាហ៍",
+    "Enabled" : "បាន​បើក",
     "From:" : "ចាប់ពីៈ",
     "To:" : "រហូតដល់ៈ",
     "Location" : "ទីតាំង",

@@ -47,6 +47,7 @@
     "No roles" : "Sin roles",
     "General" : "General",
     "Display" : "Mostrar",
+    "Shopping" : "Compras",
     "Trash" : "Basura",
     "Roles" : "Roles",
     "Members" : "Miembros",
@@ -76,8 +77,10 @@
     "Never" : "Nunca",
     "On date" : "En fecha",
     "Summary" : "Resumen",
+    "Resume" : "Continuar",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "Back" : "Regresar",
     "Days" : "Días",
     "From:" : "De:",
     "To:" : "Para:",
@@ -95,10 +98,10 @@
     "New note" : "Nota nueva",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",
-    "Back" : "Regresar",
     "Add a description" : "Agregar una descripción",
     "Remove folder" : "Eliminar carpeta",
     "Move to folder" : "Mover a carpeta",
+    "Load more" : "Cargar más",
     "Uncategorized" : "Sin categoría"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

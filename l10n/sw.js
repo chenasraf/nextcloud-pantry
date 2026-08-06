@@ -82,8 +82,12 @@ OC.L10N.register(
     "occurrences" : "matukio",
     "On date" : "Kwa tarehe",
     "Summary" : "Muhtasari",
+    "Resume" : "Rejea",
     "Viewer" : "Mtazamaji",
     "Editor" : "Mhariri",
+    "Reminders" : "Vikumbusho",
+    "Enabled" : "Washwa",
+    "Back" : "Rudi",
     "Days" : "Siku",
     "From:" : "Tangu:",
     "To:" : "Mpaka:",
@@ -101,9 +105,9 @@ OC.L10N.register(
     "New note" : "Dokezo jipya",
     "No notes yet" : "Bado hakuna madokezo",
     "New folder" : "Folda mpya",
-    "Back" : "Rudi",
     "Caption" : "Manukuu",
     "Remove folder" : "Ondoa folda",
+    "Load more" : "Pakia zaidi",
     "Uncategorized" : "Haitambuliki"
 },
 "nplurals=2; plural=(n != 1);");

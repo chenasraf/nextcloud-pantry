@@ -45,6 +45,7 @@ OC.L10N.register(
     "General" : "Općenito",
     "Save changes" : "Spremi promjene",
     "Display" : "Prikaz",
+    "Shopping" : "Kupnja",
     "Trash" : "Smeće",
     "Members" : "Članovi",
     "Account" : "Račun",
@@ -78,8 +79,10 @@ OC.L10N.register(
     "Never" : "Nikad",
     "On date" : "Na datum",
     "Summary" : "Sažetak",
+    "Resume" : "Nastavi",
     "Viewer" : "Preglednik",
     "Editor" : "Uređivač",
+    "Back" : "Natrag",
     "From:" : "Od:",
     "Contact" : "Kontakt",
     "Newest first" : "Najnoviji prvi",
@@ -93,8 +96,8 @@ OC.L10N.register(
     "No lists yet" : "Još nema popisa",
     "Note restored" : "Bilješka je vraćena",
     "New folder" : "Nova mapa",
-    "Back" : "Natrag",
     "Add a description" : "Dodaj opis",
+    "Load more" : "Učitaj više",
     "Uncategorized" : "Nekategorizirani"
 },
 "nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;");

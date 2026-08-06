@@ -36,6 +36,7 @@ OC.L10N.register(
     "Member" : "Membru",
     "General" : "General",
     "Display" : "Display",
+    "Shopping" : "Shopping",
     "Trash" : "Șterse",
     "Members" : "Membri",
     "Account" : "Cont",
@@ -61,7 +62,11 @@ OC.L10N.register(
     "Never" : "Niciodată",
     "On date" : "Pe data",
     "Summary" : "Rezumat",
+    "Resume" : "Reia",
     "Viewer" : "Vizualizator",
+    "Reminders" : "Mementouri",
+    "Enabled" : "Activat",
+    "Back" : "Înapoi",
     "From:" : "De la :",
     "To:" : "Catre:",
     "Location" : "Locație",
@@ -76,8 +81,9 @@ OC.L10N.register(
     "No lists yet" : "Nu există încă liste",
     "No notes yet" : "Nu există notițe încă ",
     "New folder" : "Director nou",
-    "Back" : "Înapoi",
     "Add a description" : "Adauga o descripție",
-    "Remove folder" : "Șterge dosarul"
+    "Remove folder" : "Șterge dosarul",
+    "Load more" : "Încarcă mai mult",
+    "Finish" : "Finalizare"
 },
 "nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1));");
