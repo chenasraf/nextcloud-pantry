@@ -330,6 +330,7 @@
                     "checklistItemSort",
                     "checklistSort",
                     "categorySort",
+                    "storeSort",
                     "showAddedBy",
                     "lastCurrency",
                     "notifyPhoto",
@@ -359,6 +360,9 @@
                         "type": "string"
                     },
                     "categorySort": {
+                        "type": "string"
+                    },
+                    "storeSort": {
                         "type": "string"
                     },
                     "showAddedBy": {
@@ -1407,6 +1411,7 @@
                     "contact",
                     "responsible",
                     "notes",
+                    "sortOrder",
                     "createdAt",
                     "updatedAt"
                 ],
@@ -1455,6 +1460,10 @@
                     "notes": {
                         "type": "string",
                         "nullable": true
+                    },
+                    "sortOrder": {
+                        "type": "integer",
+                        "format": "int64"
                     },
                     "createdAt": {
                         "type": "integer",
@@ -11521,6 +11530,12 @@
                                         "default": null,
                                         "description": "Category sort mode (name_asc, name_desc, custom)."
                                     },
+                                    "storeSort": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Store sort mode (name_asc, name_desc, custom)."
+                                    },
                                     "showAddedBy": {
                                         "type": "boolean",
                                         "nullable": true,
@@ -15734,6 +15749,13 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Free-form notes. Empty string clears it."
+                                    },
+                                    "sortOrder": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New sort order."
                                     }
                                 }
                             }
@@ -15883,6 +15905,139 @@
                 "responses": {
                     "200": {
                         "description": "Store deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/Success"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/stores/reorder": {
+            "post": {
+                "operationId": "store-reorder",
+                "summary": "Batch reorder stores",
+                "tags": [
+                    "store"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "items": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Reorder entries.",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "id",
+                                                "sortOrder"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                },
+                                                "sortOrder": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stores reordered",
                         "content": {
                             "application/json": {
                                 "schema": {

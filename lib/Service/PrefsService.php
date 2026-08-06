@@ -204,7 +204,7 @@ class PrefsService {
 	}
 
 	public function setChecklistItemSort(string $uid, int $houseId, string $sort): string {
-		$allowed = ['custom', 'newest', 'oldest', 'name_asc', 'name_desc', 'category'];
+		$allowed = ['custom', 'newest', 'oldest', 'name_asc', 'name_desc', 'category', 'store'];
 		if (!in_array($sort, $allowed, true)) {
 			$sort = 'custom';
 		}
@@ -231,6 +231,28 @@ class PrefsService {
 			$sort = 'name_asc';
 		}
 		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_CATEGORY_SORT . '_' . $houseId, $sort);
+		return $sort;
+	}
+
+	// ----- Store sort preferences -----
+
+	private const KEY_STORE_SORT = 'store_sort';
+	public const STORE_SORT_OPTIONS = ['name_asc', 'name_desc', 'custom'];
+
+	public function getStoreSort(string $uid, int $houseId): string {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_STORE_SORT . '_' . $houseId,
+			'name_asc',
+		);
+	}
+
+	public function setStoreSort(string $uid, int $houseId, string $sort): string {
+		if (!in_array($sort, self::STORE_SORT_OPTIONS, true)) {
+			$sort = 'name_asc';
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_STORE_SORT . '_' . $houseId, $sort);
 		return $sort;
 	}
 
@@ -354,6 +376,7 @@ class PrefsService {
 			'checklistItemSort' => $this->getChecklistItemSort($uid, $houseId),
 			'checklistSort' => $this->getChecklistSort($uid, $houseId),
 			'categorySort' => $this->getCategorySort($uid, $houseId),
+			'storeSort' => $this->getStoreSort($uid, $houseId),
 			'showAddedBy' => $this->getShowAddedBy($uid, $houseId),
 			'lastCurrency' => $this->getLastCurrency($uid, $houseId),
 			...$this->getNotificationPrefs($uid, $houseId),
@@ -384,6 +407,9 @@ class PrefsService {
 		}
 		if (array_key_exists('categorySort', $patch) && is_string($patch['categorySort'])) {
 			$this->setCategorySort($uid, $houseId, $patch['categorySort']);
+		}
+		if (array_key_exists('storeSort', $patch) && is_string($patch['storeSort'])) {
+			$this->setStoreSort($uid, $houseId, $patch['storeSort']);
 		}
 		if (array_key_exists('showAddedBy', $patch) && is_bool($patch['showAddedBy'])) {
 			$this->setShowAddedBy($uid, $houseId, $patch['showAddedBy']);

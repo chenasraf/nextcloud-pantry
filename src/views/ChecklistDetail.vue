@@ -206,12 +206,23 @@
                 {{ gi.category?.name ?? strings.noCategory }}
               </span>
             </li>
+            <li
+              v-else-if="gi.type === 'store-header'"
+              class="pantry-detail__category-header"
+              :style="gi.store ? { color: gi.store.color } : undefined"
+            >
+              <component :is="storeIconComponent(gi.store?.icon)" :size="18" />
+              <span class="pantry-detail__category-header-name">
+                {{ gi.store?.name ?? strings.noStore }}
+              </span>
+            </li>
             <ChecklistItemRow
               v-else
               :item="gi.item"
               :category="categoryFor(gi.item.categoryId)"
               :stores="storesFor(gi.item.storeIds)"
               :hide-category="showCategoryHeaders"
+              :hide-store="showStoreHeaders"
               :list="isMeta ? listFor(gi.item.listId) : null"
               :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
               :house-id="houseIdNum"
@@ -261,12 +272,23 @@
                   {{ gi.category?.name ?? strings.noCategory }}
                 </span>
               </li>
+              <li
+                v-else-if="gi.type === 'store-header'"
+                class="pantry-detail__category-header"
+                :style="gi.store ? { color: gi.store.color } : undefined"
+              >
+                <component :is="storeIconComponent(gi.store?.icon)" :size="18" />
+                <span class="pantry-detail__category-header-name">
+                  {{ gi.store?.name ?? strings.noStore }}
+                </span>
+              </li>
               <ChecklistItemRow
                 v-else
                 :item="gi.item"
                 :category="categoryFor(gi.item.categoryId)"
                 :stores="storesFor(gi.item.storeIds)"
                 :hide-category="showCategoryHeaders"
+                :hide-store="showStoreHeaders"
                 :list="isMeta ? listFor(gi.item.listId) : null"
                 :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
                 :house-id="houseIdNum"
@@ -598,6 +620,7 @@ import { MarkdownExportDialog } from '@/components/MarkdownExportDialog'
 import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
 import CategoryPicker, { categoryIconComponent } from '@/components/CategoryPicker'
 import StoreMultiPicker from '@/components/StoreMultiPicker'
+import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import {
   checklistIconComponent,
   ChecklistFormDialog,
@@ -779,6 +802,8 @@ const allItemSortOptions: { value: ChecklistItemSort; label: string }[] = [
   { value: 'name_asc', label: t('pantry', 'Name A\u2013Z') },
   { value: 'name_desc', label: t('pantry', 'Name Z\u2013A') },
   { value: 'category', label: t('pantry', 'Category') },
+  // TRANSLATORS: Noun, a shop where items are bought. Sort/group option.
+  { value: 'store', label: t('pantry', 'Store') },
   { value: 'custom', label: t('pantry', 'Custom') },
 ]
 
@@ -822,6 +847,9 @@ const { can } = useCurrentHouse()
 const showAddedBy = computed(() => useShowAddedBy(houseIdNum.value).showAddedBy.value)
 // Sorting by category always groups items under category headers.
 const showCategoryHeaders = computed(() => currentSort.value === 'category')
+// Sorting by store groups items under store headers; an item in several stores
+// is duplicated under each (see withStoreGroups).
+const showStoreHeaders = computed(() => currentSort.value === 'store')
 
 onMounted(async () => {
   await loadSortPref()
@@ -1030,6 +1058,7 @@ type ListGridItem =
   | { type: 'item'; key: string; item: ChecklistItem }
   | { type: 'placeholder'; key: string }
   | { type: 'header'; key: string; category: Category | null }
+  | { type: 'store-header'; key: string; store: Store | null }
 
 type Partition = 'unchecked' | 'checked'
 
@@ -1062,8 +1091,52 @@ function withCategoryHeaders(items: ListGridItem[]): ListGridItem[] {
   return out
 }
 
+// Groups a partition's items under store headers, following the store order in
+// `stores.items`. An item attached to several stores appears once under each;
+// items with no (known) store fall under a trailing "No store" header. Every
+// rendered copy shares the underlying item id, so toggling one toggles all.
+function withStoreGroups(items: ChecklistItem[], p: Partition): ListGridItem[] {
+  const orderedStores = stores.items.value
+  const storeIdSet = new Set(orderedStores.map((s) => s.id))
+  const buckets = new Map<number, ChecklistItem[]>()
+  const noStore: ChecklistItem[] = []
+  for (const it of items) {
+    const ids = (it.storeIds ?? []).filter((id) => storeIdSet.has(id))
+    if (ids.length === 0) {
+      noStore.push(it)
+      continue
+    }
+    for (const id of ids) {
+      const arr = buckets.get(id)
+      if (arr) arr.push(it)
+      else buckets.set(id, [it])
+    }
+  }
+  const byName = (a: ChecklistItem, b: ChecklistItem) => a.name.localeCompare(b.name)
+  const out: ListGridItem[] = []
+  for (const store of orderedStores) {
+    const groupItems = buckets.get(store.id)
+    if (!groupItems || groupItems.length === 0) continue
+    out.push({ type: 'store-header', key: `sh-${p}-${store.id}`, store })
+    for (const it of [...groupItems].sort(byName)) {
+      out.push({ type: 'item', key: `i-${p}-${store.id}-${it.id}`, item: it })
+    }
+  }
+  if (noStore.length > 0) {
+    out.push({ type: 'store-header', key: `sh-${p}-none`, store: null })
+    for (const it of [...noStore].sort(byName)) {
+      out.push({ type: 'item', key: `i-${p}-none-${it.id}`, item: it })
+    }
+  }
+  return out
+}
+
 function buildGridItems(p: Partition): ListGridItem[] {
   const source = partitionItems(p)
+  // Store grouping (never active alongside custom-sort drag) takes over first.
+  if (showStoreHeaders.value) {
+    return withStoreGroups(source, p)
+  }
   const dragId = draggingItemId.value
   if (
     !isCustomSort.value ||
@@ -2018,6 +2091,7 @@ const strings = {
   // TRANSLATORS: Section heading above the completed (checked-off) items.
   doneTitle: t('pantry', 'Done'),
   noCategory: t('pantry', 'No category'),
+  noStore: t('pantry', 'No store'),
   manageCategories: t('pantry', 'Manage categories'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),

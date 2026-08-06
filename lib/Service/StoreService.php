@@ -23,8 +23,34 @@ class StoreService {
 	/**
 	 * @return Store[]
 	 */
-	public function listForHouse(int $houseId): array {
-		return $this->mapper->findByHouse($houseId);
+	public function listForHouse(int $houseId, string $sortBy = 'name_asc'): array {
+		return $this->mapper->findByHouse($houseId, $sortBy);
+	}
+
+	/**
+	 * Batch reorder stores in a house.
+	 *
+	 * @param list<array{id: int, sortOrder: int}> $items
+	 */
+	public function reorder(int $houseId, array $items): void {
+		foreach ($items as $entry) {
+			$id = (int)($entry['id'] ?? 0);
+			$sortOrder = (int)($entry['sortOrder'] ?? 0);
+			if ($id <= 0) {
+				continue;
+			}
+			try {
+				$store = $this->mapper->findById($id);
+			} catch (DoesNotExistException) {
+				continue;
+			}
+			if ($store->getHouseId() !== $houseId) {
+				continue;
+			}
+			$store->setSortOrder($sortOrder);
+			$store->setUpdatedAt(time());
+			$this->mapper->update($store);
+		}
 	}
 
 	public function get(int $storeId): Store {
@@ -58,6 +84,9 @@ class StoreService {
 		$store->setIcon($icon);
 		$store->setColor($color);
 		$this->applyInfoFields($store, $info);
+		// Append at the end of the custom order so a custom-sorted list keeps a
+		// stable order instead of tying every new store at 0 (see category #113).
+		$store->setSortOrder($this->mapper->findMaxSortOrder($houseId) + 1);
 		$store->setCreatedAt($now);
 		$store->setUpdatedAt($now);
 		/** @var Store $saved */
@@ -85,6 +114,9 @@ class StoreService {
 		}
 		if (isset($patch['color'])) {
 			$store->setColor($this->normalizeColor((string)$patch['color']));
+		}
+		if (isset($patch['sortOrder'])) {
+			$store->setSortOrder((int)$patch['sortOrder']);
 		}
 		$this->applyInfoFields($store, $patch);
 		$store->setUpdatedAt(time());

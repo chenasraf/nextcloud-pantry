@@ -164,6 +164,7 @@ function makeStore(overrides: Partial<Store> = {}): Store {
     contact: null,
     responsible: null,
     notes: null,
+    sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
     ...overrides,

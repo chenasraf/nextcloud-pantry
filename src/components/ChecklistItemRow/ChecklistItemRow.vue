@@ -107,7 +107,7 @@
         {{ category.name }}
       </span>
       <button
-        v-for="store in stores"
+        v-for="store in hideStore ? [] : stores"
         :key="store.id"
         type="button"
         class="checklist-row__store"
@@ -232,6 +232,8 @@ const props = withDefaults(
     category: Category | null
     /** Hide the category chip (used when category headers already group rows). */
     hideCategory?: boolean
+    /** Hide the store chips (used when store headers already group rows). */
+    hideStore?: boolean
     /** Stores attached to this item, resolved to entities by the parent. */
     stores?: Store[]
     list?: Checklist | null
@@ -266,6 +268,7 @@ const props = withDefaults(
   }>(),
   {
     hideCategory: false,
+    hideStore: false,
     stores: () => [],
     list: null,
     reorderEnabled: false,

@@ -141,6 +141,7 @@ namespace OCA\Pantry;
  *     contact: string|null,
  *     responsible: string|null,
  *     notes: string|null,
+ *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,
  * }
@@ -262,6 +263,7 @@ namespace OCA\Pantry;
  *     checklistItemSort: string,
  *     checklistSort: string,
  *     categorySort: string,
+ *     storeSort: string,
  *     showAddedBy: bool,
  *     lastCurrency: string,
  *     notifyPhoto: bool,

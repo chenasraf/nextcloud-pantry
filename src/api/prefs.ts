@@ -78,8 +78,9 @@ export async function setReuseExistingItems(
 export type PhotoSort = 'custom' | 'newest' | 'oldest' | 'description_asc' | 'description_desc'
 export type NoteSort = 'custom' | 'newest' | 'oldest' | 'title_asc' | 'title_desc'
 export type ChecklistItemSort =
-  'custom' | 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'category'
+  'custom' | 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'category' | 'store'
 export type CategorySort = 'name_asc' | 'name_desc' | 'custom'
+export type StoreSort = 'name_asc' | 'name_desc' | 'custom'
 export type ChecklistSort = 'name_asc' | 'name_desc' | 'custom'
 
 export interface PhotoSortPrefs {
@@ -104,6 +105,7 @@ export interface HousePrefs extends NotificationPrefs {
   checklistItemSort: ChecklistItemSort
   checklistSort: ChecklistSort
   categorySort: CategorySort
+  storeSort: StoreSort
   /** When true, show the avatar of the user who added each checklist item. */
   showAddedBy: boolean
   /** Last-used currency code (ISO 4217) for item prices in this house. */
@@ -118,6 +120,7 @@ const housePrefsDefaults: HousePrefs = {
   checklistItemSort: 'custom',
   checklistSort: 'custom',
   categorySort: 'name_asc',
+  storeSort: 'name_asc',
   showAddedBy: false,
   lastCurrency: 'USD',
   notifyPhoto: true,
@@ -218,6 +221,16 @@ export async function setCategorySort(
 ): Promise<{ sort: CategorySort }> {
   const p = await setHousePrefs(houseId, { categorySort: sort })
   return { sort: p.categorySort }
+}
+
+export async function getStoreSort(houseId: number): Promise<{ sort: StoreSort }> {
+  const p = await getHousePrefs(houseId)
+  return { sort: p.storeSort }
+}
+
+export async function setStoreSort(houseId: number, sort: StoreSort): Promise<{ sort: StoreSort }> {
+  const p = await setHousePrefs(houseId, { storeSort: sort })
+  return { sort: p.storeSort }
 }
 
 export async function getLastCurrency(houseId: number): Promise<string> {

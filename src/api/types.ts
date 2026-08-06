@@ -108,6 +108,7 @@ export interface Store {
   contact: string | null
   responsible: string | null
   notes: string | null
+  sortOrder: number
   createdAt: number
   updatedAt: number
 }
