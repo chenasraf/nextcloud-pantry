@@ -120,6 +120,9 @@ class HouseService {
 		if (array_key_exists('trashRetentionDays', $patch)) {
 			$house->setTrashRetentionDays($this->normalizeRetentionDays($patch['trashRetentionDays']));
 		}
+		if (array_key_exists('recurrenceTime', $patch)) {
+			$house->setRecurrenceTime($this->normalizeRecurrenceTime($patch['recurrenceTime']));
+		}
 		$house->setUpdatedAt(time());
 		$this->houseMapper->update($house);
 		return $house;
@@ -141,6 +144,23 @@ class HouseService {
 			$days = House::MAX_TRASH_RETENTION_DAYS;
 		}
 		return $days;
+	}
+
+	/**
+	 * Coerce the recurrence time (minutes since midnight) into [0, House::MAX_RECURRENCE_TIME].
+	 */
+	private function normalizeRecurrenceTime(mixed $value): int {
+		if (!is_int($value) && !(is_string($value) && ctype_digit($value))) {
+			throw new \InvalidArgumentException('recurrenceTime must be a non-negative integer');
+		}
+		$minutes = (int)$value;
+		if ($minutes < 0) {
+			throw new \InvalidArgumentException('recurrenceTime must be a non-negative integer');
+		}
+		if ($minutes > House::MAX_RECURRENCE_TIME) {
+			$minutes = House::MAX_RECURRENCE_TIME;
+		}
+		return $minutes;
 	}
 
 	public function delete(int $houseId): void {

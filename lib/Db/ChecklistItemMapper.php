@@ -273,17 +273,21 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
-	 * Find all done items whose next_due_at has passed.
+	 * Find done recurring items whose occurrence day is today or earlier.
+	 *
+	 * $threshold is midnight (server timezone) of the day after "now", so the
+	 * comparison is exclusive: any item due on the current day (at any time) or
+	 * overdue is returned. The caller applies the per-house reopen-time gate.
 	 *
 	 * @return ChecklistItem[]
 	 */
-	public function findDueRecurring(int $now): array {
+	public function findDueRecurring(int $threshold): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('done', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->isNotNull('next_due_at'))
-			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->lt('next_due_at', $qb->createNamedParameter($threshold, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNull('deleted_at'))
 			->andWhere($qb->expr()->isNull('archived_at'));
 
@@ -291,12 +295,14 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
-	 * Find undone fixed-schedule items whose next_due_at has passed.
+	 * Find undone fixed-schedule items whose occurrence day is today or earlier.
 	 * These are items the user never checked off but whose schedule has ticked again.
+	 *
+	 * $threshold has the same meaning as in findDueRecurring().
 	 *
 	 * @return ChecklistItem[]
 	 */
-	public function findDueFixedScheduleUndone(int $now): array {
+	public function findDueFixedScheduleUndone(int $threshold): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
@@ -304,7 +310,7 @@ class ChecklistItemMapper extends QBMapper {
 			->andWhere($qb->expr()->eq('repeat_from_completion', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->isNotNull('rrule'))
 			->andWhere($qb->expr()->isNotNull('next_due_at'))
-			->andWhere($qb->expr()->lte('next_due_at', $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->lt('next_due_at', $qb->createNamedParameter($threshold, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNull('deleted_at'))
 			->andWhere($qb->expr()->isNull('archived_at'));
 

@@ -83,6 +83,31 @@
       </form>
     </NcAppSettingsSection>
 
+    <NcAppSettingsSection
+      v-if="houseIdNum !== null && canAdmin"
+      id="house-recurrence"
+      :name="strings.recurrenceSection"
+    >
+      <p class="pantry-hint">{{ strings.recurrenceTimeHint }}</p>
+      <form class="pantry-form" autocomplete="off" @submit.prevent="saveRecurrenceTime">
+        <NcDateTimePickerNative
+          v-model="recurrenceTimeValue"
+          type="time"
+          :label="strings.recurrenceTimeLabel"
+        />
+        <p class="pantry-hint pantry-hint--small">{{ recurrenceTimeSummary }}</p>
+        <div class="pantry-form__actions">
+          <NcButton
+            type="submit"
+            variant="primary"
+            :disabled="savingRecurrenceTime || !isRecurrenceTimeValid"
+          >
+            {{ savingRecurrenceTime ? strings.saving : strings.save }}
+          </NcButton>
+        </div>
+      </form>
+    </NcAppSettingsSection>
+
     <NcAppSettingsSection id="house-members" :name="strings.membersSection">
       <div v-if="loadingMembers" class="pantry-center">
         <NcLoadingIcon :size="28" />
@@ -321,6 +346,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcDateTime from '@nextcloud/vue/components/NcDateTime'
+import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNative'
 import NcAvatar from '@nextcloud/vue/components/NcAvatar'
 import PlusIcon from '@icons/Plus.vue'
 import DeleteIcon from '@icons/Delete.vue'
@@ -590,12 +616,36 @@ const description = ref('')
 const savingGeneral = ref(false)
 const trashRetentionInput = ref<string>('30')
 const savingTrashRetention = ref(false)
+// Backing value for the native time picker. It is a Date whose wall-clock time
+// (local getHours/getMinutes) is the configured reopen time; the date part is
+// irrelevant. null means the field was cleared.
+const recurrenceTimeValue = ref<Date | null>(null)
+const savingRecurrenceTime = ref(false)
+
+function minutesToDate(minutes: number): Date {
+  const clamped = Math.min(1439, Math.max(0, Math.round(minutes)))
+  const d = new Date()
+  d.setHours(Math.floor(clamped / 60), clamped % 60, 0, 0)
+  return d
+}
+
+function dateToMinutes(date: Date): number {
+  return date.getHours() * 60 + date.getMinutes()
+}
+
+function minutesToHHMM(minutes: number): string {
+  const clamped = Math.min(1439, Math.max(0, Math.round(minutes)))
+  const h = Math.floor(clamped / 60)
+  const m = clamped % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
 
 function syncFromHouse() {
   if (house.value) {
     name.value = house.value.name
     description.value = house.value.description ?? ''
     trashRetentionInput.value = String(house.value.trashRetentionDays ?? 30)
+    recurrenceTimeValue.value = minutesToDate(house.value.recurrenceTime ?? 480)
   }
 }
 
@@ -654,6 +704,36 @@ async function saveTrashRetention() {
     await refresh()
   } finally {
     savingTrashRetention.value = false
+  }
+}
+
+// Minutes since midnight for the picked time; null when the field is cleared.
+const recurrenceTimeParsed = computed<number | null>(() =>
+  recurrenceTimeValue.value ? dateToMinutes(recurrenceTimeValue.value) : null,
+)
+
+const isRecurrenceTimeValid = computed(() => recurrenceTimeParsed.value !== null)
+
+const recurrenceTimeSummary = computed(() => {
+  if (recurrenceTimeParsed.value === null) return strings.recurrenceTimeInvalid
+  // TRANSLATORS: The placeholder is a time of day, e.g. "08:00".
+  return t(
+    'pantry',
+    'Recurring items become due again around {time}, in the server timezone. A background job checks every 15 minutes.',
+    { time: minutesToHHMM(recurrenceTimeParsed.value) },
+  )
+})
+
+async function saveRecurrenceTime() {
+  const id = houseIdNum.value
+  const minutes = recurrenceTimeParsed.value
+  if (id === null || minutes === null) return
+  savingRecurrenceTime.value = true
+  try {
+    await update(id, { recurrenceTime: minutes })
+    await refresh()
+  } finally {
+    savingRecurrenceTime.value = false
   }
 }
 
@@ -850,6 +930,13 @@ const strings = {
     'Auto-delete disabled. Items stay in the trash until removed manually.',
   ),
   trashRetentionInvalid: t('pantry', 'Enter a whole number between 0 and 3650.'),
+  recurrenceSection: t('pantry', 'Recurring items'),
+  recurrenceTimeLabel: t('pantry', 'Reopen time:'),
+  recurrenceTimeHint: t(
+    'pantry',
+    'Recurring items become due again at this time of day, in the server timezone. This does not affect items that repeat more than once a day.',
+  ),
+  recurrenceTimeInvalid: t('pantry', 'Enter a valid time.'),
   rolesSection: t('pantry', 'Roles'),
   rolesHint: t(
     'pantry',

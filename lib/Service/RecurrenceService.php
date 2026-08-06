@@ -108,6 +108,17 @@ class RecurrenceService {
 		return null;
 	}
 
+	/**
+	 * Whether the rule recurs more than once per day (SECONDLY/MINUTELY/HOURLY).
+	 *
+	 * Sub-daily schedules must keep their computed time of day — snapping them to
+	 * a single house-configured time would collapse the cadence to once a day.
+	 */
+	public function isSubDaily(string $rrule): bool {
+		$normalized = $this->normalize($rrule);
+		return (bool)preg_match('/(?:^|;)FREQ=(SECONDLY|MINUTELY|HOURLY)(?:;|$)/i', $normalized);
+	}
+
 	private function normalize(string $rrule): string {
 		$trim = trim($rrule);
 		if (stripos($trim, 'RRULE:') === 0) {

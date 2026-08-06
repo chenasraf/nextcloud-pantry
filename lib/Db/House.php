@@ -22,10 +22,16 @@ use OCP\AppFramework\Db\Entity;
  * @method void setUpdatedAt(int $updatedAt)
  * @method int getTrashRetentionDays()
  * @method void setTrashRetentionDays(int $trashRetentionDays)
+ * @method int getRecurrenceTime()
+ * @method void setRecurrenceTime(int $recurrenceTime)
  */
 class House extends Entity implements \JsonSerializable {
 	public const DEFAULT_TRASH_RETENTION_DAYS = 30;
 	public const MAX_TRASH_RETENTION_DAYS = 3650;
+
+	/** Minutes since midnight (server timezone) at which recurring items reopen. Default 08:00. */
+	public const DEFAULT_RECURRENCE_TIME = 480;
+	public const MAX_RECURRENCE_TIME = 1439;
 
 	protected string $name = '';
 	protected ?string $description = null;
@@ -33,11 +39,13 @@ class House extends Entity implements \JsonSerializable {
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
 	protected int $trashRetentionDays = self::DEFAULT_TRASH_RETENTION_DAYS;
+	protected int $recurrenceTime = self::DEFAULT_RECURRENCE_TIME;
 
 	public function __construct() {
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 		$this->addType('trashRetentionDays', 'integer');
+		$this->addType('recurrenceTime', 'integer');
 	}
 
 	public function jsonSerialize(): array {
@@ -49,6 +57,7 @@ class House extends Entity implements \JsonSerializable {
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,
 			'trashRetentionDays' => $this->trashRetentionDays,
+			'recurrenceTime' => $this->recurrenceTime,
 		];
 	}
 }

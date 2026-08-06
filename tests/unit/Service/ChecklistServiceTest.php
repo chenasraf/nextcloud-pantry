@@ -11,6 +11,8 @@ use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\House;
+use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\ListRoleMapper;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\RecurrenceService;
@@ -31,12 +33,19 @@ class ChecklistServiceTest extends TestCase {
 		$this->listMapper = $this->createMock(ChecklistMapper::class);
 		$this->itemMapper = $this->createMock(ChecklistItemMapper::class);
 		$this->itemStoreMapper = $this->createMock(\OCA\Pantry\Db\ItemStoreMapper::class);
+		// Houses reopen recurring items at 08:00 (the default) by which
+		// computeNextDueAt snaps the time of day of every non-sub-daily occurrence.
+		$house = new House();
+		$house->setRecurrenceTime(House::DEFAULT_RECURRENCE_TIME);
+		$houseMapper = $this->createMock(HouseMapper::class);
+		$houseMapper->method('findById')->willReturn($house);
 		$this->svc = new ChecklistService(
 			$this->listMapper,
 			$this->itemMapper,
 			new RecurrenceService(),
 			$this->createMock(ListRoleMapper::class),
 			$this->itemStoreMapper,
+			$houseMapper,
 		);
 	}
 
@@ -61,7 +70,7 @@ class ChecklistServiceTest extends TestCase {
 	}
 
 	public function testListItemsAutoUnchecksDueRecurring(): void {
-		$now = 2_000_000_000;
+		$now = strtotime('2033-05-18 12:00:00 UTC'); // past the 08:00 reopen time
 		$dueItem = $this->makeItem([
 			'done' => true,
 			'doneAt' => $now - 86400 * 8,
@@ -79,7 +88,8 @@ class ChecklistServiceTest extends TestCase {
 		]);
 
 		$this->itemMapper->method('findByList')->willReturn([$dueItem, $freshItem]);
-		$this->itemMapper->method('findDueRecurring')->with($now)->willReturn([$dueItem]);
+		$this->itemMapper->method('findDueRecurring')->willReturn([$dueItem]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())
 			->method('update')
 			->with($this->callback(function (ChecklistItem $i) {
@@ -119,6 +129,8 @@ class ChecklistServiceTest extends TestCase {
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
 		$this->assertTrue($toggled->getDone());
+		// Raw next occurrence, one week on. The reopen time is applied later, by
+		// the background job, not baked into next_due_at.
 		$this->assertSame($now + 7 * 86400, $toggled->getNextDueAt());
 	}
 
@@ -126,7 +138,7 @@ class ChecklistServiceTest extends TestCase {
 		// createdAt is a Monday at 00:00 UTC, and we tick off on the following Wednesday.
 		$anchor = strtotime('2026-04-06 00:00:00 UTC'); // Monday
 		$now = strtotime('2026-04-08 10:00:00 UTC');    // Wednesday
-		$expected = strtotime('2026-04-13 00:00:00 UTC'); // next Monday
+		$expected = strtotime('2026-04-13 00:00:00 UTC'); // next Monday, raw (reopen time applied by the job)
 
 		$item = $this->makeItem([
 			'rrule' => 'FREQ=WEEKLY',
@@ -139,6 +151,78 @@ class ChecklistServiceTest extends TestCase {
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
 		$this->assertTrue($toggled->getDone());
 		$this->assertSame($expected, $toggled->getNextDueAt());
+	}
+
+	public function testToggleItemSubDailyComputesNextFromNow(): void {
+		// Hourly schedules are day-time agnostic: next_due_at is one hour on.
+		$now = 1_700_000_000;
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=HOURLY',
+			'repeatFromCompletion' => true,
+		]);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
+
+		$toggled = $this->svc->toggleItem(42, 'alice', $now);
+		$this->assertSame($now + 3600, $toggled->getNextDueAt());
+	}
+
+	public function testToggleItemFixedDailyAdvancesPastToday(): void {
+		// Fixed daily schedule anchored at 11:30, ticked off today at 10:00.
+		// next_due_at must be tomorrow's occurrence, not today's — otherwise an
+		// early reopen at the house reopen time would re-fire it the same day.
+		$anchor = strtotime('2026-04-06 11:30:00 UTC');
+		$now = strtotime('2026-04-08 10:00:00 UTC');
+		$expected = strtotime('2026-04-09 11:30:00 UTC');
+
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=DAILY',
+			'repeatFromCompletion' => false,
+			'createdAt' => $anchor,
+		]);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
+
+		$toggled = $this->svc->toggleItem(42, 'alice', $now);
+		$this->assertSame($expected, $toggled->getNextDueAt());
+	}
+
+	public function testReopenDueItemsWaitsUntilReopenTime(): void {
+		// Item due today at 13:00 (raw). House reopen time is 08:00. Before 08:00
+		// the job must not reopen it yet.
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=DAILY',
+			'repeatFromCompletion' => false,
+			'createdAt' => strtotime('2026-04-06 13:00:00 UTC'),
+			'done' => true,
+			'nextDueAt' => strtotime('2026-04-08 13:00:00 UTC'),
+		]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findDueRecurring')->willReturn([$item]);
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$reopened = $this->svc->reopenDueItems(strtotime('2026-04-08 07:00:00 UTC'));
+		$this->assertCount(0, $reopened);
+	}
+
+	public function testReopenDueItemsReopensEarlyOnceReopenTimePassed(): void {
+		// Same item, now 09:00 — past the 08:00 reopen time but before the raw
+		// 13:00 occurrence. It reopens now, and next_due_at advances to tomorrow.
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=DAILY',
+			'repeatFromCompletion' => false,
+			'createdAt' => strtotime('2026-04-06 13:00:00 UTC'),
+			'done' => true,
+			'nextDueAt' => strtotime('2026-04-08 13:00:00 UTC'),
+		]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findDueRecurring')->willReturn([$item]);
+		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
+
+		$reopened = $this->svc->reopenDueItems(strtotime('2026-04-08 09:00:00 UTC'));
+		$this->assertCount(1, $reopened);
+		$this->assertFalse($reopened[0]->getDone());
+		$this->assertSame(strtotime('2026-04-09 13:00:00 UTC'), $reopened[0]->getNextDueAt());
 	}
 
 	public function testToggleItemCheckingOffClearsEverything(): void {

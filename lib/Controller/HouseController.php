@@ -124,6 +124,7 @@ final class HouseController extends OCSController {
 	 * @param string|null $name New name.
 	 * @param string|null $description New description.
 	 * @param int<0, 3650>|null $trashRetentionDays Days an item stays in the trash before being permanently deleted by the cleanup job. Set to 0 to disable auto-purge.
+	 * @param int<0, 1439>|null $recurrenceTime Time of day (minutes since midnight, server timezone) at which recurring items reopen.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryHouse, array{}>
 	 *
@@ -132,8 +133,8 @@ final class HouseController extends OCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}')]
 	#[NoAdminRequired]
 	#[Permission(admin: true)]
-	public function update(int $houseId, ?string $name = null, ?string $description = null, ?int $trashRetentionDays = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $description, $trashRetentionDays): DataResponse {
+	public function update(int $houseId, ?string $name = null, ?string $description = null, ?int $trashRetentionDays = null, ?int $recurrenceTime = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $description, $trashRetentionDays, $recurrenceTime): DataResponse {
 			$uid = $this->requireUid();
 			$member = $this->auth->requireAdmin($houseId, $uid);
 			$patch = [];
@@ -145,6 +146,9 @@ final class HouseController extends OCSController {
 			}
 			if ($trashRetentionDays !== null) {
 				$patch['trashRetentionDays'] = $trashRetentionDays;
+			}
+			if ($recurrenceTime !== null) {
+				$patch['recurrenceTime'] = $recurrenceTime;
 			}
 			$house = $this->houseService->update($houseId, $patch);
 			return new DataResponse($this->serializeHouseWithRole($house, $member->getRole(), $uid));
@@ -351,6 +355,7 @@ final class HouseController extends OCSController {
 			'createdAt' => $house->getCreatedAt(),
 			'updatedAt' => $house->getUpdatedAt(),
 			'trashRetentionDays' => $house->getTrashRetentionDays(),
+			'recurrenceTime' => $house->getRecurrenceTime(),
 			'role' => $role,
 			'isAdmin' => $this->permissions->isAdmin($houseId, $uid),
 			'permissions' => $this->permissions->effectiveCapabilities($houseId, $uid),

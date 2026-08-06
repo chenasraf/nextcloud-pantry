@@ -20,6 +20,17 @@ vi.mock('@nextcloud/dialogs', () => ({
   showWarning: vi.fn(),
 }))
 
+// NcDateTimePickerNative (used by the Recurring items section) eagerly imports a
+// .css asset Node's ESM loader rejects in tests. Stub it with a v-model-capable
+// input, same rationale as the @nextcloud/dialogs mock above.
+vi.mock('@nextcloud/vue/components/NcDateTimePickerNative', () => ({
+  default: defineComponent({
+    props: ['modelValue', 'type', 'label'],
+    emits: ['update:modelValue'],
+    template: '<input class="mock-datetime-picker" />',
+  }),
+}))
+
 // Mock icon components
 vi.mock('@icons/Plus.vue', () => createIconMock('PlusIcon'))
 vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
@@ -67,6 +78,7 @@ vi.mock('@/composables/useCurrentHouse', () => ({
       createdAt: 0,
       updatedAt: 0,
       trashRetentionDays: 30,
+      recurrenceTime: 480,
       isAdmin: true,
       permissions: FULL_CAPS,
     }),
@@ -252,6 +264,7 @@ describe('HouseSettingsDialog', () => {
         createdAt: 0,
         updatedAt: 0,
         trashRetentionDays: 30,
+        recurrenceTime: 480,
         isAdmin: true,
         permissions: FULL_CAPS,
       }),
@@ -405,6 +418,7 @@ describe('HouseSettingsDialog', () => {
           createdAt: 0,
           updatedAt: 0,
           trashRetentionDays: 30,
+          recurrenceTime: 480,
           isAdmin: false,
           permissions: FULL_CAPS,
         }),
@@ -455,6 +469,7 @@ describe('HouseSettingsDialog', () => {
           createdAt: 0,
           updatedAt: 0,
           trashRetentionDays: 30,
+          recurrenceTime: 480,
           isAdmin: true,
           permissions: FULL_CAPS,
         }),

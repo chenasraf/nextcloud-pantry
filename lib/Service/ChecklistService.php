@@ -11,17 +11,28 @@ use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\House;
+use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 class ChecklistService {
+	/**
+	 * Per-list house lookups, memoized for the lifetime of the service so the
+	 * recurring-item background job doesn't refetch the house for every item.
+	 *
+	 * @var array<int, House|null>
+	 */
+	private array $houseByList = [];
+
 	public function __construct(
 		private ChecklistMapper $listMapper,
 		private ChecklistItemMapper $itemMapper,
 		private RecurrenceService $recurrence,
 		private \OCA\Pantry\Db\ListRoleMapper $listRoleMapper,
 		private ItemStoreMapper $itemStoreMapper,
+		private HouseMapper $houseMapper,
 	) {
 	}
 
@@ -509,27 +520,110 @@ class ChecklistService {
 	}
 
 	/**
-	 * Compute the next due time for an item that was just marked done.
+	 * Compute the next due time for an item that was just marked done, reopened,
+	 * or copied.
 	 *
-	 * - "from completion" mode: interval counts from now — next occurrence = now + one step.
-	 * - "fixed schedule" mode: the schedule is anchored at the item's creation time; next
-	 *   occurrence is the first one strictly after now on that anchored series.
+	 * The stored next_due_at is the raw RRULE occurrence — the house reopen time
+	 * of day is NOT baked in here. The background job applies the reopen time
+	 * live (see isDueToReopen), so a change to the setting takes effect on the
+	 * next run instead of after a full recurrence cycle.
+	 *
+	 * - "from completion" mode: interval counts from now.
+	 * - "fixed schedule", sub-daily rule (hourly/minutely): next occurrence
+	 *   strictly after now.
+	 * - "fixed schedule", day-granular rule: next occurrence strictly after the
+	 *   end of today, so an early reopen at the reopen time does not re-fire the
+	 *   same day.
 	 */
 	private function computeNextDueAt(ChecklistItem $item, int $now): ?\DateTimeImmutable {
 		$rrule = $item->getRrule();
 		if ($rrule === null) {
 			return null;
 		}
-		$nowDt = (new \DateTimeImmutable())->setTimestamp($now);
 		if ($item->getRepeatFromCompletion()) {
+			$nowDt = (new \DateTimeImmutable())->setTimestamp($now);
 			return $this->recurrence->computeNextOccurrence($rrule, $nowDt);
 		}
 		$anchor = (new \DateTimeImmutable())->setTimestamp($item->getCreatedAt() ?: $now);
-		return $this->recurrence->nextOccurrenceAfter($rrule, $anchor, $nowDt);
+		if ($this->recurrence->isSubDaily($rrule)) {
+			$after = (new \DateTimeImmutable())->setTimestamp($now);
+			return $this->recurrence->nextOccurrenceAfter($rrule, $anchor, $after);
+		}
+		$endOfToday = $this->startOfDay($now)->modify('+1 day')->modify('-1 second');
+		return $this->recurrence->nextOccurrenceAfter($rrule, $anchor, $endOfToday);
 	}
 
 	/**
-	 * Reopen all recurring items whose next_due_at has passed.
+	 * Whether a due-candidate item should reopen (or re-nudge) at $now.
+	 *
+	 * Sub-daily rules fire at their exact next_due_at. Day-granular rules fire
+	 * once their occurrence day has arrived AND $now is past the house's
+	 * configured reopen time — applied live here, never baked into next_due_at,
+	 * so changing the setting takes effect immediately.
+	 */
+	private function isDueToReopen(ChecklistItem $item, int $now): bool {
+		$nextDue = $item->getNextDueAt();
+		$rrule = $item->getRrule();
+		if ($nextDue === null || $rrule === null) {
+			return false;
+		}
+		if ($this->recurrence->isSubDaily($rrule)) {
+			return $nextDue <= $now;
+		}
+		$startOfToday = $this->startOfDay($now);
+		$startOfTomorrow = $startOfToday->modify('+1 day')->getTimestamp();
+		if ($nextDue >= $startOfTomorrow) {
+			// The occurrence day has not arrived yet.
+			return false;
+		}
+		$minutes = $this->reopenTimeMinutes($item);
+		$reopenMoment = $startOfToday->setTime(intdiv($minutes, 60), $minutes % 60, 0)->getTimestamp();
+		return $now >= $reopenMoment;
+	}
+
+	/**
+	 * The house reopen time (minutes since midnight) for an item's list, falling
+	 * back to the default when the house cannot be resolved.
+	 */
+	private function reopenTimeMinutes(ChecklistItem $item): int {
+		$house = $this->houseForItem($item);
+		return $house !== null ? $house->getRecurrenceTime() : House::DEFAULT_RECURRENCE_TIME;
+	}
+
+	/**
+	 * Midnight (server timezone) of the day containing $timestamp.
+	 */
+	private function startOfDay(int $timestamp): \DateTimeImmutable {
+		return (new \DateTimeImmutable())->setTimestamp($timestamp)->setTime(0, 0, 0);
+	}
+
+	/**
+	 * Resolve the house owning an item's list, memoized per list. Returns null
+	 * when the list or house no longer exists.
+	 */
+	private function houseForItem(ChecklistItem $item): ?House {
+		$listId = $item->getListId();
+		if (array_key_exists($listId, $this->houseByList)) {
+			return $this->houseByList[$listId];
+		}
+		$house = null;
+		try {
+			$list = $this->listMapper->findById($listId, true);
+			$house = $this->houseMapper->findById($list->getHouseId());
+		} catch (\Throwable) {
+			$house = null;
+		}
+		$this->houseByList[$listId] = $house;
+		return $house;
+	}
+
+	/**
+	 * Reopen recurring items that are due today, once $now is past each house's
+	 * reopen time.
+	 *
+	 * Candidates are fetched broadly (occurrence day today or earlier); the
+	 * reopen time is applied live per house in isDueToReopen, so a setting change
+	 * takes effect on the next run without waiting for a full cycle.
 	 *
 	 * Called both lazily from listItems() and periodically by the background job.
 	 *
@@ -537,8 +631,12 @@ class ChecklistService {
 	 */
 	public function reopenDueItems(?int $now = null): array {
 		$now ??= time();
-		$items = $this->itemMapper->findDueRecurring($now);
-		foreach ($items as $item) {
+		$candidates = $this->itemMapper->findDueRecurring($this->startOfDay($now)->modify('+1 day')->getTimestamp());
+		$reopened = [];
+		foreach ($candidates as $item) {
+			if (!$this->isDueToReopen($item, $now)) {
+				continue;
+			}
 			$item->setDone(false);
 			$item->setDoneAt(null);
 			$item->setDoneBy(null);
@@ -547,34 +645,42 @@ class ChecklistService {
 				// the item off again, so clear the schedule for now.
 				$item->setNextDueAt(null);
 			} else {
-				// Fixed schedule: immediately compute the next occurrence so the
-				// item keeps cycling even if the user never interacts with it.
+				// Fixed schedule: advance to the next occurrence so the item
+				// keeps cycling even if the user never interacts with it.
 				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 			}
 			$item->setUpdatedAt($now);
 			$this->itemMapper->update($item);
+			$reopened[] = $item;
 		}
-		return $items;
+		return $reopened;
 	}
 
 	/**
-	 * Advance fixed-schedule undone items whose next_due_at has passed.
+	 * Advance fixed-schedule undone items whose occurrence day has arrived and
+	 * are past their house reopen time.
 	 *
 	 * Unlike reopenDueItems(), these items are already undone — nothing to
-	 * reopen. We just bump next_due_at to the next occurrence so the
-	 * background job can re-notify on the next cycle.
+	 * reopen. We just bump next_due_at to the next occurrence so the background
+	 * job can re-notify on the next cycle. Gated by the same live reopen-time
+	 * check as reopenDueItems().
 	 *
 	 * @return ChecklistItem[] The items whose schedule was advanced.
 	 */
 	public function advanceDueReminders(?int $now = null): array {
 		$now ??= time();
-		$items = $this->itemMapper->findDueFixedScheduleUndone($now);
-		foreach ($items as $item) {
+		$candidates = $this->itemMapper->findDueFixedScheduleUndone($this->startOfDay($now)->modify('+1 day')->getTimestamp());
+		$advanced = [];
+		foreach ($candidates as $item) {
+			if (!$this->isDueToReopen($item, $now)) {
+				continue;
+			}
 			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 			$item->setUpdatedAt($now);
 			$this->itemMapper->update($item);
+			$advanced[] = $item;
 		}
-		return $items;
+		return $advanced;
 	}
 
 	/**

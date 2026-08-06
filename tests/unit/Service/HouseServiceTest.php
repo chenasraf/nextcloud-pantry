@@ -106,4 +106,30 @@ class HouseServiceTest extends TestCase {
 
 		$this->svc->update(1, ['trashRetentionDays' => 'never']);
 	}
+
+	public function testUpdateAcceptsRecurrenceTime(): void {
+		$house = $this->makeHouse();
+		$this->houseMapper->method('findById')->willReturn($house);
+		$this->houseMapper->expects($this->once())->method('update')->with($house);
+
+		$updated = $this->svc->update(1, ['recurrenceTime' => 90]);
+		$this->assertSame(90, $updated->getRecurrenceTime());
+	}
+
+	public function testUpdateCapsRecurrenceTimeAtMax(): void {
+		$house = $this->makeHouse();
+		$this->houseMapper->method('findById')->willReturn($house);
+		$this->houseMapper->expects($this->once())->method('update')->with($house);
+
+		$updated = $this->svc->update(1, ['recurrenceTime' => 5_000]);
+		$this->assertSame(House::MAX_RECURRENCE_TIME, $updated->getRecurrenceTime());
+	}
+
+	public function testUpdateRejectsNegativeRecurrenceTime(): void {
+		$house = $this->makeHouse();
+		$this->houseMapper->method('findById')->willReturn($house);
+		$this->expectException(\InvalidArgumentException::class);
+
+		$this->svc->update(1, ['recurrenceTime' => -1]);
+	}
 }

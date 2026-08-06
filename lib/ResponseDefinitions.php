@@ -16,6 +16,7 @@ namespace OCA\Pantry;
  *     createdAt: int,
  *     updatedAt: int,
  *     trashRetentionDays: int,
+ *     recurrenceTime: int,
  *     role: string,
  *     isAdmin: bool,
  *     permissions: array<string, bool>,
