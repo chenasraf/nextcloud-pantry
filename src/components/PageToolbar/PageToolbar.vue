@@ -189,20 +189,17 @@ function recompute() {
     collapsedActions.value = []
     return
   }
-  const avail = availableWidth()
-  const totalAll = itemWidths.reduce((s, w) => s + w, 0) + GAP * (n - 1)
-  if (avail <= 0 || totalAll <= avail) {
-    collapsedKeys.value = new Set()
-    collapsedActions.value = []
-    return
+  // Items flagged alwaysCollapsed live in the overflow menu unconditionally;
+  // they never render inline and are excluded from the inline width budget.
+  const collapsed = new Set<number>()
+  for (let i = 0; i < n; i++) {
+    if (actions[i].alwaysCollapsed) collapsed.add(i)
   }
 
-  // Collapse lowest-priority items first; break ties by collapsing the
-  // right-most (later-declared) item first.
-  const order = actions.map((_, i) => i).sort((a, b) => priorityOf(a) - priorityOf(b) || b - a)
-  const collapsed = new Set<number>()
+  const avail = availableWidth()
   const currentWidth = () => {
-    let s = OVERFLOW_WIDTH
+    // The overflow trigger is only present once at least one item is collapsed.
+    let s = collapsed.size ? OVERFLOW_WIDTH : 0
     let visible = 0
     for (let i = 0; i < n; i++) {
       if (collapsed.has(i)) continue
@@ -211,9 +208,18 @@ function recompute() {
     }
     return s + GAP * visible // one gap per visible item + the overflow trigger
   }
-  for (const idx of order) {
-    if (currentWidth() <= avail) break
-    collapsed.add(idx)
+
+  if (avail > 0 && currentWidth() > avail) {
+    // Collapse lowest-priority items first; break ties by collapsing the
+    // right-most (later-declared) item first. Forced items are already collapsed.
+    const order = actions
+      .map((_, i) => i)
+      .filter((i) => !collapsed.has(i))
+      .sort((a, b) => priorityOf(a) - priorityOf(b) || b - a)
+    for (const idx of order) {
+      if (currentWidth() <= avail) break
+      collapsed.add(idx)
+    }
   }
 
   collapsedKeys.value = new Set([...collapsed].map((i) => actions[i].key))

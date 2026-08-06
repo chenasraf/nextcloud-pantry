@@ -193,6 +193,35 @@ describe('PageToolbar', () => {
       expect(menu.findAll('.nc-action-button')).toHaveLength(2)
     })
 
+    it('keeps an alwaysCollapsed action out of the inline row and in the overflow menu', async () => {
+      const onClick = vi.fn()
+      const wrapper = mount(PageToolbar, {
+        props: {
+          actions: [
+            { key: 'edit', label: 'Edit list', icon: StubIcon, onClick: () => {} },
+            { key: 'import', label: 'Import', icon: StubIcon, alwaysCollapsed: true, onClick },
+          ],
+        },
+      })
+
+      // Let measureWidths()/recompute() settle.
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      // The inline row still renders the non-collapsed button.
+      const inlineBtn = wrapper.find('.pantry-toolbar__actions > .nc-button')
+      expect(inlineBtn.exists()).toBe(true)
+      expect(inlineBtn.text()).toContain('Edit list')
+
+      // The alwaysCollapsed action lives in the overflow menu as an action button.
+      const overflowBtns = wrapper.findAll('.nc-action-button')
+      const importBtn = overflowBtns.find((b) => b.text().includes('Import'))
+      expect(importBtn).toBeDefined()
+      await importBtn!.trigger('click')
+      expect(onClick).toHaveBeenCalledOnce()
+    })
+
     it('renders a checkbox option and a separator before the radio group', () => {
       const menuWithCheckbox: ToolbarAction[] = [
         {

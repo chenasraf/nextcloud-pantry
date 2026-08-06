@@ -2210,14 +2210,14 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         key: 'export',
         label: strings.exportMarkdown,
         icon: FileExportIcon,
-        priority: 1,
+        alwaysCollapsed: true,
         onClick: () => (showExport.value = true),
       },
       {
         key: 'import',
         label: strings.importMarkdown,
         icon: FileImportIcon,
-        priority: 1,
+        alwaysCollapsed: true,
         onClick: () => (showImport.value = true),
       },
     )
@@ -2227,7 +2227,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     key: 'categories',
     label: strings.manageCategories,
     icon: TagIcon,
-    priority: 6,
+    alwaysCollapsed: true,
     onClick: () => (showCategoryManager.value = true),
   })
 
@@ -2235,7 +2235,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     key: 'stores',
     label: strings.manageStores,
     icon: StoreOutlineIcon,
-    priority: 6,
+    alwaysCollapsed: true,
     onClick: () => (showStoreManager.value = true),
   })
 

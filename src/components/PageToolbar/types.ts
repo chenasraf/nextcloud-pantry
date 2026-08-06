@@ -31,6 +31,12 @@ interface ToolbarActionBase {
   icon: Component
   /** Higher priority stays inline longer; lowest priority collapses first. Default 0. */
   priority?: number
+  /**
+   * When true, the action always lives in the overflow menu and never renders
+   * inline, regardless of available width. Ignores `priority` for the
+   * inline/collapse decision.
+   */
+  alwaysCollapsed?: boolean
 }
 
 export interface ToolbarButtonAction extends ToolbarActionBase {
