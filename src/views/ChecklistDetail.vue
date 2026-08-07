@@ -253,8 +253,24 @@
           </template>
         </ul>
         <template v-if="checkedItems.length > 0">
-          <h3 class="pantry-detail__section-title">{{ strings.doneTitle }}</h3>
-          <ul ref="checkedListRef" class="pantry-detail__items pantry-detail__items--done">
+          <button
+            type="button"
+            class="pantry-detail__section-title pantry-detail__section-toggle"
+            :aria-expanded="!doneCollapsed"
+            @click="doneCollapsed = !doneCollapsed"
+          >
+            <ChevronDownIcon
+              class="pantry-detail__section-chevron"
+              :class="{ 'pantry-detail__section-chevron--collapsed': doneCollapsed }"
+              :size="18"
+            />
+            <span>{{ strings.doneTitle }}</span>
+          </button>
+          <ul
+            v-show="!doneCollapsed"
+            ref="checkedListRef"
+            class="pantry-detail__items pantry-detail__items--done"
+          >
             <template v-for="gi in checkedGridItems" :key="gi.key">
               <li
                 v-if="gi.type === 'placeholder'"
@@ -586,6 +602,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
+import ChevronDownIcon from '@icons/ChevronDown.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import CartIcon from '@icons/Cart.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
@@ -874,6 +891,7 @@ watch(
   async () => {
     exitSelection()
     filterListIds.value = loadListFilter()
+    doneCollapsed.value = loadDoneCollapsed()
     await loadSortPref()
     const tasks: Promise<unknown>[] = [loadList(), load()]
     if (isMeta.value) tasks.push(loadLists())
@@ -983,6 +1001,29 @@ watch(
   },
   { deep: true },
 )
+
+// Collapse state for the "Done" section, persisted per house+list so it
+// survives navigation and reloads.
+const doneCollapsedStorageKey = computed(
+  () => `pantry:done-collapsed:${props.houseId}:${props.listId}`,
+)
+const doneCollapsed = ref<boolean>(loadDoneCollapsed())
+
+function loadDoneCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(doneCollapsedStorageKey.value) === 'true'
+  } catch {
+    return false
+  }
+}
+
+watch(doneCollapsed, (collapsed) => {
+  try {
+    window.localStorage.setItem(doneCollapsedStorageKey.value, String(collapsed))
+  } catch {
+    // Ignore storage failures (e.g. private mode quota).
+  }
+})
 
 const filteredItems = computed(() => {
   let result = items.value
@@ -2400,6 +2441,30 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     color: var(--color-text-maxcontrast);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  &__section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: start;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-main-text);
+    }
+  }
+
+  &__section-chevron {
+    transition: transform 0.15s ease;
+
+    &--collapsed {
+      transform: rotate(-90deg);
+    }
   }
 }
 
