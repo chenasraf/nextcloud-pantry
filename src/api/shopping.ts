@@ -95,6 +95,24 @@ export async function uncheckSessionItem(
   await ocs.post(`/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/uncheck`)
 }
 
+/** Hide an item from this trip only (kept on the list, not marked done). */
+export async function skipSessionItem(
+  houseId: number,
+  sessionId: number,
+  itemId: number,
+): Promise<void> {
+  await ocs.post(`/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/skip`)
+}
+
+/** Undo a skip: the item returns to this trip's shopping list. */
+export async function unskipSessionItem(
+  houseId: number,
+  sessionId: number,
+  itemId: number,
+): Promise<void> {
+  await ocs.post(`/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/unskip`)
+}
+
 export async function getReview(houseId: number, sessionId: number): Promise<ShoppingReview> {
   const resp = await ocs.get<ShoppingReview>(
     `/houses/${houseId}/shopping/sessions/${sessionId}/review`,

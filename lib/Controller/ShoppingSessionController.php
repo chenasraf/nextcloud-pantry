@@ -252,6 +252,54 @@ final class ShoppingSessionController extends OCSController {
 	}
 
 	/**
+	 * Skip an item for this shopping session only
+	 *
+	 * Hides the item from this trip's shopping list without marking it done or
+	 * removing it from the checklist. Reversible via unskip.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 * @param int $itemId Item id (must be in the session's scope).
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Item skipped
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/items/{itemId}/skip')]
+	#[NoAdminRequired]
+	#[Permission(['canCheckItems'])]
+	public function skipItem(int $houseId, int $sessionId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$this->assertItemInScope($session, $itemId);
+			$this->sessions->skipItem($session, $itemId);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * Undo a skip during a shopping session
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 * @param int $itemId Item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Item unskipped
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/items/{itemId}/unskip')]
+	#[NoAdminRequired]
+	#[Permission(['canCheckItems'])]
+	public function unskipItem(int $houseId, int $sessionId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$this->sessions->unskipItem($session, $itemId);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
 	 * Review a shopping session
 	 *
 	 * Items checked this trip grouped by the store they were checked at, each

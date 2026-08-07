@@ -362,6 +362,34 @@ describe('ChecklistItemRow', () => {
     })
   })
 
+  describe('session removal', () => {
+    it('hides the remove-from-trip button by default', () => {
+      const wrapper = mount(ChecklistItemRow, { props: defaultProps })
+      expect(wrapper.find('.checklist-row__session-remove').exists()).toBe(false)
+    })
+
+    it('shows the remove-from-trip button when sessionRemovable', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, sessionRemovable: true, compact: true },
+      })
+      expect(wrapper.find('.checklist-row__session-remove').exists()).toBe(true)
+    })
+
+    it('emits session-remove with item id when clicked', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: {
+          ...defaultProps,
+          item: makeItem({ id: 7 }),
+          sessionRemovable: true,
+          compact: true,
+        },
+      })
+      await wrapper.find('.checklist-row__session-remove .nc-button').trigger('click')
+      expect(wrapper.emitted('session-remove')).toBeTruthy()
+      expect(wrapper.emitted('session-remove')![0]).toEqual([7])
+    })
+  })
+
   describe('selection mode', () => {
     it('shows a selection checkbox and hides the actions', () => {
       const wrapper = mount(ChecklistItemRow, {

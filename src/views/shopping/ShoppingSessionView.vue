@@ -84,7 +84,9 @@
                 :house-id="houseIdNum"
                 :tap-row-to-complete="tapRowToComplete"
                 compact
+                session-removable
                 @toggle="handleToggle"
+                @session-remove="handleSessionRemove"
                 @preview="openPreview"
               />
             </template>
@@ -146,7 +148,7 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { t, n } from '@nextcloud/l10n'
-import { showError, showInfo } from '@nextcloud/dialogs'
+import { showError, showInfo, showUndo } from '@nextcloud/dialogs'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcAvatar from '@nextcloud/vue/components/NcAvatar'
@@ -178,6 +180,8 @@ import {
   getReview,
   sendHeartbeat,
   setSessionPrivacy,
+  skipSessionItem,
+  unskipSessionItem,
 } from '@/api/shopping'
 import type { Category, ChecklistItem, ShoppingPresenceEntry, ShoppingSession } from '@/api/types'
 
@@ -199,6 +203,10 @@ const items = ref<ChecklistItem[]>([])
 // Items checked during this view; kept so they stay visible and uncheckable
 // (the server's item list only returns unchecked items).
 const doneItems = ref<ChecklistItem[]>([])
+// Items removed from this trip only (skipped). Tracked client-side so an
+// in-flight poll can't resurrect one between the optimistic removal and the
+// skip persisting; the server also excludes them from the item list.
+const skippedIds = ref<Set<number>>(new Set())
 const loading = ref(true)
 const busy = ref(false)
 const previewing = ref<ChecklistItem | null>(null)
@@ -317,7 +325,7 @@ async function loadItems() {
   if (!session.value) return
   const fetched = await listSessionItems(houseIdNum.value, session.value.id)
   const doneIds = new Set(doneItems.value.map((i) => i.id))
-  items.value = fetched.filter((i) => !doneIds.has(i.id))
+  items.value = fetched.filter((i) => !doneIds.has(i.id) && !skippedIds.value.has(i.id))
 }
 
 // Whole-row check records the item in the session log against the active store.
@@ -355,6 +363,36 @@ async function handleToggle(id: number) {
       showError((e as Error).message || strings.checkFailed)
     }
   }
+}
+
+// Remove an item from THIS trip only: it drops off the shopping list but stays
+// on the checklist (not marked done). Optimistic, with an undo toast and a
+// revert on failure.
+async function handleSessionRemove(id: number) {
+  if (!session.value) return
+  const sessionId = session.value.id
+  const idx = items.value.findIndex((i) => i.id === id)
+  if (idx === -1) return
+  const [item] = items.value.splice(idx, 1)
+  skippedIds.value.add(id)
+  try {
+    await skipSessionItem(houseIdNum.value, sessionId, id)
+  } catch (e) {
+    skippedIds.value.delete(id)
+    items.value.splice(idx, 0, item)
+    showError((e as Error).message || strings.removeFailed)
+    return
+  }
+  showUndo(strings.removedFromTrip, async () => {
+    skippedIds.value.delete(id)
+    try {
+      await unskipSessionItem(houseIdNum.value, sessionId, id)
+      // Re-fetch so the item returns in its correct sorted position.
+      await loadItems()
+    } catch (e) {
+      showError((e as Error).message || strings.removeFailed)
+    }
+  })
 }
 
 async function goToStore(storeId: number) {
@@ -492,6 +530,10 @@ const strings = {
   emptyDoneTitle: t('pantry', 'All done'),
   emptyDoneBody: t('pantry', 'Everything on your list is in the cart.'),
   checkFailed: t('pantry', 'Could not check off the item.'),
+  // TRANSLATORS: Undo toast shown after removing an item from the current
+  // shopping trip only (it stays on the list).
+  removedFromTrip: t('pantry', 'Item removed from this trip'),
+  removeFailed: t('pantry', 'Could not remove the item from this trip.'),
   advanceFailed: t('pantry', 'Could not switch store.'),
   finishFailed: t('pantry', 'Could not finish the trip.'),
   loadFailed: t('pantry', 'Could not load the shopping trip.'),

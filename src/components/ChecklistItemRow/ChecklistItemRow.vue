@@ -191,6 +191,18 @@
         </NcActionButton>
       </NcActions>
     </div>
+    <div v-if="sessionRemovable" class="checklist-row__session-remove">
+      <NcButton
+        variant="tertiary"
+        :aria-label="strings.removeFromTrip"
+        :title="strings.removeFromTrip"
+        @click="$emit('session-remove', item.id)"
+      >
+        <template #icon>
+          <CloseIcon :size="18" />
+        </template>
+      </NcButton>
+    </div>
   </li>
 </template>
 
@@ -207,6 +219,7 @@ import RepeatIcon from '@icons/Repeat.vue'
 import TextBoxOutlineIcon from '@icons/TextBoxOutline.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
+import CloseIcon from '@icons/Close.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import DeleteRestoreIcon from '@icons/DeleteRestore.vue'
 import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
@@ -265,6 +278,12 @@ const props = withDefaults(
      * keeping the check control, image, and meta chips.
      */
     compact?: boolean
+    /**
+     * Shows a single "remove from this trip" button that emits `session-remove`.
+     * Used in shopping mode to drop an item from the current session only,
+     * without deleting the checklist item. Independent of `compact`.
+     */
+    sessionRemovable?: boolean
   }>(),
   {
     hideCategory: false,
@@ -281,6 +300,7 @@ const props = withDefaults(
     selected: false,
     suggestion: false,
     compact: false,
+    sessionRemovable: false,
   },
 )
 
@@ -305,6 +325,7 @@ const emit = defineEmits<{
   move: [item: ChecklistItem]
   copy: [item: ChecklistItem]
   remove: [id: number]
+  'session-remove': [id: number]
   restore: [id: number]
   archive: [id: number]
   unarchive: [id: number]
@@ -384,6 +405,9 @@ const strings = {
   moveItem: t('pantry', 'Move to list'),
   copyItem: t('pantry', 'Copy to list'),
   removeItem: t('pantry', 'Remove item'),
+  // TRANSLATORS: Button that removes an item from the current shopping trip
+  // only; it stays on the list and is not marked done.
+  removeFromTrip: t('pantry', 'Remove from this trip'),
   deletePermanently: t('pantry', 'Delete permanently'),
   restoreItem: t('pantry', 'Restore'),
   // TRANSLATORS: Verb. Menu action that moves this item to the archive.
@@ -501,7 +525,8 @@ function storeLabel(name: string): string {
       grid-area: added;
     }
 
-    .checklist-row__actions {
+    .checklist-row__actions,
+    .checklist-row__session-remove {
       grid-area: actions;
     }
 
@@ -627,6 +652,11 @@ function storeLabel(name: string): string {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+  }
+
+  &__session-remove {
+    display: flex;
+    align-items: center;
   }
 
   &__added-by {

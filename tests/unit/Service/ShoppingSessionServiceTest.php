@@ -15,6 +15,8 @@ use OCA\Pantry\Db\ShoppingSessionItem;
 use OCA\Pantry\Db\ShoppingSessionItemMapper;
 use OCA\Pantry\Db\ShoppingSessionListMapper;
 use OCA\Pantry\Db\ShoppingSessionMapper;
+use OCA\Pantry\Db\ShoppingSessionSkip;
+use OCA\Pantry\Db\ShoppingSessionSkipMapper;
 use OCA\Pantry\Db\ShoppingSessionStore;
 use OCA\Pantry\Db\ShoppingSessionStoreMapper;
 use OCA\Pantry\Db\Store;
@@ -36,6 +38,8 @@ class ShoppingSessionServiceTest extends TestCase {
 	private ShoppingSessionStoreMapper $sessionStores;
 	/** @var ShoppingSessionItemMapper&MockObject */
 	private ShoppingSessionItemMapper $sessionItems;
+	/** @var ShoppingSessionSkipMapper&MockObject */
+	private ShoppingSessionSkipMapper $sessionSkips;
 	/** @var ChecklistItemMapper&MockObject */
 	private ChecklistItemMapper $items;
 	/** @var ItemStoreMapper&MockObject */
@@ -51,6 +55,7 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->sessionLists = $this->createMock(ShoppingSessionListMapper::class);
 		$this->sessionStores = $this->createMock(ShoppingSessionStoreMapper::class);
 		$this->sessionItems = $this->createMock(ShoppingSessionItemMapper::class);
+		$this->sessionSkips = $this->createMock(ShoppingSessionSkipMapper::class);
 		$this->items = $this->createMock(ChecklistItemMapper::class);
 		$this->itemStores = $this->createMock(ItemStoreMapper::class);
 		$this->checklists = $this->createMock(ChecklistService::class);
@@ -60,6 +65,7 @@ class ShoppingSessionServiceTest extends TestCase {
 			$this->sessionLists,
 			$this->sessionStores,
 			$this->sessionItems,
+			$this->sessionSkips,
 			$this->items,
 			$this->itemStores,
 			$this->checklists,
@@ -297,6 +303,61 @@ class ShoppingSessionServiceTest extends TestCase {
 			});
 
 		$this->svc->uncheckItem($session, 10);
+	}
+
+	public function testItemsForSessionDropsSkippedItems(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionLists->method('findListIdsForSession')->with(5)->willReturn([10]);
+		$this->items->method('findForShoppingScope')->willReturn([
+			$this->makeItem(['id' => 10]),
+			$this->makeItem(['id' => 11]),
+			$this->makeItem(['id' => 12]),
+		]);
+		$this->sessionSkips->method('findItemIdsForSession')->with(5)->willReturn([11]);
+
+		$result = $this->svc->itemsForSession($session);
+		$this->assertSame([10, 12], array_map(static fn (ChecklistItem $i) => $i->getId(), $result));
+	}
+
+	public function testSkipItemInsertsWhenNotAlreadySkipped(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionSkips->method('findBySessionAndItem')->with(5, 10)->willReturn(null);
+		$this->sessionSkips->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ShoppingSessionSkip $row) {
+				$this->assertSame(5, $row->getSessionId());
+				$this->assertSame(10, $row->getItemId());
+				return $row;
+			});
+
+		$this->svc->skipItem($session, 10);
+	}
+
+	public function testSkipItemIsIdempotent(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$skip = new ShoppingSessionSkip();
+		$skip->setSessionId(5);
+		$skip->setItemId(10);
+		$this->sessionSkips->method('findBySessionAndItem')->with(5, 10)->willReturn($skip);
+		$this->sessionSkips->expects($this->never())->method('insert');
+
+		$this->svc->skipItem($session, 10);
+	}
+
+	public function testSkipItemDoesNotToggleOrDeleteItem(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionSkips->method('findBySessionAndItem')->willReturn(null);
+		$this->checklists->expects($this->never())->method('toggleItem');
+		$this->items->expects($this->never())->method('update');
+
+		$this->svc->skipItem($session, 10);
+	}
+
+	public function testUnskipItemDeletesSkipRow(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionSkips->expects($this->once())->method('deleteBySessionAndItem')->with(5, 10);
+
+		$this->svc->unskipItem($session, 10);
 	}
 
 	public function testReviewGroupsByStoreWithPerCurrencyEstimate(): void {

@@ -15,6 +15,8 @@ use OCA\Pantry\Db\ShoppingSessionItem;
 use OCA\Pantry\Db\ShoppingSessionItemMapper;
 use OCA\Pantry\Db\ShoppingSessionListMapper;
 use OCA\Pantry\Db\ShoppingSessionMapper;
+use OCA\Pantry\Db\ShoppingSessionSkip;
+use OCA\Pantry\Db\ShoppingSessionSkipMapper;
 use OCA\Pantry\Db\ShoppingSessionStore;
 use OCA\Pantry\Db\ShoppingSessionStoreMapper;
 use OCA\Pantry\Db\StoreMapper;
@@ -41,6 +43,7 @@ class ShoppingSessionService {
 		private ShoppingSessionListMapper $sessionLists,
 		private ShoppingSessionStoreMapper $sessionStores,
 		private ShoppingSessionItemMapper $sessionItems,
+		private ShoppingSessionSkipMapper $sessionSkips,
 		private ChecklistItemMapper $items,
 		private ItemStoreMapper $itemStores,
 		private ChecklistService $checklists,
@@ -226,6 +229,7 @@ class ShoppingSessionService {
 		foreach ($aged as $session) {
 			$sessionId = (int)$session->getId();
 			$this->sessionItems->deleteBySession($sessionId);
+			$this->sessionSkips->deleteBySession($sessionId);
 			$this->sessionStores->deleteBySession($sessionId);
 			$this->sessionLists->deleteBySession($sessionId);
 			$this->sessions->delete($session);
@@ -241,11 +245,45 @@ class ShoppingSessionService {
 	 */
 	public function itemsForSession(ShoppingSession $session): array {
 		$listIds = $this->sessionLists->findListIdsForSession((int)$session->getId());
-		return $this->items->findForShoppingScope(
+		$items = $this->items->findForShoppingScope(
 			$listIds,
 			$session->getActiveStoreId(),
 			$session->getIncludeUnassigned(),
 		);
+		// Drop items the shopper skipped from this trip (kept on the list, not
+		// marked done — the skip is session-scoped and reversible).
+		$skipped = $this->sessionSkips->findItemIdsForSession((int)$session->getId());
+		if ($skipped === []) {
+			return $items;
+		}
+		$skippedSet = array_fill_keys($skipped, true);
+		return array_values(array_filter(
+			$items,
+			static fn (ChecklistItem $item) => !isset($skippedSet[(int)$item->getId()]),
+		));
+	}
+
+	/**
+	 * Skip an item for this trip only: hide it from the session's shopping list
+	 * without marking it done or removing it from the checklist. Idempotent.
+	 */
+	public function skipItem(ShoppingSession $session, int $itemId): void {
+		$sessionId = (int)$session->getId();
+		if ($this->sessionSkips->findBySessionAndItem($sessionId, $itemId) !== null) {
+			return;
+		}
+		$row = new ShoppingSessionSkip();
+		$row->setSessionId($sessionId);
+		$row->setItemId($itemId);
+		$row->setCreatedAt(time());
+		$this->sessionSkips->insert($row);
+	}
+
+	/**
+	 * Undo a skip: the item reappears in the session's shopping list. Idempotent.
+	 */
+	public function unskipItem(ShoppingSession $session, int $itemId): void {
+		$this->sessionSkips->deleteBySessionAndItem((int)$session->getId(), $itemId);
 	}
 
 	/**
