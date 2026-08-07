@@ -358,6 +358,7 @@ OC.L10N.register(
     "Editor" : "Bearbeiter",
     "Editor (via role)" : "Bearbeiter (über Rolle)",
     "This person's role already grants edit access, which overrides the share." : "Die Rolle dieser Person gewährt bereits Bearbeitungszugriff, was die Freigabe außer Kraft setzt.",
+    "Enabled" : "Aktiviert",
     "Back" : "Zurück",
     "Could not create store." : "Geschäft konnte nicht erstellt werden.",
     "Create store …" : "Erstelle Geschäft …",

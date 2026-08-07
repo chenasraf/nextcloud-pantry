@@ -97,6 +97,8 @@
     "Resume" : "Palauta",
     "Viewer" : "Katselin",
     "Editor" : "Muokkain",
+    "Reminders" : "Muistutukset",
+    "Enabled" : "Käytössä",
     "Back" : "Takaisin",
     "Days" : "Päivää",
     "From:" : "Alkaen:",
@@ -121,6 +123,7 @@
     "Move to folder" : "Siirrä kansioon",
     "Mine" : "Omat",
     "Load more" : "Lataa lisää",
-    "Uncategorized" : "Luokittelematon"
+    "Uncategorized" : "Luokittelematon",
+    "Finish" : "Valmis"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

@@ -51,6 +51,8 @@ OC.L10N.register(
     "Ends" : "Termina",
     "Never" : "Nunca",
     "Summary" : "Resumen",
+    "Reminders" : "Recordatorios",
+    "Enabled" : "Habilitado",
     "Back" : "Volver",
     "From:" : "De:",
     "To:" : "Para:",
@@ -64,6 +66,7 @@ OC.L10N.register(
     "Select" : "Seleccionar",
     "Apply" : "Aplicar",
     "Note restored" : "Nota restaurada",
-    "New folder" : "Carpeta nueva"
+    "New folder" : "Carpeta nueva",
+    "Finish" : "Terminar"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

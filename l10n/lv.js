@@ -60,6 +60,7 @@ OC.L10N.register(
     "Summary" : "Kopsavilkums",
     "Viewer" : "Skatītājs",
     "Editor" : "Redaktors",
+    "Reminders" : "Atgādinājumi",
     "Enabled" : "Iespējots",
     "Days" : "Dienas",
     "From:" : "No:",

@@ -30,6 +30,7 @@ OC.L10N.register(
     "Ends" : "Eindig",
     "Summary" : "Opsomming",
     "Viewer" : "Bekyker",
+    "Reminders" : "Herinneringe",
     "Contact" : "Kontak",
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",

@@ -80,6 +80,7 @@ OC.L10N.register(
     "Resume" : "Halda áfram",
     "Viewer" : "Skoðari",
     "Editor" : "Ritill",
+    "Reminders" : "Áminningar",
     "Enabled" : "Virkt",
     "Back" : "Til baka",
     "Days" : "Dagar",

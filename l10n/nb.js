@@ -95,6 +95,7 @@ OC.L10N.register(
     "Contact" : "Kontakt",
     "Newest first" : "Nyeste først",
     "Oldest first" : "Eldste først",
+    "Store" : "Butikk",
     "Archive" : "Arkiv",
     "Export" : "Eksporter",
     "Import" : "Importer",

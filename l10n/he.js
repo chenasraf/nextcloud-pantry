@@ -72,6 +72,8 @@ OC.L10N.register(
     "Summary" : "תקציר",
     "Resume" : "להמשיך",
     "Viewer" : "מציג",
+    "Reminders" : "תזכורות",
+    "Enabled" : "מופעל",
     "Back" : "אחורה",
     "Days" : "ימים",
     "From:" : "התחלה:",

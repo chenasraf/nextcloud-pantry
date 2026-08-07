@@ -94,6 +94,7 @@ OC.L10N.register(
     "Contact" : "Stik",
     "Newest first" : "najprej najnovejše",
     "Oldest first" : "najprej najstarejše",
+    "Store" : "Trgovina",
     "Archive" : "Arhiv",
     "Export" : "Izvozi",
     "Import" : "Uvozi",

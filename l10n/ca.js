@@ -50,6 +50,7 @@ OC.L10N.register(
     "General" : "General",
     "Save changes" : "Desa els canvis",
     "Display" : "Pantalla",
+    "Shopping" : "Anar de compres",
     "Trash" : "Paperera",
     "Roles" : "Rols",
     "Members" : "Membres",
@@ -86,8 +87,11 @@ OC.L10N.register(
     "After" : "Després",
     "On date" : "A la data",
     "Summary" : "Resum",
+    "Resume" : "Reprèn",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "Reminders" : "Recordatoris",
+    "Enabled" : "Habilitat",
     "Back" : "Torna",
     "Days" : "Dies",
     "From:" : "De:",
@@ -96,6 +100,7 @@ OC.L10N.register(
     "Contact" : "Contacte",
     "Newest first" : "Més nou primer",
     "Oldest first" : "Més antic primer",
+    "Store" : "Botiga",
     "Archive" : "Arxiu",
     "Export" : "Exporta",
     "Import" : "Importa",
@@ -110,6 +115,7 @@ OC.L10N.register(
     "Add a description" : "Afegir una descripció",
     "Remove folder" : "Suprimeix la carpeta",
     "Load more" : "Carrega'n més",
-    "Uncategorized" : "Sense categoria"
+    "Uncategorized" : "Sense categoria",
+    "Finish" : "Acabeu"
 },
 "nplurals=2; plural=(n != 1);");

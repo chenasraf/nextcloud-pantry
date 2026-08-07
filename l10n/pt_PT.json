@@ -299,6 +299,7 @@
     "Contact" : "Contacto",
     "Newest first" : "Recentes primeiro",
     "Oldest first" : "Antigos primeiro",
+    "Store" : "Loja",
     "Sort by: {value}" : "Ordenar por: {value}",
     "An item named \"{name}\" already exists in this list. Reuse it instead of adding a new one?" : "Já existe um item chamado “{name}” nesta lista. Deseja reutilizá-lo em vez de adicionar um novo?",
     "{item} moved to {list}" : "{item} movido para {list}",

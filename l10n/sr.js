@@ -99,6 +99,7 @@ OC.L10N.register(
     "Contact" : "Контакт",
     "Newest first" : "Прво новије",
     "Oldest first" : "Прво старије",
+    "Store" : "Продавница",
     "Archive" : "Архива",
     "Export" : "Извези",
     "Import" : "Увоз",

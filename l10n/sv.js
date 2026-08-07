@@ -374,6 +374,7 @@ OC.L10N.register(
     "_Imported %n item_::_Imported %n items_" : ["Importerade %n objekt","Importerade %n objekt"],
     "Newest first" : "Nyast först",
     "Oldest first" : "Äldst först",
+    "Store" : "Affär",
     "Sort by: {value}" : "Sortera efter: {value}",
     "Reused existing item \"{name}\"" : "Återanvände det befintliga objektet ”{name}”",
     "An item named \"{name}\" already exists in this list. Reuse it instead of adding a new one?" : "Det finns redan ett objekt med namnet ”{name}” i den här listan. Vill du återanvända det i stället för att lägga till ett nytt?",

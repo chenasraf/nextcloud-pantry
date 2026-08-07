@@ -64,6 +64,7 @@ OC.L10N.register(
     "On date" : "On date",
     "Summary" : "Summary",
     "Editor" : "Editor",
+    "Reminders" : "Reminders",
     "Enabled" : "Enabled",
     "Back" : "უკან",
     "From:" : "From:",

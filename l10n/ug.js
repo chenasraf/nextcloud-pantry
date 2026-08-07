@@ -98,6 +98,7 @@ OC.L10N.register(
     "Contact" : "ئالاقىلىشىڭ",
     "Newest first" : "ئەڭ يېڭى",
     "Oldest first" : "ئەڭ كونا",
+    "Store" : "دۇكان",
     "Archive" : "ئارخىپ",
     "Export" : "ئېكسپورت",
     "Import" : "ئەكىر",

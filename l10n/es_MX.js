@@ -65,6 +65,8 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "Reminders" : "Recordatorios",
+    "Enabled" : "Habilitado",
     "Back" : "Atrás",
     "Days" : "Días",
     "From:" : "De:",
@@ -84,6 +86,7 @@ OC.L10N.register(
     "New folder" : "Carpeta nueva ",
     "Add a description" : "Añadir una descripción",
     "Load more" : "Cargar más",
-    "Uncategorized" : "Sin categoría"
+    "Uncategorized" : "Sin categoría",
+    "Finish" : "Terminar"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

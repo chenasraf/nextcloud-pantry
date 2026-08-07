@@ -87,6 +87,7 @@ OC.L10N.register(
     "Resume" : "再開",
     "Viewer" : "ビューア",
     "Editor" : "エディタ",
+    "Reminders" : "リマインダー",
     "Enabled" : "有効",
     "Back" : "戻る",
     "Days" : "日",

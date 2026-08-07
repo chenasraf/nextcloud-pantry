@@ -52,6 +52,7 @@ OC.L10N.register(
     "General" : "General",
     "Save changes" : "Guardar cambios",
     "Display" : "Mostrar",
+    "Shopping" : "Compras",
     "Trash" : "Papelera",
     "Roles" : "Roles",
     "Members" : "Miembros",
@@ -89,8 +90,11 @@ OC.L10N.register(
     "After" : "Después",
     "On date" : "en fecha",
     "Summary" : "Resumen",
+    "Resume" : "Reanudar",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "Reminders" : "Recordatorios",
+    "Enabled" : "Habilitado",
     "Back" : "Atrás",
     "Days" : "Días",
     "From:" : "Desde:",
@@ -99,6 +103,7 @@ OC.L10N.register(
     "Contact" : "Contacto",
     "Newest first" : "Más nuevas primero",
     "Oldest first" : "Más antiguas primero",
+    "Store" : "Tienda",
     "Archive" : "Archivar",
     "Export" : "Exportar",
     "Import" : "Importar",
@@ -114,6 +119,7 @@ OC.L10N.register(
     "Remove folder" : "Eliminar carpeta",
     "Move to folder" : "Mover a la carpeta",
     "Load more" : "Cargar más",
-    "Uncategorized" : "Sin categoría"
+    "Uncategorized" : "Sin categoría",
+    "Finish" : "Terminar"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

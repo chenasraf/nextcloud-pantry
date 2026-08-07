@@ -45,6 +45,8 @@ OC.L10N.register(
     "Ends" : "Termina",
     "Never" : "Nunca",
     "Summary" : "Resumen",
+    "Reminders" : "Recordatorios",
+    "Enabled" : "Habilitado",
     "From:" : "De:",
     "To:" : "Para:",
     "Location" : "Ubicación",

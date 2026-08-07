@@ -82,6 +82,8 @@ OC.L10N.register(
     "Resume" : "Nastavi",
     "Viewer" : "Preglednik",
     "Editor" : "Uređivač",
+    "Reminders" : "Podsjetnici",
+    "Enabled" : "Omogućeno",
     "Back" : "Natrag",
     "From:" : "Od:",
     "Contact" : "Kontakt",

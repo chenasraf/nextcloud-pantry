@@ -101,6 +101,7 @@ OC.L10N.register(
     "Contact" : "Contact",
     "Newest first" : "Nieuwste eerst",
     "Oldest first" : "Oudste eerst",
+    "Store" : "Winkel",
     "Archive" : "Archief",
     "Export" : "Exporteren",
     "Import" : "Import",

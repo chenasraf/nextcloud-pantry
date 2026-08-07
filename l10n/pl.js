@@ -102,6 +102,7 @@ OC.L10N.register(
     "Contact" : "Kontakt",
     "Newest first" : "Od najnowszych",
     "Oldest first" : "Od najstarszych",
+    "Store" : "Sklep",
     "Archive" : "Archiwum",
     "Export" : "Eksportuj",
     "Import" : "Importuj",

@@ -81,6 +81,7 @@ OC.L10N.register(
     "Resume" : "Lanjutkan",
     "Viewer" : "Penampil",
     "Editor" : "Editor",
+    "Reminders" : "Pengingat",
     "Enabled" : "Diaktifkan",
     "Back" : "Kembali",
     "Days" : "Hari",

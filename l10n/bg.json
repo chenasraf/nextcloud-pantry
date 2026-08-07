@@ -42,6 +42,7 @@
     "General" : "Общи",
     "Save changes" : "Запиши промените",
     "Display" : "Показване",
+    "Shopping" : "Пазаруване",
     "Trash" : "Кошче",
     "Members" : "Членове",
     "Account" : "Профил",
@@ -73,14 +74,18 @@
     "After" : "След",
     "On date" : "На дата",
     "Summary" : "Резюме",
+    "Resume" : " Възобновяване",
     "Viewer" : "Визуализатор",
     "Editor" : "Редактор",
+    "Reminders" : "Напомняния",
+    "Enabled" : "Включено",
     "Back" : "Назад",
     "From:" : "От:",
     "Location" : "Местоположение",
     "Contact" : "Контакт",
     "Newest first" : "Първо най-новият",
     "Oldest first" : "Първо най-старият",
+    "Store" : "Магазин",
     "Archive" : "Архив",
     "Export" : "Експорт /изнасям/",
     "Import" : "Импортиране /внасяне/",
@@ -96,6 +101,7 @@
     "Remove folder" : "Премахване на папка",
     "Move to folder" : "Преместване в папка",
     "Load more" : "Зареждане на още",
-    "Uncategorized" : "Некатегоризирани"
+    "Uncategorized" : "Некатегоризирани",
+    "Finish" : "Край"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

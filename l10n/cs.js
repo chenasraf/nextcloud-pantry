@@ -98,6 +98,7 @@ OC.L10N.register(
     "House name" : "Název domu",
     "Save changes" : "Uložit změny",
     "Display" : "Zobrazit",
+    "Shopping" : "Nakupování",
     "Trash" : "Koš",
     "Roles" : "Role",
     "Members" : "Členové",
@@ -150,9 +151,12 @@ OC.L10N.register(
     "occurrences" : "výskyty",
     "On date" : "Dne",
     "Summary" : "Souhrn",
+    "Resume" : "Navázat",
     "Add a person …" : "Přidat osobu …",
     "Viewer" : "Prohlížeč",
     "Editor" : "Editor",
+    "Reminders" : "Připomínky",
+    "Enabled" : "Zapnuto",
     "Back" : "Zpět",
     "Could not create store." : "Nepodařilo se vytvořit obchod.",
     "Create store …" : "Vytvořit obchod …",
@@ -174,6 +178,7 @@ OC.L10N.register(
     "Pick stores" : "Vybrat obchody",
     "Newest first" : "Nejnovější jako první",
     "Oldest first" : "Nejstarší jako první",
+    "Store" : "Obchod",
     "Trash is empty" : "Koš je prázdný",
     "Deleted items will appear here." : "Zde se objeví smazané položky.",
     "Archive is empty" : "Archiv je prázdný",
@@ -230,6 +235,7 @@ OC.L10N.register(
     "Welcome to Pantry" : "Vítejte ve Spíži",
     "Mine" : "Moje",
     "Load more" : "Načíst více",
-    "Uncategorized" : "Nezařazeno"
+    "Uncategorized" : "Nezařazeno",
+    "Finish" : "Dokončit"
 },
 "nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n >= 2 && n <= 4 && n % 1 == 0) ? 1: (n % 1 != 0 ) ? 2 : 3;");

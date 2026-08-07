@@ -100,6 +100,7 @@ OC.L10N.register(
     "Contact" : "Контакт",
     "Newest first" : "Самый новый первый",
     "Oldest first" : "Самый старый первый",
+    "Store" : "Хранение",
     "Archive" : "Архив",
     "Export" : "Экспорт",
     "Import" : "Импортировать",

@@ -63,8 +63,11 @@ OC.L10N.register(
     "Weekly" : "Selmanalmente",
     "Never" : "Enxamás",
     "Summary" : "Resume",
+    "Resume" : "Siguir",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "Reminders" : "Recordatorios",
+    "Enabled" : "Activóse",
     "Back" : "Atrás",
     "Days" : "Díes",
     "From:" : "De:",
@@ -84,6 +87,8 @@ OC.L10N.register(
     "No notes yet" : "Nun hai nenguna nota",
     "New folder" : "Carpeta nueva",
     "Remove folder" : "Quitar la carpeta",
-    "Uncategorized" : "Ensin categoría"
+    "Load more" : "Cargar más",
+    "Uncategorized" : "Ensin categoría",
+    "Finish" : "Finar"
 },
 "nplurals=2; plural=(n != 1);");

@@ -53,6 +53,7 @@ OC.L10N.register(
     "General" : "Generelt",
     "Save changes" : "Gem ændringer",
     "Display" : "Vis",
+    "Shopping" : "Shopping",
     "Trash" : "Papirkurv",
     "Roles" : "Ruller",
     "Members" : "Medlemmer",
@@ -91,8 +92,11 @@ OC.L10N.register(
     "occurrences" : "hændelser",
     "On date" : "På dato",
     "Summary" : "Sammendrag",
+    "Resume" : "Fortsæt",
     "Viewer" : "Fremviser",
     "Editor" : "Editor",
+    "Reminders" : "Påmindelser",
+    "Enabled" : "Aktiveret",
     "Back" : "Tilbage",
     "Days" : "Dage",
     "From:" : "Fra:",
@@ -114,6 +118,7 @@ OC.L10N.register(
     "Add a description" : "Tilføj en beskrivelse",
     "Remove folder" : "Fjern mappe",
     "Load more" : "Hent flere",
-    "Uncategorized" : "Udenfor kategori"
+    "Uncategorized" : "Udenfor kategori",
+    "Finish" : "Færdiggør"
 },
 "nplurals=2; plural=(n != 1);");

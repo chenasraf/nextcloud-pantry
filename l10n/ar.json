@@ -47,6 +47,7 @@
     "General" : "عامٌّ",
     "Save changes" : "حفظ التعديلات",
     "Display" : "عرض",
+    "Shopping" : "تسوُّق",
     "Trash" : "سلّة المَحذُوفَات",
     "Members" : "الاعضاء",
     "Account" : "الحساب",
@@ -77,8 +78,11 @@
     "After" : "بعد",
     "On date" : "في تاريخ",
     "Summary" : "مُلخَّص",
+    "Resume" : "إستأنِف",
     "Viewer" : "العارض",
     "Editor" : "المحرر",
+    "Reminders" : "تذكيرات",
+    "Enabled" : "مُفعّل",
     "Back" : "عودة",
     "Days" : "أيام",
     "From:" : "من :",
@@ -101,6 +105,9 @@
     "Add a description" : "إضافة وصف",
     "Remove folder" : "حذف المجلد",
     "Move to folder" : "أنقُل إلى المجلد",
-    "Uncategorized" : "غير مُصنّفة"
+    "Mine" : "ملكي",
+    "Load more" : "حمّل أكثر",
+    "Uncategorized" : "غير مُصنّفة",
+    "Finish" : "تم"
 },"pluralForm" :"nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;"
 }

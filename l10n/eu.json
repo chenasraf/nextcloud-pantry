@@ -85,6 +85,8 @@
     "Resume" : "Jarraitu",
     "Viewer" : "Ikustailea",
     "Editor" : "Editorea",
+    "Reminders" : "Gogorarazpenak",
+    "Enabled" : "Gaituta",
     "Back" : "Itzuli",
     "Days" : "Egunak",
     "From:" : "Noiztik:",
@@ -93,6 +95,7 @@
     "Contact" : "Kontaktua",
     "Newest first" : "Berrienak lehenengo ",
     "Oldest first" : "Zaharrenak lehenengo",
+    "Store" : "Denda",
     "Archive" : "Artxibatu",
     "Export" : "Esportatu",
     "Import" : "Inportatu",
@@ -108,6 +111,7 @@
     "Remove folder" : "Kendu karpeta",
     "Move to folder" : "Eraman karpetara",
     "Load more" : "Kargatu gehiago",
-    "Uncategorized" : "Kategoria gabe"
+    "Uncategorized" : "Kategoria gabe",
+    "Finish" : "Amaitu"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

@@ -97,6 +97,7 @@ OC.L10N.register(
     "Contact" : "联系",
     "Newest first" : "从新到旧",
     "Oldest first" : "从旧到新",
+    "Store" : "店铺",
     "Archive" : "存档",
     "Export" : "导出",
     "Import" : "导入",

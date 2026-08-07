@@ -25,6 +25,7 @@ OC.L10N.register(
     "weeks" : "Wochen",
     "Daily" : "All Dag",
     "Weekly" : "All Woch",
+    "Reminders" : "Erennërungen",
     "Enabled" : "Aktivéiert",
     "From:" : "Vun:",
     "To:" : "Un:",

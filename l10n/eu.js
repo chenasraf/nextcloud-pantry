@@ -87,6 +87,8 @@ OC.L10N.register(
     "Resume" : "Jarraitu",
     "Viewer" : "Ikustailea",
     "Editor" : "Editorea",
+    "Reminders" : "Gogorarazpenak",
+    "Enabled" : "Gaituta",
     "Back" : "Itzuli",
     "Days" : "Egunak",
     "From:" : "Noiztik:",
@@ -95,6 +97,7 @@ OC.L10N.register(
     "Contact" : "Kontaktua",
     "Newest first" : "Berrienak lehenengo ",
     "Oldest first" : "Zaharrenak lehenengo",
+    "Store" : "Denda",
     "Archive" : "Artxibatu",
     "Export" : "Esportatu",
     "Import" : "Inportatu",
@@ -110,6 +113,7 @@ OC.L10N.register(
     "Remove folder" : "Kendu karpeta",
     "Move to folder" : "Eraman karpetara",
     "Load more" : "Kargatu gehiago",
-    "Uncategorized" : "Kategoria gabe"
+    "Uncategorized" : "Kategoria gabe",
+    "Finish" : "Amaitu"
 },
 "nplurals=2; plural=(n != 1);");

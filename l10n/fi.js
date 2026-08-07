@@ -99,6 +99,8 @@ OC.L10N.register(
     "Resume" : "Palauta",
     "Viewer" : "Katselin",
     "Editor" : "Muokkain",
+    "Reminders" : "Muistutukset",
+    "Enabled" : "Käytössä",
     "Back" : "Takaisin",
     "Days" : "Päivää",
     "From:" : "Alkaen:",
@@ -123,6 +125,7 @@ OC.L10N.register(
     "Move to folder" : "Siirrä kansioon",
     "Mine" : "Omat",
     "Load more" : "Lataa lisää",
-    "Uncategorized" : "Luokittelematon"
+    "Uncategorized" : "Luokittelematon",
+    "Finish" : "Valmis"
 },
 "nplurals=2; plural=(n != 1);");

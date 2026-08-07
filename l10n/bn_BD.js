@@ -23,6 +23,7 @@ OC.L10N.register(
     "weeks" : "সপ্তাহসমূহ",
     "Daily" : "দৈনিক",
     "Weekly" : "সাপ্তাহিক",
+    "Enabled" : "কার্যকর",
     "From:" : "হইতে:",
     "To:" : "প্রতি:",
     "Location" : "অবস্থান",

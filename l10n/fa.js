@@ -269,6 +269,8 @@ OC.L10N.register(
     "Resume" : "ادامه",
     "Viewer" : "بیننده",
     "Editor" : "ویرایشگر",
+    "Reminders" : "یادآوری‌ها",
+    "Enabled" : "فعال",
     "Back" : "بازگشت",
     "Days" : "روز",
     "From:" : "از:",
@@ -277,6 +279,7 @@ OC.L10N.register(
     "Contact" : "تماس",
     "Newest first" : "نخست جدیدترین",
     "Oldest first" : "نخست قدیمی‌ترین",
+    "Store" : "فروشگاه",
     "{item} moved to {list}" : "{item} به {list} منتقل شد",
     "{item} copied to {list}" : "{item} به {list} کپی شد",
     "Back to lists" : "بازگشت به فهرست‌ها",
@@ -375,6 +378,7 @@ OC.L10N.register(
     "Mine" : "مال من",
     "Load more" : "بارگذاری بیشتر",
     "Uncategorized" : "بدون دسته‌بندی",
+    "Finish" : "پایان",
     "Starts after completion" : "پس از تکمیل آغاز می‌شود"
 },
 "nplurals=2; plural=(n > 1);");

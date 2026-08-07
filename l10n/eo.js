@@ -53,6 +53,7 @@ OC.L10N.register(
     "Summary" : "Resumo",
     "Viewer" : "Vidigilo",
     "Editor" : "Redaktilo",
+    "Reminders" : "Memorigoj",
     "From:" : "El:",
     "To:" : "Al:",
     "Location" : "Loko",
