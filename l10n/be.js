@@ -69,6 +69,7 @@ OC.L10N.register(
     "Contact" : "Кантакт",
     "Newest first" : "Спачатку новыя",
     "Oldest first" : "Спачатку старыя",
+    "Store" : "Склад",
     "Archive" : "Архіў",
     "Export" : "Экспарт",
     "Import" : "Імпарт",

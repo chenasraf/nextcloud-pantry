@@ -92,6 +92,7 @@ OC.L10N.register(
     "Contact" : "جهة الاتصال",
     "Newest first" : "الأحدث أولاً",
     "Oldest first" : "الأقدم أولاً",
+    "Store" : "متجر",
     "Archive" : "الأرشيف",
     "Export" : "تصدير",
     "Import" : "إستيراد",

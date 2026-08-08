@@ -76,6 +76,7 @@ OC.L10N.register(
     "Contact" : "Contautu",
     "Newest first" : "Primero lo nuevo",
     "Oldest first" : "Primero lo antiguo",
+    "Store" : "Tienda",
     "Archive" : "Archivar",
     "Export" : "Esportar",
     "Import" : "Importa",
