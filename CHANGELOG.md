@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.26.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.25.0...v0.26.0) (2026-08-08)
+
+
+### Features
+
+* **checklist:** allow collapsing done section ([10e6a72](https://github.com/chenasraf/nextcloud-pantry/commit/10e6a72156556b6925f53a0ff81541085f091f3c))
+* **shopping:** remove items from the current trip only ([d54212d](https://github.com/chenasraf/nextcloud-pantry/commit/d54212d95f2fcb09cd4daf71b511a70742373460))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([5cae70b](https://github.com/chenasraf/nextcloud-pantry/commit/5cae70bd2723b4b09b8a937b2e1451544158824f))
+* **l10n:** Update translations from Transifex ([c1947a5](https://github.com/chenasraf/nextcloud-pantry/commit/c1947a5bb7387e8576d4909c84953bfad465ffbc))
+
 ## [0.25.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.24.0...v0.25.0) (2026-08-06)
 
 
