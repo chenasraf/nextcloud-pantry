@@ -50,8 +50,12 @@ Pantry also has companion apps for mobile and desktop that let you manage your l
 	<repair-steps>
 		<post-migration>
 			<step>OCA\Pantry\Migration\EnsureStoreTablesRepairStep</step>
+			<step>OCA\Pantry\Migration\RepairSchemaColumnsStep</step>
 		</post-migration>
 	</repair-steps>
+	<commands>
+		<command>OCA\Pantry\Command\RepairSchema</command>
+	</commands>
 	<activity>
 		<settings>
 			<setting>OCA\Pantry\Activity\Setting</setting>

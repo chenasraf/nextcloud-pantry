@@ -16,14 +16,23 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class AddMissingSchemaListenerTest extends TestCase {
-	public function testColumnsListenerDeclaresArchivedAt(): void {
+	public function testColumnsListenerDeclaresDriftProneColumns(): void {
+		$declared = [];
 		/** @var AddMissingColumnsEvent&MockObject $event */
 		$event = $this->createMock(AddMissingColumnsEvent::class);
-		$event->expects($this->once())
-			->method('addMissingColumn')
-			->with('pantry_list_items', 'archived_at', 'bigint', $this->anything());
+		$event->method('addMissingColumn')
+			->willReturnCallback(function (string $table, string $column) use (&$declared): void {
+				$declared[] = $table . '.' . $column;
+			});
 
 		(new AddMissingColumnsListener())->handle($event);
+
+		// archived_at (Version13) plus the price columns (Version19) that drift
+		// left missing in issue #212.
+		$this->assertContains('pantry_list_items.archived_at', $declared);
+		$this->assertContains('pantry_list_items.price_type', $declared);
+		$this->assertContains('pantry_list_items.price_currency', $declared);
+		$this->assertContains('pantry_shopsess_items.item_name', $declared);
 	}
 
 	public function testColumnsListenerIgnoresUnrelatedEvents(): void {

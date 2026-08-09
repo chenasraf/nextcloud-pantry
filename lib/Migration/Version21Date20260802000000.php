@@ -74,14 +74,43 @@ class Version21Date20260802000000 extends SimpleMigrationStep {
 	/**
 	 * Backfill the snapshot on existing check-log rows from their current item.
 	 *
+	 * The price_* columns on list_items come from Version19. If schema drift
+	 * left them missing (issue #212) selecting them here would abort the whole
+	 * upgrade, so only the columns that actually exist are read; the absent ones
+	 * stay null on the snapshot and RepairSchemaColumnsStep restores them after
+	 * migrations finish.
+	 *
 	 * @param Closure():ISchemaWrapper $schemaClosure
 	 */
 	public function postSchemaChange(IOutput $output, Closure $schemaClosure, array $options): void {
 		$logs = Application::tableName('shopsess_items');
 		$items = Application::tableName('list_items');
 
+		/** @var ISchemaWrapper $schema */
+		$schema = $schemaClosure();
+		if (!$schema->hasTable($items)) {
+			return;
+		}
+		$itemsTable = $schema->getTable($items);
+
+		// name/quantity predate the price columns and are always present; the
+		// price columns are read only where the source column actually exists.
+		$snapshot = [
+			'item_name' => 'name',
+			'quantity' => 'quantity',
+			'price_type' => 'price_type',
+			'price_min' => 'price_min',
+			'price_max' => 'price_max',
+			'price_currency' => 'price_currency',
+		];
+		$snapshot = array_filter(
+			$snapshot,
+			fn (string $source): bool => $itemsTable->hasColumn($source),
+		);
+
 		$select = $this->connection->getQueryBuilder();
-		$select->select('si.id', 'i.name', 'i.quantity', 'i.price_type', 'i.price_min', 'i.price_max', 'i.price_currency')
+		$select->select('si.id')
+			->addSelect(array_map(fn (string $source): string => 'i.' . $source, array_values($snapshot)))
 			->from($logs, 'si')
 			->innerJoin('si', $items, 'i', $select->expr()->eq('si.item_id', 'i.id'))
 			->where($select->expr()->isNull('si.item_name'));
@@ -90,14 +119,11 @@ class Version21Date20260802000000 extends SimpleMigrationStep {
 		$updated = 0;
 		while ($row = $result->fetch()) {
 			$update = $this->connection->getQueryBuilder();
-			$update->update($logs)
-				->set('item_name', $update->createNamedParameter($row['name']))
-				->set('quantity', $update->createNamedParameter($row['quantity']))
-				->set('price_type', $update->createNamedParameter($row['price_type']))
-				->set('price_min', $update->createNamedParameter($row['price_min']))
-				->set('price_max', $update->createNamedParameter($row['price_max']))
-				->set('price_currency', $update->createNamedParameter($row['price_currency']))
-				->where($update->expr()->eq('id', $update->createNamedParameter($row['id'], IQueryBuilder::PARAM_INT)));
+			$update->update($logs);
+			foreach ($snapshot as $target => $source) {
+				$update->set($target, $update->createNamedParameter($row[$source]));
+			}
+			$update->where($update->expr()->eq('id', $update->createNamedParameter($row['id'], IQueryBuilder::PARAM_INT)));
 			$update->executeStatement();
 			$updated++;
 		}

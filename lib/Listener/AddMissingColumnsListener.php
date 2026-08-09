@@ -7,17 +7,19 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Listener;
 
-use OCA\Pantry\AppInfo\Application;
+use OCA\Pantry\Migration\ExpectedColumns;
 use OCP\DB\Events\AddMissingColumnsEvent;
-use OCP\DB\Types;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
 /**
  * Declares columns that item queries depend on, so schema drift (a migration
- * recorded as executed without its column actually landing — see issue #188)
- * shows up in the admin overview and can be repaired with
+ * recorded as executed without its column actually landing — see issues #188
+ * and #212) shows up in the admin overview and can be repaired with
  * `occ db:add-missing-columns`.
+ *
+ * The declarations live in {@see ExpectedColumns} so the same list also drives
+ * `occ pantry:repair-schema`.
  *
  * @template-implements IEventListener<Event|AddMissingColumnsEvent>
  */
@@ -27,13 +29,13 @@ class AddMissingColumnsListener implements IEventListener {
 			return;
 		}
 
-		// Item-list queries filter on archived_at unconditionally; without the
-		// column every checklist errors out. Mirror Version13's definition.
-		$event->addMissingColumn(
-			Application::tableName('list_items'),
-			'archived_at',
-			Types::BIGINT,
-			['notnull' => false, 'length' => 20],
-		);
+		foreach (ExpectedColumns::all() as $column) {
+			$event->addMissingColumn(
+				$column['table'],
+				$column['name'],
+				$column['type'],
+				$column['options'],
+			);
+		}
 	}
 }
