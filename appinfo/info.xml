@@ -60,6 +60,9 @@ Pantry also has companion apps for mobile and desktop that let you manage your l
 		<settings>
 			<setting>OCA\Pantry\Activity\Setting</setting>
 		</settings>
+		<filters>
+			<filter>OCA\Pantry\Activity\Filter</filter>
+		</filters>
 		<providers>
 			<provider>OCA\Pantry\Activity\Provider</provider>
 		</providers>
