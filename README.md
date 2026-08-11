@@ -11,6 +11,7 @@ SPDX-License-Identifier: CC0-1.0
 [![Frontend Tests](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/vitest.yml/badge.svg)](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/vitest.yml)
 [![PHPUnit MySQL](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/phpunit-mysql.yml/badge.svg)](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/phpunit-mysql.yml)
 [![PHPUnit PostgreSQL](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/phpunit-pgsql.yml/badge.svg)](https://github.com/chenasraf/nextcloud-pantry/actions/workflows/phpunit-pgsql.yml)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/6MvhMh4Jk)
 
 A household management app for Nextcloud — shared checklists, photo boards, and notes, all in one
 place.
