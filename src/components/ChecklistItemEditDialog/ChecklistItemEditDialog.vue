@@ -2,6 +2,7 @@
   <NcDialog
     :name="strings.title"
     :open="open"
+    size="large"
     close-on-click-outside
     @update:open="(v) => !v && $emit('update:open', false)"
   >
@@ -17,7 +18,7 @@
         :placeholder="strings.namePlaceholder"
         autocomplete="off"
       />
-      <AutoResizeTextarea
+      <MarkdownEditor
         v-model="editDescription"
         :label="strings.descriptionLabel"
         :placeholder="strings.descriptionPlaceholder"
@@ -117,7 +118,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import UploadIcon from '@icons/Upload.vue'
 import DeleteIcon from '@icons/Delete.vue'
-import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
+import { MarkdownEditor } from '@/components/MarkdownEditor'
 import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
 import StoreMultiPicker from '@/components/StoreMultiPicker'

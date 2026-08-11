@@ -9,37 +9,44 @@
   >
     <div class="note-dialog__body">
       <!-- Title -->
-      <input
-        v-if="editing"
-        ref="titleInputRef"
-        v-model="titleValue"
-        :placeholder="strings.titlePlaceholder"
-        class="note-dialog__title-input"
-        dir="auto"
-      />
-      <h2 v-else class="note-dialog__title-text" dir="auto" @click="startEditing('title')">
-        {{ titleValue || strings.untitled }}
-      </h2>
+      <div class="note-dialog__title-row">
+        <input
+          v-if="editing"
+          ref="titleInputRef"
+          v-model="titleValue"
+          :placeholder="strings.titlePlaceholder"
+          class="note-dialog__title-input"
+          dir="auto"
+        />
+        <h2 v-else class="note-dialog__title-text" dir="auto">
+          {{ titleValue || strings.untitled }}
+        </h2>
+        <NcCheckboxRadioSwitch
+          v-if="editing && richAvailable"
+          v-model="richMode"
+          type="switch"
+          class="note-dialog__rich-toggle"
+          :style="richToggleStyle"
+        >
+          {{ strings.richText }}
+        </NcCheckboxRadioSwitch>
+      </div>
 
       <!-- Content -->
-      <AutoResizeTextarea
+      <MarkdownEditor
         v-if="editing"
         ref="contentInputRef"
         v-model="contentValue"
+        v-model:rich="richMode"
+        :toolbar="false"
         :placeholder="strings.contentPlaceholder"
         :max-height="MAX_TEXTAREA_HEIGHT"
-        :rows="3"
         class="note-dialog__content-input"
         dir="auto"
         autocomplete="off"
+        @available="richAvailable = $event"
       />
-      <div
-        v-else
-        ref="renderedContentRef"
-        class="note-dialog__content"
-        dir="auto"
-        @click="startEditing('content')"
-      >
+      <div v-else class="note-dialog__content" dir="auto">
         <div v-if="contentValue" class="note-dialog__rendered">
           <NcRichText :text="contentValue" :use-markdown="true" :use-extended-markdown="true" />
         </div>
@@ -105,7 +112,8 @@ import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
-import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import { MarkdownEditor, isWysiwygAvailable } from '@/components/MarkdownEditor'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
 import { contrastColor, noteColorOptions } from './noteColors'
@@ -130,8 +138,12 @@ const colorValue = ref('')
 const editing = ref(false)
 const dialogRef = ref<InstanceType<typeof NcDialog> | null>(null)
 const titleInputRef = ref<HTMLInputElement | null>(null)
-const contentInputRef = ref<InstanceType<typeof AutoResizeTextarea> | null>(null)
-const renderedContentRef = ref<HTMLElement | null>(null)
+const contentInputRef = ref<InstanceType<typeof MarkdownEditor> | null>(null)
+
+// Whether the Text (WYSIWYG) editor is available, and the current rich/source
+// mode — the toggle lives up on the title row and drives the MarkdownEditor.
+const richAvailable = ref(isWysiwygAvailable())
+const richMode = ref(true)
 
 const MAX_TEXTAREA_HEIGHT = 400
 
@@ -144,6 +156,20 @@ const swatchBorderColor = computed(() =>
   colorValue.value ? contrastColor(colorValue.value) : 'var(--color-main-text)',
 )
 const colorOptions = noteColorOptions
+
+// The rich-text switch's on-state uses --color-primary-element (the theme
+// accent), which can be invisible against a coloured note. On coloured notes,
+// retint it with the note's foreground colour; on default notes keep the theme.
+const richToggleStyle = computed((): Record<string, string> => {
+  if (!colorValue.value) return {}
+  const fg = contrastColor(colorValue.value)
+  return {
+    '--color-primary-element': fg,
+    '--color-primary-element-hover': fg,
+    '--color-primary-element-light': `color-mix(in srgb, ${fg} 30%, transparent)`,
+    '--color-primary-element-text': colorValue.value,
+  }
+})
 
 // ----- Dialog background color -----
 
@@ -167,12 +193,34 @@ function applyDialogColor() {
     }
     if (!container) return
     const fg = colorValue.value ? contrastColor(colorValue.value) : ''
+    // Nextcloud components (including the embedded Text editor) theme themselves
+    // through these CSS variables, so overriding them on the dialog container is
+    // what makes the rich editor's background and text follow the note colour —
+    // far more robust than targeting the editor's internal class names.
+    const themeVars: Record<string, string> = {
+      '--color-main-text': fg,
+      '--color-main-background': colorValue.value,
+      // The Text editor's sticky menubar uses the translucent background var
+      // (behind a backdrop blur); tint it with the note colour so it blends.
+      '--color-main-background-translucent': `color-mix(in srgb, ${colorValue.value} 80%, transparent)`,
+      '--color-text-maxcontrast': `color-mix(in srgb, ${fg} 65%, transparent)`,
+      '--color-border': `color-mix(in srgb, ${fg} 25%, transparent)`,
+      '--color-border-dark': `color-mix(in srgb, ${fg} 35%, transparent)`,
+      '--color-background-hover': `color-mix(in srgb, ${fg} 12%, transparent)`,
+      '--color-background-dark': `color-mix(in srgb, ${fg} 18%, transparent)`,
+    }
     if (colorValue.value) {
       container.style.background = colorValue.value
       container.style.color = fg
+      for (const [key, value] of Object.entries(themeVars)) {
+        container.style.setProperty(key, value)
+      }
     } else {
       container.style.background = ''
       container.style.color = ''
+      for (const key of Object.keys(themeVars)) {
+        container.style.removeProperty(key)
+      }
     }
     // Hide the empty dialog name element
     const nameEl = container.querySelector<HTMLElement>('.dialog__name')
@@ -273,31 +321,21 @@ function toggleEditing() {
       flushSave()
     }
   } else {
-    startEditing()
+    startEditing('content')
   }
 }
 
 function startEditing(focus?: 'title' | 'content') {
-  // Capture rendered content height before switching to edit
-  const renderedHeight = renderedContentRef.value?.offsetHeight ?? 0
   editing.value = true
   if (focus) {
     nextTick(() => {
       if (focus === 'title') {
         titleInputRef.value?.focus()
       } else {
-        contentInputRef.value?.getTextareaEl()?.focus()
+        contentInputRef.value?.focus()
       }
     })
   }
-  // Size textarea to match rendered content
-  nextTick(() => {
-    const ta = contentInputRef.value?.getTextareaEl()
-    if (!ta) return
-    const targetHeight = Math.max(renderedHeight, ta.scrollHeight, 80)
-    ta.style.height = Math.min(targetHeight, MAX_TEXTAREA_HEIGHT) + 'px'
-    ta.style.overflowY = targetHeight > MAX_TEXTAREA_HEIGHT ? 'auto' : 'hidden'
-  })
 }
 
 // ----- Close -----
@@ -327,8 +365,11 @@ const strings = {
   // TRANSLATORS: Toggle button label to switch the note from editing into read-only preview mode.
   view: t('pantry', 'Preview'),
   untitled: t('pantry', 'Untitled note'),
-  noContent: t('pantry', 'Click to add content …'),
+  noContent: t('pantry', 'No content yet'),
   noColor: t('pantry', 'Default (no color)'),
+  // TRANSLATORS: Label for a toggle switch that turns the formatted rich-text
+  // (WYSIWYG) editor on or off (versus editing raw Markdown).
+  richText: t('pantry', 'Rich text'),
 }
 </script>
 
@@ -341,21 +382,29 @@ const strings = {
     min-height: 200px;
   }
 
+  // Title and the rich-text toggle share one row; the toggle sits at the end,
+  // just inside the space reserved for the dialog's close button.
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-right: var(--default-clickable-area, 44px);
+  }
+
+  &__rich-toggle {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   &__title-text {
     font-size: 1.3rem;
     font-weight: 600;
     margin: 0;
-    // Reserve space on the right edge so the title (especially RTL-aligned
-    // text) doesn't collide with the dialog close button.
-    padding-right: var(--default-clickable-area, 44px);
-    cursor: text;
+    flex: 1 1 auto;
+    min-width: 0;
     line-height: 1.3;
     text-align: start;
     color: inherit;
-
-    &:hover {
-      opacity: 0.7;
-    }
   }
 
   &__title-input,
@@ -365,16 +414,17 @@ const strings = {
     font-size: 1.3rem !important;
     font-weight: 600 !important;
     line-height: 1.3 !important;
-    width: 100% !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
     border: 0 !important;
     border-width: 0 !important;
     outline: 0 !important;
     box-shadow: none !important;
     background: transparent !important;
     color: inherit !important;
-    // Reserve space on the right edge so the close button doesn't overlap
-    // the text — needed especially when the input content is RTL.
-    padding: 0 var(--default-clickable-area, 44px) 0 0 !important;
+    // The title row reserves space for the close button; no extra padding here.
+    padding: 0 !important;
     margin: 0 !important;
     font-family: inherit !important;
     box-sizing: border-box !important;
@@ -394,12 +444,7 @@ const strings = {
 
   &__content {
     flex: 1;
-    cursor: text;
     min-height: 100px;
-
-    &:hover {
-      opacity: 0.85;
-    }
   }
 
   &__rendered {

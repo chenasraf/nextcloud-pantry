@@ -32,6 +32,16 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
+// MarkdownEditor (rendered for the description) imports NcCheckboxRadioSwitch;
+// mock it so the real component's CSS import isn't pulled into the test env.
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template: '<label class="nc-switch"><slot /></label>',
+    props: ['modelValue', 'type'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/components/ItemTypeSelector', () => ({
   default: {
     name: 'ItemTypeSelector',

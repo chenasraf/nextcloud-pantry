@@ -57,6 +57,16 @@ vi.mock('@nextcloud/vue/components/NcRichText', () => ({
     props: ['text', 'useMarkdown', 'useExtendedMarkdown'],
   },
 }))
+// MarkdownEditor (rendered for the note content) imports NcCheckboxRadioSwitch;
+// mock it so the real component's CSS import isn't pulled into the test env.
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template: '<label class="nc-switch"><slot /></label>',
+    props: ['modelValue', 'type'],
+    emits: ['update:modelValue'],
+  },
+}))
 
 import NoteDialog from './NoteDialog.vue'
 
@@ -141,20 +151,20 @@ describe('NoteDialog', () => {
       expect(wrapper.find('.note-dialog__empty').exists()).toBe(true)
     })
 
-    it('switches to edit mode on content click', async () => {
+    it('does not switch to edit mode on content click (edit button only)', async () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote() },
       })
       await wrapper.find('.note-dialog__content').trigger('click')
-      expect(wrapper.find('.nc-text-area').exists()).toBe(true)
+      expect(wrapper.find('.nc-text-area').exists()).toBe(false)
     })
 
-    it('switches to edit mode on title click', async () => {
+    it('does not switch to edit mode on title click (edit button only)', async () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote() },
       })
       await wrapper.find('.note-dialog__title-text').trigger('click')
-      expect(wrapper.find('.note-dialog__title-input').exists()).toBe(true)
+      expect(wrapper.find('.note-dialog__title-input').exists()).toBe(false)
     })
 
     it('does not show title input in view mode', () => {
