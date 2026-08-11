@@ -359,6 +359,7 @@
       @update:open="(v) => !v && (viewing = null)"
       @edit="viewToEdit"
       @preview="openPreview"
+      @toggle-task="handleToggleTask"
     />
 
     <ChecklistImagePreview
@@ -1670,6 +1671,13 @@ function openView(item: ChecklistItem) {
 function viewToEdit(item: ChecklistItem) {
   viewing.value = null
   startEdit(item)
+}
+
+async function handleToggleTask(item: ChecklistItem, description: string) {
+  await update(item.id, { description })
+  // Re-point the open dialog at the refreshed item so the checkbox reflects
+  // the persisted state.
+  viewing.value = items.value.find((i) => i.id === item.id) ?? viewing.value
 }
 
 function openPreview(item: ChecklistItem) {

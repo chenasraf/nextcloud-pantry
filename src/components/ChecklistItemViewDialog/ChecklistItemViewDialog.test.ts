@@ -22,11 +22,29 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
     props: ['variant', 'form', 'type', 'disabled', 'ariaLabel'],
   },
 }))
+// Render one checkbox input per task-list line so the component's DOM-index
+// mapping (input id -> task token) can be exercised. The input id mirrors what
+// NcRichText emits via `interactTodo`.
 vi.mock('@nextcloud/vue/components/NcRichText', () => ({
   default: {
     name: 'NcRichText',
-    template: '<div class="nc-rich-text">{{ text }}</div>',
-    props: ['text', 'useMarkdown', 'useExtendedMarkdown'],
+    props: ['text', 'useMarkdown', 'useExtendedMarkdown', 'interactive'],
+    emits: ['interactTodo'],
+    computed: {
+      tasks(this: { text: string }) {
+        return String(this.text)
+          .split('\n')
+          .map((line: string, i: number) => ({ line, id: `md-input-${i}` }))
+          .filter((t: { line: string }) => /^\s*(?:[-*+]|\d+[.)])\s+\[[ xX]\]/.test(t.line))
+      },
+    },
+    template: `<div class="nc-rich-text">{{ text }}<input
+        v-for="task in tasks"
+        :key="task.id"
+        :id="task.id"
+        type="checkbox"
+        @click="$emit('interactTodo', task.id)"
+      /></div>`,
   },
 }))
 
@@ -148,6 +166,33 @@ describe('ChecklistItemViewDialog', () => {
       props: { ...defaultProps, item: makeItem({ description: null }) },
     })
     expect(wrapper.find('.item-view__description').exists()).toBe(false)
+  })
+
+  it('renders description checkboxes interactively', () => {
+    const wrapper = mount(ChecklistItemViewDialog, {
+      props: { ...defaultProps, item: makeItem({ description: '- [ ] Milk' }) },
+    })
+    const richText = wrapper.findComponent({ name: 'NcRichText' })
+    expect(richText.props('interactive')).toBe(true)
+  })
+
+  it('emits toggle-task with the flipped description when a task is toggled', async () => {
+    const wrapper = mount(ChecklistItemViewDialog, {
+      props: {
+        ...defaultProps,
+        item: makeItem({ description: '- [ ] Milk\n- [ ] Eggs' }),
+      },
+    })
+    const boxes = wrapper.findAll('.item-view__description input[type="checkbox"]')
+    expect(boxes).toHaveLength(2)
+
+    await boxes[1].trigger('click')
+
+    const events = wrapper.emitted('toggle-task')
+    expect(events).toHaveLength(1)
+    const [item, description] = events![0]
+    expect((item as { id: number }).id).toBe(1)
+    expect(description).toBe('- [ ] Milk\n- [x] Eggs')
   })
 
   it('shows quantity row when present', () => {

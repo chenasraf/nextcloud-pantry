@@ -17,8 +17,14 @@
         <img class="item-view__image" :src="largeUrl" :alt="item.name" />
       </button>
 
-      <div v-if="item.description" class="item-view__description" dir="auto">
-        <NcRichText :text="item.description" :use-markdown="true" :use-extended-markdown="true" />
+      <div v-if="item.description" ref="descriptionEl" class="item-view__description" dir="auto">
+        <NcRichText
+          :text="item.description"
+          :use-markdown="true"
+          :use-extended-markdown="true"
+          :interactive="true"
+          @interact-todo="onToggleTask"
+        />
       </div>
 
       <div class="item-view__details">
@@ -80,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -92,6 +98,7 @@ import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { formatPrice } from '@/utils/price'
+import { toggleMarkdownTask } from '@/utils/markdownTask'
 import type { ChecklistItem, Category, Store } from '@/api/types'
 
 const props = withDefaults(
@@ -105,11 +112,36 @@ const props = withDefaults(
   { stores: () => [] },
 )
 
-defineEmits<{
+const emit = defineEmits<{
   'update:open': [value: boolean]
   edit: [item: ChecklistItem]
   preview: [item: ChecklistItem]
+  'toggle-task': [item: ChecklistItem, description: string]
 }>()
+
+const descriptionEl = ref<HTMLElement | null>(null)
+
+/**
+ * A task-list checkbox in the rendered description was toggled. NcRichText
+ * gives us the checkbox's DOM id, so we map it back to its position among the
+ * rendered checkboxes (document order) and flip the matching task token in the
+ * source markdown, then let the parent persist the new description.
+ */
+function onToggleTask(id: string) {
+  const el = descriptionEl.value
+  if (!el) {
+    return
+  }
+  const inputs = Array.from(el.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))
+  const index = inputs.findIndex((input) => input.id === id)
+  if (index === -1) {
+    return
+  }
+  const next = toggleMarkdownTask(props.item.description ?? '', index)
+  if (next !== props.item.description) {
+    emit('toggle-task', props.item, next)
+  }
+}
 
 const largeUrl = computed(() =>
   props.item.imageFileId
