@@ -61,20 +61,19 @@
         :aria-label="strings.currency"
         @update:model-value="onCurrencySelected"
       />
+      <NcButton
+        v-if="hasAmount"
+        variant="tertiary"
+        type="button"
+        class="price-input__clear"
+        @click="clearPrice"
+      >
+        <template #icon>
+          <CloseIcon :size="18" />
+        </template>
+        {{ strings.clear }}
+      </NcButton>
     </div>
-
-    <NcButton
-      v-if="hasAmount"
-      variant="tertiary"
-      type="button"
-      class="price-input__clear"
-      @click="clearPrice"
-    >
-      <template #icon>
-        <CloseIcon :size="18" />
-      </template>
-      {{ strings.clear }}
-    </NcButton>
   </div>
 </template>
 
@@ -279,7 +278,11 @@ const strings = {
   }
 
   &__clear {
-    align-self: flex-start;
+    flex: 0 0 auto;
+    // Sit at the right end of the fields row, aligned with the input bottoms
+    // (the row is bottom-aligned to leave space for the field labels above).
+    align-self: flex-end;
+    white-space: nowrap;
   }
 }
 </style>
