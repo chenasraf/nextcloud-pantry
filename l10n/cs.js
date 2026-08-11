@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Pantry" : "Spíž",
     "You created list {list} in {house}" : "Vytvořili jste seznam {list} v domě {house}",
     "{author} created list {list} in {house}" : "{author} vytvořil/a seznam {list} v domě {house}",
     "You updated list {list} in {house}" : "Aktualizovali jste seznam {list} v domě {house}",
@@ -11,7 +12,6 @@ OC.L10N.register(
     "{author} added {item} to {list} in {house}" : "{author} přidal/a položku {item} do seznamu {list} v domě {house}",
     "You updated {item} on {list} in {house}" : "Aktualizovali jste položku {item} v seznamu {list} v domě {house}",
     "{author} updated {item} on {list} in {house}" : "{author} aktualizoval položku {item} na seznamu {list} v domě {house}",
-    "Pantry" : "Spíž",
     "_%n item_::_%n items_" : ["%n položka","%n položky","%n položek","%n položky"],
     "Account settings" : "Nastavení účtu",
     "Images" : "Obrázky",

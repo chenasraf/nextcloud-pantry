@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Pantry" : "Pantry",
     "You created list {list} in {house}" : "Chruthaigh tú liosta {list} i {house}",
     "{author} created list {list} in {house}" : "Chruthaigh {author} liosta {list} i {house}",
     "You updated list {list} in {house}" : "Nuashonraigh tú liosta {list} i {house}",
@@ -65,7 +66,6 @@ OC.L10N.register(
     "You deleted note {note} in {house}" : "Scrios tú nóta {note} i {house}",
     "{author} deleted note {note} in {house}" : "Scrios {author} nóta {note} i {house}",
     "A house member changed something in <strong>Pantry</strong>" : "D'athraigh ball den teach rud éigin <strong>Pantry</strong>",
-    "Pantry" : "Pantry",
     "{user} uploaded a photo in {house}" : "D'uaslódáil {user} grianghraf i {house}",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["D'uaslódáil {user} %n grianghraf i {house}","D'uaslódáil {user} %n grianghraif i {house}","D'uaslódáil {user} %n grianghraif i {house}","D'uaslódáil {user} %n grianghraif i {house}","D'uaslódáil {user} %n grianghraif i {house}"],
     "{user} added note \"{title}\" in {house}" : "Chuir {user} nóta \"{title}\" leis i {house}",

@@ -1,4 +1,5 @@
 { "translations": {
+    "Pantry" : "Pantry",
     "You created list {list} in {house}" : "Vous avez créé la liste {list} dans {house}",
     "{author} created list {list} in {house}" : "{author} a créé la liste {list} dans {house}",
     "You updated list {list} in {house}" : "Vous avez mis à jour la liste {list} dans {house}",
@@ -63,7 +64,6 @@
     "You deleted note {note} in {house}" : "Vous avez supprimé la note {note} dans {house}",
     "{author} deleted note {note} in {house}" : "{author} a supprimé la note {note} dans {house}",
     "A house member changed something in <strong>Pantry</strong>" : "Un membre du foyer a effectué une modification dans <strong>Pantry</strong>",
-    "Pantry" : "Pantry",
     "{user} uploaded a photo in {house}" : "{user} a téléversé une photo dans {house}",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["{user} a téléversé %n photo dans {house}","{user} a téléversé %n photos dans {house}","{user} a téléversé %n photos dans {house}"],
     "{user} added note \"{title}\" in {house}" : "{user} a ajouté la note « {title} » dans {house}",

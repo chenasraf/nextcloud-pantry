@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Pantry" : "Sahver",
     "You created list {list} in {house}" : "Sa koostasid  „{house}“ majapidamise jaoks „{list}“ loendi",
     "{author} created list {list} in {house}" : "{author} koostas „{house}“ majapidamise jaoks „{list}“ loendi",
     "You updated list {list} in {house}" : "Sa uuendasid „{house}“ majapidamise „{list}“ loendit",
@@ -65,7 +66,6 @@ OC.L10N.register(
     "You deleted note {note} in {house}" : "Sa kustutasid „{house}“ majapidamise „{note}“ märke",
     "{author} deleted note {note} in {house}" : "{author} kustutas „{house}“ majapidamise „{note}“ märke",
     "A house member changed something in <strong>Pantry</strong>" : "Majapidamise liige muutis <strong>Sahvrirakenduses</strong> midagi",
-    "Pantry" : "Sahver",
     "{user} uploaded a photo in {house}" : "{user} laadis üles foto „{house}“ majapidamise juurde",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["{user} laadis üles %n foto „{house}“ majapidamise juurde","{user} laadis üles %n fotot „{house}“ majapidamise juurde"],
     "{user} added note \"{title}\" in {house}" : "{user} lisas „{house}“ majapidamise juurde „{title}“ märke",

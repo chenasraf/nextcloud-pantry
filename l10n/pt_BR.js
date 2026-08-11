@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Pantry" : "Despensa",
     "You created list {list} in {house}" : "Você criou a lista {list} em {house}",
     "{author} created list {list} in {house}" : "{author} criou a lista {list} em {house}",
     "You updated list {list} in {house}" : "Você atualizou a lista {list} em {house}",
@@ -65,7 +66,6 @@ OC.L10N.register(
     "You deleted note {note} in {house}" : "Você excluiu a nota {note} em {house}",
     "{author} deleted note {note} in {house}" : "{author} excluiu a nota {note} em {house}",
     "A house member changed something in <strong>Pantry</strong>" : "Um membro da casa fez uma alteração no aplicativo <strong>Despensa</strong>",
-    "Pantry" : "Despensa",
     "{user} uploaded a photo in {house}" : "{user} enviou uma foto em {house}",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["{user} enviou %n foto em {house}","{user} enviou %n de fotos em {house}","{user} enviou %n fotos em {house}"],
     "{user} added note \"{title}\" in {house}" : "{user} adicionou a nota \"{title}\" em {house}",

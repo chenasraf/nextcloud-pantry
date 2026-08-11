@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Pantry" : "Pantry",
     "You created list {list} in {house}" : "Δημιουργήσατε τη λίστα {list} στο {house}",
     "{author} created list {list} in {house}" : "Ο/Η {author} δημιούργησε τη λίστα {list} στο {house}",
     "You updated list {list} in {house}" : "Ενημερώσατε τη λίστα {list} στο {house}",
@@ -56,7 +57,6 @@ OC.L10N.register(
     "You deleted note {note} in {house}" : "Διαγράψατε τη σημείωση {note} στο {house}",
     "{author} deleted note {note} in {house}" : "Ο/Η {author} διέγραψε τη σημείωση {note} στο {house}",
     "A house member changed something in <strong>Pantry</strong>" : "Ένα μέλος του σπιτιού άλλαξε κάτι στο <strong>Pantry</strong>",
-    "Pantry" : "Pantry",
     "{user} uploaded a photo in {house}" : "Ο/Η {user} μεταφόρτωσε μια φωτογραφία στο {house}",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["Ο/Η {user} μεταφόρτωσε %n φωτογραφία στο {house}","Ο/Η {user} μεταφόρτωσε %n φωτογραφίες στο {house}"],
     "{user} added note \"{title}\" in {house}" : "Ο/Η {user} πρόσθεσε τη σημείωση «{title}» στο {house}",

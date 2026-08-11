@@ -1,4 +1,5 @@
 { "translations": {
+    "Pantry" : "儲物室",
     "You created list {list} in {house}" : "你於 {house} 建立了列表 {list}",
     "{author} created list {list} in {house}" : "{author} 於 {house} 建立了列表 {list}",
     "You updated list {list} in {house}" : "你於 {house} 更新了列表 {list}",
@@ -63,7 +64,6 @@
     "You deleted note {note} in {house}" : "你於 {house} 刪除了備註 {note}",
     "{author} deleted note {note} in {house}" : "{author} 於 {house} 刪除了備註 {note}",
     "A house member changed something in <strong>Pantry</strong>" : "有家庭成員於 <strong>Pantry</strong> 作出了變更",
-    "Pantry" : "儲物室",
     "{user} uploaded a photo in {house}" : "{user} 在 {house} 上載了一張相片",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["{user} 在 {house} 上載了%n 張相片"],
     "{user} added note \"{title}\" in {house}" : "{user} 在 {house} 新增了筆記「{title}」",

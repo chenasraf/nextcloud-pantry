@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Pantry" : "Pantry",
     "You created list {list} in {house}" : "You created list {list} in {house}",
     "{author} created list {list} in {house}" : "{author} created list {list} in {house}",
     "You updated list {list} in {house}" : "You updated list {list} in {house}",
@@ -65,7 +66,6 @@ OC.L10N.register(
     "You deleted note {note} in {house}" : "You deleted note {note} in {house}",
     "{author} deleted note {note} in {house}" : "{author} deleted note {note} in {house}",
     "A house member changed something in <strong>Pantry</strong>" : "A house member changed something in <strong>Pantry</strong>",
-    "Pantry" : "Pantry",
     "{user} uploaded a photo in {house}" : "{user} uploaded a photo in {house}",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["{user} uploaded %n photo in {house}","{user} uploaded %n photos in {house}"],
     "{user} added note \"{title}\" in {house}" : "{user} added note \"{title}\" in {house}",

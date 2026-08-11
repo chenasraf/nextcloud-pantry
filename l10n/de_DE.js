@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Pantry" : "Pantry (Speisekammer)",
     "You created list {list} in {house}" : "Sie haben die Liste {list} in {house} erstellt",
     "{author} created list {list} in {house}" : "{author} hat die Liste {list} in {house} erstellt",
     "You updated list {list} in {house}" : "Sie haben die Liste {list} in {house} aktualisiert",
@@ -65,7 +66,6 @@ OC.L10N.register(
     "You deleted note {note} in {house}" : "Sie haben die Notiz {note} in {house} gelöscht",
     "{author} deleted note {note} in {house}" : "{author} hat die Notiz {note} in {house} gelöscht",
     "A house member changed something in <strong>Pantry</strong>" : "Ein Hausbewohner hat etwas in <strong>Pantry</strong> verändert",
-    "Pantry" : "Pantry (Speisekammer)",
     "{user} uploaded a photo in {house}" : "{user} hat ein Foto in {house} hochgeladen",
     "_{user} uploaded %n photo in {house}_::_{user} uploaded %n photos in {house}_" : ["{user} hat %n Foto in {house} hochgeladen","{user} hat %n Fotos in {house} hochgeladen"],
     "{user} added note \"{title}\" in {house}" : "{user} fügte die Notiz \"{title}\" in {house} hinzu",
