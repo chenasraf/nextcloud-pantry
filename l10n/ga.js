@@ -309,7 +309,6 @@ OC.L10N.register(
     "Write your note here …" : "Scríobh do nóta anseo …",
     "Preview" : "Réamhamharc",
     "Untitled note" : "Nóta gan teideal",
-    "Click to add content …" : "Cliceáil chun ábhar a chur leis …",
     "More actions" : "Tuilleadh gníomhartha",
     "Edit folder" : "Cuir fillteán in eagar",
     "Create folder" : "Cruthaigh fillteán",

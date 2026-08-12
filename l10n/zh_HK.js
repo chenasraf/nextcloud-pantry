@@ -303,7 +303,6 @@ OC.L10N.register(
     "Write your note here …" : "在此輸入筆記內容…",
     "Preview" : "預覽",
     "Untitled note" : "未命名筆記",
-    "Click to add content …" : "按此新增內容…",
     "More actions" : "更多操作",
     "Edit folder" : "編輯資料夾",
     "Create folder" : "創建文件夾",

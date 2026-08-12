@@ -303,7 +303,6 @@ OC.L10N.register(
     "Write your note here …" : "Write your note here …",
     "Preview" : "Preview",
     "Untitled note" : "Untitled note",
-    "Click to add content …" : "Click to add content …",
     "More actions" : "More actions",
     "Edit folder" : "Edit folder",
     "Create folder" : "Create folder",

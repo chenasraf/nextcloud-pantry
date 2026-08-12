@@ -278,7 +278,6 @@ OC.L10N.register(
     "Write your note here …" : "Skriv notatet ditt her…",
     "Preview" : "Førehandsvisning",
     "Untitled note" : "Notat utan namn",
-    "Click to add content …" : "Trykk for å leggje til innhald…",
     "More actions" : "Fleire handlingar",
     "Edit folder" : "Rediger mappe",
     "Create folder" : "Opprett mappe",

@@ -216,7 +216,6 @@ OC.L10N.register(
     "Write your note here …" : "Notunuzu buraya yazın…",
     "Preview" : "Ön izleme",
     "Untitled note" : "Başlıksız not",
-    "Click to add content …" : "İçerik eklemek için tıklayın…",
     "More actions" : "Diğer işlemler",
     "Create folder" : "Klasör oluştur",
     "Folder name" : "Klasör adı",

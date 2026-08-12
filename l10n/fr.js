@@ -300,7 +300,6 @@ OC.L10N.register(
     "Write your note here …" : "Saisissez votre note ici…",
     "Preview" : "Prévisualiser",
     "Untitled note" : "Note sans titre",
-    "Click to add content …" : "Cliquez pour ajouter du contenu…",
     "More actions" : "Plus d'actions",
     "Edit folder" : "Modifier le dossier",
     "Create folder" : "Créer un dossier",

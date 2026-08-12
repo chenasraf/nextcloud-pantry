@@ -309,7 +309,6 @@ OC.L10N.register(
     "Write your note here …" : "Sisesta oma märge siia…",
     "Preview" : "Eelvaade",
     "Untitled note" : "Ilma nimeta märge",
-    "Click to add content …" : "Sisu lisamiseks klõpsa…",
     "More actions" : "Täiendavad toimingud",
     "Edit folder" : "Muuda kausta",
     "Create folder" : "Lisa kaust",

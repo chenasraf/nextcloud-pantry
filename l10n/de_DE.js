@@ -309,7 +309,6 @@ OC.L10N.register(
     "Write your note here …" : "Schreiben Sie hier Ihre Notiz …",
     "Preview" : "Vorschau",
     "Untitled note" : "Notiz ohne Titel",
-    "Click to add content …" : "Klicken, um Inhalte hinzuzufügen …",
     "More actions" : "Weitere Aktionen",
     "Edit folder" : "Ordner bearbeiten",
     "Create folder" : "Ordner erstellen",

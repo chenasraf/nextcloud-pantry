@@ -221,7 +221,6 @@ OC.L10N.register(
     "Write your note here …" : "یادداشت خود را اینجا بنویسید …",
     "Preview" : "پیش‌نمایش",
     "Untitled note" : "یادداشت بدون عنوان",
-    "Click to add content …" : "برای افزودن محتوا کلیک کنید …",
     "More actions" : "اقدامات بیشتر",
     "Create folder" : "ساخت پوشه",
     "Folder name" : "نام پوشه",

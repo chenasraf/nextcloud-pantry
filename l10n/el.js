@@ -268,7 +268,6 @@ OC.L10N.register(
     "Write your note here …" : "Γράψτε τη σημείωσή σας εδώ …",
     "Preview" : "Προεπισκόπηση",
     "Untitled note" : "Σημείωση χωρίς τίτλο",
-    "Click to add content …" : "Κάντε κλικ για προσθήκη περιεχομένου …",
     "More actions" : "Περισσότερες ενέργειες",
     "Edit folder" : "Επεξεργασία φακέλου",
     "Create folder" : "Δημιουργία φακέλου",

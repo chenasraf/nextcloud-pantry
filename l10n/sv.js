@@ -284,7 +284,6 @@ OC.L10N.register(
     "Write your note here …" : "Skriv din anteckning här …",
     "Preview" : "Förhandsgranskning",
     "Untitled note" : "Namnlös anteckning",
-    "Click to add content …" : "Klicka för att lägga till innehåll …",
     "More actions" : "Fler åtgärder",
     "Edit folder" : "Redigera mapp",
     "Create folder" : "Skapa mapp",
