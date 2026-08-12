@@ -668,6 +668,7 @@ import {
 } from '@/api/prefs'
 import { hasPrice } from '@/utils/price'
 import { reorderToTrueOrder } from '@/utils/reorderItems'
+import { orderItemsByCategory } from '@/utils/categoryOrder'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
@@ -1086,10 +1087,23 @@ function sortWithinPartition(arr: ChecklistItem[]): ChecklistItem[] {
   if (currentSort.value === 'custom') {
     return [...arr].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
   }
+  if (currentSort.value === 'category') {
+    // Meta "All lists" keeps the backend's name-within-category order: sortOrder
+    // is per-list, so there is no cross-list custom order to honour.
+    if (isMeta.value) return arr
+    // Category grouping is derived client-side (not left to backend order) so a
+    // within-category drag renders correctly before any reload. Header order
+    // follows the categorySort pref, already baked into categories.items.
+    return orderItemsByCategory(
+      arr,
+      categories.items.value.map((c) => c.id),
+    )
+  }
   return arr
 }
 
 const isCustomSort = computed(() => currentSort.value === 'custom')
+const isCategorySort = computed(() => currentSort.value === 'category')
 const uncheckedItems = computed(() =>
   sortWithinPartition(filteredItems.value.filter((i) => !i.done)),
 )
@@ -1101,9 +1115,14 @@ const checkedItems = computed(() => sortWithinPartition(filteredItems.value.filt
 // multi-select logic lives further down.
 const selectionMode = ref(false)
 const selectedIds = ref<Set<number>>(new Set())
-const reorderActive = computed(() => isCustomSort.value && !selectionMode.value)
+// Drag-to-reorder is available in custom sort (flat) and category sort
+// (constrained to each category block); never in store sort, while selecting,
+// or in the meta "All lists" view (sortOrder is per-list, not cross-list).
+const reorderActive = computed(
+  () => !isMeta.value && (isCustomSort.value || isCategorySort.value) && !selectionMode.value,
+)
 
-// ----- Drag/drop reorder (custom sort, per partition) -----
+// ----- Drag/drop reorder (custom + category sort, per partition) -----
 
 type ListGridItem =
   | { type: 'item'; key: string; item: ChecklistItem }
@@ -1115,12 +1134,34 @@ type Partition = 'unchecked' | 'checked'
 
 const draggingItemId = ref<number | null>(null)
 const draggingPartition = ref<Partition | null>(null)
+// Category of the dragged item — a category-sort drag is constrained to its own
+// category block. Null in custom sort (no constraint) and for uncategorized.
+const draggingCategoryId = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
 const uncheckedListRef = ref<HTMLElement | null>(null)
 const checkedListRef = ref<HTMLElement | null>(null)
 
 function partitionItems(p: Partition): ChecklistItem[] {
   return p === 'unchecked' ? uncheckedItems.value : checkedItems.value
+}
+
+// The items the current drag may reorder among. In custom sort that's the whole
+// partition; in category sort it's just the dragged item's own category block,
+// so a drag can't cross a category boundary and dropIndex is block-relative.
+function dragScope(p: Partition): ChecklistItem[] {
+  const source = partitionItems(p)
+  if (isCategorySort.value) {
+    const cat = draggingCategoryId.value ?? null
+    return source.filter((i) => (i.categoryId ?? null) === cat)
+  }
+  return source
+}
+
+function resetDragState() {
+  draggingItemId.value = null
+  draggingPartition.value = null
+  draggingCategoryId.value = null
+  dropIndex.value = null
 }
 
 function withCategoryHeaders(items: ListGridItem[]): ListGridItem[] {
@@ -1184,30 +1225,49 @@ function withStoreGroups(items: ChecklistItem[], p: Partition): ListGridItem[] {
 
 function buildGridItems(p: Partition): ListGridItem[] {
   const source = partitionItems(p)
-  // Store grouping (never active alongside custom-sort drag) takes over first.
+  // Store grouping (never active alongside reorder drag) takes over first.
   if (showStoreHeaders.value) {
     return withStoreGroups(source, p)
   }
   const dragId = draggingItemId.value
-  if (
-    !isCustomSort.value ||
-    dragId === null ||
-    dropIndex.value === null ||
-    draggingPartition.value !== p
-  ) {
-    return withCategoryHeaders(
-      source.map((i) => ({ type: 'item' as const, key: 'i-' + i.id, item: i })),
-    )
-  }
-  const without = source.filter((i) => i.id !== dragId)
-  const items: ListGridItem[] = without.map((i) => ({
-    type: 'item' as const,
+  const toGrid = (i: ChecklistItem): ListGridItem => ({
+    type: 'item',
     key: 'i-' + i.id,
     item: i,
-  }))
-  const clamped = Math.min(dropIndex.value, items.length)
-  items.splice(clamped, 0, { type: 'placeholder', key: 'drop-placeholder' })
-  return items
+  })
+  const dragActive =
+    reorderActive.value &&
+    dragId !== null &&
+    dropIndex.value !== null &&
+    draggingPartition.value === p
+  if (!dragActive) {
+    return withCategoryHeaders(source.map(toGrid))
+  }
+  // Render the drop placeholder at the scope-relative dropIndex, hiding the
+  // dragged row. Headers are applied first, then the placeholder is spliced at
+  // the anchor item's position — so a "first in category" drop lands *after*
+  // its category header, not above it.
+  const scope = dragScope(p)
+  const scopeWithout = scope.filter((i) => i.id !== dragId)
+  const clampedIdx = Math.min(dropIndex.value!, scopeWithout.length)
+  const atEnd = clampedIdx >= scopeWithout.length
+  const anchorId = atEnd
+    ? (scopeWithout[scopeWithout.length - 1]?.id ?? null)
+    : scopeWithout[clampedIdx].id
+
+  const grid = withCategoryHeaders(source.filter((i) => i.id !== dragId).map(toGrid))
+  const placeholder: ListGridItem = { type: 'placeholder', key: 'drop-placeholder' }
+  if (anchorId === null) {
+    grid.push(placeholder)
+    return grid
+  }
+  const anchorPos = grid.findIndex((g) => g.type === 'item' && g.item.id === anchorId)
+  if (anchorPos === -1) {
+    grid.push(placeholder)
+  } else {
+    grid.splice(atEnd ? anchorPos + 1 : anchorPos, 0, placeholder)
+  }
+  return grid
 }
 
 const uncheckedGridItems = computed<ListGridItem[]>(() => buildGridItems('unchecked'))
@@ -1222,6 +1282,7 @@ function findPartitionOf(itemId: number): Partition | null {
 function onItemDragStart(itemId: number) {
   draggingItemId.value = itemId
   draggingPartition.value = findPartitionOf(itemId)
+  draggingCategoryId.value = filteredItems.value.find((i) => i.id === itemId)?.categoryId ?? null
   dropIndex.value = null
 }
 
@@ -1232,9 +1293,11 @@ function computeItemDropIndex(hoveredItemId: number, clientY: number, target: HT
   const partition = draggingPartition.value
   if (!partition) return
 
-  // Only allow reordering within the same partition.
-  const source = partitionItems(partition)
-  const without = source.filter((i) => i.id !== dragId)
+  // Constrain the drop to the drag scope: same partition, and — in category
+  // sort — the dragged item's own category block. Hovering another category's
+  // item is ignored (idx === -1), so the drag can't cross a category boundary.
+  const scope = dragScope(partition)
+  const without = scope.filter((i) => i.id !== dragId)
   const idx = without.findIndex((i) => i.id === hoveredItemId)
   if (idx === -1) return
 
@@ -1259,21 +1322,19 @@ async function commitReorder() {
   const dragId = draggingItemId.value
   const idx = dropIndex.value
   const partition = draggingPartition.value
-  draggingItemId.value = null
-  draggingPartition.value = null
-  dropIndex.value = null
+  // Capture the scope before clearing state (dragScope reads draggingCategoryId).
+  const scope = partition ? dragScope(partition) : []
+  resetDragState()
 
   if (dragId === null || idx === null || !partition) return
 
-  // Reorder within the dragged partition, then merge with the other partition
-  // (preserving its relative order) so the API receives a complete sort order
-  // for all items in the list.
-  // Reconstruct the dragged item's slot in the *full* list order (both
-  // partitions, by true sortOrder) so its done-state never leaks into the
-  // stored sort_order. Only the dragged item moves; every other item — checked
-  // ones included — keeps its true position. The "checked items sink to the
-  // bottom" experience is a render-time partition, not a stored one.
-  const entries = reorderToTrueOrder(filteredItems.value, partitionItems(partition), dragId, idx)
+  // Reconstruct the dragged item's slot in the *full* list order (all items, by
+  // true sortOrder) so its done-state never leaks into the stored sort_order.
+  // Only the dragged item moves; every other item — checked ones and other
+  // categories included — keeps its true position. In category sort the scope
+  // is one category block, so the item stays between its category neighbours;
+  // the "checked sink to the bottom" and category grouping are render-time only.
+  const entries = reorderToTrueOrder(filteredItems.value, scope, dragId, idx)
   if (entries.length === 0) return
   await reorderItems(entries)
 }
@@ -1283,9 +1344,7 @@ function onDropCapture() {
   commitReorder()
 }
 function onDragEndCapture() {
-  draggingItemId.value = null
-  draggingPartition.value = null
-  dropIndex.value = null
+  resetDragState()
 }
 function bindDragListeners(el: HTMLElement | null) {
   if (!el) return
@@ -1324,11 +1383,7 @@ useTouchReorder(
       computeItemDropIndex(hoveredId, clientY, el)
     },
     onDrop: commitReorder,
-    onCancel() {
-      draggingItemId.value = null
-      draggingPartition.value = null
-      dropIndex.value = null
-    },
+    onCancel: resetDragState,
   },
   reorderActive,
 )
@@ -1343,18 +1398,15 @@ useTouchReorder(
       computeItemDropIndex(hoveredId, clientY, el)
     },
     onDrop: commitReorder,
-    onCancel() {
-      draggingItemId.value = null
-      draggingPartition.value = null
-      dropIndex.value = null
-    },
+    onCancel: resetDragState,
   },
   reorderActive,
 )
 
-// Long-press to enter multi-select on touch — only when reorder's own
-// long-press isn't in play (non-custom sort) and we're not already selecting.
-const longPressActive = computed(() => !isCustomSort.value && !selectionMode.value)
+// Long-press enters multi-select on touch — only where reorder isn't already
+// claiming the press (i.e. not in custom or category sort) and we're not
+// already selecting.
+const longPressActive = computed(() => !reorderActive.value && !selectionMode.value)
 function onRowLongPress(id: number) {
   enterSelection(id)
 }

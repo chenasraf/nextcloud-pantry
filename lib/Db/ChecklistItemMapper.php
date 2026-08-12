@@ -64,7 +64,11 @@ class ChecklistItemMapper extends QBMapper {
 					$qb->addOrderBy('c.name', 'ASC');
 					break;
 			}
-			$qb->addOrderBy('i.name', 'ASC')
+			// Within a category, honour the shared custom order (sort_order), then
+			// fall back to name/created_at so equal (or legacy 0) sort_orders stay
+			// stable. Category *header* order is controlled separately above.
+			$qb->addOrderBy('i.sort_order', 'ASC')
+				->addOrderBy('i.name', 'ASC')
 				->addOrderBy('i.created_at', 'ASC');
 			return $this->findEntities($qb);
 		}

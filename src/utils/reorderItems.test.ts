@@ -95,6 +95,38 @@ describe('reorderToTrueOrder', () => {
     expect(orderedIds(all, partition, 3, 0)).toEqual([3, 1, 2])
   })
 
+  // Category-constrained drag: the "partition" passed is the dragged item's own
+  // category block (a subset). Items outside it must keep their true positions.
+  it('reorders within a category block without disturbing other categories', () => {
+    // True order (by sortOrder): A0(cat10) B1(cat20) C2(cat10) D3(cat20)
+    const A = item(1, 0, 'A')
+    const B = item(2, 1, 'B')
+    const C = item(3, 2, 'C')
+    const D = item(4, 3, 'D')
+    const all = [A, B, C, D]
+    const cat10Block = [A, C] // dragged item's category, in render order
+
+    // Drag C above A within cat10 ([A] with C removed, dropIndex 0 → [C,A]).
+    const entries = reorderToTrueOrder(all, cat10Block, 3, 0)
+    const byId = new Map(entries.map((e) => [e.id, e.sortOrder]))
+    // Within cat10, C now precedes A.
+    expect(byId.get(3)! < byId.get(1)!).toBe(true)
+    // cat20 items keep their relative order (B before D) and B still trails C.
+    expect(byId.get(2)! < byId.get(4)!).toBe(true)
+    expect(orderedIds(all, cat10Block, 3, 0)).toEqual([3, 1, 2, 4])
+  })
+
+  it('appends to the end of a category block', () => {
+    const A = item(1, 0, 'A')
+    const B = item(2, 1, 'B')
+    const C = item(3, 2, 'C')
+    const D = item(4, 3, 'D')
+    const all = [A, B, C, D]
+    const cat10Block = [A, C]
+    // Drag A to the end of its block ([C] → dropIndex 1 → [C,A]).
+    expect(orderedIds(all, cat10Block, 1, 1)).toEqual([2, 3, 1, 4])
+  })
+
   it('returns an empty array when the dragged id is not in the partition', () => {
     const all = [item(1, 0), item(2, 1)]
     expect(reorderToTrueOrder(all, [item(1, 0)], 99, 0)).toEqual([])
