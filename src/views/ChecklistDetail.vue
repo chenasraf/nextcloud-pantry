@@ -270,6 +270,7 @@
             </button>
             <NcButton
               v-if="canUncheckAll"
+              class="pantry-detail__uncheck-all"
               variant="tertiary"
               :disabled="unchecking"
               @click="confirmingUncheckAll = true"
@@ -2725,11 +2726,19 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     padding-inline-end: 0.5rem;
   }
 
+  // The toggle fills the row and absorbs any shrink; the uncheck-all button keeps
+  // its natural width so its label never truncates.
+  &__uncheck-all {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   &__section-toggle {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     background: none;
     border: none;
     cursor: pointer;
