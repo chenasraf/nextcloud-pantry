@@ -254,19 +254,32 @@
           </template>
         </ul>
         <template v-if="checkedItems.length > 0">
-          <button
-            type="button"
-            class="pantry-detail__section-title pantry-detail__section-toggle"
-            :aria-expanded="!doneCollapsed"
-            @click="doneCollapsed = !doneCollapsed"
-          >
-            <ChevronDownIcon
-              class="pantry-detail__section-chevron"
-              :class="{ 'pantry-detail__section-chevron--collapsed': doneCollapsed }"
-              :size="18"
-            />
-            <span>{{ strings.doneTitle }}</span>
-          </button>
+          <div class="pantry-detail__section-header">
+            <button
+              type="button"
+              class="pantry-detail__section-title pantry-detail__section-toggle"
+              :aria-expanded="!doneCollapsed"
+              @click="doneCollapsed = !doneCollapsed"
+            >
+              <ChevronDownIcon
+                class="pantry-detail__section-chevron"
+                :class="{ 'pantry-detail__section-chevron--collapsed': doneCollapsed }"
+                :size="18"
+              />
+              <span>{{ strings.doneTitle }}</span>
+            </button>
+            <NcButton
+              v-if="canUncheckAll"
+              variant="tertiary"
+              :disabled="unchecking"
+              @click="confirmingUncheckAll = true"
+            >
+              <template #icon>
+                <CheckboxMultipleBlankOutlineIcon :size="18" />
+              </template>
+              {{ strings.uncheckAll }}
+            </NcButton>
+          </div>
           <ul
             v-show="!doneCollapsed"
             ref="checkedListRef"
@@ -562,6 +575,24 @@
     </NcDialog>
 
     <NcDialog
+      v-if="confirmingUncheckAll"
+      :name="strings.uncheckAllTitle"
+      :open="confirmingUncheckAll"
+      close-on-click-outside
+      @update:open="(v) => !v && (confirmingUncheckAll = false)"
+    >
+      <p>{{ strings.uncheckAllConfirm }}</p>
+      <template #actions>
+        <NcButton :disabled="unchecking" @click="confirmingUncheckAll = false">
+          {{ strings.cancel }}
+        </NcButton>
+        <NcButton variant="primary" :disabled="unchecking" @click="runUncheckAll">
+          {{ strings.uncheckAll }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <NcDialog
       v-if="currentReuse"
       :name="strings.reuseTitle"
       :open="!!currentReuse"
@@ -631,6 +662,7 @@ import DeleteIcon from '@icons/Delete.vue'
 import PlusIcon from '@icons/Plus.vue'
 import SortIcon from '@icons/Sort.vue'
 import SortReverseVariantIcon from '@icons/SortReverseVariant.vue'
+import CheckboxMultipleBlankOutlineIcon from '@icons/CheckboxMultipleBlankOutline.vue'
 import SelectMultipleIcon from '@icons/SelectMultiple.vue'
 import CloseIcon from '@icons/Close.vue'
 import TagIcon from '@icons/Tag.vue'
@@ -744,6 +776,7 @@ const {
   undoArchiveMany,
   setCategoryMany,
   setStoresMany,
+  uncheckMany,
   undoRemoveMany,
   sortBy,
   viewMode,
@@ -909,6 +942,35 @@ async function runReseed(basis: ReseedBasis | null) {
     showError((e as Error).message)
   } finally {
     reseeding.value = false
+  }
+}
+
+// ----- Uncheck all -----
+
+// Per-list (sort_order/done are per-list); hidden in meta and for view-only
+// lists or accounts without the check-items permission.
+const canUncheckAll = computed(
+  () =>
+    !isMeta.value && viewMode.value === 'active' && writableHere.value && can.value.canCheckItems,
+)
+const confirmingUncheckAll = ref(false)
+const unchecking = ref(false)
+
+async function runUncheckAll() {
+  confirmingUncheckAll.value = false
+  // All done items in the list (unfiltered) — "uncheck all in the list", not
+  // just what a search/category filter currently shows.
+  const ids = items.value.filter((i) => i.done).map((i) => i.id)
+  if (ids.length === 0) return
+  unchecking.value = true
+  try {
+    const result = await uncheckMany(ids)
+    const cleared = ids.length - result.skipped.length
+    showSuccess(n('pantry', 'Unchecked %n item', 'Unchecked %n items', cleared))
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    unchecking.value = false
   }
 }
 
@@ -2318,6 +2380,13 @@ const strings = {
   ),
   reseedConfirmAction: t('pantry', 'Reset order'),
   reseedDone: t('pantry', 'Custom order reset'),
+  // TRANSLATORS: Button that clears the done-state on every checked item in the list.
+  uncheckAll: t('pantry', 'Uncheck all'),
+  uncheckAllTitle: t('pantry', 'Uncheck all items?'),
+  uncheckAllConfirm: t(
+    'pantry',
+    'Every checked item in this list will be returned to the active list.',
+  ),
   trashLabel: t('pantry', 'Trash'),
   // TRANSLATORS: Noun. Toolbar toggle that opens the view of archived items (not the "archive" action).
   archiveLabel: t('pantry', 'Archive'),
@@ -2647,6 +2716,13 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     color: var(--color-text-maxcontrast);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  &__section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline-end: 0.5rem;
   }
 
   &__section-toggle {

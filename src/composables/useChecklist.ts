@@ -414,6 +414,16 @@ export function useChecklistItems(houseId: number, listId: number) {
     return result
   }
 
+  // Bulk "uncheck all": clears done-state on the given items in one request.
+  // The server returns the now-unchecked rows; swap them in so they move from
+  // the Done section back into the active list.
+  async function uncheckMany(ids: number[]): Promise<api.BatchResult> {
+    const result = await api.batchUncheckItems(houseId, ids)
+    const byId = new Map(result.items.map((i) => [i.id, i]))
+    items.value = items.value.map((i) => byId.get(i.id) ?? i)
+    return result
+  }
+
   async function undoRemoveMany(prevItems: ChecklistItem[]): Promise<void> {
     // Undo a bulk soft-delete by restoring each snapshot (undo is rare, so a
     // per-item loop is fine — there is no batch-restore endpoint).
@@ -469,6 +479,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     undoArchiveMany,
     setCategoryMany,
     setStoresMany,
+    uncheckMany,
     undoRemoveMany,
   }
 }

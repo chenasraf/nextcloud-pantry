@@ -1438,6 +1438,39 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * Clear the done-state on a batch of items in one action ("uncheck all")
+	 *
+	 * Unchecks every targeted item that is currently done, in a single request
+	 * (clearing done_at / done_by). Items already unchecked are left as-is.
+	 *
+	 * @param int $houseId House id.
+	 * @param list<int> $itemIds Ids of the items to uncheck.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 *
+	 * 200: Items unchecked
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/items/batch/uncheck')]
+	#[NoAdminRequired]
+	#[Permission(['canCheckItems'])]
+	public function batchUncheckItems(int $houseId, array $itemIds = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $itemIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$updated = $this->lists->uncheckItems(
+				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
+			);
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($updated),
+				'skipped' => $collected['skipped'],
+			]);
+		});
+	}
+
+	/**
 	 * Set the stores attached to a batch of items in one action
 	 *
 	 * Replaces the store set on every targeted item (an empty list clears them).

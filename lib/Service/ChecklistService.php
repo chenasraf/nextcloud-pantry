@@ -536,6 +536,42 @@ class ChecklistService {
 	}
 
 	/**
+	 * Clear the done-state on a batch of items (bulk "uncheck all"). Mirrors the
+	 * uncheck branch of {@see toggleItem} per item: done → not done, clearing
+	 * done_at / done_by / next_due_at. Items that are already unchecked are left
+	 * untouched (idempotent). "Once" items were soft-deleted on completion so they
+	 * are not among a list's checked items and are never resurrected here. Runs in
+	 * one transaction; returns only the items that actually changed.
+	 *
+	 * @param int[] $itemIds
+	 * @return ChecklistItem[]
+	 */
+	public function uncheckItems(array $itemIds, ?int $now = null): array {
+		$now ??= time();
+		return $this->atomic(function () use ($itemIds, $now): array {
+			$changed = [];
+			foreach ($itemIds as $rawId) {
+				try {
+					$item = $this->getItem((int)$rawId);
+				} catch (NotFoundException) {
+					continue;
+				}
+				if (!$item->getDone()) {
+					continue;
+				}
+				$item->setDone(false);
+				$item->setDoneAt(null);
+				$item->setDoneBy(null);
+				$item->setNextDueAt(null);
+				$item->setUpdatedAt($now);
+				$this->itemMapper->update($item);
+				$changed[] = $item;
+			}
+			return $changed;
+		}, $this->db);
+	}
+
+	/**
 	 * Compute the next due time for an item that was just marked done, reopened,
 	 * or copied.
 	 *

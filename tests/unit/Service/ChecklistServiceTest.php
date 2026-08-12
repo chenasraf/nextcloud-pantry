@@ -191,6 +191,57 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertSame($expected, $toggled->getNextDueAt());
 	}
 
+	public function testUncheckItemsClearsDoneStateAndFields(): void {
+		$done = $this->makeItem(['done' => true, 'doneAt' => 123, 'doneBy' => 'bob', 'nextDueAt' => 999]);
+		$done->setId(42);
+		$this->itemMapper->method('findById')->willReturn($done);
+		$this->itemMapper->expects($this->once())->method('update')->willReturn($done);
+
+		$changed = $this->svc->uncheckItems([42], 1_000);
+		$this->assertCount(1, $changed);
+		$this->assertFalse($done->getDone());
+		$this->assertNull($done->getDoneAt());
+		$this->assertNull($done->getDoneBy());
+		$this->assertNull($done->getNextDueAt());
+		$this->assertSame(1_000, $done->getUpdatedAt());
+	}
+
+	public function testUncheckItemsLeavesAlreadyUncheckedItemsUntouched(): void {
+		$undone = $this->makeItem(['done' => false]);
+		$undone->setId(7);
+		$this->itemMapper->method('findById')->willReturn($undone);
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$this->assertSame([], $this->svc->uncheckItems([7]));
+	}
+
+	public function testUncheckItemsSkipsMissingItems(): void {
+		$this->itemMapper->method('findById')
+			->willThrowException(new DoesNotExistException('gone'));
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$this->assertSame([], $this->svc->uncheckItems([999]));
+	}
+
+	public function testUncheckItemsRunsInASingleTransaction(): void {
+		$a = $this->makeItem(['done' => true]);
+		$a->setId(1);
+		$b = $this->makeItem(['done' => true]);
+		$b->setId(2);
+		$this->itemMapper->method('findById')->willReturnMap([
+			[1, false, $a],
+			[2, false, $b],
+		]);
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+		$this->itemMapper->expects($this->exactly(2))->method('update');
+
+		$changed = $this->svc->uncheckItems([1, 2]);
+		$this->assertCount(2, $changed);
+	}
+
 	public function testReopenDueItemsWaitsUntilReopenTime(): void {
 		// Item due today at 13:00 (raw). House reopen time is 08:00. Before 08:00
 		// the job must not reopen it yet.

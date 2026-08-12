@@ -26,6 +26,7 @@ const mockApi = vi.hoisted(() => ({
   batchCopyItems: vi.fn(),
   batchDeleteItems: vi.fn(),
   batchSetCategory: vi.fn(),
+  batchUncheckItems: vi.fn(),
 }))
 
 vi.mock('@/api/lists', () => mockApi)
@@ -638,6 +639,31 @@ describe('useChecklistItems', () => {
 
       expect(mockApi.batchSetCategory).toHaveBeenCalledWith(1, [1, 2], 7)
       expect(c.items.value.every((i) => i.categoryId === 7)).toBe(true)
+    })
+
+    it('uncheckMany swaps in the now-unchecked rows', async () => {
+      mockApi.listItems.mockResolvedValue([
+        makeItem({ id: 1, done: true, doneAt: 100, doneBy: 'bob' }),
+        makeItem({ id: 2, done: true, doneAt: 100, doneBy: 'bob' }),
+        makeItem({ id: 3, done: false }),
+      ])
+      mockApi.batchUncheckItems.mockResolvedValue({
+        success: true,
+        items: [
+          makeItem({ id: 1, done: false, doneAt: null, doneBy: null }),
+          makeItem({ id: 2, done: false, doneAt: null, doneBy: null }),
+        ],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      const result = await c.uncheckMany([1, 2])
+
+      expect(mockApi.batchUncheckItems).toHaveBeenCalledWith(1, [1, 2])
+      expect(result.skipped).toEqual([])
+      expect(c.items.value.every((i) => !i.done)).toBe(true)
+      expect(c.items.value.find((i) => i.id === 1)?.doneAt).toBeNull()
     })
 
     it('undoRemoveMany restores each snapshot', async () => {

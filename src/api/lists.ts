@@ -320,6 +320,13 @@ export async function batchSetStores(
   return resp.data
 }
 
+export async function batchUncheckItems(houseId: number, itemIds: number[]): Promise<BatchResult> {
+  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/uncheck`, {
+    itemIds,
+  })
+  return resp.data
+}
+
 export async function uploadItemImage(
   houseId: number,
   listId: number,
