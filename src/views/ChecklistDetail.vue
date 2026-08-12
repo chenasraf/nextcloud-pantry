@@ -229,6 +229,7 @@
               :reorder-enabled="
                 reorderActive && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
               "
+              :reorder-group-key="gi.groupKey"
               :trash-mode="trashMode"
               :archive-mode="archiveMode"
               :tap-row-to-complete="tapRowToComplete"
@@ -311,6 +312,7 @@
                 :reorder-enabled="
                   reorderActive && (isMeta ? listWritable(listFor(gi.item.listId)) : writableHere)
                 "
+                :reorder-group-key="gi.groupKey"
                 :trash-mode="trashMode"
                 :archive-mode="archiveMode"
                 :tap-row-to-complete="tapRowToComplete"
@@ -669,6 +671,7 @@ import {
 import { hasPrice } from '@/utils/price'
 import { reorderToTrueOrder } from '@/utils/reorderItems'
 import { orderItemsByCategory } from '@/utils/categoryOrder'
+import { storeGroupKey, byStoreGroupOrder, itemsInStoreGroup } from '@/utils/storeGroupOrder'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
@@ -1104,6 +1107,7 @@ function sortWithinPartition(arr: ChecklistItem[]): ChecklistItem[] {
 
 const isCustomSort = computed(() => currentSort.value === 'custom')
 const isCategorySort = computed(() => currentSort.value === 'category')
+const isStoreSort = computed(() => currentSort.value === 'store')
 const uncheckedItems = computed(() =>
   sortWithinPartition(filteredItems.value.filter((i) => !i.done)),
 )
@@ -1115,17 +1119,23 @@ const checkedItems = computed(() => sortWithinPartition(filteredItems.value.filt
 // multi-select logic lives further down.
 const selectionMode = ref(false)
 const selectedIds = ref<Set<number>>(new Set())
-// Drag-to-reorder is available in custom sort (flat) and category sort
-// (constrained to each category block); never in store sort, while selecting,
-// or in the meta "All lists" view (sortOrder is per-list, not cross-list).
+// Drag-to-reorder is available in custom sort (flat), category sort (constrained
+// to each category block) and store sort (constrained to each store group);
+// never while selecting or in the meta "All lists" view (sortOrder is per-list).
 const reorderActive = computed(
-  () => !isMeta.value && (isCustomSort.value || isCategorySort.value) && !selectionMode.value,
+  () =>
+    !isMeta.value &&
+    (isCustomSort.value || isCategorySort.value || isStoreSort.value) &&
+    !selectionMode.value,
 )
 
 // ----- Drag/drop reorder (custom + category sort, per partition) -----
 
 type ListGridItem =
-  | { type: 'item'; key: string; item: ChecklistItem }
+  // `groupKey` marks which reorder group a rendered row belongs to when the same
+  // item can appear in several (store sort duplicates a multi-store item under
+  // each store). Undefined in flat/custom and category sort.
+  | { type: 'item'; key: string; item: ChecklistItem; groupKey?: string }
   | { type: 'placeholder'; key: string }
   | { type: 'header'; key: string; category: Category | null }
   | { type: 'store-header'; key: string; store: Store | null }
@@ -1137,6 +1147,10 @@ const draggingPartition = ref<Partition | null>(null)
 // Category of the dragged item — a category-sort drag is constrained to its own
 // category block. Null in custom sort (no constraint) and for uncategorized.
 const draggingCategoryId = ref<number | null>(null)
+// Store group key of the grabbed row — a store-sort drag is constrained to the
+// column it started in (a multi-store item is grabbed from one specific group).
+// Undefined outside store sort.
+const draggingStoreKey = ref<string | undefined>(undefined)
 const dropIndex = ref<number | null>(null)
 const uncheckedListRef = ref<HTMLElement | null>(null)
 const checkedListRef = ref<HTMLElement | null>(null)
@@ -1145,22 +1159,34 @@ function partitionItems(p: Partition): ChecklistItem[] {
   return p === 'unchecked' ? uncheckedItems.value : checkedItems.value
 }
 
-// The items the current drag may reorder among. In custom sort that's the whole
-// partition; in category sort it's just the dragged item's own category block,
-// so a drag can't cross a category boundary and dropIndex is block-relative.
+// The items the current drag may reorder among, in the same order they render
+// in the group. In custom sort that's the whole partition; in category sort the
+// dragged item's own category block; in store sort the dragged item's own store
+// column. dropIndex is relative to this scope, so a drag can't cross a boundary.
 function dragScope(p: Partition): ChecklistItem[] {
   const source = partitionItems(p)
   if (isCategorySort.value) {
     const cat = draggingCategoryId.value ?? null
     return source.filter((i) => (i.categoryId ?? null) === cat)
   }
+  if (isStoreSort.value) {
+    return storeGroupItems(source, draggingStoreKey.value)
+  }
   return source
+}
+
+// Items rendered under a given store group key, ordered exactly as the group
+// renders so dropIndex lines up with the visible rows.
+function storeGroupItems(items: ChecklistItem[], key: string | undefined): ChecklistItem[] {
+  const storeIdSet = new Set(stores.items.value.map((s) => s.id))
+  return itemsInStoreGroup(items, key ?? storeGroupKey(null), storeIdSet)
 }
 
 function resetDragState() {
   draggingItemId.value = null
   draggingPartition.value = null
   draggingCategoryId.value = null
+  draggingStoreKey.value = undefined
   dropIndex.value = null
 }
 
@@ -1204,70 +1230,89 @@ function withStoreGroups(items: ChecklistItem[], p: Partition): ListGridItem[] {
       else buckets.set(id, [it])
     }
   }
-  const byName = (a: ChecklistItem, b: ChecklistItem) => a.name.localeCompare(b.name)
   const out: ListGridItem[] = []
   for (const store of orderedStores) {
     const groupItems = buckets.get(store.id)
     if (!groupItems || groupItems.length === 0) continue
+    const groupKey = storeGroupKey(store.id)
     out.push({ type: 'store-header', key: `sh-${p}-${store.id}`, store })
-    for (const it of [...groupItems].sort(byName)) {
-      out.push({ type: 'item', key: `i-${p}-${store.id}-${it.id}`, item: it })
+    for (const it of [...groupItems].sort(byStoreGroupOrder)) {
+      out.push({ type: 'item', key: `i-${p}-${store.id}-${it.id}`, item: it, groupKey })
     }
   }
   if (noStore.length > 0) {
+    const groupKey = storeGroupKey(null)
     out.push({ type: 'store-header', key: `sh-${p}-none`, store: null })
-    for (const it of [...noStore].sort(byName)) {
-      out.push({ type: 'item', key: `i-${p}-none-${it.id}`, item: it })
+    for (const it of [...noStore].sort(byStoreGroupOrder)) {
+      out.push({ type: 'item', key: `i-${p}-none-${it.id}`, item: it, groupKey })
     }
   }
   return out
 }
 
-function buildGridItems(p: Partition): ListGridItem[] {
-  const source = partitionItems(p)
-  // Store grouping (never active alongside reorder drag) takes over first.
-  if (showStoreHeaders.value) {
-    return withStoreGroups(source, p)
-  }
-  const dragId = draggingItemId.value
-  const toGrid = (i: ChecklistItem): ListGridItem => ({
-    type: 'item',
-    key: 'i-' + i.id,
-    item: i,
-  })
-  const dragActive =
-    reorderActive.value &&
-    dragId !== null &&
-    dropIndex.value !== null &&
-    draggingPartition.value === p
-  if (!dragActive) {
-    return withCategoryHeaders(source.map(toGrid))
-  }
-  // Render the drop placeholder at the scope-relative dropIndex, hiding the
-  // dragged row. Headers are applied first, then the placeholder is spliced at
-  // the anchor item's position — so a "first in category" drop lands *after*
-  // its category header, not above it.
-  const scope = dragScope(p)
+// Splice a drop placeholder into an already-built (headered) grid at the
+// scope-relative dropIndex, hiding nothing extra. `scope` is the drag's group
+// (the dragged item still included); `matches` locates a group row by item id.
+// Since headers are already in `grid`, a "first in group" drop lands *after*
+// the group header, not above it.
+function insertDropPlaceholder(
+  grid: ListGridItem[],
+  scope: ChecklistItem[],
+  dragId: number,
+  matches: (g: ListGridItem, itemId: number) => boolean,
+): ListGridItem[] {
   const scopeWithout = scope.filter((i) => i.id !== dragId)
   const clampedIdx = Math.min(dropIndex.value!, scopeWithout.length)
   const atEnd = clampedIdx >= scopeWithout.length
   const anchorId = atEnd
     ? (scopeWithout[scopeWithout.length - 1]?.id ?? null)
     : scopeWithout[clampedIdx].id
-
-  const grid = withCategoryHeaders(source.filter((i) => i.id !== dragId).map(toGrid))
+  // Nothing to anchor against (dragged item was alone in its group) — unreachable
+  // in practice since a lone group offers no other row to hover.
+  if (anchorId === null) return grid
   const placeholder: ListGridItem = { type: 'placeholder', key: 'drop-placeholder' }
-  if (anchorId === null) {
-    grid.push(placeholder)
-    return grid
-  }
-  const anchorPos = grid.findIndex((g) => g.type === 'item' && g.item.id === anchorId)
-  if (anchorPos === -1) {
-    grid.push(placeholder)
-  } else {
-    grid.splice(atEnd ? anchorPos + 1 : anchorPos, 0, placeholder)
-  }
+  const anchorPos = grid.findIndex((g) => matches(g, anchorId))
+  if (anchorPos === -1) grid.push(placeholder)
+  else grid.splice(atEnd ? anchorPos + 1 : anchorPos, 0, placeholder)
   return grid
+}
+
+function buildGridItems(p: Partition): ListGridItem[] {
+  const source = partitionItems(p)
+  const dragId = draggingItemId.value
+  const dragActive =
+    reorderActive.value &&
+    dragId !== null &&
+    dropIndex.value !== null &&
+    draggingPartition.value === p
+
+  // Store grouping renders its own headers and duplicates multi-store items, so
+  // the placeholder is matched within the grabbed column (groupKey) only; the
+  // dragged row is hidden from every group until the drop resolves.
+  if (showStoreHeaders.value) {
+    if (!dragActive) return withStoreGroups(source, p)
+    const grid = withStoreGroups(
+      source.filter((i) => i.id !== dragId),
+      p,
+    )
+    return insertDropPlaceholder(
+      grid,
+      dragScope(p),
+      dragId!,
+      (g, itemId) =>
+        g.type === 'item' && g.groupKey === draggingStoreKey.value && g.item.id === itemId,
+    )
+  }
+
+  const toGrid = (i: ChecklistItem): ListGridItem => ({ type: 'item', key: 'i-' + i.id, item: i })
+  if (!dragActive) return withCategoryHeaders(source.map(toGrid))
+  const grid = withCategoryHeaders(source.filter((i) => i.id !== dragId).map(toGrid))
+  return insertDropPlaceholder(
+    grid,
+    dragScope(p),
+    dragId!,
+    (g, itemId) => g.type === 'item' && g.item.id === itemId,
+  )
 }
 
 const uncheckedGridItems = computed<ListGridItem[]>(() => buildGridItems('unchecked'))
@@ -1279,23 +1324,32 @@ function findPartitionOf(itemId: number): Partition | null {
   return null
 }
 
-function onItemDragStart(itemId: number) {
+function onItemDragStart(itemId: number, groupKey?: string) {
   draggingItemId.value = itemId
   draggingPartition.value = findPartitionOf(itemId)
   draggingCategoryId.value = filteredItems.value.find((i) => i.id === itemId)?.categoryId ?? null
+  // In store sort the row carries its column's key; the drag stays in that column.
+  draggingStoreKey.value = groupKey
   dropIndex.value = null
 }
 
-function computeItemDropIndex(hoveredItemId: number, clientY: number, target: HTMLElement | null) {
+function computeItemDropIndex(
+  hoveredItemId: number,
+  clientY: number,
+  target: HTMLElement | null,
+  hoveredGroupKey?: string,
+) {
   const dragId = draggingItemId.value
   if (!dragId || dragId === hoveredItemId) return
 
   const partition = draggingPartition.value
   if (!partition) return
 
-  // Constrain the drop to the drag scope: same partition, and — in category
-  // sort — the dragged item's own category block. Hovering another category's
-  // item is ignored (idx === -1), so the drag can't cross a category boundary.
+  // Constrain the drop to the drag scope: same partition, and — in category or
+  // store sort — the dragged item's own group. In store sort the hovered row
+  // must be in the same column (a multi-store item renders in several); a row
+  // outside the scope is ignored (idx === -1), so a drag can't cross a boundary.
+  if (isStoreSort.value && hoveredGroupKey !== draggingStoreKey.value) return
   const scope = dragScope(partition)
   const without = scope.filter((i) => i.id !== dragId)
   const idx = without.findIndex((i) => i.id === hoveredItemId)
@@ -1310,8 +1364,8 @@ function computeItemDropIndex(hoveredItemId: number, clientY: number, target: HT
   }
 }
 
-function onReorderOver(hoveredItemId: number, e: MouseEvent) {
-  computeItemDropIndex(hoveredItemId, e.clientY, e.currentTarget as HTMLElement | null)
+function onReorderOver(hoveredItemId: number, e: MouseEvent, groupKey?: string) {
+  computeItemDropIndex(hoveredItemId, e.clientY, e.currentTarget as HTMLElement | null, groupKey)
 }
 
 function onPlaceholderDrop() {
@@ -1372,15 +1426,29 @@ onBeforeUnmount(() => {
   unbindDragListeners(checkedListRef.value)
 })
 
+// Resolve the hovered row element for its bounding rect. In store sort the same
+// item id renders in several columns, so match the column (group) too.
+function hoveredRowEl(
+  list: HTMLElement | null,
+  hoveredId: number,
+  groupKey?: string,
+): HTMLElement | null {
+  if (!list) return null
+  const sel =
+    groupKey != null
+      ? `[data-drag-id="${hoveredId}"][data-drag-group="${groupKey}"]`
+      : `[data-drag-id="${hoveredId}"]`
+  return list.querySelector<HTMLElement>(sel)
+}
+
 // Touch reorder — one composable instance per partition list.
 useTouchReorder(
   uncheckedListRef,
   {
     onDragStart: onItemDragStart,
-    onReorderOver(hoveredId, _clientX, clientY) {
-      const el =
-        uncheckedListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
-      computeItemDropIndex(hoveredId, clientY, el)
+    onReorderOver(hoveredId, _clientX, clientY, groupKey) {
+      const el = hoveredRowEl(uncheckedListRef.value, hoveredId, groupKey)
+      computeItemDropIndex(hoveredId, clientY, el, groupKey)
     },
     onDrop: commitReorder,
     onCancel: resetDragState,
@@ -1392,10 +1460,9 @@ useTouchReorder(
   checkedListRef,
   {
     onDragStart: onItemDragStart,
-    onReorderOver(hoveredId, _clientX, clientY) {
-      const el =
-        checkedListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
-      computeItemDropIndex(hoveredId, clientY, el)
+    onReorderOver(hoveredId, _clientX, clientY, groupKey) {
+      const el = hoveredRowEl(checkedListRef.value, hoveredId, groupKey)
+      computeItemDropIndex(hoveredId, clientY, el, groupKey)
     },
     onDrop: commitReorder,
     onCancel: resetDragState,
@@ -1404,7 +1471,7 @@ useTouchReorder(
 )
 
 // Long-press enters multi-select on touch — only where reorder isn't already
-// claiming the press (i.e. not in custom or category sort) and we're not
+// claiming the press (i.e. not in custom, category or store sort) and we're not
 // already selecting.
 const longPressActive = computed(() => !reorderActive.value && !selectionMode.value)
 function onRowLongPress(id: number) {

@@ -1,8 +1,8 @@
 import { onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 
 export interface TouchReorderCallbacks {
-  onDragStart: (_id: number) => void
-  onReorderOver: (_hoveredId: number, _clientX: number, _clientY: number) => void
+  onDragStart: (id: number, groupKey?: string) => void
+  onReorderOver: (hoveredId: number, clientX: number, clientY: number, groupKey?: string) => void
   onDrop: () => void
   onCancel: () => void
 }
@@ -40,6 +40,10 @@ export function useTouchReorder(
   function getDragId(el: HTMLElement): number | null {
     const val = el.dataset.dragId
     return val != null ? Number(val) : null
+  }
+
+  function getDragGroup(el: HTMLElement): string | undefined {
+    return el.dataset.dragGroup
   }
 
   function createGhost(source: HTMLElement, x: number, y: number) {
@@ -145,10 +149,11 @@ export function useTouchReorder(
     startY = touch.clientY
     dragId = id
 
+    const groupKey = getDragGroup(draggable)
     longPressTimer = setTimeout(() => {
       longPressTimer = null
       isTouchDragging.value = true
-      callbacks.onDragStart(id)
+      callbacks.onDragStart(id, groupKey)
       createGhost(draggable, startX, startY)
     }, LONG_PRESS_MS)
   }
@@ -179,7 +184,7 @@ export function useTouchReorder(
     if (hovered) {
       const hoveredId = getDragId(hovered)
       if (hoveredId !== null && hoveredId !== dragId) {
-        callbacks.onReorderOver(hoveredId, touch.clientX, touch.clientY)
+        callbacks.onReorderOver(hoveredId, touch.clientX, touch.clientY, getDragGroup(hovered))
       }
     }
   }

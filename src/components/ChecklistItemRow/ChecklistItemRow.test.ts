@@ -499,7 +499,24 @@ describe('ChecklistItemRow', () => {
         dataTransfer: { effectAllowed: '', setData: vi.fn() },
       })
       expect(wrapper.emitted('drag-start')).toBeTruthy()
-      expect(wrapper.emitted('drag-start')![0]).toEqual([7])
+      // Second arg is the reorder group key — undefined outside store sort.
+      expect(wrapper.emitted('drag-start')![0]).toEqual([7, undefined])
+    })
+
+    it('emits drag-start with the reorder group key when set (store sort)', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: {
+          ...defaultProps,
+          item: makeItem({ id: 7 }),
+          reorderEnabled: true,
+          reorderGroupKey: 's-3',
+        },
+      })
+      await wrapper.find('.checklist-row').trigger('dragstart', {
+        dataTransfer: { effectAllowed: '', setData: vi.fn() },
+      })
+      expect(wrapper.emitted('drag-start')![0]).toEqual([7, 's-3'])
+      expect(wrapper.find('.checklist-row').attributes('data-drag-group')).toBe('s-3')
     })
 
     it('does not emit drag-start when reorderEnabled is false', async () => {

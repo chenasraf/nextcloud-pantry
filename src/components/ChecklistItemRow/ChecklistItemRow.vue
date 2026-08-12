@@ -11,6 +11,7 @@
       'checklist-row--suggestion': suggestion,
     }"
     :data-drag-id="item.id"
+    :data-drag-group="reorderGroupKey"
     :draggable="reorderEnabled && !suggestion ? 'true' : 'false'"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
@@ -252,6 +253,14 @@ const props = withDefaults(
     list?: Checklist | null
     houseId: number
     reorderEnabled?: boolean
+    /**
+     * Identifies the reorder group this rendered row belongs to, when the same
+     * item can appear in several groups (store sort duplicates a multi-store
+     * item under each store). Emitted with drag-start / reorder-over and set as
+     * `data-drag-group` so a drag can be constrained to its own group. Undefined
+     * for flat custom sort and category sort (an item has one category).
+     */
+    reorderGroupKey?: string
     trashMode?: boolean
     archiveMode?: boolean
     tapRowToComplete?: boolean
@@ -332,8 +341,8 @@ const emit = defineEmits<{
   preview: [item: ChecklistItem]
   select: [item: ChecklistItem]
   'toggle-select': [id: number]
-  'drag-start': [itemId: number]
-  'reorder-over': [itemId: number, event: MouseEvent]
+  'drag-start': [itemId: number, groupKey?: string]
+  'reorder-over': [itemId: number, event: MouseEvent, groupKey?: string]
 }>()
 
 const isDragging = ref(false)
@@ -356,7 +365,7 @@ function onDragStart(e: DragEvent) {
   isDragging.value = true
   e.dataTransfer.effectAllowed = 'move'
   e.dataTransfer.setData('application/x-pantry-checklist-item', String(props.item.id))
-  emit('drag-start', props.item.id)
+  emit('drag-start', props.item.id, props.reorderGroupKey)
 }
 
 function onDragEnd() {
@@ -366,7 +375,7 @@ function onDragEnd() {
 function onDragOver(e: DragEvent) {
   if (!props.reorderEnabled) return
   if (!e.dataTransfer?.types.includes('application/x-pantry-checklist-item')) return
-  emit('reorder-over', props.item.id, e)
+  emit('reorder-over', props.item.id, e, props.reorderGroupKey)
 }
 
 const thumbUrl = computed(() =>
