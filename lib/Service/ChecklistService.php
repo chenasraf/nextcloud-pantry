@@ -16,8 +16,12 @@ use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\AppFramework\Db\TTransactional;
+use OCP\IDBConnection;
 
 class ChecklistService {
+	use TTransactional;
+
 	/**
 	 * Per-list house lookups, memoized for the lifetime of the service so the
 	 * recurring-item background job doesn't refetch the house for every item.
@@ -33,6 +37,7 @@ class ChecklistService {
 		private \OCA\Pantry\Db\ListRoleMapper $listRoleMapper,
 		private ItemStoreMapper $itemStoreMapper,
 		private HouseMapper $houseMapper,
+		private IDBConnection $db,
 	) {
 	}
 
@@ -383,24 +388,28 @@ class ChecklistService {
 	 * @param array<array{id: int, sortOrder: int}> $items Reorder entries.
 	 */
 	public function reorderItems(int $listId, array $items): void {
-		foreach ($items as $entry) {
-			$id = (int)($entry['id'] ?? 0);
-			$sortOrder = (int)($entry['sortOrder'] ?? 0);
-			if ($id <= 0) {
-				continue;
+		// A reseed rewrites every row's sort_order, so run the per-row updates in
+		// one transaction rather than issuing each UPDATE unguarded.
+		$this->atomic(function () use ($listId, $items): void {
+			foreach ($items as $entry) {
+				$id = (int)($entry['id'] ?? 0);
+				$sortOrder = (int)($entry['sortOrder'] ?? 0);
+				if ($id <= 0) {
+					continue;
+				}
+				try {
+					$item = $this->itemMapper->findById($id);
+				} catch (DoesNotExistException) {
+					continue;
+				}
+				if ($item->getListId() !== $listId) {
+					continue;
+				}
+				$item->setSortOrder($sortOrder);
+				$item->setUpdatedAt(time());
+				$this->itemMapper->update($item);
 			}
-			try {
-				$item = $this->itemMapper->findById($id);
-			} catch (DoesNotExistException) {
-				continue;
-			}
-			if ($item->getListId() !== $listId) {
-				continue;
-			}
-			$item->setSortOrder($sortOrder);
-			$item->setUpdatedAt(time());
-			$this->itemMapper->update($item);
-		}
+		}, $this->db);
 	}
 
 	/**

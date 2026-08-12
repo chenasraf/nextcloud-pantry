@@ -27,6 +27,8 @@ class ChecklistServiceTest extends TestCase {
 	private ChecklistItemMapper $itemMapper;
 	/** @var \OCA\Pantry\Db\ItemStoreMapper&MockObject */
 	private \OCA\Pantry\Db\ItemStoreMapper $itemStoreMapper;
+	/** @var \OCP\IDBConnection&MockObject */
+	private \OCP\IDBConnection $db;
 	private ChecklistService $svc;
 
 	protected function setUp(): void {
@@ -39,6 +41,7 @@ class ChecklistServiceTest extends TestCase {
 		$house->setRecurrenceTime(House::DEFAULT_RECURRENCE_TIME);
 		$houseMapper = $this->createMock(HouseMapper::class);
 		$houseMapper->method('findById')->willReturn($house);
+		$this->db = $this->createMock(\OCP\IDBConnection::class);
 		$this->svc = new ChecklistService(
 			$this->listMapper,
 			$this->itemMapper,
@@ -46,6 +49,7 @@ class ChecklistServiceTest extends TestCase {
 			$this->createMock(ListRoleMapper::class),
 			$this->itemStoreMapper,
 			$houseMapper,
+			$this->db,
 		);
 	}
 
@@ -676,6 +680,45 @@ class ChecklistServiceTest extends TestCase {
 		$this->listMapper->expects($this->never())->method('update');
 
 		$this->svc->reorderLists(7, [['id' => 5, 'sortOrder' => 3]]);
+	}
+
+	public function testReorderItemsRunsInASingleTransaction(): void {
+		$a = $this->makeItem(['listId' => 1]);
+		$a->setId(1);
+		$b = $this->makeItem(['listId' => 1]);
+		$b->setId(2);
+		$this->itemMapper->method('findById')->willReturnMap([
+			[1, false, $a],
+			[2, false, $b],
+		]);
+
+		// The whole reseed is wrapped in one begin/commit; both rows update inside.
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+		$this->itemMapper->expects($this->exactly(2))->method('update');
+
+		$this->svc->reorderItems(1, [
+			['id' => 1, 'sortOrder' => 1],
+			['id' => 2, 'sortOrder' => 0],
+		]);
+
+		$this->assertSame(1, $a->getSortOrder());
+		$this->assertSame(0, $b->getSortOrder());
+	}
+
+	public function testReorderItemsRollsBackOnFailure(): void {
+		$a = $this->makeItem(['listId' => 1]);
+		$a->setId(1);
+		$this->itemMapper->method('findById')->willReturn($a);
+		$this->itemMapper->method('update')->willThrowException(new \RuntimeException('boom'));
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->never())->method('commit');
+		$this->db->expects($this->once())->method('rollBack');
+
+		$this->expectException(\RuntimeException::class);
+		$this->svc->reorderItems(1, [['id' => 1, 'sortOrder' => 0]]);
 	}
 
 	public function testAddItemLeavesAddedByNullWhenOmitted(): void {

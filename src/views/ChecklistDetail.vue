@@ -544,6 +544,24 @@
     </NcDialog>
 
     <NcDialog
+      v-if="pendingReseed"
+      :name="strings.reseedConfirmTitle"
+      :open="!!pendingReseed"
+      close-on-click-outside
+      @update:open="(v) => !v && (pendingReseed = null)"
+    >
+      <p>{{ strings.reseedConfirmBody }}</p>
+      <template #actions>
+        <NcButton :disabled="reseeding" @click="pendingReseed = null">
+          {{ strings.cancel }}
+        </NcButton>
+        <NcButton variant="primary" :disabled="reseeding" @click="runReseed(pendingReseed)">
+          {{ strings.reseedConfirmAction }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <NcDialog
       v-if="currentReuse"
       :name="strings.reuseTitle"
       :open="!!currentReuse"
@@ -612,6 +630,7 @@ import ContentCopyIcon from '@icons/ContentCopy.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PlusIcon from '@icons/Plus.vue'
 import SortIcon from '@icons/Sort.vue'
+import SortReverseVariantIcon from '@icons/SortReverseVariant.vue'
 import SelectMultipleIcon from '@icons/SelectMultiple.vue'
 import CloseIcon from '@icons/Close.vue'
 import TagIcon from '@icons/Tag.vue'
@@ -672,6 +691,7 @@ import { hasPrice } from '@/utils/price'
 import { reorderToTrueOrder } from '@/utils/reorderItems'
 import { orderItemsByCategory } from '@/utils/categoryOrder'
 import { storeGroupKey, byStoreGroupOrder, itemsInStoreGroup } from '@/utils/storeGroupOrder'
+import { reseedOrder, type ReseedBasis } from '@/utils/reseedOrder'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
@@ -861,6 +881,35 @@ async function changeSort(value: ChecklistItemSort) {
   sortBy.value = value
   await setChecklistItemSort(houseIdNum.value, value)
   await load(value)
+}
+
+// ----- Reset custom order (reseed sort_order from a basis) -----
+
+// The action is per-list (sort_order is per-list), so it's hidden in meta and
+// only offered on the active list (not trash/archive).
+const canResetOrder = computed(() => !isMeta.value && viewMode.value === 'active')
+// The basis the user picked, awaiting confirmation of the destructive overwrite.
+const pendingReseed = ref<ReseedBasis | null>(null)
+const reseeding = ref(false)
+
+async function runReseed(basis: ReseedBasis | null) {
+  pendingReseed.value = null
+  if (basis === null) return
+  const all = items.value
+  if (all.length === 0) return
+  // In category view the reseed is grouped by category so grouping is preserved;
+  // otherwise it is a flat basis order (still leaves each store group ordered).
+  const categoryOrder = isCategorySort.value ? categories.items.value.map((c) => c.id) : undefined
+  const entries = reseedOrder(all, basis, categoryOrder)
+  reseeding.value = true
+  try {
+    await reorderItems(entries)
+    showSuccess(strings.reseedDone)
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    reseeding.value = false
+  }
 }
 
 // ----- Loading -----
@@ -2253,6 +2302,22 @@ const strings = {
   archiveEmptyTitle: t('pantry', 'Archive is empty'),
   archiveEmptyBody: t('pantry', 'Archived items will appear here.'),
   sortLabel: t('pantry', 'Sort order'),
+  // TRANSLATORS: Menu action that overwrites the list's manual order with a
+  // fresh order computed from a chosen basis (date added / name). The trailing
+  // non-breaking space + ellipsis signal that picking a basis follows.
+  resetOrderLabel: t('pantry', 'Reset custom order to …'),
+  resetOrderCaption: t('pantry', 'Reset order'),
+  // TRANSLATORS: Reset-order basis. Orders items by when each was added.
+  reseedDateAdded: t('pantry', 'Date added'),
+  reseedNameAsc: t('pantry', 'Name A–Z'),
+  reseedNameDesc: t('pantry', 'Name Z–A'),
+  reseedConfirmTitle: t('pantry', 'Reset custom order?'),
+  reseedConfirmBody: t(
+    'pantry',
+    'This overwrites the current custom order for this list. You can rearrange items afterwards.',
+  ),
+  reseedConfirmAction: t('pantry', 'Reset order'),
+  reseedDone: t('pantry', 'Custom order reset'),
   trashLabel: t('pantry', 'Trash'),
   // TRANSLATORS: Noun. Toolbar toggle that opens the view of archived items (not the "archive" action).
   archiveLabel: t('pantry', 'Archive'),
@@ -2344,6 +2409,28 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
       })),
     },
   ]
+
+  if (canResetOrder.value) {
+    const reseedOption = (key: ReseedBasis, label: string) => ({
+      key,
+      label,
+      // Pick a basis → confirm the destructive overwrite before running.
+      onClick: () => (pendingReseed.value = key),
+    })
+    actions.push({
+      key: 'reset-order',
+      type: 'menu',
+      label: strings.resetOrderLabel,
+      caption: strings.resetOrderCaption,
+      icon: SortReverseVariantIcon,
+      priority: 1,
+      options: [
+        reseedOption('dateAdded', strings.reseedDateAdded),
+        reseedOption('name_asc', strings.reseedNameAsc),
+        reseedOption('name_desc', strings.reseedNameDesc),
+      ],
+    })
+  }
 
   if (!isMeta.value) {
     if (list.value && (list.value.canEdit ?? can.value.canEditLists)) {
