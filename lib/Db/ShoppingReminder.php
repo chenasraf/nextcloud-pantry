@@ -10,7 +10,7 @@ namespace OCA\Pantry\Db;
 use OCP\AppFramework\Db\Entity;
 
 /**
- * A house-scoped, user-defined shopping reminder (ADR 0002). Shown to the
+ * A house-scoped, user-defined shopping reminder. Shown to the
  * shopper at a single moment (`show_on`), ordered by `position`, when `enabled`.
  * Modeled like {@see Store} — one entity + mapper per table.
  *

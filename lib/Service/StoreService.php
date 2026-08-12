@@ -85,7 +85,7 @@ class StoreService {
 		$store->setColor($color);
 		$this->applyInfoFields($store, $info);
 		// Append at the end of the custom order so a custom-sorted list keeps a
-		// stable order instead of tying every new store at 0 (see category #113).
+		// stable order instead of tying every new store at 0.
 		$store->setSortOrder($this->mapper->findMaxSortOrder($houseId) + 1);
 		$store->setCreatedAt($now);
 		$store->setUpdatedAt($now);

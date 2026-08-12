@@ -23,8 +23,7 @@ use OCP\Migration\SimpleMigrationStep;
  * the version is already marked executed, the original migration will not run
  * again, so the drift is permanent until reconciled. The item-list queries
  * filter on archived_at and read pantry_item_stores on every request, so the
- * missing schema takes the whole checklist down with a hard SQL error (see
- * issue #188).
+ * missing schema takes the whole checklist down with a hard SQL error.
  *
  * This migration re-asserts the affected objects — the archived_at column and
  * its index (Version13) and the store tables (Version14) — but only when they
@@ -43,7 +42,7 @@ class Version15Date20260723000000 extends SimpleMigrationStep {
 		if ($schema->hasTable($itemsTable)) {
 			$table = $schema->getTable($itemsTable);
 			if (!$table->hasColumn('archived_at')) {
-				$output->warning('Pantry: list_items.archived_at column was missing; recreating it (see issue #188)');
+				$output->warning('Pantry: list_items.archived_at column was missing; recreating it');
 				$table->addColumn('archived_at', Types::BIGINT, [
 					'notnull' => false,
 					'length' => 20,
@@ -56,7 +55,7 @@ class Version15Date20260723000000 extends SimpleMigrationStep {
 
 		$storesTable = Application::tableName('stores');
 		if (!$schema->hasTable($storesTable)) {
-			$output->warning('Pantry: stores table was missing; recreating it (see issue #188)');
+			$output->warning('Pantry: stores table was missing; recreating it');
 			$table = $schema->createTable($storesTable);
 			$table->addColumn('id', Types::BIGINT, [
 				'autoincrement' => true,
@@ -74,7 +73,7 @@ class Version15Date20260723000000 extends SimpleMigrationStep {
 
 		$itemStoresTable = Application::tableName('item_stores');
 		if (!$schema->hasTable($itemStoresTable)) {
-			$output->warning('Pantry: item_stores table was missing; recreating it (see issue #188)');
+			$output->warning('Pantry: item_stores table was missing; recreating it');
 			$table = $schema->createTable($itemStoresTable);
 			$table->addColumn('id', Types::BIGINT, [
 				'autoincrement' => true,

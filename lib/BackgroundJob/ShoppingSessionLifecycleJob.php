@@ -14,7 +14,7 @@ use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
 /**
- * Shopping-session lifecycle job (ADR 0001 + 0008). Runs hourly and does two
+ * Shopping-session lifecycle job. Runs hourly and does two
  * passes:
  *
  * 1. Auto-close abandoned live sessions — those idle (no `last_seen_at` update)

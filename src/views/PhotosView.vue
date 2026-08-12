@@ -794,7 +794,6 @@ async function onBoardDrop(e: DragEvent) {
   // Internal photo reorder or move
   const photoData = e.dataTransfer.getData('application/x-pantry-photo')
   if (photoData) {
-    // If there's a pending reorder, commit it
     if (draggingPhotoId.value && dropIndex.value !== null) {
       await commitReorder()
       return

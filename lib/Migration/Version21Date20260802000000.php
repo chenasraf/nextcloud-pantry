@@ -75,7 +75,7 @@ class Version21Date20260802000000 extends SimpleMigrationStep {
 	 * Backfill the snapshot on existing check-log rows from their current item.
 	 *
 	 * The price_* columns on list_items come from Version19. If schema drift
-	 * left them missing (issue #212) selecting them here would abort the whole
+	 * left them missing, selecting them here would abort the whole
 	 * upgrade, so only the columns that actually exist are read; the absent ones
 	 * stay null on the snapshot and RepairSchemaColumnsStep restores them after
 	 * migrations finish.

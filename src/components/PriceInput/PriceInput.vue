@@ -120,10 +120,9 @@ const selectedCurrencyOption = computed<CurrencyOption | null>(
 
 const hasAmount = computed(() => minText.value.trim() !== '' || maxText.value.trim() !== '')
 
-// The value we last emitted upward. Used to ignore the parent echoing our own
-// update back through v-model — re-syncing on that echo would fight the user
-// (reverting the Set/Range toggle whenever there is no amount yet, and dropping
-// a trailing "." mid-decimal). Only genuine external swaps re-seed local state.
+// The value we last emitted, so we can ignore the parent echoing our own update
+// back through v-model — re-syncing on that echo would fight the user (revert the
+// Set/Range toggle before an amount is entered, drop a trailing "." mid-decimal).
 let lastEmitted: PriceValue | null = null
 
 function samePrice(a: PriceValue, b: PriceValue): boolean {

@@ -18,7 +18,7 @@ import { getCurrentSession } from '@/api/shopping'
 import { formatDuration } from '@/utils/datetime'
 import type { ShoppingSession } from '@/api/types'
 
-// The list surfaces the resume banner targets (ADR 0009). Suppressed everywhere
+// The list surfaces the resume banner targets. Suppressed everywhere
 // else — including the shopping routes, where a "resume" prompt is nonsense.
 const LIST_ROUTES = ['lists', 'list-detail', 'all-lists']
 

@@ -1,10 +1,10 @@
-// Reorder reconstruction for a checklist's custom sort order (ADR 0010,
-// decision 3). A drag happens within one render-time partition (the active
-// list or the Done section), but `sort_order` must store the user's *true*
-// intended order across both — an item's checked-state must never leak into
-// its stored order. So we translate a within-partition drop into a slot in the
-// full list order: only the dragged item moves, and every other item — checked
-// ones included — keeps its true position between its surviving neighbours.
+// Reorder reconstruction for a checklist's custom sort order. A drag happens
+// within one render-time partition (the active list or the Done section), but
+// `sort_order` must store the user's true intended order across both — an item's
+// checked-state must never leak into its stored order. So we translate a
+// within-partition drop into a slot in the full list order: only the dragged
+// item moves, and every other item — checked ones included — keeps its true
+// position between its surviving neighbours.
 
 export interface ReorderItem {
   id: number

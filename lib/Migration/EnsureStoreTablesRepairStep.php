@@ -18,7 +18,7 @@ use Psr\Log\LoggerInterface;
  *
  * Runs on every `occ upgrade` and `occ maintenance:repair`, after migrations.
  * The item-list endpoints query pantry_item_stores on every request, so a
- * missing table takes down the whole checklist (see issue #188). If migrations
+ * missing table takes down the whole checklist. If migrations
  * did their job the tables are present and this is a silent no-op; if either is
  * still missing it surfaces a loud, actionable warning in the occ output and
  * the log rather than letting the breakage stay invisible until a user reports
@@ -51,7 +51,7 @@ class EnsureStoreTablesRepairStep implements IRepairStep {
 		$list = implode(', ', $missing);
 		$message = sprintf(
 			'Pantry store tables are missing (%s). Checklist items will not load until this is fixed. '
-			. 'Run "occ upgrade" (or "occ migrations:migrate pantry") to recreate them. See issue #188.',
+			. 'Run "occ upgrade" (or "occ migrations:migrate pantry") to recreate them.',
 			$list,
 		);
 		$output->warning($message);

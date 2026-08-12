@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * `occ pantry:repair-schema` — add back optional columns that schema drift
- * (issues #188, #212) left missing, so a stuck upgrade or a checklist that
+ * left missing, so a stuck upgrade or a checklist that
  * errors out can be fixed without touching the database by hand.
  *
  * Only ever adds the nullable columns an earlier migration already intended, so

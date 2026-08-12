@@ -8,7 +8,6 @@
     @update:open="onClose"
   >
     <div class="note-dialog__body">
-      <!-- Title -->
       <div class="note-dialog__title-row">
         <input
           v-if="editing"
@@ -32,7 +31,6 @@
         </NcCheckboxRadioSwitch>
       </div>
 
-      <!-- Content -->
       <MarkdownEditor
         v-if="editing"
         ref="contentInputRef"
@@ -80,7 +78,6 @@
         </div>
       </div>
 
-      <!-- Sharing -->
       <ShareEditor
         v-if="note"
         class="note-dialog__share"

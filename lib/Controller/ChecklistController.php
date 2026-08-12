@@ -72,8 +72,7 @@ final class ChecklistController extends OCSController {
 	 * Stores are an optional feature layered on top of items. If the lookup
 	 * fails (e.g. the item-stores table is missing because its migration did
 	 * not apply), we must not let that sink the whole item list — items render
-	 * with no attached stores rather than the endpoint returning a 500. See
-	 * issue #188.
+	 * with no attached stores rather than the endpoint returning a 500.
 	 *
 	 * @param ChecklistItem[] $items
 	 * @return list<array<string, mixed>>

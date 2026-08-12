@@ -1,10 +1,10 @@
-// Reseed a list's custom order from a chosen basis (ADR 0010, decision 4).
-// Computes a fresh 0..n `sortOrder` sequence the caller writes via the reorder
-// endpoint; the list stays hand-reorderable afterwards. In category view the
-// reseed is grouped by category (header order, uncategorized last) and ordered
-// by the basis within each group, so grouping is preserved; otherwise it is a
-// flat basis order (which still leaves each store group basis-ordered, since a
-// group is a subset of the flat sequence).
+// Reseed a list's custom order from a chosen basis. Computes a fresh 0..n
+// `sortOrder` sequence the caller writes via the reorder endpoint; the list
+// stays hand-reorderable afterwards. In category view the reseed is grouped by
+// category (header order, uncategorized last) and ordered by the basis within
+// each group, so grouping is preserved; otherwise it is a flat basis order
+// (which still leaves each store group basis-ordered, since a group is a subset
+// of the flat sequence).
 
 export type ReseedBasis = 'dateAdded' | 'name_asc' | 'name_desc'
 

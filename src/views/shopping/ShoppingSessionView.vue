@@ -213,7 +213,7 @@ const previewing = ref<ChecklistItem | null>(null)
 const doneOpen = ref(false)
 const reviewOpen = ref(false)
 const reviewMode = ref<'advance' | 'close'>('close')
-// Derived presence of housemates out shopping (ADR 0004), refreshed on the same
+// Derived presence of housemates out shopping, refreshed on the same
 // focused poll as the item list. The caller's own entry is filtered client-side.
 const presence = ref<ShoppingPresenceEntry[]>([])
 const savingPrivacy = ref(false)

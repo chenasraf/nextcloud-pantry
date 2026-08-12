@@ -53,7 +53,7 @@ class ShoppingSessionMapper extends QBMapper {
 	}
 
 	/**
-	 * Closed sessions for the history view, newest first (by closed_at). ADR 0008.
+	 * Closed sessions for the history view, newest first (by closed_at).
 	 *  - 'mine'  → house AND user_id = me
 	 *  - 'house' → house AND (user_id = me OR is_private = false)
 	 *
@@ -85,7 +85,7 @@ class ShoppingSessionMapper extends QBMapper {
 	}
 
 	/**
-	 * Derived house presence (ADR 0004): live sessions in the house whose
+	 * Derived house presence: live sessions in the house whose
 	 * last_seen_at is fresh (>= cutoff) and which have opted in (is_private
 	 * false or null). Newest heartbeat first. Not self-filtered — the caller's
 	 * own session is included; the client decides whether to render it.
@@ -110,7 +110,7 @@ class ShoppingSessionMapper extends QBMapper {
 
 	/**
 	 * Live sessions whose last_seen_at predates the cutoff — abandoned trips the
-	 * lifecycle job auto-closes (ADR 0001).
+	 * lifecycle job auto-closes.
 	 *
 	 * @return ShoppingSession[]
 	 */
@@ -125,7 +125,7 @@ class ShoppingSessionMapper extends QBMapper {
 
 	/**
 	 * Closed sessions whose closed_at predates the cutoff — the retention purge
-	 * horizon (ADR 0008).
+	 * horizon.
 	 *
 	 * @return ShoppingSession[]
 	 */

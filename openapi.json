@@ -15112,7 +15112,7 @@
             "post": {
                 "operationId": "shopping_session-heartbeat",
                 "summary": "Presence heartbeat for a house",
-                "description": "Stamps the caller's live-session `last_seen_at` (if their trip is in this house) and returns the current house presence in the same round-trip. Pure liveness — it does not change the active store. ADR 0004.",
+                "description": "Stamps the caller's live-session `last_seen_at` (if their trip is in this house) and returns the current house presence in the same round-trip. Pure liveness — it does not change the active store.",
                 "tags": [
                     "shopping_session"
                 ],
@@ -15215,7 +15215,7 @@
             "get": {
                 "operationId": "shopping_session-presence",
                 "summary": "Read the current shopping presence in a house",
-                "description": "The live, fresh (within the ~15-min cutoff), opted-in trips in the house, each attributed to its active store. Read-only and requires no live session, so a housemate at home can see a trip is underway. ADR 0004.",
+                "description": "The live, fresh (within the ~15-min cutoff), opted-in trips in the house, each attributed to its active store. Read-only and requires no live session, so a housemate at home can see a trip is underway.",
                 "tags": [
                     "shopping_session"
                 ],
@@ -15318,7 +15318,7 @@
             "patch": {
                 "operationId": "shopping_session-set-privacy",
                 "summary": "Toggle \"shop privately\" on a shopping session",
-                "description": "A per-trip visibility opt-out: a private trip is hidden from housemates' presence and history. Owner-only. ADR 0004.",
+                "description": "A per-trip visibility opt-out: a private trip is hidden from housemates' presence and history. Owner-only.",
                 "tags": [
                     "shopping_session"
                 ],
@@ -16479,7 +16479,7 @@
         },
         {
             "name": "shopping_reminder",
-            "description": "Shopping Mode — user-defined reminders (ADR 0002). House-scoped per-row REST plus a batch reorder, mirroring {@see StoreController}. Surfacing (which enabled reminders show at which moment) is done client-side over the index."
+            "description": "Shopping Mode — user-defined reminders. House-scoped per-row REST plus a batch reorder, mirroring {@see StoreController}. Surfacing (which enabled reminders show at which moment) is done client-side over the index."
         },
         {
             "name": "shopping_session",

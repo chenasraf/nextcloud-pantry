@@ -15,9 +15,9 @@ use OC\DB\SchemaWrapper;
  * drift has left missing.
  *
  * Nextcloud records a migration as executed against the app's version even when
- * one of its `addColumn()` calls never reached the database (issues #188, #212).
+ * one of its `addColumn()` calls never reached the database.
  * Because the migration is marked done it is never re-run, so the column stays
- * missing and every query that references it fails — including, for #212, the
+ * missing and every query that references it fails — including the
  * Shopping Mode backfill inside Version21, which blocks the whole upgrade.
  *
  * This mirrors core's `occ db:add-missing-columns`: it only ever *adds* the

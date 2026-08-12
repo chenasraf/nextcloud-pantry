@@ -62,7 +62,7 @@ const reminders = computed(() =>
   store.items.value.filter((r) => r.enabled && r.showOn === props.moment),
 )
 
-// Acknowledgement is deliberately client-local and ephemeral (ADR 0002): ticking
+// Acknowledgement is deliberately client-local and ephemeral: ticking
 // a reminder just visually checks it off; nothing is persisted, so it resets on
 // reload / remount.
 const acked = ref<Set<number>>(new Set())

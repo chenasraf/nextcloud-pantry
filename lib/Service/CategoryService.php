@@ -79,7 +79,7 @@ class CategoryService {
 		$cat->setColor($color);
 		// Append at the end of the custom order. Assigning 0 to every new
 		// category left them all tied, so a custom-sorted list rendered in an
-		// arbitrary, shifting order (issue #113).
+		// arbitrary, shifting order.
 		$cat->setSortOrder($this->mapper->findMaxSortOrder($houseId) + 1);
 		$cat->setCreatedAt($now);
 		$cat->setUpdatedAt($now);

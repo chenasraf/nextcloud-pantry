@@ -28,7 +28,6 @@ class ReopenRecurringItemsJob extends TimedJob {
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($time);
-		// Run every 15 minutes.
 		$this->setInterval(15 * 60);
 		$this->setTimeSensitivity(self::TIME_INSENSITIVE);
 	}

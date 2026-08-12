@@ -1,10 +1,9 @@
-// Category-view ordering (ADR 0010, decisions 1 & 2). There is one shared
-// per-list `sortOrder`; the category view is a lens over it. Items are grouped
-// by category following the category-header order (the `categorySort` pref,
-// already baked into the ordered category list the caller passes), with
-// uncategorized items last, and ordered *within* each group by `sortOrder`
-// (tie-break name). Doing this on the client keeps optimistic drag updates
-// correct without a reload.
+// Category-view ordering. There is one shared per-list `sortOrder`; the category
+// view is a lens over it. Items are grouped by category following the
+// category-header order (the `categorySort` pref, already baked into the ordered
+// category list the caller passes), with uncategorized items last, and ordered
+// within each group by `sortOrder` (tie-break name). Doing this on the client
+// keeps optimistic drag updates correct without a reload.
 
 export interface CategorizedItem {
   id: number

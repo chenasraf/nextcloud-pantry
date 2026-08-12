@@ -201,7 +201,7 @@ export interface ShoppingHistoryTotal {
   amount: number
 }
 
-/** One closed trip in the history list (ADR 0008). */
+/** One closed trip in the history list. */
 export interface ShoppingHistoryRow {
   id: number
   userId: string
@@ -213,10 +213,10 @@ export interface ShoppingHistoryRow {
   grandTotal: ShoppingHistoryTotal[]
 }
 
-/** The moment a reminder surfaces during a trip (ADR 0002). */
+/** The moment a reminder surfaces during a trip. */
 export type ShoppingReminderMoment = 'on_start' | 'on_store_advance' | 'on_close'
 
-/** A house-scoped, user-defined shopping reminder (ADR 0002). */
+/** A house-scoped, user-defined shopping reminder. */
 export interface ShoppingReminder {
   id: number
   houseId: number
@@ -228,7 +228,7 @@ export interface ShoppingReminder {
   updatedAt: number
 }
 
-/** One present shopper in a house's derived shopping presence (ADR 0004). */
+/** One present shopper in a house's derived shopping presence. */
 export interface ShoppingPresenceEntry {
   userId: string
   /** The store the shopper is attributed to; null = live but no store chosen. */

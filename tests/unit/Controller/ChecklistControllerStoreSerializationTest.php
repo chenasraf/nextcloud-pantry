@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Regression coverage for issue #188: a failure loading item-store links (e.g.
+ * Regression coverage: a failure loading item-store links (e.g.
  * the item-stores table is missing because its migration did not apply) must
  * not sink the whole item list. Items should still serialize, just without any
  * attached stores.

@@ -1,9 +1,8 @@
-// Store-view grouping/ordering (ADR 0010 follow-up: the deferred store case).
-// Store sort is a client-only lens over the one shared per-list `sortOrder`: an
-// item assigned to several stores renders under each, and within a store group
-// items follow `sortOrder` (tie-break name) — the same model as category sort.
-// Dragging reorders that shared sortOrder, so a multi-store item shifts in every
-// group it appears in (coupled, by design).
+// Store-view grouping/ordering. Store sort is a client-only lens over the one
+// shared per-list `sortOrder`: an item assigned to several stores renders under
+// each, and within a store group items follow `sortOrder` (tie-break name) — the
+// same model as category sort. Dragging reorders that shared sortOrder, so a
+// multi-store item shifts in every group it appears in (coupled, by design).
 
 export interface StoreGroupedItem {
   id: number

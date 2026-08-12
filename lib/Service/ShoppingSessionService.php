@@ -31,7 +31,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
  */
 class ShoppingSessionService {
 	/**
-	 * Presence staleness cutoff (ADR 0004): a live session is "present" only if
+	 * Presence staleness cutoff: a live session is "present" only if
 	 * its last_seen_at is within this window. Chosen forgiving (~15 min) so a
 	 * ~1-min heartbeat never flickers from dropped beats, yet a genuinely-gone
 	 * shopper clears well before the ~4h abandonment auto-close.
@@ -67,7 +67,7 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * Presence heartbeat (ADR 0004): stamp the caller's live session as seen now
+	 * Presence heartbeat: stamp the caller's live session as seen now
 	 * if it belongs to this house. Pure liveness — it does not touch
 	 * `active_store_id` (advancing is a separate explicit action). A caller with
 	 * no live session here (or whose only live session is in another house) simply
@@ -85,7 +85,7 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * Derived house presence (ADR 0004): the live, fresh, opted-in sessions in the
+	 * Derived house presence: the live, fresh, opted-in sessions in the
 	 * house, each attributed to its active store. Not self-filtered — the caller's
 	 * own session is included; the client decides whether to render it.
 	 *
@@ -194,7 +194,7 @@ class ShoppingSessionService {
 	 * (`last_seen_at`) predates now − $idleSeconds. The trip is stamped closed at
 	 * its last-seen time (the truthful end), so its history duration reflects real
 	 * activity rather than when the job happened to run. Runs from the lifecycle
-	 * {@see \OCA\Pantry\BackgroundJob\ShoppingSessionLifecycleJob}. ADR 0001.
+	 * {@see \OCA\Pantry\BackgroundJob\ShoppingSessionLifecycleJob}.
 	 *
 	 * @return int Number of sessions closed.
 	 */
@@ -212,7 +212,7 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * Retention purge (ADR 0008): permanently delete closed sessions whose
+	 * Retention purge: permanently delete closed sessions whose
 	 * `closed_at` predates now − $retentionDays, cascading their child rows
 	 * (lists/stores/items). A retention of 0 (or less) means "keep forever" and
 	 * short-circuits. Runs as the second pass of the lifecycle job.
@@ -388,7 +388,7 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * Read-only history of closed trips, newest first (ADR 0008). Each row carries
+	 * Read-only history of closed trips, newest first. Each row carries
 	 * cheap roll-ups: the store-sequence names, the checked-item count, and the
 	 * blended grand total collapsed to a single figure per currency (the ≈X–Y
 	 * range and no-price count are detail-view only, so a row stays glanceable).
@@ -645,8 +645,8 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * Toggle the per-session "shop privately" opt-out (ADR 0004). A private trip
-	 * is hidden from housemates' presence and (per ADR 0008) from their history.
+	 * Toggle the per-session "shop privately" opt-out. A private trip
+	 * is hidden from housemates' presence and from their history.
 	 * A contextual, per-trip visibility choice — not a lifecycle transition.
 	 */
 	public function setPrivacy(ShoppingSession $session, bool $isPrivate): ShoppingSession {

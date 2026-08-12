@@ -28,7 +28,7 @@ class AddMissingSchemaListenerTest extends TestCase {
 		(new AddMissingColumnsListener())->handle($event);
 
 		// archived_at (Version13) plus the price columns (Version19) that drift
-		// left missing in issue #212.
+		// left missing.
 		$this->assertContains('pantry_list_items.archived_at', $declared);
 		$this->assertContains('pantry_list_items.price_type', $declared);
 		$this->assertContains('pantry_list_items.price_currency', $declared);

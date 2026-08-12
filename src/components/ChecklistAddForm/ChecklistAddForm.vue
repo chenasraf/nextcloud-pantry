@@ -94,27 +94,22 @@
     </div>
 
     <div v-if="openSection" class="checklist-add__section">
-      <!-- Category -->
       <CategoryChipList
         v-if="openSection === 'category'"
         v-model="categoryId"
         :house-id="houseId"
       />
 
-      <!-- Stores -->
       <StoreChipList v-else-if="openSection === 'stores'" v-model="storeIds" :house-id="houseId" />
 
-      <!-- Quantity -->
       <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
 
-      <!-- Price -->
       <PriceInput
         v-else-if="openSection === 'price'"
         v-model="price"
         :default-currency="defaultCurrency"
       />
 
-      <!-- Description -->
       <AutoResizeTextarea
         v-else-if="openSection === 'description'"
         v-model="description"
@@ -139,7 +134,6 @@
         />
       </div>
 
-      <!-- Image -->
       <div v-else-if="openSection === 'image'" class="checklist-add__image">
         <div v-if="previewImageUrl" class="checklist-add__image-row">
           <img
@@ -415,7 +409,6 @@ function selectRecurring() {
   // currentType becomes 'recurring'. It will live-emit a default rrule
   // (weekly) as soon as it mounts, which flips currentType for us.
   if (!rrule.value) {
-    // Seed a minimal weekly rrule so the form mounts in a "recurring" state.
     rrule.value = 'FREQ=WEEKLY;INTERVAL=1'
   }
 }
@@ -455,8 +448,7 @@ onBeforeUnmount(revokeObjectUrl)
 // ----- Barcode -----
 //
 // A resolved barcode prefills the draft: name, a best-match category, and the
-// product image. On an unknown barcode we still stamp the code as the name so
-// the user can rename it — the raw EAN is never lost.
+// product image.
 
 function onBarcodeResolved(ean: string, result: BarcodeResult | null) {
   if (!result) {

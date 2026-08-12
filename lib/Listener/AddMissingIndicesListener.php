@@ -14,7 +14,7 @@ use OCP\EventDispatcher\IEventListener;
 
 /**
  * Declares indices that should exist, so drift (an index a migration was
- * recorded as having created but that is actually missing — see issue #188)
+ * recorded as having created but that is actually missing)
  * surfaces in the admin overview and can be repaired with
  * `occ db:add-missing-indices`.
  *

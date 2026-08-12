@@ -137,7 +137,7 @@ const props = defineProps<{
   storeId?: number | null
 }>()
 
-/** History is look-only: no billed inputs, no confirm action (ADR 0008). */
+/** History is look-only: no billed inputs, no confirm action. */
 const readOnly = computed(() => props.mode === 'history')
 const emit = defineEmits<{
   'update:open': [value: boolean]

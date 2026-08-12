@@ -14,8 +14,8 @@ use OCP\EventDispatcher\IEventListener;
 
 /**
  * Declares columns that item queries depend on, so schema drift (a migration
- * recorded as executed without its column actually landing — see issues #188
- * and #212) shows up in the admin overview and can be repaired with
+ * recorded as executed without its column actually landing) shows up in the
+ * admin overview and can be repaired with
  * `occ db:add-missing-columns`.
  *
  * The declarations live in {@see ExpectedColumns} so the same list also drives

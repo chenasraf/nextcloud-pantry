@@ -13,7 +13,7 @@ use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 /**
- * House-scoped, user-defined shopping reminders (ADR 0002). A single moment per
+ * House-scoped, user-defined shopping reminders. A single moment per
  * row (`show_on`); to show the same text at two moments, create two rows. New
  * houses start empty — nothing is seeded (seeding would reintroduce the rejected
  * hardcoded prompts as data).

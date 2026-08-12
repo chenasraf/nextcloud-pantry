@@ -384,7 +384,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * Stamps the caller's live-session `last_seen_at` (if their trip is in this
 	 * house) and returns the current house presence in the same round-trip. Pure
-	 * liveness — it does not change the active store. ADR 0004.
+	 * liveness — it does not change the active store.
 	 *
 	 * @param int $houseId House id.
 	 *
@@ -409,7 +409,7 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * The live, fresh (within the ~15-min cutoff), opted-in trips in the house,
 	 * each attributed to its active store. Read-only and requires no live session,
-	 * so a housemate at home can see a trip is underway. ADR 0004.
+	 * so a housemate at home can see a trip is underway.
 	 *
 	 * @param int $houseId House id.
 	 *
@@ -432,7 +432,7 @@ final class ShoppingSessionController extends OCSController {
 	 * Toggle "shop privately" on a shopping session
 	 *
 	 * A per-trip visibility opt-out: a private trip is hidden from housemates'
-	 * presence and history. Owner-only. ADR 0004.
+	 * presence and history. Owner-only.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $sessionId Session id.
@@ -528,7 +528,7 @@ final class ShoppingSessionController extends OCSController {
 	/**
 	 * Load a session for read-only viewing (history detail): house member, and
 	 * either the caller's own trip or a non-private one. Unlike loadOwnedSession,
-	 * a housemate may view another member's non-private trip (ADR 0008).
+	 * a housemate may view another member's non-private trip.
 	 */
 	private function loadViewableSession(int $sessionId, int $houseId): ShoppingSession {
 		$uid = $this->requireUid();

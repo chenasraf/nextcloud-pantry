@@ -21,7 +21,7 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * Shopping Mode — user-defined reminders (ADR 0002). House-scoped per-row REST
+ * Shopping Mode — user-defined reminders. House-scoped per-row REST
  * plus a batch reorder, mirroring {@see StoreController}. Surfacing (which
  * enabled reminders show at which moment) is done client-side over the index.
  *

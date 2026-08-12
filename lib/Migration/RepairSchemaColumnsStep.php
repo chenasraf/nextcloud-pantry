@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
  * Post-migration self-heal for missing optional columns.
  *
  * Runs on every `occ upgrade` and `occ maintenance:repair`, after migrations.
- * If schema drift left an expected column behind (issues #188, #212) this adds
+ * If schema drift left an expected column behind, this adds
  * it back so the app stops erroring on the next request — no manual
  * `occ db:add-missing-columns` needed. When the schema is already whole it is a
  * silent no-op.

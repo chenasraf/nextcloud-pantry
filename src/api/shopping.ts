@@ -120,7 +120,7 @@ export async function getReview(houseId: number, sessionId: number): Promise<Sho
   return resp.data
 }
 
-/** Closed trips for the history view, newest first (ADR 0008). */
+/** Closed trips for the history view, newest first. */
 export async function getHistory(
   houseId: number,
   scope: 'mine' | 'house' = 'mine',
@@ -146,7 +146,7 @@ export async function getSessionSummary(
 
 /**
  * Presence heartbeat: stamp the caller's live session as seen and return the
- * current house presence in the same round-trip (ADR 0004).
+ * current house presence in the same round-trip.
  */
 export async function sendHeartbeat(houseId: number): Promise<ShoppingPresenceEntry[]> {
   const resp = await ocs.post<ShoppingPresenceEntry[]>(
