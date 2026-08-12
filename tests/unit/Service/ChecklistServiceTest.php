@@ -432,6 +432,51 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertTrue($captured->getDeleteOnDone());
 	}
 
+	public function testAddItemAppendsAtMaxSortOrderPlusOne(): void {
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('maxSortOrder')->with(1)->willReturn(4);
+		$captured = null;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		$this->svc->addItem(1, ['name' => 'Bread']);
+		$this->assertNotNull($captured);
+		$this->assertSame(5, $captured->getSortOrder());
+	}
+
+	public function testAddItemUsesZeroSortOrderForEmptyList(): void {
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('maxSortOrder')->with(1)->willReturn(null);
+		$captured = null;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		$this->svc->addItem(1, ['name' => 'Bread']);
+		$this->assertNotNull($captured);
+		$this->assertSame(0, $captured->getSortOrder());
+	}
+
+	public function testAddItemHonoursExplicitSortOrderOverMax(): void {
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->expects($this->never())->method('maxSortOrder');
+		$captured = null;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
+				$captured = $i;
+				return $i;
+			});
+
+		$this->svc->addItem(1, ['name' => 'Bread', 'sortOrder' => 2]);
+		$this->assertNotNull($captured);
+		$this->assertSame(2, $captured->getSortOrder());
+	}
+
 	public function testAddItemStoresSetPrice(): void {
 		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$captured = null;

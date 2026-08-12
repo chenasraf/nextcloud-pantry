@@ -276,7 +276,14 @@ class ChecklistService {
 		$item->setPriceMin($price['priceMin']);
 		$item->setPriceMax($price['priceMax']);
 		$item->setPriceCurrency($price['priceCurrency']);
-		$item->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : 0);
+		if (isset($data['sortOrder'])) {
+			$item->setSortOrder((int)$data['sortOrder']);
+		} else {
+			// Append at the bottom of the list's custom order rather than colliding
+			// on 0, so a new item lands predictably last even after a manual reorder.
+			$max = $this->itemMapper->maxSortOrder($listId);
+			$item->setSortOrder($max === null ? 0 : $max + 1);
+		}
 		$item->setCreatedAt($now);
 		$item->setUpdatedAt($now);
 		/** @var ChecklistItem $saved */

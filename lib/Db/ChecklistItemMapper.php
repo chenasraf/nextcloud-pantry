@@ -258,6 +258,24 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * The highest sort_order among live (non-deleted, non-archived) items in the
+	 * list, or null when the list has none. New items append at max + 1 so they
+	 * land at the bottom of the custom order instead of colliding on 0.
+	 */
+	public function maxSortOrder(int $listId): ?int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->max('sort_order'))
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
+		$result = $qb->executeQuery();
+		$max = $result->fetchOne();
+		$result->closeCursor();
+		return $max === null || $max === false ? null : (int)$max;
+	}
+
+	/**
 	 * @throws DoesNotExistException
 	 */
 	public function findById(int $id, bool $includeDeleted = false): ChecklistItem {

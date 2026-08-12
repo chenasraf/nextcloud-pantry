@@ -667,6 +667,7 @@ import {
   setLastCurrency,
 } from '@/api/prefs'
 import { hasPrice } from '@/utils/price'
+import { reorderToTrueOrder } from '@/utils/reorderItems'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
@@ -1267,22 +1268,13 @@ async function commitReorder() {
   // Reorder within the dragged partition, then merge with the other partition
   // (preserving its relative order) so the API receives a complete sort order
   // for all items in the list.
-  const source = partitionItems(partition)
-  const dragged = source.find((i) => i.id === dragId)
-  if (!dragged) return
-
-  const without = source.filter((i) => i.id !== dragId)
-  const clamped = Math.min(idx, without.length)
-  const reordered = [...without]
-  reordered.splice(clamped, 0, dragged)
-
-  const otherPartition: Partition = partition === 'unchecked' ? 'checked' : 'unchecked'
-  const other = partitionItems(otherPartition)
-
-  // Unchecked items always come first in the sortOrder sequence.
-  const finalOrder = partition === 'unchecked' ? [...reordered, ...other] : [...other, ...reordered]
-
-  const entries = finalOrder.map((i, n) => ({ id: i.id, sortOrder: n }))
+  // Reconstruct the dragged item's slot in the *full* list order (both
+  // partitions, by true sortOrder) so its done-state never leaks into the
+  // stored sort_order. Only the dragged item moves; every other item — checked
+  // ones included — keeps its true position. The "checked items sink to the
+  // bottom" experience is a render-time partition, not a stored one.
+  const entries = reorderToTrueOrder(filteredItems.value, partitionItems(partition), dragId, idx)
+  if (entries.length === 0) return
   await reorderItems(entries)
 }
 
