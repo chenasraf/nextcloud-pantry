@@ -51,6 +51,7 @@ OC.L10N.register(
     "Deselect all" : "Bỏ chọn tất cả",
     "Remove" : "Xoá",
     "Preview" : "Xem trước",
+    "No content yet" : "Chưa có nội dung gì",
     "More actions" : "Nhiều hành động hơn",
     "Folder name" : "Tên thư mục",
     "Set" : "Đặt",

@@ -42,6 +42,7 @@ OC.L10N.register(
     "Account" : "Account",
     "Role" : "Role",
     "Danger zone" : "Danger zone",
+    "Rich text" : "Rich text",
     "Close" : "Close",
     "Copied to clipboard" : "Copied to clipboard",
     "Select all" : "Select all",

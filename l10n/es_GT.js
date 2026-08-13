@@ -32,6 +32,7 @@ OC.L10N.register(
     "Account" : "Cuenta",
     "Joined" : "Se ha unido",
     "Add a member" : "Agegar un miembro",
+    "Rich text" : "Texto enriquecido",
     "Close" : "Close",
     "Copied to clipboard" : "Copiado al portapapeles",
     "Select all" : "Seleccionar todo",

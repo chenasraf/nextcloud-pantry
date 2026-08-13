@@ -60,6 +60,7 @@ OC.L10N.register(
     "Contact" : "Kontakto",
     "Newest first" : "Pli novaj unue",
     "Oldest first" : "Malpli novaj unue",
+    "Date added" : "Aldonita je",
     "Archive" : "Arĥivujo",
     "Export" : "Eksporti",
     "Import" : "Importi",

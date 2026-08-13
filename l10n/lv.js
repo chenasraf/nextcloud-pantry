@@ -69,6 +69,7 @@ OC.L10N.register(
     "Contact" : "Kontaktpersona",
     "Newest first" : "Jaunākie pirms",
     "Oldest first" : "Vecākie pirms",
+    "Date added" : "Datums pievienots",
     "Archive" : "Arhīvs",
     "Export" : "Izgūt",
     "Import" : "Ievietot",

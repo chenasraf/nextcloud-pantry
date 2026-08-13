@@ -43,6 +43,7 @@ OC.L10N.register(
     "Account" : "Уліковы запіс",
     "Role" : "Роля",
     "Danger zone" : "Небяспечная зона",
+    "Rich text" : "Фарматаваны тэкст",
     "Export to Markdown" : "Экспарт у Markdown",
     "Close" : "Закрыць",
     "Copied to clipboard" : "Скапіявана ў буфер абмену",
