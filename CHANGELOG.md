@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.27.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.26.0...v0.27.0) (2026-08-13)
+
+
+### Features
+
+* **activity:** add sidebar filter for Pantry activities ([af4c637](https://github.com/chenasraf/nextcloud-pantry/commit/af4c637fe680ec1c9e2e1628900e23d6bc13e135))
+* **checklist:** custom item order within categories ([528af2d](https://github.com/chenasraf/nextcloud-pantry/commit/528af2d28c24cb118c8345c6794cd51220300b99))
+* **checklist:** custom item order within store groups ([058cc3c](https://github.com/chenasraf/nextcloud-pantry/commit/058cc3c7d4f5df757d009a8b01edd40263c25c6f))
+* **checklist:** reset custom order to a chosen basis ([0dcc197](https://github.com/chenasraf/nextcloud-pantry/commit/0dcc19706c48d15cc327daa03e217e7f4b1838c2))
+* **checklist:** store true item order independent of checked-state ([d042904](https://github.com/chenasraf/nextcloud-pantry/commit/d04290445bbd144fe648f4d57b477a1c9f2af468))
+* **checklist:** toggle task-list checkboxes in item description ([7b69fe2](https://github.com/chenasraf/nextcloud-pantry/commit/7b69fe2f7497bf46d38a564bf300f5953ab88f53))
+* **checklist:** uncheck all items in a list ([cb3d6c2](https://github.com/chenasraf/nextcloud-pantry/commit/cb3d6c2d4e3db643b665fafc3221407e07f2c1d1))
+* **editor:** WYSIWYG Markdown editor with source toggle ([6872496](https://github.com/chenasraf/nextcloud-pantry/commit/687249667755988950e40fe8134853d9ed4a9e5f))
+* **item-editor:** inline the clear-price button on the fields row ([600bbcf](https://github.com/chenasraf/nextcloud-pantry/commit/600bbcf23f634b6119a37ba82649f8c743535a53))
+
+
+### Bug Fixes
+
+* **checklist:** stop the uncheck-all label truncating in the Done header ([3508e91](https://github.com/chenasraf/nextcloud-pantry/commit/3508e91d6b912b51d1f1079cf2f6d81a60119cf5))
+* **l10n:** Update translations from Transifex ([52f6ef7](https://github.com/chenasraf/nextcloud-pantry/commit/52f6ef7a4a4544b972326e8b2cfe67c4f9c9d210))
+* **l10n:** Update translations from Transifex ([4c646a2](https://github.com/chenasraf/nextcloud-pantry/commit/4c646a2dd1e6ba2dc61a639c5b38846a2b5608b3))
+* **l10n:** Update translations from Transifex ([86a4fff](https://github.com/chenasraf/nextcloud-pantry/commit/86a4fff277e175ef1590c0873a67482fee6774ac))
+* **l10n:** Update translations from Transifex ([dfe6313](https://github.com/chenasraf/nextcloud-pantry/commit/dfe631309fb1a9d9e20b6a4257cab87a1e1c2cf1))
+
 ## [0.26.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.25.0...v0.26.0) (2026-08-09)
 
 
