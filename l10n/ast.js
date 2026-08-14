@@ -79,6 +79,7 @@ OC.L10N.register(
     "Newest first" : "Primero lo nuevo",
     "Oldest first" : "Primero lo antiguo",
     "Store" : "Tienda",
+    "Uncheck all" : "Desmarcar too",
     "Archive" : "Archivar",
     "Export" : "Esportar",
     "Import" : "Importa",

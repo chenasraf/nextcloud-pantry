@@ -95,6 +95,7 @@ OC.L10N.register(
     "Newest first" : "الأحدث أولاً",
     "Oldest first" : "الأقدم أولاً",
     "Store" : "متجر",
+    "Uncheck all" : "إلغاء تحديد الكل",
     "Archive" : "الأرشيف",
     "Export" : "تصدير",
     "Import" : "إستيراد",

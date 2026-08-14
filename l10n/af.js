@@ -34,6 +34,7 @@ OC.L10N.register(
     "Contact" : "Kontak",
     "Newest first" : "Nuutste eerste",
     "Oldest first" : "Oudste eerste",
+    "Date added" : "Datum bygvoeg",
     "Archive" : "Argief",
     "Export" : "Voer uit",
     "Import" : "Invoer",
