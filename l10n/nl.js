@@ -120,6 +120,7 @@ OC.L10N.register(
     "Add a description" : "Voeg een omschrijving toe",
     "Remove folder" : "Map verwijderen",
     "Move to folder" : "Verplaatsen naar map",
+    "Mine" : "Mijn",
     "Load more" : "Laad meer",
     "Uncategorized" : "Niet gecategoriseerd",
     "Finish" : "Afronden"
