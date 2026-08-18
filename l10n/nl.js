@@ -88,6 +88,7 @@ OC.L10N.register(
     "Ends" : "Einde",
     "Never" : "Nooit",
     "After" : "Na",
+    "occurrences" : "gevallen",
     "On date" : "Op datum",
     "Summary" : "Samenvatting",
     "Resume" : "Hervat",
