@@ -59,6 +59,7 @@ class Capabilities implements IPublicCapability {
 					'custom-order-within-groups',
 					'barcode',
 					'item-price',
+					'item-price-per-store',
 					'shopping',
 					'photos',
 					'notes',
