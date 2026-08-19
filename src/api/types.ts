@@ -115,6 +115,19 @@ export interface Store {
   updatedAt: number
 }
 
+/**
+ * A price for an item, optionally attached to a store. A null store id is the
+ * item's store-less (default) price; there is at most one per item and at most
+ * one price per (item, store).
+ */
+export interface ItemPrice {
+  storeId: number | null
+  priceType: 'set' | 'range' | null
+  priceMin: number | null
+  priceMax: number | null
+  priceCurrency: string | null
+}
+
 export interface ChecklistItem {
   id: number
   listId: number
@@ -134,10 +147,7 @@ export interface ChecklistItem {
   imageUploadedBy: string | null
   addedBy: string | null
   barcode: string | null
-  priceType: 'set' | 'range' | null
-  priceMin: number | null
-  priceMax: number | null
-  priceCurrency: string | null
+  prices: ItemPrice[]
   sortOrder: number
   createdAt: number
   updatedAt: number

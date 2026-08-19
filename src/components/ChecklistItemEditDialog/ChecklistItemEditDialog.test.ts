@@ -55,11 +55,11 @@ vi.mock('@/components/ItemTypeSelector', () => ({
     emits: ['select-staple', 'select-one-time', 'select-recurring'],
   },
 }))
-vi.mock('@/components/PriceInput', () => ({
+vi.mock('@/components/ItemPricesEditor', () => ({
   default: {
-    name: 'PriceInput',
-    template: '<div class="mock-price-input" />',
-    props: ['modelValue', 'defaultCurrency'],
+    name: 'ItemPricesEditor',
+    template: '<div class="mock-prices-editor" />',
+    props: ['modelValue', 'houseId', 'defaultCurrency'],
     emits: ['update:modelValue'],
   },
 }))
@@ -131,10 +131,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     imageUploadedBy: null,
     addedBy: null,
     barcode: null,
-    priceType: null,
-    priceMin: null,
-    priceMax: null,
-    priceCurrency: null,
+    prices: [],
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

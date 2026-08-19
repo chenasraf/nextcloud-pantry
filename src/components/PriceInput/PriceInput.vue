@@ -1,5 +1,5 @@
 <template>
-  <div class="price-input">
+  <div class="price-input" :class="{ 'price-input--compact': compact }">
     <div class="price-input__type" role="radiogroup" :aria-label="strings.typeLabel">
       <button
         type="button"
@@ -62,7 +62,7 @@
         @update:model-value="onCurrencySelected"
       />
       <NcButton
-        v-if="hasAmount"
+        v-if="hasAmount && !compact"
         variant="tertiary"
         type="button"
         class="price-input__clear"
@@ -92,8 +92,13 @@ const props = withDefaults(
     modelValue: PriceValue
     /** Currency preselected when the item has none yet (house's last-used). */
     defaultCurrency?: string
+    /**
+     * Lay the type toggle, amount(s) and currency out on a single wrapping row
+     * (and hide the clear button) so the control fits inline in a list row.
+     */
+    compact?: boolean
   }>(),
-  { defaultCurrency: DEFAULT_CURRENCY },
+  { defaultCurrency: DEFAULT_CURRENCY, compact: false },
 )
 
 const emit = defineEmits<{
@@ -211,6 +216,35 @@ const strings = {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+
+  // Inline layout: type toggle, amount(s) and currency sit on one wrapping row
+  // so the whole control fits in a list row and only stacks when too narrow.
+  &--compact {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+
+  &--compact &__type {
+    align-self: flex-end;
+  }
+
+  // Let the amount and currency shrink so the whole control fits on one line
+  // next to a store select; they wrap before forcing the block to a new row.
+  &--compact &__fields {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  &--compact &__amount {
+    flex: 1 1 4rem;
+  }
+
+  &--compact &__currency {
+    flex: 1 1 7rem;
+    min-width: 6rem;
+  }
 
   &__type {
     display: inline-flex;

@@ -75,6 +75,14 @@ namespace OCA\Pantry;
  *     sharedOnly: bool,
  * }
  *
+ * @psalm-type PantryItemPrice = array{
+ *     storeId: int|null,
+ *     priceType: string|null,
+ *     priceMin: float|null,
+ *     priceMax: float|null,
+ *     priceCurrency: string|null,
+ * }
+ *
  * @psalm-type PantryListItem = array{
  *     id: int,
  *     listId: int,
@@ -94,10 +102,7 @@ namespace OCA\Pantry;
  *     imageUploadedBy: string|null,
  *     addedBy: string|null,
  *     barcode: string|null,
- *     priceType: string|null,
- *     priceMin: float|null,
- *     priceMax: float|null,
- *     priceCurrency: string|null,
+ *     prices: list<PantryItemPrice>,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,

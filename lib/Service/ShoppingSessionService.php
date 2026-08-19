@@ -9,6 +9,7 @@ namespace OCA\Pantry\Service;
 
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
+use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Db\ShoppingSession;
 use OCA\Pantry\Db\ShoppingSessionItem;
@@ -46,6 +47,7 @@ class ShoppingSessionService {
 		private ShoppingSessionSkipMapper $sessionSkips,
 		private ChecklistItemMapper $items,
 		private ItemStoreMapper $itemStores,
+		private ItemPriceMapper $itemPrices,
 		private ChecklistService $checklists,
 		private StoreMapper $storeMapper,
 	) {
@@ -253,14 +255,37 @@ class ShoppingSessionService {
 		// Drop items the shopper skipped from this trip (kept on the list, not
 		// marked done — the skip is session-scoped and reversible).
 		$skipped = $this->sessionSkips->findItemIdsForSession((int)$session->getId());
-		if ($skipped === []) {
-			return $items;
+		if ($skipped !== []) {
+			$skippedSet = array_fill_keys($skipped, true);
+			$items = array_values(array_filter(
+				$items,
+				static fn (ChecklistItem $item) => !isset($skippedSet[(int)$item->getId()]),
+			));
 		}
-		$skippedSet = array_fill_keys($skipped, true);
-		return array_values(array_filter(
-			$items,
-			static fn (ChecklistItem $item) => !isset($skippedSet[(int)$item->getId()]),
-		));
+		$this->attachPrices($items);
+		return $items;
+	}
+
+	/**
+	 * Attach each item's prices (bulk-loaded) so per-store resolution and
+	 * serialization have them. A lookup failure leaves items price-less rather
+	 * than failing the trip.
+	 *
+	 * @param ChecklistItem[] $items
+	 */
+	private function attachPrices(array $items): void {
+		if ($items === []) {
+			return;
+		}
+		$ids = array_map(static fn (ChecklistItem $i) => (int)$i->getId(), $items);
+		try {
+			$priceMap = $this->itemPrices->findForItems($ids);
+		} catch (\Throwable) {
+			return;
+		}
+		foreach ($items as $item) {
+			$item->setResolvedPrices($priceMap[(int)$item->getId()] ?? []);
+		}
 	}
 
 	/**
@@ -457,8 +482,10 @@ class ShoppingSessionService {
 		}
 
 		$itemIds = array_map(static fn (ShoppingSessionItem $l) => (int)$l->getItemId(), $logs);
+		$found = $this->items->findByIds($itemIds);
+		$this->attachPrices($found);
 		$itemsById = [];
-		foreach ($this->items->findByIds($itemIds) as $item) {
+		foreach ($found as $item) {
 			$itemsById[(int)$item->getId()] = $item;
 		}
 		foreach ($logs as $log) {
@@ -484,8 +511,10 @@ class ShoppingSessionService {
 			return;
 		}
 		$itemIds = array_map(static fn (ShoppingSessionItem $l) => (int)$l->getItemId(), $logs);
+		$found = $this->items->findByIds($itemIds);
+		$this->attachPrices($found);
 		$itemsById = [];
-		foreach ($this->items->findByIds($itemIds) as $item) {
+		foreach ($found as $item) {
 			$itemsById[(int)$item->getId()] = $item;
 		}
 		foreach ($logs as $log) {
@@ -493,12 +522,14 @@ class ShoppingSessionService {
 			if ($item === null) {
 				continue;
 			}
+			// Freeze the price resolved for the store the item was checked at.
+			$price = $item->priceForStore($log->getStoreId() === null ? null : (int)$log->getStoreId());
 			$log->setItemName($item->getName());
 			$log->setQuantity($item->getQuantity());
-			$log->setPriceType($item->getPriceType());
-			$log->setPriceMin($item->getPriceMin());
-			$log->setPriceMax($item->getPriceMax());
-			$log->setPriceCurrency($item->getPriceCurrency());
+			$log->setPriceType($price['priceType']);
+			$log->setPriceMin($price['priceMin']);
+			$log->setPriceMax($price['priceMax']);
+			$log->setPriceCurrency($price['priceCurrency']);
 			$this->sessionItems->update($log);
 		}
 	}
@@ -513,10 +544,17 @@ class ShoppingSessionService {
 		(new \ReflectionProperty($item, 'id'))->setValue($item, (int)$log->getItemId());
 		$item->setName((string)$log->getItemName());
 		$item->setQuantity($log->getQuantity());
-		$item->setPriceType($log->getPriceType());
-		$item->setPriceMin($log->getPriceMin());
-		$item->setPriceMax($log->getPriceMax());
-		$item->setPriceCurrency($log->getPriceCurrency());
+		// The frozen snapshot holds a single resolved price; expose it as the
+		// item's store-less price so estimate/serialize resolve it uniformly.
+		if ($log->getPriceType() !== null) {
+			$item->setResolvedPrices([[
+				'storeId' => null,
+				'priceType' => $log->getPriceType(),
+				'priceMin' => $log->getPriceMin(),
+				'priceMax' => $log->getPriceMax(),
+				'priceCurrency' => $log->getPriceCurrency(),
+			]]);
+		}
 		$item->setDone(true);
 		return $item;
 	}
@@ -533,15 +571,16 @@ class ShoppingSessionService {
 		$byStore = $this->bucketCheckedItems($session);
 		$grand = [];
 		foreach ($this->sessionStores->findBySession($sessionId) as $store) {
-			$this->foldGroupIntoTotal($byStore[(int)$store->getStoreId()] ?? [], $store, null, $grand);
-			unset($byStore[(int)$store->getStoreId()]);
+			$sid = (int)$store->getStoreId();
+			$this->foldGroupIntoTotal($byStore[$sid] ?? [], $sid, $store, null, $grand);
+			unset($byStore[$sid]);
 		}
 		if (isset($byStore['none'])) {
-			$this->foldGroupIntoTotal($byStore['none'], null, $session, $grand);
+			$this->foldGroupIntoTotal($byStore['none'], null, null, $session, $grand);
 			unset($byStore['none']);
 		}
-		foreach ($byStore as $items) {
-			$this->foldGroupIntoTotal($items, null, null, $grand);
+		foreach ($byStore as $key => $items) {
+			$this->foldGroupIntoTotal($items, $key === 'none' ? null : (int)$key, null, null, $grand);
 		}
 		return $grand;
 	}
@@ -555,7 +594,7 @@ class ShoppingSessionService {
 	 * @return array<string, mixed>
 	 */
 	private function buildReviewGroup(?int $storeId, array $items, ?ShoppingSessionStore $store, ?ShoppingSession $session, array &$grand): array {
-		$folded = $this->foldGroupIntoTotal($items, $store, $session, $grand);
+		$folded = $this->foldGroupIntoTotal($items, $storeId, $store, $session, $grand);
 		return [
 			'storeId' => $storeId,
 			'items' => $this->serializeItems($items),
@@ -573,11 +612,12 @@ class ShoppingSessionService {
 	 * render the group.
 	 *
 	 * @param ChecklistItem[] $items
+	 * @param int|null $storeId The group's store (null for the store-less group); prices resolve against it.
 	 * @param array<string, array{min: float, max: float}> $grand accumulator, by reference
 	 * @return array{estimate: array{byCurrency: array<string, array{min: float, max: float}>, noPrice: int}, billedTotal: float|null, billedCurrency: string|null}
 	 */
-	private function foldGroupIntoTotal(array $items, ?ShoppingSessionStore $store, ?ShoppingSession $session, array &$grand): array {
-		$estimate = $this->estimateForItems($items);
+	private function foldGroupIntoTotal(array $items, ?int $storeId, ?ShoppingSessionStore $store, ?ShoppingSession $session, array &$grand): array {
+		$estimate = $this->estimateForItems($items, $storeId);
 		$billedTotal = $store?->getBilledTotal() ?? $session?->getBilledTotal();
 		$billedCurrency = $store?->getBilledCurrency() ?? $session?->getBilledCurrency();
 
@@ -680,21 +720,25 @@ class ShoppingSessionService {
 	 * a point; `'range'` prices spread min..max. Quantity is ignored (free-text).
 	 * Items with no usable price are excluded and counted.
 	 *
+	 * Each item's price is resolved for the group's store (store-less fallback).
+	 *
 	 * @param ChecklistItem[] $items
+	 * @param int|null $storeId The store to resolve prices for (null = store-less).
 	 * @return array{byCurrency: array<string, array{min: float, max: float}>, noPrice: int}
 	 */
-	private function estimateForItems(array $items): array {
+	private function estimateForItems(array $items, ?int $storeId = null): array {
 		$byCurrency = [];
 		$noPrice = 0;
 		foreach ($items as $item) {
-			$type = $item->getPriceType();
-			$min = $item->getPriceMin();
+			$price = $item->priceForStore($storeId);
+			$type = $price['priceType'];
+			$min = $price['priceMin'];
 			if (($type !== 'set' && $type !== 'range') || $min === null) {
 				$noPrice++;
 				continue;
 			}
-			$max = ($type === 'range' && $item->getPriceMax() !== null) ? (float)$item->getPriceMax() : (float)$min;
-			$this->addToTotal($byCurrency, $item->getPriceCurrency() ?? '', (float)$min, $max);
+			$max = ($type === 'range' && $price['priceMax'] !== null) ? (float)$price['priceMax'] : (float)$min;
+			$this->addToTotal($byCurrency, $price['priceCurrency'] ?? '', (float)$min, $max);
 		}
 		return ['byCurrency' => $byCurrency, 'noPrice' => $noPrice];
 	}

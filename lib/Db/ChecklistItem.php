@@ -42,14 +42,6 @@ use OCP\AppFramework\Db\Entity;
  * @method void setAddedBy(?string $addedBy)
  * @method string|null getBarcode()
  * @method void setBarcode(?string $barcode)
- * @method string|null getPriceType()
- * @method void setPriceType(?string $priceType)
- * @method float|null getPriceMin()
- * @method void setPriceMin(?float $priceMin)
- * @method float|null getPriceMax()
- * @method void setPriceMax(?float $priceMax)
- * @method string|null getPriceCurrency()
- * @method void setPriceCurrency(?string $priceCurrency)
  * @method int getSortOrder()
  * @method void setSortOrder(int $sortOrder)
  * @method int getCreatedAt()
@@ -78,15 +70,19 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?string $imageUploadedBy = null;
 	protected ?string $addedBy = null;
 	protected ?string $barcode = null;
-	protected ?string $priceType = null;
-	protected ?float $priceMin = null;
-	protected ?float $priceMax = null;
-	protected ?string $priceCurrency = null;
 	protected int $sortOrder = 0;
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
 	protected ?int $deletedAt = null;
 	protected ?int $archivedAt = null;
+
+	/**
+	 * Prices resolved for this item, attached transiently by the service/controller
+	 * layer (not a DB column). Each entry is the serialized {@see ItemPrice} shape.
+	 *
+	 * @var list<array{storeId: ?int, priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}>
+	 */
+	private array $prices = [];
 
 	public function __construct() {
 		$this->addType('listId', 'integer');
@@ -97,8 +93,6 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		$this->addType('deleteOnDone', 'boolean');
 		$this->addType('nextDueAt', 'integer');
 		$this->addType('imageFileId', 'integer');
-		$this->addType('priceMin', 'float');
-		$this->addType('priceMax', 'float');
 		$this->addType('sortOrder', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
@@ -111,6 +105,54 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		$this->markFieldUpdated('done');
 		$this->markFieldUpdated('repeatFromCompletion');
 		$this->markFieldUpdated('deleteOnDone');
+	}
+
+	/**
+	 * Attach the item's resolved prices (not persisted here — prices live in
+	 * pantry_item_prices). Each entry is the serialized {@see ItemPrice} shape.
+	 *
+	 * @param list<array{storeId: ?int, priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}> $prices
+	 */
+	public function setResolvedPrices(array $prices): void {
+		$this->prices = $prices;
+	}
+
+	/**
+	 * @return list<array{storeId: ?int, priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}>
+	 */
+	public function getResolvedPrices(): array {
+		return $this->prices;
+	}
+
+	/**
+	 * The price to apply for a given store: the store's own price when set,
+	 * otherwise the store-less price, otherwise an all-null "no price". Passing
+	 * null resolves the store-less price directly.
+	 *
+	 * @return array{priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}
+	 */
+	public function priceForStore(?int $storeId): array {
+		$storeless = null;
+		foreach ($this->prices as $price) {
+			$priceStoreId = $price['storeId'] ?? null;
+			if ($storeId !== null && $priceStoreId === $storeId) {
+				return [
+					'priceType' => $price['priceType'] ?? null,
+					'priceMin' => $price['priceMin'] ?? null,
+					'priceMax' => $price['priceMax'] ?? null,
+					'priceCurrency' => $price['priceCurrency'] ?? null,
+				];
+			}
+			if ($priceStoreId === null) {
+				$storeless = $price;
+			}
+		}
+		return [
+			'priceType' => $storeless['priceType'] ?? null,
+			'priceMin' => $storeless['priceMin'] ?? null,
+			'priceMax' => $storeless['priceMax'] ?? null,
+			'priceCurrency' => $storeless['priceCurrency'] ?? null,
+		];
 	}
 
 	public function jsonSerialize(): array {
@@ -132,10 +174,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'imageUploadedBy' => $this->imageUploadedBy,
 			'addedBy' => $this->addedBy,
 			'barcode' => $this->barcode,
-			'priceType' => $this->priceType,
-			'priceMin' => $this->priceMin,
-			'priceMax' => $this->priceMax,
-			'priceCurrency' => $this->priceCurrency,
+			'prices' => $this->prices,
 			'sortOrder' => $this->sortOrder,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,

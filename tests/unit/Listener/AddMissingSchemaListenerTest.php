@@ -27,12 +27,15 @@ class AddMissingSchemaListenerTest extends TestCase {
 
 		(new AddMissingColumnsListener())->handle($event);
 
-		// archived_at (Version13) plus the price columns (Version19) that drift
-		// left missing.
+		// archived_at (Version13) plus the shopping-session snapshot columns that
+		// drift can leave missing.
 		$this->assertContains('pantry_list_items.archived_at', $declared);
-		$this->assertContains('pantry_list_items.price_type', $declared);
-		$this->assertContains('pantry_list_items.price_currency', $declared);
 		$this->assertContains('pantry_shopsess_items.item_name', $declared);
+		$this->assertContains('pantry_shopsess_items.price_type', $declared);
+		// The list_items price columns moved to pantry_item_prices, so they are no
+		// longer declared as drift-prone here.
+		$this->assertNotContains('pantry_list_items.price_type', $declared);
+		$this->assertNotContains('pantry_list_items.price_currency', $declared);
 	}
 
 	public function testColumnsListenerIgnoresUnrelatedEvents(): void {

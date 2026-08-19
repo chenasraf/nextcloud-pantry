@@ -32,9 +32,14 @@
           <span class="item-view__label">{{ strings.quantity }}:</span>
           <span>&times; {{ item.quantity }}</span>
         </div>
-        <div v-if="priceText" class="item-view__row">
+        <div v-if="priceRows.length > 0" class="item-view__row">
           <span class="item-view__label">{{ strings.price }}:</span>
-          <span>{{ priceText }}</span>
+          <span class="item-view__prices">
+            <span v-for="row in priceRows" :key="row.key" class="item-view__price">
+              <span class="item-view__price-store">{{ row.label }}</span>
+              <span>{{ row.text }}</span>
+            </span>
+          </span>
         </div>
         <div v-if="category" class="item-view__row">
           <span class="item-view__label">{{ strings.category }}:</span>
@@ -149,7 +154,22 @@ const largeUrl = computed(() =>
     : '',
 )
 
-const priceText = computed(() => formatPrice(props.item))
+// One line per price: the store-less price labeled "Any store", then each
+// per-store price labeled by its store name.
+const priceRows = computed(() =>
+  props.item.prices
+    .map((p) => ({
+      key: p.storeId ?? 'none',
+      label:
+        p.storeId == null
+          ? strings.anyStore
+          : (props.stores.find((s) => s.id === p.storeId)?.name ?? strings.store),
+      text: formatPrice(p),
+    }))
+    .filter(
+      (row): row is { key: number | string; label: string; text: string } => row.text != null,
+    ),
+)
 
 const nextRecurrence = computed(() =>
   props.item.rrule
@@ -161,6 +181,9 @@ const strings = {
   viewImage: t('pantry', 'View image'),
   quantity: t('pantry', 'Quantity'),
   price: t('pantry', 'Price'),
+  // TRANSLATORS: Label for the price that applies when no specific store is chosen
+  anyStore: t('pantry', 'Any store'),
+  store: t('pantry', 'Store'),
   category: t('pantry', 'Category'),
   // TRANSLATORS: Noun (plural), shops where this item can be bought. Detail row label.
   stores: t('pantry', 'Stores'),
@@ -238,6 +261,23 @@ const strings = {
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
+  }
+
+  &__prices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  &__price {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  &__price-store {
+    color: var(--color-text-maxcontrast);
+    font-size: 0.85rem;
   }
 }
 </style>

@@ -13,6 +13,7 @@ use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
+use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -36,6 +37,7 @@ class ChecklistService {
 		private RecurrenceService $recurrence,
 		private \OCA\Pantry\Db\ListRoleMapper $listRoleMapper,
 		private ItemStoreMapper $itemStoreMapper,
+		private ItemPriceMapper $itemPriceMapper,
 		private HouseMapper $houseMapper,
 		private IDBConnection $db,
 	) {
@@ -276,11 +278,6 @@ class ChecklistService {
 		$item->setImageFileId($this->intOrNull($data['imageFileId'] ?? null));
 		$item->setAddedBy($addedBy);
 		$item->setBarcode($this->strOrNull($data['barcode'] ?? null));
-		$price = $this->normalizePrice($data);
-		$item->setPriceType($price['priceType']);
-		$item->setPriceMin($price['priceMin']);
-		$item->setPriceMax($price['priceMax']);
-		$item->setPriceCurrency($price['priceCurrency']);
 		if (isset($data['sortOrder'])) {
 			$item->setSortOrder((int)$data['sortOrder']);
 		} else {
@@ -295,6 +292,9 @@ class ChecklistService {
 		$saved = $this->itemMapper->insert($item);
 		if (array_key_exists('storeIds', $data)) {
 			$this->itemStoreMapper->setStoresForItem((int)$saved->getId(), (array)$data['storeIds']);
+		}
+		if (array_key_exists('prices', $data)) {
+			$this->itemPriceMapper->setPricesForItem((int)$saved->getId(), $this->normalizePrices($data['prices']));
 		}
 		return $saved;
 	}
@@ -344,16 +344,6 @@ class ChecklistService {
 		if (array_key_exists('barcode', $patch)) {
 			$item->setBarcode($this->strOrNull($patch['barcode']));
 		}
-		// Price is a compound field: the presence of 'priceType' in the patch
-		// means the whole price group is being (re)set — normalize and apply all
-		// four columns together.
-		if (array_key_exists('priceType', $patch)) {
-			$price = $this->normalizePrice($patch);
-			$item->setPriceType($price['priceType']);
-			$item->setPriceMin($price['priceMin']);
-			$item->setPriceMax($price['priceMax']);
-			$item->setPriceCurrency($price['priceCurrency']);
-		}
 		if (array_key_exists('imageUploadedBy', $patch)) {
 			$v = $patch['imageUploadedBy'];
 			$item->setImageUploadedBy(is_string($v) && $v !== '' ? $v : null);
@@ -377,6 +367,10 @@ class ChecklistService {
 		$this->itemMapper->update($item);
 		if (array_key_exists('storeIds', $patch)) {
 			$this->itemStoreMapper->setStoresForItem((int)$item->getId(), (array)$patch['storeIds']);
+		}
+		// The whole price set is replaced when 'prices' is present in the patch.
+		if (array_key_exists('prices', $patch)) {
+			$this->itemPriceMapper->setPricesForItem((int)$item->getId(), $this->normalizePrices($patch['prices']));
 		}
 		return $item;
 	}
@@ -782,6 +776,10 @@ class ChecklistService {
 			(int)$saved->getId(),
 			$this->itemStoreMapper->findStoreIdsForItem((int)$source->getId()),
 		);
+		$this->itemPriceMapper->setPricesForItem(
+			(int)$saved->getId(),
+			$this->itemPriceMapper->findForItem((int)$source->getId()),
+		);
 		return $saved;
 	}
 
@@ -800,6 +798,7 @@ class ChecklistService {
 	public function permanentlyDeleteItem(int $itemId): void {
 		$item = $this->getItem($itemId, includeDeleted: true);
 		$this->itemStoreMapper->deleteByItem((int)$item->getId());
+		$this->itemPriceMapper->deleteByItem((int)$item->getId());
 		$this->itemMapper->delete($item);
 	}
 
@@ -920,17 +919,46 @@ class ChecklistService {
 	}
 
 	/**
-	 * Normalize price fields from an input array into their stored form.
+	 * Normalize a list of raw price entries into their stored form.
 	 *
-	 * Returns the four price columns. A missing/blank amount collapses the price
-	 * to "none" (all null). 'set' keeps only the min; 'range' keeps both, and
-	 * falls back to 'set' if no max is given. The currency is retained only when
-	 * a price actually exists.
+	 * Each entry is normalized individually (see {@see normalizePriceEntry}); an
+	 * entry that collapses to "no price" is dropped. Entries are keyed by store id
+	 * so at most one price survives per store, and at most one store-less price
+	 * (null store id).
+	 *
+	 * @param mixed $input a list of raw price entries
+	 * @return list<array{storeId: ?int, priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}>
+	 */
+	private function normalizePrices(mixed $input): array {
+		if (!is_array($input)) {
+			return [];
+		}
+		$byStore = [];
+		foreach ($input as $entry) {
+			if (!is_array($entry)) {
+				continue;
+			}
+			$price = $this->normalizePriceEntry($entry);
+			if ($price['priceType'] === null) {
+				continue;
+			}
+			$storeId = isset($entry['storeId']) && $entry['storeId'] !== null ? (int)$entry['storeId'] : null;
+			$byStore[$storeId === null ? 'none' : $storeId] = ['storeId' => $storeId] + $price;
+		}
+		return array_values($byStore);
+	}
+
+	/**
+	 * Normalize a single price entry into its stored form.
+	 *
+	 * A missing/blank amount collapses the price to "none" (all null). 'set' keeps
+	 * only the min; 'range' keeps both, and falls back to 'set' if no max is given.
+	 * The currency is retained only when a price actually exists.
 	 *
 	 * @param array<string, mixed> $data
 	 * @return array{priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}
 	 */
-	private function normalizePrice(array $data): array {
+	private function normalizePriceEntry(array $data): array {
 		$none = ['priceType' => null, 'priceMin' => null, 'priceMax' => null, 'priceCurrency' => null];
 
 		$type = is_string($data['priceType'] ?? null) ? $data['priceType'] : null;

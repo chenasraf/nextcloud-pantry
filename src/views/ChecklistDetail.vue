@@ -223,6 +223,7 @@
               :stores="storesFor(gi.item.storeIds)"
               :hide-category="showCategoryHeaders"
               :hide-store="showStoreHeaders"
+              :price-store-id="gi.priceStoreId"
               :list="isMeta ? listFor(gi.item.listId) : null"
               :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
               :house-id="houseIdNum"
@@ -320,6 +321,7 @@
                 :stores="storesFor(gi.item.storeIds)"
                 :hide-category="showCategoryHeaders"
                 :hide-store="showStoreHeaders"
+                :price-store-id="gi.priceStoreId"
                 :list="isMeta ? listFor(gi.item.listId) : null"
                 :list-writable="isMeta ? listWritable(listFor(gi.item.listId)) : writableHere"
                 :house-id="houseIdNum"
@@ -712,7 +714,7 @@ import { useTouchReorder } from '@/composables/useTouchReorder'
 import { useLongPress } from '@/composables/useLongPress'
 import { getList, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
-import type { Checklist, ChecklistItem, Category, Store } from '@/api/types'
+import type { Checklist, ChecklistItem, Category, Store, ItemPrice } from '@/api/types'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
 import {
   getChecklistItemSort,
@@ -1092,6 +1094,15 @@ function rememberCurrency(currency: string | null | undefined) {
   void setLastCurrency(houseIdNum.value, code).catch(() => {})
 }
 
+// Remember the currency from a saved price set, preferring the store-less price.
+function rememberCurrencyFrom(prices: ItemPrice[] | undefined) {
+  if (!prices?.length) return
+  const chosen = prices.find((p) => p.storeId == null) ?? prices[0]
+  if (chosen.priceType === 'set' || chosen.priceType === 'range') {
+    rememberCurrency(chosen.priceCurrency)
+  }
+}
+
 // List filter is only meaningful in the meta "All lists" view. Its selection is
 // persisted per house in localStorage so it survives navigation and reloads.
 const listFilterStorageKey = computed(() => `pantry:list-filter:${props.houseId}`)
@@ -1180,20 +1191,26 @@ const filteredItems = computed(() => {
   return result
 })
 
-// An item passes the price filter when its price overlaps [min, max]. A single
-// "set" price is treated as a zero-width range. When a currency is chosen, only
-// items in that currency match; otherwise amounts compare verbatim across all
-// currencies (no conversion). Items with no price never match an active filter.
-function matchesPriceFilter(item: ChecklistItem, price: PriceFilterValue): boolean {
-  if (!hasPrice(item)) return false
-  if (price.currency != null && (item.priceCurrency ?? '').toUpperCase() !== price.currency) {
+// A single price passes when it overlaps [min, max]. A "set" price is treated as
+// a zero-width range. When a currency is chosen, only prices in that currency
+// match; otherwise amounts compare verbatim across currencies (no conversion).
+function priceEntryMatches(p: ItemPrice, price: PriceFilterValue): boolean {
+  if (!hasPrice(p)) return false
+  if (price.currency != null && (p.priceCurrency ?? '').toUpperCase() !== price.currency) {
     return false
   }
-  const lo = item.priceMin!
-  const hi = item.priceType === 'range' && item.priceMax != null ? item.priceMax : lo
+  const lo = p.priceMin!
+  const hi = p.priceType === 'range' && p.priceMax != null ? p.priceMax : lo
   if (price.min != null && hi < price.min) return false
   if (price.max != null && lo > price.max) return false
   return true
+}
+
+// An item passes when any of its prices (store-less or per-store) overlaps the
+// filter, so an item priced only for a store is not hidden. Items with no price
+// never match an active filter.
+function matchesPriceFilter(item: ChecklistItem, price: PriceFilterValue): boolean {
+  return item.prices.some((p) => priceEntryMatches(p, price))
 }
 
 // ----- Partitioned items -----
@@ -1247,7 +1264,15 @@ type ListGridItem =
   // `groupKey` marks which reorder group a rendered row belongs to when the same
   // item can appear in several (store sort duplicates a multi-store item under
   // each store). Undefined in flat/custom and category sort.
-  | { type: 'item'; key: string; item: ChecklistItem; groupKey?: string }
+  // `priceStoreId` is the store the row's price chip resolves against under store
+  // grouping (null for the "No store" group); undefined outside store sort.
+  | {
+      type: 'item'
+      key: string
+      item: ChecklistItem
+      groupKey?: string
+      priceStoreId?: number | null
+    }
   | { type: 'placeholder'; key: string }
   | { type: 'header'; key: string; category: Category | null }
   | { type: 'store-header'; key: string; store: Store | null }
@@ -1349,14 +1374,26 @@ function withStoreGroups(items: ChecklistItem[], p: Partition): ListGridItem[] {
     const groupKey = storeGroupKey(store.id)
     out.push({ type: 'store-header', key: `sh-${p}-${store.id}`, store })
     for (const it of [...groupItems].sort(byStoreGroupOrder)) {
-      out.push({ type: 'item', key: `i-${p}-${store.id}-${it.id}`, item: it, groupKey })
+      out.push({
+        type: 'item',
+        key: `i-${p}-${store.id}-${it.id}`,
+        item: it,
+        groupKey,
+        priceStoreId: store.id,
+      })
     }
   }
   if (noStore.length > 0) {
     const groupKey = storeGroupKey(null)
     out.push({ type: 'store-header', key: `sh-${p}-none`, store: null })
     for (const it of [...noStore].sort(byStoreGroupOrder)) {
-      out.push({ type: 'item', key: `i-${p}-none-${it.id}`, item: it, groupKey })
+      out.push({
+        type: 'item',
+        key: `i-${p}-none-${it.id}`,
+        item: it,
+        groupKey,
+        priceStoreId: null,
+      })
     }
   }
   return out
@@ -1731,9 +1768,7 @@ async function handleAdd(
       // 'add' falls through to a normal add below.
     }
   }
-  if (input.priceType === 'set' || input.priceType === 'range') {
-    rememberCurrency(input.priceCurrency)
-  }
+  rememberCurrencyFrom(input.prices)
   adding.value = true
   try {
     const created = await add(input, targetListId ?? undefined)
@@ -1865,9 +1900,7 @@ async function handleSaveEdit(
   pendingImage: File | null,
   shouldClearImage: boolean,
 ) {
-  if (patch.priceType === 'set' || patch.priceType === 'range') {
-    rememberCurrency(patch.priceCurrency)
-  }
+  rememberCurrencyFrom(patch.prices)
   savingEdit.value = true
   try {
     await update(itemId, patch)

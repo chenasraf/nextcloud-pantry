@@ -21,12 +21,15 @@ class StoreServiceTest extends TestCase {
 	private StoreMapper $mapper;
 	/** @var ItemStoreMapper&MockObject */
 	private ItemStoreMapper $itemStoreMapper;
+	/** @var \OCA\Pantry\Db\ItemPriceMapper&MockObject */
+	private \OCA\Pantry\Db\ItemPriceMapper $itemPriceMapper;
 	private StoreService $svc;
 
 	protected function setUp(): void {
 		$this->mapper = $this->createMock(StoreMapper::class);
 		$this->itemStoreMapper = $this->createMock(ItemStoreMapper::class);
-		$this->svc = new StoreService($this->mapper, $this->itemStoreMapper);
+		$this->itemPriceMapper = $this->createMock(\OCA\Pantry\Db\ItemPriceMapper::class);
+		$this->svc = new StoreService($this->mapper, $this->itemStoreMapper, $this->itemPriceMapper);
 	}
 
 	private function makeStore(array $overrides = []): Store {

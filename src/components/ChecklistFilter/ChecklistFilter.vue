@@ -88,7 +88,7 @@ const emit = defineEmits<{
 
 const emptyPriceFilter: PriceFilterValue = { min: null, max: null, currency: null }
 const priceFilterLocal = computed(() => props.priceFilter ?? emptyPriceFilter)
-const anyPriced = computed(() => props.items.some((i) => hasPrice(i)))
+const anyPriced = computed(() => props.items.some((i) => i.prices.some((p) => hasPrice(p))))
 
 const localQuery = computed({
   get: () => props.query,
