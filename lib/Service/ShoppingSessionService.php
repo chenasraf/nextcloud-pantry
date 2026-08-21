@@ -289,6 +289,29 @@ class ShoppingSessionService {
 	}
 
 	/**
+	 * The items removed (skipped) from this trip, still live on the checklist and
+	 * recoverable via unskip. Flat array with prices attached, ordered by name so
+	 * the client can list them under a "Removed" section. Items that were since
+	 * deleted or archived off the checklist are dropped — restoring them would be
+	 * a no-op.
+	 *
+	 * @return ChecklistItem[]
+	 */
+	public function removedItemsForSession(ShoppingSession $session): array {
+		$skipped = $this->sessionSkips->findItemIdsForSession((int)$session->getId());
+		if ($skipped === []) {
+			return [];
+		}
+		$items = array_values(array_filter(
+			$this->items->findByIds($skipped),
+			static fn (ChecklistItem $item) => $item->getDeletedAt() === null && $item->getArchivedAt() === null,
+		));
+		usort($items, static fn (ChecklistItem $a, ChecklistItem $b) => strcasecmp($a->getName(), $b->getName()));
+		$this->attachPrices($items);
+		return $items;
+	}
+
+	/**
 	 * Skip an item for this trip only: hide it from the session's shopping list
 	 * without marking it done or removing it from the checklist. Idempotent.
 	 */

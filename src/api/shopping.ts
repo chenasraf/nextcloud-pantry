@@ -79,6 +79,17 @@ export async function listSessionItems(
   return resp.data ?? []
 }
 
+/** Items removed (skipped) from this trip, still on the list and recoverable. */
+export async function listRemovedSessionItems(
+  houseId: number,
+  sessionId: number,
+): Promise<ChecklistItem[]> {
+  const resp = await ocs.get<ChecklistItem[]>(
+    `/houses/${houseId}/shopping/sessions/${sessionId}/items/removed`,
+  )
+  return resp.data ?? []
+}
+
 export async function checkSessionItem(
   houseId: number,
   sessionId: number,

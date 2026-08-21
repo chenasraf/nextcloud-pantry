@@ -115,6 +115,29 @@
               />
             </ul>
           </section>
+
+          <section v-if="removedItems.length > 0" class="shop__done">
+            <button type="button" class="shop__done-toggle" @click="removedOpen = !removedOpen">
+              <ChevronDownIcon v-if="removedOpen" :size="20" />
+              <ChevronRightIcon v-else :size="20" />
+              <span class="shop__done-title">{{ removedTitle }}</span>
+            </button>
+            <ul v-if="removedOpen" class="shop__items shop__items--done">
+              <ChecklistItemRow
+                v-for="item in removedItems"
+                :key="item.id"
+                :item="item"
+                :category="categoryFor(item.categoryId)"
+                :price-store-id="session.activeStoreId"
+                :house-id="houseIdNum"
+                :list-writable="false"
+                compact
+                session-restorable
+                @session-restore="restoreItem"
+                @preview="openPreview"
+              />
+            </ul>
+          </section>
         </div>
       </div>
 
@@ -184,6 +207,7 @@ import {
   setSessionPrivacy,
   skipSessionItem,
   unskipSessionItem,
+  listRemovedSessionItems,
 } from '@/api/shopping'
 import type { Category, ChecklistItem, ShoppingPresenceEntry, ShoppingSession } from '@/api/types'
 
@@ -209,10 +233,15 @@ const doneItems = ref<ChecklistItem[]>([])
 // in-flight poll can't resurrect one between the optimistic removal and the
 // skip persisting; the server also excludes them from the item list.
 const skippedIds = ref<Set<number>>(new Set())
+// The removed items in full, shown in the collapsible "Removed" section so they
+// stay recoverable after the undo toast is gone (and across reloads — seeded
+// from the server on mount). Kept in sync with skippedIds.
+const removedItems = ref<ChecklistItem[]>([])
 const loading = ref(true)
 const busy = ref(false)
 const previewing = ref<ChecklistItem | null>(null)
 const doneOpen = ref(false)
+const removedOpen = ref(false)
 const reviewOpen = ref(false)
 const reviewMode = ref<'advance' | 'close'>('close')
 // Derived presence of housemates out shopping, refreshed on the same
@@ -256,6 +285,9 @@ const progressLabel = computed(() =>
   n('pantry', '%n in cart', '%n in cart', doneItems.value.length),
 )
 const doneTitle = computed(() => n('pantry', 'Done (%n)', 'Done (%n)', doneItems.value.length))
+const removedTitle = computed(() =>
+  n('pantry', 'Removed (%n)', 'Removed (%n)', removedItems.value.length),
+)
 
 // Client-side estimate of what's in the cart this trip, shown in the drawer
 // header. Range-aware, per-currency; the authoritative totals live in the review.
@@ -385,24 +417,40 @@ async function handleSessionRemove(id: number) {
   if (idx === -1) return
   const [item] = items.value.splice(idx, 1)
   skippedIds.value.add(id)
+  removedItems.value = [item, ...removedItems.value]
   try {
     await skipSessionItem(houseIdNum.value, sessionId, id)
   } catch (e) {
     skippedIds.value.delete(id)
+    removedItems.value = removedItems.value.filter((i) => i.id !== id)
     items.value.splice(idx, 0, item)
     showError((e as Error).message || strings.removeFailed)
     return
   }
-  showUndo(strings.removedFromTrip, async () => {
-    skippedIds.value.delete(id)
-    try {
-      await unskipSessionItem(houseIdNum.value, sessionId, id)
-      // Re-fetch so the item returns in its correct sorted position.
-      await loadItems()
-    } catch (e) {
-      showError((e as Error).message || strings.removeFailed)
-    }
+  showUndo(strings.removedFromTrip, () => {
+    void restoreItem(id)
   })
+}
+
+// Bring a removed item back onto this trip: unskip it and drop it from the
+// Removed section. Optimistic, with a revert on failure. Shared by the undo
+// toast and the Removed section's per-row restore button.
+async function restoreItem(id: number) {
+  if (!session.value) return
+  const sessionId = session.value.id
+  const idx = removedItems.value.findIndex((i) => i.id === id)
+  if (idx === -1) return
+  const [item] = removedItems.value.splice(idx, 1)
+  skippedIds.value.delete(id)
+  try {
+    await unskipSessionItem(houseIdNum.value, sessionId, id)
+    // Re-fetch so the item returns in its correct sorted position.
+    await loadItems()
+  } catch (e) {
+    skippedIds.value.add(id)
+    removedItems.value.splice(idx, 0, item)
+    showError((e as Error).message || strings.removeFailed)
+  }
 }
 
 async function goToStore(storeId: number) {
@@ -510,6 +558,15 @@ onMounted(async () => {
       doneItems.value = review.stores.flatMap((s) => s.items)
     } catch {
       // Non-critical; the drawer just starts from this view's checks.
+    }
+    // Seed the Removed section from this session's skips so removals survive a
+    // reload (the item list excludes them) and stay recoverable.
+    try {
+      const removed = await listRemovedSessionItems(houseIdNum.value, current.id)
+      removedItems.value = removed
+      skippedIds.value = new Set(removed.map((i) => i.id))
+    } catch {
+      // Non-critical; the section just starts from this view's removals.
     }
     await loadItems()
     // Seed presence immediately (also stamps our first heartbeat), then poll.

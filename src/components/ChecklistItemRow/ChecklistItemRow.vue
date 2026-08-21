@@ -204,6 +204,18 @@
         </template>
       </NcButton>
     </div>
+    <div v-if="sessionRestorable" class="checklist-row__session-remove">
+      <NcButton
+        variant="tertiary"
+        :aria-label="strings.restoreToTrip"
+        :title="strings.restoreToTrip"
+        @click="$emit('session-restore', item.id)"
+      >
+        <template #icon>
+          <DeleteRestoreIcon :size="18" />
+        </template>
+      </NcButton>
+    </div>
   </li>
 </template>
 
@@ -299,6 +311,12 @@ const props = withDefaults(
      * without deleting the checklist item. Independent of `compact`.
      */
     sessionRemovable?: boolean
+    /**
+     * Shows a single "restore to this trip" button that emits `session-restore`.
+     * The counterpart to `sessionRemovable`, used in the shopping view's Removed
+     * section to bring a skipped item back onto the current trip.
+     */
+    sessionRestorable?: boolean
   }>(),
   {
     hideCategory: false,
@@ -316,6 +334,7 @@ const props = withDefaults(
     suggestion: false,
     compact: false,
     sessionRemovable: false,
+    sessionRestorable: false,
   },
 )
 
@@ -341,6 +360,7 @@ const emit = defineEmits<{
   copy: [item: ChecklistItem]
   remove: [id: number]
   'session-remove': [id: number]
+  'session-restore': [id: number]
   restore: [id: number]
   archive: [id: number]
   unarchive: [id: number]
@@ -429,6 +449,9 @@ const strings = {
   // TRANSLATORS: Button that removes an item from the current shopping trip
   // only; it stays on the list and is not marked done.
   removeFromTrip: t('pantry', 'Remove from this trip'),
+  // TRANSLATORS: Button that brings a previously removed item back onto the
+  // current shopping trip.
+  restoreToTrip: t('pantry', 'Restore to this trip'),
   deletePermanently: t('pantry', 'Delete permanently'),
   restoreItem: t('pantry', 'Restore'),
   // TRANSLATORS: Verb. Menu action that moves this item to the archive.

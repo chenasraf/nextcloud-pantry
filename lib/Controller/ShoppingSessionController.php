@@ -204,6 +204,32 @@ final class ShoppingSessionController extends OCSController {
 	}
 
 	/**
+	 * Items removed from this shopping session
+	 *
+	 * The items skipped from this trip, still on the checklist and recoverable
+	 * via unskip. Flat array — the client renders them in a "Removed" section
+	 * with a restore action. Survives reloads (the still-to-buy list excludes
+	 * them, so without this the shopper would lose sight of them).
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>
+	 *
+	 * 200: Removed items returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/items/removed')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function removedItems(int $houseId, int $sessionId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$items = $this->sessions->removedItemsForSession($session);
+			return new DataResponse($this->serializeItems($items));
+		});
+	}
+
+	/**
 	 * Check an item off during a shopping session
 	 *
 	 * Marks the item done and records it in the session log against the active

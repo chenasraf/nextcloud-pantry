@@ -391,6 +391,43 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->svc->unskipItem($session, 10);
 	}
 
+	public function testRemovedItemsForSessionEmptyWhenNoSkips(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionSkips->method('findItemIdsForSession')->with(5)->willReturn([]);
+		$this->items->expects($this->never())->method('findByIds');
+
+		$this->assertSame([], $this->svc->removedItemsForSession($session));
+	}
+
+	public function testRemovedItemsForSessionReturnsSkippedItemsSortedByName(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionSkips->method('findItemIdsForSession')->with(5)->willReturn([11, 12]);
+		$this->items->method('findByIds')->with([11, 12])->willReturn([
+			$this->makeItem(['id' => 11, 'name' => 'Zucchini']),
+			$this->makeItem(['id' => 12, 'name' => 'Apples']),
+		]);
+
+		$result = $this->svc->removedItemsForSession($session);
+		$this->assertSame([12, 11], array_map(static fn (ChecklistItem $i) => $i->getId(), $result));
+	}
+
+	public function testRemovedItemsForSessionDropsDeletedAndArchived(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionSkips->method('findItemIdsForSession')->with(5)->willReturn([11, 12, 13]);
+		$deleted = $this->makeItem(['id' => 12, 'name' => 'Deleted']);
+		$deleted->setDeletedAt(1000);
+		$archived = $this->makeItem(['id' => 13, 'name' => 'Archived']);
+		$archived->setArchivedAt(1000);
+		$this->items->method('findByIds')->willReturn([
+			$this->makeItem(['id' => 11, 'name' => 'Live']),
+			$deleted,
+			$archived,
+		]);
+
+		$result = $this->svc->removedItemsForSession($session);
+		$this->assertSame([11], array_map(static fn (ChecklistItem $i) => $i->getId(), $result));
+	}
+
 	public function testReviewGroupsByStoreWithPerCurrencyEstimate(): void {
 		$session = $this->makeSession(['id' => 5, 'houseId' => 1]);
 		$this->sessionItems->method('findBySession')->with(5)->willReturn([
