@@ -2641,8 +2641,9 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 64px;
-    height: 64px;
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
     border-radius: 16px;
     background: var(--color-background-dark);
     color: var(--color-primary-element);
