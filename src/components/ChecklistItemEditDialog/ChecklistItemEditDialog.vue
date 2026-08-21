@@ -34,6 +34,7 @@
       <CategoryPicker
         v-model="editCategoryId"
         :house-id="houseId"
+        :list-id="item.listId"
         :label="strings.categoryLabel"
         :placeholder="strings.categoryPlaceholder"
       />

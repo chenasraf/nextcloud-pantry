@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
+use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
@@ -39,6 +40,7 @@ class ChecklistService {
 		private ItemStoreMapper $itemStoreMapper,
 		private ItemPriceMapper $itemPriceMapper,
 		private HouseMapper $houseMapper,
+		private CategoryMapper $categoryMapper,
 		private IDBConnection $db,
 	) {
 	}
@@ -183,6 +185,7 @@ class ChecklistService {
 		$list = $this->getList($listId, includeDeleted: true);
 		$this->itemMapper->deleteByList((int)$list->getId());
 		$this->listRoleMapper->deleteByList((int)$list->getId());
+		$this->categoryMapper->deleteByList((int)$list->getId());
 		$this->listMapper->delete($list);
 	}
 
@@ -194,6 +197,7 @@ class ChecklistService {
 		$removed = $this->listMapper->emptyTrashForHouse($houseId);
 		foreach ($removed as $list) {
 			$this->itemMapper->deleteByList((int)$list->getId());
+			$this->categoryMapper->deleteByList((int)$list->getId());
 		}
 	}
 

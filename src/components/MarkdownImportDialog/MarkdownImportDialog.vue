@@ -112,6 +112,7 @@
           v-if="openSection === 'category'"
           v-model="categoryId"
           :house-id="houseId"
+          :list-id="effectiveListId"
         />
         <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
         <AutoResizeTextarea
@@ -200,10 +201,13 @@ const props = withDefaults(
     // When true (the "All lists" view), the user must pick which list to import
     // into. When false, the caller supplies the target implicitly (current list).
     requireListSelector?: boolean
+    /** List in focus in single-list mode; scopes the category picker. */
+    currentListId?: number | null
     lists?: Checklist[]
   }>(),
   {
     requireListSelector: false,
+    currentListId: null,
     lists: () => [],
   },
 )
@@ -239,6 +243,12 @@ const listOptions = computed<ListOption[]>(() =>
 
 const selectedListOption = computed<ListOption | null>(
   () => listOptions.value.find((o) => o.value === targetListId.value) ?? null,
+)
+
+// List the items land on: the picked target in meta mode, else the list in
+// focus. Scopes which categories the picker offers.
+const effectiveListId = computed<number | null>(() =>
+  props.requireListSelector ? targetListId.value : props.currentListId,
 )
 
 function onListSelected(option: ListOption | null) {

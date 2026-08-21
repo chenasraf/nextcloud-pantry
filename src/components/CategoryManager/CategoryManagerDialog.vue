@@ -35,8 +35,11 @@
       </p>
       <ul v-else ref="listRef" class="pantry-cat-list">
         <template v-for="gi in gridItems" :key="gi.key">
+          <li v-if="gi.type === 'header'" class="pantry-cat-list__group">
+            {{ gi.title }}
+          </li>
           <li
-            v-if="gi.type === 'placeholder'"
+            v-else-if="gi.type === 'placeholder'"
             class="pantry-cat-list__placeholder"
             @dragover.prevent
             @drop.prevent.stop="onPlaceholderDrop"
@@ -48,10 +51,11 @@
               { 'pantry-cat-list__item--dragging': draggingId === gi.cat.id },
             ]"
             :data-drag-id="gi.cat.id"
+            :data-group-id="gi.groupId ?? ''"
             :draggable="isCustomSort ? 'true' : 'false'"
-            @dragstart="onDragStart($event, gi.cat.id)"
+            @dragstart="onDragStart($event, gi.cat.id, gi.groupId)"
             @dragend="onDragEnd"
-            @dragover.prevent="onDragOver($event, gi.cat.id)"
+            @dragover.prevent="onDragOver($event, gi.cat.id, gi.groupId)"
             @drop.prevent.stop="commitReorder"
           >
             <span
@@ -97,6 +101,7 @@
   <!-- Create/edit form -->
   <CategoryFormDialog
     :open="showForm"
+    :house-id="houseId"
     :category="editingCat"
     :saving="catSaving"
     :error="catError"
@@ -139,6 +144,7 @@ import type { Category } from '@/api/types'
 import type { CategorySort } from '@/api/prefs'
 import { getCategorySort, setCategorySort } from '@/api/prefs'
 import { useCategories } from '@/composables/useCategories'
+import { useChecklists } from '@/composables/useChecklist'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import CategoryFormDialog from './CategoryFormDialog.vue'
@@ -147,11 +153,53 @@ const props = defineProps<{ open: boolean; houseId: number }>()
 const emit = defineEmits<{
   'update:open': [value: boolean]
   'sort-changed': []
+  // A mutation that may have cleared category_id on items server-side (a scope
+  // change re-homes a category and detaches items on other lists; a delete
+  // detaches every item). The parent should refetch its items.
+  'items-affected': []
 }>()
 
 const categories = useCategories(props.houseId)
 const catItems = computed(() => categories.items.value)
 const catLoading = computed(() => categories.loading.value)
+
+const { lists, load: loadLists } = useChecklists(props.houseId)
+
+// Categories grouped by their list scope: globals first, then one group per
+// list that has categories, in the lists' own display order. Grouping is purely
+// visual — sort_order stays a single house-wide sequence.
+interface CategoryGroup {
+  listId: number | null
+  title: string
+  cats: Category[]
+}
+const groups = computed<CategoryGroup[]>(() => {
+  const byList = new Map<number, Category[]>()
+  const globals: Category[] = []
+  for (const c of catItems.value) {
+    if (c.listId == null) {
+      globals.push(c)
+    } else {
+      const arr = byList.get(c.listId) ?? []
+      arr.push(c)
+      byList.set(c.listId, arr)
+    }
+  }
+  const out: CategoryGroup[] = []
+  if (globals.length) out.push({ listId: null, title: strings.globalGroup, cats: globals })
+  for (const l of lists.value) {
+    const cats = byList.get(l.id)
+    if (cats && cats.length) out.push({ listId: l.id, title: l.name, cats })
+  }
+  // Categories whose list is not currently loaded (defensive; keeps them visible).
+  for (const [lid, cats] of byList) {
+    if (!lists.value.some((l) => l.id === lid)) {
+      out.push({ listId: lid, title: t('pantry', 'List #{id}', { id: String(lid) }), cats })
+    }
+  }
+  return out
+})
+const showGroups = computed(() => groups.value.length > 1)
 
 const currentSort = ref<CategorySort>('name_asc')
 const isCustomSort = computed(() => currentSort.value === 'custom')
@@ -184,7 +232,7 @@ watch(
     if (isOpen) {
       sortDirty.value = false
       await loadSortPref()
-      await categories.load()
+      await Promise.all([categories.load(), loadLists()])
     } else if (wasOpen && sortDirty.value) {
       sortDirty.value = false
       emit('sort-changed')
@@ -196,33 +244,50 @@ watch(
 // -------- Drag & drop reorder --------
 
 type ListGridItem =
-  | { type: 'cat'; key: string; cat: Category }
+  | { type: 'header'; key: string; title: string }
+  | { type: 'cat'; key: string; cat: Category; groupId: number | null }
   | { type: 'placeholder'; key: string }
 
 const draggingId = ref<number | null>(null)
+// Reordering is confined to the dragged category's own group; a null group is
+// the global scope.
+const draggingGroupId = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
 const listRef = ref<HTMLElement | null>(null)
 
 const gridItems = computed<ListGridItem[]>(() => {
-  const source = catItems.value
-  if (!isCustomSort.value || draggingId.value === null || dropIndex.value === null) {
-    return source.map((c) => ({ type: 'cat' as const, key: 'c-' + c.id, cat: c }))
-  }
+  const out: ListGridItem[] = []
   const dragId = draggingId.value
-  const without = source.filter((c) => c.id !== dragId)
-  const out: ListGridItem[] = without.map((c) => ({
-    type: 'cat' as const,
-    key: 'c-' + c.id,
-    cat: c,
-  }))
-  const clamped = Math.min(dropIndex.value, out.length)
-  out.splice(clamped, 0, { type: 'placeholder', key: 'drop-placeholder' })
+  const dropAt = dropIndex.value
+  const dragging = isCustomSort.value && dragId !== null && dropAt !== null
+  for (const g of groups.value) {
+    if (showGroups.value) {
+      out.push({ type: 'header', key: 'h-' + String(g.listId), title: g.title })
+    }
+    if (dragging && draggingGroupId.value === g.listId) {
+      const without = g.cats.filter((c) => c.id !== dragId)
+      const rows: ListGridItem[] = without.map((c) => ({
+        type: 'cat' as const,
+        key: 'c-' + c.id,
+        cat: c,
+        groupId: g.listId,
+      }))
+      const clamped = Math.min(dropAt as number, rows.length)
+      rows.splice(clamped, 0, { type: 'placeholder', key: 'drop-placeholder' })
+      out.push(...rows)
+    } else {
+      for (const c of g.cats) {
+        out.push({ type: 'cat', key: 'c-' + c.id, cat: c, groupId: g.listId })
+      }
+    }
+  }
   return out
 })
 
-function onDragStart(e: DragEvent, id: number) {
+function onDragStart(e: DragEvent, id: number, groupId: number | null) {
   if (!isCustomSort.value || !e.dataTransfer) return
   draggingId.value = id
+  draggingGroupId.value = groupId
   dropIndex.value = null
   e.dataTransfer.effectAllowed = 'move'
   // Some browsers refuse to start a drag without data — set anything.
@@ -231,13 +296,23 @@ function onDragStart(e: DragEvent, id: number) {
 
 function onDragEnd() {
   draggingId.value = null
+  draggingGroupId.value = null
   dropIndex.value = null
 }
 
-function computeDropIndex(hoveredId: number, clientY: number, target: HTMLElement | null) {
+function computeDropIndex(
+  hoveredId: number,
+  hoveredGroupId: number | null,
+  clientY: number,
+  target: HTMLElement | null,
+) {
   const dragId = draggingId.value
   if (!dragId || dragId === hoveredId) return
-  const without = catItems.value.filter((c) => c.id !== dragId)
+  // Only reorder within the same group; ignore hovers over other groups.
+  if (hoveredGroupId !== draggingGroupId.value) return
+  const group = groups.value.find((g) => g.listId === draggingGroupId.value)
+  if (!group) return
+  const without = group.cats.filter((c) => c.id !== dragId)
   const idx = without.findIndex((c) => c.id === hoveredId)
   if (idx === -1) return
   if (target) {
@@ -249,8 +324,8 @@ function computeDropIndex(hoveredId: number, clientY: number, target: HTMLElemen
   }
 }
 
-function onDragOver(e: DragEvent, hoveredId: number) {
-  computeDropIndex(hoveredId, e.clientY, e.currentTarget as HTMLElement | null)
+function onDragOver(e: DragEvent, hoveredId: number, hoveredGroupId: number | null) {
+  computeDropIndex(hoveredId, hoveredGroupId, e.clientY, e.currentTarget as HTMLElement | null)
 }
 
 function onPlaceholderDrop() {
@@ -260,19 +335,28 @@ function onPlaceholderDrop() {
 async function commitReorder() {
   const dragId = draggingId.value
   const idx = dropIndex.value
+  const groupId = draggingGroupId.value
   draggingId.value = null
+  draggingGroupId.value = null
   dropIndex.value = null
   if (dragId === null || idx === null) return
 
-  const source = catItems.value
-  const dragged = source.find((c) => c.id === dragId)
-  if (!dragged) return
+  const group = groups.value.find((g) => g.listId === groupId)
+  const dragged = group?.cats.find((c) => c.id === dragId)
+  if (!group || !dragged) return
 
-  const without = source.filter((c) => c.id !== dragId)
+  const without = group.cats.filter((c) => c.id !== dragId)
   const clamped = Math.min(idx, without.length)
-  const reordered = [...without]
-  reordered.splice(clamped, 0, dragged)
-  const entries = reordered.map((c, n) => ({ id: c.id, sortOrder: n }))
+  const newGroupCats = [...without]
+  newGroupCats.splice(clamped, 0, dragged)
+
+  // Renumber the whole house-wide sequence, substituting the reordered group,
+  // so sort_order stays a single coherent order that also keeps groups intact.
+  const flat: Category[] = []
+  for (const g of groups.value) {
+    flat.push(...(g.listId === groupId ? newGroupCats : g.cats))
+  }
+  const entries = flat.map((c, n) => ({ id: c.id, sortOrder: n }))
   sortDirty.value = true
   await categories.reorder(entries)
 }
@@ -299,15 +383,18 @@ useTouchReorder(
   {
     onDragStart: (id) => {
       draggingId.value = id
+      draggingGroupId.value = catItems.value.find((c) => c.id === id)?.listId ?? null
       dropIndex.value = null
     },
     onReorderOver(hoveredId, _clientX, clientY) {
       const el = listRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
-      computeDropIndex(hoveredId, clientY, el)
+      const hoveredGroupId = catItems.value.find((c) => c.id === hoveredId)?.listId ?? null
+      computeDropIndex(hoveredId, hoveredGroupId, clientY, el)
     },
     onDrop: commitReorder,
     onCancel() {
       draggingId.value = null
+      draggingGroupId.value = null
       dropIndex.value = null
     },
   },
@@ -350,12 +437,20 @@ const deleteCatConfirmBody = computed(() =>
   }),
 )
 
-async function submitForm(data: { name: string; icon: string; color: string }) {
+async function submitForm(data: {
+  name: string
+  icon: string
+  color: string
+  listId: number | null
+}) {
   catSaving.value = true
   catError.value = null
   try {
     if (editingCat.value) {
+      // A scope change detaches this category from items on other lists.
+      const scopeChanged = editingCat.value.listId !== data.listId
       await categories.update(editingCat.value.id, data)
+      if (scopeChanged) emit('items-affected')
     } else {
       await categories.create(data)
     }
@@ -377,6 +472,8 @@ async function submitDeleteCat() {
   if (!target) return
   await categories.remove(target.id)
   deletingCat.value = null
+  // Deleting a category clears it off every item that referenced it.
+  emit('items-affected')
 }
 
 const strings = {
@@ -390,6 +487,8 @@ const strings = {
   deleteCategoryTitle: t('pantry', 'Delete category'),
   sortLabel: t('pantry', 'Sort order'),
   dragHandle: t('pantry', 'Drag to reorder'),
+  // TRANSLATORS: Header for categories available on every list (not tied to one list)
+  globalGroup: t('pantry', 'All lists'),
 }
 </script>
 
@@ -415,6 +514,19 @@ const strings = {
   list-style: none;
   padding: 0;
   margin: 0 0 1rem 0;
+
+  &__group {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-maxcontrast);
+    padding: 0.75rem 0 0.25rem 0;
+
+    &:first-child {
+      padding-top: 0.25rem;
+    }
+  }
 
   &__item {
     display: flex;

@@ -12,6 +12,8 @@ use OCP\AppFramework\Db\Entity;
 /**
  * @method int getHouseId()
  * @method void setHouseId(int $houseId)
+ * @method ?int getListId()
+ * @method void setListId(?int $listId)
  * @method string getName()
  * @method void setName(string $name)
  * @method string getIcon()
@@ -27,6 +29,7 @@ use OCP\AppFramework\Db\Entity;
  */
 class Category extends Entity implements \JsonSerializable {
 	protected int $houseId = 0;
+	protected ?int $listId = null;
 	protected string $name = '';
 	protected string $icon = '';
 	protected string $color = '';
@@ -36,6 +39,7 @@ class Category extends Entity implements \JsonSerializable {
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
+		$this->addType('listId', 'integer');
 		$this->addType('sortOrder', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
@@ -45,6 +49,7 @@ class Category extends Entity implements \JsonSerializable {
 		return [
 			'id' => $this->id,
 			'houseId' => $this->houseId,
+			'listId' => $this->listId,
 			'name' => $this->name,
 			'icon' => $this->icon,
 			'color' => $this->color,

@@ -1,7 +1,7 @@
 <template>
   <div class="category-chip-list">
     <PantryChip
-      v-for="cat in items"
+      v-for="cat in visibleItems"
       :key="cat.id"
       :variant="modelValue === cat.id ? 'primary' : 'secondary'"
       class="category-chip-list__chip"
@@ -21,6 +21,8 @@
 
     <CategoryFormDialog
       :open="showCreate"
+      :house-id="houseId"
+      :default-list-id="listId ?? null"
       :saving="saving"
       :error="createError"
       @update:open="showCreate = $event"
@@ -30,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import PlusIcon from '@icons/Plus.vue'
 import PantryChip from '@/components/PantryChip'
@@ -41,13 +43,27 @@ import CategoryFormDialog from '@/components/CategoryManager/CategoryFormDialog.
 const props = defineProps<{
   houseId: number
   modelValue: number | null
+  /** List in context; only this list's categories plus globals are offered. */
+  listId?: number | null
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | null]
 }>()
 
-const { items, load, create } = useCategories(props.houseId)
+const { items, load, create, categoriesForList } = useCategories(props.houseId)
+
+// Keep the currently-selected category visible even if it falls outside the
+// list scope (e.g. it was assigned before the list binding), so its chip still
+// reflects the selection.
+const visibleItems = computed(() => {
+  const scoped = categoriesForList(props.listId ?? null)
+  if (props.modelValue != null && !scoped.some((c) => c.id === props.modelValue)) {
+    const selected = items.value.find((c) => c.id === props.modelValue)
+    if (selected) return [...scoped, selected]
+  }
+  return scoped
+})
 
 onMounted(() => {
   void load()
@@ -77,7 +93,12 @@ function openCreate() {
   showCreate.value = true
 }
 
-async function submitCreate(data: { name: string; icon: string; color: string }) {
+async function submitCreate(data: {
+  name: string
+  icon: string
+  color: string
+  listId: number | null
+}) {
   saving.value = true
   createError.value = null
   try {

@@ -39,6 +39,7 @@ function item(partial: Partial<ChecklistItem>): ChecklistItem {
 const produce: Category = {
   id: 10,
   houseId: 1,
+  listId: null,
   name: 'Produce',
   icon: 'food-apple',
   color: '#00ff00',

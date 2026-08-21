@@ -121,6 +121,7 @@ namespace OCA\Pantry;
  * @psalm-type PantryCategory = array{
  *     id: int,
  *     houseId: int,
+ *     listId: int|null,
  *     name: string,
  *     icon: PantryCategoryIcon,
  *     color: PantryCategoryColor,

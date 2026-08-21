@@ -98,6 +98,7 @@
         v-if="openSection === 'category'"
         v-model="categoryId"
         :house-id="houseId"
+        :list-id="effectiveListId"
       />
 
       <StoreChipList v-else-if="openSection === 'stores'" v-model="storeIds" :house-id="houseId" />
@@ -305,6 +306,12 @@ const selectedListOption = computed<ListOption | null>(
   () => listOptions.value.find((o) => o.value === targetListId.value) ?? null,
 )
 
+// The list the new item lands on: the picked target in meta "All lists" mode,
+// otherwise the list in focus. Drives category scoping and reuse suggestions.
+const effectiveListId = computed<number | null>(() =>
+  props.requireListSelector ? targetListId.value : props.currentListId,
+)
+
 function onListSelected(option: ListOption | null) {
   targetListId.value = option?.value ?? null
 }
@@ -324,7 +331,7 @@ const imageInputRef = ref<HTMLInputElement | null>(null)
 const userPickedType = ref(false)
 
 // Categories are loaded so the chip can show the selected category's name/icon.
-const { items: categories, load: loadCategories } = useCategories(props.houseId)
+const { items: categories, load: loadCategories, categoriesForList } = useCategories(props.houseId)
 void loadCategories()
 
 const { items: stores, load: loadStores } = useStores(props.houseId)
@@ -458,8 +465,11 @@ function onBarcodeResolved(ean: string, result: BarcodeResult | null) {
  * own categories, reusing the fuzzball scorer used for reuse suggestions.
  */
 function matchCategory(hint: string | null): Category | null {
-  if (!hint || categories.value.length === 0) return null
-  const results = extract(hint, categories.value, {
+  // Only auto-assign a category the target list actually offers (its own scoped
+  // categories plus globals) so a barcode never pulls in another list's category.
+  const candidates = categoriesForList(effectiveListId.value)
+  if (!hint || candidates.length === 0) return null
+  const results = extract(hint, candidates, {
     processor: (c: Category) => c.name,
     scorer: token_set_ratio,
     limit: 1,
@@ -626,9 +636,7 @@ function chipVariant(chip: Chip): 'primary' | 'secondary' | 'tertiary' {
 
 // Candidates on the list the new item would be added to: the picked target in
 // meta mode, otherwise the list in focus.
-const reuseTargetListId = computed<number | null>(() =>
-  props.requireListSelector ? targetListId.value : props.currentListId,
-)
+const reuseTargetListId = effectiveListId
 
 const reuseMatches = computed<ChecklistItem[]>(() => {
   // Never in bulk mode, only while typing a name, and never while a meta tray

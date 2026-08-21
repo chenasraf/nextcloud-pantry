@@ -144,6 +144,7 @@ vi.mock('@/composables/useCategories', () => ({
   useCategories: () => ({
     items: { value: [] },
     load: vi.fn().mockResolvedValue(undefined),
+    categoriesForList: () => [],
   }),
 }))
 vi.mock('@/composables/useStores', () => ({

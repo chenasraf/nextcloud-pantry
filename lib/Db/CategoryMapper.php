@@ -74,17 +74,38 @@ class CategoryMapper extends QBMapper {
 		return $this->findEntity($qb);
 	}
 
-	public function findByHouseAndName(int $houseId, string $name): ?Category {
+	/**
+	 * Find a category by name within a single scope. The scope is a house plus
+	 * a list: a null $listId matches the house-global scope, a set $listId
+	 * matches that list's own scope. Used to enforce per-scope name uniqueness.
+	 */
+	public function findByHouseListAndName(int $houseId, ?int $listId, string $name): ?Category {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->eq('name', $qb->createNamedParameter($name, IQueryBuilder::PARAM_STR)));
+		if ($listId === null) {
+			$qb->andWhere($qb->expr()->isNull('list_id'));
+		} else {
+			$qb->andWhere($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+		}
 		try {
 			return $this->findEntity($qb);
 		} catch (DoesNotExistException) {
 			return null;
 		}
+	}
+
+	/**
+	 * Delete every category scoped to the given list. Global categories
+	 * (null list_id) are untouched. Used when a list is permanently removed.
+	 */
+	public function deleteByList(int $listId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
 	}
 
 	public function deleteByHouse(int $houseId): void {
@@ -102,6 +123,20 @@ class CategoryMapper extends QBMapper {
 		$qb->update(Application::tableName('list_items'))
 			->set('category_id', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
 			->where($qb->expr()->eq('category_id', $qb->createNamedParameter($categoryId, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * Clear category_id on items that reference the category but live on a
+	 * different list than the given one. Used when a category becomes scoped to
+	 * a single list: items on other lists can no longer carry it.
+	 */
+	public function detachFromItemsNotInList(int $categoryId, int $listId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update(Application::tableName('list_items'))
+			->set('category_id', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+			->where($qb->expr()->eq('category_id', $qb->createNamedParameter($categoryId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->neq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
 		$qb->executeStatement();
 	}
 }

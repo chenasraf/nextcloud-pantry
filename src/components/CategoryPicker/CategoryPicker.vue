@@ -46,6 +46,8 @@
 
     <CategoryFormDialog
       :open="showCreate"
+      :house-id="houseId"
+      :default-list-id="listId ?? null"
       :saving="saving"
       :error="createError"
       @update:open="showCreate = $event"
@@ -68,6 +70,8 @@ import type { Category } from '@/api/types'
 const props = defineProps<{
   houseId: number
   modelValue: number | null
+  /** List in context; the picker offers this list's categories plus globals. */
+  listId?: number | null
   label?: string
   placeholder?: string
 }>()
@@ -75,7 +79,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', v: number | null): void
 }>()
 
-const { items, load, create } = useCategories(props.houseId)
+const { items, load, create, categoriesForList } = useCategories(props.houseId)
 
 interface SelectOption {
   label: string
@@ -97,7 +101,7 @@ watch(
 )
 
 const options = computed<SelectOption[]>(() => {
-  const categoryOptions: SelectOption[] = items.value.map((c) => ({
+  const categoryOptions: SelectOption[] = categoriesForList(props.listId ?? null).map((c) => ({
     label: c.name,
     id: c.id,
     category: c,
@@ -144,7 +148,12 @@ function openCreate() {
   showCreate.value = true
 }
 
-async function submitCreate(data: { name: string; icon: string; color: string }) {
+async function submitCreate(data: {
+  name: string
+  icon: string
+  color: string
+  listId: number | null
+}) {
   saving.value = true
   createError.value = null
   try {

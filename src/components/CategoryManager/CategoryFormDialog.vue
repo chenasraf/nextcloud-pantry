@@ -13,6 +13,19 @@
         autocomplete="off"
       />
       <div>
+        <label class="pantry-cat-form__sub">{{ strings.listLabel }}</label>
+        <NcSelect
+          v-model="listSelection"
+          :options="listOptions"
+          :clearable="false"
+          :input-label="''"
+          label="label"
+          :aria-label-combobox="strings.listLabel"
+          :calculate-position="ncSelectCalculatePosition"
+        />
+        <p class="pantry-cat-form__hint">{{ strings.listHint }}</p>
+      </div>
+      <div>
         <label class="pantry-cat-form__sub">{{ strings.iconLabel }}</label>
         <div class="pantry-cat-form__icon-grid">
           <button
@@ -56,12 +69,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import type { Category } from '@/api/types'
+import { useChecklists } from '@/composables/useChecklist'
+import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
 import {
   CATEGORY_COLORS,
   CATEGORY_ICONS,
@@ -70,20 +86,60 @@ import {
 
 const props = defineProps<{
   open: boolean
+  houseId: number
   /** Existing category to edit, or null/undefined to create a new one. */
   category?: Category | null
+  /** Default list scope for a new category (e.g. the list currently in context). */
+  defaultListId?: number | null
   saving?: boolean
   error?: string | null
 }>()
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [data: { name: string; icon: string; color: string }]
+  save: [data: { name: string; icon: string; color: string; listId: number | null }]
 }>()
+
+// Declared before the list-scope refs below because a ref() initializer and the
+// immediate watch read `strings` synchronously during setup.
+const strings = {
+  createTitle: t('pantry', 'New category'),
+  editTitle: t('pantry', 'Edit category'),
+  nameLabel: t('pantry', 'Name'),
+  namePlaceholder: t('pantry', 'e.g. Produce, Dairy'),
+  iconLabel: t('pantry', 'Icon:'),
+  colorLabel: t('pantry', 'Color:'),
+  listLabel: t('pantry', 'List:'),
+  // TRANSLATORS: Option in a dropdown; a global category is offered on every list
+  globalOption: t('pantry', 'All lists (global)'),
+  listHint: t('pantry', 'Choose a list to show this category only there, or keep it global.'),
+  cancel: t('pantry', 'Cancel'),
+  create: t('pantry', 'Create'),
+  save: t('pantry', 'Save'),
+  saving: t('pantry', 'Saving …'),
+}
 
 const nameValue = ref('')
 const iconValue = ref<string>(DEFAULT_CATEGORY_ICON_KEY)
 const colorValue = ref<string>(CATEGORY_COLORS[3]!)
+
+// ----- List scope -----
+interface ListOption {
+  label: string
+  listId: number | null
+}
+const { lists, load: loadLists } = useChecklists(props.houseId)
+
+onMounted(() => {
+  void loadLists()
+})
+
+const globalOption = computed<ListOption>(() => ({ label: strings.globalOption, listId: null }))
+const listOptions = computed<ListOption[]>(() => [
+  globalOption.value,
+  ...lists.value.map((l) => ({ label: l.name, listId: l.id })),
+])
+const listSelection = ref<ListOption>(globalOption.value)
 
 watch(
   () => props.open,
@@ -93,35 +149,35 @@ watch(
         nameValue.value = props.category.name
         iconValue.value = props.category.icon
         colorValue.value = props.category.color
+        listSelection.value = optionForListId(props.category.listId)
       } else {
         nameValue.value = ''
         iconValue.value = DEFAULT_CATEGORY_ICON_KEY
         colorValue.value = CATEGORY_COLORS[3]!
+        listSelection.value = optionForListId(props.defaultListId ?? null)
       }
     }
   },
   { immediate: true },
 )
 
+function optionForListId(listId: number | null): ListOption {
+  if (listId == null) return globalOption.value
+  const list = lists.value.find((l) => l.id === listId)
+  return { label: list?.name ?? String(listId), listId }
+}
+
 const dialogName = computed(() => (props.category ? strings.editTitle : strings.createTitle))
 
 function submit() {
   const name = nameValue.value.trim()
   if (!name) return
-  emit('save', { name, icon: iconValue.value, color: colorValue.value })
-}
-
-const strings = {
-  createTitle: t('pantry', 'New category'),
-  editTitle: t('pantry', 'Edit category'),
-  nameLabel: t('pantry', 'Name'),
-  namePlaceholder: t('pantry', 'e.g. Produce, Dairy'),
-  iconLabel: t('pantry', 'Icon:'),
-  colorLabel: t('pantry', 'Color:'),
-  cancel: t('pantry', 'Cancel'),
-  create: t('pantry', 'Create'),
-  save: t('pantry', 'Save'),
-  saving: t('pantry', 'Saving …'),
+  emit('save', {
+    name,
+    icon: iconValue.value,
+    color: colorValue.value,
+    listId: listSelection.value?.listId ?? null,
+  })
 }
 </script>
 
@@ -190,6 +246,12 @@ const strings = {
       border-color: var(--color-main-text);
       transform: scale(1.1);
     }
+  }
+
+  &__hint {
+    font-size: 0.8rem;
+    color: var(--color-text-maxcontrast);
+    margin: 0.35rem 0 0 0;
   }
 
   &__error {

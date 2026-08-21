@@ -54,6 +54,7 @@ class Capabilities implements IPublicCapability {
 					'checklist-all-view',
 					'categories',
 					'category-sort',
+					'category-lists',
 					'stores',
 					'store-sort',
 					'custom-order-within-groups',

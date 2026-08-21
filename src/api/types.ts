@@ -83,6 +83,7 @@ export interface Checklist {
 export interface Category {
   id: number
   houseId: number
+  listId: number | null
   name: string
   icon: string
   color: string

@@ -9,12 +9,14 @@ namespace OCA\Pantry\Service;
 
 use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\CategoryMapper;
+use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
 class CategoryService {
 	public function __construct(
 		private CategoryMapper $mapper,
+		private ChecklistMapper $listMapper,
 	) {
 	}
 
@@ -59,21 +61,23 @@ class CategoryService {
 		}
 	}
 
-	public function create(int $houseId, string $name, string $icon, string $color): Category {
+	public function create(int $houseId, string $name, string $icon, string $color, ?int $listId = null): Category {
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('Category name cannot be empty');
 		}
 		$icon = $this->normalizeIcon($icon);
 		$color = $this->normalizeColor($color);
+		$listId = $this->normalizeListId($houseId, $listId);
 
-		if ($this->mapper->findByHouseAndName($houseId, $name) !== null) {
+		if ($this->mapper->findByHouseListAndName($houseId, $listId, $name) !== null) {
 			throw new \InvalidArgumentException('A category with this name already exists');
 		}
 
 		$now = time();
 		$cat = new Category();
 		$cat->setHouseId($houseId);
+		$cat->setListId($listId);
 		$cat->setName($name);
 		$cat->setIcon($icon);
 		$cat->setColor($color);
@@ -90,19 +94,34 @@ class CategoryService {
 
 	public function update(int $categoryId, array $patch): Category {
 		$cat = $this->get($categoryId);
+
+		$targetName = $cat->getName();
 		if (isset($patch['name'])) {
-			$name = trim((string)$patch['name']);
-			if ($name === '') {
+			$targetName = trim((string)$patch['name']);
+			if ($targetName === '') {
 				throw new \InvalidArgumentException('Category name cannot be empty');
 			}
-			if ($name !== $cat->getName()) {
-				$existing = $this->mapper->findByHouseAndName($cat->getHouseId(), $name);
-				if ($existing !== null && (int)$existing->getId() !== $categoryId) {
-					throw new \InvalidArgumentException('A category with this name already exists');
-				}
-			}
-			$cat->setName($name);
 		}
+		$originalListId = $cat->getListId();
+		$targetListId = $cat->getListId();
+		// A key present with a null value moves the category to the global scope,
+		// so key existence (not isset) decides whether the scope is being changed.
+		if (array_key_exists('listId', $patch)) {
+			$targetListId = $this->normalizeListId(
+				$cat->getHouseId(),
+				$patch['listId'] === null ? null : (int)$patch['listId'],
+			);
+		}
+
+		if ($targetName !== $cat->getName() || $targetListId !== $cat->getListId()) {
+			$existing = $this->mapper->findByHouseListAndName($cat->getHouseId(), $targetListId, $targetName);
+			if ($existing !== null && (int)$existing->getId() !== $categoryId) {
+				throw new \InvalidArgumentException('A category with this name already exists');
+			}
+		}
+		$cat->setName($targetName);
+		$cat->setListId($targetListId);
+
 		if (isset($patch['icon'])) {
 			$cat->setIcon($this->normalizeIcon((string)$patch['icon']));
 		}
@@ -114,6 +133,13 @@ class CategoryService {
 		}
 		$cat->setUpdatedAt(time());
 		$this->mapper->update($cat);
+
+		// Scoping a category to a single list orphans it from items on other
+		// lists: those items can no longer carry it, so clear their category.
+		// (Becoming global is always valid everywhere, so nothing to detach.)
+		if ($targetListId !== null && $targetListId !== $originalListId) {
+			$this->mapper->detachFromItemsNotInList($categoryId, $targetListId);
+		}
 		return $cat;
 	}
 
@@ -135,6 +161,25 @@ class CategoryService {
 			throw new NotFoundException('Category does not belong to this house');
 		}
 		return $cat;
+	}
+
+	/**
+	 * A null list keeps the category global. A set list must belong to the same
+	 * house, otherwise a category could leak across houses.
+	 */
+	private function normalizeListId(int $houseId, ?int $listId): ?int {
+		if ($listId === null) {
+			return null;
+		}
+		try {
+			$list = $this->listMapper->findById($listId, includeDeleted: true);
+		} catch (DoesNotExistException) {
+			throw new \InvalidArgumentException('List not found');
+		}
+		if ($list->getHouseId() !== $houseId) {
+			throw new \InvalidArgumentException('List does not belong to this house');
+		}
+		return $listId;
 	}
 
 	private function normalizeIcon(string $icon): string {

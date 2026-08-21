@@ -401,6 +401,7 @@
       :house-id="houseIdNum"
       @update:open="showCategoryManager = $event"
       @sort-changed="onCategorySortChanged"
+      @items-affected="load"
     />
 
     <StoreViewDialog
@@ -487,7 +488,11 @@
       @update:open="(v) => !v && (showBulkCategory = false)"
     >
       <div class="pantry-bulk-category">
-        <CategoryPicker v-model="bulkCategoryId" :house-id="houseIdNum" />
+        <CategoryPicker
+          v-model="bulkCategoryId"
+          :house-id="houseIdNum"
+          :list-id="isMeta ? null : listIdNum"
+        />
       </div>
       <template #actions>
         <NcButton @click="showBulkCategory = false">{{ strings.cancel }}</NcButton>
@@ -641,6 +646,7 @@
       :importing="importing"
       :reuse-pref="reuseExistingItems"
       :require-list-selector="isMeta"
+      :current-list-id="isMeta ? null : listIdNum"
       :lists="isMeta ? allLists : []"
       @import="handleImportItems"
     />

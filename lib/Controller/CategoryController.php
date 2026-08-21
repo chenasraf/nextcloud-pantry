@@ -71,6 +71,7 @@ final class CategoryController extends OCSController {
 	 * @param string $name Category name.
 	 * @param string $icon Icon key from the palette.
 	 * @param string $color Hex color (e.g. "#4caf50").
+	 * @param int|null $listId List to scope the category to, or null for a global category.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryCategory, array{}>
 	 *
@@ -79,10 +80,10 @@ final class CategoryController extends OCSController {
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/categories')]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
-	public function create(int $houseId, string $name, string $icon, string $color): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $icon, $color): DataResponse {
+	public function create(int $houseId, string $name, string $icon, string $color, ?int $listId = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $icon, $color, $listId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
-			$cat = $this->categories->create($houseId, $name, $icon, $color);
+			$cat = $this->categories->create($houseId, $name, $icon, $color, $listId);
 			return new DataResponse($cat->jsonSerialize());
 		});
 	}
@@ -96,6 +97,7 @@ final class CategoryController extends OCSController {
 	 * @param string|null $icon New icon key.
 	 * @param string|null $color New hex color.
 	 * @param int|null $sortOrder New sort order.
+	 * @param int|null $listId New list scope, or null for a global category. Only applied when the field is present in the request.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryCategory, array{}>
 	 *
@@ -111,8 +113,13 @@ final class CategoryController extends OCSController {
 		?string $icon = null,
 		?string $color = null,
 		?int $sortOrder = null,
+		?int $listId = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $categoryId, $name, $icon, $color, $sortOrder): DataResponse {
+		// listId is nullable-but-meaningful: an explicit null moves the category
+		// to the global scope, so distinguish "field sent" from "field omitted"
+		// by the presence of the key rather than by the value being null.
+		$listIdProvided = array_key_exists('listId', $this->request->getParams());
+		return $this->runAction(function () use ($houseId, $categoryId, $name, $icon, $color, $sortOrder, $listId, $listIdProvided): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$this->categories->assertInHouse($categoryId, $houseId);
 			$patch = [];
@@ -127,6 +134,9 @@ final class CategoryController extends OCSController {
 			}
 			if ($sortOrder !== null) {
 				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($listIdProvided) {
+				$patch['listId'] = $listId;
 			}
 			$updated = $this->categories->update($categoryId, $patch);
 			return new DataResponse($updated->jsonSerialize());

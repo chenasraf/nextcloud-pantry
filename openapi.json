@@ -88,6 +88,7 @@
                 "required": [
                     "id",
                     "houseId",
+                    "listId",
                     "name",
                     "icon",
                     "color",
@@ -103,6 +104,11 @@
                     "houseId": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "listId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
                     },
                     "name": {
                         "type": "string"
@@ -2033,6 +2039,13 @@
                                     "color": {
                                         "type": "string",
                                         "description": "Hex color (e.g. \"#4caf50\")."
+                                    },
+                                    "listId": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "List to scope the category to, or null for a global category."
                                     }
                                 }
                             }
@@ -2169,6 +2182,13 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New sort order."
+                                    },
+                                    "listId": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New list scope, or null for a global category. Only applied when the field is present in the request."
                                     }
                                 }
                             }

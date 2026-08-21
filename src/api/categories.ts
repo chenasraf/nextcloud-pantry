@@ -8,7 +8,7 @@ export async function listCategories(houseId: number): Promise<Category[]> {
 
 export async function createCategory(
   houseId: number,
-  input: { name: string; icon: string; color: string },
+  input: { name: string; icon: string; color: string; listId?: number | null },
 ): Promise<Category> {
   const resp = await ocs.post<Category>(`/houses/${houseId}/categories`, input)
   return resp.data
@@ -17,7 +17,13 @@ export async function createCategory(
 export async function updateCategory(
   houseId: number,
   categoryId: number,
-  patch: { name?: string; icon?: string; color?: string; sortOrder?: number },
+  patch: {
+    name?: string
+    icon?: string
+    color?: string
+    sortOrder?: number
+    listId?: number | null
+  },
 ): Promise<Category> {
   const resp = await ocs.patch<Category>(`/houses/${houseId}/categories/${categoryId}`, patch)
   return resp.data

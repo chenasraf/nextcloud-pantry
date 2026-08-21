@@ -108,6 +108,7 @@ function makeCategory(overrides: Partial<Category> = {}): Category {
   return {
     id: 1,
     houseId: 1,
+    listId: null,
     name: 'Dairy',
     icon: 'cow',
     color: '#3366ff',

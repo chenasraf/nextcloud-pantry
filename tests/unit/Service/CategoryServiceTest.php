@@ -9,6 +9,8 @@ namespace OCA\Pantry\Tests\Unit\Service;
 
 use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\CategoryMapper;
+use OCA\Pantry\Db\Checklist;
+use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Service\CategoryService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -17,11 +19,22 @@ use PHPUnit\Framework\TestCase;
 class CategoryServiceTest extends TestCase {
 	/** @var CategoryMapper&MockObject */
 	private CategoryMapper $mapper;
+	/** @var ChecklistMapper&MockObject */
+	private ChecklistMapper $listMapper;
 	private CategoryService $svc;
 
 	protected function setUp(): void {
 		$this->mapper = $this->createMock(CategoryMapper::class);
-		$this->svc = new CategoryService($this->mapper);
+		$this->listMapper = $this->createMock(ChecklistMapper::class);
+		$this->svc = new CategoryService($this->mapper, $this->listMapper);
+	}
+
+	private function makeList(int $id, int $houseId): Checklist {
+		$l = new Checklist();
+		$l->setHouseId($houseId);
+		$ref = new \ReflectionProperty($l, 'id');
+		$ref->setValue($l, $id);
+		return $l;
 	}
 
 	private function makeCategory(array $overrides = []): Category {
@@ -100,7 +113,7 @@ class CategoryServiceTest extends TestCase {
 	}
 
 	public function testCreateAppendsAfterHighestSortOrder(): void {
-		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
 		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(4);
 		$this->mapper->method('insert')->willReturnArgument(0);
 
@@ -110,12 +123,116 @@ class CategoryServiceTest extends TestCase {
 	}
 
 	public function testCreateInEmptyHouseStartsAtZero(): void {
-		$this->mapper->method('findByHouseAndName')->willReturn(null);
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
 		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(-1);
 		$this->mapper->method('insert')->willReturnArgument(0);
 
 		$created = $this->svc->create(1, 'Produce', 'tag', '#22c55e');
 
 		$this->assertSame(0, $created->getSortOrder());
+	}
+
+	public function testCreateGlobalCategoryHasNullListId(): void {
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrder')->willReturn(-1);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Produce', 'tag', '#22c55e', null);
+
+		$this->assertNull($created->getListId());
+	}
+
+	public function testCreateScopedCategoryValidatesAndStoresList(): void {
+		$this->listMapper->method('findById')->with(7, true)->willReturn($this->makeList(7, 1));
+		$this->mapper->method('findByHouseListAndName')->with(1, 7, 'Produce')->willReturn(null);
+		$this->mapper->method('findMaxSortOrder')->willReturn(-1);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Produce', 'tag', '#22c55e', 7);
+
+		$this->assertSame(7, $created->getListId());
+	}
+
+	public function testCreateRejectsListFromAnotherHouse(): void {
+		$this->listMapper->method('findById')->with(7, true)->willReturn($this->makeList(7, 99));
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->create(1, 'Produce', 'tag', '#22c55e', 7);
+	}
+
+	public function testCreateRejectsDuplicateWithinSameScope(): void {
+		$this->mapper->method('findByHouseListAndName')->with(1, null, 'Produce')
+			->willReturn($this->makeCategory(['id' => 5]));
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->create(1, 'Produce', 'tag', '#22c55e', null);
+	}
+
+	public function testCreateAllowsSameNameInDifferentScopes(): void {
+		// A global "Produce" exists; creating a list-scoped "Produce" checks the
+		// list scope (which is empty) and must succeed.
+		$this->listMapper->method('findById')->willReturn($this->makeList(7, 1));
+		$this->mapper->method('findByHouseListAndName')->with(1, 7, 'Produce')->willReturn(null);
+		$this->mapper->method('findMaxSortOrder')->willReturn(0);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Produce', 'tag', '#22c55e', 7);
+
+		$this->assertSame(7, $created->getListId());
+	}
+
+	public function testUpdateMovesCategoryToGlobalScope(): void {
+		$cat = $this->makeCategory(['id' => 5, 'houseId' => 1]);
+		$cat->setListId(7);
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+		$this->mapper->method('findByHouseListAndName')->with(1, null, 'Produce')->willReturn(null);
+
+		$updated = $this->svc->update(5, ['listId' => null]);
+
+		$this->assertNull($updated->getListId());
+	}
+
+	public function testUpdateWithoutListIdKeyKeepsScope(): void {
+		$cat = $this->makeCategory(['id' => 5, 'houseId' => 1]);
+		$cat->setListId(7);
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+
+		$updated = $this->svc->update(5, ['icon' => 'food']);
+
+		$this->assertSame(7, $updated->getListId());
+	}
+
+	public function testUpdateScopingGlobalCategoryDetachesItemsOnOtherLists(): void {
+		$cat = $this->makeCategory(['id' => 5, 'houseId' => 1]); // global
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+		$this->listMapper->method('findById')->with(7, true)->willReturn($this->makeList(7, 1));
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+
+		$this->mapper->expects($this->once())
+			->method('detachFromItemsNotInList')
+			->with(5, 7);
+
+		$this->svc->update(5, ['listId' => 7]);
+	}
+
+	public function testUpdateToGlobalDoesNotDetachItems(): void {
+		$cat = $this->makeCategory(['id' => 5, 'houseId' => 1]);
+		$cat->setListId(7);
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+
+		$this->mapper->expects($this->never())->method('detachFromItemsNotInList');
+
+		$this->svc->update(5, ['listId' => null]);
+	}
+
+	public function testUpdateWithUnchangedScopeDoesNotDetachItems(): void {
+		$cat = $this->makeCategory(['id' => 5, 'houseId' => 1]);
+		$cat->setListId(7);
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+
+		$this->mapper->expects($this->never())->method('detachFromItemsNotInList');
+
+		$this->svc->update(5, ['icon' => 'food']);
 	}
 }

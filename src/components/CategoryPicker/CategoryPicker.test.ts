@@ -88,6 +88,8 @@ vi.mock('@/composables/useCategories', () => ({
     update: vi.fn(),
     remove: vi.fn(),
     findById: vi.fn(),
+    categoriesForList: (listId: number | null) =>
+      mockItems.value.filter((c) => c.listId == null || c.listId === listId),
   }),
 }))
 
@@ -97,6 +99,7 @@ function makeCategory(overrides: Partial<Category> = {}): Category {
   return {
     id: 1,
     houseId: 10,
+    listId: null,
     name: 'Dairy',
     icon: 'dairy',
     color: '#22c55e',

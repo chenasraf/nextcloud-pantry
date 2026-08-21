@@ -54,7 +54,12 @@ function build(houseId: number) {
     items.value = sortItems(items.value, value)
   }
 
-  async function create(input: { name: string; icon: string; color: string }): Promise<Category> {
+  async function create(input: {
+    name: string
+    icon: string
+    color: string
+    listId?: number | null
+  }): Promise<Category> {
     const created = await api.createCategory(houseId, input)
     items.value = sortItems([...items.value, created], sortBy.value)
     return created
@@ -91,6 +96,13 @@ function build(houseId: number) {
     return items.value.find((c) => c.id === id)
   }
 
+  // Categories offered for a given list: the list's own scoped categories plus
+  // every global (null list) one. A null listId means no specific list is in
+  // context (e.g. the "All lists" view), so only globals apply.
+  function categoriesForList(listId: number | null): Category[] {
+    return items.value.filter((c) => c.listId == null || c.listId === listId)
+  }
+
   return {
     items,
     loading,
@@ -104,6 +116,7 @@ function build(houseId: number) {
     remove,
     reorder,
     findById,
+    categoriesForList,
   }
 }
 
