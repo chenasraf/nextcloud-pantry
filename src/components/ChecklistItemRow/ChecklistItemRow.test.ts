@@ -124,10 +124,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     imageUploadedBy: null,
     addedBy: null,
     barcode: null,
-    priceType: null,
-    priceMin: null,
-    priceMax: null,
-    priceCurrency: null,
+    prices: [],
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
@@ -200,6 +197,72 @@ describe('ChecklistItemRow', () => {
       const qty = wrapper.find('.checklist-row__quantity')
       expect(qty.exists()).toBe(true)
       expect(qty.text()).toContain('3')
+    })
+
+    it('shows the store-less price chip when no store context is given', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: {
+          ...defaultProps,
+          item: makeItem({
+            prices: [
+              {
+                storeId: null,
+                priceType: 'set',
+                priceMin: 5,
+                priceMax: null,
+                priceCurrency: 'USD',
+              },
+              { storeId: 7, priceType: 'set', priceMin: 9, priceMax: null, priceCurrency: 'USD' },
+            ],
+          }),
+        },
+      })
+      const chip = wrapper.find('.checklist-row__price')
+      expect(chip.exists()).toBe(true)
+      expect(chip.text()).toBe('$5')
+    })
+
+    it('resolves the store price when a price-store-id is given', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: {
+          ...defaultProps,
+          priceStoreId: 7,
+          item: makeItem({
+            prices: [
+              {
+                storeId: null,
+                priceType: 'set',
+                priceMin: 5,
+                priceMax: null,
+                priceCurrency: 'USD',
+              },
+              { storeId: 7, priceType: 'set', priceMin: 9, priceMax: null, priceCurrency: 'USD' },
+            ],
+          }),
+        },
+      })
+      expect(wrapper.find('.checklist-row__price').text()).toBe('$9')
+    })
+
+    it('falls back to the store-less price for a store with no price', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: {
+          ...defaultProps,
+          priceStoreId: 8,
+          item: makeItem({
+            prices: [
+              {
+                storeId: null,
+                priceType: 'set',
+                priceMin: 5,
+                priceMax: null,
+                priceCurrency: 'USD',
+              },
+            ],
+          }),
+        },
+      })
+      expect(wrapper.find('.checklist-row__price').text()).toBe('$5')
     })
 
     it('shows category badge with color when category is provided', () => {

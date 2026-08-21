@@ -37,8 +37,8 @@
         <ul class="shop-review__items">
           <li v-for="item in grp.items" :key="item.id" class="shop-review__item">
             <span class="shop-review__item-name">{{ item.name }}</span>
-            <span v-if="itemPrice(item)" class="shop-review__item-price">{{
-              itemPrice(item)
+            <span v-if="itemPrice(item, grp.storeId)" class="shop-review__item-price">{{
+              itemPrice(item, grp.storeId)
             }}</span>
           </li>
         </ul>
@@ -115,7 +115,7 @@ import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { ShoppingReminderBlock, ShoppingRemindersDialog } from '@/components/ShoppingReminders'
 import { useStores } from '@/composables/useStores'
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/utils/currencies'
-import { formatPrice, formatEstimate, formatMoney } from '@/utils/price'
+import { formatPrice, formatEstimate, formatMoney, resolveItemPrice } from '@/utils/price'
 import { getReview, getSessionSummary, patchStoreBilled, patchSessionBilled } from '@/api/shopping'
 import type {
   ChecklistItem,
@@ -237,8 +237,9 @@ function confirm() {
   emit('confirm')
 }
 
-function itemPrice(item: ChecklistItem): string | null {
-  return formatPrice(item)
+function itemPrice(item: ChecklistItem, storeId: number | null): string | null {
+  const price = resolveItemPrice(item.prices, storeId)
+  return price ? formatPrice(price) : null
 }
 
 // Read-only store total: the actual paid amount when the shopper amended one,

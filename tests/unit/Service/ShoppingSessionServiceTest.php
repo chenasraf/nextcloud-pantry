@@ -9,6 +9,7 @@ namespace OCA\Pantry\Tests\Unit\Service;
 
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
+use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Db\ShoppingSession;
 use OCA\Pantry\Db\ShoppingSessionItem;
@@ -44,11 +45,21 @@ class ShoppingSessionServiceTest extends TestCase {
 	private ChecklistItemMapper $items;
 	/** @var ItemStoreMapper&MockObject */
 	private ItemStoreMapper $itemStores;
+	/** @var ItemPriceMapper&MockObject */
+	private ItemPriceMapper $itemPrices;
 	/** @var ChecklistService&MockObject */
 	private ChecklistService $checklists;
 	/** @var StoreMapper&MockObject */
 	private StoreMapper $storeMapper;
 	private ShoppingSessionService $svc;
+
+	/**
+	 * Item prices keyed by item id, returned by the price mapper's findForItems.
+	 * makeItem() populates this so live-trip estimates resolve real prices.
+	 *
+	 * @var array<int, list<array{storeId: ?int, priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}>>
+	 */
+	private array $priceRegistry = [];
 
 	protected function setUp(): void {
 		$this->sessions = $this->createMock(ShoppingSessionMapper::class);
@@ -58,6 +69,14 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->sessionSkips = $this->createMock(ShoppingSessionSkipMapper::class);
 		$this->items = $this->createMock(ChecklistItemMapper::class);
 		$this->itemStores = $this->createMock(ItemStoreMapper::class);
+		$this->itemPrices = $this->createMock(ItemPriceMapper::class);
+		$this->priceRegistry = [];
+		$this->itemPrices->method('findForItems')->willReturnCallback(
+			fn (array $ids): array => array_intersect_key(
+				$this->priceRegistry,
+				array_flip(array_map('intval', $ids)),
+			),
+		);
 		$this->checklists = $this->createMock(ChecklistService::class);
 		$this->storeMapper = $this->createMock(StoreMapper::class);
 		$this->svc = new ShoppingSessionService(
@@ -68,6 +87,7 @@ class ShoppingSessionServiceTest extends TestCase {
 			$this->sessionSkips,
 			$this->items,
 			$this->itemStores,
+			$this->itemPrices,
 			$this->checklists,
 			$this->storeMapper,
 		);
@@ -78,13 +98,24 @@ class ShoppingSessionServiceTest extends TestCase {
 		$i->setListId($o['listId'] ?? 1);
 		$i->setName($o['name'] ?? 'Milk');
 		$i->setDone($o['done'] ?? false);
-		$i->setPriceType($o['priceType'] ?? null);
-		$i->setPriceMin($o['priceMin'] ?? null);
-		$i->setPriceMax($o['priceMax'] ?? null);
-		$i->setPriceCurrency($o['priceCurrency'] ?? null);
 		if (isset($o['id'])) {
 			$ref = new \ReflectionProperty($i, 'id');
 			$ref->setValue($i, $o['id']);
+		}
+		// Prices now live in a related table; expose the item's price as a single
+		// store-less price and register it so the price-mapper mock returns it.
+		if (($o['priceType'] ?? null) !== null) {
+			$price = [
+				'storeId' => $o['priceStoreId'] ?? null,
+				'priceType' => $o['priceType'],
+				'priceMin' => $o['priceMin'] ?? null,
+				'priceMax' => $o['priceMax'] ?? null,
+				'priceCurrency' => $o['priceCurrency'] ?? null,
+			];
+			$i->setResolvedPrices([$price]);
+			if (isset($o['id'])) {
+				$this->priceRegistry[(int)$o['id']] = [$price];
+			}
 		}
 		return $i;
 	}

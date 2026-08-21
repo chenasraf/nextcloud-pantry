@@ -45,7 +45,11 @@
       />
       <div class="edit-item-form__price">
         <span class="edit-item-form__label">{{ strings.priceLabel }}</span>
-        <PriceInput v-model="editPrice" :default-currency="defaultCurrency" />
+        <ItemPricesEditor
+          v-model="editPrices"
+          :house-id="houseId"
+          :default-currency="defaultCurrency"
+        />
       </div>
       <div class="edit-item-form__type">
         <span class="edit-item-form__label">{{ strings.typeLabel }}</span>
@@ -123,11 +127,10 @@ import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
 import StoreMultiPicker from '@/components/StoreMultiPicker'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
-import PriceInput from '@/components/PriceInput'
+import ItemPricesEditor from '@/components/ItemPricesEditor'
 import { itemImagePreviewUrl } from '@/api/images'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
-import type { PriceValue } from '@/utils/price'
-import type { ChecklistItem } from '@/api/types'
+import type { ChecklistItem, ItemPrice } from '@/api/types'
 import type { ItemInput } from '@/api/lists'
 
 const props = withDefaults(
@@ -155,12 +158,7 @@ const editStoreIds = ref<number[]>([])
 const editRrule = ref<string | null>(null)
 const editRepeatFromCompletion = ref(false)
 const editDeleteOnDone = ref(false)
-const editPrice = ref<PriceValue>({
-  priceType: null,
-  priceMin: null,
-  priceMax: null,
-  priceCurrency: props.defaultCurrency,
-})
+const editPrices = ref<ItemPrice[]>([])
 const showRecurrenceEditor = ref(false)
 const imageInputRef = ref<HTMLInputElement | null>(null)
 
@@ -210,12 +208,7 @@ watch(
       editRrule.value = props.item.rrule ?? null
       editRepeatFromCompletion.value = props.item.repeatFromCompletion ?? false
       editDeleteOnDone.value = props.item.deleteOnDone ?? false
-      editPrice.value = {
-        priceType: props.item.priceType ?? null,
-        priceMin: props.item.priceMin ?? null,
-        priceMax: props.item.priceMax ?? null,
-        priceCurrency: props.item.priceCurrency ?? props.defaultCurrency,
-      }
+      editPrices.value = (props.item.prices ?? []).map((p) => ({ ...p }))
       resetImageState()
     }
   },
@@ -258,12 +251,8 @@ function submitEdit() {
       rrule: once ? null : editRrule.value,
       repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
       deleteOnDone: once,
-      // '' clears the price server-side; a type sets it. Currency is always sent
-      // so the house's last-used currency can be remembered.
-      priceType: editPrice.value.priceType ?? '',
-      priceMin: editPrice.value.priceMin,
-      priceMax: editPrice.value.priceMax,
-      priceCurrency: editPrice.value.priceCurrency,
+      // The full price set is replaced; an empty array clears all prices.
+      prices: editPrices.value,
     },
     pendingImageFile.value,
     pendingClearImage.value,

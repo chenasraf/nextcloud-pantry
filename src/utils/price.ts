@@ -2,12 +2,31 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { resolveCurrency } from './currencies'
+import type { ItemPrice } from '@/api/types'
 
 export interface PriceValue {
   priceType: 'set' | 'range' | null
   priceMin: number | null
   priceMax: number | null
   priceCurrency: string | null
+}
+
+/** The item's store-less (default) price, or null when it has none. */
+export function storelessPrice(prices: ItemPrice[]): ItemPrice | null {
+  return prices.find((p) => p.storeId == null) ?? null
+}
+
+/**
+ * The price to show for a given store context: the store's own price when set,
+ * otherwise the store-less price. Passing null (non-store views) resolves the
+ * store-less price directly. Returns null when neither exists.
+ */
+export function resolveItemPrice(prices: ItemPrice[], storeId: number | null): ItemPrice | null {
+  if (storeId != null) {
+    const forStore = prices.find((p) => p.storeId === storeId)
+    if (forStore) return forStore
+  }
+  return storelessPrice(prices)
 }
 
 /** True when the value carries a usable price (a type and a min amount). */

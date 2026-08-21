@@ -27,6 +27,8 @@ class ChecklistServiceTest extends TestCase {
 	private ChecklistItemMapper $itemMapper;
 	/** @var \OCA\Pantry\Db\ItemStoreMapper&MockObject */
 	private \OCA\Pantry\Db\ItemStoreMapper $itemStoreMapper;
+	/** @var \OCA\Pantry\Db\ItemPriceMapper&MockObject */
+	private \OCA\Pantry\Db\ItemPriceMapper $itemPriceMapper;
 	/** @var \OCP\IDBConnection&MockObject */
 	private \OCP\IDBConnection $db;
 	private ChecklistService $svc;
@@ -35,6 +37,7 @@ class ChecklistServiceTest extends TestCase {
 		$this->listMapper = $this->createMock(ChecklistMapper::class);
 		$this->itemMapper = $this->createMock(ChecklistItemMapper::class);
 		$this->itemStoreMapper = $this->createMock(\OCA\Pantry\Db\ItemStoreMapper::class);
+		$this->itemPriceMapper = $this->createMock(\OCA\Pantry\Db\ItemPriceMapper::class);
 		// Houses reopen recurring items at 08:00 (the default) by which
 		// computeNextDueAt snaps the time of day of every non-sub-daily occurrence.
 		$house = new House();
@@ -48,6 +51,7 @@ class ChecklistServiceTest extends TestCase {
 			new RecurrenceService(),
 			$this->createMock(ListRoleMapper::class),
 			$this->itemStoreMapper,
+			$this->itemPriceMapper,
 			$houseMapper,
 			$this->db,
 		);
@@ -534,88 +538,103 @@ class ChecklistServiceTest extends TestCase {
 
 	public function testAddItemStoresSetPrice(): void {
 		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('insert')->willReturnCallback(fn (ChecklistItem $i) => $i);
 		$captured = null;
-		$this->itemMapper->method('insert')
-			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
-				$captured = $i;
-				return $i;
+		$this->itemPriceMapper->method('setPricesForItem')
+			->willReturnCallback(function (int $id, array $prices) use (&$captured): void {
+				$captured = $prices;
 			});
 
 		$this->svc->addItem(1, [
 			'name' => 'Milk',
-			'priceType' => 'set',
-			'priceMin' => 9.99,
-			'priceCurrency' => 'usd',
+			'prices' => [['storeId' => null, 'priceType' => 'set', 'priceMin' => 9.99, 'priceCurrency' => 'usd']],
 		]);
-		$this->assertNotNull($captured);
-		$this->assertSame('set', $captured->getPriceType());
-		$this->assertSame(9.99, $captured->getPriceMin());
-		$this->assertNull($captured->getPriceMax());
-		// Currency is uppercased.
-		$this->assertSame('USD', $captured->getPriceCurrency());
+		// Currency is uppercased; max is null for a 'set' price.
+		$this->assertSame([
+			['storeId' => null, 'priceType' => 'set', 'priceMin' => 9.99, 'priceMax' => null, 'priceCurrency' => 'USD'],
+		], $captured);
 	}
 
-	public function testAddItemNormalizesRangePriceOrderAndDropsMissingAmount(): void {
+	public function testAddItemNormalizesRangePriceOrder(): void {
 		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('insert')->willReturnCallback(fn (ChecklistItem $i) => $i);
 		$captured = null;
-		$this->itemMapper->method('insert')
-			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
-				$captured = $i;
-				return $i;
+		$this->itemPriceMapper->method('setPricesForItem')
+			->willReturnCallback(function (int $id, array $prices) use (&$captured): void {
+				$captured = $prices;
 			});
 
-		// Min/max supplied out of order are swapped.
+		// Min/max supplied out of order are swapped; a per-store price is kept.
 		$this->svc->addItem(1, [
 			'name' => 'Milk',
-			'priceType' => 'range',
-			'priceMin' => 10,
-			'priceMax' => 1,
-			'priceCurrency' => 'ILS',
+			'prices' => [['storeId' => 5, 'priceType' => 'range', 'priceMin' => 10, 'priceMax' => 1, 'priceCurrency' => 'ILS']],
 		]);
-		$this->assertSame('range', $captured->getPriceType());
-		$this->assertSame(1.0, $captured->getPriceMin());
-		$this->assertSame(10.0, $captured->getPriceMax());
+		$this->assertSame([
+			['storeId' => 5, 'priceType' => 'range', 'priceMin' => 1.0, 'priceMax' => 10.0, 'priceCurrency' => 'ILS'],
+		], $captured);
 	}
 
-	public function testAddItemWithoutMinAmountHasNoPrice(): void {
+	public function testAddItemDropsPriceWithoutMinAmount(): void {
 		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('insert')->willReturnCallback(fn (ChecklistItem $i) => $i);
 		$captured = null;
-		$this->itemMapper->method('insert')
-			->willReturnCallback(function (ChecklistItem $i) use (&$captured) {
-				$captured = $i;
-				return $i;
+		$this->itemPriceMapper->method('setPricesForItem')
+			->willReturnCallback(function (int $id, array $prices) use (&$captured): void {
+				$captured = $prices;
 			});
 
-		$this->svc->addItem(1, ['name' => 'Milk', 'priceType' => 'set', 'priceCurrency' => 'USD']);
-		$this->assertNull($captured->getPriceType());
-		$this->assertNull($captured->getPriceMin());
-		$this->assertNull($captured->getPriceCurrency());
+		$this->svc->addItem(1, [
+			'name' => 'Milk',
+			'prices' => [['storeId' => null, 'priceType' => 'set', 'priceCurrency' => 'USD']],
+		]);
+		$this->assertSame([], $captured);
 	}
 
-	public function testUpdateItemClearsPriceWhenTypeNull(): void {
-		$item = $this->withId($this->makeItem(), 9);
-		$item->setPriceType('set');
-		$item->setPriceMin(5.0);
-		$item->setPriceCurrency('USD');
-		$this->itemMapper->method('findById')->willReturn($item);
+	public function testAddItemCollapsesDuplicateStorelessAndKeepsPerStore(): void {
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('insert')->willReturnCallback(fn (ChecklistItem $i) => $i);
+		$captured = null;
+		$this->itemPriceMapper->method('setPricesForItem')
+			->willReturnCallback(function (int $id, array $prices) use (&$captured): void {
+				$captured = $prices;
+			});
 
-		$this->svc->updateItem(9, ['priceType' => null]);
-		$this->assertNull($item->getPriceType());
-		$this->assertNull($item->getPriceMin());
-		$this->assertNull($item->getPriceMax());
-		$this->assertNull($item->getPriceCurrency());
+		$this->svc->addItem(1, [
+			'name' => 'Milk',
+			'prices' => [
+				['storeId' => null, 'priceType' => 'set', 'priceMin' => 5, 'priceCurrency' => 'USD'],
+				['storeId' => null, 'priceType' => 'set', 'priceMin' => 6, 'priceCurrency' => 'USD'],
+				['storeId' => 7, 'priceType' => 'set', 'priceMin' => 9, 'priceCurrency' => 'USD'],
+			],
+		]);
+		// Only the last store-less entry survives; the per-store price is kept.
+		$this->assertSame([
+			['storeId' => null, 'priceType' => 'set', 'priceMin' => 6.0, 'priceMax' => null, 'priceCurrency' => 'USD'],
+			['storeId' => 7, 'priceType' => 'set', 'priceMin' => 9.0, 'priceMax' => null, 'priceCurrency' => 'USD'],
+		], $captured);
 	}
 
-	public function testUpdateItemLeavesPriceUntouchedWhenKeyAbsent(): void {
+	public function testUpdateItemClearsPricesWithEmptyArray(): void {
 		$item = $this->withId($this->makeItem(), 9);
-		$item->setPriceType('set');
-		$item->setPriceMin(5.0);
-		$item->setPriceCurrency('USD');
 		$this->itemMapper->method('findById')->willReturn($item);
+		$captured = null;
+		$this->itemPriceMapper->method('setPricesForItem')
+			->willReturnCallback(function (int $id, array $prices) use (&$captured): void {
+				$captured = $prices;
+			});
+
+		$this->svc->updateItem(9, ['prices' => []]);
+		$this->assertSame([], $captured);
+	}
+
+	public function testUpdateItemLeavesPricesUntouchedWhenKeyAbsent(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		// No 'prices' key in the patch means the price set is not rewritten.
+		$this->itemPriceMapper->expects($this->never())->method('setPricesForItem');
 
 		$this->svc->updateItem(9, ['name' => 'Renamed']);
-		$this->assertSame('set', $item->getPriceType());
-		$this->assertSame(5.0, $item->getPriceMin());
+		$this->assertSame('Renamed', $item->getName());
 	}
 
 	public function testAddItemStoresAddedByUid(): void {

@@ -81,6 +81,7 @@
                 :item="item"
                 :category="group.category"
                 :hide-category="true"
+                :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
                 :tap-row-to-complete="tapRowToComplete"
                 compact
@@ -105,6 +106,7 @@
                 :key="item.id"
                 :item="item"
                 :category="categoryFor(item.categoryId)"
+                :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
                 :tap-row-to-complete="tapRowToComplete"
                 compact
@@ -168,7 +170,7 @@ import { useStores } from '@/composables/useStores'
 import { useCategories } from '@/composables/useCategories'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
-import { formatEstimate } from '@/utils/price'
+import { formatEstimate, resolveItemPrice } from '@/utils/price'
 import { getCurrentUserId } from '@/utils/currentUser'
 import {
   getCurrentSession,
@@ -259,12 +261,20 @@ const doneTitle = computed(() => n('pantry', 'Done (%n)', 'Done (%n)', doneItems
 // header. Range-aware, per-currency; the authoritative totals live in the review.
 const doneEstimateText = computed(() => {
   const byCurrency = new Map<string, { min: number; max: number }>()
+  const storeId = session.value?.activeStoreId ?? null
   for (const item of doneItems.value) {
-    if ((item.priceType !== 'set' && item.priceType !== 'range') || item.priceMin == null) continue
-    const cur = item.priceCurrency ?? ''
-    const max = item.priceType === 'range' && item.priceMax != null ? item.priceMax : item.priceMin
+    const price = resolveItemPrice(item.prices, storeId)
+    if (
+      !price ||
+      (price.priceType !== 'set' && price.priceType !== 'range') ||
+      price.priceMin == null
+    )
+      continue
+    const cur = price.priceCurrency ?? ''
+    const max =
+      price.priceType === 'range' && price.priceMax != null ? price.priceMax : price.priceMin
     const entry = byCurrency.get(cur) ?? { min: 0, max: 0 }
-    entry.min += item.priceMin
+    entry.min += price.priceMin
     entry.max += max
     byCurrency.set(cur, entry)
   }

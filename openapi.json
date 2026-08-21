@@ -396,6 +396,41 @@
                     }
                 }
             },
+            "ItemPrice": {
+                "type": "object",
+                "required": [
+                    "storeId",
+                    "priceType",
+                    "priceMin",
+                    "priceMax",
+                    "priceCurrency"
+                ],
+                "properties": {
+                    "storeId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "priceType": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "priceMin": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "priceMax": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "priceCurrency": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
             "List": {
                 "type": "object",
                 "required": [
@@ -489,10 +524,7 @@
                     "imageUploadedBy",
                     "addedBy",
                     "barcode",
-                    "priceType",
-                    "priceMin",
-                    "priceMax",
-                    "priceCurrency",
+                    "prices",
                     "sortOrder",
                     "createdAt",
                     "updatedAt",
@@ -575,23 +607,11 @@
                         "type": "string",
                         "nullable": true
                     },
-                    "priceType": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "priceMin": {
-                        "type": "number",
-                        "format": "double",
-                        "nullable": true
-                    },
-                    "priceMax": {
-                        "type": "number",
-                        "format": "double",
-                        "nullable": true
-                    },
-                    "priceCurrency": {
-                        "type": "string",
-                        "nullable": true
+                    "prices": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemPrice"
+                        }
                     },
                     "sortOrder": {
                         "type": "integer",
@@ -4069,31 +4089,38 @@
                                         "default": null,
                                         "description": "Optional barcode (EAN/UPC) the item was created from."
                                     },
-                                    "priceType": {
-                                        "type": "string",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "Price kind: 'set' (single amount), 'range' (min..max), or null/empty for no price."
-                                    },
-                                    "priceMin": {
-                                        "type": "number",
-                                        "format": "double",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "Price amount for 'set', or the lower bound for 'range'."
-                                    },
-                                    "priceMax": {
-                                        "type": "number",
-                                        "format": "double",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "Upper bound for 'range' (ignored for 'set')."
-                                    },
-                                    "priceCurrency": {
-                                        "type": "string",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "ISO 4217 currency code (e.g. USD, ILS) the amounts are in."
+                                    "prices": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Optional prices. A null store id is the store-less (default) price; at most one per store and one store-less.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "storeId": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                },
+                                                "priceType": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "priceMin": {
+                                                    "type": "number",
+                                                    "format": "double",
+                                                    "nullable": true
+                                                },
+                                                "priceMax": {
+                                                    "type": "number",
+                                                    "format": "double",
+                                                    "nullable": true
+                                                },
+                                                "priceCurrency": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -4675,31 +4702,39 @@
                                         "default": null,
                                         "description": "New barcode (EAN/UPC); empty string clears."
                                     },
-                                    "priceType": {
-                                        "type": "string",
+                                    "prices": {
+                                        "type": "array",
                                         "nullable": true,
                                         "default": null,
-                                        "description": "Price kind: 'set', 'range', or empty string to clear the price. Null leaves the price unchanged."
-                                    },
-                                    "priceMin": {
-                                        "type": "number",
-                                        "format": "double",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "Price amount for 'set', or the lower bound for 'range'."
-                                    },
-                                    "priceMax": {
-                                        "type": "number",
-                                        "format": "double",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "Upper bound for 'range' (ignored for 'set')."
-                                    },
-                                    "priceCurrency": {
-                                        "type": "string",
-                                        "nullable": true,
-                                        "default": null,
-                                        "description": "ISO 4217 currency code (e.g. USD, ILS) the amounts are in."
+                                        "description": "New full set of prices (empty array clears all; null leaves them unchanged). A null store id is the store-less price; at most one per store and one store-less.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "storeId": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                },
+                                                "priceType": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "priceMin": {
+                                                    "type": "number",
+                                                    "format": "double",
+                                                    "nullable": true
+                                                },
+                                                "priceMax": {
+                                                    "type": "number",
+                                                    "format": "double",
+                                                    "nullable": true
+                                                },
+                                                "priceCurrency": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

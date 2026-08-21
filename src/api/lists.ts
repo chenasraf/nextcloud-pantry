@@ -1,5 +1,5 @@
 import { ocs } from '@/axios'
-import type { Checklist, ChecklistItem } from './types'
+import type { Checklist, ChecklistItem, ItemPrice } from './types'
 
 export async function listLists(houseId: number, sortBy?: string): Promise<Checklist[]> {
   const resp = await ocs.get<Checklist[]>(`/houses/${houseId}/lists`, {
@@ -128,11 +128,12 @@ export interface ItemInput {
   sortOrder?: number
   targetListId?: number
   barcode?: string | null
-  /** '' clears the price on update; 'set'/'range' set it; null leaves unchanged. */
-  priceType?: 'set' | 'range' | '' | null
-  priceMin?: number | null
-  priceMax?: number | null
-  priceCurrency?: string | null
+  /**
+   * The full set of prices. On update, an empty array clears all prices;
+   * omitting the field leaves them unchanged. A null store id is the store-less
+   * (default) price.
+   */
+  prices?: ItemPrice[]
 }
 
 export async function addItem(

@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatPrice, hasPrice, type PriceValue } from './price'
+import { formatPrice, hasPrice, resolveItemPrice, storelessPrice, type PriceValue } from './price'
+import type { ItemPrice } from '@/api/types'
+
+function itemPrice(partial: Partial<ItemPrice>): ItemPrice {
+  return {
+    storeId: null,
+    priceType: 'set',
+    priceMin: 1,
+    priceMax: null,
+    priceCurrency: 'USD',
+    ...partial,
+  }
+}
 
 function price(partial: Partial<PriceValue>): PriceValue {
   return {
@@ -69,5 +81,39 @@ describe('formatPrice', () => {
 
   it('shows the raw code for an unknown currency', () => {
     expect(formatPrice(price({ priceType: 'set', priceMin: 2, priceCurrency: 'XyZ' }))).toBe('XYZ2')
+  })
+})
+
+describe('storelessPrice', () => {
+  it('returns the price with a null store id', () => {
+    const storeless = itemPrice({ storeId: null, priceMin: 5 })
+    expect(storelessPrice([itemPrice({ storeId: 3, priceMin: 9 }), storeless])).toBe(storeless)
+  })
+
+  it('returns null when every price is attached to a store', () => {
+    expect(storelessPrice([itemPrice({ storeId: 3 })])).toBeNull()
+    expect(storelessPrice([])).toBeNull()
+  })
+})
+
+describe('resolveItemPrice', () => {
+  const storeless = itemPrice({ storeId: null, priceMin: 5 })
+  const atStore3 = itemPrice({ storeId: 3, priceMin: 9 })
+
+  it('prefers the store price when present', () => {
+    expect(resolveItemPrice([storeless, atStore3], 3)).toBe(atStore3)
+  })
+
+  it('falls back to the store-less price when the store has none', () => {
+    expect(resolveItemPrice([storeless, atStore3], 7)).toBe(storeless)
+  })
+
+  it('resolves the store-less price directly for null store context', () => {
+    expect(resolveItemPrice([storeless, atStore3], null)).toBe(storeless)
+  })
+
+  it('returns null when neither a store price nor a store-less price exists', () => {
+    expect(resolveItemPrice([atStore3], 7)).toBeNull()
+    expect(resolveItemPrice([], 3)).toBeNull()
   })
 })

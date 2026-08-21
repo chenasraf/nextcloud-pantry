@@ -10,6 +10,7 @@ namespace OCA\Pantry\Tests\Unit\Controller;
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Controller\ChecklistController;
 use OCA\Pantry\Db\ChecklistItem;
+use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\ChecklistService;
@@ -36,12 +37,17 @@ use Psr\Log\LoggerInterface;
 class ChecklistControllerStoreSerializationTest extends TestCase {
 	/** @var ItemStoreMapper&MockObject */
 	private ItemStoreMapper $itemStores;
+	/** @var ItemPriceMapper&MockObject */
+	private ItemPriceMapper $itemPrices;
 	/** @var LoggerInterface&MockObject */
 	private LoggerInterface $logger;
 	private ChecklistController $controller;
 
 	protected function setUp(): void {
 		$this->itemStores = $this->createMock(ItemStoreMapper::class);
+		$this->itemPrices = $this->createMock(ItemPriceMapper::class);
+		$this->itemPrices->method('findForItems')->willReturn([]);
+		$this->itemPrices->method('findForItem')->willReturn([]);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->controller = new ChecklistController(
 			'pantry',
@@ -50,6 +56,7 @@ class ChecklistControllerStoreSerializationTest extends TestCase {
 			$this->createMock(CategoryService::class),
 			$this->createMock(StoreService::class),
 			$this->itemStores,
+			$this->itemPrices,
 			$this->createMock(HouseAuthService::class),
 			$this->createMock(HouseService::class),
 			$this->createMock(ImageService::class),

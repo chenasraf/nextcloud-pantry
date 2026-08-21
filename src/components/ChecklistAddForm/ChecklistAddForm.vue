@@ -104,9 +104,10 @@
 
       <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
 
-      <PriceInput
+      <ItemPricesEditor
         v-else-if="openSection === 'price'"
-        v-model="price"
+        v-model="prices"
+        :house-id="houseId"
         :default-currency="defaultCurrency"
       />
 
@@ -221,7 +222,7 @@ import CategoryChipList from '@/components/CategoryChipList'
 import StoreChipList from '@/components/StoreChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
-import PriceInput from '@/components/PriceInput'
+import ItemPricesEditor from '@/components/ItemPricesEditor'
 import PantryChip from '@/components/PantryChip'
 import BarcodeLookupDialog from '@/components/BarcodeLookupDialog'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
@@ -233,10 +234,10 @@ import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { formatRrule } from '@/utils/rrule'
-import { formatPrice, hasPrice, type PriceValue } from '@/utils/price'
+import { formatPrice, storelessPrice } from '@/utils/price'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ItemInput } from '@/api/lists'
-import type { Checklist, ChecklistItem, Category, Store } from '@/api/types'
+import type { Checklist, ChecklistItem, Category, Store, ItemPrice } from '@/api/types'
 
 type SectionKey = 'category' | 'stores' | 'quantity' | 'price' | 'description' | 'type' | 'image'
 
@@ -279,12 +280,7 @@ const name = ref('')
 const multiple = ref(false)
 const description = ref('')
 const quantity = ref('')
-const price = ref<PriceValue>({
-  priceType: null,
-  priceMin: null,
-  priceMax: null,
-  priceCurrency: props.defaultCurrency,
-})
+const prices = ref<ItemPrice[]>([])
 const categoryId = ref<number | null>(null)
 const storeIds = ref<number[]>([])
 const targetListId = ref<number | null>(null)
@@ -346,17 +342,6 @@ watch(
   () => props.deleteOnDoneDefault,
   (value) => {
     deleteOnDone.value = value
-  },
-)
-
-// The house's last-used currency may resolve after mount. Adopt it as long as
-// the user has not entered a price yet.
-watch(
-  () => props.defaultCurrency,
-  (value) => {
-    if (!hasPrice(price.value)) {
-      price.value = { ...price.value, priceCurrency: value }
-    }
   },
 )
 
@@ -513,7 +498,12 @@ const selectedCategory = computed(() =>
 
 const selectedStores = computed(() => stores.value.filter((s) => storeIds.value.includes(s.id)))
 
-const priceText = computed(() => formatPrice(price.value))
+// The chip summarizes the store-less (default) price; per-store prices show in
+// their grouped rows.
+const priceText = computed(() => {
+  const s = storelessPrice(prices.value)
+  return s ? formatPrice(s) : null
+})
 
 interface Chip {
   key: SectionKey
@@ -694,10 +684,7 @@ function submitAdd() {
         quantity: quantity.value.trim() || null,
         categoryId: categoryId.value,
         storeIds: storeIds.value,
-        priceType: price.value.priceType,
-        priceMin: price.value.priceMin,
-        priceMax: price.value.priceMax,
-        priceCurrency: price.value.priceCurrency,
+        prices: prices.value,
         rrule: once ? null : rrule.value,
         repeatFromCompletion: once ? false : repeatFromCompletion.value,
         deleteOnDone: once,
@@ -713,13 +700,9 @@ function submitAdd() {
   name.value = ''
   description.value = ''
   quantity.value = ''
-  // Keep the chosen currency as the next item's default, drop the amounts.
-  price.value = {
-    priceType: null,
-    priceMin: null,
-    priceMax: null,
-    priceCurrency: price.value.priceCurrency,
-  }
+  // Drop the amounts; the next item's default currency comes from the house's
+  // remembered currency (updated after the add).
+  prices.value = []
   categoryId.value = null
   storeIds.value = []
   rrule.value = null

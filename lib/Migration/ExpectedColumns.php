@@ -33,12 +33,6 @@ final class ExpectedColumns {
 			// archived_at (Version13); the item-list filter references it
 			// unconditionally, so a missing column takes down the whole checklist.
 			self::col('list_items', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
-			// Price support (Version19). Shopping Mode's snapshot backfill and the
-			// item read paths select these, so drift here breaks upgrades.
-			self::col('list_items', 'price_type', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
-			self::col('list_items', 'price_min', Types::FLOAT, ['notnull' => false, 'default' => null]),
-			self::col('list_items', 'price_max', Types::FLOAT, ['notnull' => false, 'default' => null]),
-			self::col('list_items', 'price_currency', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
 
 			// shopsess_items — per-trip snapshot columns (Version21).
 			self::col('shopsess_items', 'item_name', Types::STRING, ['notnull' => false, 'length' => 255, 'default' => null]),

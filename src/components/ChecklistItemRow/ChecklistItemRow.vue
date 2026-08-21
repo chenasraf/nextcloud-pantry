@@ -233,7 +233,7 @@ import { checklistIconComponent } from '@/components/ChecklistIconPicker/checkli
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
-import { formatPrice } from '@/utils/price'
+import { formatPrice, resolveItemPrice } from '@/utils/price'
 import { useHouseMembers } from '@/composables/useHouseMembers'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import type { ChecklistItem, Category, Checklist, Store } from '@/api/types'
@@ -248,6 +248,12 @@ const props = withDefaults(
     hideCategory?: boolean
     /** Hide the store chips (used when store headers already group rows). */
     hideStore?: boolean
+    /**
+     * The store context the price chip resolves against: the store's own price,
+     * falling back to the store-less price. Undefined/null (flat and category
+     * views) shows the store-less price only.
+     */
+    priceStoreId?: number | null
     /** Stores attached to this item, resolved to entities by the parent. */
     stores?: Store[]
     list?: Checklist | null
@@ -392,7 +398,13 @@ const addedByTooltip = computed(() => {
   return t('pantry', 'Added by {user}', { user: name })
 })
 
-const priceText = computed(() => formatPrice(props.item))
+// On store-grouped rows, `priceStoreId` is the group's store so the chip shows
+// that store's price (store-less fallback). Undefined/null on flat and category
+// views resolves the store-less price only.
+const priceText = computed(() => {
+  const price = resolveItemPrice(props.item.prices, props.priceStoreId ?? null)
+  return price ? formatPrice(price) : null
+})
 
 const recurrenceTooltip = computed(() => {
   const next = formatNextRecurrence(
