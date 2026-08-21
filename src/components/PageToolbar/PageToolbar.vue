@@ -103,7 +103,7 @@
             </template>
             <NcActionSeparator v-if="ai < collapsedActions.length - 1" />
           </template>
-          <NcActionButton v-else @click="action.onClick">
+          <NcActionButton v-else close-after-click @click="action.onClick">
             <template #icon>
               <component :is="action.icon" :size="20" />
             </template>
