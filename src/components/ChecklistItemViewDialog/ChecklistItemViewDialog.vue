@@ -62,6 +62,20 @@
             </span>
           </span>
         </div>
+        <div v-if="labels.length > 0" class="item-view__row">
+          <span class="item-view__label">{{ strings.labels }}:</span>
+          <span class="item-view__stores">
+            <span
+              v-for="label in labels"
+              :key="label.id"
+              class="item-view__badge"
+              :style="{ color: label.color }"
+            >
+              <component :is="labelIconComponent(label.icon)" :size="14" />
+              {{ label.name }}
+            </span>
+          </span>
+        </div>
         <div v-if="item.rrule" class="item-view__row">
           <span class="item-view__label">{{ strings.recurrence }}:</span>
           <span class="item-view__badge">
@@ -100,11 +114,12 @@ import RepeatIcon from '@icons/Repeat.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
+import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { formatPrice } from '@/utils/price'
 import { toggleMarkdownTask } from '@/utils/markdownTask'
-import type { ChecklistItem, Category, Store } from '@/api/types'
+import type { ChecklistItem, Category, Store, Label } from '@/api/types'
 
 const props = withDefaults(
   defineProps<{
@@ -112,9 +127,10 @@ const props = withDefaults(
     item: ChecklistItem
     category: Category | null
     stores?: Store[]
+    labels?: Label[]
     houseId: number
   }>(),
-  { stores: () => [] },
+  { stores: () => [], labels: () => [] },
 )
 
 const emit = defineEmits<{
@@ -185,6 +201,8 @@ const strings = {
   anyStore: t('pantry', 'Any store'),
   store: t('pantry', 'Store'),
   category: t('pantry', 'Category'),
+  // TRANSLATORS: Noun (plural), tags attached to an item. Row label in item details.
+  labels: t('pantry', 'Labels'),
   // TRANSLATORS: Noun (plural), shops where this item can be bought. Detail row label.
   stores: t('pantry', 'Stores'),
   recurrence: t('pantry', 'Recurrence'),

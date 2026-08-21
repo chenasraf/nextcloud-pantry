@@ -14,8 +14,10 @@ use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
+use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
+use OCA\Pantry\Db\LabelMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\TTransactional;
@@ -41,6 +43,8 @@ class ChecklistService {
 		private ItemPriceMapper $itemPriceMapper,
 		private HouseMapper $houseMapper,
 		private CategoryMapper $categoryMapper,
+		private ItemLabelMapper $itemLabelMapper,
+		private LabelMapper $labelMapper,
 		private IDBConnection $db,
 	) {
 	}
@@ -186,6 +190,7 @@ class ChecklistService {
 		$this->itemMapper->deleteByList((int)$list->getId());
 		$this->listRoleMapper->deleteByList((int)$list->getId());
 		$this->categoryMapper->deleteByList((int)$list->getId());
+		$this->labelMapper->deleteByList((int)$list->getId());
 		$this->listMapper->delete($list);
 	}
 
@@ -198,6 +203,7 @@ class ChecklistService {
 		foreach ($removed as $list) {
 			$this->itemMapper->deleteByList((int)$list->getId());
 			$this->categoryMapper->deleteByList((int)$list->getId());
+			$this->labelMapper->deleteByList((int)$list->getId());
 		}
 	}
 
@@ -297,6 +303,9 @@ class ChecklistService {
 		if (array_key_exists('storeIds', $data)) {
 			$this->itemStoreMapper->setStoresForItem((int)$saved->getId(), (array)$data['storeIds']);
 		}
+		if (array_key_exists('labelIds', $data)) {
+			$this->itemLabelMapper->setLabelsForItem((int)$saved->getId(), (array)$data['labelIds']);
+		}
 		if (array_key_exists('prices', $data)) {
 			$this->itemPriceMapper->setPricesForItem((int)$saved->getId(), $this->normalizePrices($data['prices']));
 		}
@@ -371,6 +380,9 @@ class ChecklistService {
 		$this->itemMapper->update($item);
 		if (array_key_exists('storeIds', $patch)) {
 			$this->itemStoreMapper->setStoresForItem((int)$item->getId(), (array)$patch['storeIds']);
+		}
+		if (array_key_exists('labelIds', $patch)) {
+			$this->itemLabelMapper->setLabelsForItem((int)$item->getId(), (array)$patch['labelIds']);
 		}
 		// The whole price set is replaced when 'prices' is present in the patch.
 		if (array_key_exists('prices', $patch)) {
@@ -464,6 +476,26 @@ class ChecklistService {
 		foreach ($itemIds as $itemId) {
 			try {
 				$updated[] = $this->updateItem((int)$itemId, ['storeIds' => $storeIds]);
+			} catch (NotFoundException) {
+				continue;
+			}
+		}
+		return $updated;
+	}
+
+	/**
+	 * Replace the set of labels attached to a batch of items. Missing items are
+	 * skipped. Returns the updated items.
+	 *
+	 * @param list<int> $itemIds
+	 * @param int[] $labelIds
+	 * @return ChecklistItem[]
+	 */
+	public function setItemsLabels(array $itemIds, array $labelIds): array {
+		$updated = [];
+		foreach ($itemIds as $itemId) {
+			try {
+				$updated[] = $this->updateItem((int)$itemId, ['labelIds' => $labelIds]);
 			} catch (NotFoundException) {
 				continue;
 			}
@@ -780,6 +812,10 @@ class ChecklistService {
 			(int)$saved->getId(),
 			$this->itemStoreMapper->findStoreIdsForItem((int)$source->getId()),
 		);
+		$this->itemLabelMapper->setLabelsForItem(
+			(int)$saved->getId(),
+			$this->itemLabelMapper->findLabelIdsForItem((int)$source->getId()),
+		);
 		$this->itemPriceMapper->setPricesForItem(
 			(int)$saved->getId(),
 			$this->itemPriceMapper->findForItem((int)$source->getId()),
@@ -802,6 +838,7 @@ class ChecklistService {
 	public function permanentlyDeleteItem(int $itemId): void {
 		$item = $this->getItem($itemId, includeDeleted: true);
 		$this->itemStoreMapper->deleteByItem((int)$item->getId());
+		$this->itemLabelMapper->deleteByItem((int)$item->getId());
 		$this->itemPriceMapper->deleteByItem((int)$item->getId());
 		$this->itemMapper->delete($item);
 	}

@@ -44,6 +44,16 @@
         <NcButton
           v-if="!trashMode && can.canEditLists"
           variant="primary"
+          @click="showLabelManager = true"
+        >
+          <template #icon>
+            <LabelMultipleIcon :size="20" />
+          </template>
+          {{ strings.manageLabels }}
+        </NcButton>
+        <NcButton
+          v-if="!trashMode && can.canEditLists"
+          variant="primary"
           @click="showStoreManager = true"
         >
           <template #icon>
@@ -264,6 +274,12 @@
       @update:open="showCategoryManager = $event"
     />
 
+    <LabelManagerDialog
+      :open="showLabelManager"
+      :house-id="houseIdNum"
+      @update:open="showLabelManager = $event"
+    />
+
     <StoreManagerDialog
       :open="showStoreManager"
       :house-id="houseIdNum"
@@ -285,10 +301,12 @@ import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import PageToolbar from '@/components/PageToolbar'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
+import { LabelManagerDialog } from '@/components/LabelManager'
 import { StoreManagerDialog } from '@/components/StoreManager'
 import PlusIcon from '@icons/Plus.vue'
 import CartIcon from '@icons/Cart.vue'
 import TagIcon from '@icons/Tag.vue'
+import LabelMultipleIcon from '@icons/LabelMultiple.vue'
 import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
@@ -410,6 +428,7 @@ function startShopping() {
 }
 
 const showCategoryManager = ref(false)
+const showLabelManager = ref(false)
 const showStoreManager = ref(false)
 
 const showCreate = ref(false)
@@ -623,6 +642,7 @@ const strings = {
   // TRANSLATORS: Button that opens Shopping Mode to shop the house's lists.
   shop: t('pantry', 'Start shopping'),
   manageCategories: t('pantry', 'Manage categories'),
+  manageLabels: t('pantry', 'Manage labels'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar button opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
   cancel: t('pantry', 'Cancel'),

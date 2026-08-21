@@ -80,6 +80,7 @@ export type NoteSort = 'custom' | 'newest' | 'oldest' | 'title_asc' | 'title_des
 export type ChecklistItemSort =
   'custom' | 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'category' | 'store'
 export type CategorySort = 'name_asc' | 'name_desc' | 'custom'
+export type LabelSort = 'name_asc' | 'name_desc' | 'custom'
 export type StoreSort = 'name_asc' | 'name_desc' | 'custom'
 export type ChecklistSort = 'name_asc' | 'name_desc' | 'custom'
 
@@ -105,6 +106,7 @@ export interface HousePrefs extends NotificationPrefs {
   checklistItemSort: ChecklistItemSort
   checklistSort: ChecklistSort
   categorySort: CategorySort
+  labelSort: LabelSort
   storeSort: StoreSort
   /** When true, show the avatar of the user who added each checklist item. */
   showAddedBy: boolean
@@ -120,6 +122,7 @@ const housePrefsDefaults: HousePrefs = {
   checklistItemSort: 'custom',
   checklistSort: 'custom',
   categorySort: 'name_asc',
+  labelSort: 'name_asc',
   storeSort: 'name_asc',
   showAddedBy: false,
   lastCurrency: 'USD',
@@ -221,6 +224,16 @@ export async function setCategorySort(
 ): Promise<{ sort: CategorySort }> {
   const p = await setHousePrefs(houseId, { categorySort: sort })
   return { sort: p.categorySort }
+}
+
+export async function getLabelSort(houseId: number): Promise<{ sort: LabelSort }> {
+  const p = await getHousePrefs(houseId)
+  return { sort: p.labelSort }
+}
+
+export async function setLabelSort(houseId: number, sort: LabelSort): Promise<{ sort: LabelSort }> {
+  const p = await setHousePrefs(houseId, { labelSort: sort })
+  return { sort: p.labelSort }
 }
 
 export async function getStoreSort(houseId: number): Promise<{ sort: StoreSort }> {

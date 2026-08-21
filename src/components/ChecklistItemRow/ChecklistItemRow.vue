@@ -119,6 +119,15 @@
         <component :is="storeIconComponent(store.icon)" :size="14" />
         {{ store.name }}
       </button>
+      <span
+        v-for="label in labels"
+        :key="'label-' + label.id"
+        class="checklist-row__label"
+        :style="{ color: label.color }"
+      >
+        <component :is="labelIconComponent(label.icon)" :size="14" />
+        {{ label.name }}
+      </span>
     </div>
     <div v-if="showAddedBy && !selectionMode && !suggestion" class="checklist-row__added-by">
       <NcAvatar
@@ -248,7 +257,8 @@ import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { formatPrice, resolveItemPrice } from '@/utils/price'
 import { useHouseMembers } from '@/composables/useHouseMembers'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
-import type { ChecklistItem, Category, Checklist, Store } from '@/api/types'
+import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
+import type { ChecklistItem, Category, Checklist, Store, Label } from '@/api/types'
 
 const { can } = useCurrentHouse()
 
@@ -268,6 +278,8 @@ const props = withDefaults(
     priceStoreId?: number | null
     /** Stores attached to this item, resolved to entities by the parent. */
     stores?: Store[]
+    /** Labels attached to this item, resolved to entities by the parent. */
+    labels?: Label[]
     list?: Checklist | null
     houseId: number
     reorderEnabled?: boolean
@@ -322,6 +334,7 @@ const props = withDefaults(
     hideCategory: false,
     hideStore: false,
     stores: () => [],
+    labels: () => [],
     list: null,
     reorderEnabled: false,
     trashMode: false,
@@ -717,6 +730,7 @@ function storeLabel(name: string): string {
   &__price,
   &__category,
   &__store,
+  &__label,
   &__recurrence,
   &__description,
   &__list {

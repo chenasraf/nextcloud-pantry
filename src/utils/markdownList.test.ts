@@ -14,6 +14,7 @@ function item(partial: Partial<ChecklistItem>): ChecklistItem {
     description: null,
     categoryId: null,
     storeIds: [],
+    labelIds: [],
     quantity: null,
     done: false,
     doneAt: null,

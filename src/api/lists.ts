@@ -120,6 +120,11 @@ export interface ItemInput {
   name: string
   description?: string | null
   categoryId?: number | null
+  /**
+   * The full set of attached label ids. On update, an empty array clears all
+   * labels; omitting the field leaves them unchanged.
+   */
+  labelIds?: number[]
   storeIds?: number[]
   quantity?: string | null
   rrule?: string | null
@@ -317,6 +322,18 @@ export async function batchSetStores(
   const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/stores`, {
     itemIds,
     storeIds,
+  })
+  return resp.data
+}
+
+export async function batchSetLabels(
+  houseId: number,
+  itemIds: number[],
+  labelIds: number[],
+): Promise<BatchResult> {
+  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/labels`, {
+    itemIds,
+    labelIds,
   })
   return resp.data
 }

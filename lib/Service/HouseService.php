@@ -35,6 +35,8 @@ class HouseService {
 		private ChecklistMapper $listMapper,
 		private ChecklistItemMapper $itemMapper,
 		private CategoryMapper $categoryMapper,
+		private \OCA\Pantry\Db\LabelMapper $labelMapper,
+		private \OCA\Pantry\Db\ItemLabelMapper $itemLabelMapper,
 		private \OCA\Pantry\Db\StoreMapper $storeMapper,
 		private \OCA\Pantry\Db\ItemStoreMapper $itemStoreMapper,
 		private \OCA\Pantry\Db\ItemPriceMapper $itemPriceMapper,
@@ -169,9 +171,11 @@ class HouseService {
 
 		$this->db->beginTransaction();
 		try {
-			// Remove item-store links and prices before the items themselves are
-			// deleted (deleteByHouse resolves item ids by joining items to lists).
+			// Remove item-store/item-label links and prices before the items
+			// themselves are deleted (deleteByHouse resolves item ids by joining
+			// items to lists).
 			$this->itemStoreMapper->deleteByHouse($houseId);
+			$this->itemLabelMapper->deleteByHouse($houseId);
 			$this->itemPriceMapper->deleteByHouse($houseId);
 			// Delete all items (and their role access rows) under all lists
 			foreach ($this->listMapper->findByHouse($houseId) as $list) {
@@ -180,6 +184,7 @@ class HouseService {
 			}
 			$this->listMapper->deleteByHouse($houseId);
 			$this->categoryMapper->deleteByHouse($houseId);
+			$this->labelMapper->deleteByHouse($houseId);
 			$this->storeMapper->deleteByHouse($houseId);
 			$this->shoppingReminderMapper->deleteByHouse($houseId);
 			$this->photoMapper->deleteByHouse($houseId);

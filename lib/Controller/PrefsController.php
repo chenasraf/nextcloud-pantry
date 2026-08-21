@@ -131,6 +131,7 @@ final class PrefsController extends OCSController {
 	 * @param string|null $checklistItemSort Checklist item sort mode.
 	 * @param string|null $checklistSort Checklist (list) sort mode (name_asc, name_desc, custom).
 	 * @param string|null $categorySort Category sort mode (name_asc, name_desc, custom).
+	 * @param string|null $labelSort Label sort mode (name_asc, name_desc, custom).
 	 * @param string|null $storeSort Store sort mode (name_asc, name_desc, custom).
 	 * @param bool|null $showAddedBy Show the avatar of the user that added each checklist item.
 	 * @param string|null $lastCurrency Last-used currency code (ISO 4217) for item prices in this house.
@@ -156,6 +157,7 @@ final class PrefsController extends OCSController {
 		?string $checklistItemSort = null,
 		?string $checklistSort = null,
 		?string $categorySort = null,
+		?string $labelSort = null,
 		?string $storeSort = null,
 		?bool $showAddedBy = null,
 		?string $lastCurrency = null,
@@ -166,7 +168,7 @@ final class PrefsController extends OCSController {
 		?bool $notifyItemRecur = null,
 		?bool $notifyItemDone = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $storeSort, $showAddedBy, $lastCurrency, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $labelSort, $storeSort, $showAddedBy, $lastCurrency, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$patch = array_filter([
@@ -177,6 +179,7 @@ final class PrefsController extends OCSController {
 				'checklistItemSort' => $checklistItemSort,
 				'checklistSort' => $checklistSort,
 				'categorySort' => $categorySort,
+				'labelSort' => $labelSort,
 				'storeSort' => $storeSort,
 				'showAddedBy' => $showAddedBy,
 				'lastCurrency' => $lastCurrency,

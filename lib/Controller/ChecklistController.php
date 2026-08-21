@@ -10,6 +10,7 @@ namespace OCA\Pantry\Controller;
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
+use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Db\Share;
@@ -22,6 +23,7 @@ use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
+use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
@@ -50,8 +52,10 @@ final class ChecklistController extends OCSController {
 		IRequest $request,
 		private ChecklistService $lists,
 		private CategoryService $categories,
+		private LabelService $labels,
 		private StoreService $stores,
 		private ItemStoreMapper $itemStores,
+		private ItemLabelMapper $itemLabels,
 		private ItemPriceMapper $itemPrices,
 		private HouseAuthService $auth,
 		private HouseService $houses,
@@ -93,10 +97,17 @@ final class ChecklistController extends OCSController {
 			$this->logger->error('Failed to load prices for items; serializing without prices', ['exception' => $e]);
 			$priceMap = [];
 		}
-		return array_values(array_map(static function ($i) use ($storeMap, $priceMap) {
+		try {
+			$labelMap = $this->itemLabels->findLabelIdsForItems($ids);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to load label ids for items; serializing without labels', ['exception' => $e]);
+			$labelMap = [];
+		}
+		return array_values(array_map(static function ($i) use ($storeMap, $priceMap, $labelMap) {
 			$data = $i->jsonSerialize();
 			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
 			$data['prices'] = $priceMap[(int)$i->getId()] ?? [];
+			$data['labelIds'] = $labelMap[(int)$i->getId()] ?? [];
 			return $data;
 		}, $items));
 	}
@@ -122,6 +133,12 @@ final class ChecklistController extends OCSController {
 		} catch (\Throwable $e) {
 			$this->logger->error('Failed to load prices for item; serializing without prices', ['exception' => $e]);
 			$data['prices'] = [];
+		}
+		try {
+			$data['labelIds'] = $this->itemLabels->findLabelIdsForItem((int)$item->getId());
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to load label ids for item; serializing without labels', ['exception' => $e]);
+			$data['labelIds'] = [];
 		}
 		return $data;
 	}
@@ -573,6 +590,7 @@ final class ChecklistController extends OCSController {
 	 * @param list<int> $storeIds Optional store ids to attach (must belong to the same house).
 	 * @param string|null $barcode Optional barcode (EAN/UPC) the item was created from.
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}> $prices Optional prices. A null store id is the store-less (default) price; at most one per store and one store-less.
+	 * @param list<int> $labelIds Optional label ids to attach (must belong to the same house).
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -595,8 +613,9 @@ final class ChecklistController extends OCSController {
 		array $storeIds = [],
 		?string $barcode = null,
 		array $prices = [],
+		array $labelIds = [],
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $prices): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $prices, $labelIds): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
@@ -606,6 +625,7 @@ final class ChecklistController extends OCSController {
 			}
 			$storeIds = array_map('intval', $storeIds);
 			$this->stores->assertStoresInHouse($houseId, $storeIds);
+			$labelIds = $this->labels->assertLabelsInHouse($houseId, $labelIds);
 			$item = $this->lists->addItem($listId, [
 				'name' => $name,
 				'description' => $description,
@@ -618,6 +638,7 @@ final class ChecklistController extends OCSController {
 				'storeIds' => $storeIds,
 				'barcode' => $barcode,
 				'prices' => $prices,
+				'labelIds' => $labelIds,
 			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
@@ -652,6 +673,7 @@ final class ChecklistController extends OCSController {
 	 * @param list<int>|null $storeIds New set of store ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 * @param string|null $barcode New barcode (EAN/UPC); empty string clears.
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}>|null $prices New full set of prices (empty array clears all; null leaves them unchanged). A null store id is the store-less price; at most one per store and one store-less.
+	 * @param list<int>|null $labelIds New set of label ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -677,8 +699,9 @@ final class ChecklistController extends OCSController {
 		?array $storeIds = null,
 		?string $barcode = null,
 		?array $prices = null,
+		?array $labelIds = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId);
@@ -733,6 +756,9 @@ final class ChecklistController extends OCSController {
 				$this->stores->assertStoresInHouse($houseId, $ids);
 				$patch['storeIds'] = $ids;
 			}
+			if ($labelIds !== null) {
+				$patch['labelIds'] = $this->labels->assertLabelsInHouse($houseId, $labelIds);
+			}
 			$targetList = null;
 			if ($targetListId !== null && $targetListId !== $listId) {
 				// Moving an item to another list needs the move capability and
@@ -764,7 +790,7 @@ final class ChecklistController extends OCSController {
 					(int)$targetList->getId(),
 					$targetList->getName(),
 				);
-			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $priceType !== null) {
+			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $priceType !== null) {
 				$this->activity->publishItemUpdated(
 					$houseId,
 					$houseName,
@@ -1497,6 +1523,61 @@ final class ChecklistController extends OCSController {
 			);
 
 			// Attaching stores reuses the generic "item updated" activity rather
+			// than a dedicated subject.
+			$houseName = $this->houses->get($houseId)->getName();
+			$listNames = [];
+			foreach ($groups as $listId => $group) {
+				$listNames[$listId] = $group['listName'];
+			}
+			foreach ($updated as $item) {
+				$this->activity->publishItemUpdated(
+					$houseId,
+					$houseName,
+					$uid,
+					(int)$item->getId(),
+					$item->getName(),
+					(int)$item->getListId(),
+					$listNames[(int)$item->getListId()] ?? '',
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($updated),
+				'skipped' => $collected['skipped'],
+			]);
+		});
+	}
+
+	/**
+	 * Set the labels attached to a batch of items in one action
+	 *
+	 * Replaces the label set on every targeted item (an empty list clears them).
+	 *
+	 * @param int $houseId House id.
+	 * @param list<int> $itemIds Ids of the items to update.
+	 * @param list<int> $labelIds Label ids to assign (must belong to the same house); empty clears.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 *
+	 * 200: Labels assigned
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/items/batch/labels')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function batchSetLabels(int $houseId, array $itemIds = [], array $labelIds = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $itemIds, $labelIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$labelIds = $this->labels->assertLabelsInHouse($houseId, $labelIds);
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$groups = $this->groupItemsBySourceList($collected['items']);
+			$updated = $this->lists->setItemsLabels(
+				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
+				$labelIds,
+			);
+
+			// Attaching labels reuses the generic "item updated" activity rather
 			// than a dedicated subject.
 			$houseName = $this->houses->get($houseId)->getName();
 			$listNames = [];

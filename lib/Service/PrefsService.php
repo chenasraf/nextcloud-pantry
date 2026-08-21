@@ -234,6 +234,28 @@ class PrefsService {
 		return $sort;
 	}
 
+	// ----- Label sort preferences -----
+
+	private const KEY_LABEL_SORT = 'label_sort';
+	public const LABEL_SORT_OPTIONS = ['name_asc', 'name_desc', 'custom'];
+
+	public function getLabelSort(string $uid, int $houseId): string {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_LABEL_SORT . '_' . $houseId,
+			'name_asc',
+		);
+	}
+
+	public function setLabelSort(string $uid, int $houseId, string $sort): string {
+		if (!in_array($sort, self::LABEL_SORT_OPTIONS, true)) {
+			$sort = 'name_asc';
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_LABEL_SORT . '_' . $houseId, $sort);
+		return $sort;
+	}
+
 	// ----- Store sort preferences -----
 
 	private const KEY_STORE_SORT = 'store_sort';
@@ -376,6 +398,7 @@ class PrefsService {
 			'checklistItemSort' => $this->getChecklistItemSort($uid, $houseId),
 			'checklistSort' => $this->getChecklistSort($uid, $houseId),
 			'categorySort' => $this->getCategorySort($uid, $houseId),
+			'labelSort' => $this->getLabelSort($uid, $houseId),
 			'storeSort' => $this->getStoreSort($uid, $houseId),
 			'showAddedBy' => $this->getShowAddedBy($uid, $houseId),
 			'lastCurrency' => $this->getLastCurrency($uid, $houseId),
@@ -407,6 +430,9 @@ class PrefsService {
 		}
 		if (array_key_exists('categorySort', $patch) && is_string($patch['categorySort'])) {
 			$this->setCategorySort($uid, $houseId, $patch['categorySort']);
+		}
+		if (array_key_exists('labelSort', $patch) && is_string($patch['labelSort'])) {
+			$this->setLabelSort($uid, $houseId, $patch['labelSort']);
 		}
 		if (array_key_exists('storeSort', $patch) && is_string($patch['storeSort'])) {
 			$this->setStoreSort($uid, $houseId, $patch['storeSort']);

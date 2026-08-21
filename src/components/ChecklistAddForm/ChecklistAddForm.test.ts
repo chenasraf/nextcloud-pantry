@@ -115,6 +115,14 @@ vi.mock('@/components/StoreChipList', () => ({
     emits: ['update:modelValue'],
   },
 }))
+vi.mock('@/components/LabelChipList', () => ({
+  default: {
+    name: 'LabelChipList',
+    template: '<div class="mock-label-chip-list" />',
+    props: ['modelValue', 'houseId', 'listId'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/components/QuantityInput', () => ({
   default: {
     name: 'QuantityInput',
@@ -140,6 +148,9 @@ vi.mock('@/components/ItemTypeSelector', () => ({
 vi.mock('@/components/CategoryPicker/categoryIcons', () => ({
   categoryIconComponent: () => ({ name: 'StubCategoryIcon', template: '<span />' }),
 }))
+vi.mock('@/components/LabelPicker/labelIcons', () => ({
+  labelIconComponent: () => ({ name: 'StubLabelIcon', template: '<span />' }),
+}))
 vi.mock('@/composables/useCategories', () => ({
   useCategories: () => ({
     items: { value: [] },
@@ -151,6 +162,13 @@ vi.mock('@/composables/useStores', () => ({
   useStores: () => ({
     items: { value: [] },
     load: vi.fn().mockResolvedValue(undefined),
+  }),
+}))
+vi.mock('@/composables/useLabels', () => ({
+  useLabels: () => ({
+    items: { value: [] },
+    load: vi.fn().mockResolvedValue(undefined),
+    labelsForList: () => [],
   }),
 }))
 vi.mock('@/utils/rrule', () => ({
@@ -175,6 +193,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     description: null,
     categoryId: null,
     storeIds: [],
+    labelIds: [],
     quantity: null,
     done: false,
     doneAt: null,
@@ -235,15 +254,16 @@ describe('ChecklistAddForm', () => {
   it('renders one chip per field section', () => {
     const wrapper = mountForm()
     const chips = wrapper.findAll('.nc-chip')
-    expect(chips).toHaveLength(8)
+    expect(chips).toHaveLength(9)
     expect(chips[0].text()).toContain('Category')
     expect(chips[1].text()).toContain('Stores')
-    expect(chips[2].text()).toContain('Quantity')
-    expect(chips[3].text()).toContain('Price')
-    expect(chips[4].text()).toContain('Description')
-    expect(chips[5].text()).toContain('Item type')
-    expect(chips[6].text()).toContain('Image')
-    expect(chips[7].text()).toContain('Barcode')
+    expect(chips[2].text()).toContain('Labels')
+    expect(chips[3].text()).toContain('Quantity')
+    expect(chips[4].text()).toContain('Price')
+    expect(chips[5].text()).toContain('Description')
+    expect(chips[6].text()).toContain('Item type')
+    expect(chips[7].text()).toContain('Image')
+    expect(chips[8].text()).toContain('Barcode')
   })
 
   it('item type chip shows the chosen type text only after explicit selection', async () => {
@@ -288,6 +308,7 @@ describe('ChecklistAddForm', () => {
       quantity: null,
       categoryId: null,
       storeIds: [],
+      labelIds: [],
       prices: [],
       rrule: null,
       repeatFromCompletion: false,

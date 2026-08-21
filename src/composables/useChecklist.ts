@@ -414,6 +414,13 @@ export function useChecklistItems(houseId: number, listId: number) {
     return result
   }
 
+  async function setLabelsMany(ids: number[], labelIds: number[]): Promise<api.BatchResult> {
+    const result = await api.batchSetLabels(houseId, ids, labelIds)
+    const byId = new Map(result.items.map((i) => [i.id, i]))
+    items.value = items.value.map((i) => byId.get(i.id) ?? i)
+    return result
+  }
+
   // Bulk "uncheck all": clears done-state on the given items in one request.
   // The server returns the now-unchecked rows; swap them in so they move from
   // the Done section back into the active list.
@@ -479,6 +486,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     undoArchiveMany,
     setCategoryMany,
     setStoresMany,
+    setLabelsMany,
     uncheckMany,
     undoRemoveMany,
   }

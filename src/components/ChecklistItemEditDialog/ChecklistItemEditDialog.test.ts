@@ -104,6 +104,14 @@ vi.mock('@/components/StoreMultiPicker', () => ({
     props: ['modelValue', 'houseId', 'label', 'placeholder'],
   },
 }))
+vi.mock('@/components/LabelChipList', () => ({
+  default: {
+    name: 'LabelChipList',
+    template: '<div class="mock-label-chip-list" />',
+    props: ['modelValue', 'houseId', 'listId'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/api/images', () => ({
   itemImagePreviewUrl: (houseId: number, fileId: number, owner: string, size: number) =>
     `/preview/${houseId}/${fileId}/${owner}/${size}`,
@@ -119,6 +127,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     description: 'Whole milk',
     categoryId: 3,
     storeIds: [],
+    labelIds: [],
     quantity: '2 L',
     done: false,
     doneAt: null,

@@ -80,6 +80,7 @@
                 :key="item.id"
                 :item="item"
                 :category="group.category"
+                :labels="labelsFor(item.labelIds)"
                 :hide-category="true"
                 :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
@@ -106,6 +107,7 @@
                 :key="item.id"
                 :item="item"
                 :category="categoryFor(item.categoryId)"
+                :labels="labelsFor(item.labelIds)"
                 :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
                 :tap-row-to-complete="tapRowToComplete"
@@ -128,6 +130,7 @@
                 :key="item.id"
                 :item="item"
                 :category="categoryFor(item.categoryId)"
+                :labels="labelsFor(item.labelIds)"
                 :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
                 :list-writable="false"
@@ -191,6 +194,7 @@ import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { useStores } from '@/composables/useStores'
 import { useCategories } from '@/composables/useCategories'
+import { useLabels } from '@/composables/useLabels'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
 import { formatEstimate, resolveItemPrice } from '@/utils/price'
@@ -209,7 +213,13 @@ import {
   unskipSessionItem,
   listRemovedSessionItems,
 } from '@/api/shopping'
-import type { Category, ChecklistItem, ShoppingPresenceEntry, ShoppingSession } from '@/api/types'
+import type {
+  Category,
+  ChecklistItem,
+  Label,
+  ShoppingPresenceEntry,
+  ShoppingSession,
+} from '@/api/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -222,7 +232,13 @@ const sessionIdNum = computed(() => Number(route.params.sessionId))
 
 const { load: loadStores, findById: findStore } = useStores(houseIdNum.value)
 const { load: loadCategories, findById: findCategory } = useCategories(houseIdNum.value)
+const { load: loadLabels, findById: findLabel } = useLabels(houseIdNum.value)
 const { tapRowToComplete } = useTapRowToComplete()
+
+function labelsFor(ids: number[] | null | undefined): Label[] {
+  if (!ids || ids.length === 0) return []
+  return ids.map((id) => findLabel(id)).filter((l): l is Label => l != null)
+}
 
 const session = ref<ShoppingSession | null>(null)
 const items = ref<ChecklistItem[]>([])
@@ -539,7 +555,7 @@ function onVisibility() {
 onMounted(async () => {
   loading.value = true
   try {
-    await Promise.all([loadStores(), loadCategories()])
+    await Promise.all([loadStores(), loadCategories(), loadLabels()])
     // One live session per user, so the caller's current session IS this one.
     const current = await getCurrentSession()
     if (!current || current.id !== sessionIdNum.value || !current.live) {

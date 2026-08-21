@@ -44,6 +44,10 @@
         :label="strings.storesLabel"
         :placeholder="strings.storesPlaceholder"
       />
+      <div class="edit-item-form__labels">
+        <span class="edit-item-form__label">{{ strings.labelsLabel }}</span>
+        <LabelChipList v-model="editLabelIds" :house-id="houseId" :list-id="item.listId" />
+      </div>
       <div class="edit-item-form__price">
         <span class="edit-item-form__label">{{ strings.priceLabel }}</span>
         <ItemPricesEditor
@@ -127,6 +131,7 @@ import { MarkdownEditor } from '@/components/MarkdownEditor'
 import RecurrenceEditor from '@/components/RecurrenceEditor'
 import CategoryPicker from '@/components/CategoryPicker'
 import StoreMultiPicker from '@/components/StoreMultiPicker'
+import LabelChipList from '@/components/LabelChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import ItemPricesEditor from '@/components/ItemPricesEditor'
 import { itemImagePreviewUrl } from '@/api/images'
@@ -156,6 +161,7 @@ const editDescription = ref('')
 const editQuantity = ref('')
 const editCategoryId = ref<number | null>(null)
 const editStoreIds = ref<number[]>([])
+const editLabelIds = ref<number[]>([])
 const editRrule = ref<string | null>(null)
 const editRepeatFromCompletion = ref(false)
 const editDeleteOnDone = ref(false)
@@ -206,6 +212,7 @@ watch(
       editQuantity.value = props.item.quantity ?? ''
       editCategoryId.value = props.item.categoryId ?? null
       editStoreIds.value = [...(props.item.storeIds ?? [])]
+      editLabelIds.value = [...(props.item.labelIds ?? [])]
       editRrule.value = props.item.rrule ?? null
       editRepeatFromCompletion.value = props.item.repeatFromCompletion ?? false
       editDeleteOnDone.value = props.item.deleteOnDone ?? false
@@ -249,6 +256,7 @@ function submitEdit() {
       quantity: editQuantity.value.trim(),
       categoryId: editCategoryId.value,
       storeIds: editStoreIds.value,
+      labelIds: editLabelIds.value,
       rrule: once ? null : editRrule.value,
       repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
       deleteOnDone: once,
@@ -297,6 +305,8 @@ const strings = {
   storesLabel: t('pantry', 'Stores'),
   // TRANSLATORS: Noun (plural), shops where this item can be bought. Field placeholder.
   storesPlaceholder: t('pantry', 'Stores'),
+  // TRANSLATORS: Noun (plural), tags attached to an item. Field label.
+  labelsLabel: t('pantry', 'Labels'),
   priceLabel: t('pantry', 'Price'),
   typeLabel: t('pantry', 'Item type'),
   imageLabel: t('pantry', 'Image'),
@@ -344,7 +354,8 @@ const strings = {
   }
 
   &__type,
-  &__price {
+  &__price,
+  &__labels {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;

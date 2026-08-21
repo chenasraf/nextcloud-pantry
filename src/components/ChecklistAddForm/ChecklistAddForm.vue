@@ -103,6 +103,13 @@
 
       <StoreChipList v-else-if="openSection === 'stores'" v-model="storeIds" :house-id="houseId" />
 
+      <LabelChipList
+        v-else-if="openSection === 'labels'"
+        v-model="labelIds"
+        :house-id="houseId"
+        :list-id="effectiveListId"
+      />
+
       <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
 
       <ItemPricesEditor
@@ -184,6 +191,7 @@
           :item="match"
           :category="categoryForItem(match.categoryId)"
           :stores="storesForItem(match.storeIds)"
+          :labels="labelsForItem(match.labelIds)"
           :house-id="houseId"
           suggestion
           @select="$emit('reuse-existing', $event)"
@@ -206,6 +214,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
 import TagOutlineIcon from '@icons/TagOutline.vue'
+import LabelMultipleOutlineIcon from '@icons/LabelMultipleOutline.vue'
 import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import FormatListBulletedIcon from '@icons/FormatListBulleted.vue'
 import TextIcon from '@icons/Text.vue'
@@ -221,6 +230,7 @@ import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { RecurrenceForm } from '@/components/RecurrenceEditor'
 import CategoryChipList from '@/components/CategoryChipList'
 import StoreChipList from '@/components/StoreChipList'
+import LabelChipList from '@/components/LabelChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
 import ItemPricesEditor from '@/components/ItemPricesEditor'
@@ -230,17 +240,20 @@ import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { type BarcodeResult } from '@/api/barcode'
 import { useCategories } from '@/composables/useCategories'
 import { useStores } from '@/composables/useStores'
+import { useLabels } from '@/composables/useLabels'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
+import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { formatRrule } from '@/utils/rrule'
 import { formatPrice, storelessPrice } from '@/utils/price'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ItemInput } from '@/api/lists'
-import type { Checklist, ChecklistItem, Category, Store, ItemPrice } from '@/api/types'
+import type { Checklist, ChecklistItem, Category, Store, Label, ItemPrice } from '@/api/types'
 
-type SectionKey = 'category' | 'stores' | 'quantity' | 'price' | 'description' | 'type' | 'image'
+type SectionKey =
+  'category' | 'labels' | 'stores' | 'quantity' | 'price' | 'description' | 'type' | 'image'
 
 const props = withDefaults(
   defineProps<{
@@ -284,6 +297,7 @@ const quantity = ref('')
 const prices = ref<ItemPrice[]>([])
 const categoryId = ref<number | null>(null)
 const storeIds = ref<number[]>([])
+const labelIds = ref<number[]>([])
 const targetListId = ref<number | null>(null)
 const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
@@ -337,11 +351,15 @@ void loadCategories()
 const { items: stores, load: loadStores } = useStores(props.houseId)
 void loadStores()
 
+const { items: labels, load: loadLabels } = useLabels(props.houseId)
+void loadLabels()
+
 watch(
   () => props.houseId,
   () => {
     void useCategories(props.houseId).load()
     void useStores(props.houseId).load()
+    void useLabels(props.houseId).load()
   },
 )
 
@@ -508,6 +526,8 @@ const selectedCategory = computed(() =>
 
 const selectedStores = computed(() => stores.value.filter((s) => storeIds.value.includes(s.id)))
 
+const selectedLabels = computed(() => labels.value.filter((l) => labelIds.value.includes(l.id)))
+
 // The chip summarizes the store-less (default) price; per-store prices show in
 // their grouped rows.
 const priceText = computed(() => {
@@ -565,6 +585,20 @@ const chips = computed<Chip[]>(() => {
     icon: stored.length === 1 ? storeIconComponent(stored[0]!.icon) : StoreOutlineIcon,
     iconStyle: stored.length === 1 ? { color: stored[0]!.color } : undefined,
     filled: stored.length > 0,
+  })
+
+  const labeled = selectedLabels.value
+  list.push({
+    key: 'labels',
+    text:
+      labeled.length === 0
+        ? strings.labels
+        : labeled.length === 1
+          ? labeled[0]!.name
+          : n('pantry', '%n label', '%n labels', labeled.length),
+    icon: labeled.length === 1 ? labelIconComponent(labeled[0]!.icon) : LabelMultipleOutlineIcon,
+    iconStyle: labeled.length === 1 ? { color: labeled[0]!.color } : undefined,
+    filled: labeled.length > 0,
   })
 
   list.push({
@@ -669,6 +703,11 @@ function storesForItem(ids: number[] | null | undefined): Store[] {
   return ids.map((id) => stores.value.find((s) => s.id === id)).filter((s): s is Store => s != null)
 }
 
+function labelsForItem(ids: number[] | null | undefined): Label[] {
+  if (!ids || ids.length === 0) return []
+  return ids.map((id) => labels.value.find((l) => l.id === id)).filter((l): l is Label => l != null)
+}
+
 // The parent clears the name (and keeps focus) after a confirmed reuse.
 function clearName() {
   name.value = ''
@@ -692,6 +731,7 @@ function submitAdd() {
         quantity: quantity.value.trim() || null,
         categoryId: categoryId.value,
         storeIds: storeIds.value,
+        labelIds: labelIds.value,
         prices: prices.value,
         rrule: once ? null : rrule.value,
         repeatFromCompletion: once ? false : repeatFromCompletion.value,
@@ -713,6 +753,7 @@ function submitAdd() {
   prices.value = []
   categoryId.value = null
   storeIds.value = []
+  labelIds.value = []
   rrule.value = null
   repeatFromCompletion.value = false
   barcode.value = null
@@ -736,6 +777,8 @@ const strings = {
   category: t('pantry', 'Category'),
   // TRANSLATORS: Noun (plural), shops where the item can be bought. Chip label.
   stores: t('pantry', 'Stores'),
+  // TRANSLATORS: Noun (plural), tags on the item. Chip label.
+  labels: t('pantry', 'Labels'),
   quantity: t('pantry', 'Quantity'),
   price: t('pantry', 'Price'),
   description: t('pantry', 'Description'),

@@ -92,6 +92,18 @@ export interface Category {
   updatedAt: number
 }
 
+export interface Label {
+  id: number
+  houseId: number
+  listId: number | null
+  name: string
+  icon: string
+  color: string
+  sortOrder: number
+  createdAt: number
+  updatedAt: number
+}
+
 /** A single opening-hours interval. `day` is 1-7 with 1 = Monday, 7 = Sunday (ISO-8601). */
 export interface OpeningHoursInterval {
   day: number
@@ -135,6 +147,7 @@ export interface ChecklistItem {
   name: string
   description: string | null
   categoryId: number | null
+  labelIds: number[]
   storeIds: number[]
   quantity: string | null
   done: boolean

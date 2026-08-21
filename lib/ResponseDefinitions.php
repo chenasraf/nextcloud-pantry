@@ -89,6 +89,7 @@ namespace OCA\Pantry;
  *     name: string,
  *     description: string|null,
  *     categoryId: int|null,
+ *     labelIds: list<int>,
  *     storeIds: list<int>,
  *     quantity: string|null,
  *     done: bool,
@@ -115,6 +116,22 @@ namespace OCA\Pantry;
  * @psalm-type PantryCategoryColor = '#ef4444'|'#f97316'|'#eab308'|'#22c55e'|'#14b8a6'|'#0ea5e9'|'#6366f1'|'#a855f7'|'#ec4899'|'#78716c'
  *
  * @psalm-type PantryChecklistIcon = 'clipboard-check'|'clipboard-list'|'format-list-checks'|'cart'|'basket'|'star'|'heart'|'home'|'calendar'|'bell'|'flag'|'bookmark'|'pin'|'map-marker'|'briefcase'|'wrench'|'silverware'|'coffee'|'gift'|'book'|'school'|'palette'|'camera'|'music'|'gamepad'|'run'|'dumbbell'|'pill'|'paw'|'flower'|'tree'|'broom'|'lightbulb'|'package'|'car'|'bike'|'beach'|'tag'
+ *
+ * @psalm-type PantryLabelIcon = 'tag'|'tag-multiple'|'tag-heart'|'tag-plus'|'label'|'label-multiple'|'star'|'heart'|'fire'|'flash'|'lightning-bolt'|'priority-high'|'priority-low'|'alert'|'alert-circle'|'information'|'check-circle'|'close-circle'|'clock'|'calendar'|'bell'|'flag'|'bookmark'|'pin'|'map-marker'|'gift'|'sale'|'percent'|'currency-usd'|'cart'|'basket'|'truck'|'ticket'|'barcode'|'seal'|'leaf'|'sprout'|'recycle'|'snowflake'|'water'|'food-apple'|'silverware'|'cup'|'pill'|'medical-bag'|'paw'|'baby'|'home'|'briefcase'|'school'|'palette'|'music'|'camera'|'gamepad'|'run'|'dumbbell'|'wrench'|'new-box'|'sticker'|'thumb-up'|'eye'|'lock'|'key'|'shield'|'diamond'|'crown'|'rocket'|'bug'|'puzzle'|'feather'|'bullhorn'|'creation'|'star-shooting'
+ *
+ * @psalm-type PantryLabelColor = '#ef4444'|'#f97316'|'#f59e0b'|'#eab308'|'#84cc16'|'#22c55e'|'#10b981'|'#14b8a6'|'#06b6d4'|'#0ea5e9'|'#3b82f6'|'#6366f1'|'#8b5cf6'|'#a855f7'|'#d946ef'|'#ec4899'|'#f43f5e'|'#78716c'
+ *
+ * @psalm-type PantryLabel = array{
+ *     id: int,
+ *     houseId: int,
+ *     listId: int|null,
+ *     name: string,
+ *     icon: PantryLabelIcon,
+ *     color: PantryLabelColor,
+ *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
  *
  * @psalm-type PantryNoteColor = '#f44336'|'#e91e63'|'#9c27b0'|'#673ab7'|'#3f51b5'|'#2196f3'|'#03a9f4'|'#00bcd4'|'#009688'|'#4caf50'|'#8bc34a'|'#cddc39'|'#ffeb3b'|'#ffc107'|'#ff9800'|'#ff5722'
  *
@@ -270,6 +287,7 @@ namespace OCA\Pantry;
  *     checklistItemSort: string,
  *     checklistSort: string,
  *     categorySort: string,
+ *     labelSort: string,
  *     storeSort: string,
  *     showAddedBy: bool,
  *     lastCurrency: string,

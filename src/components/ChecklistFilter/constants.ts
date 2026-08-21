@@ -11,3 +11,10 @@ export const NO_CATEGORY_ID = -1
  * reusing the same -1 value is fine.
  */
 export const NO_STORE_ID = -1
+
+/**
+ * Sentinel id used in the label-filter selection to represent "items with no
+ * label attached". Label selections live in their own model, so reusing the
+ * same -1 value is fine.
+ */
+export const NO_LABEL_ID = -1

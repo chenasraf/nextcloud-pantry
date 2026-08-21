@@ -33,6 +33,15 @@
         @update:model-value="$emit('update:selectedCategoryIds', $event)"
       />
       <FilterDropdown
+        v-if="labelOptions.length > 0"
+        :label="strings.labels"
+        :all-label="strings.allLabels"
+        :model-value="selectedLabelIdsLocal"
+        :options="labelOptions"
+        :total-count="totalCount"
+        @update:model-value="$emit('update:selectedLabelIds', $event)"
+      />
+      <FilterDropdown
         v-if="storeOptions.length > 0"
         :label="strings.stores"
         :all-label="strings.allStores"
@@ -59,22 +68,25 @@ import TagOffOutlineIcon from '@icons/TagOffOutline.vue'
 import StoreOffOutlineIcon from '@icons/StoreOffOutline.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
+import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker'
 import FilterDropdown, { type FilterOption } from './FilterDropdown.vue'
 import PriceFilter, { type PriceFilterValue } from './PriceFilter.vue'
-import { NO_CATEGORY_ID, NO_STORE_ID } from './constants'
+import { NO_CATEGORY_ID, NO_STORE_ID, NO_LABEL_ID } from './constants'
 import { hasPrice } from '@/utils/price'
-import type { Category, Checklist, ChecklistItem, Store } from '@/api/types'
+import type { Category, Checklist, ChecklistItem, Store, Label } from '@/api/types'
 
 const props = defineProps<{
   query: string
   selectedCategoryIds: number[]
   selectedStoreIds?: number[]
+  selectedLabelIds?: number[]
   selectedListIds?: number[]
   priceFilter?: PriceFilterValue
   items: ChecklistItem[]
   categories: Category[]
   stores?: Store[]
+  labels?: Label[]
   lists?: Checklist[]
 }>()
 
@@ -82,6 +94,7 @@ const emit = defineEmits<{
   (e: 'update:query', v: string): void
   (e: 'update:selectedCategoryIds', v: number[]): void
   (e: 'update:selectedStoreIds', v: number[]): void
+  (e: 'update:selectedLabelIds', v: number[]): void
   (e: 'update:selectedListIds', v: number[]): void
   (e: 'update:priceFilter', v: PriceFilterValue): void
 }>()
@@ -165,6 +178,44 @@ const storeOptions = computed<FilterOption[]>(() => {
   return options
 })
 
+// ----- Labels -----
+
+const selectedLabelIdsLocal = computed(() => props.selectedLabelIds ?? [])
+
+const labelOptions = computed<FilterOption[]>(() => {
+  const labels = props.labels ?? []
+  const counts = new Map<number, number>()
+  let unlabeled = 0
+  for (const item of props.items) {
+    const ids = item.labelIds ?? []
+    if (ids.length === 0) {
+      unlabeled += 1
+      continue
+    }
+    for (const id of ids) {
+      counts.set(id, (counts.get(id) ?? 0) + 1)
+    }
+  }
+  const options: FilterOption[] = labels
+    .filter((l) => counts.has(l.id))
+    .map((l) => ({
+      id: l.id,
+      label: l.name,
+      count: counts.get(l.id)!,
+      icon: labelIconComponent(l.icon),
+      color: l.color,
+    }))
+  if (unlabeled > 0) {
+    options.push({
+      id: NO_LABEL_ID,
+      label: strings.noLabel,
+      count: unlabeled,
+      icon: TagOffOutlineIcon,
+    })
+  }
+  return options
+})
+
 // ----- Lists (meta "All lists" view only) -----
 
 const selectedListIdsLocal = computed(() => props.selectedListIds ?? [])
@@ -200,6 +251,12 @@ const strings = {
   allStores: t('pantry', 'All stores'),
   // TRANSLATORS: Filter option matching items with no store attached.
   noStore: t('pantry', 'No store'),
+  // TRANSLATORS: Noun (plural), tags on items. Label of the label filter dropdown.
+  labels: t('pantry', 'Labels'),
+  // TRANSLATORS: Option that clears the label filter to show items with any label.
+  allLabels: t('pantry', 'All labels'),
+  // TRANSLATORS: Filter option matching items with no label attached.
+  noLabel: t('pantry', 'No label'),
 }
 </script>
 
