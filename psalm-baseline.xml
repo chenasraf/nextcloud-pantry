@@ -1,0 +1,2903 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="5.26.1@d747f6500b38ac4f7dfc5edbcae6e4b637d7add0">
+  <file src="lib/Activity/ActivityPublisher.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[publishItemsRecurred]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantFunctionCall>
+      <code><![CDATA[array_values]]></code>
+      <code><![CDATA[array_values]]></code>
+      <code><![CDATA[array_values]]></code>
+      <code><![CDATA[array_values]]></code>
+      <code><![CDATA[array_values]]></code>
+    </RedundantFunctionCall>
+  </file>
+  <file src="lib/Activity/Filter.php">
+    <UnusedClass>
+      <code><![CDATA[Filter]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Activity/Provider.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$params]]></code>
+    </MixedArgumentTypeCoercion>
+    <UnusedClass>
+      <code><![CDATA[Provider]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Activity/Setting.php">
+    <UnusedClass>
+      <code><![CDATA[Setting]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/AppInfo/Application.php">
+    <MixedArgument>
+      <code><![CDATA[$manifestFile]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$manifest[$entryName]]]></code>
+      <code><![CDATA[$manifest[$entryName]['file']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$manifest]]></code>
+      <code><![CDATA[$manifestFile]]></code>
+    </MixedAssignment>
+    <MixedOperand>
+      <code><![CDATA[$manifestFile]]></code>
+    </MixedOperand>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[getViteEntryScript]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/BackgroundJob/PurgeExpiredTrashJob.php">
+    <UnusedClass>
+      <code><![CDATA[PurgeExpiredTrashJob]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/BackgroundJob/ReopenRecurringItemsJob.php">
+    <UnusedClass>
+      <code><![CDATA[ReopenRecurringItemsJob]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/BackgroundJob/ShoppingSessionLifecycleJob.php">
+    <UnusedClass>
+      <code><![CDATA[ShoppingSessionLifecycleJob]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Capabilities.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Command/RepairSchema.php">
+    <UnusedClass>
+      <code><![CDATA[RepairSchema]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/BarcodeController.php">
+    <UnusedClass>
+      <code><![CDATA[BarcodeController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/CategoryController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$sortBy = $this->prefs->getCategorySort($uid, $houseId);
+			$all = $this->categories->listForHouse($houseId, $sortBy);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			return new DataResponse(array_map(fn ($c) => $c->jsonSerialize(), $sliced));
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $categoryId, $name, $icon, $color, $sortOrder, $listId, $listIdProvided): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->categories->assertInHouse($categoryId, $houseId);
+			$patch = [];
+			if ($name !== null) {
+				$patch['name'] = $name;
+			}
+			if ($icon !== null) {
+				$patch['icon'] = $icon;
+			}
+			if ($color !== null) {
+				$patch['color'] = $color;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($listIdProvided) {
+				$patch['listId'] = $listId;
+			}
+			$updated = $this->categories->update($categoryId, $patch);
+			return new DataResponse($updated->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $name, $icon, $color, $listId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$cat = $this->categories->create($houseId, $name, $icon, $color, $listId);
+			return new DataResponse($cat->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryCategory, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryCategory, array{}>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryCategory>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <UnusedClass>
+      <code><![CDATA[CategoryController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/ChecklistController.php">
+    <DocblockTypeContradiction>
+      <code><![CDATA[!is_array($data)]]></code>
+      <code><![CDATA[$data === null]]></code>
+      <code><![CDATA[$data === null || !is_array($data)]]></code>
+    </DocblockTypeContradiction>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $itemIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$updated = $this->lists->uncheckItems(
+				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
+			);
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($updated),
+				'skipped' => $collected['skipped'],
+			]);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $itemIds, $categoryId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$resolvedCategoryId = ($categoryId !== null && $categoryId > 0) ? $categoryId : null;
+			if ($resolvedCategoryId !== null) {
+				$this->categories->assertInHouse($resolvedCategoryId, $houseId);
+			}
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$groups = $this->groupItemsBySourceList($collected['items']);
+			$updated = $this->lists->setItemsCategory(
+				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
+				$resolvedCategoryId,
+			);
+
+			$houseName = $this->houses->get($houseId)->getName();
+			foreach ($groups as $listId => $group) {
+				$this->activity->publishItemsCategorized(
+					$houseId,
+					$houseName,
+					$uid,
+					$listId,
+					$group['listName'],
+					$group['itemNames'],
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($updated),
+				'skipped' => $collected['skipped'],
+			]);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $itemIds, $labelIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$labelIds = $this->labels->assertLabelsInHouse($houseId, $labelIds);
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$groups = $this->groupItemsBySourceList($collected['items']);
+			$updated = $this->lists->setItemsLabels(
+				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
+				$labelIds,
+			);
+
+			// Attaching labels reuses the generic "item updated" activity rather
+			// than a dedicated subject.
+			$houseName = $this->houses->get($houseId)->getName();
+			$listNames = [];
+			foreach ($groups as $listId => $group) {
+				$listNames[$listId] = $group['listName'];
+			}
+			foreach ($updated as $item) {
+				$this->activity->publishItemUpdated(
+					$houseId,
+					$houseName,
+					$uid,
+					(int)$item->getId(),
+					$item->getName(),
+					(int)$item->getListId(),
+					$listNames[(int)$item->getListId()] ?? '',
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($updated),
+				'skipped' => $collected['skipped'],
+			]);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $itemIds, $storeIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$storeIds = array_map('intval', $storeIds);
+			$this->stores->assertStoresInHouse($houseId, $storeIds);
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$groups = $this->groupItemsBySourceList($collected['items']);
+			$updated = $this->lists->setItemsStore(
+				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
+				$storeIds,
+			);
+
+			// Attaching stores reuses the generic "item updated" activity rather
+			// than a dedicated subject.
+			$houseName = $this->houses->get($houseId)->getName();
+			$listNames = [];
+			foreach ($groups as $listId => $group) {
+				$listNames[$listId] = $group['listName'];
+			}
+			foreach ($updated as $item) {
+				$this->activity->publishItemUpdated(
+					$houseId,
+					$houseName,
+					$uid,
+					(int)$item->getId(),
+					$item->getName(),
+					(int)$item->getListId(),
+					$listNames[(int)$item->getListId()] ?? '',
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($updated),
+				'skipped' => $collected['skipped'],
+			]);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $itemIds, $targetListId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$targetList = $this->lists->getList($targetListId);
+			$this->assertListInHouse($targetList->getHouseId(), $houseId);
+			if (!$this->permissions->isAdmin($houseId, $uid)
+				&& !$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
+				throw new ForbiddenException('No access to the destination list');
+			}
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$groups = $this->groupItemsBySourceList($collected['items']);
+			// Copy one item at a time — each may need its image file duplicated so
+			// the copy and source do not share a file (mirrors copyItem()).
+			$copies = [];
+			foreach ($collected['items'] as $source) {
+				$newImageFileId = null;
+				$newImageOwner = null;
+				if ($source->getImageFileId() !== null && $source->getImageUploadedBy() !== null) {
+					$newImageFileId = $this->images->duplicateItemImage(
+						$source->getImageUploadedBy(),
+						$source->getImageFileId(),
+						$uid,
+						$houseId,
+					);
+					if ($newImageFileId !== null) {
+						$newImageOwner = $uid;
+					}
+				}
+				$copies[] = $this->lists->copyItem((int)$source->getId(), $targetListId, $uid, $newImageFileId, $newImageOwner);
+			}
+
+			$houseName = $this->houses->get($houseId)->getName();
+			foreach ($groups as $fromListId => $group) {
+				$this->activity->publishItemsCopied(
+					$houseId,
+					$houseName,
+					$uid,
+					$fromListId,
+					$group['listName'],
+					$targetListId,
+					$targetList->getName(),
+					$group['itemNames'],
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($copies),
+				'skipped' => $collected['skipped'],
+			]);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $itemIds, $targetListId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$targetList = $this->lists->getList($targetListId);
+			$this->assertListInHouse($targetList->getHouseId(), $houseId);
+			if (!$this->permissions->isAdmin($houseId, $uid)
+				&& !$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
+				throw new ForbiddenException('No access to the destination list');
+			}
+
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			// Items already on the destination are a no-op — drop them so they
+			// neither move nor emit a spurious "moved" activity.
+			$toMove = array_values(array_filter(
+				$collected['items'],
+				fn (ChecklistItem $i) => (int)$i->getListId() !== $targetListId,
+			));
+			$groups = $this->groupItemsBySourceList($toMove);
+			$moved = $this->lists->moveItems(array_map(fn (ChecklistItem $i) => (int)$i->getId(), $toMove), $targetListId);
+
+			$houseName = $this->houses->get($houseId)->getName();
+			foreach ($groups as $fromListId => $group) {
+				$this->activity->publishItemsMoved(
+					$houseId,
+					$houseName,
+					$uid,
+					$fromListId,
+					$group['listName'],
+					$targetListId,
+					$targetList->getName(),
+					$group['itemNames'],
+				);
+			}
+			return new DataResponse([
+				'success' => true,
+				'items' => $this->serializeItems($moved),
+				'skipped' => $collected['skipped'],
+			]);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$all = $this->lists->listDeletedForHouse($houseId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $sliced));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$archived = $this->lists->archiveItem($itemId);
+			return new DataResponse($this->serializeItem($archived));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$unarchived = $this->lists->unarchiveItem($itemId);
+			return new DataResponse($this->serializeItem($unarchived));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$toggled = $this->lists->toggleItem($itemId, $uid);
+			$houseName = $this->houses->get($houseId)->getName();
+			if ($toggled->getDone()) {
+				$this->notifications->notifyItemDone($houseId, $uid, $toggled->getName(), $list->getName());
+				$this->activity->publishItemDone(
+					$houseId,
+					$houseName,
+					$uid,
+					$itemId,
+					$toggled->getName(),
+					(int)$list->getId(),
+					$list->getName(),
+				);
+			} else {
+				$this->activity->publishItemReopened(
+					$houseId,
+					$houseName,
+					$uid,
+					$itemId,
+					$toggled->getName(),
+					(int)$list->getId(),
+					$list->getName(),
+				);
+			}
+			return new DataResponse($this->serializeItem($toggled));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null, 'imageUploadedBy' => null]);
+			return new DataResponse($this->serializeItem($updated));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+
+			$data = $this->request->getUploadedFile('image');
+			if ($data === null || !is_array($data) || ($data['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+				throw new \InvalidArgumentException('No image uploaded');
+			}
+			$tmp = (string)($data['tmp_name'] ?? '');
+			if ($tmp === '' || !is_uploaded_file($tmp)) {
+				throw new \InvalidArgumentException('Invalid upload');
+			}
+			$bytes = file_get_contents($tmp);
+			if ($bytes === false) {
+				throw new \RuntimeException('Could not read uploaded file');
+			}
+			$original = (string)($data['name'] ?? 'image.jpg');
+			$fileId = $this->images->uploadForUser($uid, $houseId, $original, $bytes);
+
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId, 'imageUploadedBy' => $uid]);
+			return new DataResponse($this->serializeItem($updated));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$item = $this->lists->getItem($itemId, includeDeleted: true);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$restored = $this->lists->restoreItem($itemId);
+			$this->activity->publishItemRestored(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				$itemId,
+				$restored->getName(),
+				(int)$list->getId(),
+				$list->getName(),
+			);
+			return new DataResponse($this->serializeItem($restored));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$item = $this->lists->getItem($itemId);
+			$list = $this->lists->getList($item->getListId());
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($item->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$patch = [];
+			if ($name !== null) {
+				$patch['name'] = $name;
+			}
+			if ($description !== null) {
+				$patch['description'] = $description;
+			}
+			if ($categoryId !== null) {
+				if ($categoryId > 0) {
+					$this->categories->assertInHouse($categoryId, $houseId);
+					$patch['categoryId'] = $categoryId;
+				} else {
+					$patch['categoryId'] = null;
+				}
+			}
+			if ($quantity !== null) {
+				$patch['quantity'] = $quantity;
+			}
+			if ($rrule !== null) {
+				$patch['rrule'] = $rrule;
+			}
+			if ($repeatFromCompletion !== null) {
+				$patch['repeatFromCompletion'] = $repeatFromCompletion;
+			}
+			if ($deleteOnDone !== null) {
+				$patch['deleteOnDone'] = $deleteOnDone;
+			}
+			if ($imageFileId !== null) {
+				$patch['imageFileId'] = $imageFileId > 0 ? $imageFileId : null;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($barcode !== null) {
+				$patch['barcode'] = $barcode;
+			}
+			// Prices are replaced as a whole set. A null value leaves them
+			// unchanged; an empty array clears them.
+			if ($prices !== null) {
+				$patch['prices'] = $prices;
+			}
+			if ($storeIds !== null) {
+				$ids = array_map('intval', $storeIds);
+				$this->stores->assertStoresInHouse($houseId, $ids);
+				$patch['storeIds'] = $ids;
+			}
+			if ($labelIds !== null) {
+				$patch['labelIds'] = $this->labels->assertLabelsInHouse($houseId, $labelIds);
+			}
+			$targetList = null;
+			if ($targetListId !== null && $targetListId !== $listId) {
+				// Moving an item to another list needs the move capability and
+				// access to the destination list (admins bypass both).
+				if (!$this->permissions->isAdmin($houseId, $uid)) {
+					if (!$this->permissions->can($houseId, $uid, 'canMoveItems')) {
+						throw new ForbiddenException('Missing permission: canMoveItems');
+					}
+					if (!$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
+						throw new ForbiddenException('No access to the destination list');
+					}
+				}
+				$targetList = $this->lists->getList($targetListId);
+				$this->assertListInHouse($targetList->getHouseId(), $houseId);
+				$patch['listId'] = $targetListId;
+			}
+			$updated = $this->lists->updateItem($itemId, $patch);
+
+			$houseName = $this->houses->get($houseId)->getName();
+			if ($targetList !== null && $targetList->getId() !== $list->getId()) {
+				$this->activity->publishItemMoved(
+					$houseId,
+					$houseName,
+					$uid,
+					$itemId,
+					$updated->getName(),
+					(int)$list->getId(),
+					$list->getName(),
+					(int)$targetList->getId(),
+					$targetList->getName(),
+				);
+			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $prices !== null) {
+				$this->activity->publishItemUpdated(
+					$houseId,
+					$houseName,
+					$uid,
+					$itemId,
+					$updated->getName(),
+					(int)$list->getId(),
+					$list->getName(),
+				);
+			}
+			return new DataResponse($this->serializeItem($updated));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId, $targetListId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$source = $this->lists->getItem($itemId);
+			$sourceList = $this->lists->getList($source->getListId());
+			$this->assertListInHouse($sourceList->getHouseId(), $houseId);
+			if ($source->getListId() !== $listId) {
+				throw new NotFoundException('Item does not belong to this list');
+			}
+			$targetList = $this->lists->getList($targetListId);
+			$this->assertListInHouse($targetList->getHouseId(), $houseId);
+			if (!$this->permissions->isAdmin($houseId, $uid)
+				&& !$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
+				throw new ForbiddenException('No access to the destination list');
+			}
+
+			$newImageFileId = null;
+			$newImageOwner = null;
+			if ($source->getImageFileId() !== null && $source->getImageUploadedBy() !== null) {
+				$newImageFileId = $this->images->duplicateItemImage(
+					$source->getImageUploadedBy(),
+					$source->getImageFileId(),
+					$uid,
+					$houseId,
+				);
+				if ($newImageFileId !== null) {
+					$newImageOwner = $uid;
+				}
+			}
+
+			$copy = $this->lists->copyItem($itemId, $targetListId, $uid, $newImageFileId, $newImageOwner);
+
+			$houseName = $this->houses->get($houseId)->getName();
+			$this->activity->publishItemCopied(
+				$houseId,
+				$houseName,
+				$uid,
+				(int)$copy->getId(),
+				$copy->getName(),
+				(int)$sourceList->getId(),
+				$sourceList->getName(),
+				(int)$targetList->getId(),
+				$targetList->getName(),
+			);
+			return new DataResponse($this->serializeItem($copy));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $limit, $offset): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$all = $this->lists->listArchivedItems($listId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$items = $this->serializeItems($sliced);
+			return new DataResponse($items);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $limit, $offset): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$all = $this->lists->listDeletedItems($listId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$items = $this->serializeItems($sliced);
+			return new DataResponse($items);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $prices, $labelIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			if ($categoryId !== null) {
+				$this->categories->assertInHouse($categoryId, $houseId);
+			}
+			$storeIds = array_map('intval', $storeIds);
+			$this->stores->assertStoresInHouse($houseId, $storeIds);
+			$labelIds = $this->labels->assertLabelsInHouse($houseId, $labelIds);
+			$item = $this->lists->addItem($listId, [
+				'name' => $name,
+				'description' => $description,
+				'categoryId' => $categoryId,
+				'quantity' => $quantity,
+				'rrule' => $rrule,
+				'repeatFromCompletion' => $repeatFromCompletion,
+				'deleteOnDone' => $deleteOnDone,
+				'sortOrder' => $sortOrder ?? 0,
+				'storeIds' => $storeIds,
+				'barcode' => $barcode,
+				'prices' => $prices,
+				'labelIds' => $labelIds,
+			], $uid);
+			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
+			$this->activity->publishItemAdded(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$item->getId(),
+				$item->getName(),
+				$listId,
+				$list->getName(),
+			);
+			return new DataResponse($this->serializeItem($item));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $sortBy, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
+			$all = $this->lists->listItems($listId, $sortBy, $categorySort);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$items = $this->serializeItems($sliced);
+			return new DataResponse($items);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
+			$all = $this->lists->listItemsForHouse($houseId, $sortBy, $categorySort);
+			// Items inherit their parent list's access; hide items in lists the
+			// caller cannot reach. Cache the verdict per list id.
+			$listAccess = [];
+			$all = array_values(array_filter($all, function ($i) use ($houseId, $uid, &$listAccess) {
+				$listId = (int)$i->getListId();
+				if (!isset($listAccess[$listId])) {
+					$listAccess[$listId] = $this->permissions->canAccessList($houseId, $uid, $listId);
+				}
+				return $listAccess[$listId];
+			}));
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$items = $this->serializeItems($sliced);
+			return new DataResponse($items);
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedInferredReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryList>, array{}>]]></code>
+    </MixedInferredReturnType>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$data]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->lists->getList($listId, includeDeleted: true);
+			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$restored = $this->lists->restoreList($listId);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($restored, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $color, $sortOrder, $deleteOnDoneDefault): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->lists->getList($listId);
+			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$patch = [];
+			if ($name !== null) {
+				$patch['name'] = $name;
+			}
+			if ($description !== null) {
+				$patch['description'] = $description;
+			}
+			if ($icon !== null) {
+				$patch['icon'] = $icon;
+			}
+			if ($color !== null) {
+				$patch['color'] = $color;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($deleteOnDoneDefault !== null) {
+				$patch['deleteOnDoneDefault'] = $deleteOnDoneDefault;
+			}
+			$list = $this->lists->updateList($listId, $patch);
+			$contentChanged = $name !== null || $description !== null || $icon !== null || $color !== null;
+			if ($contentChanged) {
+				$this->activity->publishListUpdated(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					$listId,
+					$list->getName(),
+				);
+			}
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $name, $description, $icon, $color): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->lists->createList($houseId, $name, $description, $icon, $color);
+			$this->activity->publishListCreated(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$list->getId(),
+				$list->getName(),
+			);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[array_values(array_map(static function ($i) use ($storeMap, $priceMap, $labelMap) {
+			$data = $i->jsonSerialize();
+			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
+			$data['prices'] = $priceMap[(int)$i->getId()] ?? [];
+			$data['labelIds'] = $labelMap[(int)$i->getId()] ?? [];
+			return $data;
+		}, $items))]]></code>
+      <code><![CDATA[list<array<string, mixed>>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryList>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <PossiblyNullArgument>
+      <code><![CDATA[$source->getImageFileId()]]></code>
+      <code><![CDATA[$source->getImageFileId()]]></code>
+      <code><![CDATA[$source->getImageUploadedBy()]]></code>
+      <code><![CDATA[$source->getImageUploadedBy()]]></code>
+    </PossiblyNullArgument>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$copy->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getListId()]]></code>
+      <code><![CDATA[(int)$i->getListId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getListId()]]></code>
+      <code><![CDATA[(int)$item->getListId()]]></code>
+      <code><![CDATA[(int)$item->getListId()]]></code>
+      <code><![CDATA[(int)$item->getListId()]]></code>
+      <code><![CDATA[(int)$item->getListId()]]></code>
+      <code><![CDATA[(int)$item->getListId()]]></code>
+      <code><![CDATA[(int)$item->getListId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$rawId]]></code>
+      <code><![CDATA[(int)$source->getId()]]></code>
+      <code><![CDATA[(int)$sourceList->getId()]]></code>
+      <code><![CDATA[(int)$targetList->getId()]]></code>
+      <code><![CDATA[(int)$targetList->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA['']]></code>
+      <code><![CDATA['']]></code>
+      <code><![CDATA['image.jpg']]></code>
+      <code><![CDATA['image.jpg']]></code>
+    </RedundantConditionGivenDocblockType>
+    <UndefinedDocblockClass>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryList>, array{}>]]></code>
+    </UndefinedDocblockClass>
+    <UnusedClass>
+      <code><![CDATA[ChecklistController]]></code>
+    </UnusedClass>
+    <UnusedParam>
+      <code><![CDATA[$houseId]]></code>
+      <code><![CDATA[$limit]]></code>
+      <code><![CDATA[$offset]]></code>
+      <code><![CDATA[$sortBy]]></code>
+    </UnusedParam>
+  </file>
+  <file src="lib/Controller/HouseController.php">
+    <DeprecatedMethod>
+      <code><![CDATA[search]]></code>
+    </DeprecatedMethod>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$members = array_slice(
+				$this->houseService->listMembers($houseId),
+				max(0, $offset),
+				max(0, $limit),
+			);
+			$out = array_map(fn (HouseMember $m) => $this->serializeMember($m), $members);
+			return new DataResponse($out);
+		})]]></code>
+      <code><![CDATA[[
+			'id' => (int)$member->getId(),
+			'houseId' => $member->getHouseId(),
+			'userId' => $member->getUserId(),
+			'displayName' => $user !== null ? $user->getDisplayName() : $member->getUserId(),
+			'role' => $member->getRole(),
+			'roleIds' => $this->memberRoleMapper->findRoleIdsForMember((int)$member->getId()),
+			'joinedAt' => $member->getJoinedAt(),
+		]]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryMember>, array{}>]]></code>
+      <code><![CDATA[PantryMember]]></code>
+    </MoreSpecificReturnType>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$house->getId()]]></code>
+      <code><![CDATA[(int)$house->getId()]]></code>
+      <code><![CDATA[(int)$member->getId()]]></code>
+      <code><![CDATA[(int)$member->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnusedClass>
+      <code><![CDATA[HouseController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/ImageController.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $fileId, $owner, $size) {
+			$this->auth->requireMember($houseId, $this->requireUid());
+
+			return $this->servePreview($owner, $fileId, $size);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $photoId, $size) {
+			$this->auth->requireMember($houseId, $this->requireUid());
+
+			$photo = $this->photoMapper->findById($photoId);
+			if ($photo->getHouseId() !== $houseId) {
+				throw new NotFoundException('Photo does not belong to this house');
+			}
+
+			return $this->servePreview($photo->getUploadedBy(), $photo->getFileId(), $size);
+		})]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[FileDisplayResponse<Http::STATUS_OK, array{Content-Type: string}>|DataResponse<Http::STATUS_NOT_FOUND, array{error: string}, array{}>]]></code>
+      <code><![CDATA[FileDisplayResponse<Http::STATUS_OK, array{Content-Type: string}>|DataResponse<Http::STATUS_NOT_FOUND, array{error: string}, array{}>]]></code>
+    </InvalidReturnType>
+    <MissingDependency>
+      <code><![CDATA[$this->rootFolder]]></code>
+      <code><![CDATA[private]]></code>
+    </MissingDependency>
+    <MixedArrayAccess>
+      <code><![CDATA[$nodes[0]]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$nodes]]></code>
+      <code><![CDATA[$userFolder]]></code>
+    </MixedAssignment>
+    <MixedMethodCall>
+      <code><![CDATA[getById]]></code>
+    </MixedMethodCall>
+    <UnusedClass>
+      <code><![CDATA[ImageController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/LabelController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$sortBy = $this->prefs->getLabelSort($uid, $houseId);
+			$all = $this->labels->listForHouse($houseId, $sortBy);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			return new DataResponse(array_map(fn ($l) => $l->jsonSerialize(), $sliced));
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $labelId, $name, $icon, $color, $sortOrder, $listId, $listIdProvided): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->labels->assertInHouse($labelId, $houseId);
+			$patch = [];
+			if ($name !== null) {
+				$patch['name'] = $name;
+			}
+			if ($icon !== null) {
+				$patch['icon'] = $icon;
+			}
+			if ($color !== null) {
+				$patch['color'] = $color;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($listIdProvided) {
+				$patch['listId'] = $listId;
+			}
+			$updated = $this->labels->update($labelId, $patch);
+			return new DataResponse($updated->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $name, $icon, $color, $listId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$label = $this->labels->create($houseId, $name, $icon, $color, $listId);
+			return new DataResponse($label->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryLabel, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryLabel, array{}>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryLabel>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <UnusedClass>
+      <code><![CDATA[LabelController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/NoteController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$all = $this->notes->listDeletedNotes($houseId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($n) => $this->noteJson($n, $roleEdit, $shareMap), $sliced));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$all = $this->notes->listNotes($houseId, $sortBy);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($n) => $this->noteJson($n, $roleEdit, $shareMap), $sliced));
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $noteId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->notes->getNote($noteId, includeDeleted: true);
+			$this->assertInHouse($existing->getHouseId(), $houseId);
+			$restored = $this->notes->restoreNote($noteId);
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($restored, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $noteId, $title, $content, $color, $sortOrder, $isPinned): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->notes->getNote($noteId);
+			$this->assertInHouse($existing->getHouseId(), $houseId);
+			// Editing needs the role capability or an editor share on this note.
+			if (!$this->permissions->can($houseId, $uid, 'canUpdateNotes')
+				&& !$this->shares->hasEditShare($uid, Share::TYPE_NOTE, $noteId)) {
+				throw new ForbiddenException('Missing permission: canUpdateNotes');
+			}
+			$patch = [];
+			if ($title !== null) {
+				$patch['title'] = $title;
+			}
+			if ($content !== null) {
+				$patch['content'] = $content;
+			}
+			if ($color !== null) {
+				$patch['color'] = $color;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
+			}
+			if ($isPinned !== null) {
+				$patch['isPinned'] = $isPinned;
+			}
+			$note = $this->notes->updateNote($noteId, $patch);
+			// Only notify for content/title changes, not color/sort-order-only changes
+			if ($title !== null || $content !== null) {
+				$this->notifications->notifyNoteEdited($houseId, $uid, (int)$note->getId(), $note->getTitle());
+				$this->activity->publishNoteEdited(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					(int)$note->getId(),
+					$note->getTitle(),
+				);
+			}
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($note, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $title, $content, $color): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$note = $this->notes->createNote($houseId, $uid, $title, $content, $color);
+			$this->notifications->notifyNoteCreated($houseId, $uid, (int)$note->getId(), $note->getTitle());
+			$this->activity->publishNoteCreated(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$note->getId(),
+				$note->getTitle(),
+			);
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($note, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryNote, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryNote, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryNote, array{}>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryNote>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryNote>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$note->getId()]]></code>
+      <code><![CDATA[(int)$note->getId()]]></code>
+      <code><![CDATA[(int)$note->getId()]]></code>
+      <code><![CDATA[(int)$note->getId()]]></code>
+      <code><![CDATA[(int)$note->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnusedClass>
+      <code><![CDATA[NoteController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/PageController.php">
+    <InvalidTemplateParam>
+      <code><![CDATA[TemplateResponse<Http::STATUS_OK,array{}>]]></code>
+      <code><![CDATA[TemplateResponse<Http::STATUS_OK,array{}>]]></code>
+    </InvalidTemplateParam>
+    <MixedInferredReturnType>
+      <code><![CDATA[TemplateResponse<Http::STATUS_OK,array{}>]]></code>
+      <code><![CDATA[TemplateResponse<Http::STATUS_OK,array{}>]]></code>
+    </MixedInferredReturnType>
+    <PossiblyUnusedParam>
+      <code><![CDATA[$path]]></code>
+    </PossiblyUnusedParam>
+    <UndefinedDocblockClass>
+      <code><![CDATA[TemplateResponse<Http::STATUS_OK,array{}>]]></code>
+      <code><![CDATA[TemplateResponse<Http::STATUS_OK,array{}>]]></code>
+    </UndefinedDocblockClass>
+    <UnusedClass>
+      <code><![CDATA[PageController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/PhotoController.php">
+    <DocblockTypeContradiction>
+      <code><![CDATA[!is_array($data)]]></code>
+      <code><![CDATA[$data === null]]></code>
+      <code><![CDATA[$data === null || !is_array($data)]]></code>
+    </DocblockTypeContradiction>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$all = $this->photos->listDeletedPhotos($houseId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($p) => $this->photoJson($p, $roleEdit, $shareMap), $sliced));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$all = $this->photos->listFolders($houseId, $sortBy);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canMovePhotos');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($f) => $this->folderJson($f, $roleEdit, $shareMap), $sliced));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$all = $this->photos->listPhotos($houseId, $sortBy);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($p) => $this->photoJson($p, $roleEdit, $shareMap), $sliced));
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $folderId, $caption): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+
+			if ($folderId !== null && $folderId > 0) {
+				$folder = $this->photos->getFolder($folderId);
+				$this->assertInHouse($folder->getHouseId(), $houseId, 'Folder');
+			} else {
+				$folderId = null;
+			}
+
+			$data = $this->request->getUploadedFile('image');
+			if ($data === null || !is_array($data) || ($data['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+				throw new \InvalidArgumentException('No image uploaded');
+			}
+			$tmp = (string)($data['tmp_name'] ?? '');
+			if ($tmp === '' || !is_uploaded_file($tmp)) {
+				throw new \InvalidArgumentException('Invalid upload');
+			}
+			$bytes = file_get_contents($tmp);
+			if ($bytes === false) {
+				throw new \RuntimeException('Could not read uploaded file');
+			}
+			$original = (string)($data['name'] ?? 'image.jpg');
+			$fileId = $this->images->uploadPhoto($uid, $houseId, $original, $bytes);
+
+			$photo = $this->photos->addPhoto($houseId, $uid, $fileId, $folderId, $caption);
+			$this->notifications->notifyPhotoUploaded($houseId, $uid);
+			$folderName = null;
+			if ($folderId !== null) {
+				try {
+					$folderName = $this->photos->getFolder($folderId)->getName();
+				} catch (\Throwable) {
+					// best-effort
+				}
+			}
+			$this->activity->publishPhotoUploaded(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$photo->getId(),
+				$photo->getCaption(),
+				$folderId,
+				$folderName,
+			);
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			return new DataResponse($this->photoJson($photo, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $folderId, $name, $sortOrder): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->photos->getFolder($folderId);
+			$this->assertInHouse($existing->getHouseId(), $houseId, 'Folder');
+			// Editing a folder needs the move capability or an editor share on it.
+			if (!$this->permissions->can($houseId, $uid, 'canMovePhotos')
+				&& !$this->shares->hasEditShare($uid, Share::TYPE_PHOTO_FOLDER, $folderId)) {
+				throw new ForbiddenException('Missing permission: canMovePhotos');
+			}
+			$oldName = $existing->getName();
+			$patch = [];
+			if ($name !== null) {
+				$patch['name'] = $name;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
+			}
+			$folder = $this->photos->updateFolder($folderId, $patch);
+			if ($name !== null && $folder->getName() !== $oldName) {
+				$this->activity->publishFolderRenamed(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					$folderId,
+					$oldName,
+					$folder->getName(),
+				);
+			}
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canMovePhotos');
+			return new DataResponse($this->folderJson($folder, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $name): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$folder = $this->photos->createFolder($houseId, $name);
+			$this->activity->publishFolderCreated(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$folder->getId(),
+				$folder->getName(),
+			);
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canMovePhotos');
+			return new DataResponse($this->folderJson($folder, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $photoId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->photos->getPhoto($photoId, includeDeleted: true);
+			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
+			$restored = $this->photos->restorePhoto($photoId);
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			return new DataResponse($this->photoJson($restored, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $photoId, $caption, $folderId, $sortOrder): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->photos->getPhoto($photoId);
+			$this->assertInHouse($existing->getHouseId(), $houseId, 'Photo');
+			// Editing needs the role capability or an editor share on the photo
+			// (or its containing folder).
+			if (!$this->permissions->can($houseId, $uid, 'canUpdatePhotos')
+				&& !$this->shares->hasEditShare($uid, Share::TYPE_PHOTO, $photoId)) {
+				throw new ForbiddenException('Missing permission: canUpdatePhotos');
+			}
+			$previousFolderId = $existing->getFolderId();
+
+			$patch = [];
+			if ($caption !== null) {
+				$patch['caption'] = $caption;
+			}
+			if ($folderId !== null) {
+				// Changing the folder is a move and needs the move capability.
+				$normalizedFolderId = $folderId > 0 ? $folderId : null;
+				if ($normalizedFolderId !== $previousFolderId
+					&& !$this->permissions->isAdmin($houseId, $uid)
+					&& !$this->permissions->can($houseId, $uid, 'canMovePhotos')) {
+					throw new ForbiddenException('Missing permission: canMovePhotos');
+				}
+				if ($folderId > 0) {
+					$folder = $this->photos->getFolder($folderId);
+					$this->assertInHouse($folder->getHouseId(), $houseId, 'Folder');
+				}
+				$patch['folderId'] = $folderId;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
+			}
+			$photo = $this->photos->updatePhoto($photoId, $patch);
+
+			if ($folderId !== null && $photo->getFolderId() !== $previousFolderId) {
+				$this->activity->publishPhotoMoved(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					$photoId,
+					$photo->getCaption(),
+					$previousFolderId,
+					$this->safeFolderName($previousFolderId),
+					$photo->getFolderId(),
+					$this->safeFolderName($photo->getFolderId()),
+				);
+			}
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+			return new DataResponse($this->photoJson($photo, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryPhoto, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryPhoto, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryPhoto, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryPhotoFolder, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryPhotoFolder, array{}>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryPhoto>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryPhoto>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryPhotoFolder>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$folder->getId()]]></code>
+      <code><![CDATA[(int)$folder->getId()]]></code>
+      <code><![CDATA[(int)$photo->getId()]]></code>
+      <code><![CDATA[(int)$photo->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA['']]></code>
+      <code><![CDATA['']]></code>
+      <code><![CDATA['image.jpg']]></code>
+      <code><![CDATA['image.jpg']]></code>
+    </RedundantConditionGivenDocblockType>
+    <UnusedClass>
+      <code><![CDATA[PhotoController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/PrefsController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			return new DataResponse($this->prefs->getAllHousePrefs($uid, $houseId));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $labelSort, $storeSort, $showAddedBy, $lastCurrency, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$patch = array_filter([
+				'imageFolder' => $imageFolder,
+				'photoSort' => $photoSort,
+				'photoFoldersFirst' => $photoFoldersFirst,
+				'noteSort' => $noteSort,
+				'checklistItemSort' => $checklistItemSort,
+				'checklistSort' => $checklistSort,
+				'categorySort' => $categorySort,
+				'labelSort' => $labelSort,
+				'storeSort' => $storeSort,
+				'showAddedBy' => $showAddedBy,
+				'lastCurrency' => $lastCurrency,
+				'notifyPhoto' => $notifyPhoto,
+				'notifyNoteCreate' => $notifyNoteCreate,
+				'notifyNoteEdit' => $notifyNoteEdit,
+				'notifyItemAdd' => $notifyItemAdd,
+				'notifyItemRecur' => $notifyItemRecur,
+				'notifyItemDone' => $notifyItemDone,
+			], fn ($v) => $v !== null);
+			$this->prefs->setHousePrefs($uid, $houseId, $patch);
+			return new DataResponse($this->prefs->getAllHousePrefs($uid, $houseId));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($lastHouseId, $tapRowToComplete, $reuseExistingItems): DataResponse {
+			$uid = $this->requireUid();
+			$patch = [];
+			if ($lastHouseId !== null) {
+				$this->auth->requireMember($lastHouseId, $uid);
+				$patch['lastHouseId'] = $lastHouseId;
+			}
+			if ($tapRowToComplete !== null) {
+				$patch['tapRowToComplete'] = $tapRowToComplete;
+			}
+			if ($reuseExistingItems !== null) {
+				$patch['reuseExistingItems'] = $reuseExistingItems;
+			}
+			$this->prefs->setUserPrefs($uid, $patch);
+			return new DataResponse($this->prefs->getAllUserPrefs($uid));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function (): DataResponse {
+			$uid = $this->requireUid();
+			$prefs = $this->prefs->getAllUserPrefs($uid);
+			// If the saved house is no longer accessible, forget it.
+			$houseId = $prefs['lastHouseId'] ?? null;
+			if ($houseId !== null) {
+				try {
+					$this->auth->requireMember($houseId, $uid);
+				} catch (ForbiddenException) {
+					$this->prefs->setLastHouseId($uid, null);
+					$prefs['lastHouseId'] = null;
+				}
+			}
+			return new DataResponse($prefs);
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedArgument>
+      <code><![CDATA[$houseId]]></code>
+    </MixedArgument>
+    <MixedAssignment>
+      <code><![CDATA[$houseId]]></code>
+    </MixedAssignment>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryHousePrefs, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryHousePrefs, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <UnusedClass>
+      <code><![CDATA[PrefsController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/RoleController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId): DataResponse {
+			$roles = $this->roles->listForHouse($houseId);
+			return new DataResponse(array_map(fn ($r) => $r->jsonSerialize(), $roles));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($listId): DataResponse {
+			return new DataResponse($this->listRoleMapper->findRoleIdsForList($listId));
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $name, $caps): DataResponse {
+			$role = $this->roles->create($houseId, $name, $caps);
+			return new DataResponse($role->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $roleId): DataResponse {
+			return new DataResponse($this->roles->get($houseId, $roleId)->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $roleId, $name, $caps): DataResponse {
+			$role = $this->roles->update($houseId, $roleId, $name, $caps);
+			return new DataResponse($role->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryRole, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryRole, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryRole, array{}>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryRole>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<int>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <UnusedClass>
+      <code><![CDATA[RoleController]]></code>
+    </UnusedClass>
+    <UnusedParam>
+      <code><![CDATA[$houseId]]></code>
+    </UnusedParam>
+  </file>
+  <file src="lib/Controller/ShareController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $entityType, $entityId): DataResponse {
+			$type = $this->assertType($entityType);
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			if (!$this->shares->canView($houseId, $uid, $type, $entityId)) {
+				throw new ForbiddenException('No access to this item');
+			}
+			$shares = $this->shares->listForEntity($type, $entityId);
+			return new DataResponse(array_map(fn ($s) => $s->jsonSerialize(), $shares));
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryShare>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string)($s['permission'] ?? Share::PERM_VIEW)]]></code>
+      <code><![CDATA[(string)($s['uid'] ?? '')]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnusedClass>
+      <code><![CDATA[ShareController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/ShoppingReminderController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$all = $this->reminders->listForHouse($houseId);
+			return new DataResponse(array_map(static fn ($r) => $r->jsonSerialize(), $all));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $reminderIds): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$ids = array_map('intval', $reminderIds);
+			$ordered = $this->reminders->reorder($houseId, $ids);
+			return new DataResponse(array_map(static fn ($r) => $r->jsonSerialize(), $ordered));
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $reminderId, $text, $showOn, $enabled): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->reminders->assertInHouse($reminderId, $houseId);
+			$patch = [];
+			if ($text !== null) {
+				$patch['text'] = $text;
+			}
+			if ($showOn !== null) {
+				$patch['showOn'] = $showOn;
+			}
+			if ($enabled !== null) {
+				$patch['enabled'] = $enabled;
+			}
+			$updated = $this->reminders->update($reminderId, $patch);
+			return new DataResponse($updated->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $text, $showOn, $enabled): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$reminder = $this->reminders->create($houseId, $text, $showOn, $enabled);
+			return new DataResponse($reminder->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingReminder, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingReminder, array{}>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryShoppingReminder>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryShoppingReminder>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <UnusedClass>
+      <code><![CDATA[ShoppingReminderController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/ShoppingSessionController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listIds, $storeIds, $includeUnassigned): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+
+			$listIds = array_values(array_unique(array_map('intval', $listIds)));
+			foreach ($listIds as $listId) {
+				$list = $this->lists->getList($listId);
+				$this->assertInHouse($list->getHouseId(), $houseId);
+				if (!$this->permissions->canAccessList($houseId, $uid, $listId)) {
+					throw new ForbiddenException('No access to list ' . $listId);
+				}
+			}
+			$storeIds = array_map('intval', $storeIds);
+			$this->stores->assertStoresInHouse($houseId, $storeIds);
+
+			try {
+				$session = $this->sessions->create($houseId, $uid, $listIds, $storeIds, $includeUnassigned);
+			} catch (ShoppingSessionConflictException $e) {
+				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
+			}
+			return new DataResponse($this->sessions->composeDto($session));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $scope, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$scope = $scope === 'house' ? 'house' : 'mine';
+			$limit = max(1, min(100, $limit));
+			$offset = max(0, $offset);
+			return new DataResponse($this->sessions->history($houseId, $uid, $scope, $limit, $offset));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$items = $this->sessions->itemsForSession($session);
+			return new DataResponse($this->serializeItems($items));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$items = $this->sessions->removedItemsForSession($session);
+			return new DataResponse($this->serializeItems($items));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			return new DataResponse($this->sessions->review($session));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			try {
+				$closed = $this->sessions->close($session);
+			} catch (ShoppingSessionConflictException $e) {
+				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
+			}
+			return new DataResponse($this->sessions->composeDto($closed));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadViewableSession($sessionId, $houseId);
+			return new DataResponse($this->sessions->review($session));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId, $billedTotal, $billedCurrency): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$updated = $this->sessions->amendSessionBilled($session, $billedTotal, $billedCurrency);
+			return new DataResponse($this->sessions->composeDto($updated));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId, $isPrivate): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$updated = $this->sessions->setPrivacy($session, $isPrivate);
+			return new DataResponse($this->sessions->composeDto($updated));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId, $storeId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$updated = $this->sessions->advance($session, $storeId);
+			return new DataResponse($this->sessions->composeDto($updated));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $sessionId, $storeId, $billedTotal, $billedCurrency): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$this->sessions->amendStoreBilled($session, $storeId, $billedTotal, $billedCurrency);
+			return new DataResponse($this->sessions->composeDto($session));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function (): DataResponse {
+			$uid = $this->requireUid();
+			$session = $this->sessions->findCurrentForUser($uid);
+			return new DataResponse($session !== null ? $this->sessions->composeDto($session) : null);
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[array_values(array_map(static function ($i) use ($storeMap) {
+			$data = $i->jsonSerialize();
+			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
+			return $data;
+		}, $items))]]></code>
+      <code><![CDATA[list<array<string, mixed>>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingReview, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingReview, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingSession, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingSession, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingSession, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingSession, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryShoppingSession|null, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryShoppingHistoryRow>, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK|Http::STATUS_CONFLICT, PantryShoppingSession, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK|Http::STATUS_CONFLICT, PantryShoppingSession, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$item->getListId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnusedClass>
+      <code><![CDATA[ShoppingSessionController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Controller/StoreController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$sortBy = $this->prefs->getStoreSort($uid, $houseId);
+			$all = $this->stores->listForHouse($houseId, $sortBy);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			return new DataResponse(array_map(fn ($s) => $s->jsonSerialize(), $sliced));
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $name, $icon, $color, $brand, $location, $openingHours, $contact, $responsible, $notes): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$info = $this->collectInfo($brand, $location, $openingHours, $contact, $responsible, $notes);
+			$store = $this->stores->create($houseId, $name, $icon, $color, $info);
+			return new DataResponse($store->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $storeId, $name, $icon, $color, $brand, $location, $openingHours, $contact, $responsible, $notes, $sortOrder): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->stores->assertInHouse($storeId, $houseId);
+			$patch = [];
+			if ($name !== null) {
+				$patch['name'] = $name;
+			}
+			if ($icon !== null) {
+				$patch['icon'] = $icon;
+			}
+			if ($color !== null) {
+				$patch['color'] = $color;
+			}
+			if ($sortOrder !== null) {
+				$patch['sortOrder'] = $sortOrder;
+			}
+			$patch += $this->collectInfo($brand, $location, $openingHours, $contact, $responsible, $notes);
+			$updated = $this->stores->update($storeId, $patch);
+			return new DataResponse($updated->jsonSerialize());
+		})]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryStore, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryStore, array{}>]]></code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryStore>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <UnusedClass>
+      <code><![CDATA[StoreController]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Db/BarcodeCache.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$raw]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[BarcodeCache]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/BarcodeCacheMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/Category.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[Category]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/CategoryMapper.php">
+    <MixedAssignment>
+      <code><![CDATA[$max]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/Checklist.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[Checklist]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ChecklistItem.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[getResolvedPrices]]></code>
+    </PossiblyUnusedMethod>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ChecklistItem]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ChecklistItemMapper.php">
+    <MixedAssignment>
+      <code><![CDATA[$max]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ChecklistMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/House.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[House]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/HouseMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/HouseMember.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[HouseMember]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/HouseMemberMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/HouseMemberRole.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$memberId]]></code>
+      <code><![CDATA[$roleId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[HouseMemberRole]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/HouseMemberRoleMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ItemLabel.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$itemId]]></code>
+      <code><![CDATA[$labelId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ItemLabel]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ItemLabelMapper.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$row['item_id']]]></code>
+      <code><![CDATA[$row['label_id']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$row]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ItemPrice.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$itemId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ItemPrice]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ItemPriceMapper.php">
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$map]]></code>
+      <code><![CDATA[array<int, list<array{storeId: ?int, priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}>>]]></code>
+      <code><![CDATA[array_map(
+			static fn (ItemPrice $p) => $p->jsonSerialize(),
+			$this->findEntities($qb),
+		)]]></code>
+      <code><![CDATA[list<array{storeId: ?int, priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}>]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$price->getItemId()]]></code>
+      <code><![CDATA[(int)$price['storeId']]]></code>
+    </RedundantCastGivenDocblockType>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[$price['storeId'] !== null]]></code>
+      <code><![CDATA[isset($price['storeId']) && $price['storeId'] !== null]]></code>
+    </RedundantConditionGivenDocblockType>
+  </file>
+  <file src="lib/Db/ItemStore.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$itemId]]></code>
+      <code><![CDATA[$storeId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ItemStore]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ItemStoreMapper.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$row['item_id']]]></code>
+      <code><![CDATA[$row['store_id']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$row]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/Label.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[Label]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/LabelMapper.php">
+    <MixedAssignment>
+      <code><![CDATA[$max]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ListRole.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$listId]]></code>
+      <code><![CDATA[$roleId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ListRole]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ListRoleMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/Note.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[Note]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/NoteMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/Photo.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[Photo]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/PhotoFolder.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[PhotoFolder]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/PhotoFolderMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/PhotoMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[emptyTrashForHouse]]></code>
+      <code><![CDATA[findRootByHouse]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/Role.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$canAddItems]]></code>
+      <code><![CDATA[$canCheckItems]]></code>
+      <code><![CDATA[$canCopyItems]]></code>
+      <code><![CDATA[$canCreateLists]]></code>
+      <code><![CDATA[$canCreateNotes]]></code>
+      <code><![CDATA[$canDeleteItems]]></code>
+      <code><![CDATA[$canDeleteLists]]></code>
+      <code><![CDATA[$canDeleteNotes]]></code>
+      <code><![CDATA[$canDeletePhotos]]></code>
+      <code><![CDATA[$canEditLists]]></code>
+      <code><![CDATA[$canMoveItems]]></code>
+      <code><![CDATA[$canMovePhotos]]></code>
+      <code><![CDATA[$canUpdateNotes]]></code>
+      <code><![CDATA[$canUpdatePhotos]]></code>
+      <code><![CDATA[$canUploadPhotos]]></code>
+      <code><![CDATA[$canViewLists]]></code>
+      <code><![CDATA[$canViewNotes]]></code>
+      <code><![CDATA[$canViewPhotos]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[Role]]></code>
+    </PropertyNotSetInConstructor>
+    <UnusedForeachValue>
+      <code><![CDATA[$prop]]></code>
+    </UnusedForeachValue>
+  </file>
+  <file src="lib/Db/RoleMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/Share.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[Share]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ShareMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string)($entry['uid'] ?? '')]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="lib/Db/ShoppingReminder.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ShoppingReminder]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ShoppingReminderMapper.php">
+    <MixedAssignment>
+      <code><![CDATA[$max]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ShoppingSession.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ShoppingSession]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ShoppingSessionItem.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$checkedAt]]></code>
+      <code><![CDATA[$itemId]]></code>
+      <code><![CDATA[$itemName]]></code>
+      <code><![CDATA[$priceCurrency]]></code>
+      <code><![CDATA[$priceMax]]></code>
+      <code><![CDATA[$priceMin]]></code>
+      <code><![CDATA[$priceType]]></code>
+      <code><![CDATA[$quantity]]></code>
+      <code><![CDATA[$sessionId]]></code>
+      <code><![CDATA[$storeId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ShoppingSessionItem]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ShoppingSessionItemMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ShoppingSessionList.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$listId]]></code>
+      <code><![CDATA[$sessionId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ShoppingSessionList]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ShoppingSessionListMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ShoppingSessionMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ShoppingSessionSkip.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$createdAt]]></code>
+      <code><![CDATA[$itemId]]></code>
+      <code><![CDATA[$sessionId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ShoppingSessionSkip]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ShoppingSessionSkipMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/ShoppingSessionStore.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$sessionId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[ShoppingSessionStore]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/ShoppingSessionStoreMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$storeId]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="lib/Db/Store.php">
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[Store]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/StoreMapper.php">
+    <MixedAssignment>
+      <code><![CDATA[$max]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Middleware/PermissionMiddleware.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Migration/EnsureStoreTablesRepairStep.php">
+    <UnusedClass>
+      <code><![CDATA[EnsureStoreTablesRepairStep]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/RepairSchemaColumnsStep.php">
+    <UnusedClass>
+      <code><![CDATA[RepairSchemaColumnsStep]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/SchemaRepairResult.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$dryRun]]></code>
+    </PossiblyUnusedProperty>
+  </file>
+  <file src="lib/Migration/SchemaRepairService.php">
+    <MixedAssignment>
+      <code><![CDATA[$result]]></code>
+      <code><![CDATA[$schema]]></code>
+      <code><![CDATA[$table]]></code>
+    </MixedAssignment>
+    <MixedMethodCall>
+      <code><![CDATA[addColumn]]></code>
+      <code><![CDATA[getTable]]></code>
+      <code><![CDATA[getWrappedSchema]]></code>
+      <code><![CDATA[hasColumn]]></code>
+      <code><![CDATA[hasTable]]></code>
+    </MixedMethodCall>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <UndefinedClass>
+      <code><![CDATA[$this->connection]]></code>
+      <code><![CDATA[SchemaWrapper]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="lib/Migration/Version10Date20260616000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version10Date20260616000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version11Date20260629000000.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$member['id']]]></code>
+      <code><![CDATA[$member['role']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$member]]></code>
+    </MixedAssignment>
+    <RedundantCast>
+      <code><![CDATA[(int)$qb->getLastInsertId()]]></code>
+    </RedundantCast>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version11Date20260629000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version12Date20260703000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version12Date20260703000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version13Date20260714000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version13Date20260714000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version14Date20260720000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version14Date20260720000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version15Date20260723000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version15Date20260723000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version16Date20260724000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version16Date20260724000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version17Date20260727000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version17Date20260727000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version18Date20260729000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version18Date20260729000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version19Date20260730000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version19Date20260730000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version1Date20260405000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version1Date20260405000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version20Date20260731000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version20Date20260731000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version21Date20260802000000.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$row[$source]]]></code>
+      <code><![CDATA[$row['id']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$row]]></code>
+    </MixedAssignment>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version21Date20260802000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version22Date20260806000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version22Date20260806000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version23Date20260806100000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version23Date20260806100000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version24Date20260807000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version24Date20260807000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version25Date20260819000000.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$row['id']]]></code>
+      <code><![CDATA[$row['price_currency']]]></code>
+      <code><![CDATA[$row['price_max']]]></code>
+      <code><![CDATA[$row['price_min']]]></code>
+      <code><![CDATA[$row['price_type']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$row]]></code>
+    </MixedAssignment>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version25Date20260819000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version26Date20260819100000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version26Date20260819100000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version27Date20260821000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version27Date20260821000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version28Date20260821010000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version28Date20260821010000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version2Date20260408000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version2Date20260408000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version3Date20260416000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version3Date20260416000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version4Date20260515000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version4Date20260515000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version5Date20260528000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version5Date20260528000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version6Date20260531000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version6Date20260531000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version7Date20260613000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version7Date20260613000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version8Date20260614000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version8Date20260614000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version9Date20260615000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version9Date20260615000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Notification/Notifier.php">
+    <MixedArgument>
+      <code><![CDATA[$names]]></code>
+      <code><![CDATA[$names]]></code>
+      <code><![CDATA[$names]]></code>
+      <code><![CDATA[$names]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$replacements]]></code>
+      <code><![CDATA[[
+							'user' => $userParam,
+							'item' => [
+								'type' => 'highlight',
+								'id' => 'item',
+								'name' => $params['itemName'] ?? '',
+							],
+							'list' => $listParam,
+							'house' => $houseParam,
+						]]]></code>
+      <code><![CDATA[[
+							'user' => $userParam,
+							'item' => [
+								'type' => 'highlight',
+								'id' => 'item',
+								'name' => $params['itemName'] ?? '',
+							],
+							'list' => $listParam,
+							'house' => $houseParam,
+						]]]></code>
+      <code><![CDATA[[
+							'user' => $userParam,
+							'list' => $listParam,
+							'house' => $houseParam,
+						]]]></code>
+      <code><![CDATA[[
+							'user' => $userParam,
+							'list' => $listParam,
+							'house' => $houseParam,
+						]]]></code>
+      <code><![CDATA[[
+							'user' => $userParam,
+							'title' => [
+								'type' => 'highlight',
+								'id' => (string)($params['noteId'] ?? ''),
+								'name' => $params['noteTitle'] ?? '',
+							],
+							'house' => $houseParam,
+						]]]></code>
+      <code><![CDATA[[
+							'user' => $userParam,
+							'title' => [
+								'type' => 'highlight',
+								'id' => (string)($params['noteId'] ?? ''),
+								'name' => $params['noteTitle'] ?? '',
+							],
+							'house' => $houseParam,
+						]]]></code>
+      <code><![CDATA[[
+						'items' => [
+							'type' => 'highlight',
+							'id' => 'items',
+							'name' => $itemLabel,
+						],
+						'list' => [
+							'type' => 'highlight',
+							'id' => 'list',
+							'name' => $params['listName'] ?? '',
+						],
+						'house' => [
+							'type' => 'highlight',
+							'id' => (string)($params['houseId'] ?? ''),
+							'name' => $params['houseName'] ?? '',
+						],
+					]]]></code>
+      <code><![CDATA[[
+						'items' => [
+							'type' => 'highlight',
+							'id' => 'items',
+							'name' => $reminderLabel,
+						],
+						'list' => [
+							'type' => 'highlight',
+							'id' => 'list',
+							'name' => $params['listName'] ?? '',
+						],
+						'house' => [
+							'type' => 'highlight',
+							'id' => (string)($params['houseId'] ?? ''),
+							'name' => $params['houseName'] ?? '',
+						],
+					]]]></code>
+      <code><![CDATA[['user' => $userParam, 'house' => $houseParam]]]></code>
+      <code><![CDATA[['user' => $userParam, 'house' => $houseParam]]]></code>
+      <code><![CDATA[['user' => $userParam, 'house' => $houseParam]]]></code>
+      <code><![CDATA[['user' => $userParam, 'house' => $houseParam]]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment>
+      <code><![CDATA[$names]]></code>
+      <code><![CDATA[$names]]></code>
+      <code><![CDATA[$replacements[]]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/ResponseDefinitions.php">
+    <UnusedClass>
+      <code><![CDATA[ResponseDefinitions]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Service/Barcode/BarcodeResult.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[jsonSerialize]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$raw]]></code>
+    </PossiblyUnusedProperty>
+  </file>
+  <file src="lib/Service/Barcode/OpenFoodFactsProvider.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/BarcodeService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[resolveViaProvider]]></code>
+    </PossiblyUnusedMethod>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[BarcodeCache]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/CategoryService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code><![CDATA[Category]]></code>
+    </PossiblyUnusedReturnValue>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$cat->getId()]]></code>
+      <code><![CDATA[(int)$existing->getId()]]></code>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[Category]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/ChecklistService.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$entry]]></code>
+      <code><![CDATA[(array)$data['labelIds']]]></code>
+      <code><![CDATA[(array)$data['storeIds']]]></code>
+      <code><![CDATA[(array)$patch['labelIds']]]></code>
+      <code><![CDATA[(array)$patch['storeIds']]]></code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment>
+      <code><![CDATA[$color]]></code>
+      <code><![CDATA[$desc]]></code>
+      <code><![CDATA[$rrule]]></code>
+      <code><![CDATA[$v]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[listForHouse]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$itemId]]></code>
+      <code><![CDATA[(int)$itemId]]></code>
+      <code><![CDATA[(int)$itemId]]></code>
+      <code><![CDATA[(int)$itemId]]></code>
+      <code><![CDATA[(int)$itemId]]></code>
+      <code><![CDATA[(int)$itemId]]></code>
+      <code><![CDATA[(int)$itemId]]></code>
+      <code><![CDATA[(int)$itemId]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$rawId]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$source->getId()]]></code>
+      <code><![CDATA[(int)$source->getId()]]></code>
+      <code><![CDATA[(int)$source->getId()]]></code>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[Checklist]]></code>
+      <code><![CDATA[ChecklistItem]]></code>
+      <code><![CDATA[ChecklistItem]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedVariable>
+      <code><![CDATA[$house]]></code>
+    </UnusedVariable>
+  </file>
+  <file src="lib/Service/ConstantsService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[all]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/HouseAuthService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code><![CDATA[HouseMember]]></code>
+    </PossiblyUnusedReturnValue>
+  </file>
+  <file src="lib/Service/HouseService.php">
+    <MixedAssignment>
+      <code><![CDATA[$desc]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$adminRole->getId()]]></code>
+      <code><![CDATA[(int)$builtin->getId()]]></code>
+      <code><![CDATA[(int)$house->getId()]]></code>
+      <code><![CDATA[(int)$house->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$member->getId()]]></code>
+      <code><![CDATA[(int)$member->getId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[House]]></code>
+      <code><![CDATA[HouseMember]]></code>
+      <code><![CDATA[HouseMember]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/ImageService.php">
+    <MissingDependency>
+      <code><![CDATA[$this->rootFolder]]></code>
+      <code><![CDATA[$this->rootFolder]]></code>
+      <code><![CDATA[$this->rootFolder]]></code>
+      <code><![CDATA[private]]></code>
+    </MissingDependency>
+    <MixedArrayAccess>
+      <code><![CDATA[$nodes[0]]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$node]]></code>
+      <code><![CDATA[$nodes]]></code>
+      <code><![CDATA[$nodes]]></code>
+      <code><![CDATA[$sourceFolder]]></code>
+      <code><![CDATA[$userFolder]]></code>
+      <code><![CDATA[$userFolder]]></code>
+    </MixedAssignment>
+    <MixedInferredReturnType>
+      <code><![CDATA[Folder]]></code>
+    </MixedInferredReturnType>
+    <MixedMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[get]]></code>
+      <code><![CDATA[getById]]></code>
+      <code><![CDATA[getById]]></code>
+      <code><![CDATA[newFolder]]></code>
+      <code><![CDATA[nodeExists]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$userFolder]]></code>
+      <code><![CDATA[$userFolder->newFolder($relative)]]></code>
+    </MixedReturnStatement>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/LabelService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code><![CDATA[Label]]></code>
+    </PossiblyUnusedReturnValue>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$existing->getId()]]></code>
+      <code><![CDATA[(int)$label->getId()]]></code>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[Label]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/NoteService.php">
+    <MixedAssignment>
+      <code><![CDATA[$c]]></code>
+      <code><![CDATA[$color]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[Note]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/NotificationService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/PermissionService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$role->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="lib/Service/PhotoService.php">
+    <MixedAssignment>
+      <code><![CDATA[$caption]]></code>
+      <code><![CDATA[$fid]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[listPhotosByFolder]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedParam>
+      <code><![CDATA[$uid]]></code>
+    </PossiblyUnusedParam>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[Photo]]></code>
+      <code><![CDATA[PhotoFolder]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/PrefsService.php">
+    <MixedAssignment>
+      <code><![CDATA[$v]]></code>
+    </MixedAssignment>
+    <NullArgument>
+      <code><![CDATA[null]]></code>
+    </NullArgument>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code><![CDATA[bool]]></code>
+      <code><![CDATA[bool]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+      <code><![CDATA[string]]></code>
+    </PossiblyUnusedReturnValue>
+  </file>
+  <file src="lib/Service/RecurrenceService.php">
+    <MixedAssignment>
+      <code><![CDATA[$current]]></code>
+    </MixedAssignment>
+  </file>
+  <file src="lib/Service/RoleService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(bool)$caps[$key]]]></code>
+      <code><![CDATA[(int)$id]]></code>
+      <code><![CDATA[(int)$role->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[Role]]></code>
+      <code><![CDATA[Role]]></code>
+      <code><![CDATA[Role]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/ShareService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[canEdit]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$share->getEntityId()]]></code>
+      <code><![CDATA[(string)($entry['uid'] ?? '')]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+  <file src="lib/Service/ShoppingReminderService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code><![CDATA[ShoppingReminder]]></code>
+    </PossiblyUnusedReturnValue>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$id]]></code>
+      <code><![CDATA[(int)$reminder->getId()]]></code>
+      <code><![CDATA[(int)$reminder->getPosition()]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ShoppingReminder]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/ShoppingSessionService.php">
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$data]]></code>
+      <code><![CDATA[array<string, mixed>]]></code>
+      <code><![CDATA[array_values(array_map(static function (ChecklistItem $item) use ($storeMap) {
+			$data = $item->jsonSerialize();
+			$data['storeIds'] = $storeMap[(int)$item->getId()] ?? [];
+			return $data;
+		}, $items))]]></code>
+      <code><![CDATA[list<array<string, mixed>>]]></code>
+    </MixedReturnTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code><![CDATA[ShoppingSessionStore]]></code>
+    </PossiblyUnusedReturnValue>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(float)$billedTotal]]></code>
+      <code><![CDATA[(float)$billedTotal]]></code>
+      <code><![CDATA[(float)$billedTotal]]></code>
+      <code><![CDATA[(float)$folded['billedTotal']]]></code>
+      <code><![CDATA[(float)$min]]></code>
+      <code><![CDATA[(float)$min]]></code>
+      <code><![CDATA[(float)$price['priceMax']]]></code>
+      <code><![CDATA[(int)$candidate->getStoreId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$l->getItemId()]]></code>
+      <code><![CDATA[(int)$l->getItemId()]]></code>
+      <code><![CDATA[(int)$log->getItemId()]]></code>
+      <code><![CDATA[(int)$log->getItemId()]]></code>
+      <code><![CDATA[(int)$log->getItemId()]]></code>
+      <code><![CDATA[(int)$s->getStoreId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getId()]]></code>
+      <code><![CDATA[(int)$session->getLastSeenAt()]]></code>
+      <code><![CDATA[(int)$session->getLastSeenAt()]]></code>
+      <code><![CDATA[(int)$store->getId()]]></code>
+      <code><![CDATA[(int)$store->getStoreId()]]></code>
+      <code><![CDATA[(int)$store->getStoreId()]]></code>
+      <code><![CDATA[(int)$store->getStoreId()]]></code>
+      <code><![CDATA[(string)$currency]]></code>
+      <code><![CDATA[(string)$currency]]></code>
+      <code><![CDATA[(string)$currency]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ShoppingSession]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/StoreService.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$patch]]></code>
+    </MixedArgumentTypeCoercion>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code><![CDATA[Store]]></code>
+    </PossiblyUnusedReturnValue>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$existing->getId()]]></code>
+      <code><![CDATA[(int)$id]]></code>
+      <code><![CDATA[(int)$store->getId()]]></code>
+      <code><![CDATA[(int)$store->getId()]]></code>
+      <code><![CDATA[(int)$store->getId()]]></code>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[Store]]></code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="lib/Service/TrashCleanupService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$house->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
+</files>
