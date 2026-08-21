@@ -1,7 +1,10 @@
 <template>
   <div class="item-prices">
     <div class="item-prices__row item-prices__row--storeless">
-      <span class="item-prices__store-label">{{ strings.anyStore }}</span>
+      <span class="item-prices__store-label">
+        <EarthIcon class="item-prices__store-label-icon" :size="18" />
+        {{ strings.anyStore }}
+      </span>
       <PriceInput
         v-model="storelessValue"
         compact
@@ -89,6 +92,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import PlusIcon from '@icons/Plus.vue'
 import DeleteIcon from '@icons/Delete.vue'
+import EarthIcon from '@icons/Earth.vue'
 import PriceInput from '@/components/PriceInput'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { useStores } from '@/composables/useStores'
@@ -279,12 +283,27 @@ const strings = {
     }
   }
 
+  // A row label that mirrors the store select below it (bordered, same column
+  // width), not a section heading.
   &__store-label {
-    flex: 0 0 8rem;
+    flex: 0 0 9rem;
+    min-width: 7rem;
+    box-sizing: border-box;
     align-self: flex-end;
-    padding-bottom: 0.35rem;
-    font-size: 0.85rem;
-    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-element, var(--border-radius, 6px));
+    background: var(--color-background-hover);
+    color: var(--color-main-text);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  &__store-label-icon {
+    flex-shrink: 0;
     color: var(--color-text-maxcontrast);
   }
 
