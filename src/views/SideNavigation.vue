@@ -395,6 +395,7 @@ const strings = {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   width: 24px;
   height: 24px;
   margin-inline-start: 8px;
