@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.28.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.27.0...v0.28.0) (2026-08-22)
+
+
+### Features
+
+* **categories:** scope categories to lists ([0c5d47e](https://github.com/chenasraf/nextcloud-pantry/commit/0c5d47e11a5483ae2a7225c667fa82c4a3280b03))
+* **checklists:** add labels ([4c6cd9e](https://github.com/chenasraf/nextcloud-pantry/commit/4c6cd9e6e7a0175f7861d51813c0501b68e9ab21))
+* **prices:** per-store item prices ([#231](https://github.com/chenasraf/nextcloud-pantry/issues/231)) ([6c1ef9b](https://github.com/chenasraf/nextcloud-pantry/commit/6c1ef9bc9757a1dbe3f9079240ba948091a264fc))
+* **shopping:** recover items removed from a trip ([1661f22](https://github.com/chenasraf/nextcloud-pantry/commit/1661f2207ec5234950a9506cca38493870f3371e))
+
+
+### Bug Fixes
+
+* **checklist:** give empty-state icon box more room ([59be25c](https://github.com/chenasraf/nextcloud-pantry/commit/59be25c5464c0e57ae7090b7a61caeaa8103c723))
+* **checklist:** publish item-updated activity on price-only edits ([fee4f06](https://github.com/chenasraf/nextcloud-pantry/commit/fee4f06dc00f1bed059fd3c8f3619f74689d9fcd))
+* **l10n:** Update translations from Transifex ([9fa2e78](https://github.com/chenasraf/nextcloud-pantry/commit/9fa2e78ccc2cd47036d94d5d39219b545b0d671d))
+* **l10n:** Update translations from Transifex ([9a5e34d](https://github.com/chenasraf/nextcloud-pantry/commit/9a5e34d41f6900c7333e6e4207f28c2da8b0e1e7))
+* **l10n:** Update translations from Transifex ([335897c](https://github.com/chenasraf/nextcloud-pantry/commit/335897c7d163fdba49170ae351ad4989a361669d))
+* **l10n:** Update translations from Transifex ([026bba2](https://github.com/chenasraf/nextcloud-pantry/commit/026bba2429a45f8c4e0b7a7717434f752a3c08fc))
+* **l10n:** Update translations from Transifex ([b48f5b8](https://github.com/chenasraf/nextcloud-pantry/commit/b48f5b8e4e25269b600d3f514937055936466d2c))
+* **l10n:** Update translations from Transifex ([cfea181](https://github.com/chenasraf/nextcloud-pantry/commit/cfea1814878a47f29b46f30517bdff8bdb70a7a8))
+* **l10n:** Update translations from Transifex ([c360996](https://github.com/chenasraf/nextcloud-pantry/commit/c360996cb411ce3419574df9fbe59b446f55cd15))
+* **l10n:** Update translations from Transifex ([ec7e83e](https://github.com/chenasraf/nextcloud-pantry/commit/ec7e83e6c2541f5e4f744c7b459b39fa0d9b186b))
+* **nav:** keep sidebar list icon square ([409705f](https://github.com/chenasraf/nextcloud-pantry/commit/409705fdf37a68ee17861a91614bc54df073dd99))
+* **toolbar:** close overflow menu after clicking an action ([076d00c](https://github.com/chenasraf/nextcloud-pantry/commit/076d00ca4151d79c19c739c9f38f7ae80b5d1918))
+
 ## [0.27.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.26.0...v0.27.0) (2026-08-13)
 
 
