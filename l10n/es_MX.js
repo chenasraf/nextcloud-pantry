@@ -15,6 +15,7 @@ OC.L10N.register(
     "Edit" : "Editar",
     "Add" : "Añadir",
     "Category" : "Categoría",
+    "Labels" : "Etiquetas",
     "Description" : "Descripción",
     "Image" : "Imagen",
     "Remove image" : "Eliminar imagen",

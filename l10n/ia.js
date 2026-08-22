@@ -7,6 +7,7 @@ OC.L10N.register(
     "Delete" : "Deler",
     "Edit" : "Modificar",
     "Category" : "Categoria",
+    "Labels" : "Etiquettas",
     "Description" : "Description",
     "Remove image" : "Remover imagine",
     "All" : "Tote",

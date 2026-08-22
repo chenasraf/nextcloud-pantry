@@ -58,6 +58,7 @@ OC.L10N.register(
     "Add a member" : "メンバーの追加",
     "No accounts found" : "アカウントが見つかりません",
     "Danger zone" : "危険区域",
+    "New label" : "新規ラベル",
     "Rich text" : "リッチテキスト",
     "Close" : "閉じる",
     "Copied to clipboard" : "クリップボードにコピーされました",

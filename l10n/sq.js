@@ -13,6 +13,7 @@ OC.L10N.register(
     "Edit" : "Përpuno",
     "Add" : "Shto ",
     "Category" : "Kategori",
+    "Labels" : "Etiketa",
     "Description" : "Përshkrim",
     "Remove image" : "Hiqe figurën",
     "All" : "Të gjithë",

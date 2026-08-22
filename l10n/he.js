@@ -47,6 +47,7 @@ OC.L10N.register(
     "Account" : "חשבון",
     "Role" : "תפקיד",
     "Add a member" : "הוספת חבר",
+    "New label" : "תווית חדשה",
     "Rich text" : "טקסט עשיר",
     "Close" : "סגירה",
     "Copied to clipboard" : "הועתק ללוח הגזירים",

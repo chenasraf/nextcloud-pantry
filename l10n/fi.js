@@ -26,6 +26,7 @@ OC.L10N.register(
     "Create …" : "Luo…",
     "Add" : "Lisää",
     "Category" : "Kategoria",
+    "Labels" : "Etiketit",
     "Quantity" : "Lukumäärä",
     "Description" : "Kuvaus",
     "Image" : "Kuva",

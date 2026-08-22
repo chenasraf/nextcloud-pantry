@@ -15,6 +15,7 @@ OC.L10N.register(
     "Sort order" : "Saralash tartibi",
     "Add" : "Qo'shish",
     "Category" : "Kategoriya",
+    "Labels" : "Yorliqlar",
     "Description" : "Tavsif",
     "All" : "Barchasi",
     "No category" : "Kategoriyasiz",

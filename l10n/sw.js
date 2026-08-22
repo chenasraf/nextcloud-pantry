@@ -22,6 +22,7 @@ OC.L10N.register(
     "Drag to reorder" : "Drag to reorder",
     "Add" : "Ongeza",
     "Category" : "Kipengele",
+    "Labels" : "Lebo",
     "Quantity" : "Kiasi",
     "Description" : "Maelezo",
     "Image" : "Picha",
