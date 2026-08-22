@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.28.0...v0.28.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **checklist:** recover items when schema drift leaves legacy price columns ([cfcf90e](https://github.com/chenasraf/nextcloud-pantry/commit/cfcf90ed8b94df5173ff5b04e66a7370b384d162)), closes [#236](https://github.com/chenasraf/nextcloud-pantry/issues/236)
+
 ## [0.28.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.27.0...v0.28.0) (2026-08-22)
 
 
