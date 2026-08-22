@@ -12,13 +12,13 @@ use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
 
 /**
- * Post-migration self-heal for missing optional columns.
+ * Post-migration self-heal for drifted optional columns.
  *
  * Runs on every `occ upgrade` and `occ maintenance:repair`, after migrations.
- * If schema drift left an expected column behind, this adds
- * it back so the app stops erroring on the next request — no manual
- * `occ db:add-missing-columns` needed. When the schema is already whole it is a
- * silent no-op.
+ * If schema drift left an expected column missing, this adds it back; if it left
+ * a legacy column behind, this drops it — so the app stops erroring on the next
+ * request, with no manual `occ db:add-missing-columns` (which cannot drop)
+ * needed. When the schema is already whole it is a silent no-op.
  */
 class RepairSchemaColumnsStep implements IRepairStep {
 	public function __construct(
@@ -38,8 +38,15 @@ class RepairSchemaColumnsStep implements IRepairStep {
 			return;
 		}
 
-		$message = 'Pantry: restored missing column(s) ' . implode(', ', $result->added)
-			. '. See "occ pantry:repair-schema".';
+		$parts = [];
+		if ($result->added !== []) {
+			$parts[] = 'restored missing column(s) ' . implode(', ', $result->added);
+		}
+		if ($result->dropped !== []) {
+			$parts[] = 'dropped leftover column(s) ' . implode(', ', $result->dropped);
+		}
+
+		$message = 'Pantry: ' . implode('; ', $parts) . '. See "occ pantry:repair-schema".';
 		$output->info($message);
 		$this->logger->warning($message);
 	}

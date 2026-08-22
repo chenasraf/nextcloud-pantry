@@ -14,12 +14,15 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * `occ pantry:repair-schema` — add back optional columns that schema drift
- * left missing, so a stuck upgrade or a checklist that
- * errors out can be fixed without touching the database by hand.
+ * `occ pantry:repair-schema` — reconcile optional columns that schema drift
+ * left behind: add back the nullable columns a migration meant to create and
+ * drop the leftover ones a later migration meant to remove, so a stuck upgrade
+ * or a checklist that errors out can be fixed without touching the database by
+ * hand.
  *
- * Only ever adds the nullable columns an earlier migration already intended, so
- * it is safe to run repeatedly; `--dry-run` prints the SQL without applying it.
+ * Only ever adds columns an earlier migration already intended or drops columns
+ * a later migration already meant to remove, so it is safe to run repeatedly;
+ * `--dry-run` prints the SQL without applying it.
  */
 class RepairSchema extends Command {
 	public function __construct(
@@ -32,7 +35,7 @@ class RepairSchema extends Command {
 	protected function configure(): void {
 		$this
 			->setName('pantry:repair-schema')
-			->setDescription('Add back Pantry columns that a failed migration left missing')
+			->setDescription('Reconcile Pantry columns that a failed migration left missing or behind')
 			->addOption('dry-run', null, InputOption::VALUE_NONE, 'Print the SQL that would run instead of applying it.');
 	}
 
@@ -51,7 +54,12 @@ class RepairSchema extends Command {
 		}
 
 		if ($dryRun) {
-			$output->writeln('<info>Would add ' . count($result->added) . ' column(s):</info> ' . implode(', ', $result->added));
+			if ($result->added !== []) {
+				$output->writeln('<info>Would add ' . count($result->added) . ' column(s):</info> ' . implode(', ', $result->added));
+			}
+			if ($result->dropped !== []) {
+				$output->writeln('<info>Would drop ' . count($result->dropped) . ' column(s):</info> ' . implode(', ', $result->dropped));
+			}
 			if ($result->sql !== '') {
 				$output->writeln('');
 				$output->writeln($result->sql);
@@ -62,7 +70,10 @@ class RepairSchema extends Command {
 		foreach ($result->added as $column) {
 			$output->writeln('<info>Added ' . $column . '.</info>');
 		}
-		$output->writeln('<info>Repaired ' . count($result->added) . ' column(s).</info>');
+		foreach ($result->dropped as $column) {
+			$output->writeln('<info>Dropped ' . $column . '.</info>');
+		}
+		$output->writeln('<info>Repaired ' . (count($result->added) + count($result->dropped)) . ' column(s).</info>');
 
 		return 0;
 	}

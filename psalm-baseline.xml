@@ -2101,12 +2101,17 @@
       <code><![CDATA[$result]]></code>
       <code><![CDATA[$schema]]></code>
       <code><![CDATA[$table]]></code>
+      <code><![CDATA[$table]]></code>
     </MixedAssignment>
     <MixedMethodCall>
       <code><![CDATA[addColumn]]></code>
+      <code><![CDATA[dropColumn]]></code>
+      <code><![CDATA[getTable]]></code>
       <code><![CDATA[getTable]]></code>
       <code><![CDATA[getWrappedSchema]]></code>
       <code><![CDATA[hasColumn]]></code>
+      <code><![CDATA[hasColumn]]></code>
+      <code><![CDATA[hasTable]]></code>
       <code><![CDATA[hasTable]]></code>
     </MixedMethodCall>
     <PossiblyUnusedMethod>

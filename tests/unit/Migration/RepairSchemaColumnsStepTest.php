@@ -42,9 +42,22 @@ class RepairSchemaColumnsStepTest extends TestCase {
 
 	public function testReportsRestoredColumns(): void {
 		$this->repair->method('repair')
-			->willReturn(new SchemaRepairResult(['pantry_list_items.price_type'], [], '', false));
+			->willReturn(new SchemaRepairResult(['pantry_categories.list_id'], [], '', false));
 		$this->output->expects($this->once())->method('info')
-			->with($this->stringContains('pantry_list_items.price_type'));
+			->with($this->stringContains('pantry_categories.list_id'));
+		$this->logger->expects($this->once())->method('warning');
+
+		$this->step->run($this->output);
+	}
+
+	public function testReportsDroppedColumns(): void {
+		$this->repair->method('repair')
+			->willReturn(new SchemaRepairResult([], [], '', false, ['pantry_list_items.price_type']));
+		$this->output->expects($this->once())->method('info')
+			->with($this->logicalAnd(
+				$this->stringContains('dropped'),
+				$this->stringContains('pantry_list_items.price_type'),
+			));
 		$this->logger->expects($this->once())->method('warning');
 
 		$this->step->run($this->output);

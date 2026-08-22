@@ -17,8 +17,58 @@ use OCP\IDBConnection;
  * @template-extends QBMapper<ChecklistItem>
  */
 class ChecklistItemMapper extends QBMapper {
+	/** @var array<string, true>|null Cache of DB column names the entity declares. */
+	private ?array $knownColumns = null;
+
 	public function __construct(IDBConnection $db) {
 		parent::__construct($db, Application::tableName('list_items'), ChecklistItem::class);
+	}
+
+	/**
+	 * Items are read with `SELECT *`, so every table column is handed to
+	 * {@see Entity::fromRow()} — which throws BadFunctionCallException for any
+	 * column the entity does not declare. Schema drift can leave a column behind
+	 * that a later migration was supposed to drop (the legacy price_* columns
+	 * removed in Version26), which would otherwise take down the entire checklist
+	 * on every request. Drop unknown columns here so reads survive the drift; the
+	 * stray columns themselves are cleaned up by `occ pantry:repair-schema` (see
+	 * {@see \OCA\Pantry\Migration\LegacyColumns}).
+	 *
+	 * @param array<array-key, mixed> $row
+	 */
+	#[\Override]
+	protected function mapRowToEntity(array $row): ChecklistItem {
+		return parent::mapRowToEntity(array_intersect_key($row, $this->knownColumns()));
+	}
+
+	/**
+	 * DB column names the {@see ChecklistItem} entity declares. Derived from the
+	 * entity's persisted (protected) properties, converted from camelCase to the
+	 * snake_case column names, plus the inherited id.
+	 *
+	 * @return array<string, true>
+	 */
+	private function knownColumns(): array {
+		if ($this->knownColumns === null) {
+			// id is declared on the base Entity; every other column maps from a
+			// persisted property on ChecklistItem.
+			$columns = ['id' => true];
+			$properties = (new \ReflectionClass(ChecklistItem::class))
+				->getProperties(\ReflectionProperty::IS_PROTECTED);
+			foreach ($properties as $property) {
+				$name = $property->getName();
+				// Skip the entity's internal bookkeeping fields (_updatedFields,
+				// _fieldTypes, …); only persisted columns matter here.
+				if (str_starts_with($name, '_')) {
+					continue;
+				}
+				$column = strtolower((string)preg_replace('/([a-z0-9])([A-Z])/', '$1_$2', $name));
+				$columns[$column] = true;
+			}
+			$this->knownColumns = $columns;
+		}
+
+		return $this->knownColumns;
 	}
 
 	/**

@@ -34,6 +34,11 @@ final class ExpectedColumns {
 			// unconditionally, so a missing column takes down the whole checklist.
 			self::col('list_items', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
+			// categories — list scoping (Version27); category queries filter on
+			// list_id, so a missing column breaks category loading and the
+			// category-sorted item list.
+			self::col('categories', 'list_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+
 			// shopsess_items — per-trip snapshot columns (Version21).
 			self::col('shopsess_items', 'item_name', Types::STRING, ['notnull' => false, 'length' => 255, 'default' => null]),
 			self::col('shopsess_items', 'quantity', Types::STRING, ['notnull' => false, 'length' => 64, 'default' => null]),

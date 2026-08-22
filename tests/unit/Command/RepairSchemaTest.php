@@ -42,6 +42,32 @@ class RepairSchemaTest extends TestCase {
 		$this->assertStringContainsString('Repaired 1 column', $display);
 	}
 
+	public function testReportsDroppedColumns(): void {
+		$this->repair->method('repair')
+			->willReturn(new SchemaRepairResult([], [], '', false, ['pantry_list_items.price_type']));
+
+		$this->assertSame(0, $this->tester->execute([]));
+		$display = $this->tester->getDisplay();
+		$this->assertStringContainsString('Dropped pantry_list_items.price_type', $display);
+		$this->assertStringContainsString('Repaired 1 column', $display);
+	}
+
+	public function testDryRunPrintsDroppedColumns(): void {
+		$this->repair->expects($this->once())->method('repair')->with(true)
+			->willReturn(new SchemaRepairResult(
+				[],
+				[],
+				'ALTER TABLE oc_pantry_list_items DROP price_type;',
+				true,
+				['pantry_list_items.price_type'],
+			));
+
+		$this->assertSame(0, $this->tester->execute(['--dry-run' => true]));
+		$display = $this->tester->getDisplay();
+		$this->assertStringContainsString('Would drop 1 column', $display);
+		$this->assertStringContainsString('ALTER TABLE', $display);
+	}
+
 	public function testDryRunPrintsSqlWithoutApplying(): void {
 		$this->repair->expects($this->once())->method('repair')->with(true)
 			->willReturn(new SchemaRepairResult(

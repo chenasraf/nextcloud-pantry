@@ -20,9 +20,12 @@ use OC\DB\SchemaWrapper;
  * missing and every query that references it fails — including the
  * Shopping Mode backfill inside Version21, which blocks the whole upgrade.
  *
- * This mirrors core's `occ db:add-missing-columns`: it only ever *adds* the
- * nullable columns an earlier migration already intended, so it is safe to run
- * repeatedly and is a no-op once the schema is whole.
+ * This mirrors core's `occ db:add-missing-columns`, but also drops the leftover
+ * columns a later migration meant to remove ({@see LegacyColumns}) — those make
+ * `SELECT *` hydration throw once the entity stops declaring them, and core has
+ * no equivalent for dropping. It only ever adds nullable columns an earlier
+ * migration already intended or drops columns a later migration already meant to
+ * remove, so it is safe to run repeatedly and is a no-op once the schema is whole.
  */
 class SchemaRepairService {
 	public function __construct(
@@ -37,6 +40,7 @@ class SchemaRepairService {
 		$schema = new SchemaWrapper($this->connection);
 
 		$added = [];
+		$dropped = [];
 		$missingTables = [];
 
 		foreach (ExpectedColumns::all() as $column) {
@@ -56,14 +60,28 @@ class SchemaRepairService {
 			$added[] = $column['table'] . '.' . $column['name'];
 		}
 
+		foreach (LegacyColumns::all() as $column) {
+			if (!$schema->hasTable($column['table'])) {
+				continue;
+			}
+
+			$table = $schema->getTable($column['table']);
+			if (!$table->hasColumn($column['name'])) {
+				continue;
+			}
+
+			$table->dropColumn($column['name']);
+			$dropped[] = $column['table'] . '.' . $column['name'];
+		}
+
 		$sql = '';
-		if ($added !== []) {
+		if ($added !== [] || $dropped !== []) {
 			$result = $this->connection->migrateToSchema($schema->getWrappedSchema(), $dryRun);
 			if ($dryRun && is_string($result)) {
 				$sql = $result;
 			}
 		}
 
-		return new SchemaRepairResult($added, $missingTables, $sql, $dryRun);
+		return new SchemaRepairResult($added, $missingTables, $sql, $dryRun, $dropped);
 	}
 }
