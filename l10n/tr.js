@@ -231,6 +231,7 @@ OC.L10N.register(
     "Move to board" : "Panoya taşı",
     "Photo preview" : "Fotoğraf ön izlemesi",
     "Set" : "Ayarla",
+    "Range" : "ralık",
     "e.g. 2 L, 500 g" : "Örnek: 2 L, 500 g",
     "Decrease quantity" : "Miktarı azalt",
     "Increase quantity" : "Miktarı artır",
