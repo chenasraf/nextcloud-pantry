@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.29.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.28.1...v0.29.0) (2026-08-24)
+
+
+### Features
+
+* **checklists:** archive lists ([1fd0062](https://github.com/chenasraf/nextcloud-pantry/commit/1fd0062d61be26eadd9ba1f2c48d4c71bf71ab51))
+* **checklists:** reorganize checklist index toolbar ([ae58890](https://github.com/chenasraf/nextcloud-pantry/commit/ae58890e81bc6ae5a52c3565237221a721e3a057))
+* **notes:** add import-to-list action on note cards ([3503307](https://github.com/chenasraf/nextcloud-pantry/commit/3503307e007fd48360042b77448ce7b41ffc4c1d))
+* **notes:** update note dialog design & layout ([238ee74](https://github.com/chenasraf/nextcloud-pantry/commit/238ee7434e3ef524faae7303ed6b268a2257b35a))
+
+
+### Bug Fixes
+
+* **checklists:** open trashed lists into the list view ([aa42d14](https://github.com/chenasraf/nextcloud-pantry/commit/aa42d1485bdefec9b80193965748860bba95d686))
+* **l10n:** Update translations from Transifex ([9e47397](https://github.com/chenasraf/nextcloud-pantry/commit/9e47397a6571283c429065d710c31f109807ebec))
+* **l10n:** Update translations from Transifex ([80bce04](https://github.com/chenasraf/nextcloud-pantry/commit/80bce0454c1eef3acb12d7716b1628b12faf6b54))
+
 ## [0.28.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.28.0...v0.28.1) (2026-08-22)
 
 
