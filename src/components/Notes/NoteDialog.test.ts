@@ -87,6 +87,12 @@ function makeNote(overrides: Partial<Note> = {}): Note {
   }
 }
 
+// Existing notes open in view mode; click the pencil toggle to enter edit mode.
+async function enterEditMode(wrapper: ReturnType<typeof mount>) {
+  const toggleBtn = wrapper.findAll('.nc-button').find((b) => b.find('.mock-pencil-icon').exists())!
+  await toggleBtn.trigger('click')
+}
+
 describe('NoteDialog', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -293,17 +299,19 @@ describe('NoteDialog', () => {
   })
 
   describe('color swatches', () => {
-    it('renders 17 swatches (no-color + 16 colors)', () => {
+    it('renders 17 swatches (no-color + 16 colors)', async () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote() },
       })
+      await enterEditMode(wrapper)
       expect(wrapper.findAll('.note-dialog__swatch')).toHaveLength(17)
     })
 
-    it('has no-color swatch active by default when note has no color', () => {
+    it('has no-color swatch active by default when note has no color', async () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote({ color: null }) },
       })
+      await enterEditMode(wrapper)
       const noColor = wrapper.find('.note-dialog__swatch--none')
       expect(noColor.classes()).toContain('note-dialog__swatch--active')
     })
@@ -312,6 +320,7 @@ describe('NoteDialog', () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote({ color: null }) },
       })
+      await enterEditMode(wrapper)
       // Click a color swatch (skip the first "no color" swatch)
       const colorSwatch = wrapper.findAll('.note-dialog__swatch').at(1)!
       await colorSwatch.trigger('click')
@@ -324,24 +333,27 @@ describe('NoteDialog', () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote() },
       })
+      await enterEditMode(wrapper)
       await wrapper.findAll('.note-dialog__swatch').at(5)!.trigger('click')
       expect(wrapper.emitted('save')).toBeTruthy()
     })
 
-    it('pre-selects existing note color', () => {
+    it('pre-selects existing note color', async () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote({ color: '#f44336' }) },
       })
+      await enterEditMode(wrapper)
       const activeSwatch = wrapper.find('.note-dialog__swatch--active')
       expect(activeSwatch.exists()).toBe(true)
       expect(activeSwatch.attributes('style')).toContain('#f44336')
     })
 
-    it('uses contrast color for active swatch border', () => {
+    it('uses contrast color for active swatch border', async () => {
       // Dark color → white contrast → white border
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote({ color: '#3f51b5' }) },
       })
+      await enterEditMode(wrapper)
       const activeSwatch = wrapper.find('.note-dialog__swatch--active')
       expect(activeSwatch.attributes('style')).toContain('border-color: #ffffff')
     })
@@ -354,14 +366,13 @@ describe('NoteDialog', () => {
       expect(wrapper.emitted('save')).toBeFalsy()
     })
 
-    it('shows swatches in view mode too', () => {
+    it('hides swatches in view mode', () => {
       const wrapper = mount(NoteDialog, {
         props: { open: true, note: makeNote() },
       })
-      // Should be in view mode
+      // Existing notes open in view mode — no editor, no swatches
       expect(wrapper.find('.nc-text-area').exists()).toBe(false)
-      // Swatches still visible
-      expect(wrapper.findAll('.note-dialog__swatch')).toHaveLength(17)
+      expect(wrapper.findAll('.note-dialog__swatch')).toHaveLength(0)
     })
   })
 })
