@@ -204,11 +204,14 @@ const props = withDefaults(
     /** List in focus in single-list mode; scopes the category picker. */
     currentListId?: number | null
     lists?: Checklist[]
+    /** Text to pre-load into the import field when the dialog opens. */
+    initialText?: string
   }>(),
   {
     requireListSelector: false,
     currentListId: null,
     lists: () => [],
+    initialText: '',
   },
 )
 
@@ -285,12 +288,13 @@ watch(
   { immediate: true },
 )
 
-// Reset the whole dialog each time it opens.
+// Reset the whole dialog each time it opens. Runs immediately too, so callers
+// that mount the dialog already-open (v-if) still get their initial text seeded.
 watch(
   () => props.open,
   (isOpen) => {
     if (!isOpen) return
-    rawText.value = ''
+    rawText.value = props.initialText ?? ''
     description.value = ''
     quantity.value = ''
     categoryId.value = null
@@ -303,6 +307,7 @@ watch(
     dragActive.value = false
     targetListId.value = null
   },
+  { immediate: true },
 )
 
 const selectedCount = computed(() => selected.value.filter(Boolean).length)

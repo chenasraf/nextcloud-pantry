@@ -57,6 +57,7 @@
               :trash-mode="trashMode"
               @edit="openEditDialog"
               @delete="confirmDelete"
+              @import-to-list="openImportDialog"
               @restore="onRestore"
               @toggle-pin="onTogglePin"
               @drag-start="onDragStart"
@@ -75,6 +76,20 @@
       :note="editingNote"
       @update:open="closeDialog"
       @save="submitDialog"
+    />
+
+    <!-- Import note into a list -->
+    <MarkdownImportDialog
+      v-if="importNote"
+      :open="showImport"
+      :house-id="houseIdNum"
+      :importing="importing"
+      :reuse-pref="reuseExistingItems"
+      :require-list-selector="true"
+      :lists="importLists"
+      :initial-text="importNote.content ?? ''"
+      @update:open="onImportDialogToggle"
+      @import="handleNoteImport"
     />
 
     <!-- Delete confirm -->
@@ -129,22 +144,27 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { n, t } from '@nextcloud/l10n'
-import { showInfo, showUndo, showError } from '@nextcloud/dialogs'
+import { showInfo, showUndo, showError, showSuccess } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { NoteCard, NoteDialog } from '@/components/Notes'
+import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
 import PlusIcon from '@icons/Plus.vue'
 import NoteIcon from '@icons/Note.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
-import type { Note } from '@/api/types'
+import type { Checklist, ChecklistItem, Note } from '@/api/types'
 import type { NoteSort } from '@/api/prefs'
 import { getNoteSort, setNoteSort } from '@/api/prefs'
+import { addItem, listItems, toggleItem } from '@/api/lists'
+import type { ItemInput } from '@/api/lists'
 import { useNotes } from '@/composables/useNotes'
+import { useChecklists } from '@/composables/useChecklist'
+import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 
@@ -170,6 +190,8 @@ const {
 } = useNotes(houseIdNum.value)
 
 const { can } = useCurrentHouse()
+const { lists: allLists, load: loadLists } = useChecklists(houseIdNum.value)
+const { reuseExistingItems } = useReuseExistingItems()
 
 const visibleNotes = computed(() => (trashMode.value ? deletedNotes.value : notes.value))
 
@@ -198,6 +220,66 @@ async function submitEmptyTrash() {
 async function onRestore(note: Note) {
   await restore(note.id)
   showInfo(strings.noteRestored)
+}
+
+// ----- Import note into a list -----
+
+const showImport = ref(false)
+const importNote = ref<Note | null>(null)
+const importing = ref(false)
+
+// A list is a valid import target unless it is a read-only share.
+function listWritable(l?: Checklist | null): boolean {
+  return !(l?.sharedOnly && !l?.canEdit)
+}
+const importLists = computed(() => allLists.value.filter(listWritable))
+
+function openImportDialog(note: Note) {
+  importNote.value = note
+  showImport.value = true
+}
+
+function onImportDialogToggle(open: boolean) {
+  showImport.value = open
+  if (!open) importNote.value = null
+}
+
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase()
+}
+
+async function handleNoteImport(
+  inputs: ItemInput[],
+  forceReuse: boolean,
+  targetListId: number | null,
+) {
+  if (targetListId == null) return
+  showImport.value = false
+  importing.value = true
+  // Reuse dedups against the target list when the pref (or the dialog toggle)
+  // asks for it; "ask"/"never" just add every parsed line.
+  const mode: 'reuse' | 'add' = forceReuse || reuseExistingItems.value === 'reuse' ? 'reuse' : 'add'
+  try {
+    const existing = mode === 'reuse' ? await listItems(houseIdNum.value, targetListId) : []
+    for (const input of inputs) {
+      if (mode === 'reuse') {
+        const match = existing.find(
+          (i: ChecklistItem) => normalizeName(i.name) === normalizeName(input.name),
+        )
+        if (match) {
+          if (match.done) await toggleItem(houseIdNum.value, targetListId, match.id)
+          continue
+        }
+      }
+      await addItem(houseIdNum.value, targetListId, input)
+    }
+    showSuccess(n('pantry', 'Imported %n item', 'Imported %n items', inputs.length))
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    importing.value = false
+    importNote.value = null
+  }
 }
 
 // ----- Sort -----
@@ -231,6 +313,7 @@ async function changeNoteSort(value: NoteSort) {
 onMounted(async () => {
   await loadSortPref()
   await load()
+  void loadLists()
 })
 watch(
   () => props.houseId,

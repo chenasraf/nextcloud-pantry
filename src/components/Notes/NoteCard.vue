@@ -27,6 +27,14 @@
           {{ strings.restore }}
         </NcActionButton>
         <NcActionButton
+          v-if="!trashMode && note.content"
+          close-after-click
+          @click.stop="$emit('import-to-list', note)"
+        >
+          <template #icon><PlaylistPlusIcon :size="20" /></template>
+          {{ strings.importToList }}
+        </NcActionButton>
+        <NcActionButton
           v-if="can.canDeleteNotes"
           close-after-click
           @click.stop="$emit('delete', note)"
@@ -63,6 +71,7 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
 import DeleteIcon from '@icons/Delete.vue'
+import PlaylistPlusIcon from '@icons/PlaylistPlus.vue'
 import PinIcon from '@icons/Pin.vue'
 import PinOutlineIcon from '@icons/PinOutline.vue'
 import RestoreIcon from '@icons/Restore.vue'
@@ -88,6 +97,7 @@ const canEditNote = computed(() => props.note.canEdit ?? can.value.canUpdateNote
 const emit = defineEmits<{
   edit: [note: Note]
   delete: [note: Note]
+  'import-to-list': [note: Note]
   restore: [note: Note]
   'toggle-pin': [note: Note]
   'drag-start': [noteId: number]
@@ -124,6 +134,8 @@ function onDragOver(e: DragEvent) {
 
 const strings = {
   actions: t('pantry', 'Note actions'),
+  // TRANSLATORS: Menu action that imports the note's text into a checklist as items.
+  importToList: t('pantry', 'Import to list'),
   removeNote: t('pantry', 'Remove'),
   deletePermanently: t('pantry', 'Delete permanently'),
   restore: t('pantry', 'Restore'),
