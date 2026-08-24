@@ -29,7 +29,13 @@
           </div>
           <ul class="pantry-lists__grid">
             <li v-for="list in deletedLists" :key="'t-' + list.id" class="pantry-list-card-wrap">
-              <div class="pantry-list-card pantry-list-card--trash">
+              <router-link
+                :to="{
+                  name: 'list-detail',
+                  params: { houseId: String(houseIdNum), listId: String(list.id) },
+                }"
+                class="pantry-list-card pantry-list-card--trash"
+              >
                 <span class="pantry-list-card__icon-wrap" :style="iconWrapStyle(list.color)">
                   <component
                     :is="checklistIconComponent(list.icon)"
@@ -41,7 +47,7 @@
                   <h3>{{ list.name }}</h3>
                   <p v-if="list.description">{{ list.description }}</p>
                 </div>
-              </div>
+              </router-link>
               <NcActions class="pantry-list-card__actions" :aria-label="strings.listMenu">
                 <NcActionButton close-after-click @click="onRestoreList(list)">
                   <template #icon><RestoreIcon :size="20" /></template>

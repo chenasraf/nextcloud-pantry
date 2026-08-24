@@ -294,7 +294,9 @@ final class ChecklistController extends OCSController {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$list = $this->lists->getList($listId);
+			// Trashed and archived lists open into the normal list view, so fetch
+			// them regardless of their soft-delete state.
+			$list = $this->lists->getList($listId, includeDeleted: true);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
 			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
@@ -506,7 +508,8 @@ final class ChecklistController extends OCSController {
 		return $this->runAction(function () use ($houseId, $listId, $sortBy, $limit, $offset): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$list = $this->lists->getList($listId);
+			// A trashed or archived list still opens into the normal item view.
+			$list = $this->lists->getList($listId, includeDeleted: true);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
 			$all = $this->lists->listItems($listId, $sortBy, $categorySort);
