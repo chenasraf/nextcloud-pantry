@@ -29,6 +29,30 @@
         >
           {{ strings.richText }}
         </NcCheckboxRadioSwitch>
+        <div class="note-dialog__toolbar">
+          <NcButton
+            v-if="note && !editing"
+            variant="tertiary"
+            :aria-label="strings.share"
+            :title="strings.share"
+            @click="shareDialogOpen = true"
+          >
+            <template #icon>
+              <ShareVariantIcon :size="20" />
+            </template>
+          </NcButton>
+          <NcButton
+            variant="tertiary"
+            :aria-label="editing ? strings.view : strings.edit"
+            :title="editing ? strings.view : strings.edit"
+            @click="toggleEditing"
+          >
+            <template #icon>
+              <EyeIcon v-if="editing" :size="20" />
+              <PencilIcon v-else :size="20" />
+            </template>
+          </NcButton>
+        </div>
       </div>
 
       <MarkdownEditor
@@ -51,8 +75,8 @@
         <p v-else class="note-dialog__empty">{{ strings.noContent }}</p>
       </div>
 
-      <!-- Color swatches (always visible) -->
-      <div class="note-dialog__color">
+      <!-- Color swatches (edit mode only) -->
+      <div v-if="editing" class="note-dialog__color">
         <div class="note-dialog__swatches">
           <button
             type="button"
@@ -79,7 +103,7 @@
       </div>
 
       <ShareEditor
-        v-if="note"
+        v-if="note && editing"
         class="note-dialog__share"
         :house-id="note.houseId"
         entity-type="note"
@@ -87,19 +111,22 @@
         :can-manage="canManageShares"
       />
     </div>
+  </NcDialog>
 
-    <template #actions>
-      <NcButton
-        variant="tertiary"
-        :aria-label="editing ? strings.view : strings.edit"
-        @click="toggleEditing"
-      >
-        <template #icon>
-          <EyeIcon v-if="editing" :size="20" />
-          <PencilIcon v-else :size="20" />
-        </template>
-      </NcButton>
-    </template>
+  <NcDialog
+    v-if="note"
+    :open="shareDialogOpen"
+    :name="strings.shareTitle"
+    size="normal"
+    @update:open="shareDialogOpen = $event"
+  >
+    <ShareEditor
+      class="note-dialog__share note-dialog__share--dialog"
+      :house-id="note.houseId"
+      entity-type="note"
+      :entity-id="note.id"
+      :can-manage="canManageShares"
+    />
   </NcDialog>
 </template>
 
@@ -113,6 +140,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import { MarkdownEditor, isWysiwygAvailable } from '@/components/MarkdownEditor'
 import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
+import ShareVariantIcon from '@icons/ShareVariant.vue'
 import { contrastColor, noteColorOptions } from './noteColors'
 import type { Note } from '@/api/types'
 import { ShareEditor } from '@/components/ShareEditor'
@@ -133,6 +161,7 @@ const titleValue = ref('')
 const contentValue = ref('')
 const colorValue = ref('')
 const editing = ref(false)
+const shareDialogOpen = ref(false)
 const dialogRef = ref<InstanceType<typeof NcDialog> | null>(null)
 const titleInputRef = ref<HTMLInputElement | null>(null)
 const contentInputRef = ref<InstanceType<typeof MarkdownEditor> | null>(null)
@@ -250,6 +279,7 @@ watch(
       contentValue.value = props.note?.content ?? ''
       colorValue.value = props.note?.color ?? ''
       editing.value = !props.note
+      shareDialogOpen.value = false
       nextTick(applyDialogColor)
     }
   },
@@ -361,6 +391,10 @@ const strings = {
   edit: t('pantry', 'Edit'),
   // TRANSLATORS: Toggle button label to switch the note from editing into read-only preview mode.
   view: t('pantry', 'Preview'),
+  // TRANSLATORS: Button that opens the sharing dialog for the note.
+  share: t('pantry', 'Share'),
+  // TRANSLATORS: Title of the dialog that shows who the note is shared with.
+  shareTitle: t('pantry', 'Share note'),
   untitled: t('pantry', 'Untitled note'),
   noContent: t('pantry', 'No content yet'),
   noColor: t('pantry', 'Default (no color)'),
@@ -381,11 +415,14 @@ const strings = {
 
   // Title and the rich-text toggle share one row; the toggle sits at the end,
   // just inside the space reserved for the dialog's close button.
+  // Top-align so the toolbar buttons line up with the dialog's close button;
+  // the title gets its own top spacing instead of the whole row.
   &__title-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
     padding-right: var(--default-clickable-area, 44px);
+    margin-bottom: 0.25rem;
   }
 
   &__rich-toggle {
@@ -393,10 +430,20 @@ const strings = {
     white-space: nowrap;
   }
 
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 0 0 auto;
+    padding-top: 1px;
+  }
+
   &__title-text {
     font-size: 1.3rem;
     font-weight: 600;
     margin: 0;
+    // Nudge the title down so it sits centered against the top-aligned buttons.
+    padding-top: 0.5rem;
     flex: 1 1 auto;
     min-width: 0;
     line-height: 1.3;
@@ -420,8 +467,8 @@ const strings = {
     box-shadow: none !important;
     background: transparent !important;
     color: inherit !important;
-    // The title row reserves space for the close button; no extra padding here.
-    padding: 0 !important;
+    // Match the view-mode title's top nudge so it centers against the buttons.
+    padding: 0.5rem 0 0 0 !important;
     margin: 0 !important;
     font-family: inherit !important;
     box-sizing: border-box !important;
@@ -462,6 +509,14 @@ const strings = {
   &__color {
     padding-top: 0.5rem;
     border-top: 1px solid rgba(128, 128, 128, 0.2);
+  }
+
+  &__share {
+    margin-bottom: 0.75rem;
+
+    &--dialog {
+      margin-bottom: 1rem;
+    }
   }
 
   &__swatches {
