@@ -1,84 +1,9 @@
 <template>
   <div ref="gridWrapRef" class="pantry-lists">
-    <PageToolbar :title="trashMode ? strings.trashTitle : strings.title">
-      <template #actions>
-        <NcActions v-if="!trashMode" :aria-label="strings.sortLabel" type="tertiary">
-          <template #icon>
-            <SortIcon :size="20" />
-          </template>
-          <NcActionButton
-            v-for="opt in sortOptions"
-            :key="opt.value"
-            :class="{ 'pantry-sort-active': currentSort === opt.value }"
-            @click="changeSort(opt.value)"
-          >
-            <template #icon>
-              <RadioboxMarkedIcon v-if="currentSort === opt.value" :size="20" />
-              <RadioboxBlankIcon v-else :size="20" />
-            </template>
-            {{ opt.label }}
-          </NcActionButton>
-        </NcActions>
-        <NcButton
-          :variant="trashMode ? 'primary' : 'tertiary'"
-          :aria-label="strings.trashLabel"
-          :title="strings.trashLabel"
-          :aria-pressed="trashMode"
-          @click="toggleTrash"
-        >
-          <template #icon>
-            <TrashCanIcon :size="20" />
-          </template>
-          {{ strings.trashLabel }}
-        </NcButton>
-        <NcButton
-          v-if="!trashMode && can.canEditLists"
-          variant="primary"
-          @click="showCategoryManager = true"
-        >
-          <template #icon>
-            <TagIcon :size="20" />
-          </template>
-          {{ strings.manageCategories }}
-        </NcButton>
-        <NcButton
-          v-if="!trashMode && can.canEditLists"
-          variant="primary"
-          @click="showLabelManager = true"
-        >
-          <template #icon>
-            <LabelMultipleIcon :size="20" />
-          </template>
-          {{ strings.manageLabels }}
-        </NcButton>
-        <NcButton
-          v-if="!trashMode && can.canEditLists"
-          variant="primary"
-          @click="showStoreManager = true"
-        >
-          <template #icon>
-            <StoreOutlineIcon :size="20" />
-          </template>
-          {{ strings.manageStores }}
-        </NcButton>
-        <NcButton v-if="!trashMode && lists.length > 0" variant="primary" @click="startShopping">
-          <template #icon>
-            <CartIcon :size="20" />
-          </template>
-          {{ strings.shop }}
-        </NcButton>
-        <NcButton
-          v-if="!trashMode && can.canCreateLists"
-          variant="primary"
-          @click="showCreate = true"
-        >
-          <template #icon>
-            <PlusIcon :size="20" />
-          </template>
-          {{ strings.newList }}
-        </NcButton>
-      </template>
-    </PageToolbar>
+    <PageToolbar
+      :title="trashMode ? strings.trashTitle : strings.title"
+      :actions="toolbarActions"
+    />
 
     <div class="pantry-lists__body">
       <div v-if="loading" class="pantry-center">
@@ -299,7 +224,7 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
-import PageToolbar from '@/components/PageToolbar'
+import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
 import { LabelManagerDialog } from '@/components/LabelManager'
 import { StoreManagerDialog } from '@/components/StoreManager'
@@ -314,8 +239,6 @@ import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import RestoreIcon from '@icons/Restore.vue'
-import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
-import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import ViewListIcon from '@icons/ViewList.vue'
 import type { Checklist } from '@/api/types'
 import type { ChecklistSort } from '@/api/prefs'
@@ -677,6 +600,101 @@ const strings = {
   listPermanentlyDeleted: t('pantry', 'Checklist permanently deleted'),
   restoreFailed: t('pantry', 'Could not restore from trash'),
 }
+
+const sortMenuName = computed(() => {
+  const label = sortOptions.find((o) => o.value === currentSort.value)?.label ?? ''
+  // TRANSLATORS: {value} is the active sort option name, e.g. 'Name A–Z'.
+  return t('pantry', 'Sort by: {value}', { value: label })
+})
+
+const toolbarActions = computed<ToolbarAction[]>(() => {
+  const actions: ToolbarAction[] = []
+
+  if (!trashMode.value) {
+    actions.push({
+      key: 'sort',
+      type: 'menu',
+      label: sortMenuName.value,
+      caption: strings.sortLabel,
+      icon: SortIcon,
+      priority: 5,
+      options: sortOptions.map((opt) => ({
+        key: opt.value,
+        label: opt.label,
+        active: currentSort.value === opt.value,
+        onClick: () => changeSort(opt.value),
+      })),
+    })
+  }
+
+  actions.push({
+    key: 'trash',
+    label: strings.trashLabel,
+    icon: TrashCanIcon,
+    variant: trashMode.value ? 'primary' : 'tertiary',
+    pressed: trashMode.value,
+    priority: 3,
+    onClick: toggleTrash,
+  })
+
+  if (!trashMode.value && can.value.canEditLists) {
+    actions.push(
+      {
+        key: 'manage-categories',
+        label: strings.manageCategories,
+        icon: TagIcon,
+        alwaysCollapsed: true,
+        onClick: () => {
+          showCategoryManager.value = true
+        },
+      },
+      {
+        key: 'manage-labels',
+        label: strings.manageLabels,
+        icon: LabelMultipleIcon,
+        alwaysCollapsed: true,
+        onClick: () => {
+          showLabelManager.value = true
+        },
+      },
+      {
+        key: 'manage-stores',
+        label: strings.manageStores,
+        icon: StoreOutlineIcon,
+        alwaysCollapsed: true,
+        onClick: () => {
+          showStoreManager.value = true
+        },
+      },
+    )
+  }
+
+  if (!trashMode.value && lists.value.length > 0) {
+    actions.push({
+      key: 'shop',
+      label: strings.shop,
+      icon: CartIcon,
+      variant: 'primary',
+      priority: 4,
+      onClick: startShopping,
+    })
+  }
+
+  if (!trashMode.value && can.value.canCreateLists) {
+    actions.push({
+      key: 'new-list',
+      label: strings.newList,
+      icon: PlusIcon,
+      variant: 'primary',
+      priority: 6,
+      onClick: () => {
+        showCreate.value = true
+      },
+    })
+  }
+
+  return actions
+})
 </script>
 
 <style scoped lang="scss">
