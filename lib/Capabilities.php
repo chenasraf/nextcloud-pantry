@@ -82,6 +82,7 @@ class Capabilities implements IPublicCapability {
 					'item-archive',
 					'checklist-trash',
 					'checklist-trash-open',
+					'checklist-archive',
 					'note-trash',
 					'photo-trash',
 					'pref-tap-row-to-complete',

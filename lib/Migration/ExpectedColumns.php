@@ -34,6 +34,10 @@ final class ExpectedColumns {
 			// unconditionally, so a missing column takes down the whole checklist.
 			self::col('list_items', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
+			// lists — archived_at (Version29); the active-list query filters on it
+			// unconditionally, so a missing column breaks the whole list index.
+			self::col('lists', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+
 			// categories — list scoping (Version27); category queries filter on
 			// list_id, so a missing column breaks category loading and the
 			// category-sorted item list.

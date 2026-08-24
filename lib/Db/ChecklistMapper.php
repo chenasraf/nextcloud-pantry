@@ -29,7 +29,8 @@ class ChecklistMapper extends QBMapper {
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
-			->andWhere($qb->expr()->isNull('deleted_at'));
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
 		switch ($sortBy) {
 			case 'name_asc':
 				$qb->orderBy('name', 'ASC');
@@ -73,6 +74,22 @@ class ChecklistMapper extends QBMapper {
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNotNull('deleted_at'))
 			->orderBy('deleted_at', 'DESC');
+
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Find archived checklists in a house, most recently archived first.
+	 *
+	 * @return Checklist[]
+	 */
+	public function findArchivedByHouse(int $houseId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('archived_at'))
+			->orderBy('archived_at', 'DESC');
 
 		return $this->findEntities($qb);
 	}

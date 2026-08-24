@@ -7,10 +7,11 @@ import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
 interface HouseChecklistState {
   lists: Ref<Checklist[]>
   deletedLists: Ref<Checklist[]>
+  archivedLists: Ref<Checklist[]>
   loading: Ref<boolean>
   error: Ref<string | null>
   sortBy: Ref<ChecklistSort>
-  trashMode: Ref<boolean>
+  viewMode: Ref<'active' | 'trash' | 'archive'>
   inflight: Promise<Checklist[]> | null
 }
 const houseStates = new Map<number, HouseChecklistState>()
@@ -21,10 +22,11 @@ function getState(houseId: number): HouseChecklistState {
     s = {
       lists: ref<Checklist[]>([]),
       deletedLists: ref<Checklist[]>([]),
+      archivedLists: ref<Checklist[]>([]),
       loading: ref(false),
       error: ref<string | null>(null),
       sortBy: ref<ChecklistSort>('custom'),
-      trashMode: ref(false),
+      viewMode: ref<'active' | 'trash' | 'archive'>('active'),
       inflight: null,
     }
     houseStates.set(houseId, s)
@@ -34,7 +36,9 @@ function getState(houseId: number): HouseChecklistState {
 
 export function useChecklists(houseId: number) {
   const state = getState(houseId)
-  const { lists, deletedLists, loading, error, sortBy, trashMode } = state
+  const { lists, deletedLists, archivedLists, loading, error, sortBy, viewMode } = state
+  const trashMode = computed(() => viewMode.value === 'trash')
+  const archiveMode = computed(() => viewMode.value === 'archive')
 
   function load(sortOrForce?: ChecklistSort | boolean): Promise<Checklist[]> {
     const force = sortOrForce === true
@@ -64,6 +68,18 @@ export function useChecklists(houseId: number) {
     error.value = null
     try {
       deletedLists.value = await api.listDeletedLists(houseId)
+    } catch (e) {
+      error.value = (e as Error).message
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function loadArchived(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      archivedLists.value = await api.listArchivedLists(houseId)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -119,6 +135,20 @@ export function useChecklists(houseId: number) {
     deletedLists.value = []
   }
 
+  async function archive(listId: number): Promise<void> {
+    const archived = await api.archiveList(houseId, listId)
+    lists.value = lists.value.filter((l) => l.id !== listId)
+    // Prepend so it leads the archive view (most recently archived first).
+    archivedLists.value = [archived, ...archivedLists.value]
+  }
+
+  async function unarchive(listId: number): Promise<void> {
+    const restored = await api.unarchiveList(houseId, listId)
+    archivedLists.value = archivedLists.value.filter((l) => l.id !== listId)
+    // Append so it shows up immediately if the user toggles back to the active view.
+    lists.value = [...lists.value, restored]
+  }
+
   async function reorder(items: { id: number; sortOrder: number }[]): Promise<void> {
     // Apply optimistically so there's no visual jump while the API call is in flight.
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
@@ -131,18 +161,24 @@ export function useChecklists(houseId: number) {
   return {
     lists,
     deletedLists,
+    archivedLists,
     loading,
     error,
     sortBy,
+    viewMode,
     trashMode,
+    archiveMode,
     load,
     loadDeleted,
+    loadArchived,
     create,
     update,
     remove,
     restore,
     removePermanently,
     emptyTrash,
+    archive,
+    unarchive,
     reorder,
   }
 }

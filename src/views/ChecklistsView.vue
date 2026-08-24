@@ -1,7 +1,7 @@
 <template>
   <div ref="gridWrapRef" class="pantry-lists">
     <PageToolbar
-      :title="trashMode ? strings.trashTitle : strings.title"
+      :title="trashMode ? strings.trashTitle : archiveMode ? strings.archiveTitle : strings.title"
       :actions="toolbarActions"
     />
 
@@ -61,6 +61,51 @@
             </li>
           </ul>
         </template>
+      </template>
+
+      <template v-else-if="archiveMode">
+        <NcEmptyContent
+          v-if="archivedLists.length === 0"
+          :name="strings.archiveEmptyTitle"
+          :description="strings.archiveEmptyBody"
+        >
+          <template #icon>
+            <ArchiveOutlineIcon />
+          </template>
+        </NcEmptyContent>
+        <ul v-else class="pantry-lists__grid">
+          <li v-for="list in archivedLists" :key="'a-' + list.id" class="pantry-list-card-wrap">
+            <router-link
+              :to="{
+                name: 'list-detail',
+                params: { houseId: String(houseIdNum), listId: String(list.id) },
+              }"
+              class="pantry-list-card pantry-list-card--archive"
+            >
+              <span class="pantry-list-card__icon-wrap" :style="iconWrapStyle(list.color)">
+                <component
+                  :is="checklistIconComponent(list.icon)"
+                  :size="28"
+                  class="pantry-list-card__icon"
+                />
+              </span>
+              <div class="pantry-list-card__body">
+                <h3>{{ list.name }}</h3>
+                <p v-if="list.description">{{ list.description }}</p>
+              </div>
+            </router-link>
+            <NcActions
+              v-if="list.canEdit ?? can.canEditLists"
+              class="pantry-list-card__actions"
+              :aria-label="strings.listMenu"
+            >
+              <NcActionButton close-after-click @click="onUnarchiveList(list)">
+                <template #icon><ArchiveArrowUpOutlineIcon :size="20" /></template>
+                {{ strings.unarchive }}
+              </NcActionButton>
+            </NcActions>
+          </li>
+        </ul>
       </template>
 
       <NcEmptyContent
@@ -141,6 +186,14 @@
               >
                 <template #icon><PencilIcon :size="20" /></template>
                 {{ strings.edit }}
+              </NcActionButton>
+              <NcActionButton
+                v-if="item.list.canEdit ?? can.canEditLists"
+                close-after-click
+                @click="onArchiveList(item.list)"
+              >
+                <template #icon><ArchiveArrowDownOutlineIcon :size="20" /></template>
+                {{ strings.archive }}
               </NcActionButton>
               <NcActionButton
                 v-if="can.canDeleteLists"
@@ -245,6 +298,9 @@ import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import RestoreIcon from '@icons/Restore.vue'
+import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
+import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
+import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ViewListIcon from '@icons/ViewList.vue'
 import type { Checklist } from '@/api/types'
 import type { ChecklistSort } from '@/api/prefs'
@@ -270,33 +326,64 @@ const houseIdNum = computed(() => Number(props.houseId))
 const {
   lists,
   deletedLists,
+  archivedLists,
   loading,
   load,
   loadDeleted,
+  loadArchived,
   create,
   update,
   remove,
   restore,
   removePermanently,
   emptyTrash,
+  archive,
+  unarchive,
   reorder,
   sortBy,
+  viewMode,
   trashMode,
+  archiveMode,
 } = useChecklists(houseIdNum.value)
 
 const { can } = useCurrentHouse()
 
+const isActiveView = computed(() => viewMode.value === 'active')
+
 async function toggleTrash() {
-  trashMode.value = !trashMode.value
+  viewMode.value = trashMode.value ? 'active' : 'trash'
+  await refresh()
+}
+
+async function toggleArchive() {
+  viewMode.value = archiveMode.value ? 'active' : 'archive'
   await refresh()
 }
 
 async function refresh() {
   if (trashMode.value) {
     await loadDeleted()
+  } else if (archiveMode.value) {
+    await loadArchived()
   } else {
     await load(true)
   }
+}
+
+async function onArchiveList(list: Checklist) {
+  await archive(list.id)
+  showUndo(
+    strings.listArchived,
+    () => {
+      void unarchive(list.id).catch(() => showError(strings.unarchiveFailed))
+    },
+    { timeout: 6000 },
+  )
+}
+
+async function onUnarchiveList(list: Checklist) {
+  await unarchive(list.id)
+  showInfo(strings.listUnarchived)
 }
 
 const confirmingEmptyTrash = ref(false)
@@ -567,6 +654,7 @@ useTouchReorder(
 const strings = {
   title: t('pantry', 'Checklists'),
   trashTitle: t('pantry', 'Checklists trash'),
+  archiveTitle: t('pantry', 'Archived checklists'),
   newList: t('pantry', 'New list'),
   // TRANSLATORS: Button that opens Shopping Mode to shop the house's lists.
   shop: t('pantry', 'Start shopping'),
@@ -582,6 +670,10 @@ const strings = {
   deletePermanently: t('pantry', 'Delete permanently'),
   // TRANSLATORS: Verb, menu button that restores a checklist from the trash.
   restore: t('pantry', 'Restore'),
+  // TRANSLATORS: Verb, menu button that archives a checklist.
+  archive: t('pantry', 'Archive'),
+  // TRANSLATORS: Verb, menu button that restores a checklist from the archive.
+  unarchive: t('pantry', 'Unarchive'),
   listMenu: t('pantry', 'List actions'),
   deleteDialogTitle: t('pantry', 'Remove checklist'),
   deletePermanentlyDialogTitle: t('pantry', 'Delete checklist permanently'),
@@ -592,8 +684,12 @@ const strings = {
   sortLabel: t('pantry', 'Sort order'),
   // TRANSLATORS: Noun, label of the toggle button that shows deleted checklists.
   trashLabel: t('pantry', 'Trash'),
+  // TRANSLATORS: Noun, label of the toggle button that shows archived checklists.
+  archiveLabel: t('pantry', 'Archive'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
   trashEmptyBody: t('pantry', 'Deleted checklists will appear here.'),
+  archiveEmptyTitle: t('pantry', 'No archived checklists'),
+  archiveEmptyBody: t('pantry', 'Archived checklists will appear here.'),
   emptyTrashAction: t('pantry', 'Empty trash'),
   emptyTrashTitle: t('pantry', 'Empty trash?'),
   emptyTrashBody: t(
@@ -605,6 +701,9 @@ const strings = {
   listMovedToTrash: t('pantry', 'Checklist moved to trash'),
   listPermanentlyDeleted: t('pantry', 'Checklist permanently deleted'),
   restoreFailed: t('pantry', 'Could not restore from trash'),
+  listArchived: t('pantry', 'Checklist archived'),
+  listUnarchived: t('pantry', 'Checklist unarchived'),
+  unarchiveFailed: t('pantry', 'Could not restore from the archive'),
 }
 
 const sortMenuName = computed(() => {
@@ -616,7 +715,7 @@ const sortMenuName = computed(() => {
 const toolbarActions = computed<ToolbarAction[]>(() => {
   const actions: ToolbarAction[] = []
 
-  if (!trashMode.value) {
+  if (isActiveView.value) {
     actions.push({
       key: 'sort',
       type: 'menu',
@@ -633,17 +732,28 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     })
   }
 
-  actions.push({
-    key: 'trash',
-    label: strings.trashLabel,
-    icon: TrashCanIcon,
-    variant: trashMode.value ? 'primary' : 'tertiary',
-    pressed: trashMode.value,
-    priority: 3,
-    onClick: toggleTrash,
-  })
+  actions.push(
+    {
+      key: 'archive',
+      label: strings.archiveLabel,
+      icon: ArchiveOutlineIcon,
+      variant: archiveMode.value ? 'primary' : 'tertiary',
+      pressed: archiveMode.value,
+      priority: 2,
+      onClick: toggleArchive,
+    },
+    {
+      key: 'trash',
+      label: strings.trashLabel,
+      icon: TrashCanIcon,
+      variant: trashMode.value ? 'primary' : 'tertiary',
+      pressed: trashMode.value,
+      priority: 3,
+      onClick: toggleTrash,
+    },
+  )
 
-  if (!trashMode.value && can.value.canEditLists) {
+  if (isActiveView.value && can.value.canEditLists) {
     actions.push(
       {
         key: 'manage-categories',
@@ -675,7 +785,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     )
   }
 
-  if (!trashMode.value && lists.value.length > 0) {
+  if (isActiveView.value && lists.value.length > 0) {
     actions.push({
       key: 'shop',
       label: strings.shop,
@@ -686,7 +796,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     })
   }
 
-  if (!trashMode.value && can.value.canCreateLists) {
+  if (isActiveView.value && can.value.canCreateLists) {
     actions.push({
       key: 'new-list',
       label: strings.newList,

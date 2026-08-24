@@ -258,6 +258,34 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * List archived checklists in a house
+	 *
+	 * Returns lists whose archived_at is set, most recently archived first.
+	 *
+	 * @param int $houseId House id.
+	 * @param int<1, 500> $limit Maximum number of lists to return.
+	 * @param int<0, max> $offset Number of lists to skip.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryList>, array{}>
+	 *
+	 * 200: Archived lists returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/archive')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function indexArchivedLists(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
+		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$all = $this->lists->listArchivedForHouse($houseId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $sliced));
+		});
+	}
+
+	/**
 	 * Empty the house's checklists trash, permanently deleting every soft-deleted list
 	 *
 	 * @param int $houseId House id.
@@ -417,6 +445,56 @@ final class ChecklistController extends OCSController {
 			$restored = $this->lists->restoreList($listId);
 			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
 			return new DataResponse($this->listJson($restored, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		});
+	}
+
+	/**
+	 * Archive a checklist, moving it out of the active index into the archive view
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
+	 *
+	 * 200: List archived
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/archive', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function archiveList(int $houseId, int $listId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->lists->getList($listId);
+			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$archived = $this->lists->archiveList($listId);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($archived, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		});
+	}
+
+	/**
+	 * Unarchive a checklist back into the active list index
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
+	 *
+	 * 200: List unarchived
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/unarchive', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function unarchiveList(int $houseId, int $listId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->lists->getList($listId, includeDeleted: true);
+			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$unarchived = $this->lists->unarchiveList($listId);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($unarchived, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
 		});
 	}
 

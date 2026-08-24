@@ -74,6 +74,21 @@ export async function emptyListsTrash(houseId: number): Promise<void> {
   await ocs.delete(`/houses/${houseId}/lists/trash`)
 }
 
+export async function listArchivedLists(houseId: number): Promise<Checklist[]> {
+  const resp = await ocs.get<Checklist[]>(`/houses/${houseId}/lists/archive`)
+  return resp.data ?? []
+}
+
+export async function archiveList(houseId: number, listId: number): Promise<Checklist> {
+  const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists/${listId}/archive`)
+  return resp.data
+}
+
+export async function unarchiveList(houseId: number, listId: number): Promise<Checklist> {
+  const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists/${listId}/unarchive`)
+  return resp.data
+}
+
 // Server item endpoints page their results (indexItems caps at 200 by default,
 // indexHouseItems at 1000). Page through with an explicit limit/offset until a
 // short page comes back so long, category-sorted lists don't drop their tail.

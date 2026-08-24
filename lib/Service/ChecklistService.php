@@ -207,6 +207,40 @@ class ChecklistService {
 		}
 	}
 
+	/**
+	 * List archived checklists in a house. Most recently archived first.
+	 *
+	 * @return Checklist[]
+	 */
+	public function listArchivedForHouse(int $houseId): array {
+		return $this->listMapper->findArchivedByHouse($houseId);
+	}
+
+	/**
+	 * Archive a checklist by stamping its archived_at marker. Archived lists are
+	 * hidden from the active index but, unlike trash, are never auto-purged and
+	 * cannot be emptied in bulk.
+	 */
+	public function archiveList(int $listId): Checklist {
+		$list = $this->getList($listId);
+		$now = time();
+		$list->setArchivedAt($now);
+		$list->setUpdatedAt($now);
+		$this->listMapper->update($list);
+		return $list;
+	}
+
+	/**
+	 * Unarchive a checklist by clearing its archived_at marker.
+	 */
+	public function unarchiveList(int $listId): Checklist {
+		$list = $this->getList($listId, includeDeleted: true);
+		$list->setArchivedAt(null);
+		$list->setUpdatedAt(time());
+		$this->listMapper->update($list);
+		return $list;
+	}
+
 	// ----- Items -----
 
 	/**

@@ -30,6 +30,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setUpdatedAt(int $updatedAt)
  * @method int|null getDeletedAt()
  * @method void setDeletedAt(?int $deletedAt)
+ * @method int|null getArchivedAt()
+ * @method void setArchivedAt(?int $archivedAt)
  */
 class Checklist extends Entity implements \JsonSerializable {
 	protected int $houseId = 0;
@@ -42,6 +44,7 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
 	protected ?int $deletedAt = null;
+	protected ?int $archivedAt = null;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -50,6 +53,7 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 		$this->addType('deletedAt', 'integer');
+		$this->addType('archivedAt', 'integer');
 		// Force the bool field to be included in INSERTs even when its value
 		// matches the PHP default — the magic setter wouldn't otherwise mark
 		// it dirty. fromRow() resets updated fields after hydration, so reads
@@ -70,6 +74,7 @@ class Checklist extends Entity implements \JsonSerializable {
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,
 			'deletedAt' => $this->deletedAt,
+			'archivedAt' => $this->archivedAt,
 		];
 	}
 }

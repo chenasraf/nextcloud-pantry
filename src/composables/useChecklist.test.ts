@@ -13,6 +13,9 @@ const mockApi = vi.hoisted(() => ({
   restoreList: vi.fn(),
   permanentlyDeleteList: vi.fn(),
   emptyListsTrash: vi.fn(),
+  listArchivedLists: vi.fn(),
+  archiveList: vi.fn(),
+  unarchiveList: vi.fn(),
   addItem: vi.fn(),
   updateItem: vi.fn(),
   copyItem: vi.fn(),
@@ -46,6 +49,7 @@ function makeList(overrides: Partial<Checklist> = {}): Checklist {
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,
+    archivedAt: null,
     ...overrides,
   }
 }
@@ -327,6 +331,45 @@ describe('useChecklists', () => {
       await c.remove(1)
 
       expect(c.lists.value.map((l) => l.id)).toEqual([2])
+    })
+  })
+
+  describe('archive', () => {
+    it('loadArchived populates archivedLists', async () => {
+      const archived = [makeList({ id: 9, archivedAt: 123 })]
+      mockApi.listArchivedLists.mockResolvedValue(archived)
+
+      const c = useChecklists(houseCounter)
+      await c.loadArchived()
+
+      expect(c.archivedLists.value).toEqual(archived)
+    })
+
+    it('archive moves list from active lists into archivedLists', async () => {
+      const archived = makeList({ id: 1, archivedAt: 123 })
+      mockApi.listLists.mockResolvedValue([makeList({ id: 1 }), makeList({ id: 2 })])
+      mockApi.archiveList.mockResolvedValue(archived)
+
+      const c = useChecklists(houseCounter)
+      await c.load(true)
+      await c.archive(1)
+
+      expect(c.lists.value.map((l) => l.id)).toEqual([2])
+      expect(c.archivedLists.value).toContainEqual(archived)
+      expect(mockApi.archiveList).toHaveBeenCalledWith(houseCounter, 1)
+    })
+
+    it('unarchive moves list from archivedLists back to lists', async () => {
+      const restored = makeList({ id: 9, archivedAt: null })
+      mockApi.listArchivedLists.mockResolvedValue([makeList({ id: 9, archivedAt: 123 })])
+      mockApi.unarchiveList.mockResolvedValue(restored)
+
+      const c = useChecklists(houseCounter)
+      await c.loadArchived()
+      await c.unarchive(9)
+
+      expect(c.archivedLists.value).toHaveLength(0)
+      expect(c.lists.value).toContainEqual(restored)
     })
   })
 })

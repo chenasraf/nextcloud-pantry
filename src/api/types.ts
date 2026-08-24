@@ -71,6 +71,7 @@ export interface Checklist {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  archivedAt: number | null
   /** Effective edit permission for the current user (role capability or an editor share). */
   canEdit?: boolean
   /**
