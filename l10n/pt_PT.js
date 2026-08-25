@@ -247,6 +247,8 @@ OC.L10N.register(
     "Note title" : "Título da nota",
     "Write your note here …" : "Escreva sua nota aqui …",
     "Preview" : "Pré-visualizar",
+    "Share" : "Partilhar",
+    "Share note" : "Partilhar nota",
     "Untitled note" : "Nota sem título",
     "No content yet" : "Sem conteúdo ainda",
     "More actions" : "Mais ações",

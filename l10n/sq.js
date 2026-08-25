@@ -45,6 +45,7 @@ OC.L10N.register(
     "Remove" : "Hiqe",
     "Pin to top" : "Fikstoje në krye",
     "Preview" : "Parapamje ",
+    "Share" : "Ndaj",
     "More actions" : "Më tepër veprime ",
     "Folder name" : "Emër dosjeje",
     "days" : "ditë",

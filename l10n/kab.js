@@ -51,6 +51,7 @@ OC.L10N.register(
     "Remove" : "Kkes",
     "Unpin" : "Kkes anṭaḍ",
     "Preview" : "Pre-timeẓriwt",
+    "Share" : "Bḍu",
     "More actions" : "Ugar n tigawin",
     "Folder name" : "Isem n ukaram",
     "Set" : "Sbadu",

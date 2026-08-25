@@ -77,6 +77,8 @@ OC.L10N.register(
     "Pin to top" : "Fastgør til toppen",
     "Unpin" : "Frigør",
     "Preview" : "Forhåndsvisning",
+    "Share" : "Del",
+    "Share note" : "Del note",
     "No content yet" : "Endnu intet indhold",
     "More actions" : "Flere handlinger",
     "Create folder" : "Opret mappe",

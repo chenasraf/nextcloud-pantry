@@ -334,6 +334,8 @@ OC.L10N.register(
     "Note title" : "Teideal an nóta",
     "Write your note here …" : "Scríobh do nóta anseo …",
     "Preview" : "Réamhamharc",
+    "Share" : "Comhroinn",
+    "Share note" : "Roinn nóta",
     "Untitled note" : "Nóta gan teideal",
     "No content yet" : "Gan ábhar fós",
     "More actions" : "Tuilleadh gníomhartha",

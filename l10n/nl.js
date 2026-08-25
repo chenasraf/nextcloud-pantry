@@ -74,6 +74,8 @@ OC.L10N.register(
     "Pin to top" : "Bovenaan vastprikken",
     "Unpin" : "Losmaken",
     "Preview" : "Voorbeeld",
+    "Share" : "Delen",
+    "Share note" : "Notitie delen",
     "Untitled note" : "Notitie zonder titel",
     "No content yet" : "Nog geen content",
     "More actions" : "Meer acties",

@@ -73,6 +73,8 @@ OC.L10N.register(
     "Pin to top" : "ئۈستىدىن پىن",
     "Unpin" : "مىخلىما",
     "Preview" : "ئالدىن كۆرۈش",
+    "Share" : "ھەمبەھىرلەش",
+    "Share note" : "ئورتاقلىشىش خاتىرىسى",
     "No content yet" : "ھازىرچە ھېچقانداق مەزمۇن يوق",
     "More actions" : "تېخىمۇ كۆپ ھەرىكەت",
     "Create folder" : "قىسقۇچ قۇرۇش",

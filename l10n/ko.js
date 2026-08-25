@@ -63,6 +63,8 @@ OC.L10N.register(
     "Remove" : "삭제",
     "Pin to top" : "목록에 고정",
     "Preview" : "미리 보기",
+    "Share" : "공유하기",
+    "Share note" : "공유 노트",
     "No content yet" : "아직 내용 없음",
     "More actions" : "더 많은 동작",
     "Folder name" : "폴더 이름",

@@ -66,6 +66,8 @@ OC.L10N.register(
     "Pin to top" : "Weka mpaka juu",
     "Unpin" : "Bandua",
     "Preview" : "Mwonekano wa awali",
+    "Share" : "Shiriki",
+    "Share note" : "Shiriki dokezo",
     "No content yet" : "Hakuna maudhui bado",
     "More actions" : "Vitendo zaidi",
     "Create folder" : "Unda folda",

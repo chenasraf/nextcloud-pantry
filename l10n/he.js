@@ -57,6 +57,8 @@ OC.L10N.register(
     "Remove" : "הסרה",
     "Pin to top" : "הצמדה למעלה",
     "Preview" : "תצוגה מקדימה",
+    "Share" : "שתף",
+    "Share note" : "פתק שיתוף",
     "Untitled note" : "פתק ללא כותרת",
     "No content yet" : "אין תוכן עדיין",
     "More actions" : "פעולות נוספות",

@@ -39,6 +39,7 @@ OC.L10N.register(
     "Select all" : "Elekti ĉion",
     "Deselect all" : "Malelekti ĉion",
     "Preview" : "Antaŭvidi",
+    "Share note" : "Kunhavigo noton",
     "More actions" : "Pliaj agoj",
     "Folder name" : "Dosierujnomo",
     "Set" : "Uzi",

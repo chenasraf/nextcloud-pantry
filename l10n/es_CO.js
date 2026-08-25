@@ -39,6 +39,7 @@ OC.L10N.register(
     "Deselect all" : "Deseleccionar todo",
     "Pin to top" : "Anclar a la parte superior",
     "Preview" : "Previsualizar",
+    "Share note" : "Compartir nota",
     "More actions" : "Más acciones",
     "Folder name" : "Nombre de la carpeta",
     "days" : "días",

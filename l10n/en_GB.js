@@ -314,6 +314,8 @@ OC.L10N.register(
     "Note title" : "Note title",
     "Write your note here …" : "Write your note here …",
     "Preview" : "Preview",
+    "Share" : "Share",
+    "Share note" : "Share note",
     "Untitled note" : "Untitled note",
     "No content yet" : "No content yet",
     "More actions" : "More actions",

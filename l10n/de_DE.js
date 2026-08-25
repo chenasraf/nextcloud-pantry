@@ -334,6 +334,8 @@ OC.L10N.register(
     "Note title" : "Notiztitel",
     "Write your note here …" : "Schreiben Sie hier Ihre Notiz …",
     "Preview" : "Vorschau",
+    "Share" : "Teilen",
+    "Share note" : "Notiz teilen",
     "Untitled note" : "Notiz ohne Titel",
     "No content yet" : "Bislang kein Inhalt",
     "More actions" : "Weitere Aktionen",

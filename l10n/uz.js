@@ -46,6 +46,8 @@ OC.L10N.register(
     "Select all" : "Barchasini tanash",
     "Remove" : "O'chirish",
     "Preview" : "Ko‘rib chiqish",
+    "Share" : "Ulashish",
+    "Share note" : "Eslatmani ulashish",
     "No content yet" : "Hozircha kontent yo‘q",
     "More actions" : "Ko'proq harakatlar",
     "Folder name" : "Papka nomi",

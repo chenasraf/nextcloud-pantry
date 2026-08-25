@@ -69,6 +69,8 @@ OC.L10N.register(
     "Pin to top" : "トップにピン",
     "Unpin" : "ピンの解除",
     "Preview" : "プレビュー",
+    "Share" : "共有",
+    "Share note" : "共有ノート",
     "Untitled note" : "無題のノート",
     "No content yet" : "コンテンツはまだありません",
     "More actions" : "その他のアクション",

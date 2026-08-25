@@ -272,6 +272,8 @@ OC.L10N.register(
     "Note title" : "Τίτλος σημείωσης",
     "Write your note here …" : "Γράψτε τη σημείωσή σας εδώ …",
     "Preview" : "Προεπισκόπηση",
+    "Share" : "Κοινή χρήση",
+    "Share note" : "Κοινή χρήση σημείωσης",
     "Untitled note" : "Σημείωση χωρίς τίτλο",
     "No content yet" : "Χωρίς περιεχόμενο ακόμα",
     "More actions" : "Περισσότερες ενέργειες",

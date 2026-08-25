@@ -51,6 +51,8 @@ OC.L10N.register(
     "Pin to top" : "Pin to top",
     "Unpin" : "Unpin",
     "Preview" : "Preview",
+    "Share" : "გაზიარება",
+    "Share note" : "Share note",
     "More actions" : "მეტი ქმედება",
     "Folder name" : "Folder name",
     "Set" : "Set",

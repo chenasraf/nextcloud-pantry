@@ -70,6 +70,8 @@ OC.L10N.register(
     "Pin to top" : "Fest til topp",
     "Unpin" : "Løsne",
     "Preview" : "Forhåndsvis",
+    "Share" : "Dele",
+    "Share note" : "Delingsnotat",
     "Untitled note" : "Notat uten tittel",
     "No content yet" : "Ikke noe innhold enda",
     "More actions" : "Flere handlinger",

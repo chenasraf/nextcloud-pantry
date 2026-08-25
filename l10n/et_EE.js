@@ -334,6 +334,8 @@ OC.L10N.register(
     "Note title" : "Märkme pealkiri",
     "Write your note here …" : "Sisesta oma märge siia…",
     "Preview" : "Eelvaade",
+    "Share" : "Jagamine",
+    "Share note" : "Jaga märget",
     "Untitled note" : "Ilma nimeta märge",
     "No content yet" : "Sisu veel pole",
     "More actions" : "Täiendavad toimingud",

@@ -127,6 +127,8 @@ OC.L10N.register(
     "Unpin" : "Uvolnit",
     "Note title" : "Nadpis poznámky",
     "Preview" : "Náhled",
+    "Share" : "Nasdílet",
+    "Share note" : "Sdílet poznámku",
     "Untitled note" : "Nepojmenovaná poznámka",
     "No content yet" : "Zatím žádný osah",
     "More actions" : "Další akce",

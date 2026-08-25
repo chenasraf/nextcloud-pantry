@@ -68,6 +68,8 @@ OC.L10N.register(
     "Pin to top" : "Закріпити нагорі",
     "Unpin" : "Відкріпити",
     "Preview" : "Попередній перегляд",
+    "Share" : "Спільний доступ",
+    "Share note" : "Поділитися нотаткою",
     "Untitled note" : "Нотатка без назви",
     "No content yet" : "Жодного коментаря",
     "More actions" : "Більше дій",

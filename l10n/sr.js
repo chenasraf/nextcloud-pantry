@@ -73,6 +73,8 @@ OC.L10N.register(
     "Pin to top" : "Закачи на врх",
     "Unpin" : "Откачи",
     "Preview" : "Преглед",
+    "Share" : "Пдели",
+    "Share note" : "Белешка дељења",
     "Untitled note" : "Неименована белешка",
     "No content yet" : "Још нема садржаја",
     "More actions" : "Још акција",

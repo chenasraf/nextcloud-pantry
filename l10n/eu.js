@@ -71,6 +71,8 @@ OC.L10N.register(
     "Pin to top" : "Ainguratu goian",
     "Unpin" : "Kendu aingura",
     "Preview" : "Aurrebista",
+    "Share" : "Partekatu",
+    "Share note" : "Partekatu oharra",
     "Untitled note" : "Izen gabeko oharra",
     "No content yet" : "Oraindik ez dago edukirik",
     "More actions" : "Ekintza gehiago",

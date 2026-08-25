@@ -62,6 +62,8 @@ OC.L10N.register(
     "Pin to top" : "Pin to top",
     "Unpin" : "Unpin",
     "Preview" : "ເບິ່ງຕົວຢ່າງ",
+    "Share" : "ແບ່ງປັນ",
+    "Share note" : "ໝາຍເຫດການແບ່ງປັນ",
     "No content yet" : "ຍັງບໍ່ມີເນື້ອຫາເທື່ອ",
     "More actions" : "More actions",
     "Create folder" : "Create folder",

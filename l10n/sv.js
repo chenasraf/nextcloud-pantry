@@ -288,6 +288,8 @@ OC.L10N.register(
     "Note title" : "Anteckningens rubrik",
     "Write your note here …" : "Skriv din anteckning här …",
     "Preview" : "Förhandsgranskning",
+    "Share" : "Resurs",
+    "Share note" : "Dela anteckning",
     "Untitled note" : "Namnlös anteckning",
     "No content yet" : "Inget innehåll än",
     "More actions" : "Fler åtgärder",

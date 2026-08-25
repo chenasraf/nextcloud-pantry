@@ -52,6 +52,8 @@ OC.L10N.register(
     "Remove" : "Borrar",
     "Pin to top" : "Anclar a la parte superior",
     "Preview" : "Previsualizar",
+    "Share" : "Compartir",
+    "Share note" : "Compartir nota",
     "No content yet" : "Aún no hay contenido",
     "More actions" : "Más acciones",
     "Folder name" : "Nombre de la carpeta",

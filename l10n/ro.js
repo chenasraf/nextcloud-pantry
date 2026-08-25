@@ -50,6 +50,8 @@ OC.L10N.register(
     "Remove" : "Elimină",
     "Pin to top" : "Adăugați în capul listei",
     "Preview" : "Previzualizare",
+    "Share" : "Partajează",
+    "Share note" : "Partajează nota",
     "No content yet" : "Nu există conținut încă",
     "More actions" : "Mai multe acțiuni",
     "Folder name" : "Denumire director",

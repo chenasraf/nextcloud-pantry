@@ -52,6 +52,8 @@ OC.L10N.register(
     "Remove" : "Boga",
     "Pin to top" : "Piga nota in artu",
     "Unpin" : "No apicare",
+    "Share" : "Cumpartzidura",
+    "Share note" : "Cumpartzi sa nota",
     "No content yet" : "Perunu cuntenutu ancora",
     "More actions" : "Àteras atziones",
     "Folder name" : "Nùmene de sa cartella",

@@ -68,6 +68,8 @@ OC.L10N.register(
     "Pin to top" : "Pripni na vrh",
     "Unpin" : "Odpni",
     "Preview" : "Predogled",
+    "Share" : "Souporaba",
+    "Share note" : "Omogoči souporabo zabeležke",
     "Untitled note" : "Neimenovana zabeležka",
     "No content yet" : "Ni še dodane vsebine",
     "More actions" : "Več dejanj",

@@ -83,6 +83,8 @@ OC.L10N.register(
     "Pin to top" : "置頂",
     "Unpin" : "取消釘選",
     "Preview" : "預覽",
+    "Share" : "分享",
+    "Share note" : "分享備註",
     "No content yet" : "目前還沒有內容",
     "More actions" : "更多動作",
     "Create folder" : "建立資料夾",

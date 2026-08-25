@@ -70,6 +70,8 @@ OC.L10N.register(
     "Pin to top" : "Pripnúť nahor",
     "Unpin" : "Odopnúť",
     "Preview" : "Náhľad",
+    "Share" : "Zdieľaný priečinok",
+    "Share note" : "Poznámka k zdieľaniu",
     "Untitled note" : "Poznámka bez názvu",
     "No content yet" : "Zatiaľ žiadny obsah",
     "More actions" : "Viac akcií",

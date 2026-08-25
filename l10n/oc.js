@@ -42,6 +42,7 @@ OC.L10N.register(
     "Copied to clipboard" : "Copiat dins lo cartabèu",
     "Remove" : "Suprimir",
     "Preview" : "Apercebut",
+    "Share" : "Partejar",
     "More actions" : "Mai d’accions",
     "Folder name" : "Nom del dorsièr",
     "days" : "jorns",

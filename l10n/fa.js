@@ -224,6 +224,8 @@ OC.L10N.register(
     "Note title" : "عنوان یادداشت",
     "Write your note here …" : "یادداشت خود را اینجا بنویسید …",
     "Preview" : "پیش‌نمایش",
+    "Share" : "اشتراک‌گذاری",
+    "Share note" : "یادداشت اشتراک گذاری",
     "Untitled note" : "یادداشت بدون عنوان",
     "No content yet" : "هنوز محتوا موجود نیست",
     "More actions" : "اقدامات بیشتر",

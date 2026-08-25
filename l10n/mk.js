@@ -52,6 +52,8 @@ OC.L10N.register(
     "Deselect all" : "Одселектирај се",
     "Remove" : "Отстрани ",
     "Unpin" : "Од-ппинувај",
+    "Share" : "Сподели",
+    "Share note" : "Споделување со забелешка ",
     "No content yet" : "Сеуште нема содржина",
     "More actions" : "Повеќе акции",
     "Folder name" : "Име на папка",

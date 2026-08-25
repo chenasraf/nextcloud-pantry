@@ -277,6 +277,7 @@ OC.L10N.register(
     "Note title" : "Notattittel",
     "Write your note here …" : "Skriv notatet ditt her…",
     "Preview" : "Førehandsvisning",
+    "Share" : "Del",
     "Untitled note" : "Notat utan namn",
     "More actions" : "Fleire handlingar",
     "Edit folder" : "Rediger mappe",

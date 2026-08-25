@@ -66,6 +66,8 @@ OC.L10N.register(
     "Pin to top" : "Sematkan ke atas",
     "Unpin" : "Lepas sematan",
     "Preview" : "Pratinjau",
+    "Share" : "Bagikan",
+    "Share note" : "Catatan berbagi",
     "No content yet" : "Belum ada konten",
     "More actions" : "Tindakan lainnya",
     "Folder name" : "Nama folder",

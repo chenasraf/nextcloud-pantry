@@ -47,6 +47,8 @@ OC.L10N.register(
     "Deselect all" : "Atcelt atzīmi",
     "Remove" : "Noņemt",
     "Preview" : "Priekšskatīt",
+    "Share" : "Kopīgot",
+    "Share note" : "Koplietot piezīmi",
     "Folder name" : "Mapes nosaukums",
     "days" : "dienas",
     "weeks" : "nedēļas",

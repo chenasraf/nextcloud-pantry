@@ -71,6 +71,8 @@ OC.L10N.register(
     "Pin to top" : "Appunta in cima",
     "Unpin" : "Rimuovi",
     "Preview" : "Anteprima",
+    "Share" : "Condividi",
+    "Share note" : "Condividi nota",
     "Untitled note" : "Nota senza titolo",
     "No content yet" : "Ancora nessun contenuto",
     "More actions" : "Altre azioni",

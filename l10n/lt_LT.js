@@ -137,6 +137,8 @@ OC.L10N.register(
     "Pin to top" : "Prisegti viršuje",
     "Unpin" : "Atsegti",
     "Preview" : "Peržiūra",
+    "Share" : "Bendrinti",
+    "Share note" : "Pasidalinimo pastaba",
     "No content yet" : "Kol kas nėra jokio turinio",
     "More actions" : "Daugiau veiksmų",
     "Create folder" : "Sukurti aplanką",

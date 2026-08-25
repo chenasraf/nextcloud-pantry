@@ -81,6 +81,8 @@ OC.L10N.register(
     "Pin to top" : "Kiinnitä ylös",
     "Unpin" : "Poista kiinnitys",
     "Preview" : "Esikatselu",
+    "Share" : "Jaa",
+    "Share note" : "Jaa muistiinpano",
     "Untitled note" : "Nimetön muistiinpano",
     "No content yet" : "Ei vielä sisältöä",
     "More actions" : "Lisää toimintoja",

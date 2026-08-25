@@ -69,6 +69,8 @@ OC.L10N.register(
     "Pin to top" : "Rögzítés a tetejére",
     "Unpin" : "Rögzítés feloldása",
     "Preview" : "Előnézet",
+    "Share" : "Megosztás",
+    "Share note" : "Jegyzet megosztása",
     "Untitled note" : "Jegyzet cím nélkül",
     "No content yet" : "Még nincs tartalom",
     "More actions" : "További műveletek",
