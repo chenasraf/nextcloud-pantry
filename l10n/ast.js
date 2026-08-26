@@ -56,6 +56,8 @@ OC.L10N.register(
     "Pin to top" : "Fixar no cimero",
     "Unpin" : "Lliberar",
     "Preview" : "Previsualizar",
+    "Share" : "Compartir",
+    "Share note" : "Compartir una nota",
     "No content yet" : "Nun hai conteníu",
     "More actions" : "Más aiciones",
     "Folder name" : "Nome de la carpeta",

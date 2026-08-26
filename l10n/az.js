@@ -27,6 +27,7 @@ OC.L10N.register(
     "Close" : "Bağla",
     "Copied to clipboard" : "Mübadilə buferinə nüsxələndi",
     "Select all" : "Hamısıı seç",
+    "Share" : "Yayımla",
     "Folder name" : "Qovluq adı",
     "days" : "günlər",
     "weeks" : "həftələr",

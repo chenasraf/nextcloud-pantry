@@ -6,6 +6,7 @@ OC.L10N.register(
     "Save" : "Saglabāt",
     "Saving …" : "Saglabā ...",
     "Saved." : "Saglabāts",
+    "Interface" : "Saskarne",
     "Cancel" : "Atcelt",
     "Name" : "Nosaukums",
     "Custom" : "Pielāgots",

@@ -69,6 +69,8 @@ OC.L10N.register(
     "Pin to top" : "ثبتّ في الأعلى",
     "Unpin" : "فك التثبيت",
     "Preview" : "معاينة",
+    "Share" : "مُشارَكة",
+    "Share note" : "ملاحظة عن المشاركة",
     "No content yet" : "لا يوجد محتوى حتى الآن",
     "More actions" : "إجراءات إضافية",
     "Folder name" : "اسم المجلد",

@@ -53,6 +53,7 @@ OC.L10N.register(
     "Remove" : "Выдаліць",
     "Unpin" : "Адмацаваць",
     "Preview" : "Перадпрагляд",
+    "Share" : "Абагульваць",
     "More actions" : "Больш дзеянняў",
     "Create folder" : "Стварыць папку",
     "Folder name" : "Назва папкі",
