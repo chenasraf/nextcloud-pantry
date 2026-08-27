@@ -16,6 +16,8 @@ SPDX-License-Identifier: CC0-1.0
 A household management app for Nextcloud — shared checklists, photo boards, and notes, all in one
 place.
 
+**Website & documentation: [pantry.casraf.dev](https://pantry.casraf.dev)**
+
 ## Screenshots
 
 |                                                |                                                |                                                |
@@ -38,8 +40,14 @@ place.
 
 ## Documentation
 
-- [Permissions](docs/permissions.md) — how roles and capabilities work, and which action needs which
-  permission.
+Full guides and reference live on the [Pantry website](https://pantry.casraf.dev/docs):
+
+- [Documentation home](https://pantry.casraf.dev/docs) — installing the server app, pairing a
+  client, and using every feature.
+- [Permissions](https://pantry.casraf.dev/docs/administration/permissions) — how roles and
+  capabilities work, and which action needs which permission.
+- [Shopping Mode](https://pantry.casraf.dev/docs/using/shopping-mode) — start a trip, walk your
+  stores, and finish with a priced review.
 
 ## Companion Apps
 
