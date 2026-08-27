@@ -3,6 +3,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
+      "exclude-paths": ["website"],
       "extra-files": [
         {
           "type": "xml",
