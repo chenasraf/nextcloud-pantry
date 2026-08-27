@@ -1,0 +1,159 @@
+---
+title: Checklists
+description: Shared shopping and to-do lists — add items, check them off, and organize them with categories, stores and labels.
+sidebar:
+  order: 1
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
+
+Checklists are the heart of Pantry: shared shopping and to-do lists that everyone in the house sees
+update in real time. An item can carry a quantity, a price, a category, one or more stores, labels,
+an image, and a repeat schedule.
+
+<Aside type="note">
+	The web interface and the [mobile & desktop app](/docs/getting-started/pairing) work on the same
+	lists in your Nextcloud. Anything you change in one shows up in the other.
+</Aside>
+
+![A checklist in the Pantry web app, with items grouped under category headers and carrying quantities, prices, stores, labels and a weekly repeat.](/docs/checklists.png)
+
+## Create a list
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		<Steps>
+
+		1. Open **Pantry** in Nextcloud and look at the checklists in the left sidebar.
+
+		2. Select **New list**.
+
+		3. Give it a name, and optionally an icon, color and description.
+
+		</Steps>
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		<Steps>
+
+		1. Open the **Checklists** tab.
+
+		2. Tap the list name at the top to open the list switcher, then **New list**.
+
+		3. Give it a name, and optionally an icon, color and description.
+
+		</Steps>
+	</TabItem>
+</Tabs>
+
+Each list has settings for its name, description, icon, color, and a **delete on done** default that
+controls whether checked items are removed automatically. **All lists** shows every item across the
+house in one place.
+
+## Add and check off items
+
+The composer at the bottom of a list — labeled **Add to …** with the list's name — adds an item.
+Checking an item marks it done: it strikes through and drops to the bottom, and can be un-checked to
+bring it back.
+
+On the web, the composer carries a row of chips — **Category, Stores, Labels, Quantity, Price,
+Description, Item type, Image, Barcode** — so you can set any of those on the new item _before_ you
+add it, rather than opening it afterwards.
+
+![The checklist composer with chips for category, stores, labels, quantity, price, description, item type, image and barcode.](/docs/checklists-composer.png)
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		- Type a name, set any of the composer chips (category, quantity, price, …) you want, and press
+		  **Enter** or **Add**.
+		- Click the checkbox on a row to mark it done or undone.
+		- Use the row menu to edit, copy, move, archive or trash an item.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		- Type in the composer and tap the send button to add an item.
+		- Tap a row's checkbox to mark it done or undone.
+		- Tap a row to open it for editing, or long-press for quick actions.
+	</TabItem>
+</Tabs>
+
+<Aside type="tip">
+	Checked items never just vanish — they strike through and stay recoverable, so an accidental tap is
+	always undoable.
+</Aside>
+
+## Item details
+
+Set any of these from the composer chips as you add an item, or open an existing item to change them:
+
+- **Quantity** — increase, decrease or clear it.
+- **Price** — an amount (or a range) used to estimate shopping totals.
+- **Category** — one category, shown as a colored header that groups the list.
+- **Stores** — one or more shops where the item is bought.
+- **Labels** — free-form tags for filtering.
+- **Image** — attach a photo so everyone recognizes the exact product.
+
+![A checklist item showing its details inline — quantity, price, an attached image, a weekly repeat and its store.](/docs/checklists-item.png)
+
+## Organize with categories, stores and labels
+
+Three independent ways to organize a list:
+
+- **Categories** group items under colored headers (Bakery, Dairy, …). An item has at most one.
+- **Stores** mark where each item is bought (Supermarket, Home Depot, …), and drive
+  [Shopping Mode](/docs/using/shopping-mode) routes.
+- **Labels** are free-form tags for anything else.
+
+You create and manage each set from its picker — **Create category…**, **Create store…**,
+**Create label…** — and can rename, recolor or delete them there.
+
+Above the list, a free-text filter plus **Categories**, **Labels**, **Stores** and **Price** filters
+narrow what you see.
+
+![The filter row above a checklist — a text filter and dropdowns for categories, labels, stores and price.](/docs/checklists-filters.png)
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		Combine the filters above the list to focus on one store, category or price range, and sort the
+		list from **Sort by**.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		Tap the **Categories**, **Labels** and **Stores** chips under the list header to filter, and the
+		list / grid toggle to switch layouts.
+	</TabItem>
+</Tabs>
+
+## Repeat items
+
+An item can repeat on a schedule — for the groceries you buy every week. Set a repeat (for example
+**Every week** or **Every 2 weeks**) and Pantry brings the item back on its **next recurrence** after
+it is checked off.
+
+A repeat can be anchored two ways:
+
+- **On a fixed schedule** (default) — the item comes back on its next scheduled date, no matter when
+  you actually tick it off. A weekly item stays on the same weekday even if you shop a few days late.
+- **Starts after completion** — turn this on to count the interval from when the item is ticked off
+  instead. A "every week" item you buy two days late then returns a full week _from that purchase_,
+  not from the original date.
+
+<Aside type="note">Leave the day empty on a monthly repeat to recur on the same day each month.</Aside>
+
+## Import and export
+
+You can move lists in and out of Pantry as Markdown checklists:
+
+- **Import from Markdown** — paste a Markdown list or drop a `.md` file to create items in bulk.
+- **Export to Markdown** — copy the list out as a Markdown checklist.
+
+You can also **copy** or **move** items to another list from the item menu.
+
+## Archive and trash
+
+- **Archive** an item to take it off the active list without deleting it — archived items stay
+  available to bring back later. Whole lists can be archived too.
+- **Trash** an item or list to soft-delete it. Trashed things can be restored, or permanently
+  deleted, from the trash view.
+
+<Aside type="caution">
+	Emptying the trash or permanently deleting cannot be undone. Everything else — checking off,
+	archiving, trashing — is recoverable.
+</Aside>

@@ -1,0 +1,69 @@
+---
+title: Install the server app
+description: Install Pantry on your Nextcloud from the built-in App Store, then confirm the background job that keeps clients in sync.
+sidebar:
+  order: 1
+---
+
+import { Aside, Steps, LinkCard } from '@astrojs/starlight/components'
+
+Pantry ships as a Nextcloud app. The easiest way to install it is straight from the **App Store**
+built into your Nextcloud — no command line needed.
+
+<Aside type="note">Requires Nextcloud 28+ and PHP 8.2+.</Aside>
+
+## Install from the App Store
+
+<Steps>
+
+1. Sign in to your Nextcloud as an administrator.
+
+2. Open your profile menu (top right) and choose **Apps**.
+
+3. Search for **Pantry**, or find it under the **Organization** category.
+
+4. Select **Download and enable**.
+
+</Steps>
+
+Nextcloud downloads the app and runs its database migrations for you. Pantry then appears in the
+top navigation, ready to use.
+
+<LinkCard
+	title="Pantry on the Nextcloud App Store"
+	description="View the listing, ratings and release history."
+	href="https://apps.nextcloud.com/apps/pantry"
+	target="_blank"
+/>
+
+## Fallback: enable from the command line
+
+If you manage the server over SSH or automate deployments, you can enable the app with `occ`
+instead. Run it as the user that owns your Nextcloud files (commonly `www-data`; on some setups
+`nginx` or `apache`):
+
+```bash
+sudo -u www-data php occ app:enable pantry
+```
+
+<Aside type="tip">
+	The command line is only a fallback. For most installs, the App Store above is the recommended
+	path — it handles downloading, updating and migrations for you.
+</Aside>
+
+## Confirm background jobs
+
+Pantry registers a background job that keeps connected clients in sync. Make sure Nextcloud's
+background jobs run on a schedule — **Cron** is strongly recommended over AJAX:
+
+```bash
+sudo -u www-data php occ background:cron
+```
+
+Then confirm the system cron entry runs `cron.php` every 5 minutes, per the
+[Nextcloud background jobs documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/background_jobs_configuration.html).
+
+## Next steps
+
+- [Pair a client](/docs/getting-started/pairing) — connect the app on your phone or desktop.
+- [Permissions](/docs/administration/permissions) — set up house roles and decide who can do what.

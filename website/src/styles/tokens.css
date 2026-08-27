@@ -1,0 +1,91 @@
+/*
+ * Pantry Design Language v1 — token contract.
+ * Framework-agnostic. Imported by both the Starlight docs theme (custom.css)
+ * and the bespoke landing page. Reference tokens, never raw hex.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block');
+
+:root {
+	/* brand — Pantry Blue (500 taken straight from the icon) */
+	--pantry-blue-50: #e6f3fb;
+	--pantry-blue-100: #c2e2f5;
+	--pantry-blue-200: #8ccbec;
+	--pantry-blue-300: #4fb0e0;
+	--pantry-blue-400: #1a95d4;
+	--pantry-blue-500: #0082c9;
+	--pantry-blue-600: #006aa3;
+	--pantry-blue-700: #00527e;
+	--pantry-blue-800: #003a59;
+	--pantry-blue-900: #0b2431;
+
+	/* surfaces — dark (default; the brand's home) */
+	--bg-page: #0b0c0e;
+	--bg-card: #121417;
+	--bg-sunken: #171a1e;
+	--bg-chip: #1e2227;
+	--rule: #2a2f36;
+	--border: #3a4149;
+	--text-strong: #eef1f4;
+	--text: #b4bcc5;
+	--text-muted: #8b939d;
+	--text-faint: #5b636d;
+
+	/* semantic + data (user content) */
+	--success: #2f9e44;
+	--warning: #f4681f;
+	--danger: #d9453f;
+	--info: #0082c9;
+	--note-teal: #009688;
+	--note-green: #43a047;
+	--note-yellow: #fdd835;
+	--note-indigo: #4c53c6;
+	--identity: #d9a05b;
+	--identity-bg: #3a2b1c;
+
+	/* type */
+	--font-display: 'Space Grotesk', system-ui, sans-serif;
+	--font-body: 'IBM Plex Sans', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+	--step-display: clamp(34px, 5vw, 56px);
+	--step-h1: clamp(28px, 3.4vw, 38px);
+	--step-h2: 27px;
+	--step-h3: 20px;
+	--step-body: 16px;
+	--step-small: 13.5px;
+
+	/* shape, motion, layout */
+	--r-xs: 6px;
+	--r-sm: 8px;
+	--r-md: 10px;
+	--r-lg: 16px;
+	--r-xl: 20px;
+	--r-pill: 999px;
+	--e1: 0 6px 20px rgba(0, 0, 0, 0.45);
+	--e2: 0 18px 44px rgba(0, 0, 0, 0.6);
+	--dur-fast: 120ms;
+	--dur: 180ms;
+	--dur-slow: 260ms;
+	--ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--measure: 68ch;
+	--shell: 1240px;
+	--docs-nav: 260px;
+	--docs-toc: 200px;
+}
+
+/* light — a straight inversion of the surface steps; blue + data palette hold */
+:root[data-theme='light'] {
+	--bg-page: #f6f7f9;
+	--bg-card: #ffffff;
+	--bg-sunken: #eceff3;
+	--bg-chip: #eceff3;
+	--rule: #e3e7ec;
+	--border: #cdd5dd;
+	--text-strong: #14171a;
+	--text: #4a525c;
+	--text-muted: #6b7280;
+	--text-faint: #9aa1ab;
+	--identity-bg: #f2e6d4;
+	--e1: 0 6px 20px rgba(17, 24, 39, 0.12);
+	--e2: 0 18px 44px rgba(17, 24, 39, 0.18);
+}

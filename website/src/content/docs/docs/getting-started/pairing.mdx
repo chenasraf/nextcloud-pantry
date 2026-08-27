@@ -1,0 +1,108 @@
+---
+title: Pair a client
+description: Connect the Pantry app on your phone or desktop to your Nextcloud server.
+sidebar:
+  order: 1
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
+import { stores, desktopDownloads, APP_VERSION, allReleasesUrl } from '@/config'
+
+The app on your phone or desktop talks to the same Pantry app running on your Nextcloud. Pairing a
+client means pointing it at your server and signing in with your Nextcloud account — the app then
+sees the same houses, lists, boards and notes as the web interface.
+
+<Aside type="note">
+	Install the [server app](/docs/getting-started/install) first. The apps do nothing on their own — they
+	are a view onto your Nextcloud.
+</Aside>
+
+## What you need
+
+- A Nextcloud server with the Pantry app enabled.
+- Your Nextcloud account on that server.
+- The Pantry app installed — see [Get the app](#get-the-app) below.
+
+## Get the app
+
+Pantry has an app for **Android**, **iOS** and the **desktop**. It is a companion to the Pantry app
+running on your Nextcloud — the same checklists, photo board and notes, in your pocket and offline.
+
+### Phone
+
+- **Android** — [Google Play]({stores.googlePlay}) or [F-Droid]({stores.fdroid}) (Android 8.0+)
+- **iOS** — [App Store]({stores.appStore})
+
+### Desktop
+
+Direct downloads for the current release (**v{APP_VERSION}**):
+
+<ul>
+	{desktopDownloads.map((d) => (
+		<li>
+			<strong>{d.os}</strong> — <a href={d.url}>{d.file}</a> <em>({d.note})</em>
+		</li>
+	))}
+</ul>
+
+On Linux the download is a **standalone binary** — extract the `.tar.gz` and run it; there is no
+Flatpak or package to install. Every build, including Android APKs, lives on the
+<a href={allReleasesUrl}>GitHub releases page</a>.
+
+<Aside type="note">
+	The app needs a Nextcloud server with the [Pantry server app](/docs/getting-started/install)
+	enabled. It is a companion, not a standalone app.
+</Aside>
+
+## Connect
+
+When you open the app for the first time it asks for your server. Enter your **Server URL** — just
+the address, like `cloud.example.com`; the app adds `https://` for you.
+
+Then sign in one of two ways.
+
+<Tabs>
+	<TabItem label="Browser login (recommended)">
+		<Steps>
+
+		1. Enter your **Server URL** and tap **Connect**.
+
+		2. Your Nextcloud login page opens. Sign in there and **Grant access** to the app.
+
+		3. Return to the app — it finishes on its own once you have approved access.
+
+		</Steps>
+
+		This uses Nextcloud's standard login flow, so the app never sees your password. It receives a
+		device-scoped token instead.
+	</TabItem>
+	<TabItem label="App password">
+		If the browser login will not open — or your server uses a self-signed certificate — sign in
+		with a Nextcloud app password instead.
+
+		<Steps>
+
+		1. In Nextcloud, go to **Settings → Security → Devices & sessions** and create a new app
+		   password.
+
+		2. In the app, tap **Sign in with an app password instead**.
+
+		3. Enter your **Server URL**, **Username** and the **App password**, then tap **Sign in**.
+
+		</Steps>
+	</TabItem>
+</Tabs>
+
+Both methods register a device under **Settings → Security → Devices & sessions** in Nextcloud,
+which you can revoke at any time.
+
+<Aside type="tip">
+	If your server uses a self-signed certificate, the app shows the certificate's SHA-256 fingerprint
+	and asks you to confirm it before trusting it. Check the fingerprint matches the one your server
+	administrator gave you, then trust it to continue.
+</Aside>
+
+## Multiple houses
+
+If your account belongs to more than one house, the app lets you switch between them. Everything you
+do stays scoped to the house you have open, exactly as it is on the web.

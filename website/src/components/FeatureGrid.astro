@@ -1,0 +1,94 @@
+---
+const features = [
+	{
+		icon: 'checklist',
+		name: 'Checklists',
+		body: 'Shared shopping and to-do lists with categories, stores, quantities and prices. Check items off together in real time; done items strike through, never vanish.',
+	},
+	{
+		icon: 'photo_library',
+		name: 'Photo Board',
+		body: 'A shared wall of photos for the household — receipts, the shelf you need to match, the thing to remember. Stored in your own Nextcloud files.',
+	},
+	{
+		icon: 'sticky_note_2',
+		name: 'Notes Wall',
+		body: 'Color-coded notes for the measurements, schedules and reminders that never fit a list. Pinned where everyone can see them.',
+	},
+	{
+		icon: 'shopping_cart',
+		name: 'Shopping mode',
+		body: 'Turn any list into a shopping trip: walk your stores, see who else is out shopping, and finish with a priced review.',
+	},
+	{
+		icon: 'group',
+		name: 'Shared with your house',
+		body: 'Invite the people you live with and give each a role. Everyone sees the same lists, boards and notes, updated as they change.',
+	},
+	{
+		icon: 'cloud_sync',
+		name: 'Offline-first apps',
+		body: 'The mobile and desktop apps keep working when the connection does not — items you add offline queue up and merge cleanly on reconnect.',
+	},
+]
+---
+
+<section id="features" class="features">
+	<div class="shell">
+		<p class="eyebrow">What&apos;s inside</p>
+		<h2 class="features__title">One app for everything the household shares.</h2>
+		<div class="features__grid">
+			{
+				features.map((f) => (
+					<article class="feature">
+						<span class="feature__icon material-symbols-outlined">{f.icon}</span>
+						<h3 class="feature__name">{f.name}</h3>
+						<p class="feature__body">{f.body}</p>
+					</article>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style>
+	.features {
+		padding: 80px 0;
+	}
+	.features__title {
+		margin: 0 0 40px;
+		font-family: var(--font-display);
+		font-size: var(--step-h2);
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		max-width: 22ch;
+	}
+	.features__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 20px;
+	}
+	.feature {
+		background: var(--bg-card);
+		border: 1px solid var(--rule);
+		border-radius: var(--r-lg);
+		padding: 26px;
+	}
+	.feature__icon {
+		font-size: 26px;
+		color: var(--pantry-blue-300);
+	}
+	.feature__name {
+		margin: 14px 0 6px;
+		font-family: var(--font-display);
+		font-size: var(--step-h3);
+		font-weight: 500;
+		letter-spacing: -0.01em;
+	}
+	.feature__body {
+		margin: 0;
+		font-size: 14.5px;
+		line-height: 1.6;
+		color: var(--text-muted);
+	}
+</style>

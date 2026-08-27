@@ -1,0 +1,79 @@
+---
+title: Sharing
+description: How houses, roles and per-item shares decide who in your household sees and edits each list, note and photo.
+sidebar:
+  order: 5
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
+
+Pantry is built for a household. Everything belongs to a **house**, and everyone in that house shares
+its lists, boards and notes. On top of that, you can narrow access to individual items when you need
+to.
+
+## Houses and members
+
+A **house** is the shared space for everyone you live with. Being a member of a house is what lets
+you see and work on its checklists, Photo Board and Notes Wall. Adding and removing members is done
+by a house administrator.
+
+<Aside type="note">
+	What each member can do is decided by their **roles**. Out of the box everyone can do everything;
+	administrators tighten this per role. See [Permissions](/docs/administration/permissions) for the
+	full model.
+</Aside>
+
+## Restricting a list to roles
+
+By default every list is open to every member of the house. A list can instead be **restricted to
+specific roles**, so only members holding one of those roles (and administrators) can open it —
+useful for a list only some of the house should see. Restricting a list to roles is an
+administrator action.
+
+For a checklist, both controls live in its **Edit list** dialog: **Access** restricts the list to
+roles, and **Shared with** shares it with specific people.
+
+![The Edit checklist dialog showing the Access control that restricts a list to roles and the Shared with field that shares it with specific people.](/docs/sharing-access.png)
+
+## Sharing a single item with people
+
+Independently of house membership, an individual **checklist, note, photo or photo folder** can be
+shared with specific people at one of two levels:
+
+- **View** — read-only access.
+- **Edit** — can change the contents (for example, check off and edit items) but not delete the whole
+  thing.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		<Steps>
+
+		1. Open the item — for a checklist, open **Edit list**; for a note or photo, open its actions.
+
+		2. Under **Shared with**, add a person.
+
+		3. Choose their access — **View** or **Edit**.
+
+		</Steps>
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		<Steps>
+
+		1. Open the checklist, note or photo you want to share.
+
+		2. Choose **Share** from its actions.
+
+		3. Pick the person and choose **View** or **Edit**.
+
+		</Steps>
+	</TabItem>
+</Tabs>
+
+A share can grant access to someone who would otherwise have none, but it is bounded: it never
+allows deleting the shared item itself, and only the item's creator or a house administrator can
+manage its shares.
+
+<Aside type="tip">
+	Use a **view** share to let someone follow a list without changing it, and an **edit** share when
+	you want them to shop from it or keep it up to date.
+</Aside>

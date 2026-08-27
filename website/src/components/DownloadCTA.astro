@@ -1,0 +1,190 @@
+---
+import { stores, desktopDownloads, APP_VERSION } from '@/config'
+
+const mobileLinks = [
+	{ label: 'Google Play', href: stores.googlePlay },
+	{ label: 'F-Droid', href: stores.fdroid },
+	{ label: 'Apple App Store', href: stores.appStore },
+]
+const desktopLinks = desktopDownloads.map((d) => ({
+	label: d.os,
+	note: d.note,
+	href: d.url,
+}))
+---
+
+<section id="download" class="download">
+	<div class="shell">
+		<div class="download__head">
+			<div>
+				<p class="eyebrow">Get Pantry</p>
+				<h2 class="download__title">Install the server app, then pair your devices.</h2>
+			</div>
+			<p class="download__lead">
+				Pantry runs on your Nextcloud. Add the app on your phone or desktop to carry your lists with
+				you.
+			</p>
+		</div>
+		<div class="download__grid">
+			<article class="platform platform--primary">
+				<span class="platform__icon material-symbols-outlined">dns</span>
+				<h3 class="platform__name">Nextcloud app</h3>
+				<p class="platform__note">The server app · Nextcloud 28+</p>
+				<div class="platform__links">
+					<a class="btn btn--primary platform__cta" href="/docs/getting-started/install">
+						Install guide
+					</a>
+				</div>
+			</article>
+
+			<article class="platform">
+				<span class="platform__icon material-symbols-outlined">phone_android</span>
+				<h3 class="platform__name">Mobile</h3>
+				<p class="platform__note">Android &amp; iOS</p>
+				<div class="platform__links">
+					{
+						mobileLinks.map((l) => (
+							<a class="platform__link" href={l.href} target="_blank" rel="noopener">
+								<span>{l.label}</span>
+								<span class="material-symbols-outlined">open_in_new</span>
+							</a>
+						))
+					}
+				</div>
+			</article>
+
+			<article class="platform">
+				<span class="platform__icon material-symbols-outlined">desktop_windows</span>
+				<h3 class="platform__name">Desktop</h3>
+				<p class="platform__note">v{APP_VERSION}</p>
+				<div class="platform__links">
+					{
+						desktopLinks.map((l) => (
+							<a class="platform__link" href={l.href}>
+								<span>{l.label}</span>
+								<span class="platform__link-note">{l.note}</span>
+							</a>
+						))
+					}
+				</div>
+			</article>
+		</div>
+		<p class="download__all">
+			All builds — including APKs and the Windows and Linux archives — are on the
+			<a href="https://github.com/chenasraf/pantry-flutter/releases/latest">GitHub releases page</a>.
+		</p>
+	</div>
+</section>
+
+<style>
+	.download {
+		padding: 80px 0;
+		border-top: 1px solid var(--rule);
+	}
+	.download__head {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr);
+		gap: 40px;
+		align-items: end;
+		margin-bottom: 40px;
+	}
+	.download__title {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: var(--step-h2);
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		max-width: 20ch;
+	}
+	.download__lead {
+		margin: 0;
+		font-size: 15px;
+		line-height: 1.6;
+		color: var(--text-muted);
+	}
+	.download__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 20px;
+	}
+	.platform {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		background: var(--bg-card);
+		border: 1px solid var(--rule);
+		border-radius: var(--r-lg);
+		padding: 26px;
+	}
+	.platform--primary {
+		background: #0d1a22;
+		border-color: #14384c;
+	}
+	.platform__icon {
+		font-size: 26px;
+		color: var(--pantry-blue-300);
+	}
+	.platform__name {
+		margin: 14px 0 4px;
+		font-family: var(--font-display);
+		font-size: var(--step-h3);
+		font-weight: 500;
+	}
+	.platform__note {
+		margin: 0 0 18px;
+		font-size: 12.5px;
+		color: var(--text-muted);
+	}
+	.platform__links {
+		margin-top: auto;
+		align-self: stretch;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.platform__cta {
+		font-size: 14px;
+		padding: 10px 18px;
+	}
+	.platform__link {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--text-strong);
+		background: var(--bg-sunken);
+		border: 1px solid var(--rule);
+		border-radius: var(--r-sm);
+		padding: 10px 14px;
+		transition:
+			background var(--dur-fast) var(--ease),
+			border-color var(--dur-fast) var(--ease);
+	}
+	.platform__link:hover {
+		background: var(--bg-chip);
+		border-color: var(--border);
+	}
+	.platform__link .material-symbols-outlined {
+		font-size: 16px;
+		color: var(--text-muted);
+	}
+	.platform__link-note {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--text-muted);
+		font-weight: 400;
+	}
+	.download__all {
+		margin: 24px 0 0;
+		font-size: 13px;
+		color: var(--text-muted);
+	}
+	@media (max-width: 900px) {
+		.download__head {
+			grid-template-columns: 1fr;
+			gap: 16px;
+		}
+	}
+</style>

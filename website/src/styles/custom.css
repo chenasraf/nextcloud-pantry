@@ -1,0 +1,130 @@
+/*
+ * Starlight theme bridge — maps Pantry design tokens onto Starlight's own
+ * CSS custom properties so the docs chrome matches the brand without
+ * rebuilding it. Dark is the default; light is a straight surface inversion.
+ */
+@import './tokens.css';
+
+:root {
+	/* accent drives links, active nav, focus */
+	--sl-color-accent-low: var(--pantry-blue-900);
+	--sl-color-accent: var(--pantry-blue-500);
+	--sl-color-accent-high: var(--pantry-blue-200);
+
+	/* neutral ramp — dark */
+	--sl-color-white: #eef1f4;
+	--sl-color-gray-1: #b4bcc5;
+	--sl-color-gray-2: #8b939d;
+	--sl-color-gray-3: #5b636d;
+	--sl-color-gray-4: #3a4149;
+	--sl-color-gray-5: #2a2f36;
+	--sl-color-gray-6: #1e2227;
+	--sl-color-black: #0b0c0e;
+
+	--sl-color-text: var(--text);
+	--sl-color-text-accent: var(--pantry-blue-300);
+	--sl-color-bg: var(--bg-page);
+	--sl-color-bg-nav: var(--bg-card);
+	--sl-color-bg-sidebar: var(--bg-page);
+	--sl-color-hairline: var(--rule);
+	--sl-color-hairline-light: var(--rule);
+	--sl-color-hairline-shade: var(--bg-sunken);
+	--sl-color-bg-inline-code: var(--bg-sunken);
+	--sl-color-bg-accent: var(--pantry-blue-500);
+
+	/* type */
+	--sl-font: var(--font-body);
+	--sl-font-mono: var(--font-mono);
+
+	/* shape */
+	--sl-shadow-sm: var(--e1);
+	--sl-shadow-md: var(--e1);
+	--sl-shadow-lg: var(--e2);
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: var(--pantry-blue-50);
+	--sl-color-accent: var(--pantry-blue-600);
+	--sl-color-accent-high: var(--pantry-blue-700);
+
+	--sl-color-white: #14171a;
+	--sl-color-gray-1: #2b3038;
+	--sl-color-gray-2: #4a525c;
+	--sl-color-gray-3: #6b7280;
+	--sl-color-gray-4: #9aa1ab;
+	--sl-color-gray-5: #cdd5dd;
+	--sl-color-gray-6: #eceff3;
+	--sl-color-gray-7: #f6f7f9;
+	--sl-color-black: #ffffff;
+
+	--sl-color-text-accent: var(--pantry-blue-700);
+	--sl-color-bg-nav: #ffffff;
+	--sl-color-bg-sidebar: #ffffff;
+}
+
+/* Display family for anything that announces. */
+:is(h1, h2, h3, h4, h5, h6),
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6),
+.site-title {
+	font-family: var(--font-display);
+	letter-spacing: -0.02em;
+}
+
+.sl-markdown-content h1,
+.content-panel h1 {
+	letter-spacing: -0.025em;
+}
+
+/* Site title in the top nav — tighten to match the wordmark spec. */
+.site-title {
+	font-weight: 600;
+	letter-spacing: -0.02em;
+}
+
+/* Links in prose keep the accent underline treatment from the design. */
+.sl-markdown-content a:not(:where(.not-content *)) {
+	text-underline-offset: 0.2em;
+	text-decoration-color: color-mix(in srgb, var(--sl-color-text-accent) 40%, transparent);
+}
+
+/* Inline code + code blocks use the sunken surface and a 1px rule. */
+.sl-markdown-content code:not(:where(.not-content *)) {
+	border-radius: var(--r-xs);
+}
+
+/* Asides (callouts) — retint to the design's callout palette. */
+.starlight-aside {
+	border-radius: var(--r-sm);
+	border-inline-start-width: 3px;
+}
+.starlight-aside--note {
+	--sl-color-asides-text-accent: var(--pantry-blue-300);
+	--sl-color-asides-border: var(--pantry-blue-500);
+	background-color: color-mix(in srgb, var(--pantry-blue-500) 8%, var(--sl-color-bg));
+}
+.starlight-aside--tip {
+	--sl-color-asides-text-accent: #6cc47a;
+	--sl-color-asides-border: var(--success);
+	background-color: color-mix(in srgb, var(--success) 8%, var(--sl-color-bg));
+}
+.starlight-aside--caution {
+	--sl-color-asides-text-accent: #f4924f;
+	--sl-color-asides-border: var(--warning);
+	background-color: color-mix(in srgb, var(--warning) 8%, var(--sl-color-bg));
+}
+.starlight-aside--danger {
+	--sl-color-asides-text-accent: #e07a76;
+	--sl-color-asides-border: var(--danger);
+	background-color: color-mix(in srgb, var(--danger) 8%, var(--sl-color-bg));
+}
+
+/* Search / nav chips pick up the pill radius. */
+site-search button {
+	border-radius: var(--r-sm);
+}
+
+/* Product screenshots: radius 16, 1px rule, no bezel (per design). */
+.sl-markdown-content img:not(:where(.not-content *)) {
+	border-radius: var(--r-lg);
+	border: 1px solid var(--rule);
+}

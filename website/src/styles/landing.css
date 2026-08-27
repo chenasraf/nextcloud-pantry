@@ -1,0 +1,135 @@
+/*
+ * Landing / marketing styles. Dark-first — the brand's home. The bespoke
+ * pages don't share Starlight's chrome, so base element styling lives here.
+ */
+@import './tokens.css';
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	scroll-behavior: smooth;
+}
+
+body {
+	margin: 0;
+	background: var(--bg-page);
+	color: var(--text-strong);
+	font-family: var(--font-body);
+	font-size: var(--step-body);
+	line-height: 1.65;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+::selection {
+	background: rgba(0, 130, 201, 0.4);
+}
+
+a {
+	color: var(--pantry-blue-300);
+	text-decoration: none;
+}
+
+img {
+	max-width: 100%;
+	display: block;
+}
+
+.material-symbols-outlined {
+	font-family: 'Material Symbols Outlined';
+	font-weight: normal;
+	font-style: normal;
+	line-height: 1;
+	letter-spacing: normal;
+	white-space: nowrap;
+	direction: ltr;
+	-webkit-font-feature-settings: 'liga';
+	-webkit-font-smoothing: antialiased;
+}
+
+/* layout */
+.shell {
+	max-width: var(--shell);
+	margin: 0 auto;
+	padding: 0 32px;
+}
+
+.eyebrow {
+	font-family: var(--font-mono);
+	font-size: 11.5px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--pantry-blue-300);
+	margin: 0 0 18px;
+}
+
+section {
+	scroll-margin-top: 80px;
+}
+
+/* buttons */
+.btn {
+	font-family: inherit;
+	font-size: 15px;
+	font-weight: 500;
+	border: 0;
+	border-radius: var(--r-md);
+	padding: 14px 22px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	transition:
+		background var(--dur-fast) var(--ease),
+		transform var(--dur-fast) var(--ease);
+	text-decoration: none;
+}
+.btn:active {
+	transform: scale(0.98);
+}
+.btn:focus-visible {
+	outline: 2px solid var(--pantry-blue-300);
+	outline-offset: 2px;
+}
+.btn--primary {
+	color: #fff;
+	background: var(--pantry-blue-500);
+}
+.btn--primary:hover {
+	background: #0e8fd4;
+}
+.btn--secondary {
+	color: var(--text-strong);
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid var(--rule);
+}
+.btn--secondary:hover {
+	background: var(--bg-chip);
+}
+.btn .material-symbols-outlined {
+	font-size: 18px;
+}
+
+/* chips */
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 13.5px;
+	font-weight: 500;
+	border-radius: var(--r-sm);
+	padding: 8px 12px;
+}
+.chip--blue {
+	color: var(--pantry-blue-300);
+	background: rgba(0, 130, 201, 0.14);
+}
+
+@media (max-width: 640px) {
+	.shell {
+		padding: 0 20px;
+	}
+}

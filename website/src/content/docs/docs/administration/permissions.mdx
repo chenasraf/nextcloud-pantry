@@ -1,7 +1,14 @@
-# Permissions
+---
+title: Permissions
+description: How Pantry scopes everything to a house, the role and capability model, and exactly which capability each action requires.
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components'
 
 Pantry scopes everything to a **house**. Every list, item, photo, and note belongs to a house, and
-what a member may do inside that house is decided by the **roles** they hold. This document explains
+what a member may do inside that house is decided by the **roles** they hold. This page explains
 the model, how to change it, and exactly which capability each action requires.
 
 ## Concepts
@@ -23,33 +30,35 @@ editing the Member role or introducing custom roles.
 
 ## Capability catalog
 
-| Capability        | Governs                                                                                           |
+| Capability        | Governs                                                                                            |
 | ----------------- | ------------------------------------------------------------------------------------------------- |
 | `canViewLists`    | Viewing checklists and their items (incl. trash & archive views)                                  |
-| `canCreateLists`  | Creating new checklists                                                                           |
+| `canCreateLists`  | Creating new checklists                                                                            |
 | `canEditLists`    | Editing list settings **and** editing/reordering/archiving items, categories, stores, item images |
-| `canDeleteLists`  | Trashing, restoring, and permanently deleting checklists                                          |
-| `canAddItems`     | Adding items to a list                                                                            |
-| `canCheckItems`   | Toggling an item done/undone                                                                      |
-| `canCopyItems`    | Copying items to another list                                                                     |
-| `canMoveItems`    | Moving items to another list                                                                      |
-| `canDeleteItems`  | Trashing, restoring, and permanently deleting items                                               |
-| `canViewPhotos`   | Viewing photos and folders (incl. trash view)                                                     |
-| `canUploadPhotos` | Uploading photos                                                                                  |
-| `canUpdatePhotos` | Editing a photo (caption)                                                                         |
+| `canDeleteLists`  | Trashing, restoring, and permanently deleting checklists                                           |
+| `canAddItems`     | Adding items to a list                                                                             |
+| `canCheckItems`   | Toggling an item done/undone                                                                       |
+| `canCopyItems`    | Copying items to another list                                                                      |
+| `canMoveItems`    | Moving items to another list                                                                       |
+| `canDeleteItems`  | Trashing, restoring, and permanently deleting items                                                |
+| `canViewPhotos`   | Viewing photos and folders (incl. trash view)                                                      |
+| `canUploadPhotos` | Uploading photos                                                                                   |
+| `canUpdatePhotos` | Editing a photo (caption)                                                                          |
 | `canMovePhotos`   | Managing folders (create/rename/reorder/delete) and moving/reordering photos                      |
-| `canDeletePhotos` | Trashing, restoring, and permanently deleting photos                                              |
-| `canViewNotes`    | Viewing notes (incl. trash view)                                                                  |
-| `canCreateNotes`  | Creating notes                                                                                    |
+| `canDeletePhotos` | Trashing, restoring, and permanently deleting photos                                               |
+| `canViewNotes`    | Viewing notes (incl. trash view)                                                                   |
+| `canCreateNotes`  | Creating notes                                                                                     |
 | `canUpdateNotes`  | Editing notes (title/content/color/pin) and reordering                                            |
 | `canDeleteNotes`  | Trashing, restoring, and permanently deleting notes                                               |
 
-> Note: there is no separate "edit item" or "archive item" capability. Editing an item, reordering,
-> setting its category or stores, changing its image, and **archiving/unarchiving** are all governed
-> by `canEditLists`. Trashing an item is governed separately by `canDeleteItems`.
->
-> Managing **categories** and **stores** (creating, editing, deleting them) is likewise governed by
-> `canEditLists`; listing them requires `canViewLists`. Neither has its own capability.
+<Aside type="note">
+	There is no separate "edit item" or "archive item" capability. Editing an item, reordering,
+	setting its category or stores, changing its image, and **archiving/unarchiving** are all governed
+	by `canEditLists`. Trashing an item is governed separately by `canDeleteItems`.
+
+	Managing **categories** and **stores** (creating, editing, deleting them) is likewise governed by
+	`canEditLists`; listing them requires `canViewLists`. Neither has its own capability.
+</Aside>
 
 ## How enforcement works
 
@@ -117,7 +126,7 @@ Columns: **View** = `canViewLists`, **Create** = `canCreateLists`, **Edit** = `c
 | Permanently delete a list                                              |      |        |      |   ✅   |
 | Empty the lists trash                                                  |      |        |      |   ✅   |
 
-> Restricting a list to specific roles is admin-only.
+<Aside type="note">Restricting a list to specific roles is admin-only.</Aside>
 
 ### Checklist items
 

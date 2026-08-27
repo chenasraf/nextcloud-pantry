@@ -1,0 +1,149 @@
+---
+import { Image } from 'astro:assets'
+import icon from '../assets/pantry-icon.png'
+
+const cols = [
+	{
+		heading: 'Product',
+		links: [
+			{ label: 'Features', href: '/#features' },
+			{ label: 'Download', href: '/#download' },
+			{ label: 'Documentation', href: '/docs' },
+		],
+	},
+	{
+		heading: 'Docs',
+		links: [
+			{ label: 'Install the server app', href: '/docs/getting-started/install' },
+			{ label: 'Shopping mode', href: '/docs/using/shopping-mode' },
+			{ label: 'Permissions', href: '/docs/administration/permissions' },
+		],
+	},
+	{
+		heading: 'Project',
+		links: [
+			{ label: 'GitHub', href: 'https://github.com/chenasraf/nextcloud-pantry' },
+			{ label: 'Issues', href: 'https://github.com/chenasraf/nextcloud-pantry/issues' },
+			{ label: 'License — AGPL-3.0', href: 'https://www.gnu.org/licenses/agpl-3.0.html' },
+		],
+	},
+]
+---
+
+<footer class="site-footer">
+	<div class="shell site-footer__inner">
+		<div class="site-footer__brand">
+			<a class="brand" href="/">
+				<Image src={icon} alt="" width={28} height={28} class="brand__icon" />
+				<span class="brand__word">Pantry</span>
+			</a>
+			<p class="site-footer__tag">
+				The household list app that lives in your Nextcloud. Shared, self-hosted, yours.
+			</p>
+		</div>
+		<div class="site-footer__cols">
+			{
+				cols.map((col) => (
+					<nav class="site-footer__col">
+						<h4 class="site-footer__heading">{col.heading}</h4>
+						{col.links.map((l) => (
+							<a href={l.href}>{l.label}</a>
+						))}
+					</nav>
+				))
+			}
+		</div>
+	</div>
+	<div class="shell site-footer__legal">
+		<span>© Chen Asraf</span>
+		<span>Built with Astro &amp; Starlight</span>
+	</div>
+</footer>
+
+<style>
+	.site-footer {
+		border-top: 1px solid var(--rule);
+		padding: 56px 0 32px;
+		background: var(--bg-card);
+	}
+	.site-footer__inner {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+		gap: 48px;
+	}
+	.brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.brand__icon {
+		border-radius: 7px;
+	}
+	.brand__word {
+		font-family: var(--font-display);
+		font-size: 18px;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		color: var(--text-strong);
+	}
+	.site-footer__tag {
+		margin: 14px 0 0;
+		font-size: 13.5px;
+		line-height: 1.6;
+		color: var(--text-muted);
+		max-width: 34ch;
+	}
+	.site-footer__cols {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 24px;
+	}
+	.site-footer__col {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.site-footer__heading {
+		margin: 0 0 4px;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--text-faint);
+		font-weight: 500;
+	}
+	.site-footer__col a {
+		color: var(--text);
+		font-size: 13.5px;
+		transition: color var(--dur-fast) var(--ease);
+	}
+	.site-footer__col a:hover {
+		color: var(--text-strong);
+	}
+	.site-footer__legal {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+		margin-top: 44px;
+		padding-top: 20px;
+		border-top: 1px solid var(--rule);
+		font-family: var(--font-mono);
+		font-size: 11.5px;
+		color: var(--text-faint);
+	}
+	@media (max-width: 900px) {
+		.site-footer__inner {
+			grid-template-columns: 1fr;
+			gap: 32px;
+		}
+	}
+	@media (max-width: 640px) {
+		.site-footer__cols {
+			grid-template-columns: 1fr 1fr;
+		}
+		.site-footer__legal {
+			flex-direction: column;
+			gap: 6px;
+		}
+	}
+</style>

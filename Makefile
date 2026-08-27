@@ -152,6 +152,7 @@ source:
 		--exclude="build" \
 		--exclude="tests" \
 		--exclude="/src" \
+		--exclude="/website" \
 		--exclude="js/node_modules" \
 		--exclude="node_modules" \
 		--exclude="*.log" \
@@ -202,6 +203,7 @@ appstore:
 		--exclude="/gen" \
 		--exclude="/.*" \
 		--exclude="/src" \
+		--exclude="/website" \
 		--exclude="rename-template.sh" \
 		--exclude="*.config.cjs" \
 		--exclude="*.config.js" \

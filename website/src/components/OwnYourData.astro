@@ -1,0 +1,117 @@
+---
+const points = [
+	{
+		icon: 'lock',
+		title: 'Your server, your data',
+		body: 'Everything lives in the Nextcloud you already run. No Pantry account, no third-party cloud, nothing to opt out of.',
+	},
+	{
+		icon: 'group',
+		title: 'Shared, not published',
+		body: 'Lists and boards are shared with the people in your house through Nextcloud — not with anyone else.',
+	},
+	{
+		icon: 'download',
+		title: 'Install in a click',
+		body: 'Enable it from the Nextcloud App Store and it is ready — no separate service, no configuration.',
+	},
+]
+---
+
+<section class="own">
+	<div class="shell own__grid">
+		<div class="own__copy">
+			<p class="eyebrow">Own your data</p>
+			<h2 class="own__title">Self-hosting is the product.</h2>
+			<p class="own__lead">
+				Pantry is a Nextcloud app. It runs on a server you control, and never phones home.
+			</p>
+			<a class="btn btn--secondary own__cta" href="/docs/getting-started/install">
+				<span class="material-symbols-outlined">download</span>Install on your Nextcloud
+			</a>
+		</div>
+		<ul class="own__points">
+			{
+				points.map((p) => (
+					<li class="own__point">
+						<span class="own__point-icon material-symbols-outlined">{p.icon}</span>
+						<div>
+							<h3 class="own__point-title">{p.title}</h3>
+							<p class="own__point-body">{p.body}</p>
+						</div>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</section>
+
+<style>
+	.own {
+		padding: 80px 0;
+		border-top: 1px solid var(--rule);
+	}
+	.own__grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+		gap: 56px;
+		align-items: start;
+	}
+	.own__title {
+		margin: 0 0 14px;
+		font-family: var(--font-display);
+		font-size: var(--step-h2);
+		font-weight: 600;
+		letter-spacing: -0.02em;
+	}
+	.own__lead {
+		margin: 0 0 24px;
+		font-size: 16px;
+		line-height: 1.65;
+		color: var(--text);
+		max-width: 52ch;
+	}
+	.own__cta {
+		font-size: 14px;
+	}
+	.own__points {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+	.own__point {
+		display: flex;
+		gap: 14px;
+		background: var(--bg-card);
+		border: 1px solid var(--rule);
+		border-radius: var(--r-lg);
+		padding: 20px 22px;
+	}
+	.own__point-icon {
+		font-size: 22px;
+		color: var(--pantry-blue-300);
+		flex: none;
+		margin-top: 2px;
+	}
+	.own__point-title {
+		margin: 0 0 4px;
+		font-size: 15px;
+		font-weight: 600;
+		color: var(--text-strong);
+	}
+	.own__point-body {
+		margin: 0;
+		font-size: 13.5px;
+		line-height: 1.6;
+		color: var(--text-muted);
+	}
+	@media (max-width: 900px) {
+		.own__grid {
+			grid-template-columns: 1fr;
+			gap: 36px;
+		}
+	}
+</style>

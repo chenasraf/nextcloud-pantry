@@ -1,6 +1,13 @@
-# Shopping Mode
+---
+title: Shopping Mode
+description:
+  Start a trip from your lists, walk your stores, see who else is shopping, and finish with a priced
+  review.
+sidebar:
+  order: 4
+---
 
-## What it does — user-facing flow
+## What it does
 
 ### 1. Starting a trip
 
@@ -15,7 +22,7 @@ There's one live trip per person at a time. If you already have a trip running (
 house), you'll be offered **Resume** or **End previous trip** instead of silently starting a second
 one.
 
-<img width="669" alt="Start shopping screen: checklist selection, an ordered store route, and the include-unassigned toggle" src="assets/start-screen.png" />
+<img width="669" alt="Start shopping screen: checklist selection, an ordered store route, and the include-unassigned toggle" src="/docs/start-screen.png" />
 
 ### 2. Shopping
 
@@ -28,7 +35,7 @@ move to the **next store** / **finish**.
 The list refreshes about once a minute (and immediately when you return to the tab), so if a
 housemate checks something off, it disappears from yours too.
 
-<img width="965" alt="Dense shopping view: sticky store bar with progress, category-grouped items, and the next-store action" src="assets/shopping-view.png" />
+<img width="965" alt="Dense shopping view: sticky store bar with progress, category-grouped items, and the next-store action" src="/docs/shopping-view.png" />
 
 ### 3. Presence — who's out shopping
 
@@ -51,9 +58,9 @@ While shopping, enabled reminders show as a small, **non-blocking** checklist at
 can tick them off as you go, but nothing is required and the ticks are just for your own tracking
 (they don't persist across a reload).
 
-<img width="617" alt="Inline reminder block surfaced while shopping, with tick-off checkboxes" src="assets/reminders-surfacing.png" />
+<img width="617" alt="Inline reminder block surfaced while shopping, with tick-off checkboxes" src="/docs/reminders-surfacing.png" />
 
-<img width="920" alt="Reminders manager: prompts grouped by moment into drag-reorderable lists with enable toggles" src="assets/reminders-manager.png" />
+<img width="920" alt="Reminders manager: prompts grouped by moment into drag-reorderable lists with enable toggles" src="/docs/reminders-manager.png" />
 
 ### 5. Finishing & review
 
@@ -62,7 +69,7 @@ bought them at, an estimated total per currency (from item prices, shown as a ra
 ranges), and a field to **enter what you actually paid** per store (or for the whole trip if you
 shopped storeless). Finishing stamps the trip closed.
 
-<img width="616" alt="Trip review grouped by store with per-currency estimates and an actual-paid field" src="assets/review.png" />
+<img width="616" alt="Trip review grouped by store with per-currency estimates and an actual-paid field" src="/docs/review.png" />
 
 ### 6. History
 
@@ -73,4 +80,4 @@ Closed trips render from a **snapshot** taken at close time, so they stay intact
 underlying items are later edited or deleted. Old trips can be auto-pruned via a configurable
 retention period (default: keep forever).
 
-<img width="714" alt="Shopping history list: store route, item count, duration, and total per finished trip" src="assets/history.png" />
+<img width="714" alt="Shopping history list: store route, item count, duration, and total per finished trip" src="/docs/history.png" />

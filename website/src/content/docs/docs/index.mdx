@@ -1,0 +1,50 @@
+---
+title: Documentation
+description: Guides and reference for Pantry — the Nextcloud server app and the mobile & desktop companion.
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components'
+
+Pantry is a household app for your Nextcloud: shared checklists, a photo board and a notes wall,
+synced to a server you own and shared with the people you live with. These docs cover both the
+Nextcloud server app and the mobile & desktop companion.
+
+## Start here
+
+<CardGrid>
+	<LinkCard
+		title="Install the server app"
+		description="Enable Pantry on your Nextcloud from the app store or the command line."
+		href="/docs/getting-started/install"
+	/>
+	<LinkCard
+		title="Pair a client"
+		description="Connect the Android or desktop app to your server."
+		href="/docs/getting-started/pairing"
+	/>
+	<LinkCard
+		title="Shopping Mode"
+		description="Turn your lists into a shopping trip with stores, presence and a priced review."
+		href="/docs/using/shopping-mode"
+	/>
+	<LinkCard
+		title="Permissions"
+		description="House roles and the capability each action requires."
+		href="/docs/administration/permissions"
+	/>
+</CardGrid>
+
+## How the docs are organized
+
+<CardGrid>
+	<Card title="Getting started" icon="rocket">
+		Install the server app on your Nextcloud and pair the app on your phone or desktop.
+	</Card>
+	<Card title="Using Pantry" icon="open-book">
+		How to use each feature — Checklists, Photo Board, Notes Wall, Shopping Mode and Sharing — with
+		steps for both the web and the app.
+	</Card>
+	<Card title="Administration" icon="setting">
+		Server-side topics: house roles and the exact capability each action requires.
+	</Card>
+</CardGrid>

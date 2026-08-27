@@ -1,0 +1,114 @@
+name: Deploy website
+
+# The desktop download links embed the app version (e.g. pantry-0.29.0-macos.dmg),
+# so the site is rebuilt with the current pantry-flutter version. The version is
+# resolved once per build (never client-side) in this order:
+#   1. repository_dispatch `app-release` payload  → exact version pushed from the
+#      pantry-flutter release workflow (no API call).
+#   2. workflow_dispatch `app_version` input      → manual pin.
+#   3. otherwise                                  → one authenticated GitHub API
+#      call for pantry-flutter's latest release tag (build-time only; the runner's
+#      GITHUB_TOKEN has a 1000-req/hr budget, so a single call is never rate-limited).
+#
+# To wire up the automated route, have pantry-flutter's release job dispatch here:
+#   - uses: peter-evans/repository-dispatch@v3
+#     with:
+#       token: ${{ secrets.WEBSITE_DISPATCH_TOKEN }}   # PAT with actions:write on this repo
+#       repository: chenasraf/nextcloud-pantry
+#       event-type: app-release
+#       client-payload: '{"version": "${{ steps.meta.outputs.version }}"}'
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'website/**'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+    inputs:
+      app_version:
+        description: 'App version for download links (e.g. 0.29.0). Leave blank to use the latest pantry-flutter release.'
+        required: false
+        type: string
+  repository_dispatch:
+    types: [app-release]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment, don't cancel in-progress production deploys.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve app version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          DISPATCH_VERSION: ${{ github.event.client_payload.version }}
+          INPUT_VERSION: ${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "repository_dispatch" ] && [ -n "$DISPATCH_VERSION" ]; then
+            VER="$DISPATCH_VERSION"
+            echo "Using version from release dispatch: $VER"
+          elif [ "$EVENT" = "workflow_dispatch" ] && [ -n "$INPUT_VERSION" ]; then
+            VER="$INPUT_VERSION"
+            echo "Using version from manual input: $VER"
+          else
+            VER="$(gh api repos/chenasraf/pantry-flutter/releases/latest --jq .tag_name)"
+            echo "Using latest pantry-flutter release: $VER"
+          fi
+          VER="${VER#v}"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+
+      # website/ is a self-contained project (not part of the Nextcloud app's
+      # pnpm workspace), so install and build run inside it.
+      - name: Install dependencies
+        working-directory: website
+        run: pnpm install --frozen-lockfile
+
+      - name: Build website
+        working-directory: website
+        env:
+          PUBLIC_PANTRY_APP_VERSION: ${{ steps.version.outputs.version }}
+        run: pnpm build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

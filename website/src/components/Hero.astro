@@ -1,0 +1,102 @@
+---
+import { Image } from 'astro:assets'
+import shotChecklists from '../assets/shot-checklists.png'
+import shotNotes from '../assets/shot-noteswall.png'
+import shotPhotos from '../assets/shot-photoboard.png'
+---
+
+<section class="hero">
+	<div class="shell hero__grid">
+		<div class="hero__copy">
+			<p class="eyebrow">Self-hosted</p>
+			<h1 class="hero__title">The household list app that lives in your Nextcloud.</h1>
+			<p class="hero__sub">
+				Checklists, a photo board and a notes wall — shared with the people you live with, synced to
+				a server you own.
+			</p>
+			<div class="hero__actions">
+				<a class="btn btn--primary" href="/docs/getting-started/install">
+					<span class="material-symbols-outlined">download</span>Install on your server
+				</a>
+				<a class="btn btn--secondary" href="/docs">See the docs</a>
+				<span class="hero__license">AGPL-3.0</span>
+			</div>
+		</div>
+		<div class="hero__shots">
+			<Image src={shotNotes} alt="Notes Wall" widths={[220, 440]} class="shot shot--side" />
+			<Image src={shotChecklists} alt="Checklists" widths={[280, 560]} class="shot shot--front" />
+			<Image src={shotPhotos} alt="Photo Board" widths={[220, 440]} class="shot shot--side" />
+		</div>
+	</div>
+</section>
+
+<style>
+	.hero {
+		background: linear-gradient(180deg, #0d1a22 0%, var(--bg-page) 100%);
+		border-bottom: 1px solid var(--rule);
+		padding: 72px 0 80px;
+	}
+	.hero__grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
+		gap: 48px;
+		align-items: center;
+	}
+	.hero__title {
+		margin: 0 0 16px;
+		font-family: var(--font-display);
+		font-size: clamp(36px, 5vw, 52px);
+		line-height: 1.05;
+		font-weight: 600;
+		letter-spacing: -0.03em;
+		text-wrap: pretty;
+	}
+	.hero__sub {
+		margin: 0 0 26px;
+		font-size: 16.5px;
+		line-height: 1.6;
+		color: var(--text);
+		max-width: 46ch;
+	}
+	.hero__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		align-items: center;
+	}
+	.hero__license {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--text-muted);
+		margin-left: 6px;
+	}
+	.hero__shots {
+		display: flex;
+		gap: 16px;
+		justify-content: center;
+		align-items: flex-end;
+	}
+	.shot {
+		height: auto;
+		border-radius: var(--r-lg);
+		border: 1px solid var(--rule);
+		box-shadow: var(--e2);
+	}
+	.shot--front {
+		width: 42%;
+		border-color: var(--border);
+	}
+	.shot--side {
+		width: 30%;
+	}
+	@media (max-width: 900px) {
+		.hero__grid {
+			grid-template-columns: 1fr;
+			gap: 40px;
+		}
+		.hero__shots {
+			max-width: 460px;
+			margin: 0 auto;
+		}
+	}
+</style>
