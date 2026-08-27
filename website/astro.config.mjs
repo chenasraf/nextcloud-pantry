@@ -1,4 +1,5 @@
 // @ts-check
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'astro/config'
 import starlight from '@astrojs/starlight'
 
@@ -7,6 +8,17 @@ import starlight from '@astrojs/starlight'
 export default defineConfig({
 	site: 'https://pantry.casraf.dev',
 	trailingSlash: 'ignore',
+	// Define the `@` alias here rather than via tsconfig `paths`. website/ is a
+	// self-contained project nested in a repo whose root tsconfig extends a
+	// package that isn't installed in this isolated env; keeping tsconfig free of
+	// `paths` stops Vite from scanning ancestor tsconfigs and choking on it.
+	vite: {
+		resolve: {
+			alias: {
+				'@': fileURLToPath(new URL('./src', import.meta.url)),
+			},
+		},
+	},
 	integrations: [
 		starlight({
 			title: 'Pantry',

@@ -91,6 +91,16 @@ jobs:
         working-directory: website
         run: pnpm install --frozen-lockfile
 
+      # The isolated website build must not see the Nextcloud app's root
+      # tsconfig, which extends @vue/tsconfig — a root-only dependency not
+      # installed in this job. Vite reads the nearest ancestor tsconfig while
+      # loading the Astro config, so move the app's tsconfigs aside first.
+      - name: Hide app tsconfigs from the isolated build
+        run: |
+          for f in tsconfig.json tsconfig.app.json tsconfig.node.json; do
+            [ -f "$f" ] && mv "$f" "$f.disabled" || true
+          done
+
       - name: Build website
         working-directory: website
         env:
