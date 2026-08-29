@@ -15,8 +15,8 @@ importers:
         specifier: ^2.6.0
         version: 2.6.0
       '@nextcloud/dialogs':
-        specifier: ^7.4.1
-        version: 7.4.1(@vue/compiler-sfc@3.5.41)(esbuild@0.28.2)(rolldown@1.2.5)(rollup@4.60.1)(typescript@6.0.3)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(sass-embedded@1.103.1)(sass@1.103.1)(yaml@2.9.0))
+        specifier: ^7.5.0
+        version: 7.5.0(@vue/compiler-sfc@3.5.41)(esbuild@0.28.2)(rolldown@1.2.5)(rollup@4.60.1)(typescript@6.0.3)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(sass-embedded@1.103.1)(sass@1.103.1)(yaml@2.9.0))
       '@nextcloud/l10n':
         specifier: ^3.4.1
         version: 3.4.1
@@ -676,8 +676,8 @@ packages:
     resolution: {integrity: sha512-snZ0/910zzwN6PDsIlx2Uvktr1S5x0ClhDUnfPlCj7ntNvECzuVHNY5wzby22LIkc+9ZjaDKtCwuCt2ye+9p/Q==}
     engines: {node: ^20.0.0 || ^22.0.0 || ^24.0.0}
 
-  '@nextcloud/dialogs@7.4.1':
-    resolution: {integrity: sha512-M8q1v14rTMdjTyv5HOZrpBpa5M+qnqnjoFCeeohmKvt69xVW9Xag6R5InQhBQh3zfsYEaQ4mg3shn3kKBx9qxg==}
+  '@nextcloud/dialogs@7.5.0':
+    resolution: {integrity: sha512-2gmv0V3ObphxRd7ZvXwTsPvn/XSf2vummdXb2LRFpkoSamWbk+41SWv7cnDQPC+Ve9p46WebDuqyG+wbefkhEw==}
     engines: {node: ^20 || ^22 || ^24}
 
   '@nextcloud/eslint-config@9.0.1':
@@ -1233,9 +1233,6 @@ packages:
   '@types/sizzle@2.3.10':
     resolution: {integrity: sha512-TC0dmN0K8YcWEAEfiPi5gJP14eJe30TTGjkvek3iM/1NdHHsdCA/Td6GvNndMOo/iSnIsZ4HuuhrYPDAmbxzww==}
 
-  '@types/toastify-js@1.12.4':
-    resolution: {integrity: sha512-zfZHU4tKffPCnZRe7pjv/eFKzTVHozKewFCKaCjZ4gFinKgJRz/t0bkZiMCXJxPhv/ZoeDGNOeRD09R0kQZ/nw==}
-
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
@@ -1605,8 +1602,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.11.16:
-    resolution: {integrity: sha512-H/bNPUFHewJHyCTdjn1n3Pit5+2GmWT6mmeHImPX+8MA9NA6b67jO4gYmi4jTbCJb2otq34KMZnovndDPqJwhQ==}
+  baseline-browser-mapping@2.11.19:
+    resolution: {integrity: sha512-Grytf1xOxOEMTGRwx6rLGKkTabd4vMg3VrKdj/7joCmV0qgh4QwMMO6xh34YEXQqirAuUdgQGa5orJQQ+69RBw==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -1713,8 +1710,8 @@ packages:
   cancelable-promise@4.3.1:
     resolution: {integrity: sha512-A/8PwLk/T7IJDfUdQ68NR24QHa8rIlnN/stiJEBo6dmVUkD4K14LswG0w3VwdeK/o7qOwRUR1k2MhK5Rpy2m7A==}
 
-  caniuse-lite@1.0.30001809:
-    resolution: {integrity: sha512-xxWVywk6a6Arlk+hymeycyn/VgqEfLDxupvhH/xiY5SJ/18kmi9o6MiO320DCUzypORHLtvh0I4i04tUhCNHNQ==}
+  caniuse-lite@1.0.30001810:
+    resolution: {integrity: sha512-TITQPUkaz+aVk5GL6NhOdwk1aEaNTSDPsGFWrTuhKGtjTF70jL/Oht2W4c6rXUe5fu7Ie19VIahAXHIIiWWNeg==}
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -1969,8 +1966,8 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
 
-  electron-to-chromium@1.5.412:
-    resolution: {integrity: sha512-z4rMe3esBzlzovKHj4gxJnsCGZRK5l4baUvm+gCGJBPE+gsyUMKsuU9tnEUtI1dOebXz1ytAPGjvXhmQ7rIPwA==}
+  electron-to-chromium@1.5.415:
+    resolution: {integrity: sha512-958V+Kbhtgz+SxXeEVKBjrlKRBIDAYvUJfwhjxMZ5S6ut9jAl7l9ZKBkBrvjyjZE36PabLUo2L8kEeV5O4vgJg==}
 
   elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
@@ -2189,6 +2186,9 @@ packages:
 
   fast-uri@3.1.5:
     resolution: {integrity: sha512-gHwA1O9LDIcKunMKhObS/HimwtehO1nPUECKAu5TpKgaO19fcWEl4bliWe1jWxVFvIXztJjjQ4L8XQ1EU9f7Jw==}
+
+  fast-uri@3.1.6:
+    resolution: {integrity: sha512-7Ical1vFEMr0onbVzEDIreM22I4khW+fzyQPwvAFWBp1iwdshSZRsL4jjRvPG9JP1uiqMHRto+YU6R2/CzDz5Q==}
 
   fast-xml-builder@1.3.1:
     resolution: {integrity: sha512-pIM/1n3ntFXKYrUZwW7QCK0gAW7XY+wzj1YMIV3tLDvPj/V+zTGJK5e3/4WJfwj0qWw2ElNXiTixda/R+3YSug==}
@@ -2553,8 +2553,8 @@ packages:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
     engines: {node: '>=12'}
 
-  is-plain-object@5.0.0:
-    resolution: {integrity: sha512-VRSzKkbMm5jMDoKLbltAkFQ5Qr7VDiTFGXxYFXXowVj387GeGNOCsOH6Msy00SGZ3Fp84b1Naa1psqgcCIEP5Q==}
+  is-plain-object@5.1.0:
+    resolution: {integrity: sha512-bUi/yjmtKYcRVUtWRGr0UA6xEFh2I6zWUwMrUXB3s7bmYCaZ8a+0ZsTRkrawh/mzlSD1Y0Ph8bp/U+TvBpWDNw==}
     engines: {node: '>=0.10.0'}
 
   is-regex@1.2.1:
@@ -3891,9 +3891,6 @@ packages:
     resolution: {integrity: sha512-41wJyvKep3yT2tyPqX/4blcfybknGB4D+oETKLs7Q76UiPqRpUJK3hr1nxelyYO0PHKVzJwlu0aCeEAsGI6rpw==}
     engines: {node: '>=20'}
 
-  toastify-js@1.12.0:
-    resolution: {integrity: sha512-HeMHCO9yLPvP9k0apGSdPUWrUbLnxUKNFzgUoZp1PHCLploIX/4DSQ7V8H25ef+h4iO9n0he7ImfcndnN6nDrQ==}
-
   tributejs@5.1.3:
     resolution: {integrity: sha512-B5CXihaVzXw+1UHhNFyAwUTMDk1EfoLP5Tj1VhD9yybZ1I8DZJEv8tZ1l0RJo0t0tk9ZhR8eG5tEsaCvRigmdQ==}
 
@@ -4776,12 +4773,13 @@ snapshots:
     dependencies:
       '@nextcloud/initial-state': 3.0.0
 
-  '@nextcloud/dialogs@7.4.1(@vue/compiler-sfc@3.5.41)(esbuild@0.28.2)(rolldown@1.2.5)(rollup@4.60.1)(typescript@6.0.3)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(sass-embedded@1.103.1)(sass@1.103.1)(yaml@2.9.0))':
+  '@nextcloud/dialogs@7.5.0(@vue/compiler-sfc@3.5.41)(esbuild@0.28.2)(rolldown@1.2.5)(rollup@4.60.1)(typescript@6.0.3)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(sass-embedded@1.103.1)(sass@1.103.1)(yaml@2.9.0))':
     dependencies:
       '@mdi/js': 7.4.47
       '@nextcloud/auth': 2.6.0
       '@nextcloud/axios': 2.6.0
       '@nextcloud/browser-storage': 0.5.0
+      '@nextcloud/capabilities': 1.2.1
       '@nextcloud/event-bus': 3.3.3
       '@nextcloud/files': 4.0.0
       '@nextcloud/initial-state': 3.0.0
@@ -4790,10 +4788,8 @@ snapshots:
       '@nextcloud/router': 3.1.0
       '@nextcloud/sharing': 0.4.0
       '@nextcloud/vue': 9.9.0(@vue/compiler-sfc@3.5.41)(esbuild@0.28.2)(rolldown@1.2.5)(rollup@4.60.1)(typescript@6.0.3)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(sass-embedded@1.103.1)(sass@1.103.1)(yaml@2.9.0))
-      '@types/toastify-js': 1.12.4
       '@vueuse/core': 14.4.0(vue@3.5.41(typescript@6.0.3))
       p-queue: 9.3.3
-      toastify-js: 1.12.0
       vue: 3.5.41(typescript@6.0.3)
       webdav: 5.10.0
     transitivePeerDependencies:
@@ -5338,8 +5334,6 @@ snapshots:
 
   '@types/sizzle@2.3.10': {}
 
-  '@types/toastify-js@1.12.4': {}
-
   '@types/trusted-types@2.0.7':
     optional: true
 
@@ -5689,7 +5683,7 @@ snapshots:
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.5
+      fast-uri: 3.1.6
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -5784,7 +5778,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.11.16: {}
+  baseline-browser-mapping@2.11.19: {}
 
   birpc@2.9.0: {}
 
@@ -5865,9 +5859,9 @@ snapshots:
 
   browserslist@4.28.8:
     dependencies:
-      baseline-browser-mapping: 2.11.16
-      caniuse-lite: 1.0.30001809
-      electron-to-chromium: 1.5.412
+      baseline-browser-mapping: 2.11.19
+      caniuse-lite: 1.0.30001810
+      electron-to-chromium: 1.5.415
       node-releases: 2.0.53
       update-browserslist-db: 1.3.1(browserslist@4.28.8)
 
@@ -5912,7 +5906,7 @@ snapshots:
   cancelable-promise@4.3.1:
     optional: true
 
-  caniuse-lite@1.0.30001809: {}
+  caniuse-lite@1.0.30001810: {}
 
   ccount@2.0.1: {}
 
@@ -6151,7 +6145,7 @@ snapshots:
       minimatch: 9.0.9
       semver: 7.8.5
 
-  electron-to-chromium@1.5.412: {}
+  electron-to-chromium@1.5.415: {}
 
   elliptic@6.6.1:
     dependencies:
@@ -6447,6 +6441,8 @@ snapshots:
   fast-levenshtein@2.0.6: {}
 
   fast-uri@3.1.5: {}
+
+  fast-uri@3.1.6: {}
 
   fast-xml-builder@1.3.1:
     dependencies:
@@ -6822,7 +6818,7 @@ snapshots:
 
   is-plain-obj@4.1.0: {}
 
-  is-plain-object@5.0.0: {}
+  is-plain-object@5.1.0: {}
 
   is-regex@1.2.1:
     dependencies:
@@ -8260,7 +8256,7 @@ snapshots:
       html-tags: 3.3.1
       ignore: 6.0.2
       imurmurhash: 0.1.4
-      is-plain-object: 5.0.0
+      is-plain-object: 5.1.0
       known-css-properties: 0.35.0
       mathml-tag-names: 2.1.3
       meow: 13.2.0
@@ -8348,8 +8344,6 @@ snapshots:
     dependencies:
       '@sindresorhus/base62': 1.0.0
       reserved-identifiers: 1.2.0
-
-  toastify-js@1.12.0: {}
 
   tributejs@5.1.3: {}
 
