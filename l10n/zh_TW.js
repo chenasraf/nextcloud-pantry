@@ -133,6 +133,7 @@ OC.L10N.register(
     "Add a description" : "加入描述",
     "Remove folder" : "移除資料夾",
     "Move to folder" : "移動至資料夾",
+    "Creating …" : "建立中…",
     "Mine" : "我的",
     "Load more" : "載入更多",
     "Uncategorized" : "未分類",
