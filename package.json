@@ -29,7 +29,7 @@
     "@nextcloud/l10n": "^3.4.1",
     "@nextcloud/router": "^3.1.0",
     "@nextcloud/vite-config": "^2.5.4",
-    "@nextcloud/vue": "^9.9.0",
+    "@nextcloud/vue": "^9.10.0",
     "barcode-detector": "^3.2.2",
     "date-fns": "^4.4.0",
     "fuzzball": "^2.2.6",
