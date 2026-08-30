@@ -535,7 +535,7 @@ OC.L10N.register(
     "Create your first checklist to start adding items." : "Crie sua primeira lista de verificação para começar a adicionar itens.",
     "Items from every list in this house." : "Itens de todas as listas deste lar.",
     "Deleted checklists will appear here." : "As listas de verificação excluídas aparecerão aqui.",
-    "No archived checklists" : "Nenhuma lista de verificação arquivada",
+    "No archived checklists" : "Não há listas de verificação arquivadas",
     "Archived checklists will appear here." : "As listas de verificação arquivadas aparecerão aqui.",
     "This will permanently delete every checklist in the trash, along with all of their items. This cannot be undone." : "Isso excluirá definitivamente todas as listas de verificação da lixeira, juntamente com todos os itens nelas contidos. Essa ação não pode ser revertida.",
     "Trash emptied" : "Lixeira esvaziada",
