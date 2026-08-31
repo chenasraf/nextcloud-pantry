@@ -84,7 +84,11 @@
         >
           <template #icon><ArrowDownIcon :size="18" /></template>
         </NcButton>
-        <NcButton variant="tertiary" :aria-label="strings.removeOption" @click="removeOption(i)">
+        <NcButton
+          variant="tertiary"
+          :aria-label="strings.removeOption"
+          @click="$emit('remove-option', i)"
+        >
           <template #icon><CloseIcon :size="18" /></template>
         </NcButton>
       </div>
@@ -232,7 +236,7 @@ const props = defineProps<{
   error?: string | null
   isNew: boolean
 }>()
-defineEmits<{ save: []; delete: []; cancel: [] }>()
+defineEmits<{ save: []; delete: []; cancel: []; 'remove-option': [index: number] }>()
 
 interface Opt<T> {
   value: T
@@ -317,10 +321,7 @@ const defaultOptionSel = computed<Opt<number | null>>({
 })
 
 function addOption(): void {
-  model.value.options.push({ id: null, label: '' })
-}
-function removeOption(i: number): void {
-  model.value.options.splice(i, 1)
+  model.value.options.push({ id: null, label: '', valueCount: 0 })
 }
 function moveOption(i: number, dir: -1 | 1): void {
   const j = i + dir

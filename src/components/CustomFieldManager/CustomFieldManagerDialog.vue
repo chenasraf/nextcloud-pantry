@@ -54,6 +54,7 @@
                 @save="submit"
                 @delete="confirmDelete(field)"
                 @cancel="collapse"
+                @remove-option="onRemoveOption"
               />
             </div>
           </li>
@@ -70,6 +71,7 @@
               @save="submit"
               @delete="collapse"
               @cancel="collapse"
+              @remove-option="onRemoveOption"
             />
           </div>
         </li>
@@ -105,25 +107,57 @@
         </NcButton>
       </template>
     </NcDialog>
+
+    <NcDialog
+      :open="optionDelete !== null"
+      :name="strings.remapTitle"
+      size="small"
+      @update:open="
+        (v: boolean) => {
+          if (!v) optionDelete = null
+        }
+      "
+    >
+      <div v-if="optionDelete" class="cf-remap">
+        <p>{{ remapPrompt }}</p>
+        <NcSelect
+          v-model="remapChoice"
+          :options="remapChoices"
+          :clearable="false"
+          label="label"
+          :input-label="''"
+          :aria-label-combobox="strings.remapTitle"
+          :calculate-position="ncSelectCalculatePosition"
+        />
+      </div>
+      <template #actions>
+        <NcButton @click="optionDelete = null">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" :disabled="saving" @click="submitOptionDelete">
+          {{ strings.removeOption }}
+        </NcButton>
+      </template>
+    </NcDialog>
   </NcDialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { t } from '@nextcloud/l10n'
+import { t, n } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import PlusIcon from '@icons/Plus.vue'
 import BellIcon from '@icons/Bell.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
 import type { FieldDefinition } from '@/api/types'
-import type { CreateFieldInput, UpdateFieldPatch } from '@/api/customFields'
+import type { CreateFieldInput, OptionDeleteAction, UpdateFieldPatch } from '@/api/customFields'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useChecklists } from '@/composables/useChecklist'
+import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
 import { fieldTypeIconComponent, fieldTypeLabel } from './fieldTypeIcons'
 import CustomFieldEditor from './CustomFieldEditor.vue'
-import type { FieldDraft } from './draft'
+import type { DraftOption, FieldDraft } from './draft'
 import { blankDraft, draftFromField, draftToCreate, draftToPatch } from './draft'
 
 const props = defineProps<{ open: boolean; houseId: number }>()
@@ -141,6 +175,15 @@ const saving = ref(false)
 const error = ref<string | null>(null)
 const deleting = ref<FieldDefinition | null>(null)
 
+/** A `select` option removal awaiting a remap-or-clear choice. */
+const optionDelete = ref<{ index: number; option: DraftOption } | null>(null)
+
+interface RemapChoice {
+  value: number | 'clear'
+  label: string
+}
+const remapChoice = ref<RemapChoice | null>(null)
+
 const strings = {
   title: t('pantry', 'Custom fields'),
   emptyHint: t('pantry', 'No custom fields yet. Add one to attach extra info to items.'),
@@ -152,6 +195,10 @@ const strings = {
   deleteConfirm: t('pantry', 'Delete this field? Values already set on items are kept but hidden.'),
   cancel: t('pantry', 'Cancel'),
   delete: t('pantry', 'Delete'),
+  remapTitle: t('pantry', 'Option in use'),
+  removeOption: t('pantry', 'Remove option'),
+  // TRANSLATORS: Choice; empties the option from every item that had it.
+  clearValues: t('pantry', 'Clear it from those items'),
 }
 
 interface Group {
@@ -259,6 +306,78 @@ async function submitDelete(): Promise<void> {
     error.value = (e as Error).message
   } finally {
     saving.value = false
+  }
+}
+
+// A persisted option that already carries values can't just vanish — its item
+// values must be moved to another option or cleared first. Fresh (unsaved) or
+// unused options drop straight out of the draft.
+function onRemoveOption(index: number): void {
+  const opt = draft.value.options[index]
+  if (!opt) return
+  if (!creating.value && openId.value !== null && opt.id !== null && opt.valueCount > 0) {
+    remapChoice.value = remapChoices.value[0] ?? null
+    optionDelete.value = { index, option: opt }
+  } else {
+    draft.value.options.splice(index, 1)
+  }
+}
+
+const remapChoices = computed<RemapChoice[]>(() => {
+  const removing = optionDelete.value?.option
+  const targets = draft.value.options
+    .filter((o) => o.id !== null && o.label.trim() !== '' && o.id !== removing?.id)
+    .map<RemapChoice>((o) => ({
+      value: o.id as number,
+      // TRANSLATORS: Choice; moves item values onto another option. {label} is that option's name.
+      label: t('pantry', 'Move it to {label}', { label: o.label.trim() }),
+    }))
+  return [...targets, { value: 'clear', label: strings.clearValues }]
+})
+
+const remapPrompt = computed(() => {
+  const opt = optionDelete.value?.option
+  if (!opt) return ''
+  return n(
+    'pantry',
+    '%n item uses the option "{label}". What should happen to it?',
+    '%n items use the option "{label}". What should happen to them?',
+    opt.valueCount,
+    { label: opt.label.trim() },
+  )
+})
+
+async function submitOptionDelete(): Promise<void> {
+  const pending = optionDelete.value
+  const choice = remapChoice.value
+  if (!pending || !choice || openId.value === null || pending.option.id === null) return
+  const action: OptionDeleteAction = choice.value === 'clear' ? 'clear' : 'remap'
+  const remapToId = choice.value === 'clear' ? undefined : choice.value
+  saving.value = true
+  error.value = null
+  try {
+    const updated = await fields.removeOption(openId.value, pending.option.id, action, remapToId)
+    draft.value.options.splice(pending.index, 1)
+    if (draft.value.defaultOptionId === pending.option.id) {
+      draft.value.defaultOptionId = remapToId ?? null
+    }
+    syncOptionCounts(updated)
+    optionDelete.value = null
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    saving.value = false
+  }
+}
+
+// Refresh the surviving draft options' counts from the server's fresh totals
+// (a remap bumps the target's count) without disturbing unsaved label edits.
+function syncOptionCounts(updated: FieldDefinition): void {
+  const counts = new Map(updated.options.map((o) => [o.id, o.valueCount]))
+  for (const opt of draft.value.options) {
+    if (opt.id !== null && counts.has(opt.id)) {
+      opt.valueCount = counts.get(opt.id)!
+    }
   }
 }
 </script>

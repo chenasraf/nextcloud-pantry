@@ -127,7 +127,7 @@ class FieldDefinition extends Entity implements \JsonSerializable {
 	 * The field's `select` options are attached by the service (empty for
 	 * non-select fields) rather than loaded by the entity.
 	 *
-	 * @param list<array{id: int, label: string, sortOrder: int}> $options
+	 * @param list<array{id: int, label: string, sortOrder: int, valueCount?: int}> $options
 	 *
 	 * @return array<string, mixed>
 	 */

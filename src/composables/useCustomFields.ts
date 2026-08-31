@@ -46,6 +46,17 @@ function build(houseId: number) {
     items.value = items.value.filter((f) => f.id !== id)
   }
 
+  async function removeOption(
+    fieldId: number,
+    optionId: number,
+    action?: api.OptionDeleteAction,
+    remapToId?: number,
+  ): Promise<FieldDefinition> {
+    const updated = await api.deleteFieldOption(houseId, fieldId, optionId, action, remapToId)
+    items.value = sortItems(items.value.map((f) => (f.id === fieldId ? updated : f)))
+    return updated
+  }
+
   async function reorder(entries: { id: number; sortOrder: number }[]): Promise<void> {
     const map = new Map(entries.map((e) => [e.id, e.sortOrder]))
     items.value = sortItems(
@@ -54,7 +65,7 @@ function build(houseId: number) {
     await api.reorderFields(houseId, entries)
   }
 
-  return { items, loading, error, loaded, load, create, update, remove, reorder }
+  return { items, loading, error, loaded, load, create, update, remove, removeOption, reorder }
 }
 
 export function useCustomFields(houseId: number) {

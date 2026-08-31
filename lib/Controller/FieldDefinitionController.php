@@ -208,6 +208,36 @@ final class FieldDefinitionController extends OCSController {
 	}
 
 	/**
+	 * Delete a `select` option
+	 *
+	 * An option with no stored values is removed outright. An option in use
+	 * requires an action: `remap` rewrites every affected value to `remapToId`
+	 * (another option of the same field), `clear` nulls them. The value rewrite
+	 * and the option delete run in one transaction.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $fieldId Field id.
+	 * @param int $optionId Option id to delete.
+	 * @param string|null $action `remap` or `clear`; required when the option is in use.
+	 * @param int|null $remapToId Target option for `remap`.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryFieldDefinition, array{}>
+	 *
+	 * 200: Option deleted
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/fields/{fieldId}/options/{optionId}')]
+	#[NoAdminRequired]
+	#[Permission(['canEditFields'])]
+	public function deleteOption(int $houseId, int $fieldId, int $optionId, ?string $action = null, ?int $remapToId = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $fieldId, $optionId, $action, $remapToId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->fields->assertInHouse($fieldId, $houseId);
+			$updated = $this->fields->deleteOption($fieldId, $optionId, $action, $remapToId);
+			return new DataResponse($updated);
+		});
+	}
+
+	/**
 	 * Batch reorder custom-field definitions
 	 *
 	 * @param int $houseId House id.

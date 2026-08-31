@@ -403,7 +403,8 @@
                 "required": [
                     "id",
                     "label",
-                    "sortOrder"
+                    "sortOrder",
+                    "valueCount"
                 ],
                 "properties": {
                     "id": {
@@ -414,6 +415,10 @@
                         "type": "string"
                     },
                     "sortOrder": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "valueCount": {
                         "type": "integer",
                         "format": "int64"
                     }
@@ -8490,6 +8495,147 @@
                                                 },
                                                 "data": {
                                                     "$ref": "#/components/schemas/Success"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/fields/{fieldId}/options/{optionId}": {
+            "delete": {
+                "operationId": "field_definition-delete-option",
+                "summary": "Delete a `select` option",
+                "description": "An option with no stored values is removed outright. An option in use requires an action: `remap` rewrites every affected value to `remapToId` (another option of the same field), `clear` nulls them. The value rewrite and the option delete run in one transaction.",
+                "tags": [
+                    "field_definition"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "fieldId",
+                        "in": "path",
+                        "description": "Field id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "optionId",
+                        "in": "path",
+                        "description": "Option id to delete.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "description": "`remap` or `clear`; required when the option is in use.",
+                        "schema": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": null
+                        }
+                    },
+                    {
+                        "name": "remapToId",
+                        "in": "query",
+                        "description": "Target option for `remap`.",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "nullable": true,
+                            "default": null
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Option deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/FieldDefinition"
                                                 }
                                             }
                                         }

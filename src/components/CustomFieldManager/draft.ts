@@ -5,6 +5,9 @@ import type { FieldDateMode, FieldDefinition, FieldOverridePolicy, FieldType } f
 export interface DraftOption {
   id: number | null
   label: string
+  /** Stored values referencing this option; a persisted option in use needs
+   * remap-or-clear before it can be removed. */
+  valueCount: number
 }
 
 /** The editable state of one field definition, all controls as plain values. */
@@ -65,7 +68,7 @@ export function draftFromField(f: FieldDefinition): FieldDraft {
     leadDays: f.leadDays,
     overridePolicy: f.overridePolicy ?? 'field-only',
     stopWhenDone: f.stopWhenDone,
-    options: f.options.map((o) => ({ id: o.id, label: o.label })),
+    options: f.options.map((o) => ({ id: o.id, label: o.label, valueCount: o.valueCount })),
   }
 }
 

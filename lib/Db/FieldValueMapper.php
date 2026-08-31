@@ -140,6 +140,59 @@ class FieldValueMapper extends QBMapper {
 		$qb->executeStatement();
 	}
 
+	/**
+	 * Count how many stored values reference each of the given options. Options
+	 * with no values are absent from the returned map.
+	 *
+	 * @param int[] $optionIds
+	 *
+	 * @return array<int, int> option id → number of values referencing it
+	 */
+	public function countByOptions(array $optionIds): array {
+		if ($optionIds === []) {
+			return [];
+		}
+		$optionIds = array_values(array_unique(array_map('intval', $optionIds)));
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('value_option_id')
+			->selectAlias($qb->func()->count('*'), 'cnt')
+			->from($this->getTableName())
+			->where($qb->expr()->in('value_option_id', $qb->createNamedParameter($optionIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->groupBy('value_option_id');
+		$out = [];
+		$result = $qb->executeQuery();
+		/** @var array{value_option_id: int|string, cnt: int|string} $row */
+		foreach ($result->fetchAll() as $row) {
+			$out[(int)$row['value_option_id']] = (int)$row['cnt'];
+		}
+		$result->closeCursor();
+		return $out;
+	}
+
+	/**
+	 * Rewrite every value referencing one option to reference another. Used when
+	 * a `select` option in use is deleted with the remap action.
+	 */
+	public function remapOption(int $fromOptionId, int $toOptionId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('value_option_id', $qb->createNamedParameter($toOptionId, IQueryBuilder::PARAM_INT))
+			->where($qb->expr()->eq('value_option_id', $qb->createNamedParameter($fromOptionId, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * Null the reference of every value pointing at one option. Used when a
+	 * `select` option in use is deleted with the clear action.
+	 */
+	public function clearOption(int $optionId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('value_option_id', $qb->createNamedParameter(null))
+			->where($qb->expr()->eq('value_option_id', $qb->createNamedParameter($optionId, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
 	public function deleteByField(int $fieldId): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())

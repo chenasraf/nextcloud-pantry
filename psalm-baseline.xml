@@ -959,6 +959,12 @@
 			$this->auth->requireMember($houseId, $this->requireUid());
 			return new DataResponse($this->fields->listForHouse($houseId));
 		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $fieldId, $optionId, $action, $remapToId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->fields->assertInHouse($fieldId, $houseId);
+			$updated = $this->fields->deleteOption($fieldId, $optionId, $action, $remapToId);
+			return new DataResponse($updated);
+		})]]></code>
       <code><![CDATA[$this->runAction(function () use ($houseId, $fieldId, $params): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$this->fields->assertInHouse($fieldId, $houseId);
@@ -985,6 +991,7 @@
       <code><![CDATA[$patch['name']]]></code>
     </MixedAssignment>
     <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryFieldDefinition, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryFieldDefinition, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryFieldDefinition, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryFieldDefinition>, array{}>]]></code>
@@ -2786,7 +2793,9 @@
     </ArgumentTypeCoercion>
     <LessSpecificReturnStatement>
       <code><![CDATA[array_map(
-			fn (FieldDefinition $d): array => $d->jsonSerialize($optionsByField[(int)$d->getId()] ?? []),
+			fn (FieldDefinition $d): array => $d->jsonSerialize(
+				$this->attachCounts($optionsByField[(int)$d->getId()] ?? [], $counts),
+			),
 			$defs,
 		)]]></code>
     </LessSpecificReturnStatement>

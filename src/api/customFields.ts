@@ -70,6 +70,28 @@ export async function deleteField(houseId: number, fieldId: number): Promise<voi
   await ocs.delete(`/houses/${houseId}/fields/${fieldId}`)
 }
 
+/** How to treat item values that reference a `select` option being deleted. */
+export type OptionDeleteAction = 'remap' | 'clear'
+
+/**
+ * Delete one `select` option. An unused option is removed outright (no action
+ * needed). An option in use requires an action: `remap` moves its values to
+ * `remapToId`, `clear` empties them. Returns the updated definition.
+ */
+export async function deleteFieldOption(
+  houseId: number,
+  fieldId: number,
+  optionId: number,
+  action?: OptionDeleteAction,
+  remapToId?: number,
+): Promise<FieldDefinition> {
+  const resp = await ocs.delete<FieldDefinition>(
+    `/houses/${houseId}/fields/${fieldId}/options/${optionId}`,
+    { data: { action, remapToId } },
+  )
+  return resp.data
+}
+
 export async function reorderFields(
   houseId: number,
   items: { id: number; sortOrder: number }[],

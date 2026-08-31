@@ -88,6 +88,7 @@ namespace OCA\Pantry;
  *     id: int,
  *     label: string,
  *     sortOrder: int,
+ *     valueCount: int,
  * }
  *
  * @psalm-type PantryFieldDefinition = array{

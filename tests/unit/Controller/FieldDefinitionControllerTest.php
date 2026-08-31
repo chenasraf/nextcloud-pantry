@@ -92,6 +92,18 @@ class FieldDefinitionControllerTest extends TestCase {
 		$this->assertSame(['success' => true], $this->controller->destroy(3, 9)->getData());
 	}
 
+	public function testDeleteOptionDelegates(): void {
+		$this->auth->expects($this->once())->method('requireMember')->with(3, 'alice');
+		$this->fields->expects($this->once())->method('assertInHouse')->with(9, 3);
+		$this->fields->expects($this->once())
+			->method('deleteOption')
+			->with(9, 12, 'remap', 13)
+			->willReturn(['id' => 9, 'name' => 'Size', 'type' => 'select']);
+
+		$response = $this->controller->deleteOption(3, 9, 12, 'remap', 13);
+		$this->assertSame('Size', $response->getData()['name']);
+	}
+
 	public function testReorderDelegates(): void {
 		$items = [['id' => 1, 'sortOrder' => 0]];
 		$this->auth->expects($this->once())->method('requireMember')->with(3, 'alice');

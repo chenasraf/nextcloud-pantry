@@ -13,9 +13,11 @@ use OCA\Pantry\Db\FieldDefinition;
 use OCA\Pantry\Db\FieldDefinitionMapper;
 use OCA\Pantry\Db\FieldOption;
 use OCA\Pantry\Db\FieldOptionMapper;
+use OCA\Pantry\Db\FieldValueMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Service\FieldDefinitionService;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\IDBConnection;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -24,15 +26,27 @@ class FieldDefinitionServiceTest extends TestCase {
 	private FieldDefinitionMapper $mapper;
 	/** @var FieldOptionMapper&MockObject */
 	private FieldOptionMapper $optionMapper;
+	/** @var FieldValueMapper&MockObject */
+	private FieldValueMapper $valueMapper;
 	/** @var ChecklistMapper&MockObject */
 	private ChecklistMapper $listMapper;
+	/** @var IDBConnection&MockObject */
+	private IDBConnection $db;
 	private FieldDefinitionService $svc;
 
 	protected function setUp(): void {
 		$this->mapper = $this->createMock(FieldDefinitionMapper::class);
 		$this->optionMapper = $this->createMock(FieldOptionMapper::class);
+		$this->valueMapper = $this->createMock(FieldValueMapper::class);
 		$this->listMapper = $this->createMock(ChecklistMapper::class);
-		$this->svc = new FieldDefinitionService($this->mapper, $this->optionMapper, $this->listMapper);
+		$this->db = $this->createMock(IDBConnection::class);
+		$this->svc = new FieldDefinitionService(
+			$this->mapper,
+			$this->optionMapper,
+			$this->valueMapper,
+			$this->listMapper,
+			$this->db,
+		);
 	}
 
 	private static function withId(object $entity, int $id): object {
@@ -174,6 +188,106 @@ class FieldDefinitionServiceTest extends TestCase {
 			['id' => 11, 'label' => 'Renamed', 'sortOrder' => 0],
 			['label' => 'New', 'sortOrder' => 1],
 		]]);
+	}
+
+	public function testDiffDeleteRejectsInUseOption(): void {
+		$def = $this->makeDef(['id' => 5, 'houseId' => 1, 'type' => 'select']);
+		$this->mapper->method('findById')->with(5)->willReturn($def);
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+
+		$drop = $this->makeOption(12, 'Gone', 1);
+		$this->optionMapper->method('findByField')->willReturn([$drop]);
+		$this->valueMapper->method('countByOptions')->with([12])->willReturn([12 => 3]);
+		$this->optionMapper->expects($this->never())->method('delete');
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->update(5, ['options' => []]);
+	}
+
+	public function testDeleteUnusedOptionRemovesOutright(): void {
+		$def = $this->makeDef(['id' => 5, 'houseId' => 1, 'type' => 'select']);
+		$this->mapper->method('findById')->with(5)->willReturn($def);
+		$opt = $this->makeOption(12, 'Gone', 1);
+		$this->optionMapper->method('findByField')->willReturn([$opt], []);
+		$this->valueMapper->method('countByOptions')->willReturn([]);
+
+		$this->optionMapper->expects($this->once())->method('delete')->with($opt);
+		$this->valueMapper->expects($this->never())->method('remapOption');
+		$this->valueMapper->expects($this->never())->method('clearOption');
+		$this->db->expects($this->once())->method('commit');
+
+		$this->svc->deleteOption(5, 12, null, null);
+	}
+
+	public function testDeleteInUseOptionRequiresAction(): void {
+		$def = $this->makeDef(['id' => 5, 'houseId' => 1, 'type' => 'select']);
+		$this->mapper->method('findById')->with(5)->willReturn($def);
+		$this->optionMapper->method('findByField')->willReturn([$this->makeOption(12, 'Gone', 1)]);
+		$this->valueMapper->method('countByOptions')->with([12])->willReturn([12 => 2]);
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->deleteOption(5, 12, null, null);
+	}
+
+	public function testDeleteInUseOptionRemap(): void {
+		$def = $this->makeDef(['id' => 5, 'houseId' => 1, 'type' => 'select']);
+		$def->setDefaultOptionId(12);
+		$this->mapper->method('findById')->with(5)->willReturn($def);
+		$drop = $this->makeOption(12, 'Gone', 0);
+		$keep = $this->makeOption(13, 'Kept', 1);
+		$this->optionMapper->method('findByField')->willReturn([$drop, $keep], [$keep]);
+		$this->valueMapper->method('countByOptions')->willReturn([12 => 4]);
+
+		$this->valueMapper->expects($this->once())->method('remapOption')->with(12, 13);
+		$this->valueMapper->expects($this->never())->method('clearOption');
+		$this->optionMapper->expects($this->once())->method('delete')->with($drop);
+		// The default pointed at the deleted option → follows the remap target.
+		$this->mapper->expects($this->once())->method('update')->with($this->callback(
+			static fn (FieldDefinition $d): bool => $d->getDefaultOptionId() === 13,
+		));
+		$this->db->expects($this->once())->method('commit');
+
+		$this->svc->deleteOption(5, 12, 'remap', 13);
+	}
+
+	public function testDeleteInUseOptionRemapRejectsForeignTarget(): void {
+		$def = $this->makeDef(['id' => 5, 'houseId' => 1, 'type' => 'select']);
+		$this->mapper->method('findById')->with(5)->willReturn($def);
+		$this->optionMapper->method('findByField')->willReturn([$this->makeOption(12, 'Gone', 0)]);
+		$this->valueMapper->method('countByOptions')->willReturn([12 => 1]);
+		$this->db->expects($this->never())->method('beginTransaction');
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->deleteOption(5, 12, 'remap', 999);
+	}
+
+	public function testDeleteInUseOptionClear(): void {
+		$def = $this->makeDef(['id' => 5, 'houseId' => 1, 'type' => 'select']);
+		$def->setDefaultOptionId(12);
+		$this->mapper->method('findById')->with(5)->willReturn($def);
+		$drop = $this->makeOption(12, 'Gone', 0);
+		$this->optionMapper->method('findByField')->willReturn([$drop], []);
+		$this->valueMapper->method('countByOptions')->willReturn([12 => 4]);
+
+		$this->valueMapper->expects($this->once())->method('clearOption')->with(12);
+		$this->valueMapper->expects($this->never())->method('remapOption');
+		$this->optionMapper->expects($this->once())->method('delete')->with($drop);
+		// The default pointed at the deleted option → cleared.
+		$this->mapper->expects($this->once())->method('update')->with($this->callback(
+			static fn (FieldDefinition $d): bool => $d->getDefaultOptionId() === null,
+		));
+		$this->db->expects($this->once())->method('commit');
+
+		$this->svc->deleteOption(5, 12, 'clear', null);
+	}
+
+	public function testDeleteOptionRejectsUnknownOption(): void {
+		$def = $this->makeDef(['id' => 5, 'houseId' => 1, 'type' => 'select']);
+		$this->mapper->method('findById')->with(5)->willReturn($def);
+		$this->optionMapper->method('findByField')->willReturn([$this->makeOption(12, 'A', 0)]);
+
+		$this->expectException(NotFoundException::class);
+		$this->svc->deleteOption(5, 99, null, null);
 	}
 
 	public function testDeleteSoftDeletes(): void {

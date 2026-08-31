@@ -12,8 +12,10 @@ use OCA\Pantry\Db\FieldDefinition;
 use OCA\Pantry\Db\FieldDefinitionMapper;
 use OCA\Pantry\Db\FieldOption;
 use OCA\Pantry\Db\FieldOptionMapper;
+use OCA\Pantry\Db\FieldValueMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\IDBConnection;
 
 /**
  * Custom-field definitions and their `select` options: creation, per-scope
@@ -21,10 +23,15 @@ use OCP\AppFramework\Db\DoesNotExistException;
  * items and are handled elsewhere.
  */
 class FieldDefinitionService {
+	public const ACTION_REMAP = 'remap';
+	public const ACTION_CLEAR = 'clear';
+
 	public function __construct(
 		private FieldDefinitionMapper $mapper,
 		private FieldOptionMapper $optionMapper,
+		private FieldValueMapper $valueMapper,
 		private ChecklistMapper $listMapper,
+		private IDBConnection $db,
 	) {
 	}
 
@@ -38,14 +45,18 @@ class FieldDefinitionService {
 		$optionsByField = $this->optionMapper->findForFields(
 			array_map(static fn (FieldDefinition $d): int => (int)$d->getId(), $defs),
 		);
+		$counts = $this->countOptions($optionsByField);
 		return array_map(
-			fn (FieldDefinition $d): array => $d->jsonSerialize($optionsByField[(int)$d->getId()] ?? []),
+			fn (FieldDefinition $d): array => $d->jsonSerialize(
+				$this->attachCounts($optionsByField[(int)$d->getId()] ?? [], $counts),
+			),
 			$defs,
 		);
 	}
 
 	/**
-	 * Serialize a single definition with its options attached.
+	 * Serialize a single definition with its options attached, each option
+	 * carrying how many stored values reference it.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -54,7 +65,42 @@ class FieldDefinitionService {
 			static fn (FieldOption $o): array => $o->jsonSerialize(),
 			$this->optionMapper->findByField((int)$def->getId()),
 		);
-		return $def->jsonSerialize($options);
+		$counts = $this->valueMapper->countByOptions(
+			array_map(static fn (array $o): int => $o['id'], $options),
+		);
+		return $def->jsonSerialize($this->attachCounts($options, $counts));
+	}
+
+	/**
+	 * Count value references across every option of a field→options map.
+	 *
+	 * @param array<int, list<array{id: int, label: string, sortOrder: int}>> $optionsByField
+	 *
+	 * @return array<int, int> option id → number of values referencing it
+	 */
+	private function countOptions(array $optionsByField): array {
+		$ids = [];
+		foreach ($optionsByField as $options) {
+			foreach ($options as $option) {
+				$ids[] = $option['id'];
+			}
+		}
+		return $this->valueMapper->countByOptions($ids);
+	}
+
+	/**
+	 * Add a `valueCount` to each serialized option from the counts map.
+	 *
+	 * @param list<array{id: int, label: string, sortOrder: int}> $options
+	 * @param array<int, int> $counts
+	 *
+	 * @return list<array{id: int, label: string, sortOrder: int, valueCount: int}>
+	 */
+	private function attachCounts(array $options, array $counts): array {
+		return array_map(
+			static fn (array $o): array => $o + ['valueCount' => $counts[$o['id']] ?? 0],
+			$options,
+		);
 	}
 
 	/**
@@ -153,6 +199,72 @@ class FieldDefinitionService {
 		$def->setDeletedAt(time());
 		$def->setUpdatedAt(time());
 		$this->mapper->update($def);
+	}
+
+	/**
+	 * Delete a single `select` option. An option with no stored values is removed
+	 * outright. An option in use requires an action: `remap` rewrites every
+	 * affected value to another option of the same field (`$remapToId`), `clear`
+	 * nulls them. The value rewrite and the option delete run in one transaction.
+	 *
+	 * @return array<string, mixed> The reserialized definition.
+	 */
+	public function deleteOption(int $fieldId, int $optionId, ?string $action, ?int $remapToId): array {
+		$def = $this->get($fieldId);
+		$options = $this->optionMapper->findByField($fieldId);
+		$target = null;
+		foreach ($options as $option) {
+			if ($option->getId() === $optionId) {
+				$target = $option;
+				break;
+			}
+		}
+		if ($target === null) {
+			throw new NotFoundException('Option not found');
+		}
+
+		$inUse = ($this->valueMapper->countByOptions([$optionId])[$optionId] ?? 0) > 0;
+
+		$remapTo = null;
+		if ($inUse) {
+			if ($action === self::ACTION_REMAP) {
+				if ($remapToId === null || $remapToId === $optionId) {
+					throw new \InvalidArgumentException('Choose another option to remap the values to');
+				}
+				foreach ($options as $option) {
+					if ($option->getId() === $remapToId) {
+						$remapTo = $option;
+						break;
+					}
+				}
+				if ($remapTo === null) {
+					throw new \InvalidArgumentException('Remap target does not belong to this field');
+				}
+			} elseif ($action !== self::ACTION_CLEAR) {
+				throw new \InvalidArgumentException('This option is in use; choose to remap or clear its values');
+			}
+		}
+
+		$this->db->beginTransaction();
+		try {
+			if ($remapTo !== null) {
+				$this->valueMapper->remapOption($optionId, $remapTo->getId());
+			} elseif ($inUse) {
+				$this->valueMapper->clearOption($optionId);
+			}
+			if ($def->getDefaultOptionId() === $optionId) {
+				$def->setDefaultOptionId($remapTo?->getId());
+				$def->setUpdatedAt(time());
+				$this->mapper->update($def);
+			}
+			$this->optionMapper->delete($target);
+			$this->db->commit();
+		} catch (\Throwable $e) {
+			$this->db->rollBack();
+			throw $e;
+		}
+
+		return $this->serialize($this->get($fieldId));
 	}
 
 	/**
@@ -400,9 +512,19 @@ class FieldDefinitionService {
 				$this->insertOption($fieldId, $opt['label'], $opt['sortOrder']);
 			}
 		}
-		foreach ($existing as $id => $row) {
+		$dropped = [];
+		foreach (array_keys($existing) as $id) {
 			if (!isset($seen[$id])) {
-				$this->optionMapper->delete($row);
+				$dropped[] = $id;
+			}
+		}
+		if ($dropped !== []) {
+			$counts = $this->valueMapper->countByOptions($dropped);
+			foreach ($dropped as $id) {
+				if (($counts[$id] ?? 0) > 0) {
+					throw new \InvalidArgumentException('Remove an option that has values individually so they can be remapped or cleared');
+				}
+				$this->optionMapper->delete($existing[$id]);
 			}
 		}
 	}

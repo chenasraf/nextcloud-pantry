@@ -120,6 +120,8 @@ export interface FieldOption {
   id: number
   label: string
   sortOrder: number
+  /** How many stored item values currently reference this option. */
+  valueCount: number
 }
 
 /**
