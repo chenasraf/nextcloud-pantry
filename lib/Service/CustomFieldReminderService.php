@@ -10,6 +10,8 @@ namespace OCA\Pantry\Service;
 use OCA\Pantry\AppInfo\Application;
 use OCA\Pantry\Db\FieldDefinition;
 use OCA\Pantry\Db\FieldValueMapper;
+use OCA\Pantry\Db\House;
+use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\HouseMemberMapper;
 use OCP\IURLGenerator;
 use OCP\Notification\IManager as INotificationManager;
@@ -29,9 +31,13 @@ class CustomFieldReminderService {
 	public const OBJECT_TYPE = 'cf_reminder';
 	public const SUBJECT = 'field_reminder';
 
+	/** @var array<int, int> Memoized field-reminder send time (minutes) per house. */
+	private array $reminderMinutesByHouse = [];
+
 	public function __construct(
 		private FieldValueMapper $valueMapper,
 		private HouseMemberMapper $memberMapper,
+		private HouseMapper $houseMapper,
 		private PermissionService $permissions,
 		private INotificationManager $notificationManager,
 		private IURLGenerator $urlGenerator,
@@ -54,8 +60,11 @@ class CustomFieldReminderService {
 			if (!$effective['enabled']) {
 				continue;
 			}
-			// No upper bound on the window, so an overdue value still fires once.
-			if ($now < $due['valueDate'] - $effective['lead'] * 86400) {
+			// The window opens on the lead-day; within that day the reminder waits
+			// for the house's configured send time. No upper bound, so an overdue
+			// value still fires once.
+			$windowStart = $due['valueDate'] - $effective['lead'] * 86400;
+			if ($now < $windowStart + $this->reminderMinutesForHouse($due['houseId']) * 60) {
 				continue;
 			}
 
@@ -191,6 +200,21 @@ class CustomFieldReminderService {
 			->setLink($link)
 			->setIcon($iconUrl);
 		$this->notificationManager->notify($notification);
+	}
+
+	/**
+	 * The house's date-reminder send time (minutes since midnight), memoized,
+	 * falling back to the default when the house cannot be resolved.
+	 */
+	private function reminderMinutesForHouse(int $houseId): int {
+		if (!array_key_exists($houseId, $this->reminderMinutesByHouse)) {
+			try {
+				$this->reminderMinutesByHouse[$houseId] = $this->houseMapper->findById($houseId)->getFieldReminderTime();
+			} catch (\Throwable) {
+				$this->reminderMinutesByHouse[$houseId] = House::DEFAULT_FIELD_REMINDER_TIME;
+			}
+		}
+		return $this->reminderMinutesByHouse[$houseId];
 	}
 
 	/**

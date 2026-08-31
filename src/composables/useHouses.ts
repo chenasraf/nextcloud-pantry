@@ -47,6 +47,7 @@ async function update(
     description?: string | null
     trashRetentionDays?: number
     recurrenceTime?: number
+    fieldReminderTime?: number
   },
 ): Promise<House> {
   const updated = await api.updateHouse(id, patch)

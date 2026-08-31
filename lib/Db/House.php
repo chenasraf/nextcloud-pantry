@@ -24,6 +24,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setTrashRetentionDays(int $trashRetentionDays)
  * @method int getRecurrenceTime()
  * @method void setRecurrenceTime(int $recurrenceTime)
+ * @method int getFieldReminderTime()
+ * @method void setFieldReminderTime(int $fieldReminderTime)
  */
 class House extends Entity implements \JsonSerializable {
 	public const DEFAULT_TRASH_RETENTION_DAYS = 30;
@@ -33,6 +35,10 @@ class House extends Entity implements \JsonSerializable {
 	public const DEFAULT_RECURRENCE_TIME = 480;
 	public const MAX_RECURRENCE_TIME = 1439;
 
+	/** Minutes since midnight (server timezone) at which date custom-field reminders are sent. */
+	public const DEFAULT_FIELD_REMINDER_TIME = self::DEFAULT_RECURRENCE_TIME;
+	public const MAX_FIELD_REMINDER_TIME = 1439;
+
 	protected string $name = '';
 	protected ?string $description = null;
 	protected string $ownerUid = '';
@@ -40,12 +46,14 @@ class House extends Entity implements \JsonSerializable {
 	protected int $updatedAt = 0;
 	protected int $trashRetentionDays = self::DEFAULT_TRASH_RETENTION_DAYS;
 	protected int $recurrenceTime = self::DEFAULT_RECURRENCE_TIME;
+	protected int $fieldReminderTime = self::DEFAULT_FIELD_REMINDER_TIME;
 
 	public function __construct() {
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 		$this->addType('trashRetentionDays', 'integer');
 		$this->addType('recurrenceTime', 'integer');
+		$this->addType('fieldReminderTime', 'integer');
 	}
 
 	public function jsonSerialize(): array {
@@ -58,6 +66,7 @@ class House extends Entity implements \JsonSerializable {
 			'updatedAt' => $this->updatedAt,
 			'trashRetentionDays' => $this->trashRetentionDays,
 			'recurrenceTime' => $this->recurrenceTime,
+			'fieldReminderTime' => $this->fieldReminderTime,
 		];
 	}
 }

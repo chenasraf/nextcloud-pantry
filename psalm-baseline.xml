@@ -2509,6 +2509,22 @@
       <code><![CDATA[Version30Date20260831000000]]></code>
     </UnusedClass>
   </file>
+  <file src="lib/Migration/Version31Date20260831120000.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$row['id']]]></code>
+      <code><![CDATA[$row['recurrence_time']]]></code>
+    </MixedArrayAccess>
+    <MixedAssignment>
+      <code><![CDATA[$row]]></code>
+    </MixedAssignment>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version31Date20260831120000]]></code>
+    </UnusedClass>
+  </file>
   <file src="lib/Migration/Version3Date20260416000000.php">
     <UnnecessaryVarAnnotation>
       <code><![CDATA[ISchemaWrapper]]></code>

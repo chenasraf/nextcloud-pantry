@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace OCA\Pantry\Tests\Unit\Service;
 
 use OCA\Pantry\Db\FieldValueMapper;
+use OCA\Pantry\Db\House;
+use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\HouseMember;
 use OCA\Pantry\Db\HouseMemberMapper;
 use OCA\Pantry\Service\CustomFieldReminderService;
@@ -24,15 +26,23 @@ class CustomFieldReminderServiceTest extends TestCase {
 	private FieldValueMapper $valueMapper;
 	/** @var HouseMemberMapper&MockObject */
 	private HouseMemberMapper $memberMapper;
+	/** @var HouseMapper&MockObject */
+	private HouseMapper $houseMapper;
 	/** @var PermissionService&MockObject */
 	private PermissionService $permissions;
 	/** @var INotificationManager&MockObject */
 	private INotificationManager $notifManager;
 	private CustomFieldReminderService $svc;
+	/** Minutes-since-midnight send time the mocked house returns. */
+	private int $houseReminderMinutes = 0;
 
 	protected function setUp(): void {
 		$this->valueMapper = $this->createMock(FieldValueMapper::class);
 		$this->memberMapper = $this->createMock(HouseMemberMapper::class);
+		$this->houseMapper = $this->createMock(HouseMapper::class);
+		// Default: the house sends at midnight, so timing turns purely on the
+		// value's window. Tests that exercise the send time set the minutes.
+		$this->houseMapper->method('findById')->willReturnCallback(fn () => $this->house($this->houseReminderMinutes));
 		$this->permissions = $this->createMock(PermissionService::class);
 		$this->notifManager = $this->createMock(INotificationManager::class);
 		$url = $this->createMock(IURLGenerator::class);
@@ -43,11 +53,18 @@ class CustomFieldReminderServiceTest extends TestCase {
 		$this->svc = new CustomFieldReminderService(
 			$this->valueMapper,
 			$this->memberMapper,
+			$this->houseMapper,
 			$this->permissions,
 			$this->notifManager,
 			$url,
 			$this->createMock(LoggerInterface::class),
 		);
+	}
+
+	private function house(int $fieldReminderTime): House {
+		$h = new House();
+		$h->setFieldReminderTime($fieldReminderTime);
+		return $h;
 	}
 
 	/** A fluent INotification mock whose setters return itself. */
@@ -144,6 +161,33 @@ class CustomFieldReminderServiceTest extends TestCase {
 		$this->valueMapper->expects($this->never())->method('stampNotified');
 
 		$this->assertSame(0, $this->svc->sendDueReminders($now));
+	}
+
+	public function testHeldUntilHouseSendTime(): void {
+		// Window is open (value due today, midnight) but the house sends at 08:00
+		// and it is not yet 08:00 → held.
+		$this->houseReminderMinutes = 480;
+		$midnight = 1_700_000_000;
+		$this->valueMapper->method('findReminderCandidates')->willReturn([
+			$this->due(['valueDate' => $midnight, 'leadDays' => 0]),
+		]);
+		$this->notifManager->expects($this->never())->method('notify');
+		$this->valueMapper->expects($this->never())->method('stampNotified');
+
+		$this->assertSame(0, $this->svc->sendDueReminders($midnight + 470 * 60));
+	}
+
+	public function testFiresAtHouseSendTime(): void {
+		$this->houseReminderMinutes = 480;
+		$midnight = 1_700_000_000;
+		$this->valueMapper->method('findReminderCandidates')->willReturn([
+			$this->due(['valueDate' => $midnight, 'leadDays' => 0]),
+		]);
+		$this->memberMapper->method('findByHouse')->willReturn([]);
+		$this->notifManager->method('createNotification')->willReturnCallback(fn () => $this->notification());
+		$this->valueMapper->expects($this->once())->method('stampNotified');
+
+		$this->assertSame(1, $this->svc->sendDueReminders($midnight + 480 * 60));
 	}
 
 	public function testItemOverrideOffSuppressesFieldDefault(): void {

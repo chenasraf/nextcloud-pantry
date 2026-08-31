@@ -494,6 +494,7 @@
                     "updatedAt",
                     "trashRetentionDays",
                     "recurrenceTime",
+                    "fieldReminderTime",
                     "role",
                     "isAdmin",
                     "permissions"
@@ -526,6 +527,10 @@
                         "format": "int64"
                     },
                     "recurrenceTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "fieldReminderTime": {
                         "type": "integer",
                         "format": "int64"
                     },
@@ -9184,6 +9189,15 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Time of day (minutes since midnight, server timezone) at which recurring items reopen.",
+                                        "minimum": 0,
+                                        "maximum": 1439
+                                    },
+                                    "fieldReminderTime": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Time of day (minutes since midnight, server timezone) at which date custom-field reminders are sent.",
                                         "minimum": 0,
                                         "maximum": 1439
                                     }

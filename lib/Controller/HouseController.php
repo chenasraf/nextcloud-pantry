@@ -125,6 +125,7 @@ final class HouseController extends OCSController {
 	 * @param string|null $description New description.
 	 * @param int<0, 3650>|null $trashRetentionDays Days an item stays in the trash before being permanently deleted by the cleanup job. Set to 0 to disable auto-purge.
 	 * @param int<0, 1439>|null $recurrenceTime Time of day (minutes since midnight, server timezone) at which recurring items reopen.
+	 * @param int<0, 1439>|null $fieldReminderTime Time of day (minutes since midnight, server timezone) at which date custom-field reminders are sent.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryHouse, array{}>
 	 *
@@ -133,8 +134,8 @@ final class HouseController extends OCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}')]
 	#[NoAdminRequired]
 	#[Permission(admin: true)]
-	public function update(int $houseId, ?string $name = null, ?string $description = null, ?int $trashRetentionDays = null, ?int $recurrenceTime = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $description, $trashRetentionDays, $recurrenceTime): DataResponse {
+	public function update(int $houseId, ?string $name = null, ?string $description = null, ?int $trashRetentionDays = null, ?int $recurrenceTime = null, ?int $fieldReminderTime = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $description, $trashRetentionDays, $recurrenceTime, $fieldReminderTime): DataResponse {
 			$uid = $this->requireUid();
 			$member = $this->auth->requireAdmin($houseId, $uid);
 			$patch = [];
@@ -149,6 +150,9 @@ final class HouseController extends OCSController {
 			}
 			if ($recurrenceTime !== null) {
 				$patch['recurrenceTime'] = $recurrenceTime;
+			}
+			if ($fieldReminderTime !== null) {
+				$patch['fieldReminderTime'] = $fieldReminderTime;
 			}
 			$house = $this->houseService->update($houseId, $patch);
 			return new DataResponse($this->serializeHouseWithRole($house, $member->getRole(), $uid));
@@ -356,6 +360,7 @@ final class HouseController extends OCSController {
 			'updatedAt' => $house->getUpdatedAt(),
 			'trashRetentionDays' => $house->getTrashRetentionDays(),
 			'recurrenceTime' => $house->getRecurrenceTime(),
+			'fieldReminderTime' => $house->getFieldReminderTime(),
 			'role' => $role,
 			'isAdmin' => $this->permissions->isAdmin($houseId, $uid),
 			'permissions' => $this->permissions->effectiveCapabilities($houseId, $uid),

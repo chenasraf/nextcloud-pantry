@@ -8,6 +8,8 @@ export interface House {
   trashRetentionDays: number
   /** Time of day (minutes since midnight, server timezone) at which recurring items reopen. */
   recurrenceTime: number
+  /** Time of day (minutes since midnight, server timezone) at which date custom-field reminders are sent. */
+  fieldReminderTime: number
   role: HouseRole
   /** Whether the current user holds an admin role in this house. */
   isAdmin: boolean
