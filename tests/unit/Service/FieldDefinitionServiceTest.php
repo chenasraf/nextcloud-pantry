@@ -15,6 +15,7 @@ use OCA\Pantry\Db\FieldOption;
 use OCA\Pantry\Db\FieldOptionMapper;
 use OCA\Pantry\Db\FieldValueMapper;
 use OCA\Pantry\Exception\NotFoundException;
+use OCA\Pantry\Service\CustomFieldReminderService;
 use OCA\Pantry\Service\FieldDefinitionService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IDBConnection;
@@ -30,12 +31,15 @@ class FieldDefinitionServiceTest extends TestCase {
 	private FieldValueMapper $valueMapper;
 	/** @var ChecklistMapper&MockObject */
 	private ChecklistMapper $listMapper;
+	/** @var CustomFieldReminderService&MockObject */
+	private CustomFieldReminderService $reminders;
 	/** @var IDBConnection&MockObject */
 	private IDBConnection $db;
 	private FieldDefinitionService $svc;
 
 	protected function setUp(): void {
 		$this->mapper = $this->createMock(FieldDefinitionMapper::class);
+		$this->reminders = $this->createMock(CustomFieldReminderService::class);
 		$this->optionMapper = $this->createMock(FieldOptionMapper::class);
 		$this->valueMapper = $this->createMock(FieldValueMapper::class);
 		$this->listMapper = $this->createMock(ChecklistMapper::class);
@@ -45,6 +49,7 @@ class FieldDefinitionServiceTest extends TestCase {
 			$this->optionMapper,
 			$this->valueMapper,
 			$this->listMapper,
+			$this->reminders,
 			$this->db,
 		);
 	}

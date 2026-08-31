@@ -31,6 +31,7 @@ class FieldDefinitionService {
 		private FieldOptionMapper $optionMapper,
 		private FieldValueMapper $valueMapper,
 		private ChecklistMapper $listMapper,
+		private CustomFieldReminderService $reminders,
 		private IDBConnection $db,
 	) {
 	}
@@ -176,7 +177,12 @@ class FieldDefinitionService {
 		$def->setName($targetName);
 		$def->setListId($targetListId);
 
+		// Only enabling/disabling the reminder or changing its lead-time invalidates
+		// live reminders; `stop_when_done` takes effect when the item is toggled done,
+		// not when the field is edited.
+		$reminderBefore = [$def->getNotifyDefault(), $def->getLeadDays()];
 		$this->applyConfig($def, $def->getType(), $patch, partial: true);
+		$reminderChanged = $reminderBefore !== [$def->getNotifyDefault(), $def->getLeadDays()];
 
 		if ($def->getType() === FieldDefinition::TYPE_SELECT && array_key_exists('options', $patch)) {
 			$this->replaceOptions($fieldId, $this->readOptions($patch['options']), diff: true);
@@ -187,6 +193,11 @@ class FieldDefinitionService {
 
 		$def->setUpdatedAt(time());
 		$this->mapper->update($def);
+		// A reminder that is now off, re-lead, or newly stops-when-done must
+		// withdraw its live reminders; the scan re-fires whatever still qualifies.
+		if ($def->getType() === FieldDefinition::TYPE_DATE && $reminderChanged) {
+			$this->reminders->onFieldRemindersInvalidated($fieldId);
+		}
 		return $this->serialize($def);
 	}
 
@@ -199,6 +210,9 @@ class FieldDefinitionService {
 		$def->setDeletedAt(time());
 		$def->setUpdatedAt(time());
 		$this->mapper->update($def);
+		if ($def->getType() === FieldDefinition::TYPE_DATE) {
+			$this->reminders->onFieldRemindersInvalidated($fieldId);
+		}
 	}
 
 	/**

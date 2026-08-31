@@ -48,6 +48,7 @@ class ChecklistService {
 		private \OCA\Pantry\Db\FieldDefinitionMapper $fieldDefMapper,
 		private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper,
 		private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper,
+		private CustomFieldReminderService $fieldReminders,
 		private IDBConnection $db,
 	) {
 	}
@@ -351,7 +352,8 @@ class ChecklistService {
 			$this->itemPriceMapper->setPricesForItem((int)$saved->getId(), $this->normalizePrices($data['prices']));
 		}
 		if (array_key_exists('customFields', $data)) {
-			$this->fieldValueMapper->setValuesForItem((int)$saved->getId(), (array)$data['customFields']);
+			$rearmed = $this->fieldValueMapper->setValuesForItem((int)$saved->getId(), (array)$data['customFields']);
+			$this->fieldReminders->onValuesRearmed((int)$saved->getId(), $rearmed);
 		}
 		return $saved;
 	}
@@ -434,7 +436,8 @@ class ChecklistService {
 		}
 		// Likewise, the whole custom-field value set is replaced when present.
 		if (array_key_exists('customFields', $patch)) {
-			$this->fieldValueMapper->setValuesForItem((int)$item->getId(), (array)$patch['customFields']);
+			$rearmed = $this->fieldValueMapper->setValuesForItem((int)$item->getId(), (array)$patch['customFields']);
+			$this->fieldReminders->onValuesRearmed((int)$item->getId(), $rearmed);
 		}
 		return $item;
 	}
@@ -597,6 +600,7 @@ class ChecklistService {
 				$item->setDeletedAt($now);
 				$item->setUpdatedAt($now);
 				$this->itemMapper->update($item);
+				$this->fieldReminders->onItemDeleted((int)$item->getId());
 				return $item;
 			}
 			if ($item->getRrule() !== null) {
@@ -610,6 +614,7 @@ class ChecklistService {
 		}
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
+		$this->fieldReminders->onItemDoneChanged((int)$item->getId(), $item->getDone());
 		return $item;
 	}
 
@@ -643,6 +648,7 @@ class ChecklistService {
 				$item->setNextDueAt(null);
 				$item->setUpdatedAt($now);
 				$this->itemMapper->update($item);
+				$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
 				$changed[] = $item;
 			}
 			return $changed;
@@ -781,6 +787,7 @@ class ChecklistService {
 			}
 			$item->setUpdatedAt($now);
 			$this->itemMapper->update($item);
+			$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
 			$reopened[] = $item;
 		}
 		return $reopened;
@@ -881,6 +888,7 @@ class ChecklistService {
 		$item->setDeletedAt($now);
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
+		$this->fieldReminders->onItemDeleted((int)$item->getId());
 	}
 
 	/**

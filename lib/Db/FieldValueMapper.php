@@ -72,8 +72,12 @@ class FieldValueMapper extends QBMapper {
 	 * @param array<array-key, mixed> $values Each entry is a value array keyed as
 	 *                                        {fieldId, valueText?, valueNumber?, valueBool?, valueDate?, valueOptionId?,
 	 *                                        offsetDays?, notifyOverride?, notifyEnabled?, notifyLeadDays?}.
+	 *
+	 * @return int[] Field ids whose reminder was re-armed (a date value newly set
+	 *               or changed, clearing the notified stamp) — the caller
+	 *               withdraws any stale reminder for these so the scan re-fires it.
 	 */
-	public function setValuesForItem(int $itemId, array $values): void {
+	public function setValuesForItem(int $itemId, array $values): array {
 		$existing = [];
 		foreach ($this->findEntitiesForItem($itemId) as $row) {
 			$existing[$row->getFieldId()] = $row;
@@ -91,6 +95,7 @@ class FieldValueMapper extends QBMapper {
 			$byField[$fieldId] = $value;
 		}
 
+		$rearmed = [];
 		foreach ($byField as $fieldId => $value) {
 			$row = $existing[$fieldId] ?? null;
 			$newDate = isset($value['valueDate']) ? $this->intOrNull($value['valueDate']) : null;
@@ -100,12 +105,16 @@ class FieldValueMapper extends QBMapper {
 				$row->setFieldId($fieldId);
 				$this->assignValue($row, $value, $newDate);
 				$this->insert($row);
+				if ($newDate !== null) {
+					$rearmed[] = $fieldId;
+				}
 				continue;
 			}
 			// Re-arm only when the date actually changes, so an unchanged value
 			// keeps its stamp and does not re-notify.
 			if ($row->getValueDate() !== $newDate) {
 				$row->setNotifiedForDate(null);
+				$rearmed[] = $fieldId;
 			}
 			$this->assignValue($row, $value, $newDate);
 			$this->update($row);
@@ -116,6 +125,8 @@ class FieldValueMapper extends QBMapper {
 				$this->delete($row);
 			}
 		}
+
+		return $rearmed;
 	}
 
 	/**
@@ -191,6 +202,148 @@ class FieldValueMapper extends QBMapper {
 			->set('value_option_id', $qb->createNamedParameter(null))
 			->where($qb->expr()->eq('value_option_id', $qb->createNamedParameter($optionId, IQueryBuilder::PARAM_INT)));
 		$qb->executeStatement();
+	}
+
+	/**
+	 * Date values whose field-level reminder is due and not yet notified for the
+	 * current date. A value qualifies when its field is an enabled (`notify_default`)
+	 * date field, neither the item nor the field is soft-deleted, the lead window has
+	 * opened (`value_date - lead*86400 <= now`, no upper bound so overdue still
+	 * fires), the value is not already stamped for this date, and the item is not
+	 * done when the field stops reminding on done.
+	 *
+	 * @return list<array{itemId: int, fieldId: int, valueDate: int, listId: int, houseId: int, itemName: string, fieldName: string}>
+	 */
+	public function findDueReminders(int $now): array {
+		$defs = Application::tableName('field_defs');
+		$items = Application::tableName('list_items');
+		$lists = Application::tableName('lists');
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('fv.item_id', 'fv.field_id', 'fv.value_date', 'i.list_id', 'i.name')
+			->selectAlias('fd.name', 'field_name')
+			->selectAlias('l.house_id', 'house_id')
+			->from($this->getTableName(), 'fv')
+			->innerJoin('fv', $defs, 'fd', $qb->expr()->eq('fd.id', 'fv.field_id'))
+			->innerJoin('fv', $items, 'i', $qb->expr()->eq('i.id', 'fv.item_id'))
+			->innerJoin('i', $lists, 'l', $qb->expr()->eq('l.id', 'i.list_id'))
+			->where($qb->expr()->eq('fd.type', $qb->createNamedParameter(FieldDefinition::TYPE_DATE)))
+			->andWhere($qb->expr()->isNotNull('fv.value_date'))
+			->andWhere($qb->expr()->eq('fd.notify_default', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->isNull('fd.deleted_at'))
+			->andWhere($qb->expr()->isNull('i.deleted_at'))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->isNull('fv.notified_for_date'),
+				$qb->expr()->neq('fv.notified_for_date', 'fv.value_date'),
+			))
+			->andWhere('fv.value_date - (fd.lead_days * 86400) <= ' . $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->eq('fd.stop_when_done', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)),
+				$qb->expr()->eq('i.done', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)),
+			));
+
+		$out = [];
+		$result = $qb->executeQuery();
+		/** @var array{item_id: int|string, field_id: int|string, value_date: int|string, list_id: int|string, name: ?string, field_name: ?string, house_id: int|string} $row */
+		foreach ($result->fetchAll() as $row) {
+			$out[] = [
+				'itemId' => (int)$row['item_id'],
+				'fieldId' => (int)$row['field_id'],
+				'valueDate' => (int)$row['value_date'],
+				'listId' => (int)$row['list_id'],
+				'houseId' => (int)$row['house_id'],
+				'itemName' => $row['name'] ?? '',
+				'fieldName' => $row['field_name'] ?? '',
+			];
+		}
+		$result->closeCursor();
+		return $out;
+	}
+
+	/**
+	 * Stamp one value as notified for the given date, making the reminder
+	 * one-shot until the date changes.
+	 */
+	public function stampNotified(int $itemId, int $fieldId, int $valueDate): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('notified_for_date', $qb->createNamedParameter($valueDate, IQueryBuilder::PARAM_INT))
+			->where($qb->expr()->eq('item_id', $qb->createNamedParameter($itemId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('field_id', $qb->createNamedParameter($fieldId, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * Clear the notified stamp of the given fields on one item, re-arming their
+	 * reminders so the scan fires them again (used when an item is un-done and a
+	 * `stop_when_done` field must resume reminding).
+	 *
+	 * @param int[] $fieldIds
+	 */
+	public function clearStamp(int $itemId, array $fieldIds): void {
+		if ($fieldIds === []) {
+			return;
+		}
+		$fieldIds = array_values(array_unique(array_map('intval', $fieldIds)));
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('notified_for_date', $qb->createNamedParameter(null))
+			->where($qb->expr()->eq('item_id', $qb->createNamedParameter($itemId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->in('field_id', $qb->createNamedParameter($fieldIds, IQueryBuilder::PARAM_INT_ARRAY)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * The field ids of every date-typed value on one item. Used to withdraw all
+	 * of an item's reminders when it is soft-deleted.
+	 *
+	 * @return int[]
+	 */
+	public function findDateFieldIdsForItem(int $itemId): array {
+		return $this->dateFieldIds($itemId, null);
+	}
+
+	/**
+	 * The field ids of the item's date values whose field stops reminding once
+	 * the item is done. Used to withdraw (on done) or re-arm (on un-done) exactly
+	 * those reminders.
+	 *
+	 * @return int[]
+	 */
+	public function findStopWhenDoneFieldIdsForItem(int $itemId): array {
+		return $this->dateFieldIds($itemId, true);
+	}
+
+	/**
+	 * Item ids that hold a date value for the given field. Used to withdraw a
+	 * field's reminders across items when it is disabled, re-lead, or deleted.
+	 *
+	 * @return int[]
+	 */
+	public function findItemIdsWithDateValueForField(int $fieldId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('item_id')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('field_id', $qb->createNamedParameter($fieldId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('value_date'));
+		return array_map('intval', $qb->executeQuery()->fetchAll(\PDO::FETCH_COLUMN));
+	}
+
+	/**
+	 * @return int[]
+	 */
+	private function dateFieldIds(int $itemId, ?bool $stopWhenDone): array {
+		$defs = Application::tableName('field_defs');
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('fv.field_id')
+			->from($this->getTableName(), 'fv')
+			->innerJoin('fv', $defs, 'fd', $qb->expr()->eq('fd.id', 'fv.field_id'))
+			->where($qb->expr()->eq('fv.item_id', $qb->createNamedParameter($itemId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('fd.type', $qb->createNamedParameter(FieldDefinition::TYPE_DATE)));
+		if ($stopWhenDone !== null) {
+			$qb->andWhere($qb->expr()->eq('fd.stop_when_done', $qb->createNamedParameter($stopWhenDone, IQueryBuilder::PARAM_BOOL)));
+		}
+		return array_map('intval', $qb->executeQuery()->fetchAll(\PDO::FETCH_COLUMN));
 	}
 
 	public function deleteByField(int $fieldId): void {

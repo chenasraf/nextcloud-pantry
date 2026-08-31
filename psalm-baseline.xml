@@ -50,6 +50,11 @@
       <code><![CDATA[getViteEntryScript]]></code>
     </PossiblyUnusedMethod>
   </file>
+  <file src="lib/BackgroundJob/CustomFieldReminderJob.php">
+    <UnusedClass>
+      <code><![CDATA[CustomFieldReminderJob]]></code>
+    </UnusedClass>
+  </file>
   <file src="lib/BackgroundJob/PurgeExpiredTrashJob.php">
     <UnusedClass>
       <code><![CDATA[PurgeExpiredTrashJob]]></code>
@@ -2618,6 +2623,18 @@
 							'house' => $houseParam,
 						]]]></code>
       <code><![CDATA[[
+						'item' => [
+							'type' => 'highlight',
+							'id' => (string)($params['itemId'] ?? ''),
+							'name' => $params['itemName'] ?? '',
+						],
+						'field' => [
+							'type' => 'highlight',
+							'id' => (string)($params['fieldId'] ?? ''),
+							'name' => $params['fieldName'] ?? '',
+						],
+					]]]></code>
+      <code><![CDATA[[
 						'items' => [
 							'type' => 'highlight',
 							'id' => 'items',
@@ -2736,6 +2753,12 @@
       <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$itemId]]></code>
       <code><![CDATA[(int)$itemId]]></code>
       <code><![CDATA[(int)$itemId]]></code>
@@ -2756,6 +2779,7 @@
       <code><![CDATA[(int)$list->getId()]]></code>
       <code><![CDATA[(int)$list->getId()]]></code>
       <code><![CDATA[(int)$rawId]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
       <code><![CDATA[(int)$saved->getId()]]></code>
       <code><![CDATA[(int)$saved->getId()]]></code>
       <code><![CDATA[(int)$saved->getId()]]></code>
@@ -2785,6 +2809,11 @@
   <file src="lib/Service/ConstantsService.php">
     <PossiblyUnusedMethod>
       <code><![CDATA[all]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/CustomFieldReminderService.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
     </PossiblyUnusedMethod>
   </file>
   <file src="lib/Service/FieldDefinitionService.php">

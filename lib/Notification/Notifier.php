@@ -248,6 +248,27 @@ class Notifier implements INotifier {
 				);
 				break;
 
+			case 'field_reminder':
+				$ts = (int)($params['date'] ?? 0);
+				$dateStr = (string)$l->l('date', new \DateTime('@' . $ts));
+				$notification->setRichSubject(
+					// TRANSLATORS: A custom date field is due. {item} is the item name, {field} the field name, %s a formatted date. Example: "Oat milk — Buy before: 5 Sep 2026"
+					$l->t('{item} — {field}: %s', [$dateStr]),
+					[
+						'item' => [
+							'type' => 'highlight',
+							'id' => (string)($params['itemId'] ?? ''),
+							'name' => $params['itemName'] ?? '',
+						],
+						'field' => [
+							'type' => 'highlight',
+							'id' => (string)($params['fieldId'] ?? ''),
+							'name' => $params['fieldName'] ?? '',
+						],
+					],
+				);
+				break;
+
 			default:
 				throw $this->unknownNotification();
 		}
