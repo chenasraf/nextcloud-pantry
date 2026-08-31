@@ -186,7 +186,10 @@ watch(
   (isOpen) => {
     if (isOpen) {
       collapse()
-      void loadLists()
+      // useChecklists.load() always refetches (no loaded-guard) and mutates the
+      // shared list state, which flashes the checklist index. We only need the
+      // lists for scope grouping, so reuse what the index already loaded.
+      if (lists.value.length === 0) void loadLists()
       void fields.load()
     }
   },
