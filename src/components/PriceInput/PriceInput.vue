@@ -1,5 +1,5 @@
 <template>
-  <div class="price-input" :class="{ 'price-input--compact': compact }">
+  <div class="price-input">
     <div class="price-input__type" role="radiogroup" :aria-label="strings.typeLabel">
       <button
         type="button"
@@ -61,19 +61,20 @@
         :aria-label="strings.currency"
         @update:model-value="onCurrencySelected"
       />
-      <NcButton
-        v-if="hasAmount && !compact"
-        variant="tertiary"
-        type="button"
-        class="price-input__clear"
-        @click="clearPrice"
-      >
-        <template #icon>
-          <CloseIcon :size="18" />
-        </template>
-        {{ strings.clear }}
-      </NcButton>
     </div>
+
+    <NcButton
+      v-if="clearable && hasAmount"
+      variant="tertiary"
+      type="button"
+      class="price-input__clear"
+      @click="clearPrice"
+    >
+      <template #icon>
+        <CloseIcon :size="18" />
+      </template>
+      {{ strings.clear }}
+    </NcButton>
   </div>
 </template>
 
@@ -92,13 +93,10 @@ const props = withDefaults(
     modelValue: PriceValue
     /** Currency preselected when the item has none yet (house's last-used). */
     defaultCurrency?: string
-    /**
-     * Lay the type toggle, amount(s) and currency out on a single wrapping row
-     * (and hide the clear button) so the control fits inline in a list row.
-     */
-    compact?: boolean
+    /** Offer the inline "Clear price" button (hidden where a remove control exists). */
+    clearable?: boolean
   }>(),
-  { defaultCurrency: DEFAULT_CURRENCY, compact: false },
+  { defaultCurrency: DEFAULT_CURRENCY, clearable: true },
 )
 
 const emit = defineEmits<{
@@ -217,49 +215,23 @@ const strings = {
   flex-direction: column;
   gap: 0.6rem;
 
-  // Inline layout: type toggle, amount(s) and currency sit on one wrapping row
-  // so the whole control fits in a list row and only stacks when too narrow.
-  &--compact {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 0.5rem;
-  }
-
-  &--compact &__type {
-    align-self: flex-end;
-  }
-
-  // Let the amount and currency shrink so the whole control fits on one line
-  // next to a store select; they wrap before forcing the block to a new row.
-  &--compact &__fields {
-    flex: 1 1 8rem;
-    min-width: 0;
-  }
-
-  &--compact &__amount {
-    flex: 1 1 4rem;
-  }
-
-  &--compact &__currency {
-    flex: 1 1 7rem;
-    min-width: 6rem;
-  }
-
+  // Full-width Set / Range segmented toggle: the two options split the row.
   &__type {
-    display: inline-flex;
+    display: flex;
     align-items: stretch;
+    width: 100%;
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-element, var(--border-radius, 6px));
     overflow: hidden;
     background: var(--color-main-background);
-    width: fit-content;
   }
 
   &__type-btn {
+    flex: 1;
     display: inline-flex;
     align-items: center;
-    padding: 0.35rem 0.9rem;
+    justify-content: center;
+    padding: 0.4rem 0.9rem;
     border: 0;
     background: transparent;
     color: var(--color-main-text);
@@ -293,6 +265,7 @@ const strings = {
     align-self: stretch;
   }
 
+  // Amount(s) and currency share one row, wrapping only when too narrow.
   &__fields {
     display: flex;
     align-items: flex-end;
@@ -301,21 +274,17 @@ const strings = {
   }
 
   &__amount {
-    flex: 1 1 6rem;
+    flex: 1 1 5rem;
     min-width: 0;
   }
 
   &__currency {
-    flex: 0 0 9rem;
-    min-width: 8rem;
+    flex: 0 1 9rem;
+    min-width: 7rem;
   }
 
   &__clear {
-    flex: 0 0 auto;
-    // Sit at the right end of the fields row, aligned with the input bottoms
-    // (the row is bottom-aligned to leave space for the field labels above).
-    align-self: flex-end;
-    white-space: nowrap;
+    align-self: flex-start;
   }
 }
 </style>

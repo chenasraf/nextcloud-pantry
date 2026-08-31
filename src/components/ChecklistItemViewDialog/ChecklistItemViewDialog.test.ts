@@ -6,6 +6,8 @@ import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@icons/Repeat.vue', () => createIconMock('RepeatIcon'))
 vi.mock('@icons/Pencil.vue', () => createIconMock('PencilIcon'))
+vi.mock('@icons/Pin.vue', () => createIconMock('PinIcon'))
+vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
 
 vi.mock('@nextcloud/vue/components/NcDialog', () => ({
   default: {
@@ -20,6 +22,20 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
     template:
       '<button class="nc-button" :disabled="disabled"><slot name="icon" /><slot /></button>',
     props: ['variant', 'form', 'type', 'disabled', 'ariaLabel'],
+  },
+}))
+vi.mock('@nextcloud/vue/components/NcAvatar', () => ({
+  default: {
+    name: 'NcAvatar',
+    template: '<span class="nc-avatar" />',
+    props: ['user', 'size', 'showUserStatus'],
+  },
+}))
+vi.mock('@nextcloud/vue/components/NcDateTime', () => ({
+  default: {
+    name: 'NcDateTime',
+    template: '<span class="nc-date-time" :data-timestamp="timestamp" />',
+    props: ['timestamp', 'format', 'relativeTime'],
   },
 }))
 // Render one checkbox input per task-list line so the component's DOM-index
@@ -54,6 +70,10 @@ vi.mock('@/components/CategoryPicker', () => ({
     template: '<span class="mock-category-icon" />',
     props: ['size'],
   }),
+}))
+
+vi.mock('@/composables/useHouseMembers', () => ({
+  useHouseMembers: () => ({ members: { value: [] }, displayNameByUid: { value: {} } }),
 }))
 
 vi.mock('@/api/images', () => ({
@@ -139,7 +159,7 @@ describe('ChecklistItemViewDialog', () => {
         item: makeItem({ imageFileId: 42, imageUploadedBy: 'admin', name: 'Milk' }),
       },
     })
-    const img = wrapper.find('.item-view__image')
+    const img = wrapper.find('.item-view__image-btn img')
     expect(img.exists()).toBe(true)
     expect(img.attributes('src')).toBe('/preview/1/42/admin/1600')
     expect(img.attributes('alt')).toBe('Milk')
@@ -150,6 +170,14 @@ describe('ChecklistItemViewDialog', () => {
       props: { ...defaultProps, item: makeItem({ imageFileId: null }) },
     })
     expect(wrapper.find('.item-view__image-btn').exists()).toBe(false)
+  })
+
+  it('shows category-tinted fallback glyph when no image but category present', () => {
+    const wrapper = mount(ChecklistItemViewDialog, {
+      props: { ...defaultProps, item: makeItem({ categoryId: 1 }), category: makeCategory() },
+    })
+    expect(wrapper.find('.item-view__image-btn').exists()).toBe(false)
+    expect(wrapper.find('.item-view__glyph').exists()).toBe(true)
   })
 
   it('renders description with NcRichText when present', () => {
@@ -166,14 +194,6 @@ describe('ChecklistItemViewDialog', () => {
       props: { ...defaultProps, item: makeItem({ description: null }) },
     })
     expect(wrapper.find('.item-view__description').exists()).toBe(false)
-  })
-
-  it('renders description checkboxes interactively', () => {
-    const wrapper = mount(ChecklistItemViewDialog, {
-      props: { ...defaultProps, item: makeItem({ description: '- [ ] Milk' }) },
-    })
-    const richText = wrapper.findComponent({ name: 'NcRichText' })
-    expect(richText.props('interactive')).toBe(true)
   })
 
   it('emits toggle-task with the flipped description when a task is toggled', async () => {
@@ -195,56 +215,63 @@ describe('ChecklistItemViewDialog', () => {
     expect(description).toBe('- [ ] Milk\n- [x] Eggs')
   })
 
-  it('shows quantity row when present', () => {
+  it('shows quantity tile when present', () => {
     const wrapper = mount(ChecklistItemViewDialog, {
       props: { ...defaultProps, item: makeItem({ quantity: '3' }) },
     })
-    const rows = wrapper.findAll('.item-view__row')
-    const quantityRow = rows.find((r) => r.text().includes('Quantity'))
-    expect(quantityRow).toBeDefined()
-    expect(quantityRow!.text()).toContain('3')
+    const values = wrapper.findAll('.item-view__tile-value')
+    expect(values.some((v) => v.text().includes('3'))).toBe(true)
   })
 
-  it('shows category row with color when category provided', () => {
+  it('shows category chip with its color when category provided', () => {
     const category = makeCategory({ name: 'Dairy', color: '#4caf50' })
     const wrapper = mount(ChecklistItemViewDialog, {
       props: { ...defaultProps, item: makeItem({ categoryId: 1 }), category },
     })
-    const rows = wrapper.findAll('.item-view__row')
-    const categoryRow = rows.find((r) => r.text().includes('Category'))
-    expect(categoryRow).toBeDefined()
-    const badge = categoryRow!.find('.item-view__badge')
-    expect(badge.attributes('style')).toContain('color: #4caf50')
-    expect(badge.text()).toContain('Dairy')
+    const chip = wrapper.findAll('.item-view__chip').find((c) => c.text().includes('Dairy'))
+    expect(chip).toBeDefined()
+    expect(chip!.attributes('style')).toContain('#4caf50')
   })
 
-  it('shows recurrence row when rrule present', () => {
+  it('shows recurrence summary in the type tile when rrule present', () => {
     const wrapper = mount(ChecklistItemViewDialog, {
       props: { ...defaultProps, item: makeItem({ rrule: 'FREQ=WEEKLY' }) },
     })
-    const rows = wrapper.findAll('.item-view__row')
-    const recurrenceRow = rows.find((r) => r.text().includes('Recurrence'))
-    expect(recurrenceRow).toBeDefined()
-    expect(recurrenceRow!.text()).toContain('FREQ=WEEKLY')
+    expect(wrapper.text()).toContain('Recurring')
+    expect(wrapper.find('.item-view__tile-sub').text()).toContain('FREQ=WEEKLY')
   })
 
-  it('shows done status row when item is done', () => {
+  it('shows the done timestamp when the item is done', () => {
     const wrapper = mount(ChecklistItemViewDialog, {
-      props: { ...defaultProps, item: makeItem({ done: true }) },
+      props: { ...defaultProps, item: makeItem({ done: true, doneAt: 1_700_000_000 }) },
     })
-    const rows = wrapper.findAll('.item-view__row')
-    const statusRow = rows.find((r) => r.text().includes('Status'))
-    expect(statusRow).toBeDefined()
-    expect(statusRow!.text()).toContain('Done')
+    const rows = wrapper.findAll('.item-view__meta-row')
+    const doneRow = rows.find((r) => r.text().includes('Done'))
+    expect(doneRow).toBeDefined()
+    expect(doneRow!.find('.nc-date-time').attributes('data-timestamp')).toBe(
+      String(1_700_000_000 * 1000),
+    )
   })
 
-  it('does not show done row when item is not done', () => {
+  it('does not show the done row when the item is not done', () => {
     const wrapper = mount(ChecklistItemViewDialog, {
       props: { ...defaultProps, item: makeItem({ done: false }) },
     })
-    const rows = wrapper.findAll('.item-view__row')
-    const statusRow = rows.find((r) => r.text().includes('Status'))
-    expect(statusRow).toBeUndefined()
+    const rows = wrapper.findAll('.item-view__meta-row')
+    const doneRow = rows.find((r) => r.text().includes('Done'))
+    expect(doneRow).toBeUndefined()
+  })
+
+  it('shows an added-by avatar only when show-added-by is set', () => {
+    const withoutPref = mount(ChecklistItemViewDialog, {
+      props: { ...defaultProps, item: makeItem({ addedBy: 'admin' }) },
+    })
+    expect(withoutPref.find('.nc-avatar').exists()).toBe(false)
+
+    const withPref = mount(ChecklistItemViewDialog, {
+      props: { ...defaultProps, item: makeItem({ addedBy: 'admin' }), showAddedBy: true },
+    })
+    expect(withPref.find('.nc-avatar').exists()).toBe(true)
   })
 
   it('emits edit with item when edit button clicked', async () => {

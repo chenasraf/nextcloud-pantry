@@ -390,6 +390,7 @@
       :stores="storesFor(viewing.storeIds)"
       :labels="labelsFor(viewing.labelIds)"
       :house-id="houseIdNum"
+      :show-added-by="showAddedBy"
       @update:open="(v) => !v && (viewing = null)"
       @edit="viewToEdit"
       @preview="openPreview"

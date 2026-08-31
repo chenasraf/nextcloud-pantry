@@ -1,73 +1,74 @@
 <template>
   <div class="item-prices">
-    <div class="item-prices__row item-prices__row--storeless">
-      <span class="item-prices__store-label">
-        <EarthIcon class="item-prices__store-label-icon" :size="18" />
+    <div class="item-prices__entry">
+      <span class="item-prices__sublabel">
+        <EarthIcon class="item-prices__sublabel-icon" :size="16" />
         {{ strings.anyStore }}
       </span>
       <PriceInput
         v-model="storelessValue"
-        compact
         :default-currency="defaultCurrency"
         @update:model-value="emitAll"
       />
     </div>
 
-    <div v-for="(row, index) in rows" :key="row.key" class="item-prices__row">
-      <NcSelect
-        class="item-prices__store"
-        :model-value="storeOption(row.storeId)"
-        :options="storeOptionsFor(index)"
-        :clearable="false"
-        :searchable="true"
-        label="label"
-        :input-label="strings.store"
-        :aria-label="strings.store"
-        :placeholder="strings.pickStore"
-        @update:model-value="(o) => onStoreSelected(index, o)"
-      >
-        <template #option="option">
-          <div class="item-prices__store-option">
-            <span
-              v-if="option.store"
-              class="item-prices__store-icon"
-              :style="{ color: option.store.color }"
-            >
-              <component :is="iconFor(option.store.icon)" :size="18" />
-            </span>
-            <span>{{ option.label }}</span>
-          </div>
-        </template>
-        <template #selected-option="option">
-          <div class="item-prices__store-option">
-            <span
-              v-if="option.store"
-              class="item-prices__store-icon"
-              :style="{ color: option.store.color }"
-            >
-              <component :is="iconFor(option.store.icon)" :size="16" />
-            </span>
-            <span>{{ option.label }}</span>
-          </div>
-        </template>
-      </NcSelect>
+    <div v-for="(row, index) in rows" :key="row.key" class="item-prices__entry">
+      <div class="item-prices__head">
+        <NcSelect
+          class="item-prices__store"
+          :model-value="storeOption(row.storeId)"
+          :options="storeOptionsFor(index)"
+          :clearable="false"
+          :searchable="true"
+          label="label"
+          :input-label="strings.store"
+          :aria-label="strings.store"
+          :placeholder="strings.pickStore"
+          @update:model-value="(o) => onStoreSelected(index, o)"
+        >
+          <template #option="option">
+            <div class="item-prices__store-option">
+              <span
+                v-if="option.store"
+                class="item-prices__store-icon"
+                :style="{ color: option.store.color }"
+              >
+                <component :is="iconFor(option.store.icon)" :size="18" />
+              </span>
+              <span>{{ option.label }}</span>
+            </div>
+          </template>
+          <template #selected-option="option">
+            <div class="item-prices__store-option">
+              <span
+                v-if="option.store"
+                class="item-prices__store-icon"
+                :style="{ color: option.store.color }"
+              >
+                <component :is="iconFor(option.store.icon)" :size="16" />
+              </span>
+              <span>{{ option.label }}</span>
+            </div>
+          </template>
+        </NcSelect>
+        <NcButton
+          variant="tertiary"
+          type="button"
+          class="item-prices__remove"
+          :aria-label="strings.remove"
+          @click="removeRow(index)"
+        >
+          <template #icon>
+            <DeleteIcon :size="18" />
+          </template>
+        </NcButton>
+      </div>
       <PriceInput
         v-model="row.value"
-        compact
+        :clearable="false"
         :default-currency="defaultCurrency"
         @update:model-value="emitAll"
       />
-      <NcButton
-        variant="tertiary"
-        type="button"
-        class="item-prices__remove"
-        :aria-label="strings.remove"
-        @click="removeRow(index)"
-      >
-        <template #icon>
-          <DeleteIcon :size="18" />
-        </template>
-      </NcButton>
     </div>
 
     <NcButton
@@ -266,50 +267,45 @@ const strings = {
 .item-prices {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 
-  // Store, price and delete on one line; wrap only when the row is too narrow.
-  &__row {
+  // One stacked block per price: its store header sits above the amount/currency.
+  &__entry {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
+    flex-direction: column;
     gap: 0.5rem;
 
-    // Let the price block shrink so it sits beside the store select; its own
-    // fields wrap internally before the whole block drops to a new line.
-    :deep(.price-input) {
-      flex: 1 1 12rem;
-      min-width: 0;
+    & + & {
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-border);
     }
   }
 
-  // A row label that mirrors the store select below it (bordered, same column
-  // width), not a section heading.
-  &__store-label {
-    flex: 0 0 9rem;
-    min-width: 7rem;
-    box-sizing: border-box;
-    align-self: flex-end;
+  &__sublabel {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.4rem 0.6rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-element, var(--border-radius, 6px));
-    background: var(--color-background-hover);
-    color: var(--color-main-text);
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  &__store-label-icon {
-    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     color: var(--color-text-maxcontrast);
   }
 
+  &__sublabel-icon {
+    flex-shrink: 0;
+  }
+
+  // Store select and its remove button share the header row.
+  &__head {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+
   &__store {
-    flex: 0 1 9rem;
-    min-width: 7rem;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   &__store-option {
@@ -326,7 +322,7 @@ const strings = {
   }
 
   &__remove {
-    align-self: flex-end;
+    flex: 0 0 auto;
   }
 
   &__add {

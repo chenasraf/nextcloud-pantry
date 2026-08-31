@@ -2,7 +2,7 @@
   <NcDialog
     :name="strings.title"
     :open="open"
-    size="large"
+    size="normal"
     close-on-click-outside
     @update:open="(v) => !v && $emit('update:open', false)"
   >
@@ -12,71 +12,75 @@
       autocomplete="off"
       @submit.prevent="submitEdit"
     >
-      <NcTextField
-        v-model="editName"
-        :label="strings.nameLabel"
-        :placeholder="strings.namePlaceholder"
-        autocomplete="off"
-      />
-      <MarkdownEditor
-        v-model="editDescription"
-        :label="strings.descriptionLabel"
-        :placeholder="strings.descriptionPlaceholder"
-        dir="auto"
-        autocomplete="off"
-      />
-      <NcTextField
-        v-model="editQuantity"
-        :label="strings.quantityLabel"
-        :placeholder="strings.quantityPlaceholder"
-        autocomplete="off"
-      />
-      <CategoryPicker
-        v-model="editCategoryId"
-        :house-id="houseId"
-        :list-id="item.listId"
-        :label="strings.categoryLabel"
-        :placeholder="strings.categoryPlaceholder"
-      />
-      <StoreMultiPicker
-        v-model="editStoreIds"
-        :house-id="houseId"
-        :label="strings.storesLabel"
-        :placeholder="strings.storesPlaceholder"
-      />
-      <div class="edit-item-form__labels">
-        <span class="edit-item-form__label">{{ strings.labelsLabel }}</span>
-        <LabelChipList v-model="editLabelIds" :house-id="houseId" :list-id="item.listId" />
-      </div>
-      <div class="edit-item-form__price">
-        <span class="edit-item-form__label">{{ strings.priceLabel }}</span>
+      <FieldCard :label="strings.nameLabel">
+        <NcTextField
+          v-model="editName"
+          :label="strings.nameLabel"
+          label-outside
+          :placeholder="strings.namePlaceholder"
+          autocomplete="off"
+        />
+      </FieldCard>
+
+      <FieldCard :label="strings.descriptionLabel">
+        <MarkdownEditor
+          v-model="editDescription"
+          :placeholder="strings.descriptionPlaceholder"
+          dir="auto"
+          autocomplete="off"
+        />
+      </FieldCard>
+
+      <FieldCard :label="strings.quantityLabel">
+        <QuantityInput v-model="editQuantity" />
+      </FieldCard>
+
+      <FieldCard :label="strings.priceLabel">
         <ItemPricesEditor
           v-model="editPrices"
           :house-id="houseId"
           :default-currency="defaultCurrency"
         />
-      </div>
-      <div v-if="hasCustomFields" class="edit-item-form__customfields">
-        <span class="edit-item-form__label">{{ strings.customFieldsLabel }}</span>
+      </FieldCard>
+
+      <FieldCard :label="strings.categoryLabel">
+        <CategoryChipList v-model="editCategoryId" :house-id="houseId" :list-id="item.listId" />
+      </FieldCard>
+
+      <FieldCard :label="strings.storesLabel">
+        <StoreChipList v-model="editStoreIds" :house-id="houseId" />
+      </FieldCard>
+
+      <FieldCard :label="strings.labelsLabel">
+        <LabelChipList v-model="editLabelIds" :house-id="houseId" :list-id="item.listId" />
+      </FieldCard>
+
+      <template v-if="hasCustomFields">
         <ItemCustomFieldsEditor
           v-model="editCustomFields"
           :house-id="houseId"
           :list-id="item.listId"
         />
-      </div>
-      <div class="edit-item-form__type">
-        <span class="edit-item-form__label">{{ strings.typeLabel }}</span>
-        <ItemTypeSelector
-          :delete-on-done="editDeleteOnDone"
-          :rrule="editRrule"
-          @select-staple="selectStaple"
-          @select-one-time="selectOneTime"
-          @select-recurring="selectRecurring"
-        />
-      </div>
+      </template>
 
-      <div class="edit-item-form__image">
-        <span class="edit-item-form__label">{{ strings.imageLabel }}</span>
+      <FieldCard :label="strings.typeLabel">
+        <div class="edit-item-form__type">
+          <ItemTypeSelector
+            :delete-on-done="editDeleteOnDone"
+            :rrule="editRrule"
+            @select-staple="selectStaple"
+            @select-one-time="selectOneTime"
+            @select-recurring="selectRecurring"
+          />
+          <RecurrenceForm
+            v-if="currentType === 'recurring'"
+            v-model="editRrule"
+            v-model:from-completion="editRepeatFromCompletion"
+          />
+        </div>
+      </FieldCard>
+
+      <FieldCard :label="strings.imageLabel">
         <div class="edit-item-form__image-row">
           <img
             v-if="previewImageUrl"
@@ -104,14 +108,8 @@
             @change="onImagePicked"
           />
         </div>
-      </div>
+      </FieldCard>
     </form>
-
-    <RecurrenceEditor
-      v-model:open="showRecurrenceEditor"
-      v-model="editRrule"
-      v-model:from-completion="editRepeatFromCompletion"
-    />
 
     <template #actions>
       <NcButton @click="$emit('update:open', false)">{{ strings.cancel }}</NcButton>
@@ -136,11 +134,13 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import UploadIcon from '@icons/Upload.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import { MarkdownEditor } from '@/components/MarkdownEditor'
-import RecurrenceEditor from '@/components/RecurrenceEditor'
-import CategoryPicker from '@/components/CategoryPicker'
-import StoreMultiPicker from '@/components/StoreMultiPicker'
+import { RecurrenceForm } from '@/components/RecurrenceEditor'
+import FieldCard from '@/components/FieldCard'
+import CategoryChipList from '@/components/CategoryChipList'
+import StoreChipList from '@/components/StoreChipList'
 import LabelChipList from '@/components/LabelChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
+import QuantityInput from '@/components/QuantityInput'
 import ItemPricesEditor from '@/components/ItemPricesEditor'
 import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { itemImagePreviewUrl } from '@/api/images'
@@ -177,7 +177,13 @@ const editRepeatFromCompletion = ref(false)
 const editDeleteOnDone = ref(false)
 const editPrices = ref<ItemPrice[]>([])
 const editCustomFields = ref<ItemCustomFieldValue[]>([])
-const showRecurrenceEditor = ref(false)
+
+type ItemType = 'staple' | 'oneTime' | 'recurring'
+const currentType = computed<ItemType>(() => {
+  if (editDeleteOnDone.value) return 'oneTime'
+  if (editRrule.value) return 'recurring'
+  return 'staple'
+})
 
 const customFields = useCustomFields(props.houseId)
 const hasCustomFields = computed(() =>
@@ -257,7 +263,11 @@ function selectOneTime() {
 
 function selectRecurring() {
   editDeleteOnDone.value = false
-  showRecurrenceEditor.value = true
+  // RecurrenceForm renders inline below the type selector once currentType
+  // becomes 'recurring'; seed a weekly default so it appears immediately.
+  if (!editRrule.value) {
+    editRrule.value = 'FREQ=WEEKLY;INTERVAL=1'
+  }
 }
 
 function submitEdit() {
@@ -318,17 +328,12 @@ const strings = {
   descriptionLabel: t('pantry', 'Description'),
   descriptionPlaceholder: t('pantry', 'Add a description …'),
   quantityLabel: t('pantry', 'Quantity'),
-  quantityPlaceholder: t('pantry', 'e.g. 2 L'),
   categoryLabel: t('pantry', 'Category'),
-  categoryPlaceholder: t('pantry', 'Category'),
   // TRANSLATORS: Noun (plural), shops where this item can be bought. Field label.
   storesLabel: t('pantry', 'Stores'),
-  // TRANSLATORS: Noun (plural), shops where this item can be bought. Field placeholder.
-  storesPlaceholder: t('pantry', 'Stores'),
   // TRANSLATORS: Noun (plural), tags attached to an item. Field label.
   labelsLabel: t('pantry', 'Labels'),
   priceLabel: t('pantry', 'Price'),
-  customFieldsLabel: t('pantry', 'Custom fields'),
   typeLabel: t('pantry', 'Item type'),
   imageLabel: t('pantry', 'Image'),
   uploadImage: t('pantry', 'Upload image'),
@@ -341,18 +346,13 @@ const strings = {
 .edit-item-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
   padding: 0.5rem 0;
 
-  &__image {
+  &__type {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  &__label {
-    font-size: 0.85rem;
-    color: var(--color-text-maxcontrast);
+    gap: 0.75rem;
   }
 
   &__image-row {
@@ -372,14 +372,6 @@ const strings = {
 
   &__image-input {
     display: none;
-  }
-
-  &__type,
-  &__price,
-  &__labels {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
   }
 }
 </style>

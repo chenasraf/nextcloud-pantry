@@ -1,10 +1,16 @@
 <template>
   <div v-if="applicableFields.length > 0" class="cf-values">
-    <div v-for="field in applicableFields" :key="field.id" class="cf-values__field">
+    <FieldCard
+      v-for="field in applicableFields"
+      :key="field.id"
+      :label="field.type === 'checkbox' ? undefined : field.name"
+      class="cf-values__field"
+    >
       <NcTextField
         v-if="field.type === 'text' && !field.multiline"
         :model-value="draft[field.id]?.text ?? ''"
         :label="field.name"
+        label-outside
         :placeholder="field.hint ?? ''"
         @update:model-value="setText(field.id, $event)"
       />
@@ -12,6 +18,7 @@
         v-else-if="field.type === 'text'"
         :model-value="draft[field.id]?.text ?? ''"
         :label="field.name"
+        label-outside
         :placeholder="field.hint ?? ''"
         :rows="2"
         @update:model-value="setText(field.id, $event)"
@@ -21,6 +28,7 @@
         type="number"
         :model-value="draft[field.id]?.number ?? ''"
         :label="field.name"
+        label-outside
         :placeholder="field.hint ?? ''"
         @update:model-value="setNumber(field.id, $event)"
       />
@@ -38,7 +46,6 @@
         label="label"
         :clearable="true"
         :placeholder="field.hint ?? ''"
-        :input-label="field.name"
         :aria-label-combobox="field.name"
         :calculate-position="ncSelectCalculatePosition"
         @update:model-value="setOption(field.id, $event)"
@@ -48,6 +55,7 @@
         type="date"
         :model-value="draft[field.id]?.date ?? null"
         :label="field.name"
+        hide-label
         @update:model-value="setDate(field.id, $event)"
       />
       <div v-else-if="field.type === 'date'" class="cf-values__relative">
@@ -55,6 +63,7 @@
           type="number"
           :model-value="draft[field.id]?.offsetDays ?? ''"
           :label="field.name"
+          label-outside
           :placeholder="strings.daysFromToday"
           @update:model-value="setOffset(field.id, $event)"
         />
@@ -68,6 +77,7 @@
       </div>
 
       <div v-if="showReminderOverride(field)" class="cf-values__reminder">
+        <hr class="cf-values__divider" />
         <NcCheckboxRadioSwitch
           :model-value="remindOn(field)"
           @update:model-value="setRemind(field, $event)"
@@ -92,7 +102,7 @@
           </NcButton>
         </div>
       </div>
-    </div>
+    </FieldCard>
   </div>
 </template>
 
@@ -106,6 +116,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNative'
 import RefreshIcon from '@icons/Refresh.vue'
+import FieldCard from '@/components/FieldCard'
 import type { FieldDefinition, ItemCustomFieldValue } from '@/api/types'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
@@ -417,12 +428,6 @@ watch(applicableFields, () => seedFromModel(props.modelValue))
   flex-direction: column;
   gap: 0.75rem;
 
-  &__field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
   &__relative {
     display: flex;
     flex-direction: column;
@@ -445,8 +450,14 @@ watch(applicableFields, () => seedFromModel(props.modelValue))
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    padding-left: 0.5rem;
-    border-left: 2px solid var(--color-border);
+  }
+
+  &__divider {
+    width: 100%;
+    height: 0;
+    margin: 0.15rem 0 0.25rem;
+    border: 0;
+    border-top: 1px solid var(--color-border);
   }
 
   &__override-note {

@@ -7,98 +7,111 @@
     @update:open="(v) => !v && $emit('update:open', false)"
   >
     <div class="item-view">
-      <button
-        v-if="item.imageFileId"
-        type="button"
-        class="item-view__image-btn"
-        :aria-label="strings.viewImage"
-        @click="$emit('preview', item)"
+      <div
+        class="item-view__hero"
+        :class="{ 'item-view__hero--image': hasImage }"
+        :style="heroStyle"
       >
-        <img class="item-view__image" :src="largeUrl" :alt="item.name" />
-      </button>
+        <button
+          v-if="hasImage"
+          type="button"
+          class="item-view__image-btn"
+          :aria-label="strings.viewImage"
+          @click="$emit('preview', item)"
+        >
+          <img :src="largeUrl" :alt="item.name" />
+        </button>
+        <span v-else-if="category" class="item-view__glyph">
+          <component :is="categoryIconComponent(category.icon)" :size="34" />
+        </span>
 
-      <div v-if="item.description" ref="descriptionEl" class="item-view__description" dir="auto">
-        <NcRichText
-          :text="item.description"
-          :use-markdown="true"
-          :use-extended-markdown="true"
-          :interactive="true"
-          @interact-todo="onToggleTask"
-        />
+        <div class="item-view__overlay">
+          <div v-if="chips.length > 0" class="item-view__chips">
+            <span
+              v-for="chip in chips"
+              :key="chip.key"
+              class="item-view__chip"
+              :style="chipStyle(chip.color)"
+            >
+              <component :is="chip.icon" :size="14" />
+              {{ chip.name }}
+            </span>
+          </div>
+          <h2 class="item-view__title" dir="auto">{{ item.name }}</h2>
+        </div>
       </div>
 
-      <div class="item-view__details">
-        <div v-if="item.quantity" class="item-view__row">
-          <span class="item-view__label">{{ strings.quantity }}:</span>
-          <span>&times; {{ item.quantity }}</span>
-        </div>
-        <div v-if="priceRows.length > 0" class="item-view__row">
-          <span class="item-view__label">{{ strings.price }}:</span>
-          <span class="item-view__prices">
-            <span v-for="row in priceRows" :key="row.key" class="item-view__price">
-              <span class="item-view__price-store">{{ row.label }}</span>
-              <span>{{ row.text }}</span>
-            </span>
+      <div class="item-view__tiles">
+        <FieldCard v-if="item.quantity" :label="strings.quantity" class="item-view__tile">
+          <span class="item-view__tile-value">{{ item.quantity }}</span>
+        </FieldCard>
+        <FieldCard :label="strings.type" class="item-view__tile">
+          <span class="item-view__tile-value item-view__tile-value--type">
+            <component :is="typeIcon" :size="20" />
+            {{ typeLabel }}
+          </span>
+          <span v-if="typeSubtitle" class="item-view__tile-sub">{{ typeSubtitle }}</span>
+        </FieldCard>
+      </div>
+
+      <FieldCard v-if="priceRows.length > 0" :label="strings.price">
+        <div class="item-view__prices">
+          <span v-for="row in priceRows" :key="row.key" class="item-view__price">
+            <TagIcon :size="16" class="item-view__price-icon" />
+            <span v-if="showPriceStore" class="item-view__price-store">{{ row.label }}</span>
+            <span class="item-view__price-amount">{{ row.text }}</span>
           </span>
         </div>
-        <div v-if="category" class="item-view__row">
-          <span class="item-view__label">{{ strings.category }}:</span>
-          <span class="item-view__badge" :style="{ color: category.color }">
-            <component :is="categoryIconComponent(category.icon)" :size="14" />
-            {{ category.name }}
+      </FieldCard>
+
+      <FieldCard v-if="customFieldRows.length > 0" :label="strings.customFields">
+        <div class="item-view__cf">
+          <div v-for="row in customFieldRows" :key="row.id" class="item-view__cf-row">
+            <component :is="row.icon" :size="18" class="item-view__cf-icon" />
+            <span class="item-view__cf-name">{{ row.name }}</span>
+            <span class="item-view__cf-value" dir="auto">{{ row.text }}</span>
+          </div>
+        </div>
+      </FieldCard>
+
+      <FieldCard v-if="item.description" :label="strings.description">
+        <div ref="descriptionEl" class="item-view__description" dir="auto">
+          <NcRichText
+            :text="item.description"
+            :use-markdown="true"
+            :use-extended-markdown="true"
+            :interactive="true"
+            @interact-todo="onToggleTask"
+          />
+        </div>
+      </FieldCard>
+
+      <div class="item-view__meta">
+        <div class="item-view__meta-row">
+          <NcAvatar
+            v-if="showAddedBy && item.addedBy"
+            :user="item.addedBy"
+            :size="24"
+            :show-user-status="false"
+          />
+          <span class="item-view__meta-text">
+            {{ addedLabel }}
+            <span class="item-view__meta-sep" aria-hidden="true">·</span>
+            <NcDateTime :timestamp="item.createdAt * 1000" />
           </span>
         </div>
-        <div v-if="stores.length > 0" class="item-view__row">
-          <span class="item-view__label">{{ strings.stores }}:</span>
-          <span class="item-view__stores">
-            <span
-              v-for="store in stores"
-              :key="store.id"
-              class="item-view__badge"
-              :style="{ color: store.color }"
-            >
-              <component :is="storeIconComponent(store.icon)" :size="14" />
-              {{ store.name }}
-            </span>
+        <div v-if="item.done && item.doneAt" class="item-view__meta-row">
+          <CheckCircleOutlineIcon :size="20" class="item-view__meta-icon" />
+          <span class="item-view__meta-text">
+            {{ doneLabel }}
+            <span class="item-view__meta-sep" aria-hidden="true">·</span>
+            <NcDateTime :timestamp="item.doneAt * 1000" />
           </span>
-        </div>
-        <div v-if="labels.length > 0" class="item-view__row">
-          <span class="item-view__label">{{ strings.labels }}:</span>
-          <span class="item-view__stores">
-            <span
-              v-for="label in labels"
-              :key="label.id"
-              class="item-view__badge"
-              :style="{ color: label.color }"
-            >
-              <component :is="labelIconComponent(label.icon)" :size="14" />
-              {{ label.name }}
-            </span>
-          </span>
-        </div>
-        <div v-for="row in customFieldRows" :key="row.id" class="item-view__row">
-          <span class="item-view__label">{{ row.name }}:</span>
-          <span dir="auto">{{ row.text }}</span>
-        </div>
-        <div v-if="item.rrule" class="item-view__row">
-          <span class="item-view__label">{{ strings.recurrence }}:</span>
-          <span class="item-view__badge">
-            <RepeatIcon :size="14" />
-            {{ formatRrule(item.rrule) }}
-          </span>
-        </div>
-        <div v-if="nextRecurrence" class="item-view__row">
-          <span class="item-view__label">{{ strings.nextRecurrence }}:</span>
-          <span>{{ nextRecurrence }}</span>
-        </div>
-        <div v-if="item.done" class="item-view__row">
-          <span class="item-view__label">{{ strings.status }}:</span>
-          <span>{{ strings.done }}</span>
         </div>
       </div>
     </div>
     <template #actions>
-      <NcButton variant="tertiary" @click="$emit('edit', item)">
+      <NcButton variant="primary" @click="$emit('edit', item)">
         <template #icon>
           <PencilIcon :size="20" />
         </template>
@@ -109,27 +122,43 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
+import NcAvatar from '@nextcloud/vue/components/NcAvatar'
+import NcDateTime from '@nextcloud/vue/components/NcDateTime'
 import RepeatIcon from '@icons/Repeat.vue'
+import PinIcon from '@icons/Pin.vue'
+import DeleteIcon from '@icons/Delete.vue'
+import TagIcon from '@icons/Tag.vue'
 import PencilIcon from '@icons/Pencil.vue'
+import CheckCircleOutlineIcon from '@icons/CheckCircleOutline.vue'
+import TextIcon from '@icons/Text.vue'
+import NumericIcon from '@icons/Numeric.vue'
+import CheckboxMarkedOutlineIcon from '@icons/CheckboxMarkedOutline.vue'
+import CalendarOutlineIcon from '@icons/CalendarOutline.vue'
+import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
+import FieldCard from '@/components/FieldCard'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
+import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { itemImagePreviewUrl } from '@/api/images'
-import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
+import { formatRrule } from '@/utils/rrule'
 import { formatPrice } from '@/utils/price'
 import { toggleMarkdownTask } from '@/utils/markdownTask'
+import { getCurrentUserId } from '@/utils/currentUser'
 import { useCustomFields } from '@/composables/useCustomFields'
+import { useHouseMembers } from '@/composables/useHouseMembers'
 import type {
   ChecklistItem,
   Category,
   Store,
   Label,
   FieldDefinition,
+  FieldType,
   ItemCustomFieldValue,
 } from '@/api/types'
 
@@ -141,8 +170,10 @@ const props = withDefaults(
     stores?: Store[]
     labels?: Label[]
     houseId: number
+    /** Reveal who added/completed the item, mirroring the list's added-by pref. */
+    showAddedBy?: boolean
   }>(),
-  { stores: () => [], labels: () => [] },
+  { stores: () => [], labels: () => [], showAddedBy: false },
 )
 
 const emit = defineEmits<{
@@ -176,11 +207,75 @@ function onToggleTask(id: string) {
   }
 }
 
+const hasImage = computed(() => !!props.item.imageFileId)
+
 const largeUrl = computed(() =>
   props.item.imageFileId
     ? itemImagePreviewUrl(props.houseId, props.item.imageFileId!, props.item.imageUploadedBy!, 1600)
     : '',
 )
+
+// The fallback header (no image) tints a gradient with the category color.
+const heroStyle = computed(() => ({
+  '--cat-color': props.category?.color ?? 'var(--color-primary-element)',
+}))
+
+interface Chip {
+  key: string
+  name: string
+  color: string
+  icon: Component
+}
+
+const chips = computed<Chip[]>(() => {
+  const list: Chip[] = []
+  if (props.category) {
+    list.push({
+      key: 'category',
+      name: props.category.name,
+      color: props.category.color,
+      icon: categoryIconComponent(props.category.icon),
+    })
+  }
+  for (const store of props.stores) {
+    list.push({
+      key: `store-${store.id}`,
+      name: store.name,
+      color: store.color,
+      icon: storeIconComponent(store.icon),
+    })
+  }
+  for (const label of props.labels) {
+    list.push({
+      key: `label-${label.id}`,
+      name: label.name,
+      color: label.color,
+      icon: labelIconComponent(label.icon),
+    })
+  }
+  return list
+})
+
+function chipStyle(color: string) {
+  return { '--chip-bg': color, '--chip-fg': contrastColor(color) }
+}
+
+// ----- Item type tile -----
+
+const isOneTime = computed(() => props.item.deleteOnDone)
+const isRecurring = computed(() => !props.item.deleteOnDone && !!props.item.rrule)
+
+const typeLabel = computed(() =>
+  isOneTime.value ? strings.oneTime : isRecurring.value ? strings.recurring : strings.staple,
+)
+const typeIcon = computed<Component>(() =>
+  isOneTime.value ? DeleteIcon : isRecurring.value ? RepeatIcon : PinIcon,
+)
+const typeSubtitle = computed(() =>
+  isRecurring.value && props.item.rrule ? formatRrule(props.item.rrule) : null,
+)
+
+// ----- Prices -----
 
 // One line per price: the store-less price labeled "Any store", then each
 // per-store price labeled by its store name.
@@ -199,11 +294,10 @@ const priceRows = computed(() =>
     ),
 )
 
-const nextRecurrence = computed(() =>
-  props.item.rrule
-    ? formatNextRecurrence(props.item.nextDueAt, props.item.repeatFromCompletion, props.item.done)
-    : null,
-)
+// A single store-less price needs no per-line store label; several prices do.
+const showPriceStore = computed(() => priceRows.value.length > 1)
+
+// ----- Custom fields -----
 
 // The item carries its custom-field values, but rendering them needs the field
 // definitions (name, type, select option labels), so load them for the house.
@@ -215,6 +309,14 @@ watch(
   },
   { immediate: true },
 )
+
+const CF_TYPE_ICON: Record<FieldType, Component> = {
+  text: TextIcon,
+  number: NumericIcon,
+  checkbox: CheckboxMarkedOutlineIcon,
+  date: CalendarOutlineIcon,
+  select: FormatListBulletedTypeIcon,
+}
 
 function formatFieldValue(field: FieldDefinition, value: ItemCustomFieldValue): string | null {
   switch (field.type) {
@@ -238,37 +340,65 @@ function formatFieldValue(field: FieldDefinition, value: ItemCustomFieldValue): 
 }
 
 // House-wide ∪ this item's list fields that carry a value, in definition order.
-const customFieldRows = computed<{ id: number; name: string; text: string }[]>(() => {
-  const byField = new Map(props.item.customFields.map((v) => [v.fieldId, v]))
-  const rows: { id: number; name: string; text: string }[] = []
-  for (const field of fields.items.value) {
-    if (field.listId != null && field.listId !== props.item.listId) continue
-    const value = byField.get(field.id)
-    if (!value) continue
-    const text = formatFieldValue(field, value)
-    if (text == null || text === '') continue
-    rows.push({ id: field.id, name: field.name, text })
-  }
-  return rows
-})
+const customFieldRows = computed<{ id: number; name: string; text: string; icon: Component }[]>(
+  () => {
+    const byField = new Map(props.item.customFields.map((v) => [v.fieldId, v]))
+    const rows: { id: number; name: string; text: string; icon: Component }[] = []
+    for (const field of fields.items.value) {
+      if (field.listId != null && field.listId !== props.item.listId) continue
+      const value = byField.get(field.id)
+      if (!value) continue
+      const text = formatFieldValue(field, value)
+      if (text == null || text === '') continue
+      rows.push({ id: field.id, name: field.name, text, icon: CF_TYPE_ICON[field.type] })
+    }
+    return rows
+  },
+)
+
+// ----- Added / done attribution -----
+
+const currentUid = getCurrentUserId()
+const { displayNameByUid } = useHouseMembers(props.houseId)
+
+function actorName(uid: string): string {
+  if (uid === currentUid) return strings.you
+  return displayNameByUid.value[uid] ?? uid
+}
+
+const addedLabel = computed(() =>
+  props.showAddedBy && props.item.addedBy
+    ? t('pantry', 'Added by {user}', { user: actorName(props.item.addedBy) })
+    : strings.added,
+)
+
+const doneLabel = computed(() =>
+  props.showAddedBy && props.item.doneBy
+    ? t('pantry', 'Done by {user}', { user: actorName(props.item.doneBy) })
+    : strings.doneOn,
+)
 
 const strings = {
   viewImage: t('pantry', 'View image'),
   quantity: t('pantry', 'Quantity'),
+  // TRANSLATORS: Noun, the item's lifecycle kind (staple / one-time / recurring). Tile caption.
+  type: t('pantry', 'Type'),
   price: t('pantry', 'Price'),
   // TRANSLATORS: Label for the price that applies when no specific store is chosen
   anyStore: t('pantry', 'Any store'),
   store: t('pantry', 'Store'),
-  category: t('pantry', 'Category'),
-  // TRANSLATORS: Noun (plural), tags attached to an item. Row label in item details.
-  labels: t('pantry', 'Labels'),
-  // TRANSLATORS: Noun (plural), shops where this item can be bought. Detail row label.
-  stores: t('pantry', 'Stores'),
-  recurrence: t('pantry', 'Recurrence'),
-  nextRecurrence: t('pantry', 'Next recurrence'),
-  status: t('pantry', 'Status'),
-  // TRANSLATORS: Status value (adjective) shown next to "Status:" — the item is completed, not a button.
-  done: t('pantry', 'Done'),
+  customFields: t('pantry', 'Custom fields'),
+  description: t('pantry', 'Description'),
+  // TRANSLATORS: Item type (noun) — a staple that stays on the list after being checked off.
+  staple: t('pantry', 'Staple'),
+  oneTime: t('pantry', 'One-time'),
+  recurring: t('pantry', 'Recurring'),
+  // TRANSLATORS: Prefix before a relative time, e.g. "Added · 2 months ago". Verb, past tense.
+  added: t('pantry', 'Added'),
+  // TRANSLATORS: Prefix before a relative time, e.g. "Done · 3 days ago". The item was completed.
+  doneOn: t('pantry', 'Done'),
+  // TRANSLATORS: Stands in for the current user's own name, e.g. "Added by you".
+  you: t('pantry', 'you'),
   // TRANSLATORS: Value of a checkbox custom field that is ticked.
   yes: t('pantry', 'Yes'),
   // TRANSLATORS: Value of a checkbox custom field that is not ticked.
@@ -281,25 +411,178 @@ const strings = {
 .item-view {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
+
+  &__hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 168px;
+    border-radius: var(--border-radius-large, 8px);
+    overflow: hidden;
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--cat-color) 45%, var(--color-main-background)),
+      var(--color-main-background)
+    );
+
+    &--image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0) 62%);
+      pointer-events: none;
+    }
+  }
 
   &__image-btn {
-    display: block;
+    position: absolute;
+    inset: 0;
     width: 100%;
+    height: 100%;
     padding: 0;
     border: 0;
     background: none;
     cursor: zoom-in;
-    border-radius: var(--border-radius, 8px);
-    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
   }
 
-  &__image {
+  &__glyph {
+    position: absolute;
+    inset-block-start: 0.85rem;
+    inset-inline-start: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    color: var(--cat-color);
+    background: color-mix(in srgb, var(--cat-color) 20%, var(--color-main-background));
+  }
+
+  &__overlay {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     width: 100%;
-    max-height: 300px;
-    object-fit: cover;
-    display: block;
-    border-radius: var(--border-radius, 8px);
+    padding: 0.85rem;
+  }
+
+  &__hero--image &__overlay {
+    color: #fff;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: var(--chip-bg);
+    color: var(--chip-fg);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  &__tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  &__tile {
+    flex: 1 1 42%;
+    min-width: 120px;
+  }
+
+  &__tile-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+
+    &--type {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+  }
+
+  &__tile-sub {
+    font-size: 0.85rem;
+    color: var(--color-text-maxcontrast);
+  }
+
+  &__prices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  &__price {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__price-icon {
+    color: var(--color-primary-element);
+  }
+
+  &__price-store {
+    color: var(--color-text-maxcontrast);
+    font-size: 0.85rem;
+  }
+
+  &__price-amount {
+    font-weight: 600;
+  }
+
+  &__cf {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  &__cf-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__cf-icon {
+    color: var(--color-text-maxcontrast);
+    flex-shrink: 0;
+  }
+
+  &__cf-name {
+    color: var(--color-text-maxcontrast);
+    font-size: 0.85rem;
+  }
+
+  &__cf-value {
+    font-weight: 600;
   }
 
   &__description {
@@ -311,54 +594,34 @@ const strings = {
     }
   }
 
-  &__details {
+  &__meta {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.35rem;
+    padding: 0.15rem 0.15rem 0.25rem;
   }
 
-  &__row {
+  &__meta-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.9rem;
-  }
-
-  &__label {
     color: var(--color-text-maxcontrast);
-    font-weight: 500;
   }
 
-  &__badge {
+  &__meta-icon {
+    color: var(--color-text-maxcontrast);
+  }
+
+  &__meta-text {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--color-background-hover);
-  }
-
-  &__stores {
-    display: flex;
-    flex-wrap: wrap;
     gap: 0.35rem;
+    flex-wrap: wrap;
   }
 
-  &__prices {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-
-  &__price {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.5rem;
-  }
-
-  &__price-store {
-    color: var(--color-text-maxcontrast);
-    font-size: 0.85rem;
+  &__meta-sep {
+    opacity: 0.6;
   }
 }
 </style>

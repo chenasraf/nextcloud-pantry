@@ -96,20 +96,36 @@ vi.mock('@/components/RecurrenceEditor', () => ({
     template: '<div class="mock-recurrence-editor" />',
     props: ['open', 'modelValue', 'fromCompletion'],
   },
-}))
-vi.mock('@/components/CategoryPicker', () => ({
-  default: {
-    name: 'CategoryPicker',
-    template: '<div class="mock-category-picker" />',
-    props: ['modelValue', 'houseId', 'label', 'placeholder'],
+  RecurrenceForm: {
+    name: 'RecurrenceForm',
+    template: '<div class="mock-recurrence-form" />',
+    props: ['modelValue', 'fromCompletion'],
+    emits: ['update:modelValue', 'update:fromCompletion'],
   },
-  categoryIconComponent: { name: 'CategoryIcon', template: '<span />' },
 }))
-vi.mock('@/components/StoreMultiPicker', () => ({
+vi.mock('@/components/QuantityInput', () => ({
   default: {
-    name: 'StoreMultiPicker',
-    template: '<div class="mock-store-picker" />',
-    props: ['modelValue', 'houseId', 'label', 'placeholder'],
+    name: 'QuantityInput',
+    template:
+      '<input class="nc-text-field" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+  },
+}))
+vi.mock('@/components/CategoryChipList', () => ({
+  default: {
+    name: 'CategoryChipList',
+    template: '<div class="mock-category-chip-list" />',
+    props: ['modelValue', 'houseId', 'listId'],
+    emits: ['update:modelValue'],
+  },
+}))
+vi.mock('@/components/StoreChipList', () => ({
+  default: {
+    name: 'StoreChipList',
+    template: '<div class="mock-store-chip-list" />',
+    props: ['modelValue', 'houseId'],
+    emits: ['update:modelValue'],
   },
 }))
 vi.mock('@/components/LabelChipList', () => ({
