@@ -77,57 +77,91 @@
       </span>
     </div>
     <div class="checklist-row__meta">
-      <span v-if="item.quantity" class="checklist-row__quantity">&times; {{ item.quantity }}</span>
-      <span v-if="priceText" class="checklist-row__price">{{ priceText }}</span>
-      <span
+      <PantryChip
+        v-if="item.quantity"
+        class="checklist-row__quantity"
+        size="sm"
+        :interactive="false"
+      >
+        &times; {{ item.quantity }}
+      </PantryChip>
+      <PantryChip v-if="priceText" class="checklist-row__price" size="sm" :interactive="false">
+        {{ priceText }}
+      </PantryChip>
+      <PantryChip
         v-if="item.description"
         class="checklist-row__description"
+        size="sm"
+        :interactive="false"
         :title="item.description"
         :aria-label="strings.hasDescription"
       >
-        <TextBoxOutlineIcon :size="14" />
-      </span>
-      <span
+        <template #icon>
+          <TextBoxOutlineIcon :size="14" />
+        </template>
+      </PantryChip>
+      <PantryChip
         v-if="item.rrule && !compact"
         class="checklist-row__recurrence"
+        size="sm"
+        :interactive="false"
         :title="recurrenceTooltip"
       >
-        <RepeatIcon :size="14" />
+        <template #icon>
+          <RepeatIcon :size="14" />
+        </template>
         {{ formatRrule(item.rrule) }}
-      </span>
-      <span v-if="list" class="checklist-row__list" :style="listChipStyle">
-        <component :is="checklistIconComponent(list.icon)" :size="14" />
+      </PantryChip>
+      <PantryChip
+        v-if="list"
+        class="checklist-row__list"
+        :color="list.color || undefined"
+        size="sm"
+        :interactive="false"
+      >
+        <template #icon>
+          <component :is="checklistIconComponent(list.icon)" :size="14" />
+        </template>
         {{ list.name }}
-      </span>
-      <span
+      </PantryChip>
+      <PantryChip
         v-if="category && !hideCategory"
         class="checklist-row__category"
-        :style="{ color: category.color }"
+        :color="category.color || undefined"
+        size="sm"
+        :interactive="false"
       >
-        <component :is="categoryIconComponent(category.icon)" :size="14" />
+        <template #icon>
+          <component :is="categoryIconComponent(category.icon)" :size="14" />
+        </template>
         {{ category.name }}
-      </span>
-      <button
+      </PantryChip>
+      <PantryChip
         v-for="store in hideStore ? [] : stores"
         :key="store.id"
-        type="button"
         class="checklist-row__store"
-        :style="{ color: store.color }"
+        :color="store.color || undefined"
+        size="sm"
         :aria-label="storeLabel(store.name)"
-        @click.stop.prevent="$emit('view-store', store)"
+        @click="onViewStore(store, $event)"
       >
-        <component :is="storeIconComponent(store.icon)" :size="14" />
+        <template #icon>
+          <component :is="storeIconComponent(store.icon)" :size="14" />
+        </template>
         {{ store.name }}
-      </button>
-      <span
+      </PantryChip>
+      <PantryChip
         v-for="label in labels"
         :key="'label-' + label.id"
-        class="checklist-row__label"
-        :style="{ color: label.color }"
+        :color="label.color || undefined"
+        size="sm"
+        :interactive="false"
       >
-        <component :is="labelIconComponent(label.icon)" :size="14" />
+        <template #icon>
+          <component :is="labelIconComponent(label.icon)" :size="14" />
+        </template>
         {{ label.name }}
-      </span>
+      </PantryChip>
     </div>
     <div v-if="showAddedBy && !selectionMode && !suggestion" class="checklist-row__added-by">
       <NcAvatar
@@ -251,7 +285,7 @@ import ContentCopyIcon from '@icons/ContentCopy.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
-import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
+import PantryChip from '@/components/PantryChip'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { formatPrice, resolveItemPrice } from '@/utils/price'
@@ -359,11 +393,6 @@ const canMoveItem = computed(() => props.listWritable && can.value.canMoveItems)
 const canCopyItem = computed(() => props.listWritable && can.value.canCopyItems)
 const canDeleteItem = computed(() => props.listWritable && can.value.canDeleteItems)
 
-const listChipStyle = computed(() => {
-  if (!props.list?.color) return undefined
-  return { background: props.list.color, color: contrastColor(props.list.color) }
-})
-
 const emit = defineEmits<{
   toggle: [id: number]
   view: [item: ChecklistItem]
@@ -397,6 +426,12 @@ function onRowClick() {
   if (props.selectionMode) {
     emit('toggle-select', props.item.id)
   }
+}
+
+// Keep the store chip's click from bubbling to the row's own click handler.
+function onViewStore(store: Store, e: MouseEvent) {
+  e.stopPropagation()
+  emit('view-store', store)
 }
 
 function onDragStart(e: DragEvent) {
@@ -726,48 +761,8 @@ function storeLabel(name: string): string {
     align-items: center;
   }
 
-  &__quantity,
-  &__price,
-  &__category,
-  &__store,
-  &__label,
-  &__recurrence,
-  &__description,
-  &__list {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--color-background-hover);
-  }
-
   &__description {
     cursor: help;
-
-    // The icon component renders its own span/svg which reset the cursor.
-    :deep(*) {
-      cursor: inherit;
-    }
-  }
-
-  // Reset the global button styles so the chip keeps the same box as the
-  // other (span-based) meta chips instead of the 44px clickable-area height.
-  &__store {
-    appearance: none;
-    margin: 0;
-    min-height: 0;
-    height: auto;
-    border: none;
-    font: inherit;
-    line-height: inherit;
-    color: inherit;
-    cursor: pointer;
-
-    &:hover,
-    &:focus-visible {
-      background: var(--color-background-dark);
-    }
   }
 }
 </style>

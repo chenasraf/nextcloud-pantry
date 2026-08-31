@@ -27,15 +27,20 @@
 
         <div class="item-view__overlay">
           <div v-if="chips.length > 0" class="item-view__chips">
-            <span
+            <PantryChip
               v-for="chip in chips"
               :key="chip.key"
               class="item-view__chip"
-              :style="chipStyle(chip.color)"
+              :color="chip.color"
+              solid
+              size="sm"
+              :interactive="false"
             >
-              <component :is="chip.icon" :size="14" />
+              <template #icon>
+                <component :is="chip.icon" :size="14" />
+              </template>
               {{ chip.name }}
-            </span>
+            </PantryChip>
           </div>
           <h2 class="item-view__title" dir="auto">{{ item.name }}</h2>
         </div>
@@ -144,7 +149,7 @@ import FieldCard from '@/components/FieldCard'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
-import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
+import PantryChip from '@/components/PantryChip'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule } from '@/utils/rrule'
 import { formatPrice } from '@/utils/price'
@@ -255,10 +260,6 @@ const chips = computed<Chip[]>(() => {
   }
   return list
 })
-
-function chipStyle(color: string) {
-  return { '--chip-bg': color, '--chip-fg': contrastColor(color) }
-}
 
 // ----- Item type tile -----
 
@@ -485,18 +486,6 @@ const strings = {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-  }
-
-  &__chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 9px;
-    border-radius: 999px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    background: var(--chip-bg);
-    color: var(--chip-fg);
   }
 
   &__title {

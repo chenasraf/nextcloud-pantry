@@ -53,14 +53,18 @@
               <span class="shop-history__main">
                 <span class="shop-history__stores">{{ storesLabel(row) }}</span>
                 <span class="shop-history__meta">
-                  <span class="shop-history__chip">
-                    <ClockOutlineIcon :size="14" />
+                  <PantryChip class="shop-history__chip" size="sm" :interactive="false">
+                    <template #icon>
+                      <ClockOutlineIcon :size="14" />
+                    </template>
                     {{ timeLabel(row) }}
-                  </span>
-                  <span class="shop-history__chip">
-                    <FormatListChecksIcon :size="14" />
+                  </PantryChip>
+                  <PantryChip class="shop-history__chip" size="sm" :interactive="false">
+                    <template #icon>
+                      <FormatListChecksIcon :size="14" />
+                    </template>
                     {{ itemsLabel(row) }}
-                  </span>
+                  </PantryChip>
                 </span>
               </span>
               <span v-if="row.grandTotal.length > 0" class="shop-history__total">
@@ -103,6 +107,7 @@ import CartOffIcon from '@icons/CartOff.vue'
 import ClockOutlineIcon from '@icons/ClockOutline.vue'
 import FormatListChecksIcon from '@icons/FormatListChecks.vue'
 import { ShoppingReviewDialog } from '@/components/ShoppingReview'
+import PantryChip from '@/components/PantryChip'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { getHistory } from '@/api/shopping'
 import { formatMoney } from '@/utils/price'
@@ -293,15 +298,6 @@ const strings = {
     flex-wrap: wrap;
     color: var(--color-text-maxcontrast);
     font-size: 0.85rem;
-  }
-
-  &__chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--color-background-hover);
   }
 
   // The trip total as a filled counter chip.

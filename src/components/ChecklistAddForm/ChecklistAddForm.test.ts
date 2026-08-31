@@ -75,12 +75,12 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
-vi.mock('@nextcloud/vue/components/NcChip', () => ({
+vi.mock('@/components/PantryChip', () => ({
   default: {
-    name: 'NcChip',
+    name: 'PantryChip',
     template:
-      '<button class="nc-chip" :data-variant="variant" type="button" @click="$emit(\'click\')"><slot name="icon" /><slot /></button>',
-    props: ['variant', 'noClose'],
+      '<button class="pantry-chip" :data-variant="variant" type="button" @click="$emit(\'click\')"><slot name="icon" /><slot /></button>',
+    props: ['variant'],
     emits: ['click'],
   },
 }))
@@ -246,7 +246,7 @@ function mountForm(
 }
 
 function chipForKey(wrapper: ReturnType<typeof mountForm>, label: string) {
-  return wrapper.findAll('.nc-chip').find((c) => c.text().includes(label))!
+  return wrapper.findAll('.pantry-chip').find((c) => c.text().includes(label))!
 }
 
 describe('ChecklistAddForm', () => {
@@ -262,7 +262,7 @@ describe('ChecklistAddForm', () => {
 
   it('renders one chip per field section', () => {
     const wrapper = mountForm()
-    const chips = wrapper.findAll('.nc-chip')
+    const chips = wrapper.findAll('.pantry-chip')
     expect(chips).toHaveLength(9)
     expect(chips[0].text()).toContain('Category')
     expect(chips[1].text()).toContain('Stores')
@@ -287,7 +287,7 @@ describe('ChecklistAddForm', () => {
     const wrapper = mountForm({ deleteOnDoneDefault: true })
     // No explicit pick yet — chip should read "Item type", not "One-time".
     expect(wrapper.text()).toContain('Item type')
-    expect(wrapper.findAll('.nc-chip').some((c) => c.text() === 'One-time')).toBe(false)
+    expect(wrapper.findAll('.pantry-chip').some((c) => c.text() === 'One-time')).toBe(false)
   })
 
   it('submit button is disabled when name is empty', () => {
