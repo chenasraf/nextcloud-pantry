@@ -55,7 +55,7 @@ class CustomFieldReminderService {
 				continue;
 			}
 			// No upper bound on the window, so an overdue value still fires once.
-			if ($due['valueDate'] - $effective['lead'] * 86400 > $now) {
+			if ($now < $due['valueDate'] - $effective['lead'] * 86400) {
 				continue;
 			}
 
