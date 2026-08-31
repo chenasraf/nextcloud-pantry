@@ -562,7 +562,7 @@ function syncOptionCounts(updated: FieldDefinition): void {
 <style scoped lang="scss">
 .cf-manager {
   min-width: 340px;
-  padding: 0.25rem 0;
+  padding: 0.25rem 0 0.75rem;
 
   &__loading {
     display: flex;
@@ -623,6 +623,12 @@ function syncOptionCounts(updated: FieldDefinition): void {
     color: var(--color-text-maxcontrast);
     background: var(--color-main-background);
     touch-action: none;
+
+    // The icon component renders its own span/svg that doesn't inherit the
+    // grab cursor on its own.
+    :deep(*) {
+      cursor: inherit;
+    }
   }
 
   &__head {

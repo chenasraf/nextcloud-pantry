@@ -509,6 +509,12 @@ const strings = {
     cursor: grab;
     color: var(--color-text-maxcontrast);
     touch-action: none;
+
+    // The icon component renders its own span/svg that doesn't inherit the
+    // grab cursor on its own.
+    :deep(*) {
+      cursor: inherit;
+    }
   }
 }
 
