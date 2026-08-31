@@ -1,0 +1,193 @@
+---
+title: Custom Fields
+description: Add your own fields — text, number, checkbox, date or a list of choices — to checklist items, with optional date reminders.
+sidebar:
+  order: 2
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
+
+Custom fields let you attach your own information to checklist items — an expiry date, an aisle
+number, a "bought where", a size, a yes/no flag. You define a field once for the house or for a single
+list, and it then appears on every item it applies to, ready to fill in. Date fields can also send a
+reminder before they come due.
+
+<Aside type="note">
+	The web interface and the [mobile & desktop app](/docs/getting-started/pairing) work on the same
+	fields and values in your Nextcloud. Anything you change in one shows up in the other.
+</Aside>
+
+There are two things you do with custom fields: **define** them in the manager, and **fill in their
+values** on individual items.
+
+## Define fields in the manager
+
+The custom fields manager is where fields are created, edited and removed. Managing fields is
+controlled by a house permission — a member without it can still fill in values, but does not see the
+manager.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		<Steps>
+
+		1. Open a list, or the checklists overview.
+
+		2. Open the **…** actions menu and select **Manage custom fields**. It sits alongside
+		   **Manage labels** and **Manage stores**.
+
+		3. The **Custom fields** dialog opens with your fields grouped by scope.
+
+		</Steps>
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		<Steps>
+
+		1. Open the **Checklists** screen.
+
+		2. Tap the **Custom fields** button in the toolbar, or open the **⋮** menu and select **Custom
+		   fields**.
+
+		3. The **Custom fields** screen opens with your fields grouped by scope.
+
+		</Steps>
+	</TabItem>
+</Tabs>
+
+![The Custom fields manager, showing fields grouped under scope headers with a type icon, name and type label on each row.](/docs/custom-fields-manager.png)
+
+### Where fields live: scope
+
+Every field has a **scope** that decides which items it applies to:
+
+- **All lists** — a house-wide field that appears on items in every list.
+- **A single list** — a field that appears only on that list's items.
+
+In the manager, fields are grouped under headers by scope: **All lists** first, then one group per
+list that has fields. An item's fields are the house-wide fields **plus** its own list's fields, so a
+single item can show both. You change a field's scope from the **Scope** control in its editor, which
+moves it to the matching group.
+
+### The field editor
+
+Selecting a field expands it in place to reveal its editor; **Add field** at the bottom creates a new
+one. The editor's controls, top to bottom:
+
+1. **Name** — what the field is called on items.
+2. **Type** — one of the five types below. The type is chosen when the field is created and cannot be
+   changed afterwards.
+3. **Scope** — All lists, or one specific list.
+4. **Hint text** — an optional placeholder shown in the empty value control, to prompt whoever fills
+   it in. Applies to text, number and select fields.
+5. **Type-specific options** — see each type below.
+6. **Default value** — an optional value pre-filled on new items.
+
+Reordering fields within a scope is done by dragging a field's handle. Fields you no longer need are
+deleted from inside the editor.
+
+## The five field types
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		- **Text** — a line of text, or a multi-line area when **Multi-line text area** is turned on.
+		- **Number** — a numeric value.
+		- **Checkbox** — a simple on/off toggle.
+		- **Date** — a calendar date, with optional reminders (see below).
+		- **Select** — a single choice from a list of options you define. Add, rename, remove and drag to
+		  reorder the options; renaming or reordering never disturbs values already chosen.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		- **Text** — a line of text, or a multi-line area when multi-line is turned on.
+		- **Number** — a numeric value.
+		- **Checkbox** — a simple on/off toggle.
+		- **Date** — a calendar date, with optional reminders (see below).
+		- **Select** — a single choice from a list of options you define. Add, rename and remove the
+		  options; a value already chosen follows its option even if you rename it.
+	</TabItem>
+</Tabs>
+
+A **default value** pre-fills the field on newly added items: default text or number, a checkbox that
+starts on, or a pre-selected option. Date fields have no fixed default — a relative date instead
+carries a default offset (see below).
+
+## Fill in values on an item
+
+Applicable fields appear in a **Custom fields** section when you add or edit an item, one control per
+field. Anyone who can add or edit items can fill them in.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		Open an item to edit it, or expand the composer when adding one, and fill in the **Custom fields**
+		section. Each control uses its field's hint as a placeholder while empty.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		Open an item to edit it, or use the **Custom fields** tool in the compose bar when adding one, and
+		fill in the section. An item's detail screen also shows its set values.
+	</TabItem>
+</Tabs>
+
+![The Custom fields section of the item editor, with a control for each applicable field.](/docs/custom-fields-item.png)
+
+A field you leave alone simply stays unset. If a field later stops applying to an item — its scope
+changed, or it was deleted — it disappears from the item, but any value you had already set is kept,
+not thrown away, and returns if the field applies again. Set values are also shown, read-only, when you
+just open an item to view it.
+
+## Date fields and reminders
+
+A date field can be entered two ways, chosen by its **Date entry** setting:
+
+- **Absolute** — pick a calendar date.
+- **Relative** — enter a number of days from today, which is turned into a real date when you fill it
+  in. A relative field can carry a **default offset** so new items start with a date already set. On a
+  relative value you can **Re-anchor** to recompute the date from today, which also re-arms its
+  reminder.
+
+### Reminders
+
+A date field can notify the household before its date arrives. On the field, turn on **Remind by
+default** and set how far ahead — **on the day**, **1**, **2** or **3 days before**, or **1 week
+before**.
+
+Two more settings shape reminders:
+
+- **Reminder override** decides whether every item uses the same reminder, or **each item sets its
+  own**.
+- **Stop reminding once the item is done** withdraws the reminder when the item is checked off, and
+  brings it back if you un-check the item. Left off, the reminder fires regardless of whether the item
+  is done.
+
+When a field allows per-item reminders, each item's date control offers a **Remind me** toggle and its
+own lead time, with a clear note when an item's reminder differs from the field default and a way to
+return to it.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		In an item's date control, turn on **Remind me** and pick a lead time. **Custom reminder for this
+		item** shows when it differs from the field's default; **Use field default** clears the override.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		In an item's date control, turn on **Remind me** and pick a lead time. **Custom reminder for this
+		item** shows when it differs from the field's default; **Use field default** reverts it.
+	</TabItem>
+</Tabs>
+
+![A date field's per-item reminder controls, with a Remind me toggle and a lead-time selector.](/docs/custom-fields-reminder.png)
+
+A reminder goes to everyone in the house who can see the item's list. Each due date sends its own
+notification, so an item with two dates due can send two. Opening a reminder takes you straight to the
+item it belongs to.
+
+<Aside type="tip">
+	Reminders use day-level timing on the house's clock, and a date that is already past when its
+	reminder is first due still nudges you once — so a missed day is not silently skipped.
+</Aside>
+
+## Edit and delete fields
+
+Change a field any time from the manager — its name, scope, hint, options, default and reminder
+settings. The type is fixed once the field exists.
+
+Deleting a field removes it from items, but values already set are kept and hidden rather than erased.
+Removing a **select** option that items are already using prompts you to choose what happens to those
+items: **move them to another option**, or **clear the value**. An option nothing uses is removed
+straight away.
