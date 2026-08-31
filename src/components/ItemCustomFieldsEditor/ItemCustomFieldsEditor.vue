@@ -44,23 +44,42 @@
         @update:model-value="setOption(field.id, $event)"
       />
       <NcDateTimePickerNative
-        v-else-if="field.type === 'date'"
+        v-else-if="field.type === 'date' && field.dateMode !== 'relative'"
         type="date"
         :model-value="draft[field.id]?.date ?? null"
         :label="field.name"
         @update:model-value="setDate(field.id, $event)"
       />
+      <div v-else-if="field.type === 'date'" class="cf-values__relative">
+        <NcTextField
+          type="number"
+          :model-value="draft[field.id]?.offsetDays ?? ''"
+          :label="field.name"
+          :placeholder="strings.daysFromToday"
+          @update:model-value="setOffset(field.id, $event)"
+        />
+        <div v-if="draft[field.id]?.date" class="cf-values__anchor">
+          <span class="cf-values__due">{{ dueLabel(draft[field.id]?.date) }}</span>
+          <NcButton variant="tertiary" @click="reanchor(field.id)">
+            <template #icon><RefreshIcon :size="18" /></template>
+            {{ strings.reanchor }}
+          </NcButton>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { t } from '@nextcloud/l10n'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNative'
+import RefreshIcon from '@icons/Refresh.vue'
 import type { FieldDefinition, ItemCustomFieldValue } from '@/api/types'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
@@ -72,6 +91,11 @@ const props = defineProps<{
   listId: number | null
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: ItemCustomFieldValue[]] }>()
+
+const strings = {
+  daysFromToday: t('pantry', 'Days from today'),
+  reanchor: t('pantry', 'Re-anchor date'),
+}
 
 const fields = useCustomFields(props.houseId)
 onMounted(() => void fields.load())
@@ -211,6 +235,49 @@ function setDate(fieldId: number, v: Date | null): void {
   emitAll()
 }
 
+// A relative date is entered as an offset ("in N days") and materialized to an
+// absolute value_date at set-time; the reminder machinery only ever sees the
+// absolute date. Clearing the offset clears the date.
+function setOffset(fieldId: number, v: string | number): void {
+  const d = ensure(fieldId)
+  const s = String(v).trim()
+  if (s === '') {
+    d.offsetDays = null
+    d.date = null
+  } else {
+    const n = Math.trunc(Number(s))
+    if (!Number.isFinite(n)) return
+    d.offsetDays = n
+    d.date = anchor(n)
+  }
+  emitAll()
+}
+
+// Re-anchor recomputes today + offset without changing the offset, re-arming
+// the reminder (the changed value_date clears the notified stamp server-side).
+function reanchor(fieldId: number): void {
+  const d = draft[fieldId]
+  if (!d || d.offsetDays == null) return
+  d.date = anchor(d.offsetDays)
+  emitAll()
+}
+
+/** Local midnight, `offset` days from today. */
+function anchor(offset: number): Date {
+  const day = new Date()
+  day.setHours(0, 0, 0, 0)
+  day.setDate(day.getDate() + offset)
+  return day
+}
+
+function dueLabel(date: Date | null | undefined): string {
+  if (!date) return ''
+  // TRANSLATORS: Shows the materialized date of a relative date field. {date} is a formatted date.
+  return t('pantry', 'Due {date}', {
+    date: date.toLocaleDateString(undefined, { dateStyle: 'medium' }),
+  })
+}
+
 interface SelectOption {
   value: number
   label: string
@@ -257,6 +324,24 @@ watch(applicableFields, () => seedFromModel(props.modelValue))
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+  }
+
+  &__relative {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  &__anchor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  &__due {
+    color: var(--color-text-maxcontrast);
+    font-size: 0.9rem;
   }
 }
 </style>
