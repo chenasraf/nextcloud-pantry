@@ -1,11 +1,6 @@
 <template>
   <div v-if="applicableFields.length > 0" class="cf-values">
     <div v-for="field in applicableFields" :key="field.id" class="cf-values__field">
-      <label class="cf-values__label">
-        <component :is="fieldTypeIconComponent(field.type)" :size="16" />
-        {{ field.name }}
-      </label>
-
       <NcTextField
         v-if="field.type === 'text' && !field.multiline"
         :model-value="draft[field.id]?.text ?? ''"
@@ -43,7 +38,7 @@
         label="label"
         :clearable="true"
         :placeholder="field.hint ?? ''"
-        :input-label="''"
+        :input-label="field.name"
         :aria-label-combobox="field.name"
         :calculate-position="ncSelectCalculatePosition"
         @update:model-value="setOption(field.id, $event)"
@@ -69,7 +64,6 @@ import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNa
 import type { FieldDefinition, ItemCustomFieldValue } from '@/api/types'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
-import { fieldTypeIconComponent } from '@/components/CustomFieldManager/fieldTypeIcons'
 
 const props = defineProps<{
   modelValue: ItemCustomFieldValue[]
@@ -263,14 +257,6 @@ watch(applicableFields, () => seedFromModel(props.modelValue))
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-  }
-
-  &__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.85rem;
-    font-weight: 600;
   }
 }
 </style>

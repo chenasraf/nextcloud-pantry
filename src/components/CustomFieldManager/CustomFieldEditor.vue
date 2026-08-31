@@ -254,8 +254,10 @@ const leadOptions: Opt<number>[] = [
   { value: 7, label: t('pantry', '1 week before') },
 ]
 const overrideOptions: Opt<FieldOverridePolicy>[] = [
-  { value: 'field-only', label: t('pantry', 'Field default only') },
-  { value: 'item-override', label: t('pantry', 'Items may override') },
+  // TRANSLATORS: Reminder setting; every item uses the field's reminder, unchangeable per item.
+  { value: 'field-only', label: t('pantry', 'Same reminder for every item') },
+  // TRANSLATORS: Reminder setting; each item can turn the reminder on/off and set its own lead time.
+  { value: 'item-override', label: t('pantry', 'Each item sets its own reminder') },
 ]
 const dateModeOptions: Opt<FieldDateMode>[] = [
   // TRANSLATORS: Button label; the date field holds a fixed calendar date.
@@ -348,7 +350,7 @@ const strings = {
   defaultOffsetPlaceholder: t('pantry', 'e.g. 7'),
   notifyDefault: t('pantry', 'Remind by default'),
   leadTime: t('pantry', 'Remind'),
-  overridePolicy: t('pantry', 'Per-item override'),
+  overridePolicy: t('pantry', 'Reminder override'),
   stopWhenDone: t('pantry', 'Stop reminding once the item is done'),
   defaultValue: t('pantry', 'Default value'),
   defaultChecked: t('pantry', 'On by default'),
