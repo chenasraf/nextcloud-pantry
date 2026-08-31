@@ -39,6 +39,10 @@ class ChecklistControllerStoreSerializationTest extends TestCase {
 	private ItemStoreMapper $itemStores;
 	/** @var ItemPriceMapper&MockObject */
 	private ItemPriceMapper $itemPrices;
+	/** @var \OCA\Pantry\Db\FieldValueMapper&MockObject */
+	private \OCA\Pantry\Db\FieldValueMapper $fieldValues;
+	/** @var array<int, list<array<string, mixed>>> */
+	private array $fieldValueMap = [];
 	/** @var LoggerInterface&MockObject */
 	private LoggerInterface $logger;
 	private ChecklistController $controller;
@@ -48,6 +52,9 @@ class ChecklistControllerStoreSerializationTest extends TestCase {
 		$this->itemPrices = $this->createMock(ItemPriceMapper::class);
 		$this->itemPrices->method('findForItems')->willReturn([]);
 		$this->itemPrices->method('findForItem')->willReturn([]);
+		$this->fieldValues = $this->createMock(\OCA\Pantry\Db\FieldValueMapper::class);
+		$this->fieldValues->method('findForItems')->willReturnCallback(fn () => $this->fieldValueMap);
+		$this->fieldValues->method('findForItem')->willReturn([]);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->controller = new ChecklistController(
 			'pantry',
@@ -59,6 +66,8 @@ class ChecklistControllerStoreSerializationTest extends TestCase {
 			$this->itemStores,
 			$this->createMock(\OCA\Pantry\Db\ItemLabelMapper::class),
 			$this->itemPrices,
+			$this->fieldValues,
+			$this->createMock(\OCA\Pantry\Service\FieldDefinitionService::class),
 			$this->createMock(HouseAuthService::class),
 			$this->createMock(HouseService::class),
 			$this->createMock(ImageService::class),
@@ -108,6 +117,24 @@ class ChecklistControllerStoreSerializationTest extends TestCase {
 		$this->assertSame([10, 11], $out[0]['storeIds']);
 		// Item with no attached stores gets an empty list, not a missing key.
 		$this->assertSame([], $out[1]['storeIds']);
+	}
+
+	public function testSerializeItemsEmbedsCustomFieldsPerItem(): void {
+		$items = [$this->makeItem(1), $this->makeItem(2)];
+		$this->itemStores->method('findStoreIdsForItems')->willReturn([]);
+		$value = [
+			'fieldId' => 5, 'valueText' => 'Aisle 4', 'valueNumber' => null,
+			'valueBool' => false, 'valueDate' => null, 'valueOptionId' => null,
+			'offsetDays' => null, 'notifyOverride' => false, 'notifyEnabled' => false,
+			'notifyLeadDays' => null,
+		];
+		$this->fieldValueMap = [1 => [$value]];
+
+		$out = $this->serializeItems($items);
+
+		$this->assertSame([$value], $out[0]['customFields']);
+		// Item with no values gets an empty list, not a missing key.
+		$this->assertSame([], $out[1]['customFields']);
 	}
 
 	public function testSerializeItemsFallsBackToEmptyStoresWhenLookupThrows(): void {

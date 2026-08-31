@@ -17,6 +17,7 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     trashRetentionDays: int,
  *     recurrenceTime: int,
+ *     fieldReminderTime: int,
  *     role: string,
  *     isAdmin: bool,
  *     permissions: array<string, bool>,
@@ -84,6 +85,50 @@ namespace OCA\Pantry;
  *     priceCurrency: string|null,
  * }
  *
+ * @psalm-type PantryFieldOption = array{
+ *     id: int,
+ *     label: string,
+ *     sortOrder: int,
+ *     valueCount: int,
+ * }
+ *
+ * @psalm-type PantryFieldDefinition = array{
+ *     id: int,
+ *     houseId: int,
+ *     listId: int|null,
+ *     name: string,
+ *     type: 'text'|'number'|'checkbox'|'date'|'select',
+ *     sortOrder: int,
+ *     hint: string|null,
+ *     multiline: bool,
+ *     defaultText: string|null,
+ *     defaultNumber: float|null,
+ *     defaultBool: bool,
+ *     defaultOptionId: int|null,
+ *     dateMode: 'absolute'|'relative'|null,
+ *     defaultOffsetDays: int|null,
+ *     notifyDefault: bool,
+ *     leadDays: int,
+ *     overridePolicy: 'field-only'|'item-override'|null,
+ *     stopWhenDone: bool,
+ *     options: list<PantryFieldOption>,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
+ *
+ * @psalm-type PantryFieldValue = array{
+ *     fieldId: int,
+ *     valueText: string|null,
+ *     valueNumber: float|null,
+ *     valueBool: bool,
+ *     valueDate: int|null,
+ *     valueOptionId: int|null,
+ *     offsetDays: int|null,
+ *     notifyOverride: bool,
+ *     notifyEnabled: bool,
+ *     notifyLeadDays: int|null,
+ * }
+ *
  * @psalm-type PantryListItem = array{
  *     id: int,
  *     listId: int,
@@ -105,6 +150,7 @@ namespace OCA\Pantry;
  *     addedBy: string|null,
  *     barcode: string|null,
  *     prices: list<PantryItemPrice>,
+ *     customFields: list<PantryFieldValue>,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,

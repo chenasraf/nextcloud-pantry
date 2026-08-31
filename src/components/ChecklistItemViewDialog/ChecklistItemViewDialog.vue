@@ -76,6 +76,10 @@
             </span>
           </span>
         </div>
+        <div v-for="row in customFieldRows" :key="row.id" class="item-view__row">
+          <span class="item-view__label">{{ row.name }}:</span>
+          <span dir="auto">{{ row.text }}</span>
+        </div>
         <div v-if="item.rrule" class="item-view__row">
           <span class="item-view__label">{{ strings.recurrence }}:</span>
           <span class="item-view__badge">
@@ -105,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -119,7 +123,15 @@ import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { formatPrice } from '@/utils/price'
 import { toggleMarkdownTask } from '@/utils/markdownTask'
-import type { ChecklistItem, Category, Store, Label } from '@/api/types'
+import { useCustomFields } from '@/composables/useCustomFields'
+import type {
+  ChecklistItem,
+  Category,
+  Store,
+  Label,
+  FieldDefinition,
+  ItemCustomFieldValue,
+} from '@/api/types'
 
 const props = withDefaults(
   defineProps<{
@@ -193,6 +205,53 @@ const nextRecurrence = computed(() =>
     : null,
 )
 
+// The item carries its custom-field values, but rendering them needs the field
+// definitions (name, type, select option labels), so load them for the house.
+const fields = useCustomFields(props.houseId)
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) void fields.load()
+  },
+  { immediate: true },
+)
+
+function formatFieldValue(field: FieldDefinition, value: ItemCustomFieldValue): string | null {
+  switch (field.type) {
+    case 'text':
+      return value.valueText && value.valueText.trim() !== '' ? value.valueText : null
+    case 'number':
+      return value.valueNumber != null ? String(value.valueNumber) : null
+    case 'checkbox':
+      return value.valueBool ? strings.yes : strings.no
+    case 'date':
+      return value.valueDate != null
+        ? new Date(value.valueDate * 1000).toLocaleDateString(undefined, { dateStyle: 'medium' })
+        : null
+    case 'select': {
+      const opt = field.options.find((o) => o.id === value.valueOptionId)
+      return opt ? opt.label : null
+    }
+    default:
+      return null
+  }
+}
+
+// House-wide ∪ this item's list fields that carry a value, in definition order.
+const customFieldRows = computed<{ id: number; name: string; text: string }[]>(() => {
+  const byField = new Map(props.item.customFields.map((v) => [v.fieldId, v]))
+  const rows: { id: number; name: string; text: string }[] = []
+  for (const field of fields.items.value) {
+    if (field.listId != null && field.listId !== props.item.listId) continue
+    const value = byField.get(field.id)
+    if (!value) continue
+    const text = formatFieldValue(field, value)
+    if (text == null || text === '') continue
+    rows.push({ id: field.id, name: field.name, text })
+  }
+  return rows
+})
+
 const strings = {
   viewImage: t('pantry', 'View image'),
   quantity: t('pantry', 'Quantity'),
@@ -210,6 +269,10 @@ const strings = {
   status: t('pantry', 'Status'),
   // TRANSLATORS: Status value (adjective) shown next to "Status:" — the item is completed, not a button.
   done: t('pantry', 'Done'),
+  // TRANSLATORS: Value of a checkbox custom field that is ticked.
+  yes: t('pantry', 'Yes'),
+  // TRANSLATORS: Value of a checkbox custom field that is not ticked.
+  no: t('pantry', 'No'),
   editItem: t('pantry', 'Edit item'),
 }
 </script>

@@ -46,6 +46,7 @@ Pantry also has companion apps for mobile and desktop that let you manage your l
 		<job>OCA\Pantry\BackgroundJob\ReopenRecurringItemsJob</job>
 		<job>OCA\Pantry\BackgroundJob\PurgeExpiredTrashJob</job>
 		<job>OCA\Pantry\BackgroundJob\ShoppingSessionLifecycleJob</job>
+		<job>OCA\Pantry\BackgroundJob\CustomFieldReminderJob</job>
 	</background-jobs>
 	<repair-steps>
 		<post-migration>

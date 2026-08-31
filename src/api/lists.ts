@@ -1,5 +1,5 @@
 import { ocs } from '@/axios'
-import type { Checklist, ChecklistItem, ItemPrice } from './types'
+import type { Checklist, ChecklistItem, ItemCustomFieldValue, ItemPrice } from './types'
 
 export async function listLists(houseId: number, sortBy?: string): Promise<Checklist[]> {
   const resp = await ocs.get<Checklist[]>(`/houses/${houseId}/lists`, {
@@ -154,6 +154,12 @@ export interface ItemInput {
    * (default) price.
    */
   prices?: ItemPrice[]
+  /**
+   * The full set of custom-field values. On update, an empty array clears all
+   * values; omitting the field leaves them unchanged. Each entry carries the
+   * field id plus the typed value.
+   */
+  customFields?: ItemCustomFieldValue[]
 }
 
 export async function addItem(

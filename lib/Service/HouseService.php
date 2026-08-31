@@ -41,6 +41,9 @@ class HouseService {
 		private \OCA\Pantry\Db\ItemStoreMapper $itemStoreMapper,
 		private \OCA\Pantry\Db\ItemPriceMapper $itemPriceMapper,
 		private \OCA\Pantry\Db\ShoppingReminderMapper $shoppingReminderMapper,
+		private \OCA\Pantry\Db\FieldDefinitionMapper $fieldDefMapper,
+		private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper,
+		private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper,
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $photoFolderMapper,
 		private NoteMapper $noteMapper,
@@ -126,6 +129,9 @@ class HouseService {
 		if (array_key_exists('recurrenceTime', $patch)) {
 			$house->setRecurrenceTime($this->normalizeRecurrenceTime($patch['recurrenceTime']));
 		}
+		if (array_key_exists('fieldReminderTime', $patch)) {
+			$house->setFieldReminderTime($this->normalizeFieldReminderTime($patch['fieldReminderTime']));
+		}
 		$house->setUpdatedAt(time());
 		$this->houseMapper->update($house);
 		return $house;
@@ -166,6 +172,23 @@ class HouseService {
 		return $minutes;
 	}
 
+	/**
+	 * Coerce the field reminder time (minutes since midnight) into [0, House::MAX_FIELD_REMINDER_TIME].
+	 */
+	private function normalizeFieldReminderTime(mixed $value): int {
+		if (!is_int($value) && !(is_string($value) && ctype_digit($value))) {
+			throw new \InvalidArgumentException('fieldReminderTime must be a non-negative integer');
+		}
+		$minutes = (int)$value;
+		if ($minutes < 0) {
+			throw new \InvalidArgumentException('fieldReminderTime must be a non-negative integer');
+		}
+		if ($minutes > House::MAX_FIELD_REMINDER_TIME) {
+			$minutes = House::MAX_FIELD_REMINDER_TIME;
+		}
+		return $minutes;
+	}
+
 	public function delete(int $houseId): void {
 		$house = $this->get($houseId);
 
@@ -177,6 +200,7 @@ class HouseService {
 			$this->itemStoreMapper->deleteByHouse($houseId);
 			$this->itemLabelMapper->deleteByHouse($houseId);
 			$this->itemPriceMapper->deleteByHouse($houseId);
+			$this->fieldValueMapper->deleteByHouse($houseId);
 			// Delete all items (and their role access rows) under all lists
 			foreach ($this->listMapper->findByHouse($houseId) as $list) {
 				$this->itemMapper->deleteByList((int)$list->getId());
@@ -187,6 +211,9 @@ class HouseService {
 			$this->labelMapper->deleteByHouse($houseId);
 			$this->storeMapper->deleteByHouse($houseId);
 			$this->shoppingReminderMapper->deleteByHouse($houseId);
+			// Options are children of field definitions; remove them before the defs.
+			$this->fieldOptionMapper->deleteByHouse($houseId);
+			$this->fieldDefMapper->deleteByHouse($houseId);
 			$this->photoMapper->deleteByHouse($houseId);
 			$this->photoFolderMapper->deleteByHouse($houseId);
 			$this->noteMapper->deleteByHouse($houseId);

@@ -46,6 +46,9 @@ class HouseServiceTest extends TestCase {
 			$this->createMock(\OCA\Pantry\Db\ItemStoreMapper::class),
 			$this->createMock(\OCA\Pantry\Db\ItemPriceMapper::class),
 			$this->createMock(\OCA\Pantry\Db\ShoppingReminderMapper::class),
+			$this->createMock(\OCA\Pantry\Db\FieldDefinitionMapper::class),
+			$this->createMock(\OCA\Pantry\Db\FieldOptionMapper::class),
+			$this->createMock(\OCA\Pantry\Db\FieldValueMapper::class),
 			$this->createMock(PhotoMapper::class),
 			$this->createMock(PhotoFolderMapper::class),
 			$this->createMock(NoteMapper::class),
@@ -134,5 +137,31 @@ class HouseServiceTest extends TestCase {
 		$this->expectException(\InvalidArgumentException::class);
 
 		$this->svc->update(1, ['recurrenceTime' => -1]);
+	}
+
+	public function testUpdateAcceptsFieldReminderTime(): void {
+		$house = $this->makeHouse();
+		$this->houseMapper->method('findById')->willReturn($house);
+		$this->houseMapper->expects($this->once())->method('update')->with($house);
+
+		$updated = $this->svc->update(1, ['fieldReminderTime' => 90]);
+		$this->assertSame(90, $updated->getFieldReminderTime());
+	}
+
+	public function testUpdateCapsFieldReminderTimeAtMax(): void {
+		$house = $this->makeHouse();
+		$this->houseMapper->method('findById')->willReturn($house);
+		$this->houseMapper->expects($this->once())->method('update')->with($house);
+
+		$updated = $this->svc->update(1, ['fieldReminderTime' => 5_000]);
+		$this->assertSame(House::MAX_FIELD_REMINDER_TIME, $updated->getFieldReminderTime());
+	}
+
+	public function testUpdateRejectsNegativeFieldReminderTime(): void {
+		$house = $this->makeHouse();
+		$this->houseMapper->method('findById')->willReturn($house);
+		$this->expectException(\InvalidArgumentException::class);
+
+		$this->svc->update(1, ['fieldReminderTime' => -1]);
 	}
 }

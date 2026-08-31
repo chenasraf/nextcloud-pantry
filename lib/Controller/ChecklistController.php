@@ -10,6 +10,7 @@ namespace OCA\Pantry\Controller;
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
+use OCA\Pantry\Db\FieldValueMapper;
 use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
@@ -20,6 +21,7 @@ use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\ChecklistService;
+use OCA\Pantry\Service\FieldDefinitionService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
@@ -57,6 +59,8 @@ final class ChecklistController extends OCSController {
 		private ItemStoreMapper $itemStores,
 		private ItemLabelMapper $itemLabels,
 		private ItemPriceMapper $itemPrices,
+		private FieldValueMapper $fieldValues,
+		private FieldDefinitionService $fields,
 		private HouseAuthService $auth,
 		private HouseService $houses,
 		private ImageService $images,
@@ -103,11 +107,18 @@ final class ChecklistController extends OCSController {
 			$this->logger->error('Failed to load label ids for items; serializing without labels', ['exception' => $e]);
 			$labelMap = [];
 		}
-		return array_values(array_map(static function ($i) use ($storeMap, $priceMap, $labelMap) {
+		try {
+			$fieldMap = $this->fieldValues->findForItems($ids);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to load custom fields for items; serializing without them', ['exception' => $e]);
+			$fieldMap = [];
+		}
+		return array_values(array_map(static function ($i) use ($storeMap, $priceMap, $labelMap, $fieldMap) {
 			$data = $i->jsonSerialize();
 			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
 			$data['prices'] = $priceMap[(int)$i->getId()] ?? [];
 			$data['labelIds'] = $labelMap[(int)$i->getId()] ?? [];
+			$data['customFields'] = $fieldMap[(int)$i->getId()] ?? [];
 			return $data;
 		}, $items));
 	}
@@ -139,6 +150,12 @@ final class ChecklistController extends OCSController {
 		} catch (\Throwable $e) {
 			$this->logger->error('Failed to load label ids for item; serializing without labels', ['exception' => $e]);
 			$data['labelIds'] = [];
+		}
+		try {
+			$data['customFields'] = $this->fieldValues->findForItem((int)$item->getId());
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to load custom fields for item; serializing without them', ['exception' => $e]);
+			$data['customFields'] = [];
 		}
 		return $data;
 	}
@@ -672,6 +689,7 @@ final class ChecklistController extends OCSController {
 	 * @param string|null $barcode Optional barcode (EAN/UPC) the item was created from.
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}> $prices Optional prices. A null store id is the store-less (default) price; at most one per store and one store-less.
 	 * @param list<int> $labelIds Optional label ids to attach (must belong to the same house).
+	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}> $customFields Optional custom-field values. Each field must belong to the house and apply to this list; at most one value per field.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -695,8 +713,9 @@ final class ChecklistController extends OCSController {
 		?string $barcode = null,
 		array $prices = [],
 		array $labelIds = [],
+		array $customFields = [],
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $prices, $labelIds): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $prices, $labelIds, $customFields): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
@@ -707,6 +726,7 @@ final class ChecklistController extends OCSController {
 			$storeIds = array_map('intval', $storeIds);
 			$this->stores->assertStoresInHouse($houseId, $storeIds);
 			$labelIds = $this->labels->assertLabelsInHouse($houseId, $labelIds);
+			$customFields = $this->fields->sanitizeValuesForItem($houseId, $listId, $customFields);
 			$item = $this->lists->addItem($listId, [
 				'name' => $name,
 				'description' => $description,
@@ -720,6 +740,7 @@ final class ChecklistController extends OCSController {
 				'barcode' => $barcode,
 				'prices' => $prices,
 				'labelIds' => $labelIds,
+				'customFields' => $customFields,
 			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
@@ -755,6 +776,7 @@ final class ChecklistController extends OCSController {
 	 * @param string|null $barcode New barcode (EAN/UPC); empty string clears.
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}>|null $prices New full set of prices (empty array clears all; null leaves them unchanged). A null store id is the store-less price; at most one per store and one store-less.
 	 * @param list<int>|null $labelIds New set of label ids (empty array clears; null leaves unchanged). All must belong to the same house.
+	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}>|null $customFields New full set of custom-field values (empty array clears all; null leaves them unchanged). Each field must belong to the house and apply to the item's list.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -781,8 +803,9 @@ final class ChecklistController extends OCSController {
 		?string $barcode = null,
 		?array $prices = null,
 		?array $labelIds = null,
+		?array $customFields = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId);
@@ -840,6 +863,12 @@ final class ChecklistController extends OCSController {
 			if ($labelIds !== null) {
 				$patch['labelIds'] = $this->labels->assertLabelsInHouse($houseId, $labelIds);
 			}
+			// Values are validated against the destination list when the item is
+			// being moved, otherwise its current list.
+			if ($customFields !== null) {
+				$effectiveListId = ($targetListId !== null && $targetListId !== $listId) ? $targetListId : $listId;
+				$patch['customFields'] = $this->fields->sanitizeValuesForItem($houseId, $effectiveListId, $customFields);
+			}
 			$targetList = null;
 			if ($targetListId !== null && $targetListId !== $listId) {
 				// Moving an item to another list needs the move capability and
@@ -871,7 +900,7 @@ final class ChecklistController extends OCSController {
 					(int)$targetList->getId(),
 					$targetList->getName(),
 				);
-			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $prices !== null) {
+			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $prices !== null || $customFields !== null) {
 				$this->activity->publishItemUpdated(
 					$houseId,
 					$houseName,

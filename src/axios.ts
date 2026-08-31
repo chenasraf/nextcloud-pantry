@@ -10,5 +10,11 @@ ocs.interceptors.response.use(
     response.data = ocsData ?? response?.data ?? null
     return response
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    const message = error?.response?.data?.ocs?.meta?.message
+    if (typeof message === 'string' && message.trim() !== '') {
+      error.message = message
+    }
+    return Promise.reject(error)
+  },
 )

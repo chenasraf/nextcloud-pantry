@@ -10,6 +10,14 @@ vi.mock('@nextcloud/dialogs', () => ({
   showWarning: vi.fn(),
   showError: vi.fn(),
 }))
+vi.mock('@/components/ItemCustomFieldsEditor', () => ({
+  default: {
+    name: 'ItemCustomFieldsEditor',
+    template: '<div class="mock-custom-fields-editor" />',
+    props: ['modelValue', 'houseId', 'listId'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@icons/Plus.vue', () => createIconMock('PlusIcon'))
 vi.mock('@icons/TagOutline.vue', () => createIconMock('TagOutlineIcon'))
 vi.mock('@icons/ScaleBalance.vue', () => createIconMock('ScaleBalanceIcon'))
@@ -207,6 +215,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     addedBy: null,
     barcode: null,
     prices: [],
+    customFields: [],
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
@@ -310,6 +319,7 @@ describe('ChecklistAddForm', () => {
       storeIds: [],
       labelIds: [],
       prices: [],
+      customFields: [],
       rrule: null,
       repeatFromCompletion: false,
       deleteOnDone: false,

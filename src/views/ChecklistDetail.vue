@@ -442,6 +442,12 @@
       @update:open="onStoreManagerToggle"
     />
 
+    <CustomFieldManagerDialog
+      :open="showCustomFieldManager"
+      :house-id="houseIdNum"
+      @update:open="showCustomFieldManager = $event"
+    />
+
     <!-- Move item(s) to another list -->
     <NcDialog
       v-if="moveDialogOpen"
@@ -704,7 +710,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { t, n } from '@nextcloud/l10n'
 import { showUndo, showError, showSuccess } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -726,6 +732,7 @@ import CloseIcon from '@icons/Close.vue'
 import TagIcon from '@icons/Tag.vue'
 import LabelMultipleIcon from '@icons/LabelMultiple.vue'
 import StoreOutlineIcon from '@icons/StoreOutline.vue'
+import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
 import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
@@ -748,6 +755,7 @@ import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
+import { CustomFieldManagerDialog } from '@/components/CustomFieldManager'
 import { LabelManagerDialog } from '@/components/LabelManager'
 import { StoreManagerDialog, StoreViewDialog } from '@/components/StoreManager'
 import { MarkdownExportDialog } from '@/components/MarkdownExportDialog'
@@ -795,6 +803,7 @@ import { useCurrentHouse } from '@/composables/useCurrentHouse'
 
 const props = defineProps<{ houseId: string; listId: string }>()
 const router = useRouter()
+const route = useRoute()
 
 function startShopping() {
   void router.push({
@@ -1078,6 +1087,7 @@ onMounted(async () => {
   ]
   if (isMeta.value) tasks.push(loadLists())
   await Promise.all(tasks)
+  openDeepLinkedItem()
 })
 
 watch(
@@ -1090,6 +1100,16 @@ watch(
     const tasks: Promise<unknown>[] = [loadList(), load()]
     if (isMeta.value) tasks.push(loadLists())
     await Promise.all(tasks)
+    openDeepLinkedItem()
+  },
+)
+
+// A deep link arriving while already on this list changes only the query, so
+// neither the mount nor the param watch fires — open it directly.
+watch(
+  () => route.query.item,
+  (item) => {
+    if (item != null) openDeepLinkedItem()
   },
 )
 
@@ -2010,6 +2030,23 @@ function openView(item: ChecklistItem) {
   viewing.value = item
 }
 
+// A reminder notification deep-links to `?item={id}`; open that item's view
+// dialog once its list has loaded, then drop the param so a refresh or back
+// navigation doesn't reopen it.
+function openDeepLinkedItem() {
+  const raw = route.query.item
+  const id = Array.isArray(raw) ? raw[0] : raw
+  if (id == null) return
+  const itemId = Number(id)
+  if (!Number.isFinite(itemId)) return
+  const item = items.value.find((i) => i.id === itemId)
+  if (!item) return
+  openView(item)
+  const query = { ...route.query }
+  delete query.item
+  void router.replace({ query })
+}
+
 function viewToEdit(item: ChecklistItem) {
   viewing.value = null
   startEdit(item)
@@ -2031,6 +2068,7 @@ function openPreview(item: ChecklistItem) {
 const showCategoryManager = ref(false)
 const showLabelManager = ref(false)
 const showStoreManager = ref(false)
+const showCustomFieldManager = ref(false)
 
 // ----- Store details (opened from a store chip on an item) -----
 
@@ -2542,6 +2580,7 @@ const strings = {
   noCategory: t('pantry', 'No category'),
   noStore: t('pantry', 'No store'),
   manageCategories: t('pantry', 'Manage categories'),
+  manageCustomFields: t('pantry', 'Manage custom fields'),
   manageLabels: t('pantry', 'Manage labels'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
@@ -2729,6 +2768,16 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     alwaysCollapsed: true,
     onClick: () => (showStoreManager.value = true),
   })
+
+  if (can.value.canEditFields) {
+    actions.push({
+      key: 'custom-fields',
+      label: strings.manageCustomFields,
+      icon: FormatListBulletedTypeIcon,
+      alwaysCollapsed: true,
+      onClick: () => (showCustomFieldManager.value = true),
+    })
+  }
 
   if (canSelect.value) {
     actions.push({

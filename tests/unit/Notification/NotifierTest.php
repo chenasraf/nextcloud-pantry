@@ -191,6 +191,27 @@ class NotifierTest extends TestCase {
 		$this->assertSame($n, $result);
 	}
 
+	public function testFieldReminderSetsRichSubject(): void {
+		$n = $this->makeNotification('pantry', 'field_reminder', [
+			'itemId' => 7,
+			'itemName' => 'Oat milk',
+			'fieldId' => 3,
+			'fieldName' => 'Buy before',
+			'date' => 1_700_000_000,
+		]);
+
+		$n->expects($this->once())->method('setRichSubject');
+		$n->expects($this->once())->method('setParsedSubject');
+
+		$this->notifier->prepare($n, 'en');
+
+		$params = $n->getRichSubjectParameters();
+		$this->assertSame('Oat milk', $params['item']['name']);
+		$this->assertSame('Buy before', $params['field']['name']);
+		$this->assertStringContainsString('{item}', $n->getRichSubject());
+		$this->assertStringContainsString('{field}', $n->getRichSubject());
+	}
+
 	public function testParsedSubjectReplacesPlaceholders(): void {
 		$parsedSubject = '';
 		$n = $this->makeNotification('pantry', 'photo_uploaded', [

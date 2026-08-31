@@ -50,6 +50,41 @@ final class ExpectedColumns {
 			self::col('shopsess_items', 'price_min', Types::FLOAT, ['notnull' => false, 'default' => null]),
 			self::col('shopsess_items', 'price_max', Types::FLOAT, ['notnull' => false, 'default' => null]),
 			self::col('shopsess_items', 'price_currency', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
+
+			// roles — custom-fields capability (Version30). The role SELECT * hydrates
+			// every column into the entity, so a missing column breaks role loading
+			// and, with it, every permission-gated request.
+			self::col('roles', 'can_edit_fields', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+
+			// field_defs — optional config columns (Version30). Definition queries
+			// hydrate the whole row, so a missing one breaks custom-field loading.
+			self::col('field_defs', 'list_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('field_defs', 'hint', Types::STRING, ['notnull' => false, 'length' => 255]),
+			self::col('field_defs', 'multiline', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('field_defs', 'default_text', Types::STRING, ['notnull' => false, 'length' => 1024]),
+			self::col('field_defs', 'default_number', Types::FLOAT, ['notnull' => false, 'default' => null]),
+			self::col('field_defs', 'default_bool', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('field_defs', 'default_option_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('field_defs', 'date_mode', Types::STRING, ['notnull' => false, 'length' => 16]),
+			self::col('field_defs', 'default_offset_days', Types::INTEGER, ['notnull' => false, 'default' => null]),
+			self::col('field_defs', 'notify_default', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('field_defs', 'lead_days', Types::INTEGER, ['notnull' => false, 'default' => 0]),
+			self::col('field_defs', 'override_policy', Types::STRING, ['notnull' => false, 'length' => 16]),
+			self::col('field_defs', 'stop_when_done', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('field_defs', 'deleted_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+
+			// field_values — typed value + reminder columns (Version30). Populated by
+			// value writes; the reminder scan and SELECT * hydration touch these.
+			self::col('field_values', 'value_text', Types::TEXT, ['notnull' => false, 'default' => null]),
+			self::col('field_values', 'value_number', Types::FLOAT, ['notnull' => false, 'default' => null]),
+			self::col('field_values', 'value_bool', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('field_values', 'value_date', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('field_values', 'value_option_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('field_values', 'offset_days', Types::INTEGER, ['notnull' => false, 'default' => null]),
+			self::col('field_values', 'notify_override', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('field_values', 'notify_enabled', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('field_values', 'notify_lead_days', Types::INTEGER, ['notnull' => false, 'default' => null]),
+			self::col('field_values', 'notified_for_date', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 		];
 	}
 

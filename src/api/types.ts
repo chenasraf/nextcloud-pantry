@@ -8,6 +8,8 @@ export interface House {
   trashRetentionDays: number
   /** Time of day (minutes since midnight, server timezone) at which recurring items reopen. */
   recurrenceTime: number
+  /** Time of day (minutes since midnight, server timezone) at which date custom-field reminders are sent. */
+  fieldReminderTime: number
   role: HouseRole
   /** Whether the current user holds an admin role in this house. */
   isAdmin: boolean
@@ -39,6 +41,7 @@ export type CapabilityKey =
   | 'canCreateNotes'
   | 'canUpdateNotes'
   | 'canDeleteNotes'
+  | 'canEditFields'
 
 export type Capabilities = Record<CapabilityKey, boolean>
 
@@ -105,6 +108,53 @@ export interface Label {
   updatedAt: number
 }
 
+/** The five custom-field types. */
+export type FieldType = 'text' | 'number' | 'checkbox' | 'date' | 'select'
+
+/** Entry mode for a `date` field: a picked calendar date, or an offset materialized at entry. */
+export type FieldDateMode = 'absolute' | 'relative'
+
+/** Per-item reminder policy for a `date` field. */
+export type FieldOverridePolicy = 'field-only' | 'item-override'
+
+/** One choice of a `select` field. Stored values reference an option by id. */
+export interface FieldOption {
+  id: number
+  label: string
+  sortOrder: number
+  /** How many stored item values currently reference this option. */
+  valueCount: number
+}
+
+/**
+ * A custom-field definition, scoped to a house and optionally to a single list
+ * (`listId === null` = house-wide). Type-specific config lives in the matching
+ * columns; `options` is populated for `select` fields.
+ */
+export interface FieldDefinition {
+  id: number
+  houseId: number
+  listId: number | null
+  name: string
+  type: FieldType
+  sortOrder: number
+  hint: string | null
+  multiline: boolean
+  defaultText: string | null
+  defaultNumber: number | null
+  defaultBool: boolean
+  defaultOptionId: number | null
+  dateMode: FieldDateMode | null
+  defaultOffsetDays: number | null
+  notifyDefault: boolean
+  leadDays: number
+  overridePolicy: FieldOverridePolicy | null
+  stopWhenDone: boolean
+  options: FieldOption[]
+  createdAt: number
+  updatedAt: number
+}
+
 /** A single opening-hours interval. `day` is 1-7 with 1 = Monday, 7 = Sunday (ISO-8601). */
 export interface OpeningHoursInterval {
   day: number
@@ -142,6 +192,24 @@ export interface ItemPrice {
   priceCurrency: string | null
 }
 
+/**
+ * A custom-field value on an item. The typed value lives in the field matching
+ * the definition's type; `valueDate` is epoch seconds at local midnight. The
+ * `notify*` fields carry a date field's per-item reminder override.
+ */
+export interface ItemCustomFieldValue {
+  fieldId: number
+  valueText: string | null
+  valueNumber: number | null
+  valueBool: boolean
+  valueDate: number | null
+  valueOptionId: number | null
+  offsetDays: number | null
+  notifyOverride: boolean
+  notifyEnabled: boolean
+  notifyLeadDays: number | null
+}
+
 export interface ChecklistItem {
   id: number
   listId: number
@@ -163,6 +231,7 @@ export interface ChecklistItem {
   addedBy: string | null
   barcode: string | null
   prices: ItemPrice[]
+  customFields: ItemCustomFieldValue[]
   sortOrder: number
   createdAt: number
   updatedAt: number

@@ -23,6 +23,7 @@ export async function updateHouse(
     description?: string | null
     trashRetentionDays?: number
     recurrenceTime?: number
+    fieldReminderTime?: number
   },
 ): Promise<House> {
   const resp = await ocs.patch<House>(`/houses/${houseId}`, patch)

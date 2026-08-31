@@ -108,6 +108,31 @@
       </form>
     </NcAppSettingsSection>
 
+    <NcAppSettingsSection
+      v-if="houseIdNum !== null && canAdmin"
+      id="house-field-reminders"
+      :name="strings.fieldReminderSection"
+    >
+      <p class="pantry-hint">{{ strings.fieldReminderTimeHint }}</p>
+      <form class="pantry-form" autocomplete="off" @submit.prevent="saveFieldReminderTime">
+        <NcDateTimePickerNative
+          v-model="fieldReminderTimeValue"
+          type="time"
+          :label="strings.fieldReminderTimeLabel"
+        />
+        <p class="pantry-hint pantry-hint--small">{{ fieldReminderTimeSummary }}</p>
+        <div class="pantry-form__actions">
+          <NcButton
+            type="submit"
+            variant="primary"
+            :disabled="savingFieldReminderTime || !isFieldReminderTimeValid"
+          >
+            {{ savingFieldReminderTime ? strings.saving : strings.save }}
+          </NcButton>
+        </div>
+      </form>
+    </NcAppSettingsSection>
+
     <NcAppSettingsSection id="house-members" :name="strings.membersSection">
       <div v-if="loadingMembers" class="pantry-center">
         <NcLoadingIcon :size="28" />
@@ -440,6 +465,13 @@ const capGroups = computed<CapGroup[]>(() => [
       { key: 'canDeleteNotes', label: t('pantry', 'Delete') },
     ],
   },
+  {
+    label: t('pantry', 'Custom fields'),
+    caps: [
+      // TRANSLATORS: Verb, permission checkbox for managing custom-field definitions.
+      { key: 'canEditFields', label: t('pantry', 'Manage') },
+    ],
+  },
 ])
 
 function roleTypeLabel(roleType: Role['roleType']): string {
@@ -621,6 +653,8 @@ const savingTrashRetention = ref(false)
 // irrelevant. null means the field was cleared.
 const recurrenceTimeValue = ref<Date | null>(null)
 const savingRecurrenceTime = ref(false)
+const fieldReminderTimeValue = ref<Date | null>(null)
+const savingFieldReminderTime = ref(false)
 
 function minutesToDate(minutes: number): Date {
   const clamped = Math.min(1439, Math.max(0, Math.round(minutes)))
@@ -646,6 +680,7 @@ function syncFromHouse() {
     description.value = house.value.description ?? ''
     trashRetentionInput.value = String(house.value.trashRetentionDays ?? 30)
     recurrenceTimeValue.value = minutesToDate(house.value.recurrenceTime ?? 480)
+    fieldReminderTimeValue.value = minutesToDate(house.value.fieldReminderTime ?? 480)
   }
 }
 
@@ -734,6 +769,36 @@ async function saveRecurrenceTime() {
     await refresh()
   } finally {
     savingRecurrenceTime.value = false
+  }
+}
+
+// Minutes since midnight for the picked field-reminder time; null when cleared.
+const fieldReminderTimeParsed = computed<number | null>(() =>
+  fieldReminderTimeValue.value ? dateToMinutes(fieldReminderTimeValue.value) : null,
+)
+
+const isFieldReminderTimeValid = computed(() => fieldReminderTimeParsed.value !== null)
+
+const fieldReminderTimeSummary = computed(() => {
+  if (fieldReminderTimeParsed.value === null) return strings.fieldReminderTimeInvalid
+  // TRANSLATORS: The placeholder is a time of day, e.g. "08:00".
+  return t(
+    'pantry',
+    'Date custom-field reminders are sent around {time}, in the server timezone. A background job checks every 15 minutes.',
+    { time: minutesToHHMM(fieldReminderTimeParsed.value) },
+  )
+})
+
+async function saveFieldReminderTime() {
+  const id = houseIdNum.value
+  const minutes = fieldReminderTimeParsed.value
+  if (id === null || minutes === null) return
+  savingFieldReminderTime.value = true
+  try {
+    await update(id, { fieldReminderTime: minutes })
+    await refresh()
+  } finally {
+    savingFieldReminderTime.value = false
   }
 }
 
@@ -937,6 +1002,13 @@ const strings = {
     'Recurring items become due again at this time of day, in the server timezone. This does not affect items that repeat more than once a day.',
   ),
   recurrenceTimeInvalid: t('pantry', 'Enter a valid time.'),
+  fieldReminderSection: t('pantry', 'Custom field reminders'),
+  fieldReminderTimeLabel: t('pantry', 'Reminder time:'),
+  fieldReminderTimeHint: t(
+    'pantry',
+    'Date custom-field reminders are sent at this time of day, in the server timezone.',
+  ),
+  fieldReminderTimeInvalid: t('pantry', 'Enter a valid time.'),
   rolesSection: t('pantry', 'Roles'),
   rolesHint: t(
     'pantry',

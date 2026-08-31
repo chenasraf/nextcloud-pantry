@@ -63,6 +63,7 @@ function item(partial: Partial<ChecklistItem>): ChecklistItem {
     addedBy: null,
     barcode: null,
     prices: [],
+    customFields: [],
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
