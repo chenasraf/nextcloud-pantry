@@ -481,7 +481,7 @@
 			);
 			return new DataResponse($this->serializeItem($restored));
 		})]]></code>
-      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds): DataResponse {
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$item = $this->lists->getItem($itemId);
@@ -539,6 +539,12 @@
 			if ($labelIds !== null) {
 				$patch['labelIds'] = $this->labels->assertLabelsInHouse($houseId, $labelIds);
 			}
+			// Values are validated against the destination list when the item is
+			// being moved, otherwise its current list.
+			if ($customFields !== null) {
+				$effectiveListId = ($targetListId !== null && $targetListId !== $listId) ? $targetListId : $listId;
+				$patch['customFields'] = $this->fields->sanitizeValuesForItem($houseId, $effectiveListId, $customFields);
+			}
 			$targetList = null;
 			if ($targetListId !== null && $targetListId !== $listId) {
 				// Moving an item to another list needs the move capability and
@@ -570,7 +576,7 @@
 					(int)$targetList->getId(),
 					$targetList->getName(),
 				);
-			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $prices !== null) {
+			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $prices !== null || $customFields !== null) {
 				$this->activity->publishItemUpdated(
 					$houseId,
 					$houseName,
@@ -647,7 +653,7 @@
 			$items = $this->serializeItems($sliced);
 			return new DataResponse($items);
 		})]]></code>
-      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $prices, $labelIds): DataResponse {
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $prices, $labelIds, $customFields): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$list = $this->lists->getList($listId);
@@ -658,6 +664,7 @@
 			$storeIds = array_map('intval', $storeIds);
 			$this->stores->assertStoresInHouse($houseId, $storeIds);
 			$labelIds = $this->labels->assertLabelsInHouse($houseId, $labelIds);
+			$customFields = $this->fields->sanitizeValuesForItem($houseId, $listId, $customFields);
 			$item = $this->lists->addItem($listId, [
 				'name' => $name,
 				'description' => $description,
@@ -671,6 +678,7 @@
 				'barcode' => $barcode,
 				'prices' => $prices,
 				'labelIds' => $labelIds,
+				'customFields' => $customFields,
 			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
@@ -817,11 +825,12 @@
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
       <code><![CDATA[array<string, mixed>]]></code>
-      <code><![CDATA[array_values(array_map(static function ($i) use ($storeMap, $priceMap, $labelMap) {
+      <code><![CDATA[array_values(array_map(static function ($i) use ($storeMap, $priceMap, $labelMap, $fieldMap) {
 			$data = $i->jsonSerialize();
 			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
 			$data['prices'] = $priceMap[(int)$i->getId()] ?? [];
 			$data['labelIds'] = $labelMap[(int)$i->getId()] ?? [];
+			$data['customFields'] = $fieldMap[(int)$i->getId()] ?? [];
 			return $data;
 		}, $items))]]></code>
       <code><![CDATA[list<array<string, mixed>>]]></code>
@@ -868,8 +877,10 @@
       <code><![CDATA[(int)$i->getId()]]></code>
       <code><![CDATA[(int)$i->getId()]]></code>
       <code><![CDATA[(int)$i->getId()]]></code>
+      <code><![CDATA[(int)$i->getId()]]></code>
       <code><![CDATA[(int)$i->getListId()]]></code>
       <code><![CDATA[(int)$i->getListId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$item->getId()]]></code>
@@ -1897,6 +1908,21 @@
       <code><![CDATA[(int)$option->getFieldId()]]></code>
     </RedundantCastGivenDocblockType>
   </file>
+  <file src="lib/Db/FieldValue.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$itemId]]></code>
+      <code><![CDATA[$notifiedForDate]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[FieldValue]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/FieldValueMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[deleteByField]]></code>
+    </PossiblyUnusedMethod>
+  </file>
   <file src="lib/Db/House.php">
     <PropertyNotSetInConstructor>
       <code><![CDATA[House]]></code>
@@ -2701,6 +2727,8 @@
       <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
+      <code><![CDATA[(int)$item->getId()]]></code>
       <code><![CDATA[(int)$itemId]]></code>
       <code><![CDATA[(int)$itemId]]></code>
       <code><![CDATA[(int)$itemId]]></code>
@@ -2727,6 +2755,9 @@
       <code><![CDATA[(int)$saved->getId()]]></code>
       <code><![CDATA[(int)$saved->getId()]]></code>
       <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$saved->getId()]]></code>
+      <code><![CDATA[(int)$source->getId()]]></code>
       <code><![CDATA[(int)$source->getId()]]></code>
       <code><![CDATA[(int)$source->getId()]]></code>
       <code><![CDATA[(int)$source->getId()]]></code>

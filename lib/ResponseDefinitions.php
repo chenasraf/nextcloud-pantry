@@ -114,6 +114,19 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  * }
  *
+ * @psalm-type PantryFieldValue = array{
+ *     fieldId: int,
+ *     valueText: string|null,
+ *     valueNumber: float|null,
+ *     valueBool: bool,
+ *     valueDate: int|null,
+ *     valueOptionId: int|null,
+ *     offsetDays: int|null,
+ *     notifyOverride: bool,
+ *     notifyEnabled: bool,
+ *     notifyLeadDays: int|null,
+ * }
+ *
  * @psalm-type PantryListItem = array{
  *     id: int,
  *     listId: int,
@@ -135,6 +148,7 @@ namespace OCA\Pantry;
  *     addedBy: string|null,
  *     barcode: string|null,
  *     prices: list<PantryItemPrice>,
+ *     customFields: list<PantryFieldValue>,
  *     sortOrder: int,
  *     createdAt: int,
  *     updatedAt: int,

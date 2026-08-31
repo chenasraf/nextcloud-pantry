@@ -419,6 +419,65 @@
                     }
                 }
             },
+            "FieldValue": {
+                "type": "object",
+                "required": [
+                    "fieldId",
+                    "valueText",
+                    "valueNumber",
+                    "valueBool",
+                    "valueDate",
+                    "valueOptionId",
+                    "offsetDays",
+                    "notifyOverride",
+                    "notifyEnabled",
+                    "notifyLeadDays"
+                ],
+                "properties": {
+                    "fieldId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "valueText": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "valueNumber": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "valueBool": {
+                        "type": "boolean"
+                    },
+                    "valueDate": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "valueOptionId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "offsetDays": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "notifyOverride": {
+                        "type": "boolean"
+                    },
+                    "notifyEnabled": {
+                        "type": "boolean"
+                    },
+                    "notifyLeadDays": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    }
+                }
+            },
             "House": {
                 "type": "object",
                 "required": [
@@ -841,6 +900,7 @@
                     "addedBy",
                     "barcode",
                     "prices",
+                    "customFields",
                     "sortOrder",
                     "createdAt",
                     "updatedAt",
@@ -934,6 +994,12 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/ItemPrice"
+                        }
+                    },
+                    "customFields": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FieldValue"
                         }
                     },
                     "sortOrder": {
@@ -4811,6 +4877,61 @@
                                             "type": "integer",
                                             "format": "int64"
                                         }
+                                    },
+                                    "customFields": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Optional custom-field values. Each field must belong to the house and apply to this list; at most one value per field.",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "fieldId"
+                                            ],
+                                            "properties": {
+                                                "fieldId": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                },
+                                                "valueText": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "valueNumber": {
+                                                    "type": "number",
+                                                    "format": "double",
+                                                    "nullable": true
+                                                },
+                                                "valueBool": {
+                                                    "type": "boolean"
+                                                },
+                                                "valueDate": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                },
+                                                "valueOptionId": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                },
+                                                "offsetDays": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                },
+                                                "notifyOverride": {
+                                                    "type": "boolean"
+                                                },
+                                                "notifyEnabled": {
+                                                    "type": "boolean"
+                                                },
+                                                "notifyLeadDays": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -5434,6 +5555,62 @@
                                         "items": {
                                             "type": "integer",
                                             "format": "int64"
+                                        }
+                                    },
+                                    "customFields": {
+                                        "type": "array",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New full set of custom-field values (empty array clears all; null leaves them unchanged). Each field must belong to the house and apply to the item's list.",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "fieldId"
+                                            ],
+                                            "properties": {
+                                                "fieldId": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                },
+                                                "valueText": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "valueNumber": {
+                                                    "type": "number",
+                                                    "format": "double",
+                                                    "nullable": true
+                                                },
+                                                "valueBool": {
+                                                    "type": "boolean"
+                                                },
+                                                "valueDate": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                },
+                                                "valueOptionId": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                },
+                                                "offsetDays": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                },
+                                                "notifyOverride": {
+                                                    "type": "boolean"
+                                                },
+                                                "notifyEnabled": {
+                                                    "type": "boolean"
+                                                },
+                                                "notifyLeadDays": {
+                                                    "type": "integer",
+                                                    "format": "int64",
+                                                    "nullable": true
+                                                }
+                                            }
                                         }
                                     }
                                 }

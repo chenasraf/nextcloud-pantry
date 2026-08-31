@@ -210,4 +210,67 @@ class FieldDefinitionServiceTest extends TestCase {
 		$this->expectException(NotFoundException::class);
 		$this->svc->assertInHouse(5, 1);
 	}
+
+	public function testSanitizeCoercesEachTypeToItsColumn(): void {
+		$this->mapper->method('findByHouse')->with(1)->willReturn([
+			$this->makeDef(['id' => 1, 'houseId' => 1, 'type' => 'text']),
+			$this->makeDef(['id' => 2, 'houseId' => 1, 'type' => 'number']),
+			$this->makeDef(['id' => 3, 'houseId' => 1, 'type' => 'checkbox']),
+			$this->makeDef(['id' => 4, 'houseId' => 1, 'type' => 'select']),
+			$this->makeDef(['id' => 5, 'houseId' => 1, 'type' => 'date']),
+		]);
+
+		$out = $this->svc->sanitizeValuesForItem(1, 7, [
+			['fieldId' => 1, 'valueText' => 'Aisle 4'],
+			['fieldId' => 2, 'valueNumber' => '3.5'],
+			['fieldId' => 3, 'valueBool' => true],
+			['fieldId' => 4, 'valueOptionId' => 42],
+			['fieldId' => 5, 'valueDate' => 1788000000, 'offsetDays' => 3, 'notifyOverride' => true, 'notifyEnabled' => true, 'notifyLeadDays' => 1],
+		]);
+
+		$this->assertSame('Aisle 4', $out[0]['valueText']);
+		$this->assertSame(3.5, $out[1]['valueNumber']);
+		$this->assertTrue($out[2]['valueBool']);
+		$this->assertSame(42, $out[3]['valueOptionId']);
+		$this->assertSame(1788000000, $out[4]['valueDate']);
+		$this->assertSame(3, $out[4]['offsetDays']);
+		$this->assertTrue($out[4]['notifyEnabled']);
+		// A number value does not leak into unrelated typed columns.
+		$this->assertNull($out[1]['valueText']);
+	}
+
+	public function testSanitizeRejectsUnknownField(): void {
+		$this->mapper->method('findByHouse')->willReturn([]);
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->sanitizeValuesForItem(1, 7, [['fieldId' => 99, 'valueText' => 'x']]);
+	}
+
+	public function testSanitizeRejectsFieldScopedToAnotherList(): void {
+		$this->mapper->method('findByHouse')->willReturn([
+			$this->makeDef(['id' => 1, 'houseId' => 1, 'type' => 'text', 'listId' => 8]),
+		]);
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->sanitizeValuesForItem(1, 7, [['fieldId' => 1, 'valueText' => 'x']]);
+	}
+
+	public function testSanitizeAllowsHouseWideFieldOnAnyList(): void {
+		$this->mapper->method('findByHouse')->willReturn([
+			$this->makeDef(['id' => 1, 'houseId' => 1, 'type' => 'text']), // null list = house-wide
+		]);
+		$out = $this->svc->sanitizeValuesForItem(1, 7, [['fieldId' => 1, 'valueText' => 'ok']]);
+		$this->assertCount(1, $out);
+		$this->assertSame('ok', $out[0]['valueText']);
+	}
+
+	public function testSanitizeDedupsByFieldIdLastWins(): void {
+		$this->mapper->method('findByHouse')->willReturn([
+			$this->makeDef(['id' => 1, 'houseId' => 1, 'type' => 'text']),
+		]);
+		$out = $this->svc->sanitizeValuesForItem(1, 7, [
+			['fieldId' => 1, 'valueText' => 'first'],
+			['fieldId' => 1, 'valueText' => 'second'],
+		]);
+		$this->assertCount(1, $out);
+		$this->assertSame('second', $out[0]['valueText']);
+	}
 }

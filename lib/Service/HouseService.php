@@ -43,6 +43,7 @@ class HouseService {
 		private \OCA\Pantry\Db\ShoppingReminderMapper $shoppingReminderMapper,
 		private \OCA\Pantry\Db\FieldDefinitionMapper $fieldDefMapper,
 		private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper,
+		private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper,
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $photoFolderMapper,
 		private NoteMapper $noteMapper,
@@ -179,6 +180,7 @@ class HouseService {
 			$this->itemStoreMapper->deleteByHouse($houseId);
 			$this->itemLabelMapper->deleteByHouse($houseId);
 			$this->itemPriceMapper->deleteByHouse($houseId);
+			$this->fieldValueMapper->deleteByHouse($houseId);
 			// Delete all items (and their role access rows) under all lists
 			foreach ($this->listMapper->findByHouse($houseId) as $list) {
 				$this->itemMapper->deleteByList((int)$list->getId());

@@ -202,6 +202,87 @@ class FieldDefinitionService {
 		return $def;
 	}
 
+	/**
+	 * Validate and normalize a set of per-item custom-field values for an item on
+	 * the given list. Each entry's field must be a live definition of the house
+	 * that applies to the list (house-wide or scoped to this list); the typed
+	 * value is coerced to the columns the field's type uses. Entries are keyed by
+	 * field id (last wins).
+	 *
+	 * @param array<array-key, mixed> $values
+	 *
+	 * @return list<array{fieldId: int, valueText: ?string, valueNumber: ?float, valueBool: bool, valueDate: ?int, valueOptionId: ?int, offsetDays: ?int, notifyOverride: bool, notifyEnabled: bool, notifyLeadDays: ?int}>
+	 */
+	public function sanitizeValuesForItem(int $houseId, ?int $listId, array $values): array {
+		$defsById = [];
+		foreach ($this->mapper->findByHouse($houseId) as $def) {
+			$defsById[$def->getId()] = $def;
+		}
+
+		$byField = [];
+		foreach ($values as $entry) {
+			if (!is_array($entry)) {
+				continue;
+			}
+			$fieldId = (int)($entry['fieldId'] ?? 0);
+			if ($fieldId <= 0) {
+				continue;
+			}
+			$def = $defsById[$fieldId] ?? null;
+			if ($def === null) {
+				throw new \InvalidArgumentException('Unknown custom field: ' . $fieldId);
+			}
+			$scopeList = $def->getListId();
+			if ($scopeList !== null && $scopeList !== $listId) {
+				throw new \InvalidArgumentException('Custom field does not apply to this list: ' . $fieldId);
+			}
+			$byField[$fieldId] = $this->coerceValue($def, $fieldId, $entry);
+		}
+		return array_values($byField);
+	}
+
+	/**
+	 * @param array<array-key, mixed> $entry
+	 *
+	 * @return array{fieldId: int, valueText: ?string, valueNumber: ?float, valueBool: bool, valueDate: ?int, valueOptionId: ?int, offsetDays: ?int, notifyOverride: bool, notifyEnabled: bool, notifyLeadDays: ?int}
+	 */
+	private function coerceValue(FieldDefinition $def, int $fieldId, array $entry): array {
+		$out = [
+			'fieldId' => $fieldId,
+			'valueText' => null,
+			'valueNumber' => null,
+			'valueBool' => false,
+			'valueDate' => null,
+			'valueOptionId' => null,
+			'offsetDays' => null,
+			'notifyOverride' => false,
+			'notifyEnabled' => false,
+			'notifyLeadDays' => null,
+		];
+		switch ($def->getType()) {
+			case FieldDefinition::TYPE_TEXT:
+				$out['valueText'] = isset($entry['valueText']) ? (string)$entry['valueText'] : null;
+				break;
+			case FieldDefinition::TYPE_NUMBER:
+				$out['valueNumber'] = $this->floatOrNull($entry['valueNumber'] ?? null);
+				break;
+			case FieldDefinition::TYPE_CHECKBOX:
+				$out['valueBool'] = (bool)($entry['valueBool'] ?? false);
+				break;
+			case FieldDefinition::TYPE_SELECT:
+				$out['valueOptionId'] = $this->intOrNull($entry['valueOptionId'] ?? null);
+				break;
+			case FieldDefinition::TYPE_DATE:
+				$out['valueDate'] = $this->intOrNull($entry['valueDate'] ?? null);
+				$out['offsetDays'] = $this->intOrNull($entry['offsetDays'] ?? null);
+				$out['notifyOverride'] = (bool)($entry['notifyOverride'] ?? false);
+				$out['notifyEnabled'] = (bool)($entry['notifyEnabled'] ?? false);
+				$out['notifyLeadDays'] = $this->intOrNull($entry['notifyLeadDays'] ?? null);
+				break;
+		}
+		return $out;
+	}
+
 	private function normalizeType(string $type): string {
 		if (!in_array($type, FieldDefinition::TYPES, true)) {
 			throw new \InvalidArgumentException('Unsupported field type: ' . $type);
@@ -388,5 +469,12 @@ class FieldDefinitionService {
 			return null;
 		}
 		return (int)$v;
+	}
+
+	private function floatOrNull(mixed $v): ?float {
+		if ($v === null || $v === '') {
+			return null;
+		}
+		return (float)$v;
 	}
 }

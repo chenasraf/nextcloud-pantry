@@ -175,6 +175,9 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'addedBy' => $this->addedBy,
 			'barcode' => $this->barcode,
 			'prices' => $this->prices,
+			// Values are attached by the controller after serialization (like
+			// prices/storeIds); the entity carries no custom-field state itself.
+			'customFields' => [],
 			'sortOrder' => $this->sortOrder,
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,

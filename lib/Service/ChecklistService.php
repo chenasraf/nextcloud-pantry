@@ -47,6 +47,7 @@ class ChecklistService {
 		private LabelMapper $labelMapper,
 		private \OCA\Pantry\Db\FieldDefinitionMapper $fieldDefMapper,
 		private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper,
+		private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper,
 		private IDBConnection $db,
 	) {
 	}
@@ -349,6 +350,9 @@ class ChecklistService {
 		if (array_key_exists('prices', $data)) {
 			$this->itemPriceMapper->setPricesForItem((int)$saved->getId(), $this->normalizePrices($data['prices']));
 		}
+		if (array_key_exists('customFields', $data)) {
+			$this->fieldValueMapper->setValuesForItem((int)$saved->getId(), (array)$data['customFields']);
+		}
 		return $saved;
 	}
 
@@ -427,6 +431,10 @@ class ChecklistService {
 		// The whole price set is replaced when 'prices' is present in the patch.
 		if (array_key_exists('prices', $patch)) {
 			$this->itemPriceMapper->setPricesForItem((int)$item->getId(), $this->normalizePrices($patch['prices']));
+		}
+		// Likewise, the whole custom-field value set is replaced when present.
+		if (array_key_exists('customFields', $patch)) {
+			$this->fieldValueMapper->setValuesForItem((int)$item->getId(), (array)$patch['customFields']);
 		}
 		return $item;
 	}
@@ -860,6 +868,10 @@ class ChecklistService {
 			(int)$saved->getId(),
 			$this->itemPriceMapper->findForItem((int)$source->getId()),
 		);
+		$this->fieldValueMapper->setValuesForItem(
+			(int)$saved->getId(),
+			$this->fieldValueMapper->findForItem((int)$source->getId()),
+		);
 		return $saved;
 	}
 
@@ -880,6 +892,7 @@ class ChecklistService {
 		$this->itemStoreMapper->deleteByItem((int)$item->getId());
 		$this->itemLabelMapper->deleteByItem((int)$item->getId());
 		$this->itemPriceMapper->deleteByItem((int)$item->getId());
+		$this->fieldValueMapper->deleteByItem((int)$item->getId());
 		$this->itemMapper->delete($item);
 	}
 
