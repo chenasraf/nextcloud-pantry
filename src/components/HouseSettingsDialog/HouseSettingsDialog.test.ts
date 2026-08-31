@@ -56,6 +56,7 @@ const { FULL_CAPS } = vi.hoisted(() => ({
     canCreateNotes: true,
     canUpdateNotes: true,
     canDeleteNotes: true,
+    canEditFields: true,
   },
 }))
 

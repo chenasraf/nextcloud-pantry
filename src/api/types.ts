@@ -39,6 +39,7 @@ export type CapabilityKey =
   | 'canCreateNotes'
   | 'canUpdateNotes'
   | 'canDeleteNotes'
+  | 'canEditFields'
 
 export type Capabilities = Record<CapabilityKey, boolean>
 
@@ -101,6 +102,51 @@ export interface Label {
   icon: string
   color: string
   sortOrder: number
+  createdAt: number
+  updatedAt: number
+}
+
+/** The five custom-field types. */
+export type FieldType = 'text' | 'number' | 'checkbox' | 'date' | 'select'
+
+/** Entry mode for a `date` field: a picked calendar date, or an offset materialized at entry. */
+export type FieldDateMode = 'absolute' | 'relative'
+
+/** Per-item reminder policy for a `date` field. */
+export type FieldOverridePolicy = 'field-only' | 'item-override'
+
+/** One choice of a `select` field. Stored values reference an option by id. */
+export interface FieldOption {
+  id: number
+  label: string
+  sortOrder: number
+}
+
+/**
+ * A custom-field definition, scoped to a house and optionally to a single list
+ * (`listId === null` = house-wide). Type-specific config lives in the matching
+ * columns; `options` is populated for `select` fields.
+ */
+export interface FieldDefinition {
+  id: number
+  houseId: number
+  listId: number | null
+  name: string
+  type: FieldType
+  sortOrder: number
+  hint: string | null
+  multiline: boolean
+  defaultText: string | null
+  defaultNumber: number | null
+  defaultBool: boolean
+  defaultOptionId: number | null
+  dateMode: FieldDateMode | null
+  defaultOffsetDays: number | null
+  notifyDefault: boolean
+  leadDays: number
+  overridePolicy: FieldOverridePolicy | null
+  stopWhenDone: boolean
+  options: FieldOption[]
   createdAt: number
   updatedAt: number
 }

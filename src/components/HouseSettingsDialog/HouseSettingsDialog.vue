@@ -440,6 +440,13 @@ const capGroups = computed<CapGroup[]>(() => [
       { key: 'canDeleteNotes', label: t('pantry', 'Delete') },
     ],
   },
+  {
+    label: t('pantry', 'Custom fields'),
+    caps: [
+      // TRANSLATORS: Verb, permission checkbox for managing custom-field definitions.
+      { key: 'canEditFields', label: t('pantry', 'Manage') },
+    ],
+  },
 ])
 
 function roleTypeLabel(roleType: Role['roleType']): string {

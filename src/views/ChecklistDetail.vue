@@ -442,6 +442,12 @@
       @update:open="onStoreManagerToggle"
     />
 
+    <CustomFieldManagerDialog
+      :open="showCustomFieldManager"
+      :house-id="houseIdNum"
+      @update:open="showCustomFieldManager = $event"
+    />
+
     <!-- Move item(s) to another list -->
     <NcDialog
       v-if="moveDialogOpen"
@@ -726,6 +732,7 @@ import CloseIcon from '@icons/Close.vue'
 import TagIcon from '@icons/Tag.vue'
 import LabelMultipleIcon from '@icons/LabelMultiple.vue'
 import StoreOutlineIcon from '@icons/StoreOutline.vue'
+import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
 import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
@@ -748,6 +755,7 @@ import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
+import { CustomFieldManagerDialog } from '@/components/CustomFieldManager'
 import { LabelManagerDialog } from '@/components/LabelManager'
 import { StoreManagerDialog, StoreViewDialog } from '@/components/StoreManager'
 import { MarkdownExportDialog } from '@/components/MarkdownExportDialog'
@@ -2031,6 +2039,7 @@ function openPreview(item: ChecklistItem) {
 const showCategoryManager = ref(false)
 const showLabelManager = ref(false)
 const showStoreManager = ref(false)
+const showCustomFieldManager = ref(false)
 
 // ----- Store details (opened from a store chip on an item) -----
 
@@ -2542,6 +2551,7 @@ const strings = {
   noCategory: t('pantry', 'No category'),
   noStore: t('pantry', 'No store'),
   manageCategories: t('pantry', 'Manage categories'),
+  manageCustomFields: t('pantry', 'Manage custom fields'),
   manageLabels: t('pantry', 'Manage labels'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
@@ -2729,6 +2739,16 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     alwaysCollapsed: true,
     onClick: () => (showStoreManager.value = true),
   })
+
+  if (can.value.canEditFields) {
+    actions.push({
+      key: 'custom-fields',
+      label: strings.manageCustomFields,
+      icon: FormatListBulletedTypeIcon,
+      alwaysCollapsed: true,
+      onClick: () => (showCustomFieldManager.value = true),
+    })
+  }
 
   if (canSelect.value) {
     actions.push({

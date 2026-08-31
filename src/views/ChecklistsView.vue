@@ -269,6 +269,12 @@
       :house-id="houseIdNum"
       @update:open="showStoreManager = $event"
     />
+
+    <CustomFieldManagerDialog
+      :open="showCustomFieldManager"
+      :house-id="houseIdNum"
+      @update:open="showCustomFieldManager = $event"
+    />
   </div>
 </template>
 
@@ -287,11 +293,13 @@ import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
 import { LabelManagerDialog } from '@/components/LabelManager'
 import { StoreManagerDialog } from '@/components/StoreManager'
+import { CustomFieldManagerDialog } from '@/components/CustomFieldManager'
 import PlusIcon from '@icons/Plus.vue'
 import CartIcon from '@icons/Cart.vue'
 import TagIcon from '@icons/Tag.vue'
 import LabelMultipleIcon from '@icons/LabelMultiple.vue'
 import StoreOutlineIcon from '@icons/StoreOutline.vue'
+import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import DeleteIcon from '@icons/Delete.vue'
@@ -445,6 +453,7 @@ function startShopping() {
 
 const showCategoryManager = ref(false)
 const showLabelManager = ref(false)
+const showCustomFieldManager = ref(false)
 const showStoreManager = ref(false)
 
 const showCreate = ref(false)
@@ -659,6 +668,7 @@ const strings = {
   // TRANSLATORS: Button that opens Shopping Mode to shop the house's lists.
   shop: t('pantry', 'Start shopping'),
   manageCategories: t('pantry', 'Manage categories'),
+  manageCustomFields: t('pantry', 'Manage custom fields'),
   manageLabels: t('pantry', 'Manage labels'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar button opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
@@ -783,6 +793,18 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         },
       },
     )
+  }
+
+  if (isActiveView.value && can.value.canEditFields) {
+    actions.push({
+      key: 'manage-custom-fields',
+      label: strings.manageCustomFields,
+      icon: FormatListBulletedTypeIcon,
+      alwaysCollapsed: true,
+      onClick: () => {
+        showCustomFieldManager.value = true
+      },
+    })
   }
 
   if (isActiveView.value && lists.value.length > 0) {

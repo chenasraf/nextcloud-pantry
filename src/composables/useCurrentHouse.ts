@@ -23,6 +23,7 @@ const NO_CAPS: Capabilities = {
   canCreateNotes: false,
   canUpdateNotes: false,
   canDeleteNotes: false,
+  canEditFields: false,
 }
 
 export function useCurrentHouse(): {
