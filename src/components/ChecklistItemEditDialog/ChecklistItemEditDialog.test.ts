@@ -63,6 +63,14 @@ vi.mock('@/components/ItemPricesEditor', () => ({
     emits: ['update:modelValue'],
   },
 }))
+vi.mock('@/components/ItemCustomFieldsEditor', () => ({
+  default: {
+    name: 'ItemCustomFieldsEditor',
+    template: '<div class="mock-custom-fields-editor" />',
+    props: ['modelValue', 'houseId', 'listId'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/components/AutoResizeTextarea', () => ({
   AutoResizeTextarea: {
     name: 'AutoResizeTextarea',
@@ -141,6 +149,7 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
     addedBy: null,
     barcode: null,
     prices: [],
+    customFields: [],
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,

@@ -119,6 +119,13 @@
         :default-currency="defaultCurrency"
       />
 
+      <ItemCustomFieldsEditor
+        v-else-if="openSection === 'customfields'"
+        v-model="customFieldValues"
+        :house-id="houseId"
+        :list-id="effectiveListId"
+      />
+
       <AutoResizeTextarea
         v-else-if="openSection === 'description'"
         v-model="description"
@@ -226,6 +233,7 @@ import ImagePlusIcon from '@icons/ImagePlus.vue'
 import UploadIcon from '@icons/Upload.vue'
 import BarcodeScanIcon from '@icons/BarcodeScan.vue'
 import CashIcon from '@icons/Cash.vue'
+import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { RecurrenceForm } from '@/components/RecurrenceEditor'
 import CategoryChipList from '@/components/CategoryChipList'
@@ -234,6 +242,8 @@ import LabelChipList from '@/components/LabelChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
 import ItemPricesEditor from '@/components/ItemPricesEditor'
+import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
+import { defaultCustomFieldValues } from '@/components/ItemCustomFieldsEditor/defaults'
 import PantryChip from '@/components/PantryChip'
 import BarcodeLookupDialog from '@/components/BarcodeLookupDialog'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
@@ -241,6 +251,7 @@ import { type BarcodeResult } from '@/api/barcode'
 import { useCategories } from '@/composables/useCategories'
 import { useStores } from '@/composables/useStores'
 import { useLabels } from '@/composables/useLabels'
+import { useCustomFields } from '@/composables/useCustomFields'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
@@ -250,10 +261,26 @@ import { formatRrule } from '@/utils/rrule'
 import { formatPrice, storelessPrice } from '@/utils/price'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ItemInput } from '@/api/lists'
-import type { Checklist, ChecklistItem, Category, Store, Label, ItemPrice } from '@/api/types'
+import type {
+  Checklist,
+  ChecklistItem,
+  Category,
+  Store,
+  Label,
+  ItemPrice,
+  ItemCustomFieldValue,
+} from '@/api/types'
 
 type SectionKey =
-  'category' | 'labels' | 'stores' | 'quantity' | 'price' | 'description' | 'type' | 'image'
+  | 'category'
+  | 'labels'
+  | 'stores'
+  | 'quantity'
+  | 'price'
+  | 'customfields'
+  | 'description'
+  | 'type'
+  | 'image'
 
 const props = withDefaults(
   defineProps<{
@@ -295,6 +322,7 @@ const multiple = ref(false)
 const description = ref('')
 const quantity = ref('')
 const prices = ref<ItemPrice[]>([])
+const customFieldValues = ref<ItemCustomFieldValue[]>([])
 const categoryId = ref<number | null>(null)
 const storeIds = ref<number[]>([])
 const labelIds = ref<number[]>([])
@@ -353,6 +381,20 @@ void loadStores()
 
 const { items: labels, load: loadLabels } = useLabels(props.houseId)
 void loadLabels()
+
+const { items: fieldDefs, load: loadFields } = useCustomFields(props.houseId)
+void loadFields()
+const hasCustomFields = computed(() =>
+  fieldDefs.value.some((f) => f.listId == null || f.listId === effectiveListId.value),
+)
+// New items start pre-filled with each applicable field's default value.
+watch(
+  [fieldDefs, effectiveListId],
+  () => {
+    customFieldValues.value = defaultCustomFieldValues(fieldDefs.value, effectiveListId.value)
+  },
+  { immediate: true },
+)
 
 watch(
   () => props.houseId,
@@ -615,6 +657,15 @@ const chips = computed<Chip[]>(() => {
     filled: priceText.value !== null,
   })
 
+  if (hasCustomFields.value) {
+    list.push({
+      key: 'customfields',
+      text: strings.customFields,
+      icon: FormatListBulletedTypeIcon,
+      filled: customFieldValues.value.length > 0,
+    })
+  }
+
   list.push({
     key: 'description',
     text: strings.description,
@@ -733,6 +784,7 @@ function submitAdd() {
         storeIds: storeIds.value,
         labelIds: labelIds.value,
         prices: prices.value,
+        customFields: customFieldValues.value,
         rrule: once ? null : rrule.value,
         repeatFromCompletion: once ? false : repeatFromCompletion.value,
         deleteOnDone: once,
@@ -751,6 +803,7 @@ function submitAdd() {
   // Drop the amounts; the next item's default currency comes from the house's
   // remembered currency (updated after the add).
   prices.value = []
+  customFieldValues.value = defaultCustomFieldValues(fieldDefs.value, effectiveListId.value)
   categoryId.value = null
   storeIds.value = []
   labelIds.value = []
@@ -781,6 +834,7 @@ const strings = {
   labels: t('pantry', 'Labels'),
   quantity: t('pantry', 'Quantity'),
   price: t('pantry', 'Price'),
+  customFields: t('pantry', 'Custom fields'),
   description: t('pantry', 'Description'),
   descriptionLabel: t('pantry', 'Description'),
   itemType: t('pantry', 'Item type'),

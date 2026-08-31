@@ -188,6 +188,24 @@ export interface ItemPrice {
   priceCurrency: string | null
 }
 
+/**
+ * A custom-field value on an item. The typed value lives in the field matching
+ * the definition's type; `valueDate` is epoch seconds at local midnight. The
+ * `notify*` fields carry a date field's per-item reminder override.
+ */
+export interface ItemCustomFieldValue {
+  fieldId: number
+  valueText: string | null
+  valueNumber: number | null
+  valueBool: boolean
+  valueDate: number | null
+  valueOptionId: number | null
+  offsetDays: number | null
+  notifyOverride: boolean
+  notifyEnabled: boolean
+  notifyLeadDays: number | null
+}
+
 export interface ChecklistItem {
   id: number
   listId: number
@@ -209,6 +227,7 @@ export interface ChecklistItem {
   addedBy: string | null
   barcode: string | null
   prices: ItemPrice[]
+  customFields: ItemCustomFieldValue[]
   sortOrder: number
   createdAt: number
   updatedAt: number

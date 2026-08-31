@@ -56,6 +56,14 @@
           :default-currency="defaultCurrency"
         />
       </div>
+      <div v-if="hasCustomFields" class="edit-item-form__customfields">
+        <span class="edit-item-form__label">{{ strings.customFieldsLabel }}</span>
+        <ItemCustomFieldsEditor
+          v-model="editCustomFields"
+          :house-id="houseId"
+          :list-id="item.listId"
+        />
+      </div>
       <div class="edit-item-form__type">
         <span class="edit-item-form__label">{{ strings.typeLabel }}</span>
         <ItemTypeSelector
@@ -134,10 +142,12 @@ import StoreMultiPicker from '@/components/StoreMultiPicker'
 import LabelChipList from '@/components/LabelChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import ItemPricesEditor from '@/components/ItemPricesEditor'
+import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { itemImagePreviewUrl } from '@/api/images'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
-import type { ChecklistItem, ItemPrice } from '@/api/types'
+import type { ChecklistItem, ItemCustomFieldValue, ItemPrice } from '@/api/types'
 import type { ItemInput } from '@/api/lists'
+import { useCustomFields } from '@/composables/useCustomFields'
 
 const props = withDefaults(
   defineProps<{
@@ -166,7 +176,13 @@ const editRrule = ref<string | null>(null)
 const editRepeatFromCompletion = ref(false)
 const editDeleteOnDone = ref(false)
 const editPrices = ref<ItemPrice[]>([])
+const editCustomFields = ref<ItemCustomFieldValue[]>([])
 const showRecurrenceEditor = ref(false)
+
+const customFields = useCustomFields(props.houseId)
+const hasCustomFields = computed(() =>
+  customFields.items.value.some((f) => f.listId == null || f.listId === props.item.listId),
+)
 const imageInputRef = ref<HTMLInputElement | null>(null)
 
 const pendingImageFile = ref<File | null>(null)
@@ -217,6 +233,8 @@ watch(
       editRepeatFromCompletion.value = props.item.repeatFromCompletion ?? false
       editDeleteOnDone.value = props.item.deleteOnDone ?? false
       editPrices.value = (props.item.prices ?? []).map((p) => ({ ...p }))
+      editCustomFields.value = (props.item.customFields ?? []).map((v) => ({ ...v }))
+      void customFields.load()
       resetImageState()
     }
   },
@@ -262,6 +280,8 @@ function submitEdit() {
       deleteOnDone: once,
       // The full price set is replaced; an empty array clears all prices.
       prices: editPrices.value,
+      // Likewise, the full custom-field value set is replaced.
+      customFields: editCustomFields.value,
     },
     pendingImageFile.value,
     pendingClearImage.value,
@@ -308,6 +328,7 @@ const strings = {
   // TRANSLATORS: Noun (plural), tags attached to an item. Field label.
   labelsLabel: t('pantry', 'Labels'),
   priceLabel: t('pantry', 'Price'),
+  customFieldsLabel: t('pantry', 'Custom fields'),
   typeLabel: t('pantry', 'Item type'),
   imageLabel: t('pantry', 'Image'),
   uploadImage: t('pantry', 'Upload image'),
