@@ -247,7 +247,7 @@
               :reorder-group-key="gi.groupKey"
               :trash-mode="trashMode"
               :archive-mode="archiveMode"
-              :tap-row-to-complete="tapRowToComplete"
+              :row-click-action="rowClickAction"
               :show-added-by="showAddedBy"
               :selection-mode="selectionMode"
               :selected="selectedIds.has(gi.item.id)"
@@ -346,7 +346,7 @@
                 :reorder-group-key="gi.groupKey"
                 :trash-mode="trashMode"
                 :archive-mode="archiveMode"
-                :tap-row-to-complete="tapRowToComplete"
+                :row-click-action="rowClickAction"
                 :show-added-by="showAddedBy"
                 :selection-mode="selectionMode"
                 :selected="selectedIds.has(gi.item.id)"
@@ -797,7 +797,7 @@ import { orderItemsByCategory } from '@/utils/categoryOrder'
 import { storeGroupKey, byStoreGroupOrder, itemsInStoreGroup } from '@/utils/storeGroupOrder'
 import { reseedOrder, type ReseedBasis } from '@/utils/reseedOrder'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
-import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
+import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
@@ -1065,7 +1065,7 @@ async function loadList() {
   list.value = await getList(houseIdNum.value, listIdNum.value)
 }
 
-const { tapRowToComplete } = useTapRowToComplete()
+const { rowClickAction } = useRowClickAction()
 const { can } = useCurrentHouse()
 const showAddedBy = computed(() => useShowAddedBy(houseIdNum.value).showAddedBy.value)
 // Sorting by category always groups items under category headers.

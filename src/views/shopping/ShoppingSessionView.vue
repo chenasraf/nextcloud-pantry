@@ -84,7 +84,7 @@
                 :hide-category="true"
                 :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
-                :tap-row-to-complete="tapRowToComplete"
+                :row-click-action="rowClickAction"
                 compact
                 session-removable
                 @toggle="handleToggle"
@@ -110,7 +110,7 @@
                 :labels="labelsFor(item.labelIds)"
                 :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
-                :tap-row-to-complete="tapRowToComplete"
+                :row-click-action="rowClickAction"
                 compact
                 @toggle="handleToggle"
                 @preview="openPreview"
@@ -196,7 +196,7 @@ import { useStores } from '@/composables/useStores'
 import { useCategories } from '@/composables/useCategories'
 import { useLabels } from '@/composables/useLabels'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
-import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
+import { useRowClickAction } from '@/composables/useRowClickAction'
 import { formatEstimate, resolveItemPrice } from '@/utils/price'
 import { getCurrentUserId } from '@/utils/currentUser'
 import {
@@ -233,7 +233,7 @@ const sessionIdNum = computed(() => Number(route.params.sessionId))
 const { load: loadStores, findById: findStore } = useStores(houseIdNum.value)
 const { load: loadCategories, findById: findCategory } = useCategories(houseIdNum.value)
 const { load: loadLabels, findById: findLabel } = useLabels(houseIdNum.value)
-const { tapRowToComplete } = useTapRowToComplete()
+const { rowClickAction } = useRowClickAction()
 
 function labelsFor(ids: number[] | null | undefined): Label[] {
   if (!ids || ids.length === 0) return []

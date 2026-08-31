@@ -15,8 +15,10 @@ class PrefsService {
 	private const KEY_LAST_HOUSE = 'last_house_id';
 	private const KEY_IMAGE_FOLDER = 'image_folder';
 	private const KEY_TAP_ROW_TO_COMPLETE = 'tap_row_to_complete';
+	private const KEY_ROW_CLICK_ACTION = 'row_click_action';
 	private const KEY_REUSE_EXISTING_ITEMS = 'reuse_existing_items';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
+	public const ROW_CLICK_ACTION_OPTIONS = ['done', 'view', 'edit', 'none'];
 	public const REUSE_EXISTING_ITEMS_OPTIONS = ['ask', 'reuse', 'never'];
 
 	public function __construct(
@@ -65,23 +67,44 @@ class PrefsService {
 		return $normalized;
 	}
 
-	public function getTapRowToComplete(string $uid): bool {
-		// Off by default — taps only register on the checkbox itself.
-		return $this->config->getUserValue(
+	public function getRowClickAction(string $uid): string {
+		$value = $this->config->getUserValue(
 			$uid,
 			Application::APP_ID,
-			self::KEY_TAP_ROW_TO_COMPLETE,
-			'0',
-		) === '1';
+			self::KEY_ROW_CLICK_ACTION,
+			'',
+		);
+		if ($value === '') {
+			// No explicit choice stored yet: derive from the tap-to-complete
+			// preference so an existing setting keeps its behavior.
+			$tap = $this->config->getUserValue(
+				$uid,
+				Application::APP_ID,
+				self::KEY_TAP_ROW_TO_COMPLETE,
+				'0',
+			) === '1';
+			return $tap ? 'done' : 'none';
+		}
+		return in_array($value, self::ROW_CLICK_ACTION_OPTIONS, true) ? $value : 'none';
 	}
 
-	public function setTapRowToComplete(string $uid, bool $value): void {
+	public function setRowClickAction(string $uid, string $value): string {
+		$normalized = in_array($value, self::ROW_CLICK_ACTION_OPTIONS, true) ? $value : 'none';
 		$this->config->setUserValue(
 			$uid,
 			Application::APP_ID,
-			self::KEY_TAP_ROW_TO_COMPLETE,
-			$value ? '1' : '0',
+			self::KEY_ROW_CLICK_ACTION,
+			$normalized,
 		);
+		return $normalized;
+	}
+
+	public function getTapRowToComplete(string $uid): bool {
+		return $this->getRowClickAction($uid) === 'done';
+	}
+
+	public function setTapRowToComplete(string $uid, bool $value): void {
+		$this->setRowClickAction($uid, $value ? 'done' : 'none');
 	}
 
 	public function getReuseExistingItems(string $uid): string {
@@ -115,6 +138,7 @@ class PrefsService {
 			'lastHouseId' => $this->getLastHouseId($uid),
 			'firstDayOfWeek' => $this->getFirstDayOfWeek($uid),
 			'tapRowToComplete' => $this->getTapRowToComplete($uid),
+			'rowClickAction' => $this->getRowClickAction($uid),
 			'reuseExistingItems' => $this->getReuseExistingItems($uid),
 		];
 	}
@@ -129,6 +153,9 @@ class PrefsService {
 		}
 		if (array_key_exists('tapRowToComplete', $patch) && is_bool($patch['tapRowToComplete'])) {
 			$this->setTapRowToComplete($uid, $patch['tapRowToComplete']);
+		}
+		if (array_key_exists('rowClickAction', $patch) && is_string($patch['rowClickAction'])) {
+			$this->setRowClickAction($uid, $patch['rowClickAction']);
 		}
 		if (array_key_exists('reuseExistingItems', $patch) && is_string($patch['reuseExistingItems'])) {
 			$this->setReuseExistingItems($uid, $patch['reuseExistingItems']);

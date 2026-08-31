@@ -9,6 +9,7 @@
       'checklist-row--selecting': selectionMode,
       'checklist-row--selected': selectionMode && selected,
       'checklist-row--suggestion': suggestion,
+      'checklist-row--clickable': rowClickable,
     }"
     :data-drag-id="item.id"
     :data-drag-group="reorderGroupKey"
@@ -25,7 +26,12 @@
         @update:model-value="$emit('toggle-select', item.id)"
       />
     </div>
-    <span v-if="reorderEnabled" class="checklist-row__handle" :aria-label="strings.dragToReorder">
+    <span
+      v-if="reorderEnabled"
+      class="checklist-row__handle"
+      :aria-label="strings.dragToReorder"
+      @click.stop
+    >
       <DragVerticalIcon :size="20" />
     </span>
     <div v-if="suggestion || selectionMode" class="checklist-row__check">
@@ -46,11 +52,12 @@
       <NcCheckboxRadioSwitch
         :model-value="item.done"
         :disabled="!canCheck"
-        :aria-label="tapRowToComplete ? undefined : item.name"
-        :class="{ 'checklist-row__check-fill': tapRowToComplete }"
+        :aria-label="rowClickAction === 'done' ? undefined : item.name"
+        :class="{ 'checklist-row__check-fill': rowClickAction === 'done' }"
+        @click.stop
         @update:model-value="$emit('toggle', item.id)"
       >
-        <span v-if="tapRowToComplete" class="checklist-row__label">
+        <span v-if="rowClickAction === 'done'" class="checklist-row__label">
           <button
             v-if="item.imageFileId"
             type="button"
@@ -63,7 +70,10 @@
           <span class="checklist-row__name">{{ item.name }}</span>
         </span>
       </NcCheckboxRadioSwitch>
-      <span v-if="!tapRowToComplete" class="checklist-row__label checklist-row__label--standalone">
+      <span
+        v-if="rowClickAction !== 'done'"
+        class="checklist-row__label checklist-row__label--standalone"
+      >
         <button
           v-if="item.imageFileId"
           type="button"
@@ -172,19 +182,32 @@
         :tooltip-message="addedByTooltip"
       />
     </div>
-    <div v-if="!selectionMode && !suggestion && !compact" class="checklist-row__actions">
-      <NcButton variant="tertiary" :aria-label="strings.viewItem" @click="$emit('view', item)">
+    <div
+      v-if="!selectionMode && !suggestion && !compact"
+      class="checklist-row__actions"
+      @click.stop
+    >
+      <NcButton
+        v-if="rowClickAction !== 'view'"
+        variant="tertiary"
+        :aria-label="strings.viewItem"
+        @click="$emit('view', item)"
+      >
         <template #icon>
           <EyeIcon :size="18" />
         </template>
       </NcButton>
+      <NcButton
+        v-if="canEditItem && rowClickAction !== 'edit'"
+        variant="tertiary"
+        :aria-label="strings.editItem"
+        @click="$emit('edit', item)"
+      >
+        <template #icon>
+          <PencilIcon :size="18" />
+        </template>
+      </NcButton>
       <NcActions :aria-label="strings.itemActions">
-        <NcActionButton v-if="canEditItem" close-after-click @click="$emit('edit', item)">
-          <template #icon>
-            <PencilIcon :size="20" />
-          </template>
-          {{ strings.editItem }}
-        </NcActionButton>
         <NcActionButton v-if="canMoveItem" close-after-click @click="$emit('move', item)">
           <template #icon>
             <ArrowRightIcon :size="20" />
@@ -235,7 +258,7 @@
         </NcActionButton>
       </NcActions>
     </div>
-    <div v-if="sessionRemovable" class="checklist-row__session-remove">
+    <div v-if="sessionRemovable" class="checklist-row__session-remove" @click.stop>
       <NcButton
         variant="tertiary"
         :aria-label="strings.removeFromTrip"
@@ -247,7 +270,7 @@
         </template>
       </NcButton>
     </div>
-    <div v-if="sessionRestorable" class="checklist-row__session-remove">
+    <div v-if="sessionRestorable" class="checklist-row__session-remove" @click.stop>
       <NcButton
         variant="tertiary"
         :aria-label="strings.restoreToTrip"
@@ -293,6 +316,7 @@ import { useHouseMembers } from '@/composables/useHouseMembers'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import type { ChecklistItem, Category, Checklist, Store, Label } from '@/api/types'
+import type { RowClickAction } from '@/api/prefs'
 
 const { can } = useCurrentHouse()
 
@@ -327,7 +351,13 @@ const props = withDefaults(
     reorderGroupKey?: string
     trashMode?: boolean
     archiveMode?: boolean
-    tapRowToComplete?: boolean
+    /**
+     * What a click on the row body does: 'done' marks the item done (the whole
+     * row becomes the checkbox hit target), 'view' / 'edit' open the item,
+     * 'none' does nothing. Whichever action is chosen is dropped from the
+     * right-side icon buttons, since the row itself already performs it.
+     */
+    rowClickAction?: RowClickAction
     showAddedBy?: boolean
     /**
      * Whether the parent list accepts writes for the current user. False for a
@@ -373,7 +403,7 @@ const props = withDefaults(
     reorderEnabled: false,
     trashMode: false,
     archiveMode: false,
-    tapRowToComplete: false,
+    rowClickAction: 'none',
     showAddedBy: false,
     listWritable: true,
     selectionMode: false,
@@ -415,9 +445,10 @@ const emit = defineEmits<{
 
 const isDragging = ref(false)
 
-// In selection mode, a tap anywhere on the row body toggles selection. The
-// selection checkbox and the image thumb stop propagation so they keep their
-// own behavior.
+// A tap on the row body drives the configured action. The checkbox, actions,
+// image thumb, drag handle and store chips stop propagation so they keep their
+// own behavior. In 'done' mode the checkbox itself fills the row, so nothing
+// is emitted here.
 function onRowClick() {
   if (props.suggestion) {
     emit('select', props.item)
@@ -425,8 +456,25 @@ function onRowClick() {
   }
   if (props.selectionMode) {
     emit('toggle-select', props.item.id)
+    return
+  }
+  if (props.compact) return
+  if (props.rowClickAction === 'view') {
+    emit('view', props.item)
+  } else if (props.rowClickAction === 'edit' && canEditItem.value) {
+    emit('edit', props.item)
   }
 }
+
+// The row body is a click target only when its action opens the item; 'done'
+// is served by the checkbox fill and 'none' does nothing.
+const rowClickable = computed(
+  () =>
+    !props.suggestion &&
+    !props.selectionMode &&
+    !props.compact &&
+    (props.rowClickAction === 'view' || (props.rowClickAction === 'edit' && canEditItem.value)),
+)
 
 // Keep the store chip's click from bubbling to the row's own click handler.
 function onViewStore(store: Store, e: MouseEvent) {
@@ -549,6 +597,16 @@ function storeLabel(name: string): string {
   &--selected {
     background: var(--color-primary-element-light);
     border-color: var(--color-primary-element);
+  }
+
+  // Row body opens the item on click (view / edit action). The checkbox,
+  // actions and other controls reset the cursor on their own hit areas.
+  &--clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-background-hover);
+    }
   }
 
   // Reuse suggestion: no checkbox/handle/actions tracks — just the name and its

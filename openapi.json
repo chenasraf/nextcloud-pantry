@@ -2005,6 +2005,7 @@
                     "lastHouseId",
                     "firstDayOfWeek",
                     "tapRowToComplete",
+                    "rowClickAction",
                     "reuseExistingItems"
                 ],
                 "properties": {
@@ -2019,6 +2020,9 @@
                     },
                     "tapRowToComplete": {
                         "type": "boolean"
+                    },
+                    "rowClickAction": {
+                        "type": "string"
                     },
                     "reuseExistingItems": {
                         "type": "string"
@@ -13966,6 +13970,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Whether clicking anywhere on a checklist row marks it done."
+                                    },
+                                    "rowClickAction": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "What clicking a checklist row does. One of: done, view, edit, none."
                                     },
                                     "reuseExistingItems": {
                                         "type": "string",

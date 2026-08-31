@@ -32,16 +32,17 @@
     </NcAppSettingsSection>
 
     <NcAppSettingsSection id="pantry-interface" :name="strings.interfaceSection">
-      <div class="account-settings__checks">
-        <NcCheckboxRadioSwitch
-          :model-value="tapRowToComplete"
-          @update:model-value="updateTapRowToComplete($event)"
-        >
-          {{ strings.tapRowToCompleteLabel }}
-        </NcCheckboxRadioSwitch>
-        <p class="account-settings__hint account-settings__hint--inline">
-          {{ strings.tapRowToCompleteHint }}
-        </p>
+      <div class="account-settings__field">
+        <label class="account-settings__label">{{ strings.rowClickActionLabel }}</label>
+        <p class="account-settings__hint">{{ strings.rowClickActionHint }}</p>
+        <NcSelect
+          :model-value="selectedRowClickActionOption"
+          :options="rowClickActionOptions"
+          :clearable="false"
+          :searchable="false"
+          input-label=""
+          @update:model-value="updateRowClickAction"
+        />
       </div>
       <div class="account-settings__field">
         <label class="account-settings__label">{{ strings.reuseExistingItemsLabel }}</label>
@@ -120,8 +121,9 @@ import {
   setNotificationPrefs,
   type NotificationPrefs,
   type ReuseExistingItems,
+  type RowClickAction,
 } from '@/api/prefs'
-import { useTapRowToComplete } from '@/composables/useTapRowToComplete'
+import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 
 const props = defineProps<{ open: boolean; houseId: number | null }>()
@@ -220,11 +222,30 @@ async function updateNotifPref(key: keyof NotificationPrefs, value: boolean) {
 
 // ----- Interface prefs -----
 
-const { tapRowToComplete, set: setTapRowPref } = useTapRowToComplete()
+const { rowClickAction, set: setRowClickActionPref } = useRowClickAction()
 
-async function updateTapRowToComplete(value: boolean) {
+interface RowClickActionOption {
+  value: RowClickAction
+  label: string
+}
+
+const rowClickActionOptions = computed<RowClickActionOption[]>(() => [
+  { value: 'done', label: strings.rowClickActionDone },
+  { value: 'view', label: strings.rowClickActionView },
+  { value: 'edit', label: strings.rowClickActionEdit },
+  { value: 'none', label: strings.rowClickActionNone },
+])
+
+const selectedRowClickActionOption = computed<RowClickActionOption>(
+  () =>
+    rowClickActionOptions.value.find((o) => o.value === rowClickAction.value) ??
+    rowClickActionOptions.value[3],
+)
+
+async function updateRowClickAction(option: RowClickActionOption | null) {
+  if (!option) return
   try {
-    await setTapRowPref(value)
+    await setRowClickActionPref(option.value)
   } catch {
     // Composable already reverted the optimistic update.
   }
@@ -283,11 +304,16 @@ const strings = {
   notifyItemRecur: t('pantry', 'Recurring items reappearing'),
   notifyItemDone: t('pantry', 'Checklist items completed'),
   interfaceSection: t('pantry', 'Interface'),
-  tapRowToCompleteLabel: t('pantry', 'Click row to complete items'),
-  tapRowToCompleteHint: t(
-    'pantry',
-    'When off, items are only marked complete by clicking the checkbox.',
-  ),
+  rowClickActionLabel: t('pantry', 'Default item click action'),
+  rowClickActionHint: t('pantry', 'What happens when you click an item row.'),
+  // TRANSLATORS: Option for the item click action: mark the item as done.
+  rowClickActionDone: t('pantry', 'Mark as done'),
+  // TRANSLATORS: Option for the item click action: open the item's details view.
+  rowClickActionView: t('pantry', 'View'),
+  // TRANSLATORS: Option for the item click action: open the item for editing.
+  rowClickActionEdit: t('pantry', 'Edit'),
+  // TRANSLATORS: Option for the item click action: do nothing on click.
+  rowClickActionNone: t('pantry', 'None'),
   reuseExistingItemsLabel: t('pantry', 'Reuse existing items when adding'),
   reuseExistingItemsHint: t(
     'pantry',

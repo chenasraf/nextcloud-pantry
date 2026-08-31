@@ -11,10 +11,10 @@ vi.mock('@/api/prefs', () => ({
   setImageFolder: vi.fn(),
   getNotificationPrefs: vi.fn(),
   setNotificationPrefs: vi.fn(),
-  getTapRowToComplete: vi.fn(),
-  setTapRowToComplete: vi.fn(),
-  getReuseExistingItems: vi.fn(),
-  setReuseExistingItems: vi.fn(),
+  getRowClickAction: vi.fn().mockResolvedValue('none'),
+  setRowClickAction: vi.fn().mockResolvedValue('none'),
+  getReuseExistingItems: vi.fn().mockResolvedValue('ask'),
+  setReuseExistingItems: vi.fn().mockResolvedValue('ask'),
 }))
 
 // Mock Nextcloud Vue components that pull in CSS

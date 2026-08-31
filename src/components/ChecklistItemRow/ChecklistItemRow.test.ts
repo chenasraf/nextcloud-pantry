@@ -365,8 +365,9 @@ describe('ChecklistItemRow', () => {
     it('keeps write affordances when listWritable is true (default)', () => {
       const wrapper = mount(ChecklistItemRow, { props: defaultProps })
       expect(wrapper.find('input[type="checkbox"]').attributes('disabled')).toBeUndefined()
-      const actionTexts = wrapper.findAll('.nc-action-button').map((b) => b.text())
-      expect(actionTexts).toContain('Edit item')
+      expect(
+        wrapper.findAll('.nc-button').some((b) => b.attributes('aria-label') === 'Edit item'),
+      ).toBe(true)
     })
   })
 
@@ -390,10 +391,12 @@ describe('ChecklistItemRow', () => {
       expect(wrapper.emitted('view')![0]).toEqual([item])
     })
 
-    it('emits edit with item on edit action click', async () => {
+    it('emits edit with item on edit button click', async () => {
       const item = makeItem()
       const wrapper = mount(ChecklistItemRow, { props: { ...defaultProps, item } })
-      const editBtn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Edit item')!
+      const editBtn = wrapper
+        .findAll('.nc-button')
+        .find((b) => b.attributes('aria-label') === 'Edit item')!
       await editBtn.trigger('click')
       expect(wrapper.emitted('edit')).toBeTruthy()
       expect(wrapper.emitted('edit')![0]).toEqual([item])
@@ -425,6 +428,69 @@ describe('ChecklistItemRow', () => {
       await wrapper.find('.checklist-row__thumb').trigger('click')
       expect(wrapper.emitted('preview')).toBeTruthy()
       expect(wrapper.emitted('preview')![0]).toEqual([item])
+    })
+  })
+
+  describe('row click action', () => {
+    const editLabel = (b: { attributes: (n: string) => string | undefined }) =>
+      b.attributes('aria-label') === 'Edit item'
+    const viewLabel = (b: { attributes: (n: string) => string | undefined }) =>
+      b.attributes('aria-label') === 'View item'
+
+    it("shows both view and edit icon buttons when action is 'none' (default)", () => {
+      const wrapper = mount(ChecklistItemRow, { props: defaultProps })
+      const buttons = wrapper.findAll('.nc-button')
+      expect(buttons.some(viewLabel)).toBe(true)
+      expect(buttons.some(editLabel)).toBe(true)
+    })
+
+    it("does nothing on row click when action is 'none'", async () => {
+      const wrapper = mount(ChecklistItemRow, { props: defaultProps })
+      await wrapper.find('.checklist-row').trigger('click')
+      expect(wrapper.emitted('view')).toBeFalsy()
+      expect(wrapper.emitted('edit')).toBeFalsy()
+    })
+
+    it("fills the checkbox and drops both icon buttons when action is 'done'", () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, rowClickAction: 'done' },
+      })
+      expect(wrapper.find('.checklist-row__check-fill').exists()).toBe(true)
+      const buttons = wrapper.findAll('.nc-button')
+      // View and edit stay available (neither is the click action).
+      expect(buttons.some(viewLabel)).toBe(true)
+      expect(buttons.some(editLabel)).toBe(true)
+    })
+
+    it("emits view on row click and hides the view icon when action is 'view'", async () => {
+      const item = makeItem()
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item, rowClickAction: 'view' },
+      })
+      expect(wrapper.findAll('.nc-button').some(viewLabel)).toBe(false)
+      // Edit is not the click action, so its icon button stays.
+      expect(wrapper.findAll('.nc-button').some(editLabel)).toBe(true)
+      await wrapper.find('.checklist-row').trigger('click')
+      expect(wrapper.emitted('view')![0]).toEqual([item])
+    })
+
+    it("emits edit on row click and hides the edit icon when action is 'edit'", async () => {
+      const item = makeItem()
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item, rowClickAction: 'edit' },
+      })
+      expect(wrapper.findAll('.nc-button').some(editLabel)).toBe(false)
+      expect(wrapper.findAll('.nc-button').some(viewLabel)).toBe(true)
+      await wrapper.find('.checklist-row').trigger('click')
+      expect(wrapper.emitted('edit')![0]).toEqual([item])
+    })
+
+    it('does not trigger the row action when the checkbox is clicked', async () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, rowClickAction: 'view' },
+      })
+      await wrapper.find('.nc-checkbox').trigger('click')
+      expect(wrapper.emitted('view')).toBeFalsy()
     })
   })
 

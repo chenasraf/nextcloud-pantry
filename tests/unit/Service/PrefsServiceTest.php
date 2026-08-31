@@ -407,4 +407,144 @@ class PrefsServiceTest extends TestCase {
 
 		$this->svc->setHousePrefs('alice', 4, ['checklistSort' => 'name_asc']);
 	}
+
+	// ----- Row click action -----
+
+	public function testGetRowClickActionDefaultsToNone(): void {
+		// Nothing stored: no explicit action, tap-to-complete off.
+		$this->config->method('getUserValue')->willReturnArgument(3);
+
+		$this->assertSame('none', $this->svc->getRowClickAction('alice'));
+	}
+
+	public function testGetRowClickActionReturnsStoredValue(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'row_click_action') {
+					return 'view';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertSame('view', $this->svc->getRowClickAction('alice'));
+	}
+
+	public function testGetRowClickActionFallsBackForUnknownValue(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'row_click_action') {
+					return 'bogus';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertSame('none', $this->svc->getRowClickAction('alice'));
+	}
+
+	public function testGetRowClickActionDerivesDoneFromTapToComplete(): void {
+		// No explicit row_click_action, but tap-to-complete was on.
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'tap_row_to_complete') {
+					return '1';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertSame('done', $this->svc->getRowClickAction('alice'));
+	}
+
+	public function testExplicitRowClickActionWinsOverTapToComplete(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'row_click_action') {
+					return 'edit';
+				}
+				if ($key === 'tap_row_to_complete') {
+					return '1';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertSame('edit', $this->svc->getRowClickAction('alice'));
+	}
+
+	public function testSetRowClickActionStoresValidValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'row_click_action', 'view');
+
+		$this->assertSame('view', $this->svc->setRowClickAction('alice', 'view'));
+	}
+
+	public function testSetRowClickActionFallsBackForUnknownValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'row_click_action', 'none');
+
+		$this->assertSame('none', $this->svc->setRowClickAction('alice', 'bogus'));
+	}
+
+	public function testGetTapRowToCompleteReflectsDoneAction(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'row_click_action') {
+					return 'done';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertTrue($this->svc->getTapRowToComplete('alice'));
+	}
+
+	public function testGetTapRowToCompleteFalseForNonToggleAction(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'row_click_action') {
+					return 'view';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertFalse($this->svc->getTapRowToComplete('alice'));
+	}
+
+	public function testSetTapRowToCompleteStoresDoneAction(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'row_click_action', 'done');
+
+		$this->svc->setTapRowToComplete('alice', true);
+	}
+
+	public function testSetTapRowToCompleteFalseStoresNone(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'row_click_action', 'none');
+
+		$this->svc->setTapRowToComplete('alice', false);
+	}
+
+	public function testGetAllUserPrefsIncludesRowClickAction(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'row_click_action') {
+					return 'view';
+				}
+				return $default;
+			}
+		);
+
+		$prefs = $this->svc->getAllUserPrefs('alice');
+		$this->assertArrayHasKey('rowClickAction', $prefs);
+		$this->assertSame('view', $prefs['rowClickAction']);
+		// The derived tap-to-complete mirror stays consistent.
+		$this->assertFalse($prefs['tapRowToComplete']);
+	}
 }

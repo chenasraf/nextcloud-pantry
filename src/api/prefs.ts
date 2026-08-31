@@ -4,12 +4,17 @@ import { ocs } from '@/axios'
 
 export type ReuseExistingItems = 'ask' | 'reuse' | 'never'
 
+/** What clicking a checklist row body does. */
+export type RowClickAction = 'done' | 'view' | 'edit' | 'none'
+
 export interface UserPrefs {
   lastHouseId: number | null
   /** 0 = Sunday, 1 = Monday, …, 6 = Saturday. Read-only from server. */
   firstDayOfWeek: number
   /** When true, clicking anywhere on a checklist row marks the item done. */
   tapRowToComplete: boolean
+  /** What clicking a checklist row does: toggle done, open view, open edit, or nothing. */
+  rowClickAction: RowClickAction
   /** How to handle adding an item whose name already exists in the list. */
   reuseExistingItems: ReuseExistingItems
 }
@@ -18,6 +23,7 @@ const userPrefsDefaults: UserPrefs = {
   lastHouseId: null,
   firstDayOfWeek: 1,
   tapRowToComplete: false,
+  rowClickAction: 'none',
   reuseExistingItems: 'ask',
 }
 
@@ -51,14 +57,14 @@ export async function setLastHouse(houseId: number | null): Promise<void> {
   await setUserPrefs({ lastHouseId: houseId })
 }
 
-export async function getTapRowToComplete(): Promise<boolean> {
+export async function getRowClickAction(): Promise<RowClickAction> {
   const prefs = await getUserPrefs()
-  return prefs.tapRowToComplete
+  return prefs.rowClickAction
 }
 
-export async function setTapRowToComplete(value: boolean): Promise<boolean> {
-  const prefs = await setUserPrefs({ tapRowToComplete: value })
-  return prefs.tapRowToComplete
+export async function setRowClickAction(value: RowClickAction): Promise<RowClickAction> {
+  const prefs = await setUserPrefs({ rowClickAction: value })
+  return prefs.rowClickAction
 }
 
 export async function getReuseExistingItems(): Promise<ReuseExistingItems> {

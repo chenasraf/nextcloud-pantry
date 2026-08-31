@@ -71,6 +71,7 @@ final class PrefsController extends OCSController {
 	 *
 	 * @param int|null $lastHouseId Last-used house id, or null to clear.
 	 * @param bool|null $tapRowToComplete Whether clicking anywhere on a checklist row marks it done.
+	 * @param string|null $rowClickAction What clicking a checklist row does. One of: done, view, edit, none.
 	 * @param string|null $reuseExistingItems How to handle adding an item that already exists in the list. One of: ask, reuse, never.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>
@@ -79,8 +80,8 @@ final class PrefsController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $reuseExistingItems = null): DataResponse {
-		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $reuseExistingItems): DataResponse {
+	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null): DataResponse {
+		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems): DataResponse {
 			$uid = $this->requireUid();
 			$patch = [];
 			if ($lastHouseId !== null) {
@@ -89,6 +90,9 @@ final class PrefsController extends OCSController {
 			}
 			if ($tapRowToComplete !== null) {
 				$patch['tapRowToComplete'] = $tapRowToComplete;
+			}
+			if ($rowClickAction !== null) {
+				$patch['rowClickAction'] = $rowClickAction;
 			}
 			if ($reuseExistingItems !== null) {
 				$patch['reuseExistingItems'] = $reuseExistingItems;

@@ -86,6 +86,7 @@ class Capabilities implements IPublicCapability {
 					'note-trash',
 					'photo-trash',
 					'pref-tap-row-to-complete',
+					'pref-row-click-action',
 					'pref-category-spacing',
 					'reuse-existing-items',
 					'roles',
