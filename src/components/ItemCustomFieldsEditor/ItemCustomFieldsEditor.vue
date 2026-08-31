@@ -66,6 +66,32 @@
           </NcButton>
         </div>
       </div>
+
+      <div v-if="showReminderOverride(field)" class="cf-values__reminder">
+        <NcCheckboxRadioSwitch
+          :model-value="remindOn(field)"
+          @update:model-value="setRemind(field, $event)"
+        >
+          {{ strings.remindMe }}
+        </NcCheckboxRadioSwitch>
+        <NcSelect
+          v-if="remindOn(field)"
+          :model-value="leadValue(field)"
+          :options="leadOptions"
+          :clearable="false"
+          label="label"
+          :input-label="strings.leadTime"
+          :aria-label-combobox="strings.leadTime"
+          :calculate-position="ncSelectCalculatePosition"
+          @update:model-value="setLead(field, $event)"
+        />
+        <div v-if="differsFromDefault(field)" class="cf-values__override-note">
+          <span>{{ strings.differsFromDefault }}</span>
+          <NcButton variant="tertiary" @click="resetOverride(field)">
+            {{ strings.useFieldDefault }}
+          </NcButton>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -95,7 +121,25 @@ const emit = defineEmits<{ 'update:modelValue': [value: ItemCustomFieldValue[]] 
 const strings = {
   daysFromToday: t('pantry', 'Days from today'),
   reanchor: t('pantry', 'Re-anchor date'),
+  // TRANSLATORS: Toggle to enable a reminder for this item's date value.
+  remindMe: t('pantry', 'Remind me'),
+  leadTime: t('pantry', 'Remind'),
+  // TRANSLATORS: Signals that this item's reminder differs from the field's default reminder.
+  differsFromDefault: t('pantry', 'Custom reminder for this item'),
+  useFieldDefault: t('pantry', 'Use field default'),
 }
+
+interface LeadOption {
+  value: number
+  label: string
+}
+const leadOptions: LeadOption[] = [
+  { value: 0, label: t('pantry', 'On the day') },
+  { value: 1, label: t('pantry', '1 day before') },
+  { value: 2, label: t('pantry', '2 days before') },
+  { value: 3, label: t('pantry', '3 days before') },
+  { value: 7, label: t('pantry', '1 week before') },
+]
 
 const fields = useCustomFields(props.houseId)
 onMounted(() => void fields.load())
@@ -278,6 +322,59 @@ function dueLabel(date: Date | null | undefined): string {
   })
 }
 
+// Per-item reminder override, offered only when the field allows it and a date is
+// set (a reminder needs a value_date). Without an override the value inherits the
+// field's default reminder; touching the toggle or lead marks it overridden.
+function showReminderOverride(field: FieldDefinition): boolean {
+  return (
+    field.type === 'date' &&
+    field.overridePolicy === 'item-override' &&
+    draft[field.id]?.date != null
+  )
+}
+function remindOn(field: FieldDefinition): boolean {
+  const d = draft[field.id]
+  if (!d) return field.notifyDefault
+  return d.notifyOverride ? d.notifyEnabled : field.notifyDefault
+}
+function setRemind(field: FieldDefinition, on: boolean): void {
+  const d = ensure(field.id)
+  d.notifyOverride = true
+  d.notifyEnabled = on
+  if (on && d.notifyLeadDays == null) d.notifyLeadDays = field.leadDays
+  emitAll()
+}
+function currentLead(field: FieldDefinition): number {
+  const d = draft[field.id]
+  if (!d) return field.leadDays
+  return d.notifyOverride ? (d.notifyLeadDays ?? field.leadDays) : field.leadDays
+}
+function leadValue(field: FieldDefinition): LeadOption {
+  const lead = currentLead(field)
+  return leadOptions.find((o) => o.value === lead) ?? leadOptions[0]!
+}
+function setLead(field: FieldDefinition, opt: LeadOption | null): void {
+  if (!opt) return
+  const d = ensure(field.id)
+  d.notifyOverride = true
+  d.notifyEnabled = true
+  d.notifyLeadDays = opt.value
+  emitAll()
+}
+function differsFromDefault(field: FieldDefinition): boolean {
+  const d = draft[field.id]
+  if (!d || !d.notifyOverride) return false
+  if (d.notifyEnabled !== field.notifyDefault) return true
+  return d.notifyEnabled && (d.notifyLeadDays ?? field.leadDays) !== field.leadDays
+}
+function resetOverride(field: FieldDefinition): void {
+  const d = ensure(field.id)
+  d.notifyOverride = false
+  d.notifyEnabled = false
+  d.notifyLeadDays = null
+  emitAll()
+}
+
 interface SelectOption {
   value: number
   label: string
@@ -342,6 +439,23 @@ watch(applicableFields, () => seedFromModel(props.modelValue))
   &__due {
     color: var(--color-text-maxcontrast);
     font-size: 0.9rem;
+  }
+
+  &__reminder {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid var(--color-border);
+  }
+
+  &__override-note {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--color-text-maxcontrast);
   }
 }
 </style>

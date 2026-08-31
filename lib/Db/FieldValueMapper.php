@@ -205,22 +205,37 @@ class FieldValueMapper extends QBMapper {
 	}
 
 	/**
-	 * Date values whose field-level reminder is due and not yet notified for the
-	 * current date. A value qualifies when its field is an enabled (`notify_default`)
-	 * date field, neither the item nor the field is soft-deleted, the lead window has
-	 * opened (`value_date - lead*86400 <= now`, no upper bound so overdue still
-	 * fires), the value is not already stamped for this date, and the item is not
-	 * done when the field stops reminding on done.
+	 * Date values that may fire a reminder, with the field defaults and the
+	 * per-item override raw so the caller resolves the effective reminder (see
+	 * {@see CustomFieldReminderService::effectiveReminder}) and the due window.
 	 *
-	 * @return list<array{itemId: int, fieldId: int, valueDate: int, listId: int, houseId: int, itemName: string, fieldName: string}>
+	 * Structural filters live in SQL: a date field, neither item nor field
+	 * soft-deleted, not already stamped for the current date, the item not done
+	 * when the field stops reminding on done, and the reminder at least *possibly*
+	 * enabled (the field default is on, or the item overrides). The effective
+	 * enabled/lead resolution and the lead window are applied per row in PHP.
+	 *
+	 * @return list<array{itemId: int, fieldId: int, valueDate: int, listId: int, houseId: int, itemName: string, fieldName: string, overridePolicy: ?string, notifyDefault: bool, leadDays: int, notifyOverride: bool, notifyEnabled: bool, notifyLeadDays: ?int}>
 	 */
-	public function findDueReminders(int $now): array {
+	public function findReminderCandidates(): array {
 		$defs = Application::tableName('field_defs');
 		$items = Application::tableName('list_items');
 		$lists = Application::tableName('lists');
 
 		$qb = $this->db->getQueryBuilder();
-		$qb->select('fv.item_id', 'fv.field_id', 'fv.value_date', 'i.list_id', 'i.name')
+		$qb->select(
+			'fv.item_id',
+			'fv.field_id',
+			'fv.value_date',
+			'fv.notify_override',
+			'fv.notify_enabled',
+			'fv.notify_lead_days',
+			'i.list_id',
+			'i.name',
+			'fd.notify_default',
+			'fd.lead_days',
+			'fd.override_policy',
+		)
 			->selectAlias('fd.name', 'field_name')
 			->selectAlias('l.house_id', 'house_id')
 			->from($this->getTableName(), 'fv')
@@ -229,22 +244,28 @@ class FieldValueMapper extends QBMapper {
 			->innerJoin('i', $lists, 'l', $qb->expr()->eq('l.id', 'i.list_id'))
 			->where($qb->expr()->eq('fd.type', $qb->createNamedParameter(FieldDefinition::TYPE_DATE)))
 			->andWhere($qb->expr()->isNotNull('fv.value_date'))
-			->andWhere($qb->expr()->eq('fd.notify_default', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->isNull('fd.deleted_at'))
 			->andWhere($qb->expr()->isNull('i.deleted_at'))
 			->andWhere($qb->expr()->orX(
 				$qb->expr()->isNull('fv.notified_for_date'),
 				$qb->expr()->neq('fv.notified_for_date', 'fv.value_date'),
 			))
-			->andWhere('fv.value_date - (fd.lead_days * 86400) <= ' . $qb->createNamedParameter($now, IQueryBuilder::PARAM_INT))
 			->andWhere($qb->expr()->orX(
 				$qb->expr()->eq('fd.stop_when_done', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)),
 				$qb->expr()->eq('i.done', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)),
+			))
+			// Possibly enabled: the field reminds by default, or the item opts in.
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->eq('fd.notify_default', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)),
+				$qb->expr()->andX(
+					$qb->expr()->eq('fd.override_policy', $qb->createNamedParameter(FieldDefinition::OVERRIDE_ITEM)),
+					$qb->expr()->eq('fv.notify_override', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)),
+				),
 			));
 
 		$out = [];
 		$result = $qb->executeQuery();
-		/** @var array{item_id: int|string, field_id: int|string, value_date: int|string, list_id: int|string, name: ?string, field_name: ?string, house_id: int|string} $row */
+		/** @var array{item_id: int|string, field_id: int|string, value_date: int|string, list_id: int|string, name: ?string, field_name: ?string, house_id: int|string, notify_override: mixed, notify_enabled: mixed, notify_lead_days: int|string|null, notify_default: mixed, lead_days: int|string, override_policy: ?string} $row */
 		foreach ($result->fetchAll() as $row) {
 			$out[] = [
 				'itemId' => (int)$row['item_id'],
@@ -254,10 +275,34 @@ class FieldValueMapper extends QBMapper {
 				'houseId' => (int)$row['house_id'],
 				'itemName' => $row['name'] ?? '',
 				'fieldName' => $row['field_name'] ?? '',
+				'overridePolicy' => $row['override_policy'],
+				'notifyDefault' => $this->toBool($row['notify_default']),
+				'leadDays' => (int)$row['lead_days'],
+				'notifyOverride' => $this->toBool($row['notify_override']),
+				'notifyEnabled' => $this->toBool($row['notify_enabled']),
+				'notifyLeadDays' => $row['notify_lead_days'] === null ? null : (int)$row['notify_lead_days'],
 			];
 		}
 		$result->closeCursor();
 		return $out;
+	}
+
+	/**
+	 * Normalize a boolean column read via a raw query, where the driver may hand
+	 * back a native bool, an int, or a string ('1'/'0', 't'/'f', 'true'/'false').
+	 */
+	private function toBool(mixed $v): bool {
+		if (is_bool($v)) {
+			return $v;
+		}
+		if (is_int($v)) {
+			return $v !== 0;
+		}
+		if (is_string($v)) {
+			$v = strtolower($v);
+			return $v !== '' && $v !== '0' && $v !== 'f' && $v !== 'false';
+		}
+		return (bool)$v;
 	}
 
 	/**

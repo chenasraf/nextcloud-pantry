@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\Pantry\Service;
 
 use OCA\Pantry\AppInfo\Application;
+use OCA\Pantry\Db\FieldDefinition;
 use OCA\Pantry\Db\FieldValueMapper;
 use OCA\Pantry\Db\HouseMemberMapper;
 use OCP\IURLGenerator;
@@ -48,7 +49,16 @@ class CustomFieldReminderService {
 		/** @var array<int, string[]> $recipientsByList */
 		$recipientsByList = [];
 
-		foreach ($this->valueMapper->findDueReminders($now) as $due) {
+		foreach ($this->valueMapper->findReminderCandidates() as $due) {
+			$effective = self::effectiveReminder($due);
+			if (!$effective['enabled']) {
+				continue;
+			}
+			// No upper bound on the window, so an overdue value still fires once.
+			if ($due['valueDate'] - $effective['lead'] * 86400 > $now) {
+				continue;
+			}
+
 			$listId = $due['listId'];
 			$recipientsByList[$listId] ??= $this->recipientsForList($due['houseId'], $listId);
 			$recipients = $recipientsByList[$listId];
@@ -72,6 +82,25 @@ class CustomFieldReminderService {
 		}
 
 		return $sent;
+	}
+
+	/**
+	 * Resolve a date value's effective reminder. When the field allows per-item
+	 * override and the value opts in, the value's own enable flag and lead-time
+	 * (falling back to the field lead) apply; otherwise the field defaults do.
+	 *
+	 * @param array{overridePolicy: ?string, notifyDefault: bool, leadDays: int, notifyOverride: bool, notifyEnabled: bool, notifyLeadDays: ?int, ...} $c
+	 *
+	 * @return array{enabled: bool, lead: int}
+	 */
+	public static function effectiveReminder(array $c): array {
+		if ($c['overridePolicy'] === FieldDefinition::OVERRIDE_ITEM && $c['notifyOverride']) {
+			return [
+				'enabled' => $c['notifyEnabled'],
+				'lead' => $c['notifyLeadDays'] ?? $c['leadDays'],
+			];
+		}
+		return ['enabled' => $c['notifyDefault'], 'lead' => $c['leadDays']];
 	}
 
 	/**
@@ -138,7 +167,7 @@ class CustomFieldReminderService {
 	}
 
 	/**
-	 * @param array{itemId: int, fieldId: int, valueDate: int, listId: int, houseId: int, itemName: string, fieldName: string} $due
+	 * @param array{itemId: int, fieldId: int, valueDate: int, listId: int, houseId: int, itemName: string, fieldName: string, ...} $due
 	 */
 	private function notify(string $uid, array $due): void {
 		$link = $this->urlGenerator->linkToRouteAbsolute('pantry.page.index')

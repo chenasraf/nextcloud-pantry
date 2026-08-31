@@ -68,8 +68,13 @@ class CustomFieldReminderServiceTest extends TestCase {
 		return $m;
 	}
 
-	private function due(): array {
-		return [
+	/**
+	 * A candidate that is enabled by the field default and already due.
+	 *
+	 * @param array<string, mixed> $overrides
+	 */
+	private function due(array $overrides = []): array {
+		return array_merge([
 			'itemId' => 7,
 			'fieldId' => 3,
 			'valueDate' => 1_700_000_000,
@@ -77,11 +82,17 @@ class CustomFieldReminderServiceTest extends TestCase {
 			'houseId' => 1,
 			'itemName' => 'Oat milk',
 			'fieldName' => 'Buy before',
-		];
+			'overridePolicy' => 'field-only',
+			'notifyDefault' => true,
+			'leadDays' => 0,
+			'notifyOverride' => false,
+			'notifyEnabled' => false,
+			'notifyLeadDays' => null,
+		], $overrides);
 	}
 
 	public function testSendsToViewMembersAndStamps(): void {
-		$this->valueMapper->method('findDueReminders')->willReturn([$this->due()]);
+		$this->valueMapper->method('findReminderCandidates')->willReturn([$this->due()]);
 		$this->memberMapper->method('findByHouse')->willReturn([
 			$this->member('alice'),
 			$this->member('bob'),
@@ -104,7 +115,7 @@ class CustomFieldReminderServiceTest extends TestCase {
 	}
 
 	public function testStampsEvenWhenNoRecipients(): void {
-		$this->valueMapper->method('findDueReminders')->willReturn([$this->due()]);
+		$this->valueMapper->method('findReminderCandidates')->willReturn([$this->due()]);
 		$this->memberMapper->method('findByHouse')->willReturn([]);
 		$this->notifManager->method('createNotification')->willReturnCallback(fn () => $this->notification());
 
@@ -116,11 +127,115 @@ class CustomFieldReminderServiceTest extends TestCase {
 	}
 
 	public function testNothingDueSendsNothing(): void {
-		$this->valueMapper->method('findDueReminders')->willReturn([]);
+		$this->valueMapper->method('findReminderCandidates')->willReturn([]);
 		$this->notifManager->expects($this->never())->method('notify');
 		$this->valueMapper->expects($this->never())->method('stampNotified');
 
 		$this->assertSame(0, $this->svc->sendDueReminders(1_700_000_000));
+	}
+
+	public function testCandidateNotYetInWindowIsSkipped(): void {
+		// value_date is a full day past `now`, lead 0 → the window has not opened.
+		$now = 1_700_000_000;
+		$this->valueMapper->method('findReminderCandidates')->willReturn([
+			$this->due(['valueDate' => $now + 86400, 'leadDays' => 0]),
+		]);
+		$this->notifManager->expects($this->never())->method('notify');
+		$this->valueMapper->expects($this->never())->method('stampNotified');
+
+		$this->assertSame(0, $this->svc->sendDueReminders($now));
+	}
+
+	public function testItemOverrideOffSuppressesFieldDefault(): void {
+		// The field reminds by default, but the item overrides it off.
+		$this->valueMapper->method('findReminderCandidates')->willReturn([
+			$this->due([
+				'overridePolicy' => 'item-override',
+				'notifyDefault' => true,
+				'notifyOverride' => true,
+				'notifyEnabled' => false,
+			]),
+		]);
+		$this->notifManager->expects($this->never())->method('notify');
+		$this->valueMapper->expects($this->never())->method('stampNotified');
+
+		$this->assertSame(0, $this->svc->sendDueReminders(1_700_000_000));
+	}
+
+	public function testItemOverrideLeadWidensWindow(): void {
+		// Field lead 0 would not be due yet, but the item's 7-day lead opens it.
+		$now = 1_700_000_000;
+		$this->valueMapper->method('findReminderCandidates')->willReturn([
+			$this->due([
+				'valueDate' => $now + 3 * 86400,
+				'overridePolicy' => 'item-override',
+				'notifyDefault' => false,
+				'leadDays' => 0,
+				'notifyOverride' => true,
+				'notifyEnabled' => true,
+				'notifyLeadDays' => 7,
+			]),
+		]);
+		$this->memberMapper->method('findByHouse')->willReturn([$this->member('alice')]);
+		$this->permissions->method('can')->willReturn(true);
+		$this->permissions->method('canAccessList')->willReturn(true);
+		$this->notifManager->method('createNotification')->willReturnCallback(fn () => $this->notification());
+
+		$this->notifManager->expects($this->once())->method('notify');
+		$this->valueMapper->expects($this->once())->method('stampNotified');
+
+		$this->assertSame(1, $this->svc->sendDueReminders($now));
+	}
+
+	public function testEffectiveReminderResolution(): void {
+		// field-only ignores the item's values.
+		$this->assertSame(
+			['enabled' => true, 'lead' => 2],
+			CustomFieldReminderService::effectiveReminder($this->due([
+				'overridePolicy' => 'field-only',
+				'notifyDefault' => true,
+				'leadDays' => 2,
+				'notifyOverride' => true,
+				'notifyEnabled' => false,
+				'notifyLeadDays' => 9,
+			])),
+		);
+		// item-override + opt-in uses the value's enable + lead.
+		$this->assertSame(
+			['enabled' => true, 'lead' => 5],
+			CustomFieldReminderService::effectiveReminder($this->due([
+				'overridePolicy' => 'item-override',
+				'notifyDefault' => false,
+				'leadDays' => 2,
+				'notifyOverride' => true,
+				'notifyEnabled' => true,
+				'notifyLeadDays' => 5,
+			])),
+		);
+		// item-override opt-in with no per-item lead falls back to the field lead.
+		$this->assertSame(
+			['enabled' => true, 'lead' => 2],
+			CustomFieldReminderService::effectiveReminder($this->due([
+				'overridePolicy' => 'item-override',
+				'notifyDefault' => false,
+				'leadDays' => 2,
+				'notifyOverride' => true,
+				'notifyEnabled' => true,
+				'notifyLeadDays' => null,
+			])),
+		);
+		// item-override without opt-in falls back to the field default.
+		$this->assertSame(
+			['enabled' => false, 'lead' => 2],
+			CustomFieldReminderService::effectiveReminder($this->due([
+				'overridePolicy' => 'item-override',
+				'notifyDefault' => false,
+				'leadDays' => 2,
+				'notifyOverride' => false,
+				'notifyEnabled' => true,
+				'notifyLeadDays' => 5,
+			])),
+		);
 	}
 
 	public function testDoneWithStopWhenDoneWithdrawsThoseFields(): void {
