@@ -15,49 +15,80 @@
         {{ strings.emptyHint }}
       </p>
 
-      <ul v-else class="cf-acc">
-        <template v-for="group in groups" :key="group.key">
+      <ul v-else ref="listRef" class="cf-acc">
+        <template v-for="group in displayGroups" :key="group.key">
           <li class="cf-acc__group">{{ group.title }}</li>
-          <li v-for="field in group.fields" :key="field.id" class="cf-acc__item">
-            <button
-              type="button"
-              class="cf-acc__head"
-              :aria-expanded="openId === field.id"
-              @click="toggle(field)"
+          <template
+            v-for="row in group.rows"
+            :key="row.type === 'field' ? 'f' + row.field.id : 'drop-' + group.key"
+          >
+            <li
+              v-if="row.type === 'placeholder'"
+              class="cf-acc__placeholder"
+              @dragover.prevent
+              @drop.prevent.stop="commitReorder"
+            />
+            <li
+              v-else
+              class="cf-acc__item"
+              :class="{ 'cf-acc__item--dragging': draggingId === row.field.id }"
+              :data-drag-id="row.field.id"
+              @dragover.prevent="onDragOver($event, row.field.id, group.key)"
+              @drop.prevent.stop="commitReorder"
             >
-              <component
-                :is="fieldTypeIconComponent(field.type)"
-                :size="18"
-                class="cf-acc__ticon"
-              />
-              <span class="cf-acc__name">{{ field.name }}</span>
-              <span class="cf-acc__type">{{ fieldTypeLabel(field.type) }}</span>
-              <BellIcon
-                v-if="field.type === 'date' && field.notifyDefault"
-                :size="14"
-                class="cf-acc__bell"
-                :title="strings.reminderOn"
-              />
-              <ChevronDownIcon
-                :size="18"
-                class="cf-acc__chev"
-                :class="{ 'cf-acc__chev--open': openId === field.id }"
-              />
-            </button>
-            <div v-if="openId === field.id" class="cf-acc__body">
-              <CustomFieldEditor
-                v-model="draft"
-                :lists="lists"
-                :saving="saving"
-                :error="error"
-                :is-new="false"
-                @save="submit"
-                @delete="confirmDelete(field)"
-                @cancel="collapse"
-                @remove-option="onRemoveOption"
-              />
-            </div>
-          </li>
+              <div class="cf-acc__row">
+                <span
+                  v-if="canReorder"
+                  class="cf-acc__handle"
+                  draggable="true"
+                  :aria-label="strings.dragHandle"
+                  :title="strings.dragHandle"
+                  @dragstart="onDragStart($event, row.field.id, group.key)"
+                  @dragend="onDragEnd"
+                >
+                  <DragVerticalIcon :size="18" />
+                </span>
+                <button
+                  type="button"
+                  class="cf-acc__head"
+                  :aria-expanded="openId === row.field.id"
+                  @click="toggle(row.field)"
+                >
+                  <component
+                    :is="fieldTypeIconComponent(row.field.type)"
+                    :size="18"
+                    class="cf-acc__ticon"
+                  />
+                  <span class="cf-acc__name">{{ row.field.name }}</span>
+                  <span class="cf-acc__type">{{ fieldTypeLabel(row.field.type) }}</span>
+                  <BellIcon
+                    v-if="row.field.type === 'date' && row.field.notifyDefault"
+                    :size="14"
+                    class="cf-acc__bell"
+                    :title="strings.reminderOn"
+                  />
+                  <ChevronDownIcon
+                    :size="18"
+                    class="cf-acc__chev"
+                    :class="{ 'cf-acc__chev--open': openId === row.field.id }"
+                  />
+                </button>
+              </div>
+              <div v-if="openId === row.field.id" class="cf-acc__body">
+                <CustomFieldEditor
+                  v-model="draft"
+                  :lists="lists"
+                  :saving="saving"
+                  :error="error"
+                  :is-new="false"
+                  @save="submit"
+                  @delete="confirmDelete(row.field)"
+                  @cancel="collapse"
+                  @remove-option="onRemoveOption"
+                />
+              </div>
+            </li>
+          </template>
         </template>
 
         <li v-if="creating" class="cf-acc__item cf-acc__item--new">
@@ -141,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { t, n } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
@@ -150,10 +181,12 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import PlusIcon from '@icons/Plus.vue'
 import BellIcon from '@icons/Bell.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
+import DragVerticalIcon from '@icons/DragVertical.vue'
 import type { FieldDefinition } from '@/api/types'
 import type { CreateFieldInput, OptionDeleteAction, UpdateFieldPatch } from '@/api/customFields'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useChecklists } from '@/composables/useChecklist'
+import { useTouchReorder } from '@/composables/useTouchReorder'
 import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
 import { fieldTypeIconComponent, fieldTypeLabel } from './fieldTypeIcons'
 import CustomFieldEditor from './CustomFieldEditor.vue'
@@ -188,6 +221,7 @@ const strings = {
   title: t('pantry', 'Custom fields'),
   emptyHint: t('pantry', 'No custom fields yet. Add one to attach extra info to items.'),
   addField: t('pantry', 'Add field'),
+  dragHandle: t('pantry', 'Drag to reorder'),
   // TRANSLATORS: Header for fields available on every list (not tied to one list)
   allLists: t('pantry', 'All lists'),
   reminderOn: t('pantry', 'Reminder on'),
@@ -227,6 +261,149 @@ const groups = computed<Group[]>(() => {
   }
   return out
 })
+
+// -------- Drag reorder --------
+// Fields carry a single house-wide sort_order but are displayed grouped by scope,
+// so a drag is confined to its own group (moving across scopes would change the
+// field's list, which reorder does not do). On drop the whole sequence is
+// renumbered with the reordered group substituted in, keeping groups intact.
+// Reordering is disabled while an editor is expanded — the head is a toggle.
+const listRef = ref<HTMLElement | null>(null)
+const draggingId = ref<number | null>(null)
+const draggingGroupKey = ref<string | null>(null)
+const dropIndex = ref<number | null>(null)
+
+const canReorder = computed(() => openId.value === null && !creating.value)
+
+type FieldRow = { type: 'field'; field: FieldDefinition } | { type: 'placeholder' }
+interface DisplayGroup {
+  key: string
+  title: string
+  rows: FieldRow[]
+}
+
+const displayGroups = computed<DisplayGroup[]>(() =>
+  groups.value.map((g) => {
+    if (draggingId.value === null || dropIndex.value === null || draggingGroupKey.value !== g.key) {
+      return {
+        key: g.key,
+        title: g.title,
+        rows: g.fields.map((f) => ({ type: 'field', field: f })),
+      }
+    }
+    const rows: FieldRow[] = g.fields
+      .filter((f) => f.id !== draggingId.value)
+      .map((f) => ({ type: 'field' as const, field: f }))
+    rows.splice(Math.min(dropIndex.value, rows.length), 0, { type: 'placeholder' })
+    return { key: g.key, title: g.title, rows }
+  }),
+)
+
+function groupKeyOf(fieldId: number): string | null {
+  for (const g of groups.value) {
+    if (g.fields.some((f) => f.id === fieldId)) return g.key
+  }
+  return null
+}
+
+function onDragStart(e: DragEvent, id: number, groupKey: string): void {
+  if (!canReorder.value || !e.dataTransfer) return
+  draggingId.value = id
+  draggingGroupKey.value = groupKey
+  dropIndex.value = null
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', String(id))
+  const row = (e.currentTarget as HTMLElement).closest<HTMLElement>('.cf-acc__item')
+  if (row) e.dataTransfer.setDragImage(row, 0, 0)
+}
+
+function onDragEnd(): void {
+  draggingId.value = null
+  draggingGroupKey.value = null
+  dropIndex.value = null
+}
+
+function computeDropIndex(
+  hoveredId: number,
+  hoveredGroupKey: string | null,
+  clientY: number,
+  target: HTMLElement | null,
+): void {
+  const dragId = draggingId.value
+  if (!dragId || dragId === hoveredId) return
+  if (hoveredGroupKey !== draggingGroupKey.value) return
+  const group = groups.value.find((g) => g.key === draggingGroupKey.value)
+  if (!group) return
+  const without = group.fields.filter((f) => f.id !== dragId)
+  const idx = without.findIndex((f) => f.id === hoveredId)
+  if (idx === -1) return
+  if (target) {
+    const rect = target.getBoundingClientRect()
+    dropIndex.value = clientY > rect.top + rect.height / 2 ? idx + 1 : idx
+  } else {
+    dropIndex.value = idx
+  }
+}
+
+function onDragOver(e: DragEvent, hoveredId: number, hoveredGroupKey: string): void {
+  computeDropIndex(hoveredId, hoveredGroupKey, e.clientY, e.currentTarget as HTMLElement | null)
+}
+
+async function commitReorder(): Promise<void> {
+  const dragId = draggingId.value
+  const idx = dropIndex.value
+  const gk = draggingGroupKey.value
+  draggingId.value = null
+  draggingGroupKey.value = null
+  dropIndex.value = null
+  if (dragId === null || idx === null) return
+
+  const group = groups.value.find((g) => g.key === gk)
+  const dragged = group?.fields.find((f) => f.id === dragId)
+  if (!group || !dragged) return
+
+  const without = group.fields.filter((f) => f.id !== dragId)
+  without.splice(Math.min(idx, without.length), 0, dragged)
+
+  // Renumber the whole house-wide sequence with the reordered group substituted,
+  // so sort_order stays one coherent order that also keeps groups intact.
+  const flat: FieldDefinition[] = []
+  for (const g of groups.value) {
+    flat.push(...(g.key === gk ? without : g.fields))
+  }
+  const entries = flat.map((f, i) => ({ id: f.id, sortOrder: i }))
+  try {
+    await fields.reorder(entries)
+  } catch (e) {
+    error.value = (e as Error).message
+  }
+}
+
+// dragend on the source can be missed when the placeholder shuffles the DOM;
+// a capture listener on the list guarantees the drag state is cleared.
+watch(listRef, (el, old) => {
+  old?.removeEventListener('dragend', onDragEnd, true)
+  el?.addEventListener('dragend', onDragEnd, true)
+})
+onBeforeUnmount(() => listRef.value?.removeEventListener('dragend', onDragEnd, true))
+
+useTouchReorder(
+  listRef,
+  {
+    onDragStart: (id) => {
+      draggingId.value = id
+      draggingGroupKey.value = groupKeyOf(id)
+      dropIndex.value = null
+    },
+    onReorderOver: (hoveredId, _clientX, clientY) => {
+      const el = listRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
+      computeDropIndex(hoveredId, groupKeyOf(hoveredId), clientY, el)
+    },
+    onDrop: commitReorder,
+    onCancel: onDragEnd,
+  },
+  canReorder,
+)
 
 watch(
   () => props.open,
@@ -426,6 +603,26 @@ function syncOptionCounts(updated: FieldDefinition): void {
     &--new {
       border-color: var(--color-primary-element);
     }
+
+    &--dragging {
+      opacity: 0.4;
+    }
+  }
+
+  &__row {
+    display: flex;
+    align-items: stretch;
+  }
+
+  &__handle {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-left: 8px;
+    cursor: grab;
+    color: var(--color-text-maxcontrast);
+    background: var(--color-main-background);
+    touch-action: none;
   }
 
   &__head {
@@ -442,6 +639,14 @@ function syncOptionCounts(updated: FieldDefinition): void {
     &:hover {
       background: var(--color-background-hover);
     }
+  }
+
+  &__placeholder {
+    min-height: 42px;
+    border: 3px dashed var(--color-primary-element);
+    border-radius: var(--border-radius, 8px);
+    background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
+    margin-bottom: 0.4rem;
   }
 
   &__ticon {

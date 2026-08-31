@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Tests\Unit\Service;
 
+use OCA\Pantry\Db\FieldValueMapper;
 use OCA\Pantry\Db\HouseMember;
 use OCA\Pantry\Db\HouseMemberMapper;
-use OCA\Pantry\Db\FieldValueMapper;
 use OCA\Pantry\Service\CustomFieldReminderService;
 use OCA\Pantry\Service\PermissionService;
 use OCP\IURLGenerator;

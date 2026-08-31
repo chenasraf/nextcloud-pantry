@@ -62,35 +62,46 @@
     <!-- select options -->
     <div v-if="model.type === 'select'" class="cf-row">
       <label class="cf-lbl">{{ strings.options }}</label>
-      <div v-for="(opt, i) in model.options" :key="i" class="cf-option">
-        <NcTextField
-          v-model="opt.label"
-          :label="strings.optionLabel"
-          :placeholder="strings.optionPlaceholder"
-        />
-        <NcButton
-          variant="tertiary"
-          :aria-label="strings.moveUp"
-          :disabled="i === 0"
-          @click="moveOption(i, -1)"
-        >
-          <template #icon><ArrowUpIcon :size="18" /></template>
-        </NcButton>
-        <NcButton
-          variant="tertiary"
-          :aria-label="strings.moveDown"
-          :disabled="i === model.options.length - 1"
-          @click="moveOption(i, 1)"
-        >
-          <template #icon><ArrowDownIcon :size="18" /></template>
-        </NcButton>
-        <NcButton
-          variant="tertiary"
-          :aria-label="strings.removeOption"
-          @click="$emit('remove-option', i)"
-        >
-          <template #icon><CloseIcon :size="18" /></template>
-        </NcButton>
+      <div ref="optionsRef" class="cf-options">
+        <template v-for="row in optionRows" :key="row.type === 'option' ? 'o' + row.index : 'drop'">
+          <div
+            v-if="row.type === 'placeholder'"
+            class="cf-option-placeholder"
+            @dragover.prevent
+            @drop.prevent.stop="commitOptionDrop"
+          />
+          <div
+            v-else
+            class="cf-option"
+            :class="{ 'cf-option--dragging': dragIndex === row.index }"
+            :data-drag-id="row.index"
+            @dragover.prevent="onOptionDragOver($event, row.index)"
+            @drop.prevent.stop="commitOptionDrop"
+          >
+            <span
+              class="cf-option__handle"
+              draggable="true"
+              :aria-label="strings.dragHandle"
+              :title="strings.dragHandle"
+              @dragstart="onOptionDragStart($event, row.index)"
+              @dragend="onOptionDragEnd"
+            >
+              <DragVerticalIcon :size="20" />
+            </span>
+            <NcTextField
+              v-model="row.opt.label"
+              :label="strings.optionLabel"
+              :placeholder="strings.optionPlaceholder"
+            />
+            <NcButton
+              variant="tertiary"
+              :aria-label="strings.removeOption"
+              @click="$emit('remove-option', row.index)"
+            >
+              <template #icon><CloseIcon :size="18" /></template>
+            </NcButton>
+          </div>
+        </template>
       </div>
       <NcButton variant="tertiary" @click="addOption">
         <template #icon><PlusIcon :size="18" /></template>
@@ -213,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
@@ -222,12 +233,12 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import PlusIcon from '@icons/Plus.vue'
 import CloseIcon from '@icons/Close.vue'
 import DeleteIcon from '@icons/Delete.vue'
-import ArrowUpIcon from '@icons/ArrowUp.vue'
-import ArrowDownIcon from '@icons/ArrowDown.vue'
+import DragVerticalIcon from '@icons/DragVertical.vue'
 import type { Checklist, FieldDateMode, FieldOverridePolicy, FieldType } from '@/api/types'
 import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
+import { useTouchReorder } from '@/composables/useTouchReorder'
 import { FIELD_TYPES } from './fieldTypeIcons'
-import type { FieldDraft } from './draft'
+import type { DraftOption, FieldDraft } from './draft'
 
 const model = defineModel<FieldDraft>({ required: true })
 const props = defineProps<{
@@ -323,12 +334,95 @@ const defaultOptionSel = computed<Opt<number | null>>({
 function addOption(): void {
   model.value.options.push({ id: null, label: '', valueCount: 0 })
 }
-function moveOption(i: number, dir: -1 | 1): void {
-  const j = i + dir
-  if (j < 0 || j >= model.value.options.length) return
+
+// -------- Option drag reorder --------
+// The dragged option's index and, while dragging, the insertion slot in the
+// list-without-the-dragged-item (mirrors LabelManagerDialog). The option array's
+// order is only mutated on drop, so indices stay stable during a drag. Saving
+// renumbers sort_order from the array position, so a reorder persists as-is.
+const optionsRef = ref<HTMLElement | null>(null)
+const dragIndex = ref<number | null>(null)
+const dropIndex = ref<number | null>(null)
+
+type OptionRow = { type: 'option'; opt: DraftOption; index: number } | { type: 'placeholder' }
+
+const optionRows = computed<OptionRow[]>(() => {
   const opts = model.value.options
-  ;[opts[i], opts[j]] = [opts[j]!, opts[i]!]
+  if (dragIndex.value === null || dropIndex.value === null) {
+    return opts.map((opt, index) => ({ type: 'option', opt, index }))
+  }
+  const rows: OptionRow[] = opts
+    .map((opt, index) => ({ opt, index }))
+    .filter((r) => r.index !== dragIndex.value)
+    .map((r) => ({ type: 'option' as const, opt: r.opt, index: r.index }))
+  rows.splice(Math.min(dropIndex.value, rows.length), 0, { type: 'placeholder' })
+  return rows
+})
+
+function onOptionDragStart(e: DragEvent, index: number): void {
+  if (!e.dataTransfer) return
+  dragIndex.value = index
+  dropIndex.value = null
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', String(index))
+  const row = (e.currentTarget as HTMLElement).closest<HTMLElement>('.cf-option')
+  if (row) e.dataTransfer.setDragImage(row, 0, 0)
 }
+
+function computeOptionDrop(
+  hoveredIndex: number,
+  clientY: number,
+  target: HTMLElement | null,
+): void {
+  const di = dragIndex.value
+  if (di === null || di === hoveredIndex) return
+  const without = model.value.options.map((_, i) => i).filter((i) => i !== di)
+  const pos = without.indexOf(hoveredIndex)
+  if (pos === -1) return
+  if (target) {
+    const rect = target.getBoundingClientRect()
+    dropIndex.value = clientY > rect.top + rect.height / 2 ? pos + 1 : pos
+  } else {
+    dropIndex.value = pos
+  }
+}
+
+function onOptionDragOver(e: DragEvent, hoveredIndex: number): void {
+  computeOptionDrop(hoveredIndex, e.clientY, e.currentTarget as HTMLElement | null)
+}
+
+function commitOptionDrop(): void {
+  const di = dragIndex.value
+  const dp = dropIndex.value
+  dragIndex.value = null
+  dropIndex.value = null
+  if (di === null || dp === null) return
+  const opts = model.value.options
+  const [moved] = opts.splice(di, 1)
+  if (!moved) return
+  opts.splice(Math.min(dp, opts.length), 0, moved)
+}
+
+function onOptionDragEnd(): void {
+  dragIndex.value = null
+  dropIndex.value = null
+}
+
+useTouchReorder(optionsRef, {
+  onDragStart: (id) => {
+    dragIndex.value = id
+    dropIndex.value = null
+  },
+  onReorderOver: (hoveredId, _clientX, clientY) => {
+    const el = optionsRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
+    computeOptionDrop(hoveredId, clientY, el)
+  },
+  onDrop: commitOptionDrop,
+  onCancel: () => {
+    dragIndex.value = null
+    dropIndex.value = null
+  },
+})
 
 const strings = {
   name: t('pantry', 'Name'),
@@ -343,8 +437,7 @@ const strings = {
   optionLabel: t('pantry', 'Option'),
   optionPlaceholder: t('pantry', 'Option label'),
   addOption: t('pantry', 'Add option'),
-  moveUp: t('pantry', 'Move up'),
-  moveDown: t('pantry', 'Move down'),
+  dragHandle: t('pantry', 'Drag to reorder'),
   removeOption: t('pantry', 'Remove option'),
   entryMode: t('pantry', 'Date entry'),
   defaultOffset: t('pantry', 'Default offset (days)'),
@@ -393,11 +486,37 @@ const strings = {
   flex-wrap: wrap;
 }
 
+.cf-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
 .cf-option {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  margin-bottom: 0.35rem;
+
+  &--dragging {
+    opacity: 0.4;
+  }
+
+  &__handle {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: grab;
+    color: var(--color-text-maxcontrast);
+    touch-action: none;
+  }
+}
+
+.cf-option-placeholder {
+  min-height: 40px;
+  border: 3px dashed var(--color-primary-element);
+  border-radius: var(--border-radius, 8px);
+  background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
 }
 
 .cf-error {
