@@ -15,10 +15,19 @@ function emptyValue(fieldId: number): ItemCustomFieldValue {
   }
 }
 
+/** Epoch seconds at local midnight, `offset` days from today. */
+function anchorEpoch(offset: number): number {
+  const day = new Date()
+  day.setHours(0, 0, 0, 0)
+  day.setDate(day.getDate() + offset)
+  return Math.floor(day.getTime() / 1000)
+}
+
 /**
  * The initial custom-field values for a new item on the given list: each
- * applicable field that carries a default contributes a value. Fields without a
- * default (and all date fields) are left unset.
+ * applicable field that carries a default contributes a value. A relative date
+ * field's default offset is materialized to today + offset; absolute date fields
+ * have no default, and fields without one are left unset.
  */
 export function defaultCustomFieldValues(
   fields: FieldDefinition[],
@@ -44,6 +53,11 @@ export function defaultCustomFieldValues(
       case 'select':
         if (field.defaultOptionId == null) continue
         v.valueOptionId = field.defaultOptionId
+        break
+      case 'date':
+        if (field.dateMode !== 'relative' || field.defaultOffsetDays == null) continue
+        v.offsetDays = field.defaultOffsetDays
+        v.valueDate = anchorEpoch(field.defaultOffsetDays)
         break
       default:
         continue

@@ -38,7 +38,8 @@ describe('defaultCustomFieldValues', () => {
       field({ id: 4, type: 'checkbox', defaultBool: true }),
       field({ id: 5, type: 'checkbox' }), // false default → skipped
       field({ id: 6, type: 'select', defaultOptionId: 42 }),
-      field({ id: 7, type: 'date' }), // dates never default
+      field({ id: 7, type: 'date' }), // absolute date → never defaults
+      field({ id: 8, type: 'date', dateMode: 'relative' }), // no offset → skipped
     ]
 
     const out = defaultCustomFieldValues(fields, null)
@@ -48,6 +49,20 @@ describe('defaultCustomFieldValues', () => {
     expect(out.find((v) => v.fieldId === 3)!.valueNumber).toBe(5)
     expect(out.find((v) => v.fieldId === 4)!.valueBool).toBe(true)
     expect(out.find((v) => v.fieldId === 6)!.valueOptionId).toBe(42)
+  })
+
+  it('materializes a relative date default to today + offset', () => {
+    const fields = [field({ id: 1, type: 'date', dateMode: 'relative', defaultOffsetDays: 3 })]
+
+    const out = defaultCustomFieldValues(fields, null)
+
+    const midnight = new Date()
+    midnight.setHours(0, 0, 0, 0)
+    midnight.setDate(midnight.getDate() + 3)
+
+    expect(out).toHaveLength(1)
+    expect(out[0]!.offsetDays).toBe(3)
+    expect(out[0]!.valueDate).toBe(Math.floor(midnight.getTime() / 1000))
   })
 
   it('excludes fields scoped to another list', () => {
