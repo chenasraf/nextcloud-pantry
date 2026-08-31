@@ -115,6 +115,12 @@ class FieldDefinition extends Entity implements \JsonSerializable {
 		$this->addType('deletedAt', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
+		// `type` has no DB default and is NOT NULL. A text field's value equals the
+		// PHP default ('text'), so the magic setter would never mark it dirty and
+		// QBMapper would omit it from the INSERT, violating the constraint. Force
+		// it in. (fromRow() resets updated fields after hydration, so reads are
+		// unaffected — same pattern as Role::roleType.)
+		$this->markFieldUpdated('type');
 	}
 
 	/**
