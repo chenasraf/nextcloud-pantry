@@ -52,6 +52,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setCanUpdateNotes(bool $v)
  * @method bool getCanDeleteNotes()
  * @method void setCanDeleteNotes(bool $v)
+ * @method bool getCanEditFields()
+ * @method void setCanEditFields(bool $v)
  */
 class Role extends Entity implements \JsonSerializable {
 	public const TYPE_ADMIN = 'admin';
@@ -83,6 +85,7 @@ class Role extends Entity implements \JsonSerializable {
 		'canCreateNotes' => 'canCreateNotes',
 		'canUpdateNotes' => 'canUpdateNotes',
 		'canDeleteNotes' => 'canDeleteNotes',
+		'canEditFields' => 'canEditFields',
 	];
 
 	protected int $houseId = 0;
@@ -107,6 +110,7 @@ class Role extends Entity implements \JsonSerializable {
 	protected bool $canCreateNotes = false;
 	protected bool $canUpdateNotes = false;
 	protected bool $canDeleteNotes = false;
+	protected bool $canEditFields = false;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');

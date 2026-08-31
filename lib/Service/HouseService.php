@@ -41,6 +41,8 @@ class HouseService {
 		private \OCA\Pantry\Db\ItemStoreMapper $itemStoreMapper,
 		private \OCA\Pantry\Db\ItemPriceMapper $itemPriceMapper,
 		private \OCA\Pantry\Db\ShoppingReminderMapper $shoppingReminderMapper,
+		private \OCA\Pantry\Db\FieldDefinitionMapper $fieldDefMapper,
+		private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper,
 		private PhotoMapper $photoMapper,
 		private PhotoFolderMapper $photoFolderMapper,
 		private NoteMapper $noteMapper,
@@ -187,6 +189,9 @@ class HouseService {
 			$this->labelMapper->deleteByHouse($houseId);
 			$this->storeMapper->deleteByHouse($houseId);
 			$this->shoppingReminderMapper->deleteByHouse($houseId);
+			// Options are children of field definitions; remove them before the defs.
+			$this->fieldOptionMapper->deleteByHouse($houseId);
+			$this->fieldDefMapper->deleteByHouse($houseId);
 			$this->photoMapper->deleteByHouse($houseId);
 			$this->photoFolderMapper->deleteByHouse($houseId);
 			$this->noteMapper->deleteByHouse($houseId);

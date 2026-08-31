@@ -56,6 +56,8 @@ class ChecklistServiceTest extends TestCase {
 			$this->createMock(\OCA\Pantry\Db\CategoryMapper::class),
 			$this->createMock(\OCA\Pantry\Db\ItemLabelMapper::class),
 			$this->createMock(\OCA\Pantry\Db\LabelMapper::class),
+			$this->createMock(\OCA\Pantry\Db\FieldDefinitionMapper::class),
+			$this->createMock(\OCA\Pantry\Db\FieldOptionMapper::class),
 			$this->db,
 		);
 	}

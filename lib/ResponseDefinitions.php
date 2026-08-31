@@ -84,6 +84,36 @@ namespace OCA\Pantry;
  *     priceCurrency: string|null,
  * }
  *
+ * @psalm-type PantryFieldOption = array{
+ *     id: int,
+ *     label: string,
+ *     sortOrder: int,
+ * }
+ *
+ * @psalm-type PantryFieldDefinition = array{
+ *     id: int,
+ *     houseId: int,
+ *     listId: int|null,
+ *     name: string,
+ *     type: 'text'|'number'|'checkbox'|'date'|'select',
+ *     sortOrder: int,
+ *     hint: string|null,
+ *     multiline: bool,
+ *     defaultText: string|null,
+ *     defaultNumber: float|null,
+ *     defaultBool: bool,
+ *     defaultOptionId: int|null,
+ *     dateMode: 'absolute'|'relative'|null,
+ *     defaultOffsetDays: int|null,
+ *     notifyDefault: bool,
+ *     leadDays: int,
+ *     overridePolicy: 'field-only'|'item-override'|null,
+ *     stopWhenDone: bool,
+ *     options: list<PantryFieldOption>,
+ *     createdAt: int,
+ *     updatedAt: int,
+ * }
+ *
  * @psalm-type PantryListItem = array{
  *     id: int,
  *     listId: int,

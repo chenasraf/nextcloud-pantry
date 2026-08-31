@@ -90,6 +90,7 @@ class Capabilities implements IPublicCapability {
 					'reuse-existing-items',
 					'roles',
 					'share-users',
+					'custom-fields',
 				],
 			],
 		];

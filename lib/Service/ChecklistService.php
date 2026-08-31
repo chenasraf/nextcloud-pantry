@@ -45,6 +45,8 @@ class ChecklistService {
 		private CategoryMapper $categoryMapper,
 		private ItemLabelMapper $itemLabelMapper,
 		private LabelMapper $labelMapper,
+		private \OCA\Pantry\Db\FieldDefinitionMapper $fieldDefMapper,
+		private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper,
 		private IDBConnection $db,
 	) {
 	}
@@ -191,6 +193,8 @@ class ChecklistService {
 		$this->listRoleMapper->deleteByList((int)$list->getId());
 		$this->categoryMapper->deleteByList((int)$list->getId());
 		$this->labelMapper->deleteByList((int)$list->getId());
+		$this->fieldOptionMapper->deleteByList((int)$list->getId());
+		$this->fieldDefMapper->deleteByList((int)$list->getId());
 		$this->listMapper->delete($list);
 	}
 
@@ -204,6 +208,8 @@ class ChecklistService {
 			$this->itemMapper->deleteByList((int)$list->getId());
 			$this->categoryMapper->deleteByList((int)$list->getId());
 			$this->labelMapper->deleteByList((int)$list->getId());
+			$this->fieldOptionMapper->deleteByList((int)$list->getId());
+			$this->fieldDefMapper->deleteByList((int)$list->getId());
 		}
 	}
 

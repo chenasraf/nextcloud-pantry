@@ -348,6 +348,15 @@
       <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
+			$all = $this->lists->listArchivedForHouse($houseId);
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			return new DataResponse(array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $sliced));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$all = $this->lists->listDeletedForHouse($houseId);
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
@@ -678,7 +687,8 @@
       <code><![CDATA[$this->runAction(function () use ($houseId, $listId, $sortBy, $limit, $offset): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$list = $this->lists->getList($listId);
+			// A trashed or archived list still opens into the normal item view.
+			$list = $this->lists->getList($listId, includeDeleted: true);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
 			$all = $this->lists->listItems($listId, $sortBy, $categorySort);
@@ -714,6 +724,15 @@
       <code><![CDATA[$this->runAction(function () use ($houseId, $listId): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
+			$existing = $this->lists->getList($listId);
+			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$archived = $this->lists->archiveList($listId);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($archived, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->lists->getList($listId, includeDeleted: true);
 			$this->assertListInHouse($existing->getHouseId(), $houseId);
 			$restored = $this->lists->restoreList($listId);
@@ -723,7 +742,18 @@
       <code><![CDATA[$this->runAction(function () use ($houseId, $listId): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$list = $this->lists->getList($listId);
+			$existing = $this->lists->getList($listId, includeDeleted: true);
+			$this->assertListInHouse($existing->getHouseId(), $houseId);
+			$unarchived = $this->lists->unarchiveList($listId);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($unarchived, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			// Trashed and archived lists open into the normal list view, so fetch
+			// them regardless of their soft-delete state.
+			$list = $this->lists->getList($listId, includeDeleted: true);
 			$this->assertListInHouse($list->getHouseId(), $houseId);
 			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
 			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
@@ -784,6 +814,8 @@
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryList, array{}>]]></code>
       <code><![CDATA[array<string, mixed>]]></code>
       <code><![CDATA[array_values(array_map(static function ($i) use ($storeMap, $priceMap, $labelMap) {
 			$data = $i->jsonSerialize();
@@ -810,6 +842,7 @@
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, PantryListItem, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryList>, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryList>, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>]]></code>
       <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryListItem>, array{}>]]></code>
@@ -882,6 +915,75 @@
       <code><![CDATA[$limit]]></code>
       <code><![CDATA[$offset]]></code>
       <code><![CDATA[$sortBy]]></code>
+    </UnusedParam>
+  </file>
+  <file src="lib/Controller/FieldDefinitionController.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->runAction(function () use (
+			$houseId, $name, $type, $listId, $hint, $multiline, $defaultText,
+			$defaultNumber, $defaultBool, $dateMode, $defaultOffsetDays,
+			$notifyDefault, $leadDays, $overridePolicy, $stopWhenDone, $options,
+		): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$created = $this->fields->create($houseId, [
+				'name' => $name,
+				'type' => $type,
+				'listId' => $listId,
+				'hint' => $hint,
+				'multiline' => $multiline,
+				'defaultText' => $defaultText,
+				'defaultNumber' => $defaultNumber,
+				'defaultBool' => $defaultBool,
+				'dateMode' => $dateMode,
+				'defaultOffsetDays' => $defaultOffsetDays,
+				'notifyDefault' => $notifyDefault,
+				'leadDays' => $leadDays,
+				'overridePolicy' => $overridePolicy,
+				'stopWhenDone' => $stopWhenDone,
+				'options' => $options,
+			]);
+			return new DataResponse($created);
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			return new DataResponse($this->fields->listForHouse($houseId));
+		})]]></code>
+      <code><![CDATA[$this->runAction(function () use ($houseId, $fieldId, $params): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->fields->assertInHouse($fieldId, $houseId);
+
+			$patch = [];
+			if (array_key_exists('name', $params)) {
+				$patch['name'] = $params['name'];
+			}
+			if (array_key_exists('listId', $params)) {
+				$patch['listId'] = $params['listId'];
+			}
+			foreach (self::CONFIG_KEYS as $key) {
+				if (array_key_exists($key, $params)) {
+					$patch[$key] = $params[$key];
+				}
+			}
+			$updated = $this->fields->update($fieldId, $patch);
+			return new DataResponse($updated);
+		})]]></code>
+    </LessSpecificReturnStatement>
+    <MixedAssignment>
+      <code><![CDATA[$patch[$key]]]></code>
+      <code><![CDATA[$patch['listId']]]></code>
+      <code><![CDATA[$patch['name']]]></code>
+    </MixedAssignment>
+    <MoreSpecificReturnType>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryFieldDefinition, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, PantryFieldDefinition, array{}>]]></code>
+      <code><![CDATA[DataResponse<Http::STATUS_OK, list<PantryFieldDefinition>, array{}>]]></code>
+    </MoreSpecificReturnType>
+    <UnusedClass>
+      <code><![CDATA[FieldDefinitionController]]></code>
+    </UnusedClass>
+    <UnusedParam>
+      <code><![CDATA[$listId]]></code>
+      <code><![CDATA[$name]]></code>
     </UnusedParam>
   </file>
   <file src="lib/Controller/HouseController.php">
@@ -1762,6 +1864,39 @@
       <code><![CDATA[__construct]]></code>
     </PossiblyUnusedMethod>
   </file>
+  <file src="lib/Db/FieldDefinition.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$deletedAt]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[FieldDefinition]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/FieldDefinitionMapper.php">
+    <MixedAssignment>
+      <code><![CDATA[$max]]></code>
+    </MixedAssignment>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Db/FieldOption.php">
+    <PossiblyUnusedProperty>
+      <code><![CDATA[$fieldId]]></code>
+    </PossiblyUnusedProperty>
+    <PropertyNotSetInConstructor>
+      <code><![CDATA[FieldOption]]></code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="lib/Db/FieldOptionMapper.php">
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+      <code><![CDATA[deleteByField]]></code>
+    </PossiblyUnusedMethod>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$option->getFieldId()]]></code>
+    </RedundantCastGivenDocblockType>
+  </file>
   <file src="lib/Db/House.php">
     <PropertyNotSetInConstructor>
       <code><![CDATA[House]]></code>
@@ -1938,6 +2073,7 @@
       <code><![CDATA[$canDeleteLists]]></code>
       <code><![CDATA[$canDeleteNotes]]></code>
       <code><![CDATA[$canDeletePhotos]]></code>
+      <code><![CDATA[$canEditFields]]></code>
       <code><![CDATA[$canEditLists]]></code>
       <code><![CDATA[$canMoveItems]]></code>
       <code><![CDATA[$canMovePhotos]]></code>
@@ -2311,12 +2447,28 @@
       <code><![CDATA[Version28Date20260821010000]]></code>
     </UnusedClass>
   </file>
+  <file src="lib/Migration/Version29Date20260824000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version29Date20260824000000]]></code>
+    </UnusedClass>
+  </file>
   <file src="lib/Migration/Version2Date20260408000000.php">
     <UnnecessaryVarAnnotation>
       <code><![CDATA[ISchemaWrapper]]></code>
     </UnnecessaryVarAnnotation>
     <UnusedClass>
       <code><![CDATA[Version2Date20260408000000]]></code>
+    </UnusedClass>
+  </file>
+  <file src="lib/Migration/Version30Date20260831000000.php">
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[ISchemaWrapper]]></code>
+    </UnnecessaryVarAnnotation>
+    <UnusedClass>
+      <code><![CDATA[Version30Date20260831000000]]></code>
     </UnusedClass>
   </file>
   <file src="lib/Migration/Version3Date20260416000000.php">
@@ -2564,6 +2716,10 @@
       <code><![CDATA[(int)$list->getId()]]></code>
       <code><![CDATA[(int)$list->getId()]]></code>
       <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
+      <code><![CDATA[(int)$list->getId()]]></code>
       <code><![CDATA[(int)$rawId]]></code>
       <code><![CDATA[(int)$saved->getId()]]></code>
       <code><![CDATA[(int)$saved->getId()]]></code>
@@ -2592,6 +2748,51 @@
     <PossiblyUnusedMethod>
       <code><![CDATA[all]]></code>
     </PossiblyUnusedMethod>
+  </file>
+  <file src="lib/Service/FieldDefinitionService.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$options]]></code>
+    </ArgumentTypeCoercion>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[array_map(
+			fn (FieldDefinition $d): array => $d->jsonSerialize($optionsByField[(int)$d->getId()] ?? []),
+			$defs,
+		)]]></code>
+    </LessSpecificReturnStatement>
+    <MissingClosureParamType>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+      <code><![CDATA[$v]]></code>
+    </MissingClosureParamType>
+    <MoreSpecificReturnType>
+      <code><![CDATA[list<array<string, mixed>>]]></code>
+    </MoreSpecificReturnType>
+    <PossiblyUnusedMethod>
+      <code><![CDATA[__construct]]></code>
+    </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code><![CDATA[FieldDefinition]]></code>
+    </PossiblyUnusedReturnValue>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(int)$d->getId()]]></code>
+      <code><![CDATA[(int)$d->getId()]]></code>
+      <code><![CDATA[(int)$def->getId()]]></code>
+      <code><![CDATA[(int)$def->getId()]]></code>
+      <code><![CDATA[(int)$existing->getId()]]></code>
+      <code><![CDATA[(int)($entry['id'] ?? 0)]]></code>
+      <code><![CDATA[(int)($entry['sortOrder'] ?? 0)]]></code>
+    </RedundantCastGivenDocblockType>
+    <UnnecessaryVarAnnotation>
+      <code><![CDATA[FieldDefinition]]></code>
+    </UnnecessaryVarAnnotation>
   </file>
   <file src="lib/Service/HouseAuthService.php">
     <PossiblyUnusedMethod>
