@@ -295,6 +295,18 @@
               </template>
               {{ strings.uncheckAll }}
             </NcButton>
+            <NcButton
+              v-if="canRemoveAll"
+              class="pantry-detail__uncheck-all"
+              variant="tertiary"
+              :disabled="removingAll"
+              @click="confirmingRemoveAll = true"
+            >
+              <template #icon>
+                <DeleteIcon :size="18" />
+              </template>
+              {{ strings.removeAll }}
+            </NcButton>
           </div>
           <ul
             v-show="!doneCollapsed"
@@ -652,6 +664,24 @@
         </NcButton>
         <NcButton variant="primary" :disabled="unchecking" @click="runUncheckAll">
           {{ strings.uncheckAll }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <NcDialog
+      v-if="confirmingRemoveAll"
+      :name="strings.removeAllTitle"
+      :open="confirmingRemoveAll"
+      close-on-click-outside
+      @update:open="(v) => !v && (confirmingRemoveAll = false)"
+    >
+      <p>{{ strings.removeAllConfirm }}</p>
+      <template #actions>
+        <NcButton :disabled="removingAll" @click="confirmingRemoveAll = false">
+          {{ strings.cancel }}
+        </NcButton>
+        <NcButton variant="error" :disabled="removingAll" @click="runRemoveAll">
+          {{ strings.removeAll }}
         </NcButton>
       </template>
     </NcDialog>
@@ -1054,6 +1084,41 @@ async function runUncheckAll() {
     showError((e as Error).message)
   } finally {
     unchecking.value = false
+  }
+}
+
+// ----- Remove all done -----
+
+const canRemoveAll = computed(
+  () =>
+    !isMeta.value && viewMode.value === 'active' && writableHere.value && can.value.canDeleteItems,
+)
+const confirmingRemoveAll = ref(false)
+const removingAll = ref(false)
+
+async function runRemoveAll() {
+  confirmingRemoveAll.value = false
+  // All done items in the list (unfiltered) — "remove all in the list", not just
+  // what a search/category filter currently shows.
+  const done = items.value.filter((i) => i.done)
+  const ids = done.map((i) => i.id)
+  if (ids.length === 0) return
+  const snapshots = done.map((i) => ({ ...i }))
+  removingAll.value = true
+  try {
+    const result = await removeMany(ids)
+    const removed = ids.length - result.skipped.length
+    showUndo(
+      n('pantry', 'Removed %n item', 'Removed %n items', removed),
+      () => {
+        void undoRemoveMany(snapshots).catch(() => showError(strings.restoreFailed))
+      },
+      { timeout: 6000 },
+    )
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    removingAll.value = false
   }
 }
 
@@ -2575,6 +2640,13 @@ const strings = {
     'pantry',
     'Every checked item in this list will be returned to the active list.',
   ),
+  // TRANSLATORS: Button that soft-deletes every checked (done) item in the list.
+  removeAll: t('pantry', 'Remove all'),
+  removeAllTitle: t('pantry', 'Remove all done items?'),
+  removeAllConfirm: t(
+    'pantry',
+    'Every checked item in this list will be moved to the trash. You can restore them afterwards.',
+  ),
   trashLabel: t('pantry', 'Trash'),
   // TRANSLATORS: Noun. Toolbar toggle that opens the view of archived items (not the "archive" action).
   archiveLabel: t('pantry', 'Archive'),
@@ -2939,6 +3011,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     align-items: center;
     gap: 0.5rem;
     padding-inline-end: 0.5rem;
+    margin-block-start: 1.5rem;
   }
 
   // The toggle fills the row and absorbs any shrink; the uncheck-all button keeps
