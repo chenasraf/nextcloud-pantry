@@ -92,19 +92,29 @@ otherwise have none, but it is bounded:
 
 ## How to change permissions
 
-All role and membership management is **admin-only**.
+Roles are edited in the **Roles** dialog, opened from **Manage roles** on the
+[Manage house](/docs/administration/manage-house) page. It is **admin-only**. Each role is a card
+showing its **name** and a type chip — **Built-in admin**, **Built-in member**, or **Custom**.
 
-- **Edit a role's capabilities** — toggle capabilities on the Member role or a custom role
-  (`PATCH /api/houses/{houseId}/roles/{roleId}`). The Admin role is locked to all-granted.
-- **Create / delete custom roles** — `POST` / `DELETE /api/houses/{houseId}/roles`.
-- **Assign roles to a member** — `PUT /api/houses/{houseId}/members/{memberId}/roles`.
-- **Restrict a list to roles** — `PUT /api/houses/{houseId}/lists/{listId}/roles` (empty = open to
-  all).
-- **Share an entity with a user** — `PUT /api/houses/{houseId}/shares/{entityType}/{entityId}`. Only
-  the entity's creator or a house admin may manage its shares.
+- **Edit what a role can do** — expand **Customize** on the Member role or a custom role to reveal
+  its capability switches, grouped into **Checklists**, **Checklist items**, **Photos** and
+  **Notes**. Each group's **View** switch gates the rest of the group: turn View off and the other
+  switches in that group turn off and grey out. The **Admin** role is locked to every permission and
+  has no switches.
+- **Add a role** — **Add role** creates a custom role with every permission granted, ready to rename
+  and pare back. **Duplicate role** copies an existing role's permissions into a new custom one.
+- **Delete a role** — only custom roles can be deleted; the built-in Admin and Member roles cannot.
+  A pending delete is marked and can be undone until you save.
+- **Save** — nothing takes effect until you select **Save changes**. Closing with unsaved edits asks
+  you to confirm first.
 
-House-level management (editing house settings such as trash retention, adding/removing members) is
-also admin-only; deleting or leaving a house is governed by house ownership.
+Roles are assigned to people separately, in the **Members** dialog (**Manage members** on the same
+page) — each member holds one or more roles, and their effective permissions are the union across
+them.
+
+To scope a single list rather than a whole role, restrict that list to roles, or share an individual
+entity with specific people — both described under [Per-list access and sharing](#per-list-access-and-sharing)
+above.
 
 ---
 
