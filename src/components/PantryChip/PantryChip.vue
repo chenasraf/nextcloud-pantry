@@ -81,7 +81,9 @@ const colorStyle = computed(() => {
   --chip-bg: var(--color-background-hover);
   --chip-bg-hover: var(--color-background-dark);
   --chip-fg: var(--color-text-maxcontrast);
-  --chip-border: transparent;
+  // Nudge the neutral outline toward the higher-contrast border so it lifts off
+  // the hover / field-card backgrounds these chips sit on, instead of blending in.
+  --chip-border: color-mix(in srgb, var(--color-border) 55%, var(--color-border-maxcontrast));
   --chip-weight: 600;
 
   display: inline-flex;
@@ -136,9 +138,6 @@ const colorStyle = computed(() => {
 
 .pantry-chip--interactive {
   cursor: pointer;
-  // Resting interactive chips carry a visible outline; the accent variants and
-  // color modifier below replace it.
-  --chip-border: var(--color-border);
 
   &:hover {
     background-color: var(--chip-bg-hover);

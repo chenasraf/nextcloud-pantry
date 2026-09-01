@@ -1,213 +1,219 @@
 <template>
-  <form class="checklist-add" autocomplete="off" @submit.prevent="submitAdd">
-    <div class="checklist-add__primary" :class="{ 'checklist-add__primary--multiple': multiple }">
-      <div class="checklist-add__name-wrapper">
-        <AutoResizeTextarea
-          v-if="multiple"
-          v-model="name"
-          class="checklist-add__name-textarea"
-          :rows="3"
-          :label="strings.nameLabel"
-          :placeholder="strings.namePlaceholder"
-          autocomplete="off"
-        />
-        <NcTextField
-          v-else
-          v-model="name"
-          class="checklist-add__name"
-          :class="{ 'checklist-add__name--compact': requireListSelector }"
-          :label="strings.nameLabel"
-          :placeholder="strings.namePlaceholder"
-          autocomplete="off"
-        />
-        <div v-if="multiple" class="checklist-add__hint">
-          {{ strings.multipleHint }}
-        </div>
-      </div>
-      <NcSelect
-        v-if="requireListSelector"
-        class="checklist-add__list-select"
-        :model-value="selectedListOption"
-        :options="listOptions"
-        :clearable="false"
-        :placeholder="strings.list"
-        input-label=""
-        @update:model-value="onListSelected"
-      >
-        <template #option="opt">
-          <span class="checklist-add__list-option">
-            <span class="checklist-add__list-option-icon" :style="listIconStyle(opt.list)">
-              <component :is="checklistIconComponent(opt.list.icon)" :size="14" />
-            </span>
-            {{ opt.label }}
-          </span>
-        </template>
-        <template #selected-option="opt">
-          <span class="checklist-add__list-option">
-            <span class="checklist-add__list-option-icon" :style="listIconStyle(opt.list)">
-              <component :is="checklistIconComponent(opt.list.icon)" :size="14" />
-            </span>
-            {{ opt.label }}
-          </span>
-        </template>
-      </NcSelect>
-      <NcCheckboxRadioSwitch v-model="multiple" class="checklist-add__multiple-toggle">
-        {{ strings.multiple }}
-      </NcCheckboxRadioSwitch>
-      <NcButton
-        type="submit"
-        variant="primary"
-        :disabled="!canSubmit || adding"
-        :class="{ 'checklist-add__submit--compact': requireListSelector && !multiple }"
-      >
-        <template #icon>
-          <PlusIcon :size="20" />
-        </template>
-        {{ strings.add }}
-      </NcButton>
-    </div>
-
-    <div class="checklist-add__chips">
-      <PantryChip
-        v-for="chip in chips"
-        :key="chip.key"
-        :variant="chipVariant(chip)"
-        class="checklist-add__chip"
-        @click="toggleSection(chip.key)"
-      >
-        <template #icon>
-          <component :is="chip.icon" :size="14" :style="chip.iconStyle" />
-        </template>
-        {{ chip.text }}
-      </PantryChip>
-      <PantryChip
-        v-if="!multiple"
-        :variant="barcode ? 'secondary' : 'tertiary'"
-        class="checklist-add__chip"
-        @click="barcodeDialogOpen = true"
-      >
-        <template #icon>
-          <BarcodeScanIcon :size="14" />
-        </template>
-        {{ barcode ? strings.barcodeAttached : strings.barcode }}
-      </PantryChip>
-    </div>
-
-    <div v-if="openSection" class="checklist-add__section">
-      <CategoryChipList
-        v-if="openSection === 'category'"
-        v-model="categoryId"
-        :house-id="houseId"
-        :list-id="effectiveListId"
-      />
-
-      <StoreChipList v-else-if="openSection === 'stores'" v-model="storeIds" :house-id="houseId" />
-
-      <LabelChipList
-        v-else-if="openSection === 'labels'"
-        v-model="labelIds"
-        :house-id="houseId"
-        :list-id="effectiveListId"
-      />
-
-      <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
-
-      <ItemPricesEditor
-        v-else-if="openSection === 'price'"
-        v-model="prices"
-        :house-id="houseId"
-        :default-currency="defaultCurrency"
-      />
-
-      <ItemCustomFieldsEditor
-        v-else-if="openSection === 'customfields'"
-        v-model="customFieldValues"
-        :house-id="houseId"
-        :list-id="effectiveListId"
-      />
-
-      <AutoResizeTextarea
-        v-else-if="openSection === 'description'"
-        v-model="description"
-        :label="strings.descriptionLabel"
-        :placeholder="strings.descriptionPlaceholder"
-        autocomplete="off"
-      />
-
-      <!-- Item type + (inline recurrence when Recurring) -->
-      <div v-else-if="openSection === 'type'" class="checklist-add__type">
-        <ItemTypeSelector
-          :delete-on-done="deleteOnDone"
-          :rrule="rrule"
-          @select-staple="selectStaple"
-          @select-one-time="selectOneTime"
-          @select-recurring="selectRecurring"
-        />
-        <RecurrenceForm
-          v-if="currentType === 'recurring'"
-          v-model="rrule"
-          v-model:from-completion="repeatFromCompletion"
-        />
-      </div>
-
-      <div v-else-if="openSection === 'image'" class="checklist-add__image">
-        <div v-if="previewImageUrl" class="checklist-add__image-row">
-          <img
-            class="checklist-add__image-preview"
-            :src="previewImageUrl"
-            :alt="strings.imageAlt"
+  <FieldCard :label="formLabel" class="checklist-add-card">
+    <form class="checklist-add" autocomplete="off" @submit.prevent="submitAdd">
+      <div class="checklist-add__primary" :class="{ 'checklist-add__primary--multiple': multiple }">
+        <div class="checklist-add__name-wrapper">
+          <AutoResizeTextarea
+            v-if="multiple"
+            v-model="name"
+            class="checklist-add__name-textarea"
+            :rows="3"
+            :label="strings.nameLabel"
+            :placeholder="strings.namePlaceholder"
+            autocomplete="off"
           />
-          <NcButton variant="tertiary" type="button" @click="triggerImagePick">
-            <template #icon>
-              <UploadIcon :size="20" />
-            </template>
-            {{ strings.replaceImage }}
-          </NcButton>
-          <NcButton variant="tertiary" type="button" @click="clearPendingImage">
-            <template #icon>
-              <DeleteIcon :size="20" />
-            </template>
-            {{ strings.removeImage }}
-          </NcButton>
+          <NcTextField
+            v-else
+            v-model="name"
+            class="checklist-add__name"
+            :class="{ 'checklist-add__name--compact': requireListSelector }"
+            :label="strings.nameLabel"
+            :placeholder="strings.namePlaceholder"
+            autocomplete="off"
+          />
+          <div v-if="multiple" class="checklist-add__hint">
+            {{ strings.multipleHint }}
+          </div>
         </div>
-        <NcButton v-else variant="tertiary" type="button" @click="triggerImagePick">
-          <template #icon>
-            <ImagePlusIcon :size="20" />
+        <NcSelect
+          v-if="requireListSelector"
+          class="checklist-add__list-select"
+          :model-value="selectedListOption"
+          :options="listOptions"
+          :clearable="false"
+          :placeholder="strings.list"
+          input-label=""
+          @update:model-value="onListSelected"
+        >
+          <template #option="opt">
+            <span class="checklist-add__list-option">
+              <span class="checklist-add__list-option-icon" :style="listIconStyle(opt.list)">
+                <component :is="checklistIconComponent(opt.list.icon)" :size="14" />
+              </span>
+              {{ opt.label }}
+            </span>
           </template>
-          {{ strings.addImage }}
+          <template #selected-option="opt">
+            <span class="checklist-add__list-option">
+              <span class="checklist-add__list-option-icon" :style="listIconStyle(opt.list)">
+                <component :is="checklistIconComponent(opt.list.icon)" :size="14" />
+              </span>
+              {{ opt.label }}
+            </span>
+          </template>
+        </NcSelect>
+        <NcCheckboxRadioSwitch v-model="multiple" class="checklist-add__multiple-toggle">
+          {{ strings.multiple }}
+        </NcCheckboxRadioSwitch>
+        <NcButton
+          type="submit"
+          variant="primary"
+          :disabled="!canSubmit || adding"
+          :class="{ 'checklist-add__submit--compact': requireListSelector && !multiple }"
+        >
+          <template #icon>
+            <PlusIcon :size="20" />
+          </template>
+          {{ strings.add }}
         </NcButton>
-        <input
-          ref="imageInputRef"
-          type="file"
-          accept="image/*"
-          class="checklist-add__image-input"
-          @change="onImagePicked"
-        />
       </div>
-    </div>
 
-    <!-- Live "reuse existing item" suggestions. Mutually exclusive with an open
+      <div class="checklist-add__chips">
+        <PantryChip
+          v-for="chip in chips"
+          :key="chip.key"
+          :variant="chipVariant(chip)"
+          class="checklist-add__chip"
+          @click="toggleSection(chip.key)"
+        >
+          <template #icon>
+            <component :is="chip.icon" :size="14" :style="chip.iconStyle" />
+          </template>
+          {{ chip.text }}
+        </PantryChip>
+        <PantryChip
+          v-if="!multiple"
+          :variant="barcode ? 'secondary' : 'tertiary'"
+          class="checklist-add__chip"
+          @click="barcodeDialogOpen = true"
+        >
+          <template #icon>
+            <BarcodeScanIcon :size="14" />
+          </template>
+          {{ barcode ? strings.barcodeAttached : strings.barcode }}
+        </PantryChip>
+      </div>
+
+      <div v-if="openSection" class="checklist-add__section">
+        <CategoryChipList
+          v-if="openSection === 'category'"
+          v-model="categoryId"
+          :house-id="houseId"
+          :list-id="effectiveListId"
+        />
+
+        <StoreChipList
+          v-else-if="openSection === 'stores'"
+          v-model="storeIds"
+          :house-id="houseId"
+        />
+
+        <LabelChipList
+          v-else-if="openSection === 'labels'"
+          v-model="labelIds"
+          :house-id="houseId"
+          :list-id="effectiveListId"
+        />
+
+        <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
+
+        <ItemPricesEditor
+          v-else-if="openSection === 'price'"
+          v-model="prices"
+          :house-id="houseId"
+          :default-currency="defaultCurrency"
+        />
+
+        <ItemCustomFieldsEditor
+          v-else-if="openSection === 'customfields'"
+          v-model="customFieldValues"
+          :house-id="houseId"
+          :list-id="effectiveListId"
+        />
+
+        <AutoResizeTextarea
+          v-else-if="openSection === 'description'"
+          v-model="description"
+          :label="strings.descriptionLabel"
+          :placeholder="strings.descriptionPlaceholder"
+          autocomplete="off"
+        />
+
+        <!-- Item type + (inline recurrence when Recurring) -->
+        <div v-else-if="openSection === 'type'" class="checklist-add__type">
+          <ItemTypeSelector
+            :delete-on-done="deleteOnDone"
+            :rrule="rrule"
+            @select-staple="selectStaple"
+            @select-one-time="selectOneTime"
+            @select-recurring="selectRecurring"
+          />
+          <RecurrenceForm
+            v-if="currentType === 'recurring'"
+            v-model="rrule"
+            v-model:from-completion="repeatFromCompletion"
+          />
+        </div>
+
+        <div v-else-if="openSection === 'image'" class="checklist-add__image">
+          <div v-if="previewImageUrl" class="checklist-add__image-row">
+            <img
+              class="checklist-add__image-preview"
+              :src="previewImageUrl"
+              :alt="strings.imageAlt"
+            />
+            <NcButton variant="tertiary" type="button" @click="triggerImagePick">
+              <template #icon>
+                <UploadIcon :size="20" />
+              </template>
+              {{ strings.replaceImage }}
+            </NcButton>
+            <NcButton variant="tertiary" type="button" @click="clearPendingImage">
+              <template #icon>
+                <DeleteIcon :size="20" />
+              </template>
+              {{ strings.removeImage }}
+            </NcButton>
+          </div>
+          <NcButton v-else variant="tertiary" type="button" @click="triggerImagePick">
+            <template #icon>
+              <ImagePlusIcon :size="20" />
+            </template>
+            {{ strings.addImage }}
+          </NcButton>
+          <input
+            ref="imageInputRef"
+            type="file"
+            accept="image/*"
+            class="checklist-add__image-input"
+            @change="onImagePicked"
+          />
+        </div>
+      </div>
+
+      <!-- Live "reuse existing item" suggestions. Mutually exclusive with an open
          meta tray (they share this vertical slot) — only shown while typing a
          single item name. -->
-    <div v-if="reuseMatches.length > 0" class="checklist-add__suggestions">
-      <span class="checklist-add__suggestions-header">{{ strings.suggestionsHeader }}</span>
-      <ul class="checklist-add__suggestions-list">
-        <ChecklistItemRow
-          v-for="match in reuseMatches"
-          :key="match.id"
-          :item="match"
-          :category="categoryForItem(match.categoryId)"
-          :stores="storesForItem(match.storeIds)"
-          :labels="labelsForItem(match.labelIds)"
-          :house-id="houseId"
-          suggestion
-          @select="$emit('reuse-existing', $event)"
-        />
-      </ul>
-    </div>
+      <div v-if="reuseMatches.length > 0" class="checklist-add__suggestions">
+        <span class="checklist-add__suggestions-header">{{ strings.suggestionsHeader }}</span>
+        <ul class="checklist-add__suggestions-list">
+          <ChecklistItemRow
+            v-for="match in reuseMatches"
+            :key="match.id"
+            :item="match"
+            :category="categoryForItem(match.categoryId)"
+            :stores="storesForItem(match.storeIds)"
+            :labels="labelsForItem(match.labelIds)"
+            :house-id="houseId"
+            suggestion
+            @select="$emit('reuse-existing', $event)"
+          />
+        </ul>
+      </div>
 
-    <BarcodeLookupDialog v-model:open="barcodeDialogOpen" @resolved="onBarcodeResolved" />
-  </form>
+      <BarcodeLookupDialog v-model:open="barcodeDialogOpen" @resolved="onBarcodeResolved" />
+    </form>
+  </FieldCard>
 </template>
 
 <script setup lang="ts">
@@ -245,6 +251,7 @@ import ItemPricesEditor from '@/components/ItemPricesEditor'
 import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { defaultCustomFieldValues } from '@/components/ItemCustomFieldsEditor/defaults'
 import PantryChip from '@/components/PantryChip'
+import FieldCard from '@/components/FieldCard'
 import BarcodeLookupDialog from '@/components/BarcodeLookupDialog'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { type BarcodeResult } from '@/api/barcode'
@@ -596,6 +603,8 @@ const itemNames = computed(() =>
       : [],
 )
 
+const formLabel = computed(() => (multiple.value ? strings.addItems : strings.addItem))
+
 const canSubmit = computed(() => {
   if (itemNames.value.length === 0) return false
   if (props.requireListSelector && targetListId.value === null) return false
@@ -819,6 +828,10 @@ function submitAdd() {
 }
 
 const strings = {
+  // TRANSLATORS: Title above the item compose form, when adding a single item.
+  addItem: t('pantry', 'Add item'),
+  // TRANSLATORS: Title above the item compose form, when adding several items at once.
+  addItems: t('pantry', 'Add items'),
   // TRANSLATORS: Verb. Label of the button that adds the new item to the list.
   add: t('pantry', 'Add'),
   // TRANSLATORS: Label of a toggle that switches the form to adding several items at once.
@@ -859,11 +872,14 @@ const strings = {
 </script>
 
 <style scoped lang="scss">
+.checklist-add-card {
+  margin-bottom: 1.5rem;
+}
+
 .checklist-add {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
 
   &__primary {
     display: flex;
