@@ -275,14 +275,31 @@ const strings = {
 
 <style scoped lang="scss">
 .pantry-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  padding-block: 0.5rem;
+  background-color: var(--color-main-background);
   // The NC sidebar toggle overlays the top-left area of the content.
   // Add left padding so the toolbar content is not hidden behind it.
   padding-inline-start: var(--default-clickable-area, 44px);
+
+  // The scroll container adds top/side padding, and the browser sticks this bar
+  // below that padding — leaving a band where scrolled content peeks above it.
+  // Extend the background up and out to cover that band.
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    inset-inline: -1rem;
+    height: 1.5rem;
+    background-color: var(--color-main-background);
+  }
 
   &__left {
     display: flex;
