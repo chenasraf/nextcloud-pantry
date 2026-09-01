@@ -98,6 +98,7 @@
             :user="item.addedBy"
             :size="24"
             :show-user-status="false"
+            :disable-menu="true"
           />
           <span class="item-view__meta-text">
             {{ addedLabel }}
