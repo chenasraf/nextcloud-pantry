@@ -1888,15 +1888,22 @@ const reuseCandidates = computed<ChecklistItem[]>(() =>
 )
 
 const reuseConfirm = ref<{ item: ChecklistItem; resolve: (ok: boolean) => void } | null>(null)
-const reuseConfirmPrompt = computed(() =>
-  reuseConfirm.value
-    ? t(
-        'pantry',
-        'An item named "{name}" already exists in this list. Reuse it instead of adding a new one?',
-        { name: reuseConfirm.value.item.name },
-      )
-    : '',
-)
+const reuseConfirmPrompt = computed(() => {
+  const item = reuseConfirm.value?.item
+  if (!item) return ''
+  if (item.archivedAt != null) {
+    return t(
+      'pantry',
+      'An archived item named "{name}" already exists. Reuse it instead of adding a new one? It will be unarchived.',
+      { name: item.name },
+    )
+  }
+  return t(
+    'pantry',
+    'An item named "{name}" already exists in this list. Reuse it instead of adding a new one?',
+    { name: item.name },
+  )
+})
 
 function confirmReuseSuggestion(item: ChecklistItem): Promise<boolean> {
   return new Promise((resolve) => {
@@ -1914,8 +1921,27 @@ function resolveReuseConfirm(ok: boolean) {
 async function onReuseFromSuggestion(item: ChecklistItem) {
   const ok = await confirmReuseSuggestion(item)
   if (!ok) return
-  await reuseItem(item)
+  if (item.archivedAt != null) {
+    await reuseArchivedItem(item)
+  } else {
+    await reuseItem(item)
+  }
   addForm.value?.clearName()
+}
+
+async function reuseArchivedItem(item: ChecklistItem) {
+  // Bring the archived item back onto the active list, then surface it as an
+  // active (unchecked) item — the same end state a plain reuse produces.
+  try {
+    await undoArchive(item)
+  } catch {
+    showError(strings.unarchiveFailed)
+    return
+  }
+  if (item.done) {
+    await toggle(item.id)
+  }
+  showSuccess(t('pantry', 'Reused archived item "{name}"', { name: item.name }))
 }
 
 async function handleAdd(

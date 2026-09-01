@@ -203,6 +203,55 @@ class PrefsServiceTest extends TestCase {
 		$this->assertSame('ask', $this->svc->setReuseExistingItems('alice', 'bogus'));
 	}
 
+	// ----- Suggest archived items -----
+
+	public function testGetSuggestArchivedItemsDefaultsToFalse(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'suggest_archived_items', '0')
+			->willReturn('0');
+
+		$this->assertFalse($this->svc->getSuggestArchivedItems('alice'));
+	}
+
+	public function testGetSuggestArchivedItemsReturnsTrueWhenEnabled(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'suggest_archived_items', '0')
+			->willReturn('1');
+
+		$this->assertTrue($this->svc->getSuggestArchivedItems('alice'));
+	}
+
+	public function testSetSuggestArchivedItemsStoresOne(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'suggest_archived_items', '1');
+
+		$this->assertTrue($this->svc->setSuggestArchivedItems('alice', true));
+	}
+
+	public function testSetSuggestArchivedItemsStoresZero(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'suggest_archived_items', '0');
+
+		$this->assertFalse($this->svc->setSuggestArchivedItems('alice', false));
+	}
+
+	public function testGetAllUserPrefsIncludesSuggestArchivedItems(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'suggest_archived_items') {
+					return '1';
+				}
+				return $default;
+			}
+		);
+
+		$prefs = $this->svc->getAllUserPrefs('alice');
+		$this->assertArrayHasKey('suggestArchivedItems', $prefs);
+		$this->assertTrue($prefs['suggestArchivedItems']);
+	}
+
 	// ----- Show added-by -----
 
 	public function testGetShowAddedByDefaultsToFalse(): void {

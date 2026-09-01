@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ItemInput } from '@/api/lists'
@@ -178,6 +178,23 @@ vi.mock('@/composables/useLabels', () => ({
     load: vi.fn().mockResolvedValue(undefined),
     labelsForList: () => [],
   }),
+}))
+const archivedMocks = vi.hoisted(() => ({
+  suggestArchivedItems: null as unknown as { value: boolean },
+  listArchivedItems: vi.fn().mockResolvedValue([]),
+}))
+vi.mock('@/composables/useSuggestArchivedItems', async () => {
+  const { ref } = await import('vue')
+  archivedMocks.suggestArchivedItems = ref(false)
+  return {
+    useSuggestArchivedItems: () => ({
+      suggestArchivedItems: archivedMocks.suggestArchivedItems,
+      set: vi.fn().mockResolvedValue(undefined),
+    }),
+  }
+})
+vi.mock('@/api/lists', () => ({
+  listArchivedItems: archivedMocks.listArchivedItems,
 }))
 vi.mock('@/utils/rrule', () => ({
   formatRrule: (s: string) => `text(${s})`,
@@ -528,6 +545,65 @@ describe('ChecklistAddForm', () => {
       await wrapper.find('.mock-item-row').trigger('click')
       expect(wrapper.emitted('reuse-existing')).toBeTruthy()
       expect((wrapper.emitted('reuse-existing')![0][0] as ChecklistItem).name).toBe('Milk')
+    })
+  })
+
+  describe('archived reuse suggestions', () => {
+    const candidates = [makeItem({ id: 1, name: 'Milk', listId: 10 })]
+
+    afterEach(() => {
+      archivedMocks.suggestArchivedItems.value = false
+      archivedMocks.listArchivedItems.mockReset()
+      archivedMocks.listArchivedItems.mockResolvedValue([])
+    })
+
+    it('does not fetch or fold in archived items when the pref is off', async () => {
+      archivedMocks.listArchivedItems.mockResolvedValue([
+        makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 }),
+      ])
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      await flushPromises()
+      expect(archivedMocks.listArchivedItems).not.toHaveBeenCalled()
+      expect(wrapper.findAll('.mock-item-row')).toHaveLength(1)
+    })
+
+    it('lazily fetches archived items for the target list and folds them into the matches', async () => {
+      archivedMocks.suggestArchivedItems.value = true
+      archivedMocks.listArchivedItems.mockResolvedValue([
+        makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 }),
+      ])
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      await flushPromises()
+      expect(archivedMocks.listArchivedItems).toHaveBeenCalledWith(1, 10)
+      const names = wrapper.findAll('.mock-item-row').map((r) => r.text())
+      expect(names).toContain('Milk')
+      expect(names).toContain('Milk Powder')
+    })
+
+    it('fetches the archive only once across repeated searches on the same list', async () => {
+      archivedMocks.suggestArchivedItems.value = true
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('mil')
+      await flushPromises()
+      await wrapper.find('.nc-text-field').setValue('milk')
+      await flushPromises()
+      expect(archivedMocks.listArchivedItems).toHaveBeenCalledTimes(1)
+    })
+
+    it('emits reuse-existing with the archived item when it is tapped', async () => {
+      archivedMocks.suggestArchivedItems.value = true
+      archivedMocks.listArchivedItems.mockResolvedValue([
+        makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 }),
+      ])
+      const wrapper = mountForm({ reuseCandidates: [], currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk powder')
+      await flushPromises()
+      await wrapper.find('.mock-item-row').trigger('click')
+      const emitted = wrapper.emitted('reuse-existing')
+      expect(emitted).toBeTruthy()
+      expect((emitted![0][0] as ChecklistItem).archivedAt).toBe(123)
     })
   })
 })

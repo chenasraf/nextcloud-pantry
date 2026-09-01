@@ -344,6 +344,29 @@ describe('ChecklistItemRow', () => {
       const wrapper = mount(ChecklistItemRow, { props: defaultProps })
       expect(wrapper.find('.checklist-row__thumb').exists()).toBe(false)
     })
+
+    it('marks an archived reuse suggestion with an archived chip', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, suggestion: true, item: makeItem({ archivedAt: 1000 }) },
+      })
+      const chip = wrapper.find('.checklist-row__archived')
+      expect(chip.exists()).toBe(true)
+      expect(chip.text()).toContain('Archived')
+    })
+
+    it('does not mark a non-archived suggestion', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, suggestion: true, item: makeItem({ archivedAt: null }) },
+      })
+      expect(wrapper.find('.checklist-row__archived').exists()).toBe(false)
+    })
+
+    it('does not show the archived chip outside suggestion mode', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: { ...defaultProps, item: makeItem({ archivedAt: 1000 }) },
+      })
+      expect(wrapper.find('.checklist-row__archived').exists()).toBe(false)
+    })
   })
 
   describe('view-only shared list (listWritable=false)', () => {

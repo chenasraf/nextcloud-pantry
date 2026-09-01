@@ -73,6 +73,7 @@ final class PrefsController extends OCSController {
 	 * @param bool|null $tapRowToComplete Whether clicking anywhere on a checklist row marks it done.
 	 * @param string|null $rowClickAction What clicking a checklist row does. One of: done, view, edit, none.
 	 * @param string|null $reuseExistingItems How to handle adding an item that already exists in the list. One of: ask, reuse, never.
+	 * @param bool|null $suggestArchivedItems Whether reuse suggestions also search archived items.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>
 	 *
@@ -80,8 +81,8 @@ final class PrefsController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null): DataResponse {
-		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems): DataResponse {
+	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null, ?bool $suggestArchivedItems = null): DataResponse {
+		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems, $suggestArchivedItems): DataResponse {
 			$uid = $this->requireUid();
 			$patch = [];
 			if ($lastHouseId !== null) {
@@ -96,6 +97,9 @@ final class PrefsController extends OCSController {
 			}
 			if ($reuseExistingItems !== null) {
 				$patch['reuseExistingItems'] = $reuseExistingItems;
+			}
+			if ($suggestArchivedItems !== null) {
+				$patch['suggestArchivedItems'] = $suggestArchivedItems;
 			}
 			$this->prefs->setUserPrefs($uid, $patch);
 			return new DataResponse($this->prefs->getAllUserPrefs($uid));

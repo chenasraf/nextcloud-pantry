@@ -325,6 +325,7 @@ namespace OCA\Pantry;
  *     tapRowToComplete: bool,
  *     rowClickAction: string,
  *     reuseExistingItems: string,
+ *     suggestArchivedItems: bool,
  * }
  *
  * @psalm-type PantryHousePrefs = array{

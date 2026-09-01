@@ -89,6 +89,7 @@ class Capabilities implements IPublicCapability {
 					'pref-row-click-action',
 					'pref-category-spacing',
 					'reuse-existing-items',
+					'pref-suggest-archived-items',
 					'roles',
 					'share-users',
 					'custom-fields',

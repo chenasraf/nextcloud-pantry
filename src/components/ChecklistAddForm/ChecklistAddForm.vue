@@ -255,6 +255,8 @@ import { useCategories } from '@/composables/useCategories'
 import { useStores } from '@/composables/useStores'
 import { useLabels } from '@/composables/useLabels'
 import { useCustomFields } from '@/composables/useCustomFields'
+import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
+import { listArchivedItems } from '@/api/lists'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
@@ -729,6 +731,44 @@ function chipVariant(chip: Chip): 'primary' | 'secondary' | 'tertiary' {
 // meta mode, otherwise the list in focus.
 const reuseTargetListId = effectiveListId
 
+// When the pref is on, archived items on the target list are folded into the
+// same fuzzy pool. They are fetched lazily — the first time the user searches a
+// given list — and cached per list so repeat searches don't refetch.
+const { suggestArchivedItems } = useSuggestArchivedItems()
+const archivedByList = ref<Map<number, ChecklistItem[]>>(new Map())
+const archivedLoading = new Set<number>()
+
+async function ensureArchivedLoaded(listId: number): Promise<void> {
+  if (!suggestArchivedItems.value) return
+  if (archivedByList.value.has(listId) || archivedLoading.has(listId)) return
+  archivedLoading.add(listId)
+  try {
+    const loaded = await listArchivedItems(props.houseId, listId)
+    archivedByList.value = new Map(archivedByList.value).set(listId, loaded)
+  } catch {
+    // Leave it unloaded so the next search retries.
+  } finally {
+    archivedLoading.delete(listId)
+  }
+}
+
+// The list being actively searched (single-item name typed, no meta tray open),
+// or null when suggestions are suppressed. Drives the lazy archive fetch.
+const searchListId = computed<number | null>(() => {
+  if (multiple.value || openSection.value !== null) return null
+  if (!name.value.trim()) return null
+  const listId = reuseTargetListId.value
+  return listId != null && listId > 0 ? listId : null
+})
+
+watch(
+  [searchListId, suggestArchivedItems],
+  ([listId, on]) => {
+    if (listId != null && on) void ensureArchivedLoaded(listId)
+  },
+  { immediate: true },
+)
+
 const reuseMatches = computed<ChecklistItem[]>(() => {
   // Never in bulk mode, only while typing a name, and never while a meta tray
   // occupies the same slot.
@@ -737,7 +777,16 @@ const reuseMatches = computed<ChecklistItem[]>(() => {
   if (!query) return []
   const listId = reuseTargetListId.value
   if (listId == null || listId <= 0) return []
-  const candidates = props.reuseCandidates.filter((i) => i.listId === listId)
+  const active = props.reuseCandidates.filter((i) => i.listId === listId)
+  // Fold in archived items only when the pref is on. Drop any that have since
+  // become active (e.g. just reused) so they aren't offered twice.
+  const activeIds = new Set(active.map((i) => i.id))
+  const archived = suggestArchivedItems.value
+    ? (archivedByList.value.get(listId) ?? []).filter(
+        (i) => i.listId === listId && !activeIds.has(i.id),
+      )
+    : []
+  const candidates = [...active, ...archived]
   if (candidates.length === 0) return []
   // token_set_ratio is the fuzzball scorer that reproduces the intended ranking
   // (e.g. "Organic milk" surfaces "Milk" as the top match). Cutoff 60 lets weak
@@ -1018,7 +1067,9 @@ const strings = {
     flex-direction: column;
     gap: 0.25rem;
     padding: 0.5rem 0.25rem;
-    border: 1px solid var(--color-border);
+    // Matches the colorless PantryChip border so the panel lifts off the
+    // field-card background instead of blending into it.
+    border: 1px solid color-mix(in srgb, var(--color-border) 55%, var(--color-border-maxcontrast));
     border-radius: var(--border-radius-large, 8px);
     background: var(--color-background-hover);
   }

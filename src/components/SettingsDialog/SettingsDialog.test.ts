@@ -17,6 +17,8 @@ vi.mock('@/api/prefs', () => ({
   setRowClickAction: vi.fn().mockResolvedValue('none'),
   getReuseExistingItems: vi.fn().mockResolvedValue('ask'),
   setReuseExistingItems: vi.fn().mockResolvedValue('ask'),
+  getSuggestArchivedItems: vi.fn().mockResolvedValue(false),
+  setSuggestArchivedItems: vi.fn().mockResolvedValue(false),
   getHousePrefs: vi.fn().mockResolvedValue({ showAddedBy: false }),
   setHousePrefs: vi.fn().mockResolvedValue({ showAddedBy: false }),
 }))

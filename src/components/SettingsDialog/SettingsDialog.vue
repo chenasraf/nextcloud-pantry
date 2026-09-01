@@ -32,6 +32,15 @@
       </div>
       <div class="settings__field">
         <NcCheckboxRadioSwitch
+          :model-value="suggestArchivedItems"
+          @update:model-value="updateSuggestArchivedItems($event)"
+        >
+          {{ strings.suggestArchivedItemsLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="settings__hint settings__hint--inline">{{ strings.suggestArchivedItemsHint }}</p>
+      </div>
+      <div class="settings__field">
+        <NcCheckboxRadioSwitch
           :model-value="showAddedBy"
           @update:model-value="updateShowAddedBy($event)"
         >
@@ -147,6 +156,7 @@ import {
 import { leaveHouse } from '@/api/houses'
 import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
+import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 
 const props = defineProps<{ open: boolean; houseId: number | null; isOwner: boolean }>()
@@ -302,6 +312,16 @@ async function updateReuseExistingItems(option: ReuseExistingItemsOption | null)
   }
 }
 
+const { suggestArchivedItems, set: setSuggestArchivedItemsPref } = useSuggestArchivedItems()
+
+async function updateSuggestArchivedItems(value: boolean) {
+  try {
+    await setSuggestArchivedItemsPref(value)
+  } catch {
+    // Composable already reverted the optimistic update.
+  }
+}
+
 // ----- Display: show added-by (per-house) -----
 
 const showAddedBy = computed(() => {
@@ -367,6 +387,11 @@ const strings = {
   reuseExistingItemsAsk: t('pantry', 'Always ask'),
   reuseExistingItemsReuse: t('pantry', 'Always reuse'),
   reuseExistingItemsNever: t('pantry', 'Never reuse'),
+  suggestArchivedItemsLabel: t('pantry', 'Suggest archived items'),
+  suggestArchivedItemsHint: t(
+    'pantry',
+    'When adding an item, also search archived items for reuse suggestions. Reusing an archived item unarchives it.',
+  ),
   notificationsSection: t('pantry', 'Notifications'),
   notificationsHint: t(
     'pantry',

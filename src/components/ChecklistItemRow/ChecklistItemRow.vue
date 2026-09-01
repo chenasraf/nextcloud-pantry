@@ -56,6 +56,18 @@
         </span>
         <div class="checklist-row__meta">
           <PantryChip
+            v-if="suggestion && item.archivedAt"
+            class="checklist-row__archived"
+            size="sm"
+            :interactive="false"
+            :aria-label="strings.archivedItem"
+          >
+            <template #icon>
+              <ArchiveOutlineIcon :size="14" />
+            </template>
+            {{ strings.archived }}
+          </PantryChip>
+          <PantryChip
             v-if="item.quantity"
             class="checklist-row__quantity"
             size="sm"
@@ -273,6 +285,7 @@ import DeleteIcon from '@icons/Delete.vue'
 import DeleteRestoreIcon from '@icons/DeleteRestore.vue'
 import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
 import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
+import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
@@ -507,6 +520,10 @@ const recurrenceTooltip = computed(() => {
 const strings = {
   dragToReorder: t('pantry', 'Drag to reorder'),
   hasDescription: t('pantry', 'Has a description'),
+  // TRANSLATORS: Adjective. Chip marking a reuse suggestion that is currently archived.
+  archived: t('pantry', 'Archived'),
+  // TRANSLATORS: Accessible label for the chip marking an archived reuse suggestion.
+  archivedItem: t('pantry', 'Archived item'),
   selectItem: t('pantry', 'Select item'),
   viewImage: t('pantry', 'View image'),
   viewItem: t('pantry', 'View item'),
@@ -597,6 +614,17 @@ function storeLabel(name: string): string {
     &:focus-visible {
       background: var(--color-background-dark);
     }
+
+    // A suggestion is offered for reuse regardless of its done state, so it
+    // should read at full strength — the done dimming/strikethrough would only
+    // mute it (and its archived marker) for no useful signal here.
+    &.checklist-row--done {
+      opacity: 1;
+
+      .checklist-row__name {
+        text-decoration: none;
+      }
+    }
   }
 
   @media (max-width: 600px) {
@@ -678,6 +706,13 @@ function storeLabel(name: string): string {
   // carry a tinted border.
   &__meta :deep(.pantry-chip:not(.pantry-chip--color)) {
     --chip-border: var(--color-border);
+  }
+
+  // The archived-suggestion marker keeps the higher-contrast outline (the same
+  // one PantryChip uses at rest) so it reads clearly against the suggestion
+  // panel instead of blending into the neutral meta chips.
+  &__meta :deep(.pantry-chip.checklist-row__archived) {
+    --chip-border: color-mix(in srgb, var(--color-border) 55%, var(--color-border-maxcontrast));
   }
 
   &__thumb {

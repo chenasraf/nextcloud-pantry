@@ -17,6 +17,7 @@ class PrefsService {
 	private const KEY_TAP_ROW_TO_COMPLETE = 'tap_row_to_complete';
 	private const KEY_ROW_CLICK_ACTION = 'row_click_action';
 	private const KEY_REUSE_EXISTING_ITEMS = 'reuse_existing_items';
+	private const KEY_SUGGEST_ARCHIVED_ITEMS = 'suggest_archived_items';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
 	public const ROW_CLICK_ACTION_OPTIONS = ['done', 'view', 'edit', 'none'];
 	public const REUSE_EXISTING_ITEMS_OPTIONS = ['ask', 'reuse', 'never'];
@@ -128,6 +129,25 @@ class PrefsService {
 		return $normalized;
 	}
 
+	public function getSuggestArchivedItems(string $uid): bool {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_SUGGEST_ARCHIVED_ITEMS,
+			'0',
+		) === '1';
+	}
+
+	public function setSuggestArchivedItems(string $uid, bool $value): bool {
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_SUGGEST_ARCHIVED_ITEMS,
+			$value ? '1' : '0',
+		);
+		return $value;
+	}
+
 	// ----- Unified user prefs -----
 
 	/**
@@ -140,6 +160,7 @@ class PrefsService {
 			'tapRowToComplete' => $this->getTapRowToComplete($uid),
 			'rowClickAction' => $this->getRowClickAction($uid),
 			'reuseExistingItems' => $this->getReuseExistingItems($uid),
+			'suggestArchivedItems' => $this->getSuggestArchivedItems($uid),
 		];
 	}
 
@@ -159,6 +180,9 @@ class PrefsService {
 		}
 		if (array_key_exists('reuseExistingItems', $patch) && is_string($patch['reuseExistingItems'])) {
 			$this->setReuseExistingItems($uid, $patch['reuseExistingItems']);
+		}
+		if (array_key_exists('suggestArchivedItems', $patch) && is_bool($patch['suggestArchivedItems'])) {
+			$this->setSuggestArchivedItems($uid, $patch['suggestArchivedItems']);
 		}
 	}
 

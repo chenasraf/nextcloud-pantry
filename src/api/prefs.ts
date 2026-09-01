@@ -17,6 +17,8 @@ export interface UserPrefs {
   rowClickAction: RowClickAction
   /** How to handle adding an item whose name already exists in the list. */
   reuseExistingItems: ReuseExistingItems
+  /** When true, reuse suggestions also search archived items. */
+  suggestArchivedItems: boolean
 }
 
 const userPrefsDefaults: UserPrefs = {
@@ -25,6 +27,7 @@ const userPrefsDefaults: UserPrefs = {
   tapRowToComplete: false,
   rowClickAction: 'none',
   reuseExistingItems: 'ask',
+  suggestArchivedItems: false,
 }
 
 let userPrefsInflight: Promise<UserPrefs> | null = null
@@ -77,6 +80,16 @@ export async function setReuseExistingItems(
 ): Promise<ReuseExistingItems> {
   const prefs = await setUserPrefs({ reuseExistingItems: value })
   return prefs.reuseExistingItems
+}
+
+export async function getSuggestArchivedItems(): Promise<boolean> {
+  const prefs = await getUserPrefs()
+  return prefs.suggestArchivedItems
+}
+
+export async function setSuggestArchivedItems(value: boolean): Promise<boolean> {
+  const prefs = await setUserPrefs({ suggestArchivedItems: value })
+  return prefs.suggestArchivedItems
 }
 
 // ----- Per-house prefs -----
