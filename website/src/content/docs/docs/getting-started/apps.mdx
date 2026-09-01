@@ -7,7 +7,7 @@ sidebar:
 ---
 
 import { Aside, Tabs, TabItem } from '@astrojs/starlight/components'
-import { stores, desktopDownloads, APP_VERSION, allReleasesUrl } from '@/config'
+import { stores, desktopDownloads, androidApks, APP_VERSION, allReleasesUrl } from '@/config'
 
 Pantry has an app for **Android**, **iOS** and the **desktop**. It is a companion to the Pantry app
 running on your Nextcloud — the same checklists, photo board and notes, in your pocket and offline.
@@ -25,8 +25,14 @@ running on your Nextcloud — the same checklists, photo board and notes, in you
 
 		- [Google Play]({stores.googlePlay}) — the recommended path; updates arrive automatically.
 		- [F-Droid]({stores.fdroid}) — for a fully open-source distribution.
-		- <a href={allReleasesUrl}>APK</a> — download and sideload the `.apk` directly from the GitHub
-		  releases page.
+		- APK (**v{APP_VERSION}**) — download and sideload directly:
+			<ul>
+				{androidApks.map((a) => (
+					<li>
+						<a href={a.url}>{a.file}</a> <em>({a.abi} — {a.note})</em>
+					</li>
+				))}
+			</ul>
 	</TabItem>
 	<TabItem label="iOS">
 		Install from the [App Store]({stores.appStore}).

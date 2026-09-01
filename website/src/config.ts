@@ -21,6 +21,17 @@ export const stores = {
   appStore: 'https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619',
 } as const
 
+/** Direct APK downloads — one per Android ABI, for the current version. */
+export const androidApks = [
+  { abi: 'arm64-v8a', note: 'most phones since 2017', file: `pantry-${APP_VERSION}-arm64-v8a.apk` },
+  {
+    abi: 'armeabi-v7a',
+    note: 'older 32-bit devices',
+    file: `pantry-${APP_VERSION}-armeabi-v7a.apk`,
+  },
+  { abi: 'x86_64', note: 'emulators & x86 tablets', file: `pantry-${APP_VERSION}-x86_64.apk` },
+].map((d) => ({ ...d, url: releaseAsset(d.file) }))
+
 /** Direct desktop downloads — release assets for the current version. */
 export const desktopDownloads = [
   { os: 'macOS', note: 'Apple silicon & Intel', file: `pantry-${APP_VERSION}-macos.dmg` },
