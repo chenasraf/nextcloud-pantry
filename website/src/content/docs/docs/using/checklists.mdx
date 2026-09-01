@@ -51,9 +51,8 @@ house in one place.
 
 ## Add and check off items
 
-The composer at the bottom of a list — labeled **Add to …** with the list's name — adds an item.
-Checking an item marks it done: it strikes through and drops to the bottom, and can be un-checked to
-bring it back.
+A composer adds an item to the list. Checking an item marks it done: it strikes through and drops
+to the bottom, and can be un-checked to bring it back.
 
 The composer carries a row of chips — **Category, Stores, Labels, Quantity, Price, Description, Item
 type, Image, Barcode** — so you can set an item's details as you add it.
@@ -62,14 +61,21 @@ type, Image, Barcode** — so you can set an item's details as you add it.
 
 <Tabs syncKey="platform">
 	<TabItem label="Web">
-		- Type a name, set any chips you want, and press **Enter** or **Add**.
-		- Click the checkbox on a row to mark it done or undone.
-		- Use the row menu to edit, copy, move, archive or trash an item.
+		- The composer sits at the **top** of the list, in a card titled **Add item**. Type a name in
+		  the **Item name** field, set any chips you want, and press **Enter** or **Add**.
+		- Click a row's checkbox to mark it done or undone.
+		- Clicking elsewhere on a row does whatever your **Default item click action** setting says —
+		  out of the box, nothing.
+		- On a touch screen, long-press a row to start selecting several at once.
+		- Each row's menu holds view, edit, copy to list, move to list, archive and trash.
 	</TabItem>
 	<TabItem label="Mobile & desktop">
-		- Type in the composer and tap the send button to add an item.
+		- The composer is pinned to the **bottom**, labeled **Add to …** with the list's name (or
+		  **Add an item …** on All lists). Type there and tap send to add an item.
 		- Tap a row's checkbox to mark it done or undone.
-		- Tap a row to open it for editing, or long-press for quick actions.
+		- Tapping elsewhere on a row opens the item by default, and long-pressing starts a
+		  multi-select — both are configurable.
+		- Swipe a row for quick actions — view, edit, move, copy, archive, delete.
 	</TabItem>
 </Tabs>
 
@@ -77,6 +83,24 @@ type, Image, Barcode** — so you can set an item's details as you add it.
 	Checked items never just vanish — they strike through and stay recoverable, so an accidental tap is
 	always undoable.
 </Aside>
+
+What a tap or click on a row does is up to you, in **Settings**:
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		- **Default item click action** — Mark as done, View, Edit or None. Default **None**.
+
+		A long-press on a touch screen always begins a multi-select; there are no swipe actions.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		- **Default item tap action** — Mark as done, View, Edit or None. Default **View**.
+		- **Default item long-press action** — the same, plus Multi-select. Default **Multi-select**.
+		- **Swipe actions** — on by default; turn it off to reach the same quick actions from a per-row
+		  menu button instead.
+
+		The same screen also sets the checkbox side, list density and long-name truncation.
+	</TabItem>
+</Tabs>
 
 ## Item details
 
@@ -88,6 +112,8 @@ Set any of these from the composer chips as you add an item, or open an existing
 - **Stores** — one or more shops where the item is bought.
 - **Labels** — free-form tags for filtering.
 - **Image** — attach a photo so everyone recognizes the exact product.
+- **[Custom fields](/docs/using/custom-fields)** — your own fields (a text note, a number, a
+  yes/no flag, a date, or a list of choices) that you define for the house or a single list.
 
 ![A checklist item showing its details inline — quantity, price, an attached image, a weekly repeat and its store.](/docs/checklists-item.png)
 

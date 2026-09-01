@@ -1,0 +1,68 @@
+---
+title: Manage house
+description: The house-level settings an admin controls — name, description, recurrence and reminder times, trash retention, shopping reminders, members and roles, and deleting a house.
+sidebar:
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+Everything in Pantry belongs to a **house** (see [Permissions](/docs/administration/permissions) for
+how a house scopes access). The **Manage house** page is where you set that house's own options —
+its name, the times its background jobs run, how long the trash is kept, and who belongs to it.
+
+Open it from the house menu in the sidebar.
+
+<Aside type="note">
+	Only house **admins** can open Manage house. The **Danger zone** below is narrower still — it
+	shows only to the house **owner**.
+</Aside>
+
+Most fields save together from the **Save changes** button in the toolbar; leaving with unsaved
+edits prompts you first. Members, roles, shopping reminders, and deleting the house each have their
+own flow.
+
+## General
+
+- **Name** — what the house is called throughout Pantry. Required.
+- **Description** — an optional short line of context for the house.
+
+## Automation
+
+Both times run in the **server timezone**, and a background job acts on them every 15 minutes — so
+an item comes due within about a quarter-hour of the time you set, not to the exact second.
+
+- **Recurring items reopen time** — the time of day a [recurring item](/docs/using/checklists#repeat-items)
+  becomes due again once its schedule comes around. Defaults to 08:00.
+- **Custom field reminder time** — the time of day that date
+  [custom-field reminders](/docs/using/custom-fields) are sent. Defaults to 08:00.
+
+## Trash
+
+- **Days to keep items in the trash** — a daily background job permanently deletes checklists,
+  items, notes and photos whose deletion is older than this many days. Set it to **0** to never
+  auto-delete — trashed things then stay until removed by hand. Defaults to 30, and accepts a whole
+  number up to 3650.
+
+## Shopping
+
+- **Manage reminders** — opens the reminders that pop up during [Shopping Mode](/docs/using/shopping-mode)
+  — at the start of a trip, when changing store, and at the end. This section appears only to
+  members who can edit lists.
+
+## Members & roles
+
+- **Manage members** — add or remove people and assign each one a role.
+- **Manage roles** — define what each role is allowed to do.
+
+Both open their own dialogs; the full role and capability model is covered in
+[Permissions](/docs/administration/permissions).
+
+## Danger zone
+
+- **Delete house** — permanently removes the house and all of its lists, items, and membership
+  records. Pantry asks you to confirm first.
+
+<Aside type="caution">
+	Deleting a house cannot be undone. Everything inside it goes with it.
+</Aside>
