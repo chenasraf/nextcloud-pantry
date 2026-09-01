@@ -5,36 +5,10 @@
     :show-navigation="true"
     @update:open="(v) => emit('update:open', v)"
   >
-    <NcAppSettingsSection id="pantry-images" :name="strings.imagesSection">
-      <p class="account-settings__hint">{{ strings.imagesHint }}</p>
-      <form class="account-settings__form" autocomplete="off" @submit.prevent="save">
-        <div class="account-settings__folder-row">
-          <NcTextField
-            v-model="folder"
-            :label="strings.folderLabel"
-            placeholder="/Pantry"
-            autocomplete="off"
-          />
-          <NcButton type="button" variant="secondary" @click="browseFolder">
-            <template #icon>
-              <FolderIcon :size="20" />
-            </template>
-            {{ strings.browse }}
-          </NcButton>
-        </div>
-        <div class="account-settings__actions">
-          <NcButton type="submit" variant="primary" :disabled="saving || !folder.trim()">
-            {{ saving ? strings.saving : strings.save }}
-          </NcButton>
-          <span v-if="saved" class="account-settings__saved">{{ strings.saved }}</span>
-        </div>
-      </form>
-    </NcAppSettingsSection>
-
     <NcAppSettingsSection id="pantry-interface" :name="strings.interfaceSection">
-      <div class="account-settings__field">
-        <label class="account-settings__label">{{ strings.rowClickActionLabel }}</label>
-        <p class="account-settings__hint">{{ strings.rowClickActionHint }}</p>
+      <div class="settings__field">
+        <label class="settings__label">{{ strings.rowClickActionLabel }}</label>
+        <p class="settings__hint">{{ strings.rowClickActionHint }}</p>
         <NcSelect
           :model-value="selectedRowClickActionOption"
           :options="rowClickActionOptions"
@@ -44,9 +18,9 @@
           @update:model-value="updateRowClickAction"
         />
       </div>
-      <div class="account-settings__field">
-        <label class="account-settings__label">{{ strings.reuseExistingItemsLabel }}</label>
-        <p class="account-settings__hint">{{ strings.reuseExistingItemsHint }}</p>
+      <div class="settings__field">
+        <label class="settings__label">{{ strings.reuseExistingItemsLabel }}</label>
+        <p class="settings__hint">{{ strings.reuseExistingItemsHint }}</p>
         <NcSelect
           :model-value="selectedReuseExistingItemsOption"
           :options="reuseExistingItemsOptions"
@@ -56,11 +30,20 @@
           @update:model-value="updateReuseExistingItems"
         />
       </div>
+      <div class="settings__field">
+        <NcCheckboxRadioSwitch
+          :model-value="showAddedBy"
+          @update:model-value="updateShowAddedBy($event)"
+        >
+          {{ strings.showAddedByLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="settings__hint settings__hint--inline">{{ strings.showAddedByHint }}</p>
+      </div>
     </NcAppSettingsSection>
 
     <NcAppSettingsSection id="pantry-notifications" :name="strings.notificationsSection">
-      <p class="account-settings__hint">{{ strings.notificationsHint }}</p>
-      <div class="account-settings__checks">
+      <p class="settings__hint">{{ strings.notificationsHint }}</p>
+      <div class="settings__checks">
         <NcCheckboxRadioSwitch
           :model-value="notifPrefs.notifyPhoto"
           @update:model-value="updateNotifPref('notifyPhoto', $event)"
@@ -99,11 +82,49 @@
         </NcCheckboxRadioSwitch>
       </div>
     </NcAppSettingsSection>
+
+    <NcAppSettingsSection id="pantry-files" :name="strings.filesSection">
+      <p class="settings__hint">{{ strings.filesHint }}</p>
+      <form class="settings__form" autocomplete="off" @submit.prevent="saveFolder">
+        <div class="settings__folder-row">
+          <NcTextField
+            v-model="folder"
+            :label="strings.folderLabel"
+            placeholder="/Pantry"
+            autocomplete="off"
+            @blur="saveFolder"
+          />
+          <NcButton type="button" variant="secondary" @click="browseFolder">
+            <template #icon>
+              <FolderIcon :size="20" />
+            </template>
+            {{ strings.browse }}
+          </NcButton>
+        </div>
+        <p
+          class="settings__saved"
+          :class="{ 'settings__saved--show': folderSaved }"
+          aria-live="polite"
+        >
+          {{ strings.saved }}
+        </p>
+      </form>
+    </NcAppSettingsSection>
+
+    <NcAppSettingsSection v-if="!isOwner" id="pantry-leave" :name="strings.leaveSection">
+      <p class="settings__hint">{{ strings.leaveHint }}</p>
+      <NcButton variant="secondary" :disabled="leaving" @click="leave">
+        <template #icon>
+          <LogoutIcon :size="20" />
+        </template>
+        {{ strings.leaveButton }}
+      </NcButton>
+    </NcAppSettingsSection>
   </NcAppSettingsDialog>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcAppSettingsDialog from '@nextcloud/vue/components/NcAppSettingsDialog'
 import NcAppSettingsSection from '@nextcloud/vue/components/NcAppSettingsSection'
@@ -112,8 +133,8 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
-import { computed } from 'vue'
 import FolderIcon from '@icons/Folder.vue'
+import LogoutIcon from '@icons/Logout.vue'
 import {
   getImageFolder,
   setImageFolder,
@@ -123,36 +144,52 @@ import {
   type ReuseExistingItems,
   type RowClickAction,
 } from '@/api/prefs'
+import { leaveHouse } from '@/api/houses'
 import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
+import { useShowAddedBy } from '@/composables/useShowAddedBy'
 
-const props = defineProps<{ open: boolean; houseId: number | null }>()
-const emit = defineEmits<{ 'update:open': [value: boolean] }>()
+const props = defineProps<{ open: boolean; houseId: number | null; isOwner: boolean }>()
+const emit = defineEmits<{ 'update:open': [value: boolean]; left: [] }>()
+
+// ----- Images (per-house upload folder) -----
 
 const folder = ref('/Pantry')
-const saving = ref(false)
-const saved = ref(false)
+// The last value persisted to the server; used to skip no-op saves on blur.
+const savedFolder = ref('/Pantry')
+const folderSaved = ref(false)
 
 async function loadFolder() {
   if (props.houseId === null) return
   try {
     folder.value = await getImageFolder(props.houseId)
+    savedFolder.value = folder.value
   } catch {
     // Keep default.
   }
 }
 
-watch(
-  () => props.open,
-  (isOpen) => {
-    if (isOpen) {
-      saved.value = false
-      void loadFolder()
-      void loadNotifPrefs()
-    }
-  },
-  { immediate: true },
-)
+async function saveFolder() {
+  const value = folder.value.trim()
+  if (!value || props.houseId === null || value === savedFolder.value) return
+  try {
+    const persisted = await setImageFolder(props.houseId, value)
+    folder.value = persisted
+    savedFolder.value = persisted
+    flashSaved()
+  } catch {
+    // Leave the field as typed so the user can retry.
+  }
+}
+
+let savedTimer: ReturnType<typeof setTimeout> | null = null
+function flashSaved() {
+  folderSaved.value = true
+  if (savedTimer) clearTimeout(savedTimer)
+  savedTimer = setTimeout(() => {
+    folderSaved.value = false
+  }, 2000)
+}
 
 async function browseFolder() {
   const picker = getFilePickerBuilder(strings.pickerTitle)
@@ -167,27 +204,14 @@ async function browseFolder() {
     const path = Array.isArray(picked) ? picked[0] : picked
     if (typeof path === 'string' && path.length > 0) {
       folder.value = path
-      saved.value = false
+      await saveFolder()
     }
   } catch {
     // User cancelled — no-op.
   }
 }
 
-async function save() {
-  const value = folder.value.trim()
-  if (!value || props.houseId === null) return
-  saving.value = true
-  saved.value = false
-  try {
-    folder.value = await setImageFolder(props.houseId, value)
-    saved.value = true
-  } finally {
-    saving.value = false
-  }
-}
-
-// ----- Notification prefs -----
+// ----- Notification prefs (per-house) -----
 
 const notifPrefs = reactive<NotificationPrefs>({
   notifyPhoto: true,
@@ -215,12 +239,11 @@ async function updateNotifPref(key: keyof NotificationPrefs, value: boolean) {
     const updated = await setNotificationPrefs(props.houseId, { [key]: value })
     Object.assign(notifPrefs, updated)
   } catch {
-    // Revert on error
     notifPrefs[key] = !value
   }
 }
 
-// ----- Interface prefs -----
+// ----- Interface prefs (global) -----
 
 const { rowClickAction, set: setRowClickActionPref } = useRowClickAction()
 
@@ -279,30 +302,52 @@ async function updateReuseExistingItems(option: ReuseExistingItemsOption | null)
   }
 }
 
+// ----- Display: show added-by (per-house) -----
+
+const showAddedBy = computed(() => {
+  if (props.houseId === null) return false
+  return useShowAddedBy(props.houseId).showAddedBy.value
+})
+
+async function updateShowAddedBy(value: boolean) {
+  if (props.houseId === null) return
+  try {
+    await useShowAddedBy(props.houseId).set(value)
+  } catch {
+    // Composable already reverted the optimistic update.
+  }
+}
+
+// ----- Leave house -----
+
+const leaving = ref(false)
+
+async function leave() {
+  if (props.houseId === null || leaving.value) return
+  leaving.value = true
+  try {
+    await leaveHouse(props.houseId)
+    emit('update:open', false)
+    emit('left')
+  } finally {
+    leaving.value = false
+  }
+}
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      folderSaved.value = false
+      void loadFolder()
+      void loadNotifPrefs()
+    }
+  },
+  { immediate: true },
+)
+
 const strings = {
-  title: t('pantry', 'Account settings'),
-  imagesSection: t('pantry', 'Images'),
-  imagesHint: t(
-    'pantry',
-    'Pick the base folder where Pantry will store uploaded images. Checklist item images go into a "Checklist items" subfolder inside it, created automatically.',
-  ),
-  folderLabel: t('pantry', 'Upload folder'),
-  browse: t('pantry', 'Browse …'),
-  pickerTitle: t('pantry', 'Pick an upload folder'),
-  save: t('pantry', 'Save'),
-  saving: t('pantry', 'Saving …'),
-  saved: t('pantry', 'Saved.'),
-  notificationsSection: t('pantry', 'Notifications'),
-  notificationsHint: t(
-    'pantry',
-    'Choose which notifications you want to receive from this household.',
-  ),
-  notifyPhoto: t('pantry', 'Photo uploads'),
-  notifyNoteCreate: t('pantry', 'New notes'),
-  notifyNoteEdit: t('pantry', 'Note edits'),
-  notifyItemAdd: t('pantry', 'Checklist items added'),
-  notifyItemRecur: t('pantry', 'Recurring items reappearing'),
-  notifyItemDone: t('pantry', 'Checklist items completed'),
+  title: t('pantry', 'Personal settings'),
   interfaceSection: t('pantry', 'Interface'),
   rowClickActionLabel: t('pantry', 'Default item click action'),
   rowClickActionHint: t('pantry', 'What happens when you click an item row.'),
@@ -322,11 +367,42 @@ const strings = {
   reuseExistingItemsAsk: t('pantry', 'Always ask'),
   reuseExistingItemsReuse: t('pantry', 'Always reuse'),
   reuseExistingItemsNever: t('pantry', 'Never reuse'),
+  notificationsSection: t('pantry', 'Notifications'),
+  notificationsHint: t(
+    'pantry',
+    'Choose which notifications you want to receive from this household.',
+  ),
+  notifyPhoto: t('pantry', 'Photo uploads'),
+  notifyNoteCreate: t('pantry', 'New notes'),
+  notifyNoteEdit: t('pantry', 'Note edits'),
+  notifyItemAdd: t('pantry', 'Checklist items added'),
+  notifyItemRecur: t('pantry', 'Recurring items reappearing'),
+  notifyItemDone: t('pantry', 'Checklist items completed'),
+  filesSection: t('pantry', 'Files'),
+  filesHint: t(
+    'pantry',
+    'Pick the base folder where Pantry will store uploaded files. Checklist item images go into a "Checklist items" subfolder inside it, created automatically.',
+  ),
+  folderLabel: t('pantry', 'Upload folder'),
+  browse: t('pantry', 'Browse …'),
+  pickerTitle: t('pantry', 'Pick an upload folder'),
+  saved: t('pantry', 'Saved.'),
+  showAddedByLabel: t('pantry', 'Show who added each item'),
+  showAddedByHint: t(
+    'pantry',
+    'Display the avatar of the person who added each checklist item on the right of the row.',
+  ),
+  leaveSection: t('pantry', 'Leave house'),
+  leaveHint: t(
+    'pantry',
+    'You will lose access to this house. An administrator can add you back later.',
+  ),
+  leaveButton: t('pantry', 'Leave this house'),
 }
 </script>
 
 <style scoped lang="scss">
-.account-settings__hint {
+.settings__hint {
   color: var(--color-text-maxcontrast);
   margin: 0 0 0.75rem 0;
   font-size: 0.9rem;
@@ -336,13 +412,13 @@ const strings = {
   }
 }
 
-.account-settings__form {
+.settings__form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.account-settings__folder-row {
+.settings__folder-row {
   display: flex;
   align-items: end;
   gap: 0.5rem;
@@ -353,31 +429,36 @@ const strings = {
   }
 }
 
-.account-settings__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.account-settings__saved {
+.settings__saved {
   color: var(--color-success);
   font-size: 0.85rem;
+  margin: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  &--show {
+    opacity: 1;
+  }
 }
 
-.account-settings__checks {
+.settings__checks {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.account-settings__field {
+.settings__field {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   margin-top: 1rem;
+
+  &:first-child {
+    margin-top: 0;
+  }
 }
 
-.account-settings__label {
+.settings__label {
   font-weight: 600;
 }
 </style>

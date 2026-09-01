@@ -49,6 +49,11 @@ const routes: RouteRecordRaw[] = [
         props: true,
       },
       {
+        path: 'manage',
+        name: 'house-manage',
+        component: () => import('@/views/HouseManageView.vue'),
+      },
+      {
         path: 'photos',
         name: 'photos',
         component: () => import('@/views/PhotosView.vue'),

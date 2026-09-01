@@ -92,20 +92,21 @@
       <ul class="pantry-nav__footer-list">
         <NcAppNavigationItem
           v-if="currentHouseId !== null"
-          :name="strings.houseSettings"
-          @click="openHouseSettings"
+          :name="strings.settings"
+          @click="openSettings"
         >
           <template #icon>
             <CogIcon :size="20" />
           </template>
         </NcAppNavigationItem>
         <NcAppNavigationItem
-          v-if="currentHouseId !== null"
-          :name="strings.accountSettings"
-          @click="openAccountSettings"
+          v-if="currentHouseId !== null && canAdmin"
+          :name="strings.manageHouse"
+          :to="{ name: 'house-manage', params: { houseId: String(currentHouseId) } }"
+          :active="route.name === 'house-manage'"
         >
           <template #icon>
-            <CogOutlineIcon :size="20" />
+            <HomeCityIcon :size="20" />
           </template>
         </NcAppNavigationItem>
       </ul>
@@ -155,8 +156,12 @@
     </template>
   </NcAppNavigation>
 
-  <HouseSettingsDialog v-if="currentHouseId !== null" v-model:open="showHouseSettings" />
-  <AccountSettingsDialog v-model:open="showSettings" :house-id="currentHouseId" />
+  <SettingsDialog
+    v-model:open="showSettings"
+    :house-id="currentHouseId"
+    :is-owner="isOwner"
+    @left="onLeftHouse"
+  />
 
   <NcDialog
     v-if="showCreate"
@@ -215,7 +220,7 @@ import HistoryIcon from '@icons/History.vue'
 import ImageIcon from '@icons/Image.vue'
 import NoteIcon from '@icons/Note.vue'
 import CogIcon from '@icons/Cog.vue'
-import CogOutlineIcon from '@icons/CogOutline.vue'
+import HomeCityIcon from '@icons/HomeCity.vue'
 import ChevronUpIcon from '@icons/ChevronUp.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
 import CheckIcon from '@icons/Check.vue'
@@ -230,8 +235,7 @@ function iconWrapStyle(color: string | null) {
   if (!color) return undefined
   return { background: color, color: contrastColor(color) }
 }
-import HouseSettingsDialog from '@/components/HouseSettingsDialog'
-import AccountSettingsDialog from '@/components/AccountSettingsDialog'
+import SettingsDialog from '@/components/SettingsDialog'
 
 const route = useRoute()
 const router = useRouter()
@@ -258,6 +262,14 @@ const house = computed(() =>
 // Effective capabilities for gating sidebar sections. Defaults to all-false
 // until the house (with its permissions payload) is loaded.
 const perms = computed<Capabilities>(() => house.value?.permissions ?? NO_CAPS)
+
+// Admin status mirrors useCurrentHouse: the resolved role permission, falling
+// back to the legacy role string for older payloads.
+const canAdmin = computed(
+  () =>
+    house.value?.isAdmin === true || house.value?.role === 'owner' || house.value?.role === 'admin',
+)
+const isOwner = computed(() => house.value?.role === 'owner')
 
 // Checklists for the sidebar sub-items. The composable shares per-house
 // state, so creates/updates/deletes from other views are reflected here.
@@ -319,19 +331,18 @@ async function pickHouse(id: number) {
   await router.push({ name: 'lists', params: { houseId: String(id) } })
 }
 
-// -------- Settings dialogs --------
-const showHouseSettings = ref(false)
+// -------- Settings dialog --------
 const showSettings = ref(false)
 
-// The nav items render as <a href="#">; prevent the default so opening a
+// The nav item renders as <a href="#">; prevent the default so opening the
 // settings dialog does not append "#" to the URL.
-function openHouseSettings(e?: Event) {
-  e?.preventDefault()
-  showHouseSettings.value = true
-}
-function openAccountSettings(e?: Event) {
+function openSettings(e?: Event) {
   e?.preventDefault()
   showSettings.value = true
+}
+
+async function onLeftHouse() {
+  await router.push({ name: 'home' })
 }
 
 // -------- Create house dialog --------
@@ -374,8 +385,8 @@ const strings = {
   // TRANSLATORS: Sidebar item, noun — the pinboard/corkboard view where photos are displayed, not a plank of wood.
   photos: t('pantry', 'Photo board'),
   notes: t('pantry', 'Notes wall'),
-  houseSettings: t('pantry', 'House settings'),
-  accountSettings: t('pantry', 'Account settings'),
+  settings: t('pantry', 'Personal settings'),
+  manageHouse: t('pantry', 'Manage house'),
   pickHouse: t('pantry', 'Pick a house'),
   createHouse: t('pantry', 'New house …'),
   welcomeHint: t('pantry', 'Pick or create a house to get started.'),
