@@ -1,75 +1,75 @@
 <template>
-  <div class="price-filter">
-    <label class="price-filter__label">{{ strings.price }}</label>
-    <NcPopover
-      class="price-filter__wrap"
-      popover-base-class="price-filter__popover"
-      :shown="open"
-      @update:shown="open = $event"
-    >
-      <template #trigger>
-        <button
-          type="button"
-          class="price-filter__trigger"
-          :class="{ 'price-filter__trigger--active': isActive }"
-          :aria-label="strings.price"
-        >
+  <NcPopover
+    class="price-filter"
+    popover-base-class="price-filter__popover"
+    :shown="open"
+    @update:shown="open = $event"
+  >
+    <template #trigger>
+      <PantryChip class="price-filter__trigger-chip" :filled="isActive">
+        <template #icon>
           <CashIcon :size="16" />
-          <span class="price-filter__trigger-label">{{ triggerLabel }}</span>
-          <MenuDownIcon :size="16" />
-        </button>
-      </template>
+        </template>
+        {{ triggerLabel }}
+        <template #trailing>
+          <MenuDownIcon
+            :size="16"
+            class="price-filter__chevron"
+            :class="{ 'price-filter__chevron--open': open }"
+          />
+        </template>
+      </PantryChip>
+    </template>
 
-      <div class="price-filter__panel">
-        <span class="price-filter__title">{{ strings.price }}</span>
-        <div class="price-filter__row">
-          <NcTextField
-            v-model="minText"
-            class="price-filter__amount"
-            type="number"
-            inputmode="decimal"
-            :label="strings.min"
-            min="0"
-            step="0.01"
-            autocomplete="off"
-            @update:model-value="emitValue"
-          />
-          <NcTextField
-            v-model="maxText"
-            class="price-filter__amount"
-            type="number"
-            inputmode="decimal"
-            :label="strings.max"
-            min="0"
-            step="0.01"
-            autocomplete="off"
-            @update:model-value="emitValue"
-          />
-        </div>
-        <!-- append-to-body is off so the dropdown renders inside the popover
+    <div class="price-filter__panel">
+      <span class="price-filter__title">{{ strings.price }}</span>
+      <div class="price-filter__row">
+        <NcTextField
+          v-model="minText"
+          class="price-filter__amount"
+          type="number"
+          inputmode="decimal"
+          :label="strings.min"
+          min="0"
+          step="0.01"
+          autocomplete="off"
+          @update:model-value="emitValue"
+        />
+        <NcTextField
+          v-model="maxText"
+          class="price-filter__amount"
+          type="number"
+          inputmode="decimal"
+          :label="strings.max"
+          min="0"
+          step="0.01"
+          autocomplete="off"
+          @update:model-value="emitValue"
+        />
+      </div>
+      <!-- append-to-body is off so the dropdown renders inside the popover
              instead of teleporting behind it; the popover's overflow clip is
              lifted for this instance via popover-base-class (see the global
              style block below). -->
-        <NcSelect
-          class="price-filter__currency"
-          :model-value="selectedCurrencyOption"
-          :options="currencyOptions"
-          :append-to-body="false"
-          :clearable="false"
-          :searchable="true"
-          label="label"
-          :input-label="strings.currency"
-          :aria-label="strings.currency"
-          @update:model-value="onCurrencySelected"
-        />
-        <div class="price-filter__actions">
-          <NcButton variant="tertiary" :disabled="!isActive" @click="clearAll">
-            {{ strings.clear }}
-          </NcButton>
-        </div>
+      <NcSelect
+        class="price-filter__currency"
+        :model-value="selectedCurrencyOption"
+        :options="currencyOptions"
+        :append-to-body="false"
+        :clearable="false"
+        :searchable="true"
+        label="label"
+        :input-label="strings.currency"
+        :aria-label="strings.currency"
+        @update:model-value="onCurrencySelected"
+      />
+      <div class="price-filter__actions">
+        <NcButton variant="tertiary" :disabled="!isActive" @click="clearAll">
+          {{ strings.clear }}
+        </NcButton>
       </div>
-    </NcPopover>
-  </div>
+    </div>
+  </NcPopover>
 </template>
 
 <script setup lang="ts">
@@ -79,6 +79,7 @@ import NcPopover from '@nextcloud/vue/components/NcPopover'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import PantryChip from '@/components/PantryChip'
 import CashIcon from '@icons/Cash.vue'
 import MenuDownIcon from '@icons/MenuDown.vue'
 import { CURRENCIES, resolveCurrency } from '@/utils/currencies'
@@ -199,48 +200,12 @@ const strings = {
 
 <style scoped lang="scss">
 .price-filter {
-  display: flex;
-  flex-direction: column;
+  &__chevron {
+    transition: transform 0.2s ease;
 
-  // Matches the label NcSelect renders above the sibling filter dropdowns so
-  // the trigger box lines up with them in the filter grid.
-  &__label {
-    display: block;
-    margin-bottom: -2px;
-  }
-
-  &__trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    width: 100%;
-    // Match the sibling NcSelect control height (which is clickable-area minus
-    // its border) so all four filter boxes line up.
-    min-height: calc(var(--default-clickable-area, 44px) + 2 * var(--border-width-input, 2px));
-    padding: 0 0.75rem;
-    border: 2px solid var(--color-border-maxcontrast);
-    border-radius: var(--border-radius-large, 8px);
-    background: var(--color-main-background);
-    color: var(--color-main-text);
-    cursor: pointer;
-    font: inherit;
-
-    &:hover {
-      border-color: var(--color-primary-element);
+    &--open {
+      transform: rotate(180deg);
     }
-
-    &--active {
-      border-color: var(--color-primary-element);
-      background: var(--color-primary-element-light);
-    }
-  }
-
-  &__trigger-label {
-    flex: 1;
-    text-align: start;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   &__panel {

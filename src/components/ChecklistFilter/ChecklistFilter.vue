@@ -13,38 +13,42 @@
       </template>
     </NcTextField>
 
-    <div class="pantry-filter__dropdowns">
-      <FilterDropdown
+    <div class="pantry-filter__chips">
+      <FilterChip
         v-if="listOptions.length > 0"
         :label="strings.lists"
         :all-label="strings.allLists"
+        :icon="ListIcon"
         :model-value="selectedListIdsLocal"
         :options="listOptions"
         :total-count="totalCount"
         @update:model-value="$emit('update:selectedListIds', $event)"
       />
-      <FilterDropdown
+      <FilterChip
         v-if="categoryOptions.length > 0"
         :label="strings.categories"
-        :all-label="strings.all"
+        :all-label="strings.allCategories"
+        :icon="CategoryIcon"
         :model-value="selectedCategoryIds"
         :options="categoryOptions"
         :total-count="totalCount"
         @update:model-value="$emit('update:selectedCategoryIds', $event)"
       />
-      <FilterDropdown
+      <FilterChip
         v-if="labelOptions.length > 0"
         :label="strings.labels"
         :all-label="strings.allLabels"
+        :icon="LabelIcon"
         :model-value="selectedLabelIdsLocal"
         :options="labelOptions"
         :total-count="totalCount"
         @update:model-value="$emit('update:selectedLabelIds', $event)"
       />
-      <FilterDropdown
+      <FilterChip
         v-if="storeOptions.length > 0"
         :label="strings.stores"
         :all-label="strings.allStores"
+        :icon="StoreIcon"
         :model-value="selectedStoreIdsLocal"
         :options="storeOptions"
         :total-count="totalCount"
@@ -66,11 +70,15 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import MagnifyIcon from '@icons/Magnify.vue'
 import TagOffOutlineIcon from '@icons/TagOffOutline.vue'
 import StoreOffOutlineIcon from '@icons/StoreOffOutline.vue'
+import LabelOutlineIcon from '@icons/LabelOutline.vue'
+import TagOutlineIcon from '@icons/TagOutline.vue'
+import StorefrontOutlineIcon from '@icons/StorefrontOutline.vue'
+import FormatListChecksIcon from '@icons/FormatListChecks.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker'
-import FilterDropdown, { type FilterOption } from './FilterDropdown.vue'
+import FilterChip, { type FilterOption } from './FilterChip.vue'
 import PriceFilter, { type PriceFilterValue } from './PriceFilter.vue'
 import { NO_CATEGORY_ID, NO_STORE_ID, NO_LABEL_ID } from './constants'
 import { hasPrice } from '@/utils/price'
@@ -98,6 +106,12 @@ const emit = defineEmits<{
   (e: 'update:selectedListIds', v: number[]): void
   (e: 'update:priceFilter', v: PriceFilterValue): void
 }>()
+
+// Facet trigger-chip icons, mirroring the Flutter filter bar.
+const ListIcon = FormatListChecksIcon
+const CategoryIcon = LabelOutlineIcon
+const LabelIcon = TagOutlineIcon
+const StoreIcon = StorefrontOutlineIcon
 
 const emptyPriceFilter: PriceFilterValue = { min: null, max: null, currency: null }
 const priceFilterLocal = computed(() => props.priceFilter ?? emptyPriceFilter)
@@ -237,8 +251,8 @@ const listOptions = computed<FilterOption[]>(() => {
 
 const strings = {
   placeholder: t('pantry', 'Type to filter …'),
-  // TRANSLATORS: Adjective/label meaning "no category filter — show all". Option that clears the category filter.
-  all: t('pantry', 'All'),
+  // TRANSLATORS: First row of the category filter that clears it to show every category.
+  allCategories: t('pantry', 'All categories'),
   noCategory: t('pantry', 'No category'),
   // TRANSLATORS: Noun (plural). Label of the list filter dropdown.
   lists: t('pantry', 'Lists'),
@@ -250,7 +264,7 @@ const strings = {
   // TRANSLATORS: Option that clears the store filter to show items from all stores.
   allStores: t('pantry', 'All stores'),
   // TRANSLATORS: Filter option matching items with no store attached.
-  noStore: t('pantry', 'No store'),
+  noStore: t('pantry', 'No stores'),
   // TRANSLATORS: Noun (plural), tags on items. Label of the label filter dropdown.
   labels: t('pantry', 'Labels'),
   // TRANSLATORS: Option that clears the label filter to show items with any label.
@@ -266,20 +280,11 @@ const strings = {
   flex-direction: column;
   gap: 0.5rem;
 
-  &__dropdowns {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
-    align-items: start;
-
-    // Tablet: drop to two columns, then a single full-width column on mobile.
-    @media (max-width: 900px) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    @media (max-width: 600px) {
-      grid-template-columns: 1fr;
-    }
   }
 }
 </style>

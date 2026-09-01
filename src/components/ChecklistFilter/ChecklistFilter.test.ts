@@ -9,6 +9,14 @@ vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@icons/Magnify.vue', () => createIconMock('MagnifyIcon'))
 vi.mock('@icons/TagOffOutline.vue', () => createIconMock('TagOffOutlineIcon'))
 vi.mock('@icons/StoreOffOutline.vue', () => createIconMock('StoreOffOutlineIcon'))
+vi.mock('@icons/LabelOutline.vue', () => createIconMock('LabelOutlineIcon'))
+vi.mock('@icons/TagOutline.vue', () => createIconMock('TagOutlineIcon'))
+vi.mock('@icons/StorefrontOutline.vue', () => createIconMock('StorefrontOutlineIcon'))
+vi.mock('@icons/FormatListChecks.vue', () => createIconMock('FormatListChecksIcon'))
+vi.mock('@icons/MenuDown.vue', () => createIconMock('MenuDownIcon'))
+vi.mock('@icons/CheckAll.vue', () => createIconMock('CheckAllIcon'))
+vi.mock('@icons/CheckboxMarked.vue', () => createIconMock('CheckboxMarkedIcon'))
+vi.mock('@icons/CheckboxBlankOutline.vue', () => createIconMock('CheckboxBlankOutlineIcon'))
 
 vi.mock('@/components/CategoryPicker/categoryIcons', () => ({
   categoryIconComponent: () => ({ name: 'CatIcon', template: '<span class="cat-icon" />' }),
@@ -40,35 +48,22 @@ vi.mock('@nextcloud/vue/components/NcCounterBubble', () => ({
   },
 }))
 
-// A lightweight NcSelect stand-in: renders each option as a button so tests can
-// click to add it to the multi-select model. Clicking an "All"-flagged option
-// emulates the clear affordance.
-vi.mock('@nextcloud/vue/components/NcSelect', () => ({
+// Render both the trigger and the panel so the option rows are always in the DOM.
+vi.mock('@nextcloud/vue/components/NcPopover', () => ({
   default: {
-    name: 'NcSelect',
-    props: [
-      'modelValue',
-      'options',
-      'multiple',
-      'closeOnSelect',
-      'clearable',
-      'searchable',
-      'placeholder',
-      'inputLabel',
-      'label',
-    ],
-    emits: ['update:modelValue'],
-    template: `
-      <div class="nc-select">
-        <button
-          v-for="(opt, i) in options"
-          :key="i"
-          class="nc-select-option"
-          :data-all="opt.all ? 'true' : 'false'"
-          @click="$emit('update:modelValue', [...modelValue, opt])"
-        >{{ opt.label }}</button>
-      </div>
-    `,
+    name: 'NcPopover',
+    props: ['shown', 'popoverBaseClass'],
+    emits: ['update:shown'],
+    template: '<div class="nc-popover"><slot name="trigger" /><slot /></div>',
+  },
+}))
+
+vi.mock('@/components/PantryChip', () => ({
+  default: {
+    name: 'PantryChip',
+    props: ['filled', 'variant', 'color', 'solid', 'size', 'interactive'],
+    template:
+      '<span class="pantry-chip"><slot name="icon" /><slot /><slot name="trailing" /></span>',
   },
 }))
 
@@ -162,12 +157,14 @@ function mountFilter(props: Partial<InstanceType<typeof ChecklistFilter>['$props
   })
 }
 
-/** The first option across every dropdown whose label matches exactly. */
+/** The first option row across every filter chip whose label matches exactly. */
 function optionByText(wrapper: ReturnType<typeof mountFilter>, text: string) {
-  return wrapper.findAll('.nc-select-option').find((o) => o.text() === text)
+  return wrapper
+    .findAll('.filter-chip__row')
+    .find((r) => r.find('.filter-chip__row-label').text() === text)
 }
 
-describe('ChecklistFilter — category dropdown', () => {
+describe('ChecklistFilter — category filter', () => {
   it('renders a "No category" option for uncategorized items', () => {
     const wrapper = mountFilter()
     expect(optionByText(wrapper, 'No category')).toBeDefined()
@@ -186,23 +183,18 @@ describe('ChecklistFilter — category dropdown', () => {
     expect(wrapper.emitted('update:selectedCategoryIds')?.[0]).toEqual([[NO_CATEGORY_ID]])
   })
 
-  it('clears the category facet when the "All" option is picked', async () => {
+  it('clears the category facet when the "All categories" row is picked', async () => {
     const wrapper = mountFilter({ selectedCategoryIds: [dairy.id] })
-    // No list dropdown in non-meta view, so the first "All" option is the
-    // category dropdown's.
-    const allOption = wrapper
-      .findAll('.nc-select-option')
-      .find((o) => o.attributes('data-all') === 'true')
-    await allOption!.trigger('click')
+    await optionByText(wrapper, 'All categories')!.trigger('click')
     expect(wrapper.emitted('update:selectedCategoryIds')?.[0]).toEqual([[]])
   })
 })
 
-describe('ChecklistFilter — store dropdown', () => {
+describe('ChecklistFilter — store filter', () => {
   it('renders a store option and a "No store" option', () => {
     const wrapper = mountFilter()
     expect(optionByText(wrapper, 'Supermarket')).toBeDefined()
-    expect(optionByText(wrapper, 'No store')).toBeDefined()
+    expect(optionByText(wrapper, 'No stores')).toBeDefined()
   })
 
   it('emits the store id when a store option is picked', async () => {
@@ -213,7 +205,13 @@ describe('ChecklistFilter — store dropdown', () => {
 
   it('emits the sentinel id when the "No store" option is picked', async () => {
     const wrapper = mountFilter()
-    await optionByText(wrapper, 'No store')!.trigger('click')
+    await optionByText(wrapper, 'No stores')!.trigger('click')
     expect(wrapper.emitted('update:selectedStoreIds')?.[0]).toEqual([[NO_STORE_ID]])
+  })
+
+  it('removes an already-selected store when its row is toggled off', async () => {
+    const wrapper = mountFilter({ selectedStoreIds: [supermarket.id] })
+    await optionByText(wrapper, 'Supermarket')!.trigger('click')
+    expect(wrapper.emitted('update:selectedStoreIds')?.[0]).toEqual([[]])
   })
 })

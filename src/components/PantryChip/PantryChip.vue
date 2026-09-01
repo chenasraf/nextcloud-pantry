@@ -8,6 +8,7 @@
       `pantry-chip--${size}`,
       {
         'pantry-chip--interactive': interactive,
+        'pantry-chip--filled': filled && !color,
         'pantry-chip--color': color && !solid,
         'pantry-chip--solid': color && solid,
         'pantry-chip--dark': isDarkTheme,
@@ -21,6 +22,9 @@
     </span>
     <span v-if="$slots.default" class="pantry-chip__label">
       <slot />
+    </span>
+    <span v-if="$slots.trailing" class="pantry-chip__trailing">
+      <slot name="trailing" />
     </span>
   </component>
 </template>
@@ -42,6 +46,8 @@ const props = withDefaults(
     size?: 'md' | 'sm'
     /** Render as a button with hover/focus affordances; `false` renders a display span. */
     interactive?: boolean
+    /** Solid primary-accent fill with contrast text; ignored when `color` is set. */
+    filled?: boolean
   }>(),
   {
     variant: 'tertiary',
@@ -49,6 +55,7 @@ const props = withDefaults(
     solid: false,
     size: 'md',
     interactive: true,
+    filled: false,
   },
 )
 
@@ -112,6 +119,12 @@ const colorStyle = computed(() => {
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+
+  &__trailing {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+  }
 }
 
 .pantry-chip--sm {
@@ -159,6 +172,16 @@ const colorStyle = computed(() => {
   );
   --chip-border: var(--color-primary-element);
   --chip-fg: var(--color-main-text);
+  --chip-weight: 700;
+}
+
+// Solid primary-accent fill with contrast text: the selected/active state for
+// filter chips, where the tint variants would read as too subtle.
+.pantry-chip--filled {
+  --chip-bg: var(--color-primary-element);
+  --chip-bg-hover: var(--color-primary-element-hover, var(--color-primary-element));
+  --chip-border: var(--color-primary-element);
+  --chip-fg: var(--color-primary-element-text);
   --chip-weight: 700;
 }
 
