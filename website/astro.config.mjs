@@ -45,6 +45,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Overview', slug: 'docs' },
 						{ slug: 'docs/getting-started/install' },
+						{ slug: 'docs/getting-started/apps' },
 						{ slug: 'docs/getting-started/pairing' },
 					],
 				},

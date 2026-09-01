@@ -6,7 +6,6 @@ sidebar:
 ---
 
 import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
-import { stores, desktopDownloads, APP_VERSION, allReleasesUrl } from '@/config'
 
 The app on your phone or desktop talks to the same Pantry app running on your Nextcloud. Pairing a
 client means pointing it at your server and signing in with your Nextcloud account — the app then
@@ -21,38 +20,7 @@ sees the same houses, lists, boards and notes as the web interface.
 
 - A Nextcloud server with the Pantry app enabled.
 - Your Nextcloud account on that server.
-- The Pantry app installed — see [Get the app](#get-the-app) below.
-
-## Get the app
-
-Pantry has an app for **Android**, **iOS** and the **desktop**. It is a companion to the Pantry app
-running on your Nextcloud — the same checklists, photo board and notes, in your pocket and offline.
-
-### Phone
-
-- **Android** — [Google Play]({stores.googlePlay}) or [F-Droid]({stores.fdroid}) (Android 8.0+)
-- **iOS** — [App Store]({stores.appStore})
-
-### Desktop
-
-Direct downloads for the current release (**v{APP_VERSION}**):
-
-<ul>
-	{desktopDownloads.map((d) => (
-		<li>
-			<strong>{d.os}</strong> — <a href={d.url}>{d.file}</a> <em>({d.note})</em>
-		</li>
-	))}
-</ul>
-
-On Linux the download is a **standalone binary** — extract the `.tar.gz` and run it; there is no
-Flatpak or package to install. Every build, including Android APKs, lives on the
-<a href={allReleasesUrl}>GitHub releases page</a>.
-
-<Aside type="note">
-	The app needs a Nextcloud server with the [Pantry server app](/docs/getting-started/install)
-	enabled. It is a companion, not a standalone app.
-</Aside>
+- The Pantry app installed — see [Get the mobile & desktop app](/docs/getting-started/apps).
 
 ## Connect
 

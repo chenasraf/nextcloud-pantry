@@ -1,0 +1,58 @@
+---
+title: Get the mobile & desktop app
+description: Install Pantry on Android, iOS, macOS, Windows or Linux — the companion to the Pantry app running on your Nextcloud.
+sidebar:
+  order: 2
+  label: Get the mobile & desktop app
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components'
+import { stores, desktopDownloads, APP_VERSION, allReleasesUrl } from '@/config'
+
+Pantry has an app for **Android**, **iOS** and the **desktop**. It is a companion to the Pantry app
+running on your Nextcloud — the same checklists, photo board and notes, in your pocket and offline.
+
+<Aside type="note">
+	The app needs a Nextcloud server with the [Pantry server app](/docs/getting-started/install)
+	enabled. It is a companion, not a standalone app — on its own it has nothing to connect to.
+</Aside>
+
+## Phone
+
+<Tabs>
+	<TabItem label="Android">
+		Requires Android 8.0 or newer.
+
+		- [Google Play]({stores.googlePlay}) — the recommended path; updates arrive automatically.
+		- [F-Droid]({stores.fdroid}) — for a fully open-source distribution.
+		- <a href={allReleasesUrl}>APK</a> — download and sideload the `.apk` directly from the GitHub
+		  releases page.
+	</TabItem>
+	<TabItem label="iOS">
+		Install from the [App Store]({stores.appStore}).
+	</TabItem>
+</Tabs>
+
+## Desktop
+
+Direct downloads for the current release (**v{APP_VERSION}**):
+
+<ul>
+	{desktopDownloads.map((d) => (
+		<li>
+			<strong>{d.os}</strong> — <a href={d.url}>{d.file}</a> <em>({d.note})</em>
+		</li>
+	))}
+</ul>
+
+On Linux the download is a **standalone binary** — extract the `.tar.gz` and run it; there is no
+Flatpak or package to install.
+
+<Aside type="tip">
+	Every build, including Android APKs and the Windows and Linux archives, lives on the
+	<a href={allReleasesUrl}>GitHub releases page</a>.
+</Aside>
+
+## Next steps
+
+- [Pair a client](/docs/getting-started/pairing) — point the app at your server and sign in.
