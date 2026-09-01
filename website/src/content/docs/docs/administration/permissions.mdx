@@ -30,24 +30,25 @@ editing the Member role or introducing custom roles.
 
 ## Capability catalog
 
-| Capability        | Governs                                                                                            |
+| Capability        | Governs                                                                                           |
 | ----------------- | ------------------------------------------------------------------------------------------------- |
 | `canViewLists`    | Viewing checklists and their items (incl. trash & archive views)                                  |
-| `canCreateLists`  | Creating new checklists                                                                            |
+| `canCreateLists`  | Creating new checklists                                                                           |
 | `canEditLists`    | Editing list settings **and** editing/reordering/archiving items, categories, stores, item images |
-| `canDeleteLists`  | Trashing, restoring, and permanently deleting checklists                                           |
-| `canAddItems`     | Adding items to a list                                                                             |
-| `canCheckItems`   | Toggling an item done/undone                                                                       |
-| `canCopyItems`    | Copying items to another list                                                                      |
-| `canMoveItems`    | Moving items to another list                                                                       |
-| `canDeleteItems`  | Trashing, restoring, and permanently deleting items                                                |
-| `canViewPhotos`   | Viewing photos and folders (incl. trash view)                                                      |
-| `canUploadPhotos` | Uploading photos                                                                                   |
-| `canUpdatePhotos` | Editing a photo (caption)                                                                          |
+| `canDeleteLists`  | Trashing, restoring, and permanently deleting checklists                                          |
+| `canAddItems`     | Adding items to a list                                                                            |
+| `canCheckItems`   | Toggling an item done/undone                                                                      |
+| `canCopyItems`    | Copying items to another list                                                                     |
+| `canMoveItems`    | Moving items to another list                                                                      |
+| `canDeleteItems`  | Trashing, restoring, and permanently deleting items                                               |
+| `canEditFields`   | Creating, editing, reordering, and deleting custom-field definitions                              |
+| `canViewPhotos`   | Viewing photos and folders (incl. trash view)                                                     |
+| `canUploadPhotos` | Uploading photos                                                                                  |
+| `canUpdatePhotos` | Editing a photo (caption)                                                                         |
 | `canMovePhotos`   | Managing folders (create/rename/reorder/delete) and moving/reordering photos                      |
-| `canDeletePhotos` | Trashing, restoring, and permanently deleting photos                                               |
-| `canViewNotes`    | Viewing notes (incl. trash view)                                                                   |
-| `canCreateNotes`  | Creating notes                                                                                     |
+| `canDeletePhotos` | Trashing, restoring, and permanently deleting photos                                              |
+| `canViewNotes`    | Viewing notes (incl. trash view)                                                                  |
+| `canCreateNotes`  | Creating notes                                                                                    |
 | `canUpdateNotes`  | Editing notes (title/content/color/pin) and reordering                                            |
 | `canDeleteNotes`  | Trashing, restoring, and permanently deleting notes                                               |
 
@@ -58,6 +59,10 @@ editing the Member role or introducing custom roles.
 
 	Managing **categories** and **stores** (creating, editing, deleting them) is likewise governed by
 	`canEditLists`; listing them requires `canViewLists`. Neither has its own capability.
+
+	`canEditFields` covers custom-field **definitions**, not the values stored on items. Filling in
+	an item's custom-field values travels with the item write itself — `canAddItems` when creating
+	the item, `canEditLists` when editing it.
 </Aside>
 
 ## How enforcement works
@@ -153,6 +158,24 @@ Columns: **View** = `canViewLists`, **Add** = `canAddItems`, **Check** = `canChe
 | Restore an item from trash                          |      |     |       |      |      |      |   ✅   |
 | Permanently delete an item (incl. from the archive) |      |     |       |      |      |      |   ✅   |
 | Empty the items trash                               |      |     |       |      |      |      |   ✅   |
+
+### Custom fields
+
+Columns: **View** = `canViewLists`, **Manage** = `canEditFields`.
+
+| Action                                                      | View | Manage |
+| ----------------------------------------------------------- | :--: | :----: |
+| List a house's custom-field definitions                     |  ✅  |        |
+| Create a field definition                                   |      |   ✅   |
+| Edit a field definition (name, list scope)                  |      |   ✅   |
+| Reorder field definitions                                   |      |   ✅   |
+| Delete a field definition                                   |      |   ✅   |
+| Delete a `select` option (remapping or clearing its values) |      |   ✅   |
+
+<Aside type="note">
+	Setting custom-field values on an item is not listed here — it is part of the item write and
+	requires `canAddItems` or `canEditLists` accordingly.
+</Aside>
 
 ### Photos
 
