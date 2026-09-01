@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.30.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.29.0...v0.30.0) (2026-09-01)
+
+
+### Features
+
+* **checklist:** allow opt-in suggestions for reusing archived items ([966e807](https://github.com/chenasraf/nextcloud-pantry/commit/966e80702de88e361cc46da5a8d096d3026154b8)), closes [#215](https://github.com/chenasraf/nextcloud-pantry/issues/215)
+* **checklist:** bulk remove-all done items ([cf9cd62](https://github.com/chenasraf/nextcloud-pantry/commit/cf9cd62f44de845e5e2c4f3116ecd91d254dd0f2)), closes [#248](https://github.com/chenasraf/nextcloud-pantry/issues/248)
+* **checklist:** configurable item click action ([50b4736](https://github.com/chenasraf/nextcloud-pantry/commit/50b4736b907a7c4d75bc40db8ae90a10ad2912d0))
+* **checklist:** update item compose form style ([2ed921c](https://github.com/chenasraf/nextcloud-pantry/commit/2ed921c77e5d28f7d735194e0fd59071ff543c31))
+* **chips:** redesign chips ([13d6e47](https://github.com/chenasraf/nextcloud-pantry/commit/13d6e4752edfcb235d8da3282fd39c620cf37e55))
+* custom fields for checklist items ([c564a92](https://github.com/chenasraf/nextcloud-pantry/commit/c564a922415ed3364e79f7e0549e1f596b302505))
+* **filters:** redesign filter controls ([52da4fb](https://github.com/chenasraf/nextcloud-pantry/commit/52da4fbddb8e833bd5fcede596a2c79f7aecf0cd))
+* **items:** redesign item view & edit modals ([4bc294f](https://github.com/chenasraf/nextcloud-pantry/commit/4bc294f17c61398af9e6bf692e0c36ea75b07dd9))
+* **items:** stack meta chips below label, restrict drag to handle ([70b90bb](https://github.com/chenasraf/nextcloud-pantry/commit/70b90bb18758f68808f094f262b14d018c3ac0f2))
+* **settings:** redesign house management & settings ([b8950a2](https://github.com/chenasraf/nextcloud-pantry/commit/b8950a23f6b3e172b6ebc6dde00a9133e8b3249e))
+* **toolbar:** make page toolbars sticky across all pages ([c4f6c5b](https://github.com/chenasraf/nextcloud-pantry/commit/c4f6c5bd10af97f2babf69b7a6f11c3a135b5393))
+
+
+### Bug Fixes
+
+* **checklist:** disable user avatar popover in item detail view ([1d9da5e](https://github.com/chenasraf/nextcloud-pantry/commit/1d9da5e21d59dfc8825654304fc3502c39786554))
+* **icons:** properly unify category, label, store and price icons across the ui ([e680d6d](https://github.com/chenasraf/nextcloud-pantry/commit/e680d6d4775f3df3af32ef5f407ee29001ce7cf5))
+* **l10n:** Update translations from Transifex ([4a595da](https://github.com/chenasraf/nextcloud-pantry/commit/4a595da2b3311a4d15603ccf1b6780e477456b4a))
+* **l10n:** Update translations from Transifex ([c85ee40](https://github.com/chenasraf/nextcloud-pantry/commit/c85ee40fda12768896f9cc950e99c6ec19502d83))
+* **l10n:** Update translations from Transifex ([18935a7](https://github.com/chenasraf/nextcloud-pantry/commit/18935a7bc9e9ec6b7ed6748a698b9ac614c49db8))
+* **l10n:** Update translations from Transifex ([3879fdb](https://github.com/chenasraf/nextcloud-pantry/commit/3879fdb9fd9f5e413c3f01fb608cf2f15755199e))
+* **l10n:** Update translations from Transifex ([612bf37](https://github.com/chenasraf/nextcloud-pantry/commit/612bf37406ef0dd89b9e3d9120c42e147787c4bb))
+* **l10n:** Update translations from Transifex ([e5810e3](https://github.com/chenasraf/nextcloud-pantry/commit/e5810e3e3fbacafd780f4528c1866e259cd18259))
+* **l10n:** Update translations from Transifex ([5f31ad5](https://github.com/chenasraf/nextcloud-pantry/commit/5f31ad5cae9aec77acb80e597f11b960c56e364a))
+
 ## [0.29.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.28.1...v0.29.0) (2026-08-24)
 
 
