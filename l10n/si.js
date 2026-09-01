@@ -3,11 +3,11 @@ OC.L10N.register(
     {
     "Images" : "පින්තූර",
     "Save" : "Save",
+    "Edit" : "සංස්කරණය",
     "Cancel" : "Cancel",
     "Name" : "නම",
     "Create" : "සාදන්න",
     "Delete" : "Delete",
-    "Edit" : "සංස්කරණය",
     "Add" : "එකතු කරන්න",
     "Category" : "ප්‍රවර්ගය",
     "Description" : "විස්තරය",
@@ -16,6 +16,8 @@ OC.L10N.register(
     "Max" : "උපරිම",
     "Everyone" : "සැවොම",
     "Restore" : "ප්‍රතිෂ්ථාපනය",
+    "No" : "නැහැ",
+    "Name cannot be empty" : "නම හිස් විය නොහැක",
     "Photos" : "ඡායාරූප",
     "Upload" : "උඩුගත",
     "Notes" : "සටහන්",
@@ -39,6 +41,7 @@ OC.L10N.register(
     "Location" : "ස්ථානය",
     "Archive" : "සංරක්ෂණය",
     "No notes yet" : "තවම සටහන් නැත",
-    "New folder" : "නව බහාලුම"
+    "New folder" : "නව බහාලුම",
+    "Date" : "දිනය"
 },
 "nplurals=2; plural=(n != 1);");

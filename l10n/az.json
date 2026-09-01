@@ -1,9 +1,9 @@
 { "translations": {
     "Save" : "Saxla",
+    "Edit" : "Dəyişiklik et",
     "Cancel" : "Cancel",
     "Name" : "Ad",
     "Delete" : "Sil",
-    "Edit" : "Dəyişiklik et",
     "Category" : "Kateqoriya",
     "Description" : "Açıqlanma",
     "Remove image" : "Şəkili sil",
@@ -12,7 +12,6 @@
     "Everyone" : "Hamı",
     "Delete permanently" : "Həmişəlik sil",
     "Restore" : "Geri qaytar",
-    "Status" : "Status",
     "Done" : "Edildi",
     "Copy" : "Kopyala",
     "Move" : "Move",

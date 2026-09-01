@@ -7,6 +7,8 @@
     "Saving …" : "Saving …",
     "Saved." : "Guardado.",
     "Notifications" : "Notificaciones",
+    "View" : "Ver",
+    "Edit" : "Editar",
     "Cancel" : "Cancelar",
     "Edit category" : "Editar categoría",
     "Name" : "Nombre",
@@ -14,7 +16,6 @@
     "Custom" : "Personalizado",
     "Are you sure you want to delete the category \"{name}\"?" : "¿Estás seguro de que deseas eliminar la categoría \"{name}\"?",
     "Delete" : "Eliminar",
-    "Edit" : "Editar",
     "Delete category" : "Eliminar categoría",
     "Sort order" : "Orden",
     "Add" : "Agregar",
@@ -36,10 +37,12 @@
     "Restore" : "Restaurar",
     "Unarchive" : "Desarchivar",
     "Store" : "Tienda",
-    "Status" : "Estado",
+    "Added" : "Agregado",
     "Done" : "Hecho",
+    "you" : "tú",
+    "Relative" : "Relativo",
+    "Options" : "Opciones",
     "Checklists" : "Listas de verificación",
-    "View" : "Ver",
     "Copy" : "Copiar",
     "Move" : "Mover",
     "Photos" : "Fotos",
@@ -110,6 +113,9 @@
     "Remove folder" : "Eliminar carpeta",
     "Move to folder" : "Mover a carpeta",
     "Load more" : "Cargar más",
-    "Uncategorized" : "Sin categoría"
+    "Uncategorized" : "Sin categoría",
+    "Text" : "Texto",
+    "Number" : "Número",
+    "Checkbox" : "Casilla de verificación"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

@@ -4,11 +4,11 @@ OC.L10N.register(
     "Images" : "Imágenes",
     "Save" : "Guardar",
     "Saved." : "Guardado.",
+    "Edit" : "Editar",
     "Cancel" : "Cancel",
     "Name" : "Nombre",
     "Custom" : "Personalizado",
     "Delete" : "Borrar",
-    "Edit" : "Editar",
     "Add" : "Guardar",
     "Category" : "Categoría",
     "Description" : "Descripción",
@@ -20,6 +20,8 @@ OC.L10N.register(
     "Delete permanently" : "Borrar permanentemente",
     "Restore" : "Restaurar",
     "Unarchive" : "Desarchivar",
+    "you" : "tú",
+    "Relative" : "Relativo",
     "Move" : "Mover",
     "Upload" : "Cargar",
     "Member" : "Miembro",
@@ -62,6 +64,8 @@ OC.L10N.register(
     "New note" : "Nota nueva",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva ",
-    "Uncategorized" : "Sin categoría"
+    "Uncategorized" : "Sin categoría",
+    "Text" : "Texto",
+    "Checkbox" : "Casilla de verificación"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

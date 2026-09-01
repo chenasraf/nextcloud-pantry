@@ -8,6 +8,8 @@
     "Saving …" : "Guardando...",
     "Saved." : "Guardado.",
     "Notifications" : "Notificaciones",
+    "View" : "Vista",
+    "Edit" : "Editar",
     "Barcode" : "Código de barras",
     "Cancel" : "Cancelar",
     "Name" : "Nombre",
@@ -15,7 +17,6 @@
     "Create" : "Crear",
     "Custom" : "Personalizado",
     "Delete" : "Eliminar",
-    "Edit" : "Editar",
     "Sort order" : "Ordenar por",
     "Drag to reorder" : "Arrastre para reordenar",
     "Add" : "Añadir",
@@ -39,10 +40,11 @@
     "Restore" : "Restaurar",
     "Unarchive" : "Desarchivar",
     "Store" : "Tienda",
-    "Status" : "Estado",
     "Done" : "Listo",
+    "you" : "usted",
+    "Relative" : "Relativo",
+    "Options" : "Opciones",
     "Checklists" : "Listas de verificación",
-    "View" : "Vista",
     "Copy" : "Copiar",
     "Move" : "Mover",
     "Photos" : "Fotos",
@@ -126,6 +128,8 @@
     "Move to folder" : "Mover a la carpeta",
     "Load more" : "Cargar más",
     "Uncategorized" : "Sin categoría",
-    "Finish" : "Terminar"
+    "Finish" : "Terminar",
+    "Text" : "Texto",
+    "Checkbox" : "Casilla de verificación"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

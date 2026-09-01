@@ -6,11 +6,12 @@ OC.L10N.register(
     "Save" : "Konservi",
     "Saving …" : "Konservado...",
     "Notifications" : "Atentigoj",
+    "View" : "Vidi",
+    "Edit" : "Modifi",
     "Cancel" : "Cancel",
     "Name" : "Nomo",
     "Custom" : "Propra",
     "Delete" : "Forigi",
-    "Edit" : "Modifi",
     "Category" : "Kategorio",
     "Description" : "Priskribo",
     "Remove image" : "Forigi bildon",
@@ -21,7 +22,8 @@ OC.L10N.register(
     "Delete permanently" : "Forigi por ĉiam",
     "Restore" : "Restaŭri",
     "Done" : "Farita",
-    "View" : "Vidi",
+    "you" : "vi",
+    "Relative" : "Relative",
     "Move" : "Movi",
     "Photos" : "Fotoj",
     "Upload" : "Alŝuti",
@@ -68,6 +70,8 @@ OC.L10N.register(
     "Select" : "Elekti",
     "Apply" : "Validigi",
     "New folder" : "Nova dosierujo",
-    "Uncategorized" : "Senkategoria"
+    "Uncategorized" : "Senkategoria",
+    "Text" : "Teksto",
+    "Checkbox" : "Markobutono"
 },
 "nplurals=2; plural=(n != 1);");

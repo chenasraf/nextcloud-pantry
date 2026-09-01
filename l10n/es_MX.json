@@ -5,12 +5,13 @@
     "Save" : "Guardar",
     "Saving …" : "Guardando ...",
     "Saved." : "Guardado.",
+    "View" : "Ver",
+    "Edit" : "Editar",
     "Cancel" : "Cancel",
     "Name" : "Nombre",
     "Create" : "Crear",
     "Custom" : "Personalizado",
     "Delete" : "Eliminar",
-    "Edit" : "Editar",
     "Add" : "Añadir",
     "Category" : "Categoría",
     "Labels" : "Etiquetas",
@@ -26,7 +27,9 @@
     "Restore" : "Restaurar",
     "Unarchive" : "Desarchivar",
     "Done" : "Terminado",
-    "View" : "Ver",
+    "you" : "tú",
+    "Relative" : "Relativo",
+    "Options" : "Opciones",
     "Copy" : "Copiar",
     "Move" : "Mover",
     "Photos" : "Fotos",
@@ -90,6 +93,8 @@
     "Add a description" : "Añadir una descripción",
     "Load more" : "Cargar más",
     "Uncategorized" : "Sin categoría",
-    "Finish" : "Terminar"
+    "Finish" : "Terminar",
+    "Text" : "Texto",
+    "Checkbox" : "Casilla de verificación"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }
