@@ -2830,6 +2830,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   &__body {
     max-width: 900px;
     margin: 0 auto;
+    padding-bottom: 4rem;
   }
 
   &__filter {
