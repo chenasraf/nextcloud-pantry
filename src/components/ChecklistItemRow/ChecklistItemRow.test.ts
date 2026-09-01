@@ -451,15 +451,17 @@ describe('ChecklistItemRow', () => {
       expect(wrapper.emitted('edit')).toBeFalsy()
     })
 
-    it("fills the checkbox and drops both icon buttons when action is 'done'", () => {
+    it("toggles done on row click and keeps both icon buttons when action is 'done'", async () => {
+      const item = makeItem({ id: 5 })
       const wrapper = mount(ChecklistItemRow, {
-        props: { ...defaultProps, rowClickAction: 'done' },
+        props: { ...defaultProps, item, rowClickAction: 'done' },
       })
-      expect(wrapper.find('.checklist-row__check-fill').exists()).toBe(true)
       const buttons = wrapper.findAll('.nc-button')
       // View and edit stay available (neither is the click action).
       expect(buttons.some(viewLabel)).toBe(true)
       expect(buttons.some(editLabel)).toBe(true)
+      await wrapper.find('.checklist-row').trigger('click')
+      expect(wrapper.emitted('toggle')![0]).toEqual([5])
     })
 
     it("emits view on row click and hides the view icon when action is 'view'", async () => {
@@ -590,11 +592,11 @@ describe('ChecklistItemRow', () => {
       expect(wrapper.find('.checklist-row__actions').exists()).toBe(false)
     })
 
-    it('is not draggable even when reorderEnabled is set', () => {
+    it('shows no drag handle even when reorderEnabled is set', () => {
       const wrapper = mount(ChecklistItemRow, {
         props: { ...defaultProps, suggestion: true, reorderEnabled: true },
       })
-      expect(wrapper.find('.checklist-row').attributes('draggable')).toBe('false')
+      expect(wrapper.find('.checklist-row__handle').exists()).toBe(false)
     })
 
     it('emits select with the item on row click (not toggle)', async () => {
@@ -611,23 +613,27 @@ describe('ChecklistItemRow', () => {
   })
 
   describe('reorderEnabled', () => {
-    it('is not draggable by default', () => {
+    it('has no drag handle by default', () => {
       const wrapper = mount(ChecklistItemRow, { props: defaultProps })
-      expect(wrapper.find('.checklist-row').attributes('draggable')).toBe('false')
+      expect(wrapper.find('.checklist-row__handle').exists()).toBe(false)
     })
 
-    it('is draggable when reorderEnabled is true', () => {
+    it('exposes a draggable handle when reorderEnabled is true', () => {
       const wrapper = mount(ChecklistItemRow, {
         props: { ...defaultProps, reorderEnabled: true },
       })
-      expect(wrapper.find('.checklist-row').attributes('draggable')).toBe('true')
+      const handle = wrapper.find('.checklist-row__handle')
+      expect(handle.exists()).toBe(true)
+      expect(handle.attributes('draggable')).toBe('true')
+      // The row itself is not a drag source — only the handle is.
+      expect(wrapper.find('.checklist-row').attributes('draggable')).toBeUndefined()
     })
 
-    it('emits drag-start on dragstart when reorderEnabled', async () => {
+    it('emits drag-start on handle dragstart when reorderEnabled', async () => {
       const wrapper = mount(ChecklistItemRow, {
         props: { ...defaultProps, item: makeItem({ id: 7 }), reorderEnabled: true },
       })
-      await wrapper.find('.checklist-row').trigger('dragstart', {
+      await wrapper.find('.checklist-row__handle').trigger('dragstart', {
         dataTransfer: { effectAllowed: '', setData: vi.fn() },
       })
       expect(wrapper.emitted('drag-start')).toBeTruthy()
@@ -644,21 +650,11 @@ describe('ChecklistItemRow', () => {
           reorderGroupKey: 's-3',
         },
       })
-      await wrapper.find('.checklist-row').trigger('dragstart', {
+      await wrapper.find('.checklist-row__handle').trigger('dragstart', {
         dataTransfer: { effectAllowed: '', setData: vi.fn() },
       })
       expect(wrapper.emitted('drag-start')![0]).toEqual([7, 's-3'])
       expect(wrapper.find('.checklist-row').attributes('data-drag-group')).toBe('s-3')
-    })
-
-    it('does not emit drag-start when reorderEnabled is false', async () => {
-      const wrapper = mount(ChecklistItemRow, {
-        props: { ...defaultProps, item: makeItem({ id: 7 }), reorderEnabled: false },
-      })
-      await wrapper.find('.checklist-row').trigger('dragstart', {
-        dataTransfer: { effectAllowed: '', setData: vi.fn() },
-      })
-      expect(wrapper.emitted('drag-start')).toBeFalsy()
     })
 
     it('emits reorder-over on dragover when reorderEnabled', async () => {
@@ -681,18 +677,19 @@ describe('ChecklistItemRow', () => {
       expect(wrapper.emitted('reorder-over')).toBeFalsy()
     })
 
-    it('applies dragging class on dragstart and removes on dragend', async () => {
+    it('applies dragging class on handle dragstart and removes on dragend', async () => {
       const wrapper = mount(ChecklistItemRow, {
         props: { ...defaultProps, reorderEnabled: true },
       })
       const row = wrapper.find('.checklist-row')
+      const handle = wrapper.find('.checklist-row__handle')
 
-      await row.trigger('dragstart', {
+      await handle.trigger('dragstart', {
         dataTransfer: { effectAllowed: '', setData: vi.fn() },
       })
       expect(row.classes()).toContain('checklist-row--dragging')
 
-      await row.trigger('dragend')
+      await handle.trigger('dragend')
       expect(row.classes()).not.toContain('checklist-row--dragging')
     })
   })

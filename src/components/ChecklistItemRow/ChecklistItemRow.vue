@@ -4,8 +4,6 @@
     :class="{
       'checklist-row--done': item.done,
       'checklist-row--dragging': isDragging,
-      'checklist-row--reorderable': reorderEnabled,
-      'checklist-row--with-added-by': showAddedBy && !selectionMode && !suggestion,
       'checklist-row--selecting': selectionMode,
       'checklist-row--selected': selectionMode && selected,
       'checklist-row--suggestion': suggestion,
@@ -13,9 +11,6 @@
     }"
     :data-drag-id="item.id"
     :data-drag-group="reorderGroupKey"
-    :draggable="reorderEnabled && !suggestion ? 'true' : 'false'"
-    @dragstart="onDragStart"
-    @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
     @click="onRowClick"
   >
@@ -27,151 +22,126 @@
       />
     </div>
     <span
-      v-if="reorderEnabled"
+      v-if="reorderEnabled && !suggestion"
       class="checklist-row__handle"
       :aria-label="strings.dragToReorder"
+      draggable="true"
       @click.stop
+      @dragstart="onDragStart"
+      @dragend="onDragEnd"
     >
       <DragVerticalIcon :size="20" />
     </span>
-    <div v-if="suggestion || selectionMode" class="checklist-row__check">
-      <span class="checklist-row__label checklist-row__label--standalone">
-        <button
-          v-if="item.imageFileId"
-          type="button"
-          class="checklist-row__thumb"
-          :aria-label="strings.viewImage"
-          @click.stop.prevent="$emit('preview', item)"
-        >
-          <img :src="thumbUrl" :alt="item.name" />
-        </button>
-        <span class="checklist-row__name">{{ item.name }}</span>
-      </span>
-    </div>
-    <div v-else class="checklist-row__check">
-      <NcCheckboxRadioSwitch
-        :model-value="item.done"
-        :disabled="!canCheck"
-        :aria-label="rowClickAction === 'done' ? undefined : item.name"
-        :class="{ 'checklist-row__check-fill': rowClickAction === 'done' }"
-        @click.stop
-        @update:model-value="$emit('toggle', item.id)"
+    <div class="checklist-row__body">
+      <div v-if="!suggestion && !selectionMode" class="checklist-row__check" @click.stop>
+        <NcCheckboxRadioSwitch
+          :model-value="item.done"
+          :disabled="!canCheck"
+          :aria-label="item.name"
+          @update:model-value="$emit('toggle', item.id)"
+        />
+      </div>
+      <button
+        v-if="item.imageFileId"
+        type="button"
+        class="checklist-row__thumb"
+        :aria-label="strings.viewImage"
+        @click.stop.prevent="$emit('preview', item)"
       >
-        <span v-if="rowClickAction === 'done'" class="checklist-row__label">
-          <button
-            v-if="item.imageFileId"
-            type="button"
-            class="checklist-row__thumb"
-            :aria-label="strings.viewImage"
-            @click.stop.prevent="$emit('preview', item)"
-          >
-            <img :src="thumbUrl" :alt="item.name" />
-          </button>
+        <img :src="thumbUrl" :alt="item.name" />
+      </button>
+      <div class="checklist-row__content">
+        <span class="checklist-row__label">
           <span class="checklist-row__name">{{ item.name }}</span>
         </span>
-      </NcCheckboxRadioSwitch>
-      <span
-        v-if="rowClickAction !== 'done'"
-        class="checklist-row__label checklist-row__label--standalone"
-      >
-        <button
-          v-if="item.imageFileId"
-          type="button"
-          class="checklist-row__thumb"
-          :aria-label="strings.viewImage"
-          @click.stop.prevent="$emit('preview', item)"
-        >
-          <img :src="thumbUrl" :alt="item.name" />
-        </button>
-        <span class="checklist-row__name">{{ item.name }}</span>
-      </span>
-    </div>
-    <div class="checklist-row__meta">
-      <PantryChip
-        v-if="item.quantity"
-        class="checklist-row__quantity"
-        size="sm"
-        :interactive="false"
-      >
-        &times; {{ item.quantity }}
-      </PantryChip>
-      <PantryChip v-if="priceText" class="checklist-row__price" size="sm" :interactive="false">
-        {{ priceText }}
-      </PantryChip>
-      <PantryChip
-        v-if="item.description"
-        class="checklist-row__description"
-        size="sm"
-        :interactive="false"
-        :title="item.description"
-        :aria-label="strings.hasDescription"
-      >
-        <template #icon>
-          <TextBoxOutlineIcon :size="14" />
-        </template>
-      </PantryChip>
-      <PantryChip
-        v-if="item.rrule && !compact"
-        class="checklist-row__recurrence"
-        size="sm"
-        :interactive="false"
-        :title="recurrenceTooltip"
-      >
-        <template #icon>
-          <RepeatIcon :size="14" />
-        </template>
-        {{ formatRrule(item.rrule) }}
-      </PantryChip>
-      <PantryChip
-        v-if="list"
-        class="checklist-row__list"
-        :color="list.color || undefined"
-        size="sm"
-        :interactive="false"
-      >
-        <template #icon>
-          <component :is="checklistIconComponent(list.icon)" :size="14" />
-        </template>
-        {{ list.name }}
-      </PantryChip>
-      <PantryChip
-        v-if="category && !hideCategory"
-        class="checklist-row__category"
-        :color="category.color || undefined"
-        size="sm"
-        :interactive="false"
-      >
-        <template #icon>
-          <component :is="categoryIconComponent(category.icon)" :size="14" />
-        </template>
-        {{ category.name }}
-      </PantryChip>
-      <PantryChip
-        v-for="store in hideStore ? [] : stores"
-        :key="store.id"
-        class="checklist-row__store"
-        :color="store.color || undefined"
-        size="sm"
-        :aria-label="storeLabel(store.name)"
-        @click="onViewStore(store, $event)"
-      >
-        <template #icon>
-          <component :is="storeIconComponent(store.icon)" :size="14" />
-        </template>
-        {{ store.name }}
-      </PantryChip>
-      <PantryChip
-        v-for="label in labels"
-        :key="'label-' + label.id"
-        :color="label.color || undefined"
-        size="sm"
-        :interactive="false"
-      >
-        <template #icon>
-          <component :is="labelIconComponent(label.icon)" :size="14" />
-        </template>
-        {{ label.name }}
-      </PantryChip>
+        <div class="checklist-row__meta">
+          <PantryChip
+            v-if="item.quantity"
+            class="checklist-row__quantity"
+            size="sm"
+            :interactive="false"
+          >
+            &times; {{ item.quantity }}
+          </PantryChip>
+          <PantryChip v-if="priceText" class="checklist-row__price" size="sm" :interactive="false">
+            {{ priceText }}
+          </PantryChip>
+          <PantryChip
+            v-if="item.description"
+            class="checklist-row__description"
+            size="sm"
+            :interactive="false"
+            :title="item.description"
+            :aria-label="strings.hasDescription"
+          >
+            <template #icon>
+              <TextBoxOutlineIcon :size="14" />
+            </template>
+          </PantryChip>
+          <PantryChip
+            v-if="item.rrule && !compact"
+            class="checklist-row__recurrence"
+            size="sm"
+            :interactive="false"
+            :title="recurrenceTooltip"
+          >
+            <template #icon>
+              <RepeatIcon :size="14" />
+            </template>
+            {{ formatRrule(item.rrule) }}
+          </PantryChip>
+          <PantryChip
+            v-if="list"
+            class="checklist-row__list"
+            :color="list.color || undefined"
+            size="sm"
+            :interactive="false"
+          >
+            <template #icon>
+              <component :is="checklistIconComponent(list.icon)" :size="14" />
+            </template>
+            {{ list.name }}
+          </PantryChip>
+          <PantryChip
+            v-if="category && !hideCategory"
+            class="checklist-row__category"
+            :color="category.color || undefined"
+            size="sm"
+            :interactive="false"
+          >
+            <template #icon>
+              <component :is="categoryIconComponent(category.icon)" :size="14" />
+            </template>
+            {{ category.name }}
+          </PantryChip>
+          <PantryChip
+            v-for="store in hideStore ? [] : stores"
+            :key="store.id"
+            class="checklist-row__store"
+            :color="store.color || undefined"
+            size="sm"
+            :aria-label="storeLabel(store.name)"
+            @click="onViewStore(store, $event)"
+          >
+            <template #icon>
+              <component :is="storeIconComponent(store.icon)" :size="14" />
+            </template>
+            {{ store.name }}
+          </PantryChip>
+          <PantryChip
+            v-for="label in labels"
+            :key="'label-' + label.id"
+            :color="label.color || undefined"
+            size="sm"
+            :interactive="false"
+          >
+            <template #icon>
+              <component :is="labelIconComponent(label.icon)" :size="14" />
+            </template>
+            {{ label.name }}
+          </PantryChip>
+        </div>
+      </div>
     </div>
     <div v-if="showAddedBy && !selectionMode && !suggestion" class="checklist-row__added-by">
       <NcAvatar
@@ -447,8 +417,7 @@ const isDragging = ref(false)
 
 // A tap on the row body drives the configured action. The checkbox, actions,
 // image thumb, drag handle and store chips stop propagation so they keep their
-// own behavior. In 'done' mode the checkbox itself fills the row, so nothing
-// is emitted here.
+// own behavior.
 function onRowClick() {
   if (props.suggestion) {
     emit('select', props.item)
@@ -463,17 +432,21 @@ function onRowClick() {
     emit('view', props.item)
   } else if (props.rowClickAction === 'edit' && canEditItem.value) {
     emit('edit', props.item)
+  } else if (props.rowClickAction === 'done' && canCheck.value) {
+    emit('toggle', props.item.id)
   }
 }
 
-// The row body is a click target only when its action opens the item; 'done'
-// is served by the checkbox fill and 'none' does nothing.
+// The row body is a click target whenever its action does something: opening
+// the item (view / edit) or toggling done. 'none' leaves the body inert.
 const rowClickable = computed(
   () =>
     !props.suggestion &&
     !props.selectionMode &&
     !props.compact &&
-    (props.rowClickAction === 'view' || (props.rowClickAction === 'edit' && canEditItem.value)),
+    (props.rowClickAction === 'view' ||
+      (props.rowClickAction === 'edit' && canEditItem.value) ||
+      (props.rowClickAction === 'done' && canCheck.value)),
 )
 
 // Keep the store chip's click from bubbling to the row's own click handler.
@@ -563,11 +536,11 @@ function storeLabel(name: string): string {
 
 <style scoped lang="scss">
 .checklist-row {
-  display: grid;
-  // Columns: [handle] check(1fr) meta [added-by] actions. The optional tracks
-  // are toggled via modifier classes so the actions column is always the last
-  // track on every row — otherwise rows missing an avatar shift the eye/kebab.
-  grid-template-columns: 1fr auto auto;
+  // A flex row of optional leading controls (selection checkbox, drag handle),
+  // the item body (checkbox + name-over-chips content), and trailing controls
+  // (added-by avatar, actions). The body stacks the meta chips under the name,
+  // to the right of the checkbox.
+  display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
@@ -575,22 +548,7 @@ function storeLabel(name: string): string {
   border-radius: var(--border-radius, 8px);
   background: var(--color-main-background);
 
-  &--reorderable {
-    grid-template-columns: auto 1fr auto auto;
-  }
-
-  &--with-added-by {
-    grid-template-columns: 1fr auto auto auto;
-  }
-
-  &--reorderable#{&}--with-added-by {
-    grid-template-columns: auto 1fr auto auto auto;
-  }
-
-  // Selection mode drops the handle, actions and added-by, prepending a single
-  // selection checkbox track. It never co-occurs with the reorder handle.
   &--selecting {
-    grid-template-columns: auto 1fr auto;
     cursor: pointer;
   }
 
@@ -599,20 +557,30 @@ function storeLabel(name: string): string {
     border-color: var(--color-primary-element);
   }
 
-  // Row body opens the item on click (view / edit action). The checkbox,
-  // actions and other controls reset the cursor on their own hit areas.
+  // Row body opens the item (view / edit) or toggles done on click. A global
+  // `div` cursor rule outranks the inherited pointer on every wrapper div, so
+  // restate it on the body and its container divs. The thumb, description chip,
+  // handle and actions keep their own cursors via their higher-specificity
+  // rules.
   &--clickable {
     cursor: pointer;
+
+    .checklist-row__body,
+    .checklist-row__check,
+    .checklist-row__content,
+    .checklist-row__label,
+    .checklist-row__meta {
+      cursor: pointer;
+    }
 
     &:hover {
       background: var(--color-background-hover);
     }
   }
 
-  // Reuse suggestion: no checkbox/handle/actions tracks — just the name and its
-  // meta chips. Transparent so it blends into the surrounding suggestions panel.
+  // Reuse suggestion: no checkbox/handle/actions — just the name and its meta
+  // chips. Transparent so it blends into the surrounding suggestions panel.
   &--suggestion {
-    grid-template-columns: 1fr auto;
     background: transparent;
     border-color: transparent;
     cursor: pointer;
@@ -629,60 +597,10 @@ function storeLabel(name: string): string {
     &:focus-visible {
       background: var(--color-background-dark);
     }
-
-    @media (max-width: 600px) {
-      grid-template-columns: 1fr;
-      grid-template-areas:
-        'check'
-        'meta';
-    }
   }
 
   @media (max-width: 600px) {
-    grid-template-columns: 1fr auto auto;
-    grid-template-areas:
-      'check added actions'
-      'meta  meta  meta';
-    gap: 0.25rem 0.5rem;
-
-    &.checklist-row--reorderable {
-      grid-template-columns: auto 1fr auto auto;
-      grid-template-areas:
-        'handle check added actions'
-        'handle meta  meta  meta';
-    }
-
-    &.checklist-row--selecting {
-      grid-template-columns: auto 1fr;
-      grid-template-areas:
-        'select check'
-        'meta   meta';
-    }
-
-    .checklist-row__select {
-      grid-area: select;
-    }
-
-    .checklist-row__handle {
-      grid-area: handle;
-    }
-
-    .checklist-row__check {
-      grid-area: check;
-    }
-
-    .checklist-row__added-by {
-      grid-area: added;
-    }
-
-    .checklist-row__actions,
-    .checklist-row__session-remove {
-      grid-area: actions;
-    }
-
-    .checklist-row__meta {
-      grid-area: meta;
-    }
+    gap: 0.5rem;
   }
 
   &--done {
@@ -697,20 +615,13 @@ function storeLabel(name: string): string {
     opacity: 0.35;
   }
 
-  &[draggable='true'] {
-    cursor: grab;
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
   &__handle {
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--color-text-maxcontrast);
     cursor: grab;
+    flex-shrink: 0;
 
     &:active {
       cursor: grabbing;
@@ -723,25 +634,26 @@ function storeLabel(name: string): string {
     }
   }
 
-  &__check {
+  &__body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex: 1;
     min-width: 0;
   }
 
-  // When the row-tap pref is on, the label content sits inside the
-  // NcCheckboxRadioSwitch slot. Stretch the checkbox component (and its
-  // inner content wrapper) so the hover highlight and click target span
-  // the whole row.
-  &__check-fill {
-    flex: 1;
-    min-width: 0;
+  &__check {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
 
-    :deep(.checkbox-radio-switch__content) {
-      width: 100%;
-      max-width: unset;
-    }
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    min-width: 0;
+    flex: 1;
   }
 
   :deep(.checkbox-content__icon) {
@@ -753,12 +665,19 @@ function storeLabel(name: string): string {
     align-items: center;
     gap: 0.6rem;
     min-width: 0;
+  }
 
-    // Standalone label (checkbox-only mode): fills the remaining space
-    // next to the checkbox in the flex container.
-    &--standalone {
-      flex: 1;
-    }
+  // Collapsed when no chips render, so the name-only body keeps its single-line
+  // height instead of reserving the column gap.
+  &__meta:empty {
+    display: none;
+  }
+
+  // Neutral (uncolored) display chips share their fill with the row's hover
+  // background, so give them an outline to stay distinct. Colored chips already
+  // carry a tinted border.
+  &__meta :deep(.pantry-chip:not(.pantry-chip--color)) {
+    --chip-border: var(--color-border);
   }
 
   &__thumb {
@@ -802,21 +721,25 @@ function storeLabel(name: string): string {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    flex-shrink: 0;
   }
 
   &__session-remove {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
   }
 
   &__added-by {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
   }
 
   &__select {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
   }
 
   &__description {
