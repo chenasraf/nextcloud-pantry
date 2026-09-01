@@ -226,9 +226,6 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
-import TagOutlineIcon from '@icons/TagOutline.vue'
-import LabelMultipleOutlineIcon from '@icons/LabelMultipleOutline.vue'
-import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import FormatListBulletedIcon from '@icons/FormatListBulleted.vue'
 import TextIcon from '@icons/Text.vue'
 import PinIcon from '@icons/Pin.vue'
@@ -238,7 +235,6 @@ import ImageIcon from '@icons/Image.vue'
 import ImagePlusIcon from '@icons/ImagePlus.vue'
 import UploadIcon from '@icons/Upload.vue'
 import BarcodeScanIcon from '@icons/BarcodeScan.vue'
-import CashIcon from '@icons/Cash.vue'
 import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { RecurrenceForm } from '@/components/RecurrenceEditor'
@@ -264,6 +260,7 @@ import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
+import { entityIcon } from '@/utils/entityIcons'
 import { formatRrule } from '@/utils/rrule'
 import { formatPrice, storelessPrice } from '@/utils/price'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
@@ -619,7 +616,7 @@ const chips = computed<Chip[]>(() => {
     text: selectedCategory.value ? selectedCategory.value.name : strings.category,
     icon: selectedCategory.value
       ? categoryIconComponent(selectedCategory.value.icon)
-      : TagOutlineIcon,
+      : entityIcon.category,
     iconStyle: selectedCategory.value ? { color: selectedCategory.value.color } : undefined,
     filled: selectedCategory.value !== null,
   })
@@ -633,7 +630,7 @@ const chips = computed<Chip[]>(() => {
         : stored.length === 1
           ? stored[0]!.name
           : n('pantry', '%n store', '%n stores', stored.length),
-    icon: stored.length === 1 ? storeIconComponent(stored[0]!.icon) : StoreOutlineIcon,
+    icon: stored.length === 1 ? storeIconComponent(stored[0]!.icon) : entityIcon.store,
     iconStyle: stored.length === 1 ? { color: stored[0]!.color } : undefined,
     filled: stored.length > 0,
   })
@@ -647,7 +644,7 @@ const chips = computed<Chip[]>(() => {
         : labeled.length === 1
           ? labeled[0]!.name
           : n('pantry', '%n label', '%n labels', labeled.length),
-    icon: labeled.length === 1 ? labelIconComponent(labeled[0]!.icon) : LabelMultipleOutlineIcon,
+    icon: labeled.length === 1 ? labelIconComponent(labeled[0]!.icon) : entityIcon.label,
     iconStyle: labeled.length === 1 ? { color: labeled[0]!.color } : undefined,
     filled: labeled.length > 0,
   })
@@ -662,7 +659,7 @@ const chips = computed<Chip[]>(() => {
   list.push({
     key: 'price',
     text: priceText.value ?? strings.price,
-    icon: CashIcon,
+    icon: entityIcon.price,
     filled: priceText.value !== null,
   })
 

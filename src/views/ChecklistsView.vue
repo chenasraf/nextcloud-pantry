@@ -296,9 +296,6 @@ import { StoreManagerDialog } from '@/components/StoreManager'
 import { CustomFieldManagerDialog } from '@/components/CustomFieldManager'
 import PlusIcon from '@icons/Plus.vue'
 import CartIcon from '@icons/Cart.vue'
-import TagIcon from '@icons/Tag.vue'
-import LabelMultipleIcon from '@icons/LabelMultiple.vue'
-import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
@@ -321,6 +318,11 @@ import {
   ChecklistFormDialog,
   contrastColor,
 } from '@/components/ChecklistIconPicker'
+import { entityIcon } from '@/utils/entityIcons'
+
+const CategoryEntityIcon = entityIcon.category
+const LabelEntityIcon = entityIcon.label
+const StoreEntityIcon = entityIcon.store
 
 function iconWrapStyle(color: string | null) {
   if (!color) return undefined
@@ -768,7 +770,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
       {
         key: 'manage-categories',
         label: strings.manageCategories,
-        icon: TagIcon,
+        icon: CategoryEntityIcon,
         alwaysCollapsed: true,
         onClick: () => {
           showCategoryManager.value = true
@@ -777,7 +779,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
       {
         key: 'manage-labels',
         label: strings.manageLabels,
-        icon: LabelMultipleIcon,
+        icon: LabelEntityIcon,
         alwaysCollapsed: true,
         onClick: () => {
           showLabelManager.value = true
@@ -786,7 +788,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
       {
         key: 'manage-stores',
         label: strings.manageStores,
-        icon: StoreOutlineIcon,
+        icon: StoreEntityIcon,
         alwaysCollapsed: true,
         onClick: () => {
           showStoreManager.value = true

@@ -2,6 +2,7 @@
 // with CategoryService::ICON_KEYS on the backend); the component is resolved at render time.
 
 import type { Component } from 'vue'
+import { entityIcon } from '@/utils/entityIcons'
 import TagIcon from '@icons/Tag.vue'
 import FoodIcon from '@icons/Food.vue'
 import FruitIcon from '@icons/FoodApple.vue'
@@ -164,7 +165,7 @@ const byKey: Record<string, CategoryIconOption> = Object.fromEntries(
 )
 
 export function categoryIconComponent(key: string | null | undefined): Component {
-  return byKey[key ?? '']?.component ?? TagIcon
+  return byKey[key ?? '']?.component ?? entityIcon.category
 }
 
 /** Default palette of colors shown in the inline create dialog. */

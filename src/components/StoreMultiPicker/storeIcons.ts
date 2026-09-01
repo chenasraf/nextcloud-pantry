@@ -4,6 +4,7 @@
 // category icon set so the two can diverge.
 
 import type { Component } from 'vue'
+import { entityIcon } from '@/utils/entityIcons'
 import StoreIcon from '@icons/Store.vue'
 import StorefrontIcon from '@icons/Storefront.vue'
 import MarketIcon from '@icons/StorefrontOutline.vue'
@@ -104,7 +105,7 @@ const byKey: Record<string, StoreIconOption> = Object.fromEntries(
 )
 
 export function storeIconComponent(key: string | null | undefined): Component {
-  return byKey[key ?? '']?.component ?? StoreIcon
+  return byKey[key ?? '']?.component ?? entityIcon.store
 }
 
 /** Default palette of colors shown in the store create/edit dialog. */

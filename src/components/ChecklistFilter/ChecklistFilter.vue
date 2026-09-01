@@ -35,16 +35,6 @@
         @update:model-value="$emit('update:selectedCategoryIds', $event)"
       />
       <FilterChip
-        v-if="labelOptions.length > 0"
-        :label="strings.labels"
-        :all-label="strings.allLabels"
-        :icon="LabelIcon"
-        :model-value="selectedLabelIdsLocal"
-        :options="labelOptions"
-        :total-count="totalCount"
-        @update:model-value="$emit('update:selectedLabelIds', $event)"
-      />
-      <FilterChip
         v-if="storeOptions.length > 0"
         :label="strings.stores"
         :all-label="strings.allStores"
@@ -53,6 +43,16 @@
         :options="storeOptions"
         :total-count="totalCount"
         @update:model-value="$emit('update:selectedStoreIds', $event)"
+      />
+      <FilterChip
+        v-if="labelOptions.length > 0"
+        :label="strings.labels"
+        :all-label="strings.allLabels"
+        :icon="LabelIcon"
+        :model-value="selectedLabelIdsLocal"
+        :options="labelOptions"
+        :total-count="totalCount"
+        @update:model-value="$emit('update:selectedLabelIds', $event)"
       />
       <PriceFilter
         v-if="anyPriced"
@@ -68,12 +68,8 @@ import { computed } from 'vue'
 import { t } from '@nextcloud/l10n'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import MagnifyIcon from '@icons/Magnify.vue'
-import TagOffOutlineIcon from '@icons/TagOffOutline.vue'
-import StoreOffOutlineIcon from '@icons/StoreOffOutline.vue'
-import LabelOutlineIcon from '@icons/LabelOutline.vue'
-import TagOutlineIcon from '@icons/TagOutline.vue'
-import StorefrontOutlineIcon from '@icons/StorefrontOutline.vue'
 import FormatListChecksIcon from '@icons/FormatListChecks.vue'
+import { entityIcon, entityNoneIcon } from '@/utils/entityIcons'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
@@ -109,9 +105,9 @@ const emit = defineEmits<{
 
 // Facet trigger-chip icons, mirroring the Flutter filter bar.
 const ListIcon = FormatListChecksIcon
-const CategoryIcon = LabelOutlineIcon
-const LabelIcon = TagOutlineIcon
-const StoreIcon = StorefrontOutlineIcon
+const CategoryIcon = entityIcon.category
+const LabelIcon = entityIcon.label
+const StoreIcon = entityIcon.store
 
 const emptyPriceFilter: PriceFilterValue = { min: null, max: null, currency: null }
 const priceFilterLocal = computed(() => props.priceFilter ?? emptyPriceFilter)
@@ -148,7 +144,7 @@ const categoryOptions = computed<FilterOption[]>(() => {
       id: NO_CATEGORY_ID,
       label: strings.noCategory,
       count: uncategorized,
-      icon: TagOffOutlineIcon,
+      icon: entityNoneIcon.category,
     })
   }
   return options
@@ -186,7 +182,7 @@ const storeOptions = computed<FilterOption[]>(() => {
       id: NO_STORE_ID,
       label: strings.noStore,
       count: storeless,
-      icon: StoreOffOutlineIcon,
+      icon: entityNoneIcon.store,
     })
   }
   return options
@@ -224,7 +220,7 @@ const labelOptions = computed<FilterOption[]>(() => {
       id: NO_LABEL_ID,
       label: strings.noLabel,
       count: unlabeled,
-      icon: TagOffOutlineIcon,
+      icon: entityNoneIcon.label,
     })
   }
   return options

@@ -62,7 +62,7 @@
       <FieldCard v-if="priceRows.length > 0" :label="strings.price">
         <div class="item-view__prices">
           <span v-for="row in priceRows" :key="row.key" class="item-view__price">
-            <TagIcon :size="16" class="item-view__price-icon" />
+            <PriceIcon :size="16" class="item-view__price-icon" />
             <span v-if="showPriceStore" class="item-view__price-store">{{ row.label }}</span>
             <span class="item-view__price-amount">{{ row.text }}</span>
           </span>
@@ -138,7 +138,6 @@ import NcDateTime from '@nextcloud/vue/components/NcDateTime'
 import RepeatIcon from '@icons/Repeat.vue'
 import PinIcon from '@icons/Pin.vue'
 import DeleteIcon from '@icons/Delete.vue'
-import TagIcon from '@icons/Tag.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import CheckCircleOutlineIcon from '@icons/CheckCircleOutline.vue'
 import TextIcon from '@icons/Text.vue'
@@ -150,6 +149,7 @@ import FieldCard from '@/components/FieldCard'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
+import { entityIcon } from '@/utils/entityIcons'
 import PantryChip from '@/components/PantryChip'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule } from '@/utils/rrule'
@@ -167,6 +167,8 @@ import type {
   FieldType,
   ItemCustomFieldValue,
 } from '@/api/types'
+
+const PriceIcon = entityIcon.price
 
 const props = withDefaults(
   defineProps<{

@@ -168,7 +168,6 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import FileUploadIcon from '@icons/FileUpload.vue'
-import TagOutlineIcon from '@icons/TagOutline.vue'
 import FormatListBulletedIcon from '@icons/FormatListBulleted.vue'
 import TextIcon from '@icons/Text.vue'
 import PinIcon from '@icons/Pin.vue'
@@ -184,6 +183,7 @@ import { checklistIconComponent } from '@/components/ChecklistIconPicker/checkli
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { useCategories } from '@/composables/useCategories'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
+import { entityIcon } from '@/utils/entityIcons'
 import { formatRrule } from '@/utils/rrule'
 import { parseMarkdownItems } from '@/utils/markdownList'
 import type { ItemInput } from '@/api/lists'
@@ -412,7 +412,7 @@ const chips = computed<Chip[]>(() => {
       text: selectedCategory.value ? selectedCategory.value.name : strings.category,
       icon: selectedCategory.value
         ? categoryIconComponent(selectedCategory.value.icon)
-        : TagOutlineIcon,
+        : entityIcon.category,
       iconStyle: selectedCategory.value ? { color: selectedCategory.value.color } : undefined,
       filled: selectedCategory.value !== null,
     },

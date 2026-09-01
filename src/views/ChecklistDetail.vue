@@ -70,7 +70,7 @@
           @click="openBulkCategory"
         >
           <template #icon>
-            <TagIcon :size="20" />
+            <CategoryEntityIcon :size="20" />
           </template>
         </NcButton>
         <NcButton
@@ -81,7 +81,7 @@
           @click="openBulkStores"
         >
           <template #icon>
-            <StoreOutlineIcon :size="20" />
+            <StoreEntityIcon :size="20" />
           </template>
         </NcButton>
         <NcButton
@@ -92,7 +92,7 @@
           @click="openBulkLabels"
         >
           <template #icon>
-            <LabelMultipleIcon :size="20" />
+            <LabelEntityIcon :size="20" />
           </template>
         </NcButton>
         <NcButton
@@ -730,9 +730,6 @@ import SortReverseVariantIcon from '@icons/SortReverseVariant.vue'
 import CheckboxMultipleBlankOutlineIcon from '@icons/CheckboxMultipleBlankOutline.vue'
 import SelectMultipleIcon from '@icons/SelectMultiple.vue'
 import CloseIcon from '@icons/Close.vue'
-import TagIcon from '@icons/Tag.vue'
-import LabelMultipleIcon from '@icons/LabelMultiple.vue'
-import StoreOutlineIcon from '@icons/StoreOutline.vue'
 import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
 import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
@@ -770,6 +767,11 @@ import {
   ChecklistFormDialog,
   contrastColor,
 } from '@/components/ChecklistIconPicker'
+import { entityIcon } from '@/utils/entityIcons'
+
+const CategoryEntityIcon = entityIcon.category
+const LabelEntityIcon = entityIcon.label
+const StoreEntityIcon = entityIcon.store
 
 function iconWrapStyle(color: string | null) {
   if (!color) return undefined
@@ -2749,7 +2751,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   actions.push({
     key: 'categories',
     label: strings.manageCategories,
-    icon: TagIcon,
+    icon: CategoryEntityIcon,
     alwaysCollapsed: true,
     onClick: () => (showCategoryManager.value = true),
   })
@@ -2757,7 +2759,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   actions.push({
     key: 'labels',
     label: strings.manageLabels,
-    icon: LabelMultipleIcon,
+    icon: LabelEntityIcon,
     alwaysCollapsed: true,
     onClick: () => (showLabelManager.value = true),
   })
@@ -2765,7 +2767,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   actions.push({
     key: 'stores',
     label: strings.manageStores,
-    icon: StoreOutlineIcon,
+    icon: StoreEntityIcon,
     alwaysCollapsed: true,
     onClick: () => (showStoreManager.value = true),
   })

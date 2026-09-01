@@ -76,6 +76,7 @@ import {
   DEFAULT_CATEGORY_ICON_KEY,
   categoryIconComponent,
 } from './categoryIcons'
+import { entityIcon } from '@/utils/entityIcons'
 
 describe('CATEGORY_ICONS', () => {
   it('has 70 entries', () => {
@@ -121,19 +122,16 @@ describe('categoryIconComponent', () => {
     expect(result.name).toBe('TagIcon')
   })
 
-  it('returns the fallback TagIcon for unknown keys', () => {
-    const result = categoryIconComponent('nonexistent') as { name: string }
-    expect(result.name).toBe('TagIcon')
+  it('returns the category entity icon for unknown keys', () => {
+    expect(categoryIconComponent('nonexistent')).toBe(entityIcon.category)
   })
 
-  it('returns the fallback TagIcon for null', () => {
-    const result = categoryIconComponent(null) as { name: string }
-    expect(result.name).toBe('TagIcon')
+  it('returns the category entity icon for null', () => {
+    expect(categoryIconComponent(null)).toBe(entityIcon.category)
   })
 
-  it('returns the fallback TagIcon for undefined', () => {
-    const result = categoryIconComponent(undefined) as { name: string }
-    expect(result.name).toBe('TagIcon')
+  it('returns the category entity icon for undefined', () => {
+    expect(categoryIconComponent(undefined)).toBe(entityIcon.category)
   })
 })
 

@@ -8,7 +8,7 @@
     <template #trigger>
       <PantryChip class="price-filter__trigger-chip" :filled="isActive">
         <template #icon>
-          <CashIcon :size="16" />
+          <PriceIcon :size="16" />
         </template>
         {{ triggerLabel }}
         <template #trailing>
@@ -80,9 +80,11 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import PantryChip from '@/components/PantryChip'
-import CashIcon from '@icons/Cash.vue'
 import MenuDownIcon from '@icons/MenuDown.vue'
 import { CURRENCIES, resolveCurrency } from '@/utils/currencies'
+import { entityIcon } from '@/utils/entityIcons'
+
+const PriceIcon = entityIcon.price
 
 export interface PriceFilterValue {
   min: number | null

@@ -3,6 +3,7 @@
 // render time.
 
 import type { Component } from 'vue'
+import { entityIcon } from '@/utils/entityIcons'
 import TagIcon from '@icons/Tag.vue'
 import TagMultipleIcon from '@icons/TagMultiple.vue'
 import TagHeartIcon from '@icons/TagHeart.vue'
@@ -167,7 +168,7 @@ const byKey: Record<string, LabelIconOption> = Object.fromEntries(
 )
 
 export function labelIconComponent(key: string | null | undefined): Component {
-  return byKey[key ?? '']?.component ?? TagIcon
+  return byKey[key ?? '']?.component ?? entityIcon.label
 }
 
 /** Default palette of colors shown in the inline create dialog. */
