@@ -12,6 +12,9 @@ Pantry helps households stay organized in Nextcloud.
 
 - **Houses** group members and their shared data. A person can belong to multiple houses and switch between them freely.
 - **Checklists** support recurring items (e.g. milk every week) that automatically reappear when due. Share lists with the whole household so everyone knows what to pick up.
+- **Shopping mode** turns your lists into a store-by-store trip — pick the lists and the route, check items off as you walk, see which housemates are out shopping, and finish with a priced review that lands in your shopping history.
+- **Barcode scanning** prefills an item from a product's EAN or UPC. Scan with the camera or type the code in, and Pantry looks up the name, category and photo for you to review.
+- **Custom fields** attach your own information to checklist items — an expiry date, an aisle number, a size, a yes/no flag. Define a field once for the house or a single list; date fields can send a reminder before they come due.
 - **Photo boards** let you keep shared reference photos organized in folders — the right brand of dog food, a favorite recipe card, a product label, and so on.
 - **Notes wall** gives the household a lightweight shared space for reminders, pinned messages, and quick notes with customizable colors.
 - **Notifications** keep everyone in the loop when photos are uploaded or notes are added or edited.

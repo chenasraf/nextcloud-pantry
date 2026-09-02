@@ -30,6 +30,14 @@ place.
   and switch between them freely.
 - **Checklists**: Create and manage shared checklists with support for recurring items (e.g. milk
   every week) that automatically reappear when due.
+- **Shopping Mode**: Turn your lists into a store-by-store trip — pick the lists and the route,
+  check items off as you walk, see which housemates are out shopping, and finish with a priced
+  review that lands in your shopping history.
+- **Barcode Scanning**: Prefill an item from a product's EAN or UPC — scan with the camera or type
+  the code in, and Pantry looks up the name, category and photo for you to review.
+- **Custom Fields**: Attach your own information to checklist items — an expiry date, an aisle
+  number, a size, a yes/no flag — defined once for the house or a single list, with optional
+  reminders on date fields.
 - **Photo Boards**: Keep shared reference photos organized in folders — the right brand of dog food,
   a favorite recipe card, a product label, and so on.
 - **Notes Wall**: A lightweight shared space for household reminders, pinned messages, and quick
