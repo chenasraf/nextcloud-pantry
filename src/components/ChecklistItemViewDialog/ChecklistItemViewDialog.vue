@@ -74,7 +74,22 @@
           <div v-for="row in customFieldRows" :key="row.id" class="item-view__cf-row">
             <component :is="row.icon" :size="18" class="item-view__cf-icon" />
             <span class="item-view__cf-name">{{ row.name }}</span>
-            <span class="item-view__cf-value" dir="auto">{{ row.text }}</span>
+            <span class="item-view__cf-value" dir="auto">
+              <template v-if="row.segments">
+                <template v-for="(seg, i) in row.segments" :key="i">
+                  <a
+                    v-if="seg.href"
+                    :href="seg.href"
+                    class="item-view__cf-link"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    >{{ seg.text }}</a
+                  >
+                  <template v-else>{{ seg.text }}</template></template
+                >
+              </template>
+              <template v-else>{{ row.text }}</template>
+            </span>
           </div>
         </div>
       </FieldCard>
@@ -155,6 +170,7 @@ import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule } from '@/utils/rrule'
 import { formatPrice } from '@/utils/price'
 import { toggleMarkdownTask } from '@/utils/markdownTask'
+import { linkifySegments, type TextSegment } from '@/utils/linkify'
 import { getCurrentUserId } from '@/utils/currentUser'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useHouseMembers } from '@/composables/useHouseMembers'
@@ -343,22 +359,35 @@ function formatFieldValue(field: FieldDefinition, value: ItemCustomFieldValue): 
   }
 }
 
+interface CustomFieldRow {
+  id: number
+  name: string
+  text: string
+  icon: Component
+  // Present only for text fields, where the value may contain hyperlinks.
+  segments: TextSegment[] | null
+}
+
 // House-wide ∪ this item's list fields that carry a value, in definition order.
-const customFieldRows = computed<{ id: number; name: string; text: string; icon: Component }[]>(
-  () => {
-    const byField = new Map(props.item.customFields.map((v) => [v.fieldId, v]))
-    const rows: { id: number; name: string; text: string; icon: Component }[] = []
-    for (const field of fields.items.value) {
-      if (field.listId != null && field.listId !== props.item.listId) continue
-      const value = byField.get(field.id)
-      if (!value) continue
-      const text = formatFieldValue(field, value)
-      if (text == null || text === '') continue
-      rows.push({ id: field.id, name: field.name, text, icon: CF_TYPE_ICON[field.type] })
-    }
-    return rows
-  },
-)
+const customFieldRows = computed<CustomFieldRow[]>(() => {
+  const byField = new Map(props.item.customFields.map((v) => [v.fieldId, v]))
+  const rows: CustomFieldRow[] = []
+  for (const field of fields.items.value) {
+    if (field.listId != null && field.listId !== props.item.listId) continue
+    const value = byField.get(field.id)
+    if (!value) continue
+    const text = formatFieldValue(field, value)
+    if (text == null || text === '') continue
+    rows.push({
+      id: field.id,
+      name: field.name,
+      text,
+      icon: CF_TYPE_ICON[field.type],
+      segments: field.type === 'text' ? linkifySegments(text) : null,
+    })
+  }
+  return rows
+})
 
 // ----- Added / done attribution -----
 
@@ -575,6 +604,12 @@ const strings = {
 
   &__cf-value {
     font-weight: 600;
+  }
+
+  &__cf-link {
+    color: var(--color-primary-element);
+    text-decoration: underline;
+    word-break: break-word;
   }
 
   &__description {
