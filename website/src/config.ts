@@ -2,10 +2,12 @@
  * Central download/version config for the site.
  *
  * The app version drives the desktop release-asset URLs, whose filenames embed
- * the version (e.g. pantry-0.29.0-macos.dmg). CI passes the current app version
- * in via `PUBLIC_PANTRY_APP_VERSION`; the fallback keeps local builds working.
- * See the deploy workflow for how the version is resolved (release dispatch,
- * manual input, or the latest pantry-flutter release).
+ * the version (e.g. pantry-0.29.0-macos.dmg). It arrives in
+ * `PUBLIC_PANTRY_APP_VERSION`: the deploy workflow resolves it from the release
+ * dispatch, a manual input, or the latest pantry-flutter release, and
+ * `make website-dev` resolves that same latest release once per run. The
+ * fallback only covers a bare `astro dev`/`astro build` with no version to hand,
+ * so links may point at an older release than the one published.
  */
 export const APP_VERSION: string =
   (import.meta.env.PUBLIC_PANTRY_APP_VERSION as string | undefined)?.replace(/^v/, '') || '0.29.0'

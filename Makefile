@@ -470,3 +470,26 @@ release:
 	fi; \
 	rm -f "$$RESPONSE"; \
 	echo "\x1b[32m🎉 Release successful!\x1b[0m";
+
+# website-dev:
+#   - Start a local development server for the website/ directory
+#   - Resolve the pantry-flutter release the download links point at, the same
+#     way the deploy workflow does, so the preview shows real, current links
+website-dev:
+	@echo "\x1b[33mStarting local development server for website/...\x1b[0m"
+	@VER="$${PUBLIC_PANTRY_APP_VERSION:-}"; \
+	if [ -z "$$VER" ]; then \
+		if command -v gh >/dev/null 2>&1; then \
+			VER="$$(gh api repos/chenasraf/pantry-flutter/releases/latest --jq .tag_name 2>/dev/null)"; \
+		else \
+			VER="$$(curl -fsSL https://api.github.com/repos/chenasraf/pantry-flutter/releases/latest 2>/dev/null \
+				| sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')"; \
+		fi; \
+	fi; \
+	VER="$${VER#v}"; \
+	if [ -n "$$VER" ]; then \
+		echo "\x1b[32mDownload links use app version $$VER\x1b[0m"; \
+	else \
+		echo "\x1b[33mCould not resolve the app version, falling back to the default in website/src/config.ts\x1b[0m"; \
+	fi; \
+	cd website && PUBLIC_PANTRY_APP_VERSION="$$VER" $(pnpm_cmd) dev
