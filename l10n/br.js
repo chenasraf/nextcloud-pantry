@@ -18,6 +18,7 @@ OC.L10N.register(
     "No" : "Ket",
     "Member" : "Ezel",
     "Account" : "Kont",
+    "New" : "Nevez",
     "Save changes" : "Enrollañ ar cheñchamantoù",
     "View" : "Gwell",
     "Move" : "Diplasañ",

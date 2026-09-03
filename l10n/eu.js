@@ -101,6 +101,7 @@ OC.L10N.register(
     "Mark as done" : "Markatu egindako gisa",
     "None" : "Bat ere ez",
     "Notifications" : "Jakinarazpenak",
+    "Files" : "Fitxategiak",
     "Upload folder" : "Igo karpeta",
     "Browse …" : "Arakatu ...",
     "Saved." : "Gordeta.",

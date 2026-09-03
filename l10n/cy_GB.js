@@ -19,6 +19,7 @@ OC.L10N.register(
     "Relative" : "Perthynas",
     "Member" : "Aelod",
     "Account" : "Cyfrif",
+    "New" : "Newydd",
     "View" : "Golwg",
     "Move" : "Symud",
     "Photos" : "Lluniau",

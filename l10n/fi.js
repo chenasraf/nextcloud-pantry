@@ -111,6 +111,7 @@ OC.L10N.register(
     "Mark as done" : "Merkitse valmiiksi",
     "None" : "Ei mitään",
     "Notifications" : "Ilmoitukset",
+    "Files" : "Tiedostot",
     "Upload folder" : "Lähetä kansio",
     "Browse …" : "Selaa…",
     "Saved." : "Tallennettu.",

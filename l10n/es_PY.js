@@ -48,6 +48,7 @@ OC.L10N.register(
     "Never" : "Nunca",
     "Summary" : "Resumen",
     "None" : "Ninguno",
+    "Files" : "Archivo",
     "Saved." : "Guardado.",
     "Viewer" : "Visor",
     "Reminders" : "Recordatorios",

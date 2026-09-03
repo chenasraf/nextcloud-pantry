@@ -19,6 +19,7 @@ OC.L10N.register(
     "No" : "Xeyir",
     "Scope" : "Həcm",
     "Account" : "Hesab",
+    "New" : "Yeni",
     "Save changes" : "Dəyişiklikləri yaddaşa ver",
     "Copy" : "Kopyala",
     "Move" : "Move",
