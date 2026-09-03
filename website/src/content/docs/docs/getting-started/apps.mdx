@@ -41,12 +41,28 @@ running on your Nextcloud — the same checklists, photo board and notes, in you
 
 ## Desktop
 
-Direct downloads for the current release (**v{APP_VERSION}**):
+Downloads for the current release (**v{APP_VERSION}**):
 
 <ul>
 	{desktopDownloads.map((d) => (
 		<li>
-			<strong>{d.os}</strong> — <a href={d.url}>{d.file}</a> <em>({d.note})</em>
+			<strong>{d.os}</strong>
+			{d.store ? (
+				<ul>
+					<li>
+						<a href={d.store}>App Store</a> — the same universal app as on iPhone and iPad, with
+						automatic updates.
+					</li>
+					<li>
+						<a href={d.url}>{d.file}</a> <em>({d.note})</em> — direct download.
+					</li>
+				</ul>
+			) : (
+				<>
+					{' '}
+					— <a href={d.url}>{d.file}</a> <em>({d.note})</em>
+				</>
+			)}
 		</li>
 	))}
 </ul>

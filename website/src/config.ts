@@ -14,7 +14,12 @@ const APP_REPO = 'chenasraf/pantry-flutter'
 const releaseAsset = (file: string): string =>
   `https://github.com/${APP_REPO}/releases/download/v${APP_VERSION}/${file}`
 
-/** App-store listings — stable IDs, independent of version. */
+/**
+ * App-store listings — stable IDs, independent of version.
+ *
+ * The App Store listing is a universal app: the same link installs on iOS and
+ * on macOS.
+ */
 export const stores = {
   googlePlay: 'https://play.google.com/store/apps/details?id=dev.casraf.pantry',
   fdroid: 'https://f-droid.org/en/packages/dev.casraf.pantry/',
@@ -32,12 +37,22 @@ export const androidApks = [
   { abi: 'x86_64', note: 'emulators & x86 tablets', file: `pantry-${APP_VERSION}-x86_64.apk` },
 ].map((d) => ({ ...d, url: releaseAsset(d.file) }))
 
-/** Direct desktop downloads — release assets for the current version. */
-export const desktopDownloads = [
-  { os: 'macOS', note: 'Apple silicon & Intel', file: `pantry-${APP_VERSION}-macos.dmg` },
+/**
+ * Desktop builds — release assets for the current version, plus the store
+ * listing for platforms that have one.
+ */
+const desktopBuilds: { os: string; note: string; file: string; store?: string }[] = [
+  {
+    os: 'macOS',
+    note: 'Apple silicon & Intel',
+    file: `pantry-${APP_VERSION}-macos.dmg`,
+    store: stores.appStore,
+  },
   { os: 'Windows', note: '64-bit', file: `pantry-${APP_VERSION}-windows-x64.zip` },
   { os: 'Linux', note: 'Standalone binary (x64)', file: `pantry-${APP_VERSION}-linux-x64.tar.gz` },
-].map((d) => ({ ...d, url: releaseAsset(d.file) }))
+]
+
+export const desktopDownloads = desktopBuilds.map((d) => ({ ...d, url: releaseAsset(d.file) }))
 
 /** All release assets for this version live here. */
 export const allReleasesUrl = `https://github.com/${APP_REPO}/releases/latest`

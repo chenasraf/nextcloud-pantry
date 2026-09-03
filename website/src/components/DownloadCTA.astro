@@ -6,11 +6,14 @@ const mobileLinks = [
 	{ label: 'F-Droid', href: stores.fdroid },
 	{ label: 'Apple App Store', href: stores.appStore },
 ]
-const desktopLinks = desktopDownloads.map((d) => ({
-	label: d.os,
-	note: d.note,
-	href: d.url,
-}))
+const desktopLinks = [
+	{ label: 'Mac App Store', note: 'macOS', href: stores.appStore },
+	...desktopDownloads.map((d) => ({
+		label: d.os,
+		note: d.note,
+		href: d.url,
+	})),
+]
 ---
 
 <section id="download" class="download">
@@ -56,7 +59,7 @@ const desktopLinks = desktopDownloads.map((d) => ({
 			<article class="platform">
 				<span class="platform__icon material-symbols-outlined">desktop_windows</span>
 				<h3 class="platform__name">Desktop</h3>
-				<p class="platform__note">v{APP_VERSION}</p>
+				<p class="platform__note">macOS, Windows &amp; Linux · direct builds v{APP_VERSION}</p>
 				<div class="platform__links">
 					{
 						desktopLinks.map((l) => (
