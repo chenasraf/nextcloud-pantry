@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.31.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.30.0...v0.31.0) (2026-09-05)
+
+
+### Features
+
+* **fields:** auto-detect links in text fields ([3f8ab7e](https://github.com/chenasraf/nextcloud-pantry/commit/3f8ab7e43cfc480dd7616793924f53fc713c3f63))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([9a7eea6](https://github.com/chenasraf/nextcloud-pantry/commit/9a7eea66f2727c3e4f44d3555b6436c3a56bf0c7))
+* **l10n:** Update translations from Transifex ([e2754f6](https://github.com/chenasraf/nextcloud-pantry/commit/e2754f643b488e7e25fd7d72721119c7f5967040))
+* **l10n:** Update translations from Transifex ([2581c37](https://github.com/chenasraf/nextcloud-pantry/commit/2581c377607fa8b3bc8494678ced048b3a03e736))
+* **l10n:** Update translations from Transifex ([98b85a7](https://github.com/chenasraf/nextcloud-pantry/commit/98b85a751f31ee35fe47cd8c6f09e10468d3ac70))
+
 ## [0.30.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.29.0...v0.30.0) (2026-09-01)
 
 
