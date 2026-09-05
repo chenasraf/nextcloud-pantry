@@ -135,6 +135,7 @@ OC.L10N.register(
     "Caption" : "カプション",
     "Add a description" : "説明を追加",
     "Remove folder" : "フォルダーを削除",
+    "Mine" : "私",
     "Load more" : "さらに読み込む",
     "Uncategorized" : "未分類",
     "Finish" : "完了",
