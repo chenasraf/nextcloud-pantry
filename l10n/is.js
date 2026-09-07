@@ -76,6 +76,7 @@ OC.L10N.register(
     "Untitled note" : "Ónefndur minnispunktur",
     "No content yet" : "Ekkert efni ennþá",
     "More actions" : "Fleiri aðgerðir",
+    "Create folder" : "Búa til möppu",
     "Folder name" : "Nafn möppu",
     "Set" : "Setja",
     "days" : "daga",
