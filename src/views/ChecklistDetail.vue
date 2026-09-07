@@ -1887,14 +1887,14 @@ function resolveCurrentReuse(decision: ReuseDecision) {
 // ----- Live reuse suggestions -----
 //
 // The add form surfaces existing items on the target list that fuzzily match
-// what's being typed. Tapping one asks for a plain confirm (Cancel / Reuse
-// existing) — no "add anyway", since the user picked a specific item — then
-// reuses it (unchecking if done) and clears the input.
+// what's being typed. Tapping one reuses it (unchecking if done) and clears the
+// input. Under the "ask" pref the tap first asks for a plain confirm (Cancel /
+// Reuse existing) — no "add anyway", since the user picked a specific item.
 
 const addForm = ref<{ clearName: () => void } | null>(null)
 
-// Only active items, and only when the user can check items. No pref check:
-// the panel is a manual discovery affordance, distinct from on-submit dedup.
+// Only active items, and only when the user can check items. The panel is a
+// manual discovery affordance, so it is offered whatever the reuse pref says.
 const reuseCandidates = computed<ChecklistItem[]>(() =>
   can.value.canCheckItems ? items.value.filter((i) => !i.deletedAt) : [],
 )
@@ -1931,8 +1931,12 @@ function resolveReuseConfirm(ok: boolean) {
 }
 
 async function onReuseFromSuggestion(item: ChecklistItem) {
-  const ok = await confirmReuseSuggestion(item)
-  if (!ok) return
+  // Tapping a suggestion is itself an explicit choice of one item, so only the
+  // "ask" pref adds a confirm on top of it.
+  if (reuseExistingItems.value === 'ask') {
+    const ok = await confirmReuseSuggestion(item)
+    if (!ok) return
+  }
   if (item.archivedAt != null) {
     await reuseArchivedItem(item)
   } else {
