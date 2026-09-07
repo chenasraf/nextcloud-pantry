@@ -13,7 +13,10 @@ vi.mock('@/components/ShareEditor', () => ({
   ShareEditor: { name: 'ShareEditor', template: '<div class="share-editor" />' },
 }))
 vi.mock('@/composables/useCurrentHouse', () => ({
-  useCurrentHouse: () => ({ isAdmin: { value: false } }),
+  useCurrentHouse: () => ({
+    isAdmin: { value: false },
+    can: { value: { canUpdateNotes: true } },
+  }),
 }))
 
 vi.mock('@nextcloud/vue/components/NcDialog', () => ({
@@ -50,11 +53,29 @@ vi.mock('@/components/AutoResizeTextarea', () => ({
     },
   },
 }))
+// Render one checkbox input per task-list line so the component's DOM-index
+// mapping (input id -> task token) can be exercised. The input id mirrors what
+// NcRichText emits via `interactTodo`.
 vi.mock('@nextcloud/vue/components/NcRichText', () => ({
   default: {
     name: 'NcRichText',
-    template: '<div class="nc-rich-text">{{ text }}</div>',
-    props: ['text', 'useMarkdown', 'useExtendedMarkdown'],
+    props: ['text', 'useMarkdown', 'useExtendedMarkdown', 'interactive'],
+    emits: ['interactTodo'],
+    computed: {
+      tasks(this: { text: string }) {
+        return String(this.text)
+          .split('\n')
+          .map((line: string, i: number) => ({ line, id: `md-input-${i}` }))
+          .filter((t: { line: string }) => /^\s*(?:[-*+]|\d+[.)])\s+\[[ xX]\]/.test(t.line))
+      },
+    },
+    template: `<div class="nc-rich-text">{{ text }}<input
+        v-for="task in tasks"
+        :key="task.id"
+        :id="task.id"
+        type="checkbox"
+        @click="$emit('interactTodo', task.id)"
+      /></div>`,
   },
 }))
 // MarkdownEditor (rendered for the note content) imports NcCheckboxRadioSwitch;
@@ -178,6 +199,33 @@ describe('NoteDialog', () => {
         props: { open: true, note: makeNote() },
       })
       expect(wrapper.find('.note-dialog__title-input').exists()).toBe(false)
+    })
+
+    it('renders task-list checkboxes as interactive', () => {
+      const wrapper = mount(NoteDialog, {
+        props: { open: true, note: makeNote({ content: '- [ ] Milk' }) },
+      })
+      expect(wrapper.findComponent({ name: 'NcRichText' }).props('interactive')).toBe(true)
+    })
+
+    it('is not interactive when the note cannot be edited', () => {
+      const wrapper = mount(NoteDialog, {
+        props: { open: true, note: makeNote({ content: '- [ ] Milk', canEdit: false }) },
+      })
+      expect(wrapper.findComponent({ name: 'NcRichText' }).props('interactive')).toBe(false)
+    })
+
+    it('saves the flipped content when a task checkbox is toggled', async () => {
+      const wrapper = mount(NoteDialog, {
+        props: { open: true, note: makeNote({ content: '- [ ] Milk\n- [ ] Eggs' }) },
+      })
+      const boxes = wrapper.findAll('.note-dialog__rendered input[type="checkbox"]')
+      expect(boxes).toHaveLength(2)
+      await boxes[1].trigger('click')
+      vi.advanceTimersByTime(1000)
+      expect((wrapper.emitted('save')!.at(-1)![0] as SavePayload).content).toBe(
+        '- [ ] Milk\n- [x] Eggs',
+      )
     })
 
     it('passes empty name to NcDialog', () => {

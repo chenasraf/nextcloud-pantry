@@ -25,7 +25,7 @@
           v-model="richMode"
           type="switch"
           class="note-dialog__rich-toggle"
-          :style="richToggleStyle"
+          :style="accentStyle"
         >
           {{ strings.richText }}
         </NcCheckboxRadioSwitch>
@@ -69,8 +69,19 @@
         @available="richAvailable = $event"
       />
       <div v-else class="note-dialog__content" dir="auto">
-        <div v-if="contentValue" class="note-dialog__rendered">
-          <NcRichText :text="contentValue" :use-markdown="true" :use-extended-markdown="true" />
+        <div
+          v-if="contentValue"
+          ref="renderedEl"
+          class="note-dialog__rendered"
+          :style="accentStyle"
+        >
+          <NcRichText
+            :text="contentValue"
+            :use-markdown="true"
+            :use-extended-markdown="true"
+            :interactive="canEditNote"
+            @interact-todo="onToggleTask"
+          />
         </div>
         <p v-else class="note-dialog__empty">{{ strings.noContent }}</p>
       </div>
@@ -142,6 +153,7 @@ import PencilIcon from '@icons/Pencil.vue'
 import EyeIcon from '@icons/Eye.vue'
 import ShareVariantIcon from '@icons/ShareVariant.vue'
 import { contrastColor, noteColorOptions } from './noteColors'
+import { toggleMarkdownTask } from '@/utils/markdownTask'
 import type { Note } from '@/api/types'
 import { ShareEditor } from '@/components/ShareEditor'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
@@ -165,6 +177,7 @@ const shareDialogOpen = ref(false)
 const dialogRef = ref<InstanceType<typeof NcDialog> | null>(null)
 const titleInputRef = ref<HTMLInputElement | null>(null)
 const contentInputRef = ref<InstanceType<typeof MarkdownEditor> | null>(null)
+const renderedEl = ref<HTMLElement | null>(null)
 
 // Whether the Text (WYSIWYG) editor is available, and the current rich/source
 // mode — the toggle lives up on the title row and drives the MarkdownEditor.
@@ -173,20 +186,24 @@ const richMode = ref(true)
 
 const MAX_TEXTAREA_HEIGHT = 400
 
-const { isAdmin } = useCurrentHouse()
+const { isAdmin, can } = useCurrentHouse()
 const isExisting = computed(() => !!props.note)
 const canManageShares = computed(
   () => isAdmin.value || props.note?.createdBy === getCurrentUserId(),
 )
+// Prefer the per-note effective permission (covers editor-shares); fall back to
+// the house-level capability for older payloads without the field.
+const canEditNote = computed(() => props.note?.canEdit ?? can.value.canUpdateNotes)
 const swatchBorderColor = computed(() =>
   colorValue.value ? contrastColor(colorValue.value) : 'var(--color-main-text)',
 )
 const colorOptions = noteColorOptions
 
-// The rich-text switch's on-state uses --color-primary-element (the theme
-// accent), which can be invisible against a coloured note. On coloured notes,
-// retint it with the note's foreground colour; on default notes keep the theme.
-const richToggleStyle = computed((): Record<string, string> => {
+// Checked switches and checkboxes paint themselves with --color-primary-element
+// (the theme accent), which can be invisible against a coloured note. On
+// coloured notes, retint it with the note's foreground colour; on default notes
+// keep the theme.
+const accentStyle = computed((): Record<string, string> => {
   if (!colorValue.value) return {}
   const fg = contrastColor(colorValue.value)
   return {
@@ -337,6 +354,27 @@ function toggleColor(c: string) {
       color: colorValue.value,
     })
   }
+}
+
+// ----- Task-list checkboxes in the rendered view -----
+
+/**
+ * A task-list checkbox in the rendered note was toggled. NcRichText gives us the
+ * checkbox's DOM id, so we map it back to its position among the rendered
+ * checkboxes (document order) and flip the matching task token in the source
+ * markdown; the content watcher then persists it.
+ */
+function onToggleTask(id: string) {
+  const el = renderedEl.value
+  if (!el) {
+    return
+  }
+  const inputs = Array.from(el.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))
+  const index = inputs.findIndex((input) => input.id === id)
+  if (index === -1) {
+    return
+  }
+  contentValue.value = toggleMarkdownTask(contentValue.value, index)
 }
 
 // ----- Edit mode -----
