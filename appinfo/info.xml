@@ -21,22 +21,24 @@ Pantry helps households stay organized in Nextcloud.
 
 All data is scoped to a house; members only see the houses they belong to.
 
-Pantry also has companion apps for mobile and desktop that let you manage your lists, photos and notes on the go and keep everything in sync with your Nextcloud instance.
+Pantry also has companion apps for mobile, watch and desktop that let you manage your lists, photos and notes on the go and keep everything in sync with your Nextcloud instance.
 
-**Companion apps:** Android ([Google Play](https://play.google.com/store/apps/details?id=dev.casraf.pantry), [F-Droid](https://f-droid.org/en/packages/dev.casraf.pantry/)) | iOS/macOS ([App Store](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619))
+**Companion apps:** Android ([Google Play](https://play.google.com/store/apps/details?id=dev.casraf.pantry), [F-Droid](https://f-droid.org/en/packages/dev.casraf.pantry/)) | iOS/macOS ([App Store](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)) | Wear OS ([Google Play](https://play.google.com/store/apps/details?id=dev.casraf.pantry)) | [Windows](https://pantry.casraf.dev/docs/getting-started/apps#desktop) | [Linux](https://pantry.casraf.dev/docs/getting-started/apps#desktop)
+
+**Website:** [pantry.casraf.dev](https://pantry.casraf.dev) | **Documentation:** [pantry.casraf.dev/docs](https://pantry.casraf.dev/docs)
 ]]></description>
 	<version>0.30.0</version>
 	<licence>agpl</licence>
 	<author mail="contact@casraf.dev" homepage="https://casraf.dev">Chen Asraf</author>
 	<namespace>Pantry</namespace>
 	<documentation>
-		<user>https://github.com/chenasraf/nextcloud-pantry/blob/master/README.md</user>
-		<admin>https://github.com/chenasraf/nextcloud-pantry#installation</admin>
+		<user>https://pantry.casraf.dev/docs</user>
+		<admin>https://pantry.casraf.dev/docs/getting-started/install</admin>
 		<developer>https://github.com/chenasraf/nextcloud-pantry#development</developer>
 	</documentation>
 	<category>organization</category>
 	<category>tools</category>
-	<website>https://github.com/chenasraf/nextcloud-pantry</website>
+	<website>https://pantry.casraf.dev</website>
 	<bugs>https://github.com/chenasraf/nextcloud-pantry/issues</bugs>
 	<repository>https://github.com/chenasraf/nextcloud-pantry</repository>
 	<screenshot>https://raw.githubusercontent.com/chenasraf/nextcloud-pantry/refs/heads/master/screenshots/screenshot-01.png</screenshot>
