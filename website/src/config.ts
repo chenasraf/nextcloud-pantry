@@ -39,6 +39,17 @@ export const androidApks = [
   { abi: 'x86_64', note: 'emulators & x86 tablets', file: `pantry-${APP_VERSION}-x86_64.apk` },
 ].map((d) => ({ ...d, url: releaseAsset(d.file) }))
 
+/** Direct Wear OS APK downloads — one per ABI, for the current version. */
+export const wearApks = [
+  {
+    abi: 'armeabi-v7a',
+    note: 'most watches',
+    file: `pantry-${APP_VERSION}-wear-armeabi-v7a.apk`,
+  },
+  { abi: 'arm64-v8a', note: '64-bit watches', file: `pantry-${APP_VERSION}-wear-arm64-v8a.apk` },
+  { abi: 'x86_64', note: 'emulators', file: `pantry-${APP_VERSION}-wear-x86_64.apk` },
+].map((d) => ({ ...d, url: releaseAsset(d.file) }))
+
 /**
  * Desktop builds — release assets for the current version, plus the store
  * listing for platforms that have one.

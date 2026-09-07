@@ -1,10 +1,15 @@
 ---
-import { stores, desktopDownloads, APP_VERSION } from '@/config'
+import { stores, desktopDownloads, wearApks, APP_VERSION } from '@/config'
 
 const mobileLinks = [
 	{ label: 'Google Play', href: stores.googlePlay },
 	{ label: 'F-Droid', href: stores.fdroid },
 	{ label: 'Apple App Store', href: stores.appStore },
+]
+// The watch ships in the phone app's Play listing; the APKs are for sideloading.
+const wearLinks = [
+	{ label: 'Google Play', note: 'on the watch', href: stores.googlePlay },
+	...wearApks.map((a) => ({ label: `APK — ${a.abi}`, note: a.note, href: a.url })),
 ]
 const desktopLinks = [
 	{ label: 'Mac App Store', note: 'macOS', href: stores.appStore },
@@ -24,8 +29,8 @@ const desktopLinks = [
 				<h2 class="download__title">Install the server app, then pair your devices.</h2>
 			</div>
 			<p class="download__lead">
-				Pantry runs on your Nextcloud. Add the app on your phone or desktop to carry your lists with
-				you.
+				Pantry runs on your Nextcloud. Add the app on your phone, watch or desktop to carry your
+				lists with you.
 			</p>
 		</div>
 		<div class="download__grid">
@@ -50,6 +55,22 @@ const desktopLinks = [
 							<a class="platform__link" href={l.href} target="_blank" rel="noopener">
 								<span>{l.label}</span>
 								<span class="material-symbols-outlined">open_in_new</span>
+							</a>
+						))
+					}
+				</div>
+			</article>
+
+			<article class="platform">
+				<span class="platform__icon material-symbols-outlined">watch</span>
+				<h3 class="platform__name">Wear OS</h3>
+				<p class="platform__note">Wear OS 3+ · lists, trips &amp; a tile</p>
+				<div class="platform__links">
+					{
+						wearLinks.map((l) => (
+							<a class="platform__link" href={l.href}>
+								<span>{l.label}</span>
+								<span class="platform__link-note">{l.note}</span>
 							</a>
 						))
 					}

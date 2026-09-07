@@ -1,16 +1,17 @@
 ---
-title: Get the mobile & desktop app
-description: Install Pantry on Android, iOS, macOS, Windows or Linux — the companion to the Pantry app running on your Nextcloud.
+title: Get the companion app
+description: Install Pantry on Android, iOS, Wear OS, macOS, Windows or Linux — the companion to the Pantry app running on your Nextcloud.
 sidebar:
   order: 2
-  label: Get the mobile & desktop app
+  label: Get the companion app
 ---
 
 import { Aside, Tabs, TabItem } from '@astrojs/starlight/components'
-import { stores, desktopDownloads, androidApks, APP_VERSION, allReleasesUrl } from '@/config'
+import { stores, desktopDownloads, androidApks, wearApks, APP_VERSION, allReleasesUrl } from '@/config'
 
-Pantry has an app for **Android**, **iOS** and the **desktop**. It is a companion to the Pantry app
-running on your Nextcloud — the same checklists, photo board and notes, in your pocket and offline.
+Pantry has an app for **Android**, **iOS**, **Wear OS** and the **desktop**. It is a companion to the
+Pantry app running on your Nextcloud — the same checklists, photo board and notes, in your pocket and
+offline.
 
 <Aside type="note">
 	The app needs a Nextcloud server with the [Pantry server app](/docs/getting-started/install)
@@ -38,6 +39,27 @@ running on your Nextcloud — the same checklists, photo board and notes, in you
 		Install from the <a href={stores.appStore}>App Store</a>.
 	</TabItem>
 </Tabs>
+
+## Watch
+
+Requires Wear OS 3.0 or newer. The watch app carries your checklists, photo board, notes and
+shopping trips, plus a tile for your lists and a live trip on the watch face.
+
+- <a href={stores.googlePlay}>Google Play</a> — the same listing as the phone app, so Play offers it
+  on the watch once the phone app is installed.
+- APK (**v{APP_VERSION}**) — download and sideload directly:
+	<ul>
+		{wearApks.map((a) => (
+			<li>
+				<a href={a.url}>{a.file}</a> <em>({a.abi} — {a.note})</em>
+			</li>
+		))}
+	</ul>
+
+Nothing is typed on the watch. Open Pantry on it and tap **Open on phone**: the phone app comes up
+with the request, and allowing it signs the watch in. **Sign in with QR** draws a code you scan with
+any phone's camera instead, which needs no phone app at all — this is the path to use on the F-Droid
+build, where the transport watch pairing needs is unavailable.
 
 ## Desktop
 
