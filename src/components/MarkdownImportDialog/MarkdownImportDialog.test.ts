@@ -212,7 +212,7 @@ describe('MarkdownImportDialog', () => {
   it('applies a shared one-time type to every imported item', async () => {
     const wrapper = mountDialog()
     await pasteTextarea(wrapper).setValue('- Milk\n- Eggs')
-    await chipForKey(wrapper, 'Item type').trigger('click')
+    await chipForKey(wrapper, 'Recurrence').trigger('click')
     await wrapper.find('.mock-one-time').trigger('click')
     await addButton(wrapper).trigger('click')
 

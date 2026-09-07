@@ -500,7 +500,8 @@ const strings = {
   description: t('pantry', 'Description'),
   descriptionLabel: t('pantry', 'Description'),
   descriptionPlaceholder: t('pantry', 'Notes, instructions, links …'),
-  itemType: t('pantry', 'Item type'),
+  // TRANSLATORS: Noun, chip label for the staple / one-time / recurring choice.
+  itemType: t('pantry', 'Recurrence'),
   // TRANSLATORS: Item type (noun) for a pantry staple — an item that stays on the list after being checked off. Shown as a chip label.
   staple: t('pantry', 'Staple'),
   oneTime: t('pantry', 'One-time'),

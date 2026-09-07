@@ -414,8 +414,8 @@ const doneLabel = computed(() =>
 const strings = {
   viewImage: t('pantry', 'View image'),
   quantity: t('pantry', 'Quantity'),
-  // TRANSLATORS: Noun, the item's lifecycle kind (staple / one-time / recurring). Tile caption.
-  type: t('pantry', 'Type'),
+  // TRANSLATORS: Noun, the item's staple / one-time / recurring kind. Tile caption.
+  type: t('pantry', 'Recurrence'),
   price: t('pantry', 'Price'),
   // TRANSLATORS: Label for the price that applies when no specific store is chosen
   anyStore: t('pantry', 'Any store'),

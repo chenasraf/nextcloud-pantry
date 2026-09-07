@@ -388,7 +388,7 @@ const pendingImageObjectUrl = ref<string | null>(null)
 const imageInputRef = ref<HTMLInputElement | null>(null)
 
 // Tracks whether the user has explicitly chosen an item type via the button
-// group, so the chip can stay a neutral "Item type" until they pick one.
+// group, so the chip can stay a neutral "Recurrence" until they pick one.
 const userPickedType = ref(false)
 
 // Categories are loaded so the chip can show the selected category's name/icon.
@@ -704,7 +704,7 @@ const chips = computed<Chip[]>(() => {
     filled: description.value.trim().length > 0,
   })
 
-  // Item type chip — stays neutral "Item type" until the user explicitly picks
+  // Item type chip — stays neutral "Recurrence" until the user explicitly picks
   // one of the three options, or the list's default already gives new items a
   // recurrence worth showing.
   if (!userPickedType.value && currentType.value === 'staple') {
@@ -945,7 +945,8 @@ const strings = {
   customFields: t('pantry', 'Custom fields'),
   description: t('pantry', 'Description'),
   descriptionLabel: t('pantry', 'Description'),
-  itemType: t('pantry', 'Item type'),
+  // TRANSLATORS: Noun, chip label for the staple / one-time / recurring choice.
+  itemType: t('pantry', 'Recurrence'),
   descriptionPlaceholder: t('pantry', 'Notes, instructions, links …'),
   // TRANSLATORS: An item type. A staple is a recurring household essential that stays on the list after being checked off (e.g. milk, bread).
   staple: t('pantry', 'Staple'),

@@ -334,7 +334,8 @@ const strings = {
   // TRANSLATORS: Noun (plural), tags attached to an item. Field label.
   labelsLabel: t('pantry', 'Labels'),
   priceLabel: t('pantry', 'Price'),
-  typeLabel: t('pantry', 'Item type'),
+  // TRANSLATORS: Noun, field label for the staple / one-time / recurring choice.
+  typeLabel: t('pantry', 'Recurrence'),
   imageLabel: t('pantry', 'Image'),
   uploadImage: t('pantry', 'Upload image'),
   replaceImage: t('pantry', 'Replace image'),

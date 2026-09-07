@@ -294,14 +294,14 @@ describe('ChecklistAddForm', () => {
     expect(chips[3].text()).toContain('Quantity')
     expect(chips[4].text()).toContain('Price')
     expect(chips[5].text()).toContain('Description')
-    expect(chips[6].text()).toContain('Item type')
+    expect(chips[6].text()).toContain('Recurrence')
     expect(chips[7].text()).toContain('Image')
     expect(chips[8].text()).toContain('Barcode')
   })
 
   it('item type chip shows the chosen type text only after explicit selection', async () => {
     const wrapper = mountForm()
-    await chipForKey(wrapper, 'Item type').trigger('click')
+    await chipForKey(wrapper, 'Recurrence').trigger('click')
     await wrapper.find('.mock-staple').trigger('click')
     // After picking Staple, the chip's neutral label is replaced.
     expect(chipForKey(wrapper, 'Staple').exists()).toBe(true)
@@ -314,7 +314,7 @@ describe('ChecklistAddForm', () => {
 
   it('item type chip stays neutral when new items carry no recurrence', () => {
     const wrapper = mountForm()
-    expect(wrapper.text()).toContain('Item type')
+    expect(wrapper.text()).toContain('Recurrence')
   })
 
   it('submit button is disabled when name is empty', () => {
@@ -402,7 +402,7 @@ describe('ChecklistAddForm', () => {
   it('selecting One-time emits deleteOnDone=true and remembers it on submit', async () => {
     const wrapper = mountForm({ remembersRecurrence: true })
     await wrapper.find('.nc-text-field').setValue('Milk')
-    await chipForKey(wrapper, 'Item type').trigger('click')
+    await chipForKey(wrapper, 'Recurrence').trigger('click')
     await wrapper.find('.mock-one-time').trigger('click')
 
     expect(wrapper.emitted('update:recurrenceDefault')).toBeFalsy()
@@ -417,7 +417,7 @@ describe('ChecklistAddForm', () => {
 
   it('selecting Recurring opens the inline RecurrenceForm and seeds an rrule', async () => {
     const wrapper = mountForm()
-    await chipForKey(wrapper, 'Item type').trigger('click')
+    await chipForKey(wrapper, 'Recurrence').trigger('click')
     await wrapper.find('.mock-recurring').trigger('click')
     await flushPromises()
 
@@ -452,7 +452,7 @@ describe('ChecklistAddForm', () => {
     const wrapper = mountForm({ defaultRecurrenceKind: 'once', remembersRecurrence: true })
     await wrapper.find('.nc-text-field').setValue('Milk')
     // Pick One-time again — it already matches the list default, which the chip
-    // already names rather than the neutral "Item type".
+    // already names rather than the neutral "Recurrence".
     await chipForKey(wrapper, 'One-time').trigger('click')
     await wrapper.find('.mock-one-time').trigger('click')
 
@@ -463,7 +463,7 @@ describe('ChecklistAddForm', () => {
   it('does not report the recurrence used when the list default is pinned', async () => {
     const wrapper = mountForm()
     await wrapper.find('.nc-text-field').setValue('Milk')
-    await chipForKey(wrapper, 'Item type').trigger('click')
+    await chipForKey(wrapper, 'Recurrence').trigger('click')
     await wrapper.find('.mock-one-time').trigger('click')
 
     await wrapper.find('form').trigger('submit')
