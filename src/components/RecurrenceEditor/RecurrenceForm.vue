@@ -34,6 +34,7 @@
         <label class="pantry-recurrence__label">{{ strings.frequencyLabel }}</label>
         <NcSelect
           v-model="frequencyOption"
+          class="pantry-recurrence__select--frequency"
           :options="frequencyOptions"
           :clearable="false"
           :input-label="''"
@@ -58,22 +59,79 @@
       </div>
     </section>
 
-    <!-- Monthly: bymonthday -->
+    <!-- Monthly: day of the month, or an ordinal weekday -->
     <section v-if="frequencyOption?.value === 'MONTHLY'" class="pantry-recurrence__section">
-      <label class="pantry-recurrence__label">{{ strings.monthDaysLabel }}</label>
-      <p class="pantry-recurrence__hint">{{ strings.monthDaysHint }}</p>
-      <div class="pantry-recurrence__month-grid">
-        <button
-          v-for="day in 31"
-          :key="day"
-          type="button"
-          class="pantry-recurrence__month-day"
-          :class="{ 'pantry-recurrence__month-day--active': selectedMonthDays.includes(day) }"
-          @click="toggleMonthDay(day)"
+      <label class="pantry-recurrence__label">{{ strings.weekdaysLabel }}</label>
+      <div class="pantry-recurrence__ends">
+        <NcCheckboxRadioSwitch
+          :model-value="monthlyMode"
+          value="monthday"
+          :name="monthlyModeName"
+          type="radio"
+          @update:model-value="monthlyMode = $event"
         >
-          {{ day }}
-        </button>
+          {{ strings.monthDaysLabel }}
+        </NcCheckboxRadioSwitch>
+        <template v-if="monthlyMode === 'monthday'">
+          <NcSelect
+            v-model="selectedMonthDayOptions"
+            class="pantry-recurrence__select--monthday"
+            :options="monthDayOptions"
+            multiple
+            :close-on-select="false"
+            :input-label="''"
+            :placeholder="strings.monthDaysPlaceholder"
+            :aria-label="strings.monthDaysLabel"
+          />
+          <p class="pantry-recurrence__hint">{{ strings.monthDaysHint }}</p>
+        </template>
+
+        <NcCheckboxRadioSwitch
+          :model-value="monthlyMode"
+          value="weekday"
+          :name="monthlyModeName"
+          type="radio"
+          @update:model-value="monthlyMode = $event"
+        >
+          {{ strings.monthWeekdayLabel }}
+        </NcCheckboxRadioSwitch>
+        <div v-if="monthlyMode === 'weekday'" class="pantry-recurrence__row">
+          <div class="pantry-recurrence__field pantry-recurrence__field--grow">
+            <NcSelect
+              v-model="ordinalOption"
+              class="pantry-recurrence__select--ordinal"
+              :options="ordinalOptions"
+              :clearable="false"
+              :input-label="''"
+              :aria-label="strings.ordinalAriaLabel"
+            />
+          </div>
+          <div class="pantry-recurrence__field pantry-recurrence__field--grow">
+            <NcSelect
+              v-model="ordinalWeekdayOption"
+              class="pantry-recurrence__select--ordinal-weekday"
+              :options="ordinalWeekdayOptions"
+              :clearable="false"
+              :input-label="''"
+              :aria-label="strings.ordinalWeekdayAriaLabel"
+            />
+          </div>
+        </div>
       </div>
+    </section>
+
+    <!-- Yearly: month and day, without a year -->
+    <section v-if="frequencyOption?.value === 'YEARLY'" class="pantry-recurrence__section">
+      <label class="pantry-recurrence__label">{{ strings.yearDayLabel }}</label>
+      <p class="pantry-recurrence__hint">{{ strings.yearDayHint }}</p>
+      <NcDateTimePicker
+        v-model="yearlyDate"
+        type="date"
+        clearable
+        :format="formatYearlessDate"
+        :placeholder="strings.yearDayPlaceholder"
+        :aria-label="strings.yearDayLabel"
+      />
     </section>
 
     <!-- End condition -->
@@ -154,8 +212,9 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { getDayNamesShort, getFirstDay, t } from '@nextcloud/l10n'
+import { getDayNames, getDayNamesShort, getFirstDay, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import RepeatIcon from '@icons/Repeat.vue'
@@ -163,12 +222,24 @@ import { Frequency, RRule, Weekday } from 'rrule'
 
 type Freq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
 type EndKind = 'never' | 'count' | 'until'
+type MonthlyMode = 'monthday' | 'weekday'
 type PresetKey = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom'
 
 interface FreqOption {
   label: string
   value: Freq
 }
+
+interface NumberOption {
+  label: string
+  value: number
+}
+
+/**
+ * The yearly rule only keeps a month and a day, but the date picker needs a full date to work
+ * with. Anchoring on a leap year keeps 29 February selectable.
+ */
+const YEARLESS_ANCHOR_YEAR = 2024
 
 const props = defineProps<{
   modelValue: string | null
@@ -197,14 +268,17 @@ const frequencyOption = ref<FreqOption>(frequencyOptions.value[1]!)
 const interval = ref<number>(1)
 const selectedWeekdays = ref<number[]>([])
 const selectedMonthDays = ref<number[]>([])
+const monthlyMode = ref<MonthlyMode>('monthday')
 const endKind = ref<EndKind>('never')
 const endCount = ref<number>(10)
 const endUntil = ref<string>('')
+const yearlyDate = ref<Date | null>(null)
 const error = ref<string | null>(null)
 
 const uniqueSuffix = Math.random().toString(36).slice(2, 8)
 const intervalId = `pantry-interval-${uniqueSuffix}`
 const endKindName = `pantry-end-kind-${uniqueSuffix}`
+const monthlyModeName = `pantry-monthly-mode-${uniqueSuffix}`
 
 const weekdays = computed(() => {
   const shortNames = getDayNamesShort()
@@ -223,6 +297,47 @@ const weekdays = computed(() => {
   return [...allDays.slice(startIdx), ...allDays.slice(0, startIdx)]
 })
 
+const ordinalOptions = computed<NumberOption[]>(() => [
+  // TRANSLATORS: Ordinal in a dropdown picking which weekday of the month, e.g. 'First Monday'.
+  { label: t('pantry', 'First'), value: 1 },
+  // TRANSLATORS: Ordinal in a dropdown picking which weekday of the month, e.g. 'Second Monday'.
+  { label: t('pantry', 'Second'), value: 2 },
+  // TRANSLATORS: Ordinal in a dropdown picking which weekday of the month, e.g. 'Third Monday'.
+  { label: t('pantry', 'Third'), value: 3 },
+  // TRANSLATORS: Ordinal in a dropdown picking which weekday of the month, e.g. 'Fourth Monday'.
+  { label: t('pantry', 'Fourth'), value: 4 },
+  // TRANSLATORS: Ordinal in a dropdown picking which weekday of the month, e.g. 'Last Monday'.
+  { label: t('pantry', 'Last'), value: -1 },
+])
+
+// Full weekday names keyed by the rrule weekday index, where 0 is Monday.
+const ordinalWeekdayOptions = computed<NumberOption[]>(() => {
+  const names = getDayNames()
+  const fallback = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  return [0, 1, 2, 3, 4, 5, 6].map((value) => ({
+    label: names[(value + 1) % 7] ?? fallback[(value + 1) % 7]!,
+    value,
+  }))
+})
+
+const ordinalOption = ref<NumberOption>(ordinalOptions.value[0]!)
+const ordinalWeekdayOption = ref<NumberOption>(ordinalWeekdayOptions.value[0]!)
+
+const monthDayOptions = computed<NumberOption[]>(() =>
+  Array.from({ length: 31 }, (_, i) => ({ label: String(i + 1), value: i + 1 })),
+)
+
+const selectedMonthDayOptions = computed<NumberOption[]>({
+  get: () => monthDayOptions.value.filter((o) => selectedMonthDays.value.includes(o.value)),
+  set: (options) => {
+    selectedMonthDays.value = (options ?? []).map((o) => o.value).sort((a, b) => a - b)
+  },
+})
+
+function formatYearlessDate(date: Date): string {
+  return date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })
+}
+
 const presetButtons = computed(() => [
   { key: 'daily' as PresetKey, label: t('pantry', 'Daily') },
   { key: 'weekly' as PresetKey, label: t('pantry', 'Weekly') },
@@ -238,7 +353,12 @@ const activePreset = computed<PresetKey>(() => {
     return 'weekly'
   if (freq === 'WEEKLY' && interval.value === 2 && selectedWeekdays.value.length === 0)
     return 'biweekly'
-  if (freq === 'MONTHLY' && interval.value === 1 && selectedMonthDays.value.length === 0)
+  if (
+    freq === 'MONTHLY' &&
+    interval.value === 1 &&
+    monthlyMode.value === 'monthday' &&
+    selectedMonthDays.value.length === 0
+  )
     return 'monthly'
   return 'custom'
 })
@@ -250,6 +370,8 @@ function applyPreset(key: PresetKey): void {
   endUntil.value = ''
   selectedWeekdays.value = []
   selectedMonthDays.value = []
+  monthlyMode.value = 'monthday'
+  yearlyDate.value = null
   switch (key) {
     case 'daily':
       frequencyOption.value = frequencyOptions.value[0]!
@@ -276,15 +398,6 @@ function toggleWeekday(value: number): void {
     selectedWeekdays.value = [...selectedWeekdays.value, value].sort((a, b) => a - b)
   } else {
     selectedWeekdays.value = selectedWeekdays.value.filter((v) => v !== value)
-  }
-}
-
-function toggleMonthDay(day: number): void {
-  const idx = selectedMonthDays.value.indexOf(day)
-  if (idx === -1) {
-    selectedMonthDays.value = [...selectedMonthDays.value, day].sort((a, b) => a - b)
-  } else {
-    selectedMonthDays.value = selectedMonthDays.value.filter((v) => v !== day)
   }
 }
 
@@ -326,8 +439,18 @@ function buildRrule(): string | null {
   if (freq === 'WEEKLY' && selectedWeekdays.value.length > 0) {
     options.byweekday = selectedWeekdays.value.map((n) => new Weekday(n))
   }
-  if (freq === 'MONTHLY' && selectedMonthDays.value.length > 0) {
-    options.bymonthday = [...selectedMonthDays.value]
+  if (freq === 'MONTHLY') {
+    if (monthlyMode.value === 'weekday') {
+      options.byweekday = [
+        new Weekday(ordinalWeekdayOption.value?.value ?? 0, ordinalOption.value?.value ?? 1),
+      ]
+    } else if (selectedMonthDays.value.length > 0) {
+      options.bymonthday = [...selectedMonthDays.value]
+    }
+  }
+  if (freq === 'YEARLY' && yearlyDate.value) {
+    options.bymonth = [yearlyDate.value.getMonth() + 1]
+    options.bymonthday = [yearlyDate.value.getDate()]
   }
 
   if (endKind.value === 'count') {
@@ -354,10 +477,27 @@ function buildRrule(): string | null {
   return rruleLine.slice('RRULE:'.length)
 }
 
+function toList<T>(value: T | T[] | null | undefined): T[] {
+  if (value == null) return []
+  return Array.isArray(value) ? value : [value]
+}
+
+/** Weekday index and, when the rule pins an ordinal ("2nd Monday"), its position. */
+function readWeekday(entry: unknown): { weekday: number; n: number | null } | null {
+  if (typeof entry === 'number') return { weekday: entry, n: null }
+  if (entry && typeof entry === 'object' && 'weekday' in entry) {
+    const w = entry as { weekday: number; n?: number | null }
+    return { weekday: w.weekday, n: typeof w.n === 'number' ? w.n : null }
+  }
+  return null
+}
+
 function loadFromRrule(raw: string | null): void {
   error.value = null
   selectedWeekdays.value = []
   selectedMonthDays.value = []
+  monthlyMode.value = 'monthday'
+  yearlyDate.value = null
   endKind.value = 'never'
   endCount.value = 10
   endUntil.value = ''
@@ -377,20 +517,32 @@ function loadFromRrule(raw: string | null): void {
       frequencyOptions.value.find((o) => o.value === freq) ?? frequencyOptions.value[1]!
     interval.value = opts.interval ?? 1
 
-    if (opts.byweekday) {
-      const list = Array.isArray(opts.byweekday) ? opts.byweekday : [opts.byweekday]
-      selectedWeekdays.value = list
-        .map((w) => {
-          if (typeof w === 'number') return w
-          if (w instanceof Weekday) return w.weekday
-          return null
-        })
-        .filter((v): v is number => v !== null)
+    const byWeekday = toList(opts.byweekday)
+      .map(readWeekday)
+      .filter((w) => w !== null)
+    const byMonthDay = toList(opts.bymonthday).filter((n): n is number => typeof n === 'number')
+    const byMonth = toList(opts.bymonth).filter((n): n is number => typeof n === 'number')
+
+    const ordinalDay = byWeekday.find((w) => w.n !== null)
+    if (freq === 'MONTHLY' && ordinalDay) {
+      monthlyMode.value = 'weekday'
+      ordinalOption.value =
+        ordinalOptions.value.find((o) => o.value === ordinalDay.n) ?? ordinalOptions.value[0]!
+      ordinalWeekdayOption.value =
+        ordinalWeekdayOptions.value.find((o) => o.value === ordinalDay.weekday) ??
+        ordinalWeekdayOptions.value[0]!
+    } else if (freq === 'WEEKLY') {
+      selectedWeekdays.value = byWeekday.map((w) => w.weekday)
     }
 
-    if (opts.bymonthday) {
-      const list = Array.isArray(opts.bymonthday) ? opts.bymonthday : [opts.bymonthday]
-      selectedMonthDays.value = list.filter((n): n is number => typeof n === 'number')
+    if (freq === 'YEARLY') {
+      const month = byMonth[0]
+      const day = byMonthDay[0]
+      if (month != null && day != null) {
+        yearlyDate.value = new Date(YEARLESS_ANCHOR_YEAR, month - 1, day)
+      }
+    } else if (freq === 'MONTHLY' && !ordinalDay) {
+      selectedMonthDays.value = byMonthDay
     }
 
     if (opts.count != null) {
@@ -441,7 +593,19 @@ onMounted(async () => {
 })
 
 watch(
-  [frequencyOption, interval, selectedWeekdays, selectedMonthDays, endKind, endCount, endUntil],
+  [
+    frequencyOption,
+    interval,
+    selectedWeekdays,
+    selectedMonthDays,
+    monthlyMode,
+    ordinalOption,
+    ordinalWeekdayOption,
+    yearlyDate,
+    endKind,
+    endCount,
+    endUntil,
+  ],
   () => {
     if (!initialized.value) return
     try {
@@ -466,8 +630,22 @@ const strings = {
   // TRANSLATORS: Label before the interval number input, forming 'Every N <unit>'.
   everyLabel: t('pantry', 'Every'),
   weekdaysLabel: t('pantry', 'Repeat on'),
+  // TRANSLATORS: Radio option under 'Repeat on' for a monthly rule; followed by a dropdown
+  // holding the numbers 1 to 31.
   monthDaysLabel: t('pantry', 'Days of the month'),
   monthDaysHint: t('pantry', 'Leave empty to repeat on the same day each month.'),
+  monthDaysPlaceholder: t('pantry', 'Pick one or more days'),
+  // TRANSLATORS: Radio option under 'Repeat on' for a monthly rule; followed by two dropdowns
+  // that together read like 'Second Monday'.
+  monthWeekdayLabel: t('pantry', 'A weekday of the month'),
+  // TRANSLATORS: Accessible name of the dropdown holding First / Second / … / Last.
+  ordinalAriaLabel: t('pantry', 'Position in the month'),
+  // TRANSLATORS: Accessible name of the dropdown holding Monday … Sunday.
+  ordinalWeekdayAriaLabel: t('pantry', 'Weekday'),
+  // TRANSLATORS: Label of the month-and-day picker for a yearly rule.
+  yearDayLabel: t('pantry', 'Date of the year'),
+  yearDayHint: t('pantry', 'Leave empty to repeat on the same date each year.'),
+  yearDayPlaceholder: t('pantry', 'Pick a month and day'),
   // TRANSLATORS: Label for the group of radio options choosing when the recurrence stops.
   endsLabel: t('pantry', 'Ends'),
   // TRANSLATORS: Radio option under 'Ends'; the recurrence never stops.
@@ -567,33 +745,6 @@ const strings = {
     color: var(--color-main-text);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
-
-    &:hover {
-      background: var(--color-background-hover);
-    }
-
-    &--active {
-      background: var(--color-primary-element);
-      color: var(--color-primary-element-text);
-      border-color: var(--color-primary-element);
-    }
-  }
-
-  &__month-grid {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 0.25rem;
-  }
-
-  &__month-day {
-    padding: 6px 0;
-    border-radius: var(--border-radius, 8px);
-    border: 1px solid var(--color-border);
-    background: var(--color-main-background);
-    color: var(--color-main-text);
-    cursor: pointer;
-    font-size: 0.85rem;
     transition: all 0.15s ease;
 
     &:hover {

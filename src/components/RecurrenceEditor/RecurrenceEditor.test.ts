@@ -34,6 +34,15 @@ vi.mock('@nextcloud/vue/components/NcSelect', () => ({
     props: ['modelValue', 'options', 'clearable', 'inputLabel'],
   },
 }))
+// NcDateTimePicker eagerly imports a .css asset Node's ESM loader rejects.
+vi.mock('@nextcloud/vue/components/NcDateTimePicker', () => ({
+  default: {
+    name: 'NcDateTimePicker',
+    template: '<input class="nc-date-time-picker" />',
+    props: ['modelValue', 'type', 'clearable', 'format', 'placeholder'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
   default: {
     name: 'NcCheckboxRadioSwitch',

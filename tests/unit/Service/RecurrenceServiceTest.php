@@ -59,4 +59,39 @@ class RecurrenceServiceTest extends TestCase {
 		$this->assertNotNull($next);
 		$this->assertSame('2026-04-19', $next->format('Y-m-d'));
 	}
+
+	public function testMonthlyOrdinalWeekdayNextOccurrence(): void {
+		$from = new \DateTimeImmutable('2026-04-05T00:00:00Z');
+		$next = $this->svc->computeNextOccurrence('FREQ=MONTHLY;INTERVAL=1;BYDAY=+2MO', $from);
+		$this->assertNotNull($next);
+		$this->assertSame('2026-04-13', $next->format('Y-m-d'));
+	}
+
+	public function testMonthlyLastWeekdayNextOccurrence(): void {
+		$from = new \DateTimeImmutable('2026-04-05T00:00:00Z');
+		$next = $this->svc->computeNextOccurrence('FREQ=MONTHLY;INTERVAL=1;BYDAY=-1FR', $from);
+		$this->assertNotNull($next);
+		$this->assertSame('2026-04-24', $next->format('Y-m-d'));
+	}
+
+	public function testYearlyDateNextOccurrence(): void {
+		$from = new \DateTimeImmutable('2026-04-05T00:00:00Z');
+		$next = $this->svc->computeNextOccurrence('FREQ=YEARLY;INTERVAL=1;BYMONTH=11;BYMONTHDAY=29', $from);
+		$this->assertNotNull($next);
+		$this->assertSame('2026-11-29', $next->format('Y-m-d'));
+	}
+
+	public function testYearlyDateSkipsToNextYearOnceThePastIsBehind(): void {
+		$from = new \DateTimeImmutable('2026-04-05T00:00:00Z');
+		$next = $this->svc->computeNextOccurrence('FREQ=YEARLY;INTERVAL=1;BYMONTH=3;BYMONTHDAY=15', $from);
+		$this->assertNotNull($next);
+		$this->assertSame('2027-03-15', $next->format('Y-m-d'));
+	}
+
+	public function testYearlyLeapDayLandsOnALeapYear(): void {
+		$from = new \DateTimeImmutable('2026-04-05T00:00:00Z');
+		$next = $this->svc->computeNextOccurrence('FREQ=YEARLY;INTERVAL=1;BYMONTH=2;BYMONTHDAY=29', $from);
+		$this->assertNotNull($next);
+		$this->assertSame('2028-02-29', $next->format('Y-m-d'));
+	}
 }
