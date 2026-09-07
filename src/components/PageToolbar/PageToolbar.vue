@@ -242,10 +242,22 @@ async function measureWidths() {
 
 let observer: ResizeObserver | null = null
 
+// Content below the toolbar that sticks to the top of the same scroll area
+// (category headers, selection bars) would stick *behind* this bar. Publish the
+// measured height on the parent so those elements can offset themselves below it.
+function publishHeight() {
+  const tb = toolbarRef.value
+  tb?.parentElement?.style.setProperty('--pantry-toolbar-height', `${tb.offsetHeight}px`)
+}
+
 onMounted(() => {
-  observer = new ResizeObserver(() => recompute())
+  observer = new ResizeObserver(() => {
+    recompute()
+    publishHeight()
+  })
   if (toolbarRef.value) observer.observe(toolbarRef.value)
   if (leftRef.value) observer.observe(leftRef.value)
+  publishHeight()
   void measureWidths()
 })
 

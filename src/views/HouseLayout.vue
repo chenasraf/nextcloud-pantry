@@ -12,10 +12,7 @@
     </template>
   </NcEmptyContent>
   <div v-else class="house-layout">
-    <ResumeShoppingBanner />
-    <div class="house-layout__view">
-      <router-view />
-    </div>
+    <router-view />
   </div>
 </template>
 
@@ -25,7 +22,6 @@ import { t } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import HomeIcon from '@icons/Home.vue'
-import { ResumeShoppingBanner } from '@/components/ResumeShoppingBanner'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useLastHouse } from '@/composables/useLastHouse'
 
@@ -61,14 +57,7 @@ const strings = {
 }
 
 .house-layout {
-  display: flex;
-  flex-direction: column;
   height: 100%;
-  min-height: 0;
-}
-
-.house-layout__view {
-  flex: 1;
   min-height: 0;
 }
 </style>

@@ -2992,8 +2992,9 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
 
   &__selection-bar {
     position: sticky;
-    top: 0;
-    z-index: 10;
+    // Sits below the sticky page toolbar, which publishes its own height.
+    top: var(--pantry-toolbar-height, 0px);
+    z-index: 9;
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -3027,14 +3028,14 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    // Stick each category header to the top of the scroll area so the group a
+    // Stick each category header below the sticky page toolbar so the group a
     // row belongs to stays visible while scrolling through it. An opaque
     // background and a z-index keep item rows from showing through as they
     // scroll underneath. Top margin is avoided on purpose — a sticky element's
     // transparent margin would leave a see-through strip above the stuck
     // header; the internal top padding provides the separation instead.
     position: sticky;
-    top: 0;
+    top: var(--pantry-toolbar-height, 0px);
     z-index: 2;
     margin: 0;
     padding: 0.6rem 0.25rem 0.4rem;

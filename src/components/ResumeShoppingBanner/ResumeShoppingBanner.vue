@@ -131,6 +131,10 @@ const strings = {
   padding: 0.5rem 1rem;
   background: var(--color-primary-element-light, var(--color-background-hover));
   border-bottom: 1px solid var(--color-border);
+  // The NC sidebar toggle overlays the top-left of the content area, which is
+  // where this banner sits. Indent past it, with a gap so the icon does not
+  // butt up against the toggle.
+  padding-inline-start: calc(var(--default-clickable-area, 44px) + 0.75rem);
 
   &__icon {
     display: inline-flex;
