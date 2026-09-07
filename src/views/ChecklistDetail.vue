@@ -143,14 +143,17 @@
         ref="addForm"
         :house-id="houseIdNum"
         :adding="adding"
-        :delete-on-done-default="list?.deleteOnDoneDefault ?? false"
+        :default-recurrence-kind="defaultRecurrence.kind"
+        :default-rrule="defaultRecurrence.rrule"
+        :default-repeat-from-completion="defaultRecurrence.repeatFromCompletion"
+        :remembers-recurrence="defaultRecurrence.remembers"
         :require-list-selector="isMeta"
         :available-lists="isMeta ? allLists : []"
         :reuse-candidates="reuseCandidates"
         :current-list-id="isMeta ? null : listIdNum"
         :default-currency="defaultCurrency"
         @add="handleAdd"
-        @update:delete-on-done-default="handleDeleteOnDoneDefaultChange"
+        @update:recurrence-default="handleRecurrenceDefaultChange"
         @reuse-existing="onReuseFromSuggestion"
       />
 
@@ -796,6 +799,7 @@ import {
   checklistIconComponent,
   ChecklistFormDialog,
   contrastColor,
+  type ChecklistFormData,
 } from '@/components/ChecklistIconPicker'
 import { entityIcon } from '@/utils/entityIcons'
 
@@ -815,7 +819,15 @@ import { useTouchReorder } from '@/composables/useTouchReorder'
 import { useLongPress } from '@/composables/useLongPress'
 import { getList, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
-import type { Checklist, ChecklistItem, Category, Store, Label, ItemPrice } from '@/api/types'
+import type {
+  Checklist,
+  ChecklistItem,
+  Category,
+  Store,
+  Label,
+  ItemPrice,
+  RecurrenceKind,
+} from '@/api/types'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
 import {
   getChecklistItemSort,
@@ -1986,12 +1998,7 @@ async function handleAdd(
 
 const editingList = ref(false)
 
-async function submitEditList(data: {
-  name: string
-  description: string
-  icon: string
-  color: string
-}) {
+async function submitEditList(data: ChecklistFormData) {
   if (!list.value) return
   try {
     list.value = await apiUpdateList(houseIdNum.value, listIdNum.value, {
@@ -1999,6 +2006,9 @@ async function submitEditList(data: {
       description: data.description,
       icon: data.icon,
       color: data.color || null,
+      defaultRecurrenceMode: data.defaultRecurrenceMode,
+      defaultRrule: data.defaultRrule,
+      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
     })
     editingList.value = false
   } catch (e) {
@@ -2006,15 +2016,36 @@ async function submitEditList(data: {
   }
 }
 
-async function handleDeleteOnDoneDefaultChange(value: boolean) {
-  if (!list.value || list.value.deleteOnDoneDefault === value) return
+/** The recurrence new items start with, from the list's default. */
+const defaultRecurrence = computed(() => {
+  const mode = list.value?.defaultRecurrenceMode ?? 'remember'
+  return {
+    kind: mode === 'remember' ? (list.value?.defaultRecurrenceKind ?? 'none') : mode,
+    rrule: list.value?.defaultRrule ?? null,
+    repeatFromCompletion: list.value?.defaultRepeatFromCompletion ?? false,
+    remembers: mode === 'remember',
+  }
+})
+
+async function handleRecurrenceDefaultChange(value: {
+  kind: RecurrenceKind
+  rrule: string | null
+  repeatFromCompletion: boolean
+}) {
+  if (!list.value) return
   const prev = list.value
-  list.value = { ...prev, deleteOnDoneDefault: value }
+  list.value = {
+    ...prev,
+    defaultRecurrenceKind: value.kind,
+    defaultRrule: value.rrule,
+    defaultRepeatFromCompletion: value.repeatFromCompletion,
+  }
   try {
-    const updated = await apiUpdateList(houseIdNum.value, listIdNum.value, {
-      deleteOnDoneDefault: value,
+    list.value = await apiUpdateList(houseIdNum.value, listIdNum.value, {
+      defaultRecurrenceKind: value.kind,
+      defaultRrule: value.rrule,
+      defaultRepeatFromCompletion: value.repeatFromCompletion,
     })
-    list.value = updated
   } catch (e) {
     list.value = prev
     showError((e as Error).message)
@@ -2281,17 +2312,17 @@ function createListForMove() {
   showCreateForMove.value = true
 }
 
-async function submitCreateListAndMove(data: {
-  name: string
-  description: string
-  icon: string
-  color: string
-}) {
+async function submitCreateListAndMove(data: ChecklistFormData) {
   const newList = await createList(
     data.name,
     data.description || null,
     data.icon || null,
     data.color || null,
+    {
+      defaultRecurrenceMode: data.defaultRecurrenceMode,
+      defaultRrule: data.defaultRrule,
+      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
+    },
   )
   showCreateForMove.value = false
   await submitMoveItem(newList.id)
@@ -2362,17 +2393,17 @@ function createListForCopy() {
   showCreateForCopy.value = true
 }
 
-async function submitCreateListAndCopy(data: {
-  name: string
-  description: string
-  icon: string
-  color: string
-}) {
+async function submitCreateListAndCopy(data: ChecklistFormData) {
   const newList = await createList(
     data.name,
     data.description || null,
     data.icon || null,
     data.color || null,
+    {
+      defaultRecurrenceMode: data.defaultRecurrenceMode,
+      defaultRrule: data.defaultRrule,
+      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
+    },
   )
   showCreateForCopy.value = false
   await submitCopyItem(newList.id)

@@ -1,5 +1,12 @@
 import { ocs } from '@/axios'
-import type { Checklist, ChecklistItem, ItemCustomFieldValue, ItemPrice } from './types'
+import type {
+  Checklist,
+  ChecklistItem,
+  ItemCustomFieldValue,
+  ItemPrice,
+  RecurrenceKind,
+  RecurrenceMode,
+} from './types'
 
 export async function listLists(houseId: number, sortBy?: string): Promise<Checklist[]> {
   const resp = await ocs.get<Checklist[]>(`/houses/${houseId}/lists`, {
@@ -21,12 +28,18 @@ export async function createList(
   description?: string | null,
   icon?: string | null,
   color?: string | null,
+  recurrenceDefault?: {
+    defaultRecurrenceMode?: RecurrenceMode
+    defaultRrule?: string | null
+    defaultRepeatFromCompletion?: boolean
+  },
 ): Promise<Checklist> {
   const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists`, {
     name,
     description: description ?? null,
     icon: icon ?? null,
     color: color ?? null,
+    ...recurrenceDefault,
   })
   return resp.data
 }
@@ -45,7 +58,10 @@ export async function updateList(
     icon?: string
     color?: string | null
     sortOrder?: number
-    deleteOnDoneDefault?: boolean
+    defaultRecurrenceMode?: RecurrenceMode
+    defaultRecurrenceKind?: RecurrenceKind
+    defaultRrule?: string | null
+    defaultRepeatFromCompletion?: boolean
   },
 ): Promise<Checklist> {
   const resp = await ocs.patch<Checklist>(`/houses/${houseId}/lists/${listId}`, patch)

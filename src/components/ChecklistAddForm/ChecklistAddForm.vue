@@ -263,7 +263,7 @@ import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { entityIcon } from '@/utils/entityIcons'
-import { formatRrule } from '@/utils/rrule'
+import { DEFAULT_RRULE, formatRrule } from '@/utils/rrule'
 import { formatPrice, storelessPrice } from '@/utils/price'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ItemInput } from '@/api/lists'
@@ -275,6 +275,7 @@ import type {
   Label,
   ItemPrice,
   ItemCustomFieldValue,
+  RecurrenceKind,
 } from '@/api/types'
 
 type SectionKey =
@@ -292,7 +293,15 @@ const props = withDefaults(
   defineProps<{
     houseId: number
     adding: boolean
-    deleteOnDoneDefault?: boolean
+    /** Recurrence new items start with, resolved from the target list's default. */
+    defaultRecurrenceKind?: RecurrenceKind
+    defaultRrule?: string | null
+    defaultRepeatFromCompletion?: boolean
+    /**
+     * The list follows the last item added, so the form reports back whatever
+     * recurrence was used. Pinned defaults are left alone.
+     */
+    remembersRecurrence?: boolean
     requireListSelector?: boolean
     availableLists?: Checklist[]
     /**
@@ -308,7 +317,10 @@ const props = withDefaults(
     defaultCurrency?: string
   }>(),
   {
-    deleteOnDoneDefault: false,
+    defaultRecurrenceKind: 'none',
+    defaultRrule: null,
+    defaultRepeatFromCompletion: false,
+    remembersRecurrence: false,
     requireListSelector: false,
     availableLists: () => [],
     reuseCandidates: () => [],
@@ -319,7 +331,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   add: [input: ItemInput, pendingImage: File | null, targetListId: number | null]
-  'update:deleteOnDoneDefault': [value: boolean]
+  'update:recurrenceDefault': [
+    value: { kind: RecurrenceKind; rrule: string | null; repeatFromCompletion: boolean },
+  ]
   'reuse-existing': [item: ChecklistItem]
 }>()
 
@@ -335,7 +349,7 @@ const labelIds = ref<number[]>([])
 const targetListId = ref<number | null>(null)
 const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
-const deleteOnDone = ref(props.deleteOnDoneDefault)
+const deleteOnDone = ref(false)
 const openSection = ref<SectionKey | null>(null)
 const barcode = ref<string | null>(null)
 const barcodeDialogOpen = ref(false)
@@ -374,8 +388,7 @@ const pendingImageObjectUrl = ref<string | null>(null)
 const imageInputRef = ref<HTMLInputElement | null>(null)
 
 // Tracks whether the user has explicitly chosen an item type via the button
-// group. The chip stays a neutral "Item type" until they pick one — even if
-// the list's deleteOnDoneDefault has implicitly set deleteOnDone=true.
+// group, so the chip can stay a neutral "Item type" until they pick one.
 const userPickedType = ref(false)
 
 // Categories are loaded so the chip can show the selected category's name/icon.
@@ -411,11 +424,19 @@ watch(
   },
 )
 
+/** Start a fresh item on the target list's default recurrence. */
+function applyRecurrenceDefault() {
+  const kind = props.defaultRecurrenceKind
+  deleteOnDone.value = kind === 'once'
+  rrule.value = kind === 'recurring' ? (props.defaultRrule ?? DEFAULT_RRULE) : null
+  repeatFromCompletion.value = kind === 'recurring' && props.defaultRepeatFromCompletion
+}
+
+applyRecurrenceDefault()
+
 watch(
-  () => props.deleteOnDoneDefault,
-  (value) => {
-    deleteOnDone.value = value
-  },
+  () => [props.defaultRecurrenceKind, props.defaultRrule, props.defaultRepeatFromCompletion],
+  () => applyRecurrenceDefault(),
 )
 
 watch(multiple, (on) => {
@@ -439,25 +460,27 @@ const currentType = computed<ItemType>(() => {
   return 'staple'
 })
 
-function setDeleteOnDoneAndPersist(value: boolean) {
-  deleteOnDone.value = value
-  if (value !== props.deleteOnDoneDefault) {
-    emit('update:deleteOnDoneDefault', value)
-  }
-}
+/** The recurrence the composed item carries, in the list default's own terms. */
+const currentRecurrenceKind = computed<RecurrenceKind>(() =>
+  currentType.value === 'oneTime'
+    ? 'once'
+    : currentType.value === 'recurring'
+      ? 'recurring'
+      : 'none',
+)
 
 function selectStaple() {
   rrule.value = null
   repeatFromCompletion.value = false
+  deleteOnDone.value = false
   userPickedType.value = true
-  setDeleteOnDoneAndPersist(false)
 }
 
 function selectOneTime() {
   rrule.value = null
   repeatFromCompletion.value = false
+  deleteOnDone.value = true
   userPickedType.value = true
-  setDeleteOnDoneAndPersist(true)
 }
 
 function selectRecurring() {
@@ -467,7 +490,7 @@ function selectRecurring() {
   // currentType becomes 'recurring'. It will live-emit a default rrule
   // (weekly) as soon as it mounts, which flips currentType for us.
   if (!rrule.value) {
-    rrule.value = 'FREQ=WEEKLY;INTERVAL=1'
+    rrule.value = DEFAULT_RRULE
   }
 }
 
@@ -681,9 +704,10 @@ const chips = computed<Chip[]>(() => {
     filled: description.value.trim().length > 0,
   })
 
-  // Item type chip — stays neutral "Item type" until the user explicitly
-  // picks one of the three options.
-  if (!userPickedType.value) {
+  // Item type chip — stays neutral "Item type" until the user explicitly picks
+  // one of the three options, or the list's default already gives new items a
+  // recurrence worth showing.
+  if (!userPickedType.value && currentType.value === 'staple') {
     list.push({
       key: 'type',
       text: strings.itemType,
@@ -819,6 +843,26 @@ function clearName() {
   name.value = ''
 }
 
+/**
+ * Report the recurrence just used, so a list that follows the last item added
+ * starts the next one the same way.
+ */
+function rememberRecurrence(usedRrule: string | null, usedFromCompletion: boolean) {
+  if (!props.remembersRecurrence) return
+  const kind = currentRecurrenceKind.value
+  const unchanged =
+    kind === props.defaultRecurrenceKind &&
+    (kind !== 'recurring' ||
+      (usedRrule === props.defaultRrule &&
+        usedFromCompletion === props.defaultRepeatFromCompletion))
+  if (unchanged) return
+  emit('update:recurrenceDefault', {
+    kind,
+    rrule: usedRrule,
+    repeatFromCompletion: usedFromCompletion,
+  })
+}
+
 defineExpose({ clearName })
 
 // ----- Submit -----
@@ -828,6 +872,8 @@ function submitAdd() {
   if (names.length === 0) return
   if (props.requireListSelector && targetListId.value === null) return
   const once = deleteOnDone.value
+  const usedRrule = once ? null : rrule.value
+  const usedFromCompletion = once ? false : repeatFromCompletion.value
   names.forEach((itemName, index) => {
     emit(
       'add',
@@ -840,8 +886,8 @@ function submitAdd() {
         labelIds: labelIds.value,
         prices: prices.value,
         customFields: customFieldValues.value,
-        rrule: once ? null : rrule.value,
-        repeatFromCompletion: once ? false : repeatFromCompletion.value,
+        rrule: usedRrule,
+        repeatFromCompletion: usedFromCompletion,
         deleteOnDone: once,
         // A barcode identifies a single product, so only the first line of a
         // bulk add carries it.
@@ -862,11 +908,14 @@ function submitAdd() {
   categoryId.value = null
   storeIds.value = []
   labelIds.value = []
-  rrule.value = null
-  repeatFromCompletion.value = false
   barcode.value = null
-  // Keep the user's last-chosen list default.
-  deleteOnDone.value = props.deleteOnDoneDefault
+  rememberRecurrence(usedRrule, usedFromCompletion)
+  // A list that follows the last item added keeps the recurrence just used, so
+  // a run of matching items needs picking it only once; a pinned default wins
+  // back the next item.
+  if (!props.remembersRecurrence) {
+    applyRecurrenceDefault()
+  }
   userPickedType.value = false
   revokeObjectUrl()
   pendingImage.value = null

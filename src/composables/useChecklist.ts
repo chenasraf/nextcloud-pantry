@@ -1,6 +1,6 @@
 import { computed, ref, type Ref } from 'vue'
 import * as api from '@/api/lists'
-import type { Checklist, ChecklistItem } from '@/api/types'
+import type { Checklist, ChecklistItem, RecurrenceKind, RecurrenceMode } from '@/api/types'
 import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
 
 // Per-house state shared across all callers so sidebar and views stay in sync.
@@ -92,8 +92,13 @@ export function useChecklists(houseId: number) {
     description?: string | null,
     icon?: string | null,
     color?: string | null,
+    recurrenceDefault?: {
+      defaultRecurrenceMode?: RecurrenceMode
+      defaultRrule?: string | null
+      defaultRepeatFromCompletion?: boolean
+    },
   ): Promise<Checklist> {
-    const created = await api.createList(houseId, name, description, icon, color)
+    const created = await api.createList(houseId, name, description, icon, color, recurrenceDefault)
     lists.value = [...lists.value, created]
     return created
   }
@@ -105,7 +110,10 @@ export function useChecklists(houseId: number) {
       description?: string | null
       icon?: string
       color?: string | null
-      deleteOnDoneDefault?: boolean
+      defaultRecurrenceMode?: RecurrenceMode
+      defaultRecurrenceKind?: RecurrenceKind
+      defaultRrule?: string | null
+      defaultRepeatFromCompletion?: boolean
     },
   ): Promise<void> {
     const updated = await api.updateList(houseId, listId, patch)

@@ -1011,4 +1011,106 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertNotNull($a->getArchivedAt());
 		$this->assertNotNull($b->getArchivedAt());
 	}
+
+	// ----- Default recurrence -----
+
+	private function makeListWithRecurrence(array $overrides = []): Checklist {
+		$list = new Checklist();
+		$list->setId($overrides['id'] ?? 3);
+		$list->setHouseId(1);
+		$list->setName('Groceries');
+		$list->setDefaultRecurrenceMode($overrides['mode'] ?? Checklist::RECURRENCE_MODE_REMEMBER);
+		$list->setDefaultRecurrenceKind($overrides['kind'] ?? Checklist::RECURRENCE_KIND_NONE);
+		$list->setDefaultRrule($overrides['rrule'] ?? null);
+		$list->setDefaultRepeatFromCompletion($overrides['repeatFromCompletion'] ?? false);
+		$this->listMapper->method('findById')->willReturn($list);
+		return $list;
+	}
+
+	public function testNewListRemembersTheLastRecurrenceUsed(): void {
+		$this->listMapper->method('insert')->willReturnArgument(0);
+
+		$list = $this->svc->createList(1, 'Groceries', null);
+
+		$this->assertSame(Checklist::RECURRENCE_MODE_REMEMBER, $list->getDefaultRecurrenceMode());
+		$this->assertSame(Checklist::RECURRENCE_KIND_NONE, $list->getDefaultRecurrenceKind());
+	}
+
+	public function testPinningARecurrenceAlsoSetsWhatNewItemsStartWith(): void {
+		$list = $this->makeListWithRecurrence();
+
+		$this->svc->updateList(3, [
+			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_ONCE,
+		]);
+
+		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $list->getDefaultRecurrenceMode());
+		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $list->getDefaultRecurrenceKind());
+	}
+
+	public function testPinningARecurringDefaultWithoutARuleFallsBackToWeekly(): void {
+		$list = $this->makeListWithRecurrence();
+
+		$this->svc->updateList(3, [
+			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_RECURRING,
+		]);
+
+		$this->assertSame('FREQ=WEEKLY;INTERVAL=1', $list->getDefaultRrule());
+	}
+
+	public function testARecurrenceThatIsNotRecurringCarriesNoRule(): void {
+		$list = $this->makeListWithRecurrence([
+			'mode' => Checklist::RECURRENCE_KIND_RECURRING,
+			'kind' => Checklist::RECURRENCE_KIND_RECURRING,
+			'rrule' => 'FREQ=DAILY;INTERVAL=2',
+			'repeatFromCompletion' => true,
+		]);
+
+		$this->svc->updateList(3, [
+			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_NONE,
+		]);
+
+		$this->assertNull($list->getDefaultRrule());
+		$this->assertFalse($list->getDefaultRepeatFromCompletion());
+	}
+
+	public function testRememberingLeavesTheModeAloneWhileTrackingTheLastItemAdded(): void {
+		$list = $this->makeListWithRecurrence();
+
+		$this->svc->updateList(3, [
+			'defaultRecurrenceKind' => Checklist::RECURRENCE_KIND_RECURRING,
+			'defaultRrule' => 'FREQ=DAILY;INTERVAL=2',
+			'defaultRepeatFromCompletion' => true,
+		]);
+
+		$this->assertSame(Checklist::RECURRENCE_MODE_REMEMBER, $list->getDefaultRecurrenceMode());
+		$this->assertSame(Checklist::RECURRENCE_KIND_RECURRING, $list->getDefaultRecurrenceKind());
+		$this->assertSame('FREQ=DAILY;INTERVAL=2', $list->getDefaultRrule());
+		$this->assertTrue($list->getDefaultRepeatFromCompletion());
+	}
+
+	public function testTheOnceToggleFromOlderClientsLandsOnTheRecurrenceDefault(): void {
+		$list = $this->makeListWithRecurrence();
+
+		$this->svc->updateList(3, ['deleteOnDoneDefault' => true]);
+
+		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $list->getDefaultRecurrenceKind());
+		$this->assertTrue($list->jsonSerialize()['deleteOnDoneDefault']);
+	}
+
+	public function testAnUnknownRecurrenceIsRejected(): void {
+		$this->makeListWithRecurrence();
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateList(3, ['defaultRecurrenceMode' => 'sometimes']);
+	}
+
+	public function testAnUnparseableDefaultRuleIsRejected(): void {
+		$this->makeListWithRecurrence();
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateList(3, [
+			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_RECURRING,
+			'defaultRrule' => 'every other tuesday',
+		]);
+	}
 }

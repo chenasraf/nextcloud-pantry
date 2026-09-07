@@ -93,6 +93,7 @@ class Capabilities implements IPublicCapability {
 					'roles',
 					'share-users',
 					'custom-fields',
+					'list-default-recurrence',
 				],
 			],
 		];

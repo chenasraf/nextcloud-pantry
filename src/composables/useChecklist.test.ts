@@ -46,6 +46,10 @@ function makeList(overrides: Partial<Checklist> = {}): Checklist {
     color: null,
     sortOrder: 0,
     deleteOnDoneDefault: false,
+    defaultRecurrenceMode: 'remember',
+    defaultRecurrenceKind: 'none',
+    defaultRrule: null,
+    defaultRepeatFromCompletion: false,
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,
@@ -145,6 +149,7 @@ describe('useChecklists', () => {
         'New',
         'desc',
         'cart',
+        undefined,
         undefined,
       )
       expect(result).toEqual(newList)

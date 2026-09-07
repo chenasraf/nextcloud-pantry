@@ -38,6 +38,11 @@ final class LegacyColumns {
 			self::col('list_items', 'price_min'),
 			self::col('list_items', 'price_max'),
 			self::col('list_items', 'price_currency'),
+
+			// lists — delete_on_done_default (Version5) folded into the recurrence
+			// default by Version32 and dropped by Version33. If the drop drifted,
+			// every list load throws "deleteOnDoneDefault is not a valid attribute".
+			self::col('lists', 'delete_on_done_default'),
 		];
 	}
 

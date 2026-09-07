@@ -26,6 +26,9 @@ use OCP\IDBConnection;
 class ChecklistService {
 	use TTransactional;
 
+	/** Rule a list falls back to when it defaults to recurring items without naming one. */
+	private const DEFAULT_RRULE = 'FREQ=WEEKLY;INTERVAL=1';
+
 	/**
 	 * Per-list house lookups, memoized for the lifetime of the service so the
 	 * recurring-item background job doesn't refetch the house for every item.
@@ -106,7 +109,10 @@ class ChecklistService {
 		}
 	}
 
-	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null, ?string $color = null): Checklist {
+	/**
+	 * @param array<string, mixed> $recurrenceDefault Recurrence keys accepted by {@see self::applyRecurrenceDefault()}.
+	 */
+	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null, ?string $color = null, array $recurrenceDefault = []): Checklist {
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('List name cannot be empty');
@@ -121,6 +127,7 @@ class ChecklistService {
 		}
 		$list->setColor($color !== null && $color !== '' ? $color : null);
 		$list->setSortOrder(0);
+		$this->applyRecurrenceDefault($list, $recurrenceDefault);
 		$list->setCreatedAt($now);
 		$list->setUpdatedAt($now);
 		/** @var Checklist $saved */
@@ -154,12 +161,65 @@ class ChecklistService {
 		if (isset($patch['sortOrder'])) {
 			$list->setSortOrder((int)$patch['sortOrder']);
 		}
-		if (array_key_exists('deleteOnDoneDefault', $patch)) {
-			$list->setDeleteOnDoneDefault((bool)$patch['deleteOnDoneDefault']);
-		}
+		$this->applyRecurrenceDefault($list, $patch);
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
 		return $list;
+	}
+
+	/**
+	 * Apply the list's recurrence default.
+	 *
+	 * `defaultRecurrenceMode` is what an editor picks; the other keys are the
+	 * recurrence new items actually start with, which the add-item form keeps
+	 * rewriting while the mode is "remember".
+	 *
+	 * @param array<string, mixed> $patch
+	 */
+	private function applyRecurrenceDefault(Checklist $list, array $patch): void {
+		if (array_key_exists('defaultRecurrenceMode', $patch)) {
+			$mode = (string)$patch['defaultRecurrenceMode'];
+			if (!in_array($mode, Checklist::RECURRENCE_MODES, true)) {
+				throw new \InvalidArgumentException('Unknown recurrence default: ' . $mode);
+			}
+			$list->setDefaultRecurrenceMode($mode);
+			if ($mode !== Checklist::RECURRENCE_MODE_REMEMBER) {
+				$list->setDefaultRecurrenceKind($mode);
+			}
+		}
+
+		if (array_key_exists('defaultRecurrenceKind', $patch)) {
+			$kind = (string)$patch['defaultRecurrenceKind'];
+			if (!in_array($kind, Checklist::RECURRENCE_KINDS, true)) {
+				throw new \InvalidArgumentException('Unknown recurrence: ' . $kind);
+			}
+			$list->setDefaultRecurrenceKind($kind);
+		} elseif (array_key_exists('deleteOnDoneDefault', $patch)) {
+			// Clients predating the recurrence default write back only the
+			// "Once" choice, which lands on the same effective default.
+			$list->setDefaultRecurrenceKind(
+				(bool)$patch['deleteOnDoneDefault'] ? Checklist::RECURRENCE_KIND_ONCE : Checklist::RECURRENCE_KIND_NONE,
+			);
+		}
+
+		if (array_key_exists('defaultRrule', $patch)) {
+			$rrule = $patch['defaultRrule'];
+			$rrule = is_string($rrule) ? trim($rrule) : '';
+			if ($rrule !== '') {
+				$this->recurrence->validate($rrule);
+			}
+			$list->setDefaultRrule($rrule !== '' ? $rrule : null);
+		}
+		if (array_key_exists('defaultRepeatFromCompletion', $patch)) {
+			$list->setDefaultRepeatFromCompletion((bool)$patch['defaultRepeatFromCompletion']);
+		}
+
+		if ($list->getDefaultRecurrenceKind() !== Checklist::RECURRENCE_KIND_RECURRING) {
+			$list->setDefaultRrule(null);
+			$list->setDefaultRepeatFromCompletion(false);
+		} elseif ($list->getDefaultRrule() === null) {
+			$list->setDefaultRrule(self::DEFAULT_RRULE);
+		}
 	}
 
 	/**

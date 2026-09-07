@@ -62,6 +62,12 @@ export interface HouseMember {
   joinedAt: number
 }
 
+/** What an editor pins as a list's default recurrence, or the policy of following the last item added. */
+export type RecurrenceMode = 'remember' | RecurrenceKind
+
+/** The recurrence a new item starts with. */
+export type RecurrenceKind = 'none' | 'once' | 'recurring'
+
 export interface Checklist {
   id: number
   houseId: number
@@ -70,7 +76,13 @@ export interface Checklist {
   icon: string
   color: string | null
   sortOrder: number
+  /** True when new items default to one-time. Derived from the recurrence default. */
   deleteOnDoneDefault: boolean
+  defaultRecurrenceMode: RecurrenceMode
+  /** The recurrence new items start with; tracks the last item added while the mode is 'remember'. */
+  defaultRecurrenceKind: RecurrenceKind
+  defaultRrule: string | null
+  defaultRepeatFromCompletion: boolean
   createdAt: number
   updatedAt: number
   deletedAt: number | null

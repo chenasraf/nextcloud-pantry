@@ -820,6 +820,10 @@
                     "color",
                     "sortOrder",
                     "deleteOnDoneDefault",
+                    "defaultRecurrenceMode",
+                    "defaultRecurrenceKind",
+                    "defaultRrule",
+                    "defaultRepeatFromCompletion",
                     "createdAt",
                     "updatedAt",
                     "deletedAt",
@@ -859,6 +863,30 @@
                         "format": "int64"
                     },
                     "deleteOnDoneDefault": {
+                        "type": "boolean"
+                    },
+                    "defaultRecurrenceMode": {
+                        "type": "string",
+                        "enum": [
+                            "remember",
+                            "none",
+                            "once",
+                            "recurring"
+                        ]
+                    },
+                    "defaultRecurrenceKind": {
+                        "type": "string",
+                        "enum": [
+                            "none",
+                            "once",
+                            "recurring"
+                        ]
+                    },
+                    "defaultRrule": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "defaultRepeatFromCompletion": {
                         "type": "boolean"
                     },
                     "createdAt": {
@@ -3109,6 +3137,30 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Optional accent color (hex, e.g. \"#03a9f4\"). Null clears."
+                                    },
+                                    "defaultRecurrenceMode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "enum": [
+                                            "remember",
+                                            "none",
+                                            "once",
+                                            "recurring"
+                                        ],
+                                        "description": "Recurrence new items start with, or \"remember\" to follow the last one added."
+                                    },
+                                    "defaultRrule": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Rule new items repeat by when the mode is \"recurring\"."
+                                    },
+                                    "defaultRepeatFromCompletion": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether that rule counts its interval from completion."
                                     }
                                 }
                             }
@@ -3846,6 +3898,41 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New default for the \"Once\" toggle on the add-item form."
+                                    },
+                                    "defaultRecurrenceMode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "enum": [
+                                            "remember",
+                                            "none",
+                                            "once",
+                                            "recurring"
+                                        ],
+                                        "description": "Recurrence new items start with, or \"remember\" to follow the last one added."
+                                    },
+                                    "defaultRecurrenceKind": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "enum": [
+                                            "none",
+                                            "once",
+                                            "recurring"
+                                        ],
+                                        "description": "Recurrence new items start with right now, rewritten by the add-item form while the mode is \"remember\"."
+                                    },
+                                    "defaultRrule": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Rule new items repeat by when the recurrence is \"recurring\". Pass an empty string to clear."
+                                    },
+                                    "defaultRepeatFromCompletion": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether that rule counts its interval from completion."
                                     }
                                 }
                             }

@@ -221,6 +221,9 @@ final class ChecklistController extends OCSController {
 	 * @param string|null $description Optional description.
 	 * @param string|null $icon Optional icon key.
 	 * @param string|null $color Optional accent color (hex, e.g. "#03a9f4"). Null clears.
+	 * @param 'remember'|'none'|'once'|'recurring'|null $defaultRecurrenceMode Recurrence new items start with, or "remember" to follow the last one added.
+	 * @param string|null $defaultRrule Rule new items repeat by when the mode is "recurring".
+	 * @param bool|null $defaultRepeatFromCompletion Whether that rule counts its interval from completion.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
 	 *
@@ -229,11 +232,21 @@ final class ChecklistController extends OCSController {
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists')]
 	#[NoAdminRequired]
 	#[Permission(['canCreateLists'])]
-	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null, ?string $color = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $description, $icon, $color): DataResponse {
+	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null, ?string $color = null, ?string $defaultRecurrenceMode = null, ?string $defaultRrule = null, ?bool $defaultRepeatFromCompletion = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $name, $description, $icon, $color, $defaultRecurrenceMode, $defaultRrule, $defaultRepeatFromCompletion): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$list = $this->lists->createList($houseId, $name, $description, $icon, $color);
+			$recurrenceDefault = [];
+			if ($defaultRecurrenceMode !== null) {
+				$recurrenceDefault['defaultRecurrenceMode'] = $defaultRecurrenceMode;
+			}
+			if ($defaultRrule !== null) {
+				$recurrenceDefault['defaultRrule'] = $defaultRrule;
+			}
+			if ($defaultRepeatFromCompletion !== null) {
+				$recurrenceDefault['defaultRepeatFromCompletion'] = $defaultRepeatFromCompletion;
+			}
+			$list = $this->lists->createList($houseId, $name, $description, $icon, $color, $recurrenceDefault);
 			$this->activity->publishListCreated(
 				$houseId,
 				$this->houses->get($houseId)->getName(),
@@ -359,6 +372,10 @@ final class ChecklistController extends OCSController {
 	 * @param string|null $color New accent color (hex). Pass an empty string to clear.
 	 * @param int|null $sortOrder New sort order.
 	 * @param bool|null $deleteOnDoneDefault New default for the "Once" toggle on the add-item form.
+	 * @param 'remember'|'none'|'once'|'recurring'|null $defaultRecurrenceMode Recurrence new items start with, or "remember" to follow the last one added.
+	 * @param 'none'|'once'|'recurring'|null $defaultRecurrenceKind Recurrence new items start with right now, rewritten by the add-item form while the mode is "remember".
+	 * @param string|null $defaultRrule Rule new items repeat by when the recurrence is "recurring". Pass an empty string to clear.
+	 * @param bool|null $defaultRepeatFromCompletion Whether that rule counts its interval from completion.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
 	 *
@@ -367,8 +384,8 @@ final class ChecklistController extends OCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
-	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?bool $deleteOnDoneDefault = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $color, $sortOrder, $deleteOnDoneDefault): DataResponse {
+	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?bool $deleteOnDoneDefault = null, ?string $defaultRecurrenceMode = null, ?string $defaultRecurrenceKind = null, ?string $defaultRrule = null, ?bool $defaultRepeatFromCompletion = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $color, $sortOrder, $deleteOnDoneDefault, $defaultRecurrenceMode, $defaultRecurrenceKind, $defaultRrule, $defaultRepeatFromCompletion): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$existing = $this->lists->getList($listId);
@@ -391,6 +408,18 @@ final class ChecklistController extends OCSController {
 			}
 			if ($deleteOnDoneDefault !== null) {
 				$patch['deleteOnDoneDefault'] = $deleteOnDoneDefault;
+			}
+			if ($defaultRecurrenceMode !== null) {
+				$patch['defaultRecurrenceMode'] = $defaultRecurrenceMode;
+			}
+			if ($defaultRecurrenceKind !== null) {
+				$patch['defaultRecurrenceKind'] = $defaultRecurrenceKind;
+			}
+			if ($defaultRrule !== null) {
+				$patch['defaultRrule'] = $defaultRrule;
+			}
+			if ($defaultRepeatFromCompletion !== null) {
+				$patch['defaultRepeatFromCompletion'] = $defaultRepeatFromCompletion;
 			}
 			$list = $this->lists->updateList($listId, $patch);
 			$contentChanged = $name !== null || $description !== null || $icon !== null || $color !== null;

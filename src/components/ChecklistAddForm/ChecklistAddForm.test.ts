@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ItemInput } from '@/api/lists'
-import type { ChecklistItem } from '@/api/types'
+import type { ChecklistItem, RecurrenceKind } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@nextcloud/dialogs', () => ({
@@ -197,6 +197,7 @@ vi.mock('@/api/lists', () => ({
   listArchivedItems: archivedMocks.listArchivedItems,
 }))
 vi.mock('@/utils/rrule', () => ({
+  DEFAULT_RRULE: 'FREQ=WEEKLY;INTERVAL=1',
   formatRrule: (s: string) => `text(${s})`,
 }))
 vi.mock('@/components/ChecklistItemRow', () => ({
@@ -246,7 +247,10 @@ function mountForm(
   props: {
     houseId?: number
     adding?: boolean
-    deleteOnDoneDefault?: boolean
+    defaultRecurrenceKind?: RecurrenceKind
+    defaultRrule?: string | null
+    defaultRepeatFromCompletion?: boolean
+    remembersRecurrence?: boolean
     reuseCandidates?: ChecklistItem[]
     currentListId?: number | null
   } = {},
@@ -255,7 +259,10 @@ function mountForm(
     props: {
       houseId: props.houseId ?? 1,
       adding: props.adding ?? false,
-      deleteOnDoneDefault: props.deleteOnDoneDefault ?? false,
+      defaultRecurrenceKind: props.defaultRecurrenceKind ?? 'none',
+      defaultRrule: props.defaultRrule ?? null,
+      defaultRepeatFromCompletion: props.defaultRepeatFromCompletion ?? false,
+      remembersRecurrence: props.remembersRecurrence ?? false,
       reuseCandidates: props.reuseCandidates ?? [],
       currentListId: props.currentListId ?? null,
     },
@@ -300,11 +307,14 @@ describe('ChecklistAddForm', () => {
     expect(chipForKey(wrapper, 'Staple').exists()).toBe(true)
   })
 
-  it('item type chip stays neutral when only the list default is one-time', () => {
-    const wrapper = mountForm({ deleteOnDoneDefault: true })
-    // No explicit pick yet — chip should read "Item type", not "One-time".
+  it("item type chip names the list's one-time default before any explicit pick", () => {
+    const wrapper = mountForm({ defaultRecurrenceKind: 'once' })
+    expect(wrapper.findAll('.pantry-chip').some((c) => c.text() === 'One-time')).toBe(true)
+  })
+
+  it('item type chip stays neutral when new items carry no recurrence', () => {
+    const wrapper = mountForm()
     expect(wrapper.text()).toContain('Item type')
-    expect(wrapper.findAll('.pantry-chip').some((c) => c.text() === 'One-time')).toBe(false)
   })
 
   it('submit button is disabled when name is empty', () => {
@@ -389,17 +399,20 @@ describe('ChecklistAddForm', () => {
     expect(input.description).toBe('Whole milk preferred')
   })
 
-  it('selecting One-time emits deleteOnDone=true and update:deleteOnDoneDefault', async () => {
-    const wrapper = mountForm()
+  it('selecting One-time emits deleteOnDone=true and remembers it on submit', async () => {
+    const wrapper = mountForm({ remembersRecurrence: true })
     await wrapper.find('.nc-text-field').setValue('Milk')
     await chipForKey(wrapper, 'Item type').trigger('click')
     await wrapper.find('.mock-one-time').trigger('click')
 
-    expect(wrapper.emitted('update:deleteOnDoneDefault')![0]).toEqual([true])
+    expect(wrapper.emitted('update:recurrenceDefault')).toBeFalsy()
 
     await wrapper.find('form').trigger('submit')
     const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
     expect(input.deleteOnDone).toBe(true)
+    expect(wrapper.emitted('update:recurrenceDefault')![0]).toEqual([
+      { kind: 'once', rrule: null, repeatFromCompletion: false },
+    ])
   })
 
   it('selecting Recurring opens the inline RecurrenceForm and seeds an rrule', async () => {
@@ -411,8 +424,8 @@ describe('ChecklistAddForm', () => {
     expect(wrapper.find('.mock-recurrence-form').exists()).toBe(true)
   })
 
-  it('initializes deleteOnDone from deleteOnDoneDefault prop and emits it on submit', async () => {
-    const wrapper = mountForm({ deleteOnDoneDefault: true })
+  it("starts a new item on the list's one-time default", async () => {
+    const wrapper = mountForm({ defaultRecurrenceKind: 'once' })
     await wrapper.find('.nc-text-field').setValue('Milk')
 
     await wrapper.find('form').trigger('submit')
@@ -420,21 +433,41 @@ describe('ChecklistAddForm', () => {
     expect(input.deleteOnDone).toBe(true)
   })
 
-  it('does not emit update:deleteOnDoneDefault when choice already matches the default', async () => {
-    const wrapper = mountForm({ deleteOnDoneDefault: true })
-    // Pick One-time again — it already matches the list default.
+  it("starts a new item on the list's recurring default", async () => {
+    const wrapper = mountForm({
+      defaultRecurrenceKind: 'recurring',
+      defaultRrule: 'FREQ=DAILY;INTERVAL=2',
+      defaultRepeatFromCompletion: true,
+    })
+    await wrapper.find('.nc-text-field').setValue('Milk')
+
+    await wrapper.find('form').trigger('submit')
+    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    expect(input.deleteOnDone).toBe(false)
+    expect(input.rrule).toBe('FREQ=DAILY;INTERVAL=2')
+    expect(input.repeatFromCompletion).toBe(true)
+  })
+
+  it('does not report a recurrence that already matches the default', async () => {
+    const wrapper = mountForm({ defaultRecurrenceKind: 'once', remembersRecurrence: true })
+    await wrapper.find('.nc-text-field').setValue('Milk')
+    // Pick One-time again — it already matches the list default, which the chip
+    // already names rather than the neutral "Item type".
+    await chipForKey(wrapper, 'One-time').trigger('click')
+    await wrapper.find('.mock-one-time').trigger('click')
+
+    await wrapper.find('form').trigger('submit')
+    expect(wrapper.emitted('update:recurrenceDefault')).toBeFalsy()
+  })
+
+  it('does not report the recurrence used when the list default is pinned', async () => {
+    const wrapper = mountForm()
+    await wrapper.find('.nc-text-field').setValue('Milk')
     await chipForKey(wrapper, 'Item type').trigger('click')
     await wrapper.find('.mock-one-time').trigger('click')
 
-    expect(wrapper.emitted('update:deleteOnDoneDefault')).toBeFalsy()
-  })
-
-  it('does not change deleteOnDoneDefault when the user picks Recurring', async () => {
-    const wrapper = mountForm()
-    await chipForKey(wrapper, 'Item type').trigger('click')
-    await wrapper.find('.mock-recurring').trigger('click')
-
-    expect(wrapper.emitted('update:deleteOnDoneDefault')).toBeFalsy()
+    await wrapper.find('form').trigger('submit')
+    expect(wrapper.emitted('update:recurrenceDefault')).toBeFalsy()
   })
 
   it('toggling Multiple swaps the name input for a textarea and shows a hint', async () => {

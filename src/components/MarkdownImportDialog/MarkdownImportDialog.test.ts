@@ -112,6 +112,7 @@ vi.mock('@/composables/useCategories', () => ({
   }),
 }))
 vi.mock('@/utils/rrule', () => ({
+  DEFAULT_RRULE: 'FREQ=WEEKLY;INTERVAL=1',
   formatRrule: (s: string) => `text(${s})`,
 }))
 

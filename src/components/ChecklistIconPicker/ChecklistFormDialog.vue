@@ -60,6 +60,29 @@
           />
         </div>
       </div>
+      <div>
+        <label class="pantry-icon-picker__label">{{ strings.recurrenceLabel }}</label>
+        <div class="pantry-recurrence-default__modes">
+          <NcCheckboxRadioSwitch
+            v-for="mode in recurrenceModes"
+            :key="mode.value"
+            :model-value="recurrenceMode"
+            :value="mode.value"
+            :name="recurrenceModeName"
+            type="radio"
+            @update:model-value="selectRecurrenceMode(mode.value)"
+          >
+            {{ mode.label }}
+          </NcCheckboxRadioSwitch>
+        </div>
+        <p class="pantry-access-hint">{{ recurrenceHint }}</p>
+        <RecurrenceForm
+          v-if="recurrenceMode === 'recurring'"
+          :key="recurrenceFormKey"
+          v-model="recurrenceRrule"
+          v-model:from-completion="recurrenceFromCompletion"
+        />
+      </div>
       <div v-if="showAccess">
         <label class="pantry-icon-picker__label">{{ strings.accessLabel }}</label>
         <NcSelect
@@ -99,8 +122,12 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import CloseIcon from '@icons/Close.vue'
-import type { Checklist } from '@/api/types'
+import type { Checklist, RecurrenceMode } from '@/api/types'
+import { RecurrenceForm } from '@/components/RecurrenceEditor'
+import type { ChecklistFormData } from './checklistForm'
+import { DEFAULT_RRULE } from '@/utils/rrule'
 import { CHECKLIST_ICONS, DEFAULT_CHECKLIST_ICON_KEY } from './checklistIcons'
 import { checklistColorOptions, contrastColor } from './checklistColors'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
@@ -115,7 +142,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [data: { name: string; description: string; icon: string; color: string }]
+  save: [data: ChecklistFormData]
 }>()
 
 const formId = 'pantry-checklist-form-dialog'
@@ -123,6 +150,47 @@ const nameValue = ref('')
 const descriptionValue = ref('')
 const iconValue = ref(DEFAULT_CHECKLIST_ICON_KEY)
 const colorValue = ref('')
+
+// -------- Default recurrence --------
+const recurrenceMode = ref<RecurrenceMode>('remember')
+const recurrenceRrule = ref<string | null>(null)
+const recurrenceFromCompletion = ref(false)
+const recurrenceModeName = 'pantry-checklist-form-recurrence'
+// RecurrenceForm reads its rule once, on mount, then owns its own state. Remount
+// it whenever the dialog reopens so it never carries the previous list's rule.
+const recurrenceFormKey = ref(0)
+
+const recurrenceModes = computed<{ value: RecurrenceMode; label: string }[]>(() => [
+  { value: 'remember', label: strings.recurrenceRemember },
+  { value: 'none', label: strings.recurrenceNone },
+  { value: 'once', label: strings.recurrenceOnce },
+  { value: 'recurring', label: strings.recurrenceRecurring },
+])
+
+function selectRecurrenceMode(mode: RecurrenceMode) {
+  recurrenceMode.value = mode
+  if (mode === 'recurring') {
+    // RecurrenceForm renders below once the mode flips and live-emits its own
+    // rule; seed one so the summary is never momentarily blank.
+    recurrenceRrule.value ||= DEFAULT_RRULE
+  } else {
+    recurrenceRrule.value = null
+    recurrenceFromCompletion.value = false
+  }
+}
+
+const recurrenceHint = computed(() => {
+  switch (recurrenceMode.value) {
+    case 'none':
+      return strings.recurrenceNoneHint
+    case 'once':
+      return strings.recurrenceOnceHint
+    case 'recurring':
+      return strings.recurrenceRecurringHint
+    default:
+      return strings.recurrenceRememberHint
+  }
+})
 
 // -------- Access (admin-only, edit mode) --------
 const { isAdmin, houseId } = useCurrentHouse()
@@ -168,12 +236,20 @@ watch(
         descriptionValue.value = props.list.description ?? ''
         iconValue.value = props.list.icon ?? DEFAULT_CHECKLIST_ICON_KEY
         colorValue.value = props.list.color ?? ''
+        recurrenceMode.value = props.list.defaultRecurrenceMode ?? 'remember'
+        recurrenceRrule.value = props.list.defaultRrule ?? null
+        recurrenceFromCompletion.value = props.list.defaultRepeatFromCompletion ?? false
+        recurrenceFormKey.value++
         if (isAdmin.value) void loadListAccess()
       } else {
         nameValue.value = ''
         descriptionValue.value = ''
         iconValue.value = DEFAULT_CHECKLIST_ICON_KEY
         colorValue.value = ''
+        recurrenceMode.value = 'remember'
+        recurrenceRrule.value = null
+        recurrenceFromCompletion.value = false
+        recurrenceFormKey.value++
       }
     }
   },
@@ -196,6 +272,10 @@ function submit() {
     description: descriptionValue.value.trim(),
     icon: iconValue.value,
     color: colorValue.value,
+    defaultRecurrenceMode: recurrenceMode.value,
+    defaultRrule: recurrenceMode.value === 'recurring' ? recurrenceRrule.value : null,
+    defaultRepeatFromCompletion:
+      recurrenceMode.value === 'recurring' && recurrenceFromCompletion.value,
   })
 }
 
@@ -209,6 +289,20 @@ const strings = {
   iconLabel: t('pantry', 'Icon:'),
   colorLabel: t('pantry', 'Color:'),
   noColor: t('pantry', 'Default (no color)'),
+  recurrenceLabel: t('pantry', 'Default recurrence:'),
+  // TRANSLATORS: Recurrence option, meaning new items copy the recurrence of the last item added to the list.
+  recurrenceRemember: t('pantry', 'Remember last'),
+  recurrenceRememberHint: t(
+    'pantry',
+    'New items start with the same recurrence as the last item added to this list.',
+  ),
+  // TRANSLATORS: Recurrence option, meaning new items do not repeat and are not removed when done.
+  recurrenceNone: t('pantry', 'None'),
+  recurrenceNoneHint: t('pantry', 'New items stay on the list after they are marked done.'),
+  recurrenceOnce: t('pantry', 'One-time'),
+  recurrenceOnceHint: t('pantry', 'New items are removed from the list once marked done.'),
+  recurrenceRecurring: t('pantry', 'Recurring'),
+  recurrenceRecurringHint: t('pantry', 'New items come back on the schedule below.'),
   accessLabel: t('pantry', 'Access:'),
   accessEveryone: t('pantry', 'Everyone'),
   accessHint: t(
@@ -227,6 +321,12 @@ const strings = {
   flex-direction: column;
   gap: 1rem;
   padding: 0.5rem 0;
+}
+
+.pantry-recurrence-default__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
 }
 
 .pantry-access-hint {

@@ -1,6 +1,9 @@
 import { t } from '@nextcloud/l10n'
 import { RRule } from 'rrule'
 
+/** Rule an item falls back to when it becomes recurring without one of its own. */
+export const DEFAULT_RRULE = 'FREQ=WEEKLY;INTERVAL=1'
+
 export function formatRrule(rrule: string): string {
   try {
     const rule = RRule.fromString('RRULE:' + rrule.replace(/^RRULE:/i, ''))

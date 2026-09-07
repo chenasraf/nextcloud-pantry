@@ -317,6 +317,7 @@ import {
   checklistIconComponent,
   ChecklistFormDialog,
   contrastColor,
+  type ChecklistFormData,
 } from '@/components/ChecklistIconPicker'
 import { entityIcon } from '@/utils/entityIcons'
 
@@ -460,13 +461,12 @@ const showStoreManager = ref(false)
 
 const showCreate = ref(false)
 
-async function submitCreate(data: {
-  name: string
-  description: string
-  icon: string
-  color: string
-}) {
-  const list = await create(data.name, data.description || null, data.icon, data.color || null)
+async function submitCreate(data: ChecklistFormData) {
+  const list = await create(data.name, data.description || null, data.icon, data.color || null, {
+    defaultRecurrenceMode: data.defaultRecurrenceMode,
+    defaultRrule: data.defaultRrule,
+    defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
+  })
   showCreate.value = false
   await router.push({
     name: 'list-detail',
@@ -480,12 +480,7 @@ function startEdit(list: Checklist) {
   editing.value = list
 }
 
-async function submitEdit(data: {
-  name: string
-  description: string
-  icon: string
-  color: string
-}) {
+async function submitEdit(data: ChecklistFormData) {
   const target = editing.value
   if (!target) return
   await update(target.id, {
@@ -493,6 +488,9 @@ async function submitEdit(data: {
     description: data.description,
     icon: data.icon,
     color: data.color || null,
+    defaultRecurrenceMode: data.defaultRecurrenceMode,
+    defaultRrule: data.defaultRrule,
+    defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
   })
   editing.value = null
 }

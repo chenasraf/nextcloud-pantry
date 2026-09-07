@@ -38,6 +38,14 @@ final class ExpectedColumns {
 			// unconditionally, so a missing column breaks the whole list index.
 			self::col('lists', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
+			// lists — per-list recurrence default (Version32). The list SELECT *
+			// hydrates every column into the entity, so a missing one breaks the
+			// list index and, with it, the add-item form.
+			self::col('lists', 'default_recurrence_mode', Types::STRING, ['notnull' => false, 'length' => 16, 'default' => 'remember']),
+			self::col('lists', 'default_recurrence_kind', Types::STRING, ['notnull' => false, 'length' => 16, 'default' => 'none']),
+			self::col('lists', 'default_rrule', Types::STRING, ['notnull' => false, 'length' => 255, 'default' => null]),
+			self::col('lists', 'default_repeat_from_completion', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+
 			// categories — list scoping (Version27); category queries filter on
 			// list_id, so a missing column breaks category loading and the
 			// category-sorted item list.
