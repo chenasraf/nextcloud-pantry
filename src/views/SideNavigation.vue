@@ -90,6 +90,19 @@
 
     <template #footer>
       <ul class="pantry-nav__footer-list">
+        <NcAppNavigationItem :name="strings.documentation" href="https://pantry.casraf.dev/docs">
+          <template #icon>
+            <BookOpenPageVariantIcon :size="20" />
+          </template>
+        </NcAppNavigationItem>
+        <NcAppNavigationItem
+          :name="strings.companionApps"
+          href="https://pantry.casraf.dev/docs/getting-started/apps"
+        >
+          <template #icon>
+            <CellphoneLinkIcon :size="20" />
+          </template>
+        </NcAppNavigationItem>
         <NcAppNavigationItem
           v-if="currentHouseId !== null"
           :name="strings.settings"
@@ -219,6 +232,8 @@ import ViewListIcon from '@icons/ViewList.vue'
 import HistoryIcon from '@icons/History.vue'
 import ImageIcon from '@icons/Image.vue'
 import NoteIcon from '@icons/Note.vue'
+import BookOpenPageVariantIcon from '@icons/BookOpenPageVariant.vue'
+import CellphoneLinkIcon from '@icons/CellphoneLink.vue'
 import CogIcon from '@icons/Cog.vue'
 import HomeCityIcon from '@icons/HomeCity.vue'
 import ChevronUpIcon from '@icons/ChevronUp.vue'
@@ -385,6 +400,9 @@ const strings = {
   // TRANSLATORS: Sidebar item, noun — the pinboard/corkboard view where photos are displayed, not a plank of wood.
   photos: t('pantry', 'Photo board'),
   notes: t('pantry', 'Notes wall'),
+  documentation: t('pantry', 'Documentation'),
+  // TRANSLATORS: Sidebar link to the page listing the mobile and desktop client apps
+  companionApps: t('pantry', 'Get companion apps'),
   settings: t('pantry', 'Personal settings'),
   manageHouse: t('pantry', 'Manage house'),
   pickHouse: t('pantry', 'Pick a house'),
