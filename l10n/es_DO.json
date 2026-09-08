@@ -11,6 +11,7 @@
     "Remove image" : "Eliminar imagen",
     "Categories" : "Categorías",
     "Clear" : "Limpiar",
+    "None" : "Ninguno",
     "Everyone" : "Todos",
     "Delete permanently" : "Borrar permanentemente",
     "Restore" : "Restaurar",
@@ -45,7 +46,6 @@
     "Ends" : "Termina",
     "Never" : "Nunca",
     "Summary" : "Resumen",
-    "None" : "Ninguno",
     "Files" : "Archivo",
     "Saved." : "Guardado.",
     "Reminders" : "Recordatorios",
@@ -66,6 +66,7 @@
     "New note" : "Nota nueva",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva ",
+    "Documentation" : "Documentación",
     "Uncategorized" : "Sin categoría",
     "Text" : "Texto",
     "Checkbox" : "Casilla de verificación"

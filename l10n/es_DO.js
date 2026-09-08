@@ -13,6 +13,7 @@ OC.L10N.register(
     "Remove image" : "Eliminar imagen",
     "Categories" : "Categorías",
     "Clear" : "Limpiar",
+    "None" : "Ninguno",
     "Everyone" : "Todos",
     "Delete permanently" : "Borrar permanentemente",
     "Restore" : "Restaurar",
@@ -47,7 +48,6 @@ OC.L10N.register(
     "Ends" : "Termina",
     "Never" : "Nunca",
     "Summary" : "Resumen",
-    "None" : "Ninguno",
     "Files" : "Archivo",
     "Saved." : "Guardado.",
     "Reminders" : "Recordatorios",
@@ -68,6 +68,7 @@ OC.L10N.register(
     "New note" : "Nota nueva",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva ",
+    "Documentation" : "Documentación",
     "Uncategorized" : "Sin categoría",
     "Text" : "Texto",
     "Checkbox" : "Casilla de verificación"

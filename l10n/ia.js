@@ -10,14 +10,15 @@ OC.L10N.register(
     "Labels" : "Etiquettas",
     "Description" : "Description",
     "Remove image" : "Remover imagine",
+    "None" : "Nulle",
     "Everyone" : "Totos",
     "Delete permanently" : "Deler permanentemente",
     "Restore" : "Restaurar",
-    "Type" : "Typo",
     "Done" : "Preste",
     "you" : "Tu",
     "Absolute" : "Absolute",
     "Relative" : "Relative",
+    "Type" : "Typo",
     "Members" : "Membros",
     "New" : "Nove",
     "View" : "Vider",
@@ -35,7 +36,6 @@ OC.L10N.register(
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
-    "None" : "Nulle",
     "Reminders" : "Memento",
     "Enabled" : "Activate",
     "Location" : "Loco",
@@ -43,6 +43,7 @@ OC.L10N.register(
     "Select" : "Selectionar",
     "Apply" : "Applicar",
     "General" : "General",
-    "New folder" : "Nove dossier"
+    "New folder" : "Nove dossier",
+    "Documentation" : "Documentation"
 },
 "nplurals=2; plural=(n != 1);");
