@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.31.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.30.0...v0.31.0) (2026-09-08)
+
+
+### Features
+
+* **fields:** auto-detect links in text fields ([3f8ab7e](https://github.com/chenasraf/nextcloud-pantry/commit/3f8ab7e43cfc480dd7616793924f53fc713c3f63))
+* **lists:** per-list default recurrence for new items ([f8373da](https://github.com/chenasraf/nextcloud-pantry/commit/f8373da462369ab7d082b9475bfa5d85a6db5af1)), closes [#256](https://github.com/chenasraf/nextcloud-pantry/issues/256)
+* **nav:** documentation and companion apps links ([747a727](https://github.com/chenasraf/nextcloud-pantry/commit/747a727f837552605e7485028b404712576077ce))
+* **notes:** toggle task-list checkboxes in view mode ([1e230ad](https://github.com/chenasraf/nextcloud-pantry/commit/1e230adebe53c6ce2acb695f87900dc275af3a23))
+* **recurrence:** monthly ordinal weekdays and yearly dates ([37fd481](https://github.com/chenasraf/nextcloud-pantry/commit/37fd481872a9b7320133632f9ecdbd27586643a2)), closes [#250](https://github.com/chenasraf/nextcloud-pantry/issues/250)
+
+
+### Bug Fixes
+
+* **checklist:** honor reuse pref when tapping a suggestion ([e3aecb9](https://github.com/chenasraf/nextcloud-pantry/commit/e3aecb98a410ecf9422fa0dce0fc054ee694da43)), closes [#255](https://github.com/chenasraf/nextcloud-pantry/issues/255)
+* **l10n:** label the item type field "Recurrence" ([9d3f319](https://github.com/chenasraf/nextcloud-pantry/commit/9d3f319d071a3b6cd70f76cbbaea7cdf677c8d74))
+* **l10n:** Update translations from Transifex ([4001c27](https://github.com/chenasraf/nextcloud-pantry/commit/4001c270b5c3954e958457650164f2aa4dfca563))
+* **l10n:** Update translations from Transifex ([64c7788](https://github.com/chenasraf/nextcloud-pantry/commit/64c77889ab793ff010ae4f1ebbd5c8d41a929bc3))
+* **l10n:** Update translations from Transifex ([7d114d0](https://github.com/chenasraf/nextcloud-pantry/commit/7d114d0823324f1155149bce74597d9e9c126dc2))
+* **l10n:** Update translations from Transifex ([9a7eea6](https://github.com/chenasraf/nextcloud-pantry/commit/9a7eea66f2727c3e4f44d3555b6436c3a56bf0c7))
+* **l10n:** Update translations from Transifex ([e2754f6](https://github.com/chenasraf/nextcloud-pantry/commit/e2754f643b488e7e25fd7d72721119c7f5967040))
+* **l10n:** Update translations from Transifex ([2581c37](https://github.com/chenasraf/nextcloud-pantry/commit/2581c377607fa8b3bc8494678ced048b3a03e736))
+* **l10n:** Update translations from Transifex ([98b85a7](https://github.com/chenasraf/nextcloud-pantry/commit/98b85a751f31ee35fe47cd8c6f09e10468d3ac70))
+* **ui:** keep resume banner and sticky headers clear of the page toolbar ([4a0f221](https://github.com/chenasraf/nextcloud-pantry/commit/4a0f221feb71abf757ba00f47d3c455789842391))
+
 ## [0.30.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.29.0...v0.30.0) (2026-09-01)
 
 
