@@ -58,25 +58,36 @@ function storePosition(s: ShoppingSession): { index: number; total: number } | n
 const bannerText = computed(() => {
   const s = session.value
   if (!s) return ''
+  // A short duration reads "< 1 min", and interpolating it escapes that bare
+  // "<" into "&lt;", which the banner then shows verbatim. Both opt-outs are
+  // needed: escaping produces the entity, and DOMPurify drops everything from
+  // the "<" onward. Safe because the label renders as text, never as HTML.
+  const raw = { escape: false, sanitize: false }
   const elapsed = formatDuration(Math.floor((now.value - s.createdAt * 1000) / 1000))
   const store = s.activeStoreId != null ? resolveStoreName(s.activeStoreId) : ''
   if (!store) {
     // Storeless trip (or store not yet resolved): elapsed only.
     // TRANSLATORS: Resume banner for a shopping trip with no store. {elapsed} is a duration like "15 min".
-    return t('pantry', 'Shopping · {elapsed}', { elapsed })
+    return t('pantry', 'Shopping · {elapsed}', { elapsed }, undefined, raw)
   }
   const pos = storePosition(s)
   if (pos) {
     // TRANSLATORS: Resume banner. {store} is a store name, {index}/{total} the position in the planned store sequence, {elapsed} a duration.
-    return t('pantry', 'Shopping at {store} (Store {index}/{total}) · {elapsed}', {
-      store,
-      index: String(pos.index),
-      total: String(pos.total),
-      elapsed,
-    })
+    return t(
+      'pantry',
+      'Shopping at {store} (Store {index}/{total}) · {elapsed}',
+      {
+        store,
+        index: String(pos.index),
+        total: String(pos.total),
+        elapsed,
+      },
+      undefined,
+      raw,
+    )
   }
   // TRANSLATORS: Resume banner. {store} is a store name, {elapsed} a duration like "15 min".
-  return t('pantry', 'Shopping at {store} · {elapsed}', { store, elapsed })
+  return t('pantry', 'Shopping at {store} · {elapsed}', { store, elapsed }, undefined, raw)
 })
 
 // Fetch `current` on mount and on route changes into a list view — no continuous
