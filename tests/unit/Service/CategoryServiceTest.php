@@ -112,9 +112,9 @@ class CategoryServiceTest extends TestCase {
 		$this->svc->reorder(1, [['id' => 0, 'sortOrder' => 0]]);
 	}
 
-	public function testCreateAppendsAfterHighestSortOrder(): void {
+	public function testCreateAppendsAfterTheLastGlobalCategory(): void {
 		$this->mapper->method('findByHouseListAndName')->willReturn(null);
-		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(4);
+		$this->mapper->method('findMaxSortOrderInScope')->with(1, null)->willReturn(4);
 		$this->mapper->method('insert')->willReturnArgument(0);
 
 		$created = $this->svc->create(1, 'Aisle 8', 'tag', '#ef4444');
@@ -124,8 +124,57 @@ class CategoryServiceTest extends TestCase {
 
 	public function testCreateInEmptyHouseStartsAtZero(): void {
 		$this->mapper->method('findByHouseListAndName')->willReturn(null);
-		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(-1);
+		$this->mapper->method('findMaxSortOrderInScope')->with(1, null)->willReturn(-1);
 		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Produce', 'tag', '#22c55e');
+
+		$this->assertSame(0, $created->getSortOrder());
+	}
+
+	public function testCreateAppendsWithinItsListGroup(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(7, 1));
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+		// List 7's run ends at 3; later groups carry the house on to 9.
+		$this->mapper->method('findMaxSortOrderInScope')->with(1, 7)->willReturn(3);
+		$this->mapper->method('findMaxSortOrder')->willReturn(9);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Deli', 'tag', '#ef4444', 7);
+
+		$this->assertSame(4, $created->getSortOrder());
+	}
+
+	public function testCreateOpensASlotAtTheAppendPosition(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(7, 1));
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrderInScope')->willReturn(3);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$this->mapper->expects($this->once())->method('shiftSortOrderFrom')->with(1, 4);
+
+		$this->svc->create(1, 'Deli', 'tag', '#ef4444', 7);
+	}
+
+	public function testCreateStartsAnEmptyListGroupAfterTheExistingOnes(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(7, 1));
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrderInScope')->with(1, 7)->willReturn(-1);
+		$this->mapper->method('findMaxSortOrder')->with(1)->willReturn(9);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$created = $this->svc->create(1, 'Deli', 'tag', '#ef4444', 7);
+
+		$this->assertSame(10, $created->getSortOrder());
+	}
+
+	public function testCreateFirstGlobalCategoryLeadsTheSequence(): void {
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrderInScope')->with(1, null)->willReturn(-1);
+		$this->mapper->method('findMaxSortOrder')->willReturn(9);
+		$this->mapper->method('insert')->willReturnArgument(0);
+
+		$this->mapper->expects($this->once())->method('shiftSortOrderFrom')->with(1, 0);
 
 		$created = $this->svc->create(1, 'Produce', 'tag', '#22c55e');
 
@@ -234,5 +283,44 @@ class CategoryServiceTest extends TestCase {
 		$this->mapper->expects($this->never())->method('detachFromItemsNotInList');
 
 		$this->svc->update(5, ['icon' => 'food']);
+	}
+
+	public function testUpdateMovingScopeAppendsToTheTargetGroup(): void {
+		$cat = $this->makeCategory(['id' => 5, 'houseId' => 1, 'sortOrder' => 2]);
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+		$this->listMapper->method('findById')->willReturn($this->makeList(7, 1));
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+		$this->mapper->method('findMaxSortOrderInScope')->with(1, 7)->willReturn(6);
+
+		$this->mapper->expects($this->once())->method('shiftSortOrderFrom')->with(1, 7);
+
+		$updated = $this->svc->update(5, ['listId' => 7]);
+
+		$this->assertSame(7, $updated->getSortOrder());
+	}
+
+	public function testUpdateKeepsPositionWhenScopeIsUnchanged(): void {
+		$cat = $this->makeCategory(['id' => 5, 'houseId' => 1, 'sortOrder' => 2]);
+		$cat->setListId(7);
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+
+		$this->mapper->expects($this->never())->method('shiftSortOrderFrom');
+
+		$updated = $this->svc->update(5, ['icon' => 'food']);
+
+		$this->assertSame(2, $updated->getSortOrder());
+	}
+
+	public function testUpdateWithExplicitSortOrderOverridesTheGroupAppend(): void {
+		$cat = $this->makeCategory(['id' => 5, 'houseId' => 1, 'sortOrder' => 2]);
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+		$this->listMapper->method('findById')->willReturn($this->makeList(7, 1));
+		$this->mapper->method('findByHouseListAndName')->willReturn(null);
+
+		$this->mapper->expects($this->never())->method('shiftSortOrderFrom');
+
+		$updated = $this->svc->update(5, ['listId' => 7, 'sortOrder' => 3]);
+
+		$this->assertSame(3, $updated->getSortOrder());
 	}
 }

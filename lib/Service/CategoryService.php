@@ -81,10 +81,9 @@ class CategoryService {
 		$cat->setName($name);
 		$cat->setIcon($icon);
 		$cat->setColor($color);
-		// Append at the end of the custom order. Assigning 0 to every new
-		// category left them all tied, so a custom-sorted list rendered in an
-		// arbitrary, shifting order.
-		$cat->setSortOrder($this->mapper->findMaxSortOrder($houseId) + 1);
+		$position = $this->appendPositionInScope($houseId, $listId);
+		$this->mapper->shiftSortOrderFrom($houseId, $position);
+		$cat->setSortOrder($position);
 		$cat->setCreatedAt($now);
 		$cat->setUpdatedAt($now);
 		/** @var Category $saved */
@@ -130,6 +129,13 @@ class CategoryService {
 		}
 		if (isset($patch['sortOrder'])) {
 			$cat->setSortOrder((int)$patch['sortOrder']);
+		} elseif ($targetListId !== $originalListId) {
+			// The old position sits inside the run the category is leaving, so
+			// carrying it over would drop the category into the middle of a
+			// group it no longer belongs to.
+			$position = $this->appendPositionInScope($cat->getHouseId(), $targetListId);
+			$this->mapper->shiftSortOrderFrom($cat->getHouseId(), $position);
+			$cat->setSortOrder($position);
 		}
 		$cat->setUpdatedAt(time());
 		$this->mapper->update($cat);
@@ -161,6 +167,24 @@ class CategoryService {
 			throw new NotFoundException('Category does not belong to this house');
 		}
 		return $cat;
+	}
+
+	/**
+	 * The position just past the last category of a scope, which is where the
+	 * category manager shows a newcomer: sort_order is one house-wide sequence,
+	 * but it runs group by group, so appending to the house instead would land
+	 * the category past every other group.
+	 *
+	 * An empty scope has no run to append to. Global categories lead the
+	 * sequence, so the first of them opens it; a list's first category starts a
+	 * run of its own at the end.
+	 */
+	private function appendPositionInScope(int $houseId, ?int $listId): int {
+		$maxInScope = $this->mapper->findMaxSortOrderInScope($houseId, $listId);
+		if ($maxInScope >= 0) {
+			return $maxInScope + 1;
+		}
+		return $listId === null ? 0 : $this->mapper->findMaxSortOrder($houseId) + 1;
 	}
 
 	/**

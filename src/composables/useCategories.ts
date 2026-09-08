@@ -23,6 +23,16 @@ function sortItems(items: Category[], sortBy: CategorySort): Category[] {
   return next
 }
 
+// Placing a category inside its group makes room by pushing everything at or
+// past that position one step down. The server does this when it stores the
+// category; mirroring it keeps the cached order matching the stored one until
+// the next fetch.
+function shiftFrom(items: Category[], from: number, exceptId: number): Category[] {
+  return items.map((c) =>
+    c.id !== exceptId && c.sortOrder >= from ? { ...c, sortOrder: c.sortOrder + 1 } : c,
+  )
+}
+
 function build(houseId: number) {
   const items = ref<Category[]>([])
   const loading = ref(false)
@@ -61,7 +71,10 @@ function build(houseId: number) {
     listId?: number | null
   }): Promise<Category> {
     const created = await api.createCategory(houseId, input)
-    items.value = sortItems([...items.value, created], sortBy.value)
+    items.value = sortItems(
+      shiftFrom([...items.value, created], created.sortOrder, created.id),
+      sortBy.value,
+    )
     return created
   }
 
@@ -69,11 +82,15 @@ function build(houseId: number) {
     id: number,
     patch: Parameters<typeof api.updateCategory>[2],
   ): Promise<Category> {
+    const previous = items.value.find((c) => c.id === id)
     const updated = await api.updateCategory(houseId, id, patch)
-    items.value = sortItems(
-      items.value.map((c) => (c.id === id ? updated : c)),
-      sortBy.value,
-    )
+    let next = items.value.map((c) => (c.id === id ? updated : c))
+    // Moving a category to another list re-places it at the end of that group,
+    // unless the patch pinned a position of its own.
+    if (previous && previous.listId !== updated.listId && patch.sortOrder === undefined) {
+      next = shiftFrom(next, updated.sortOrder, updated.id)
+    }
+    items.value = sortItems(next, sortBy.value)
     return updated
   }
 

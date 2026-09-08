@@ -57,10 +57,51 @@ class CategoryMapper extends QBMapper {
 		$qb->select($qb->func()->max('sort_order'))
 			->from($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+		return $this->fetchMaxSortOrder($qb);
+	}
+
+	/**
+	 * Highest sort_order within one scope — the global categories when $listId
+	 * is null, otherwise the ones bound to that list — or -1 when the scope is
+	 * empty. Categories of a scope occupy a contiguous run of the house's
+	 * sequence, so `max + 1` appends to the end of that run.
+	 */
+	public function findMaxSortOrderInScope(int $houseId, ?int $listId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->max('sort_order'))
+			->from($this->getTableName())
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)));
+		if ($listId === null) {
+			$qb->andWhere($qb->expr()->isNull('list_id'));
+		} else {
+			$qb->andWhere($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+		}
+		return $this->fetchMaxSortOrder($qb);
+	}
+
+	/**
+	 * Runs a MAX(sort_order) query, reporting an empty result as -1 so callers
+	 * can append with `max + 1` without special-casing it.
+	 */
+	private function fetchMaxSortOrder(IQueryBuilder $qb): int {
 		$result = $qb->executeQuery();
 		$max = $result->fetchOne();
 		$result->closeCursor();
 		return $max === null || $max === false ? -1 : (int)$max;
+	}
+
+	/**
+	 * Open a slot at $from by pushing every category at or past it one step
+	 * down, so an insert there lands between two runs instead of tying with
+	 * whichever category already holds the position.
+	 */
+	public function shiftSortOrderFrom(int $houseId, int $from): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('sort_order', $qb->createFunction('sort_order + 1'))
+			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->gte('sort_order', $qb->createNamedParameter($from, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
 	}
 
 	/**

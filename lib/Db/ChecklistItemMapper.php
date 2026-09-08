@@ -243,8 +243,10 @@ class ChecklistItemMapper extends QBMapper {
 	 * narrowing is applied. The item_stores LEFT JOIN is only added when
 	 * narrowing so multi-store items are not duplicated.
 	 *
-	 * Ordered by category sort_order then item sort_order, with uncategorized
-	 * items trailing. Returns a flat array the caller groups by category.
+	 * Ordered by category sort_order then category name — the name keeps items
+	 * of categories sharing a sort_order from interleaving — then item
+	 * sort_order, with uncategorized items trailing. Returns a flat array the
+	 * caller groups by category.
 	 *
 	 * @param int[] $listIds
 	 * @return ChecklistItem[]
@@ -285,6 +287,7 @@ class ChecklistItemMapper extends QBMapper {
 			'ASC',
 		)
 			->addOrderBy('c.sort_order', 'ASC')
+			->addOrderBy('c.name', 'ASC')
 			->addOrderBy('i.sort_order', 'ASC')
 			->addOrderBy('i.id', 'ASC');
 
