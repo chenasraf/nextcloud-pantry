@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.31.0...v0.31.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **categories:** keep sort order distinct within each list group ([e8ef889](https://github.com/chenasraf/nextcloud-pantry/commit/e8ef8891c7636fbef7a318323743e43f1307a163))
+
 ## [0.31.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.30.0...v0.31.0) (2026-09-08)
 
 
