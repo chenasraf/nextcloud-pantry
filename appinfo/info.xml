@@ -27,7 +27,7 @@ Pantry also has companion apps for mobile, watch and desktop that let you manage
 
 **Website:** [pantry.casraf.dev](https://pantry.casraf.dev) | **Documentation:** [pantry.casraf.dev/docs](https://pantry.casraf.dev/docs)
 ]]></description>
-	<version>0.31.0</version>
+	<version>0.31.1</version>
 	<licence>agpl</licence>
 	<author mail="contact@casraf.dev" homepage="https://casraf.dev">Chen Asraf</author>
 	<namespace>Pantry</namespace>

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.31.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.31.0...v0.31.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **categories:** keep sort order distinct within each list group ([e8ef889](https://github.com/chenasraf/nextcloud-pantry/commit/e8ef8891c7636fbef7a318323743e43f1307a163))
+* **l10n:** Update translations from Transifex ([7fc85c3](https://github.com/chenasraf/nextcloud-pantry/commit/7fc85c39e1d156437ab896a882857e507e540777))
+* **shopping:** stop the resume banner escaping short durations ([27e443b](https://github.com/chenasraf/nextcloud-pantry/commit/27e443bcf94b2eba75149d54b7599c72d6b01697))
+
 ## [0.31.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.30.0...v0.31.0) (2026-09-08)
 
 
