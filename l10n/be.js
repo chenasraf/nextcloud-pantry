@@ -92,6 +92,7 @@ OC.L10N.register(
     "No notes yet" : "Пакуль няма нататак",
     "New folder" : "Новая папка",
     "Caption" : "Подпіс",
+    "Documentation" : "Дакументацыя",
     "Creating …" : "Стварэнне …",
     "Text" : "Тэкст",
     "Number" : "Нумар",

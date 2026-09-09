@@ -57,6 +57,7 @@ OC.L10N.register(
     "Note restored" : "Nodyn wedi'i adfer",
     "New folder" : "Ffolder newydd",
     "Add a description" : "Ychwanegu disgrifiad",
+    "Documentation" : "Dogfennaeth",
     "Uncategorized" : "Dim categori",
     "Checkbox" : "Blwch ticio"
 },

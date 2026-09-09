@@ -102,6 +102,7 @@ OC.L10N.register(
     "Second" : "Segundo",
     "Third" : "Tercero",
     "Fourth" : "Cuarto",
+    "Last" : "Último",
     "Daily" : "Cada día",
     "Weekly" : "Semanalmente",
     "Monthly" : "Mensualmente",

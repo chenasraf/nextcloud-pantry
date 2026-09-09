@@ -113,6 +113,7 @@ OC.L10N.register(
     "No notes yet" : "Nun hai nenguna nota",
     "New folder" : "Carpeta nueva",
     "Remove folder" : "Quitar la carpeta",
+    "Documentation" : "Documentación",
     "Load more" : "Cargar más",
     "Uncategorized" : "Ensin categoría",
     "Finish" : "Finar",

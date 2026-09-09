@@ -129,6 +129,7 @@ OC.L10N.register(
     "No lists yet" : "Belum ada list",
     "General" : "Umum",
     "Automation" : "Otomatisasi",
+    "Danger zone" : "Zona berbahaya",
     "New folder" : "Folder baru",
     "Add a description" : "Tambah deskripsi",
     "Remove folder" : "Hapus folder",

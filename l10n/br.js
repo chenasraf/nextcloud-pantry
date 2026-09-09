@@ -56,6 +56,7 @@ OC.L10N.register(
     "New note" : "Notenn nevez",
     "New folder" : "Teuliad nevez",
     "Add a description" : "Ouzhpennañ un deskrivadur",
+    "Documentation" : "Diellvadur",
     "Text" : "Testenn",
     "Checkbox" : "Log-askañ",
     "Date" : "Deiz"

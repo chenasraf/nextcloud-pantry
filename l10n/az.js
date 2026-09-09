@@ -48,6 +48,7 @@ OC.L10N.register(
     "Import" : "Əlavə et",
     "Select" : "Seç",
     "General" : "Ümumi",
-    "New folder" : "Yeni qovluq"
+    "New folder" : "Yeni qovluq",
+    "Documentation" : "Sənədlər"
 },
 "nplurals=2; plural=(n != 1);");

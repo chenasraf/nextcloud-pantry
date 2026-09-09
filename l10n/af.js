@@ -44,6 +44,7 @@ OC.L10N.register(
     "Export" : "Voer uit",
     "Import" : "Invoer",
     "New folder" : "Nuwe gids",
+    "Documentation" : "Dokumentasie",
     "Text" : "Teks"
 },
 "nplurals=2; plural=(n != 1);");
