@@ -86,12 +86,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/nextcloud/openapi-extractor.git",
-                "reference": "5a97989bd4f9b46fb6a5d0dc2d8e84c94c6ccc5a"
+                "reference": "fd7e9bbdd922a335e2bdb6a8791de62fc9cd1d46"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nextcloud/openapi-extractor/zipball/5a97989bd4f9b46fb6a5d0dc2d8e84c94c6ccc5a",
-                "reference": "5a97989bd4f9b46fb6a5d0dc2d8e84c94c6ccc5a",
+                "url": "https://api.github.com/repos/nextcloud/openapi-extractor/zipball/fd7e9bbdd922a335e2bdb6a8791de62fc9cd1d46",
+                "reference": "fd7e9bbdd922a335e2bdb6a8791de62fc9cd1d46",
                 "shasum": ""
             },
             "require": {
@@ -139,10 +139,10 @@
             ],
             "description": "A tool for extracting OpenAPI specifications from Nextcloud source code",
             "support": {
-                "source": "https://github.com/nextcloud/openapi-extractor/tree/v1.9.1",
+                "source": "https://github.com/nextcloud/openapi-extractor/tree/main",
                 "issues": "https://github.com/nextcloud/openapi-extractor/issues"
             },
-            "time": "2026-09-02T10:33:47+00:00"
+            "time": "2026-09-06T10:31:21+00:00"
         },
         {
             "name": "nikic/php-parser",
