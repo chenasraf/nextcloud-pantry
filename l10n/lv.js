@@ -1,6 +1,15 @@
 OC.L10N.register(
     "pantry",
     {
+    "You deleted list {list} in {house}" : "Tu {house} izdzēsi sarakstu {list}",
+    "You completed {item} on {list} in {house}" : "Tu {house} pabeidzi {item} no {list}",
+    "You deleted {item} from {list} in {house}" : "Tu {house} izdzēsi {item} no {list}",
+    "You deleted {items} from {list} in {house}" : "Tu {house} izdzēsi {items} no {list}",
+    "_You deleted %n item from {list} in {house}_::_You deleted %n items from {list} in {house}_" : ["Tu {house} izdzēsi %n vienumus no {list}","Tu {house} izdzēsi %n vienumu no {list}","Tu {house} izdzēsi %n vienumus no {list}"],
+    "You deleted a photo from {folder} in {house}" : "Tu {house} izdzēsi fotoattēlu no {folder}",
+    "You deleted a photo in {house}" : "Tu {house} izdzēsi fotoattēlu",
+    "You deleted photo folder {folder} in {house}" : "Tu {house} izdzēsi fotoattēlu mapi {folder}",
+    "You deleted note {note} in {house}" : "Tu {house} izdzēsi piezīmi {note}",
     "Cancel" : "Atcelt",
     "Name" : "Nosaukums",
     "Save" : "Saglabāt",
