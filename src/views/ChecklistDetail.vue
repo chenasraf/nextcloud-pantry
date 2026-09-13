@@ -286,30 +286,45 @@
               />
               <span>{{ strings.doneTitle }}</span>
             </button>
-            <NcButton
-              v-if="canUncheckAll"
-              class="pantry-detail__uncheck-all"
-              variant="tertiary"
-              :disabled="unchecking"
-              @click="confirmingUncheckAll = true"
+            <NcActions
+              v-if="canUncheckAll || canArchiveAll || canRemoveAll"
+              class="pantry-detail__done-actions"
+              :aria-label="strings.doneActions"
             >
-              <template #icon>
-                <CheckboxMultipleBlankOutlineIcon :size="18" />
-              </template>
-              {{ strings.uncheckAll }}
-            </NcButton>
-            <NcButton
-              v-if="canRemoveAll"
-              class="pantry-detail__uncheck-all"
-              variant="tertiary"
-              :disabled="removingAll"
-              @click="confirmingRemoveAll = true"
-            >
-              <template #icon>
-                <DeleteIcon :size="18" />
-              </template>
-              {{ strings.removeAll }}
-            </NcButton>
+              <NcActionButton
+                v-if="canUncheckAll"
+                close-after-click
+                :disabled="unchecking"
+                @click="confirmingUncheckAll = true"
+              >
+                <template #icon>
+                  <CheckboxMultipleBlankOutlineIcon :size="20" />
+                </template>
+                {{ strings.uncheckAll }}
+              </NcActionButton>
+              <NcActionButton
+                v-if="canArchiveAll"
+                close-after-click
+                :disabled="archivingAll"
+                @click="confirmingArchiveAll = true"
+              >
+                <template #icon>
+                  <ArchiveArrowDownOutlineIcon :size="20" />
+                </template>
+                {{ strings.archiveAll }}
+              </NcActionButton>
+              <NcActionButton
+                v-if="canRemoveAll"
+                close-after-click
+                :disabled="removingAll"
+                @click="confirmingRemoveAll = true"
+              >
+                <template #icon>
+                  <DeleteIcon :size="20" />
+                </template>
+                {{ strings.removeAll }}
+              </NcActionButton>
+            </NcActions>
           </div>
           <ul
             v-show="!doneCollapsed"
@@ -672,6 +687,24 @@
     </NcDialog>
 
     <NcDialog
+      v-if="confirmingArchiveAll"
+      :name="strings.archiveAllTitle"
+      :open="confirmingArchiveAll"
+      close-on-click-outside
+      @update:open="(v) => !v && (confirmingArchiveAll = false)"
+    >
+      <p>{{ strings.archiveAllConfirm }}</p>
+      <template #actions>
+        <NcButton :disabled="archivingAll" @click="confirmingArchiveAll = false">
+          {{ strings.cancel }}
+        </NcButton>
+        <NcButton variant="primary" :disabled="archivingAll" @click="runArchiveAll">
+          {{ strings.archiveAll }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <NcDialog
       v-if="confirmingRemoveAll"
       :name="strings.removeAllTitle"
       :open="confirmingRemoveAll"
@@ -748,6 +781,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { t, n } from '@nextcloud/l10n'
 import { showUndo, showError, showSuccess } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcActions from '@nextcloud/vue/components/NcActions'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -1096,6 +1131,43 @@ async function runUncheckAll() {
     showError((e as Error).message)
   } finally {
     unchecking.value = false
+  }
+}
+
+// ----- Archive all done -----
+
+// Archiving is an organizing action, gated by canEditLists like the per-row and
+// bulk-selection archive actions.
+const canArchiveAll = computed(
+  () =>
+    !isMeta.value && viewMode.value === 'active' && writableHere.value && can.value.canEditLists,
+)
+const confirmingArchiveAll = ref(false)
+const archivingAll = ref(false)
+
+async function runArchiveAll() {
+  confirmingArchiveAll.value = false
+  // All done items in the list (unfiltered) — "archive all in the list", not
+  // just what a search/category filter currently shows.
+  const done = items.value.filter((i) => i.done)
+  const ids = done.map((i) => i.id)
+  if (ids.length === 0) return
+  const snapshots = done.map((i) => ({ ...i }))
+  archivingAll.value = true
+  try {
+    const result = await archiveMany(ids)
+    const archived = ids.length - result.skipped.length
+    showUndo(
+      n('pantry', 'Archived %n item', 'Archived %n items', archived),
+      () => {
+        void undoArchiveMany(snapshots).catch(() => showError(strings.unarchiveFailed))
+      },
+      { timeout: 6000 },
+    )
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    archivingAll.value = false
   }
 }
 
@@ -2701,6 +2773,15 @@ const strings = {
     'pantry',
     'Every checked item in this list will be returned to the active list.',
   ),
+  // TRANSLATORS: Menu action that moves every checked (done) item into the archive.
+  archiveAll: t('pantry', 'Archive all'),
+  archiveAllTitle: t('pantry', 'Archive all done items?'),
+  archiveAllConfirm: t(
+    'pantry',
+    'Every checked item in this list will be moved to the archive. You can unarchive them afterwards.',
+  ),
+  // TRANSLATORS: Accessible label for the overflow menu of the done section.
+  doneActions: t('pantry', 'Done item actions'),
   // TRANSLATORS: Button that soft-deletes every checked (done) item in the list.
   removeAll: t('pantry', 'Remove all'),
   removeAllTitle: t('pantry', 'Remove all done items?'),
@@ -3076,11 +3157,10 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     margin-block-start: 1.5rem;
   }
 
-  // The toggle fills the row and absorbs any shrink; the uncheck-all button keeps
-  // its natural width so its label never truncates.
-  &__uncheck-all {
+  // The toggle fills the row and absorbs any shrink; the actions menu keeps its
+  // natural width.
+  &__done-actions {
     flex: 0 0 auto;
-    white-space: nowrap;
   }
 
   &__section-toggle {
