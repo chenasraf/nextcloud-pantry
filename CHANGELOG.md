@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.32.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.31.1...v0.32.0) (2026-09-15)
+
+
+### Features
+
+* **checklist:** add archive all action to done items ([819e75e](https://github.com/chenasraf/nextcloud-pantry/commit/819e75e684a5d6789dc833529ae4338d6d28537b)), closes [#265](https://github.com/chenasraf/nextcloud-pantry/issues/265)
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([12f8e0e](https://github.com/chenasraf/nextcloud-pantry/commit/12f8e0e9247722a8f7a371ce1a9fd43c31baa067))
+* **l10n:** Update translations from Transifex ([7ae6b87](https://github.com/chenasraf/nextcloud-pantry/commit/7ae6b87abf649f2dc2bfe4cbeb11ecf85ad26fad))
+* **l10n:** Update translations from Transifex ([d22fe55](https://github.com/chenasraf/nextcloud-pantry/commit/d22fe55573ca8093161d6448ff30cf82976a89ae))
+* **l10n:** Update translations from Transifex ([8d08966](https://github.com/chenasraf/nextcloud-pantry/commit/8d08966f3217cc07e91334362c5ee441a7007959))
+* **l10n:** Update translations from Transifex ([5f7c83f](https://github.com/chenasraf/nextcloud-pantry/commit/5f7c83ff935d0d855e8de13189f1435cc836273d))
+
 ## [0.31.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.31.0...v0.31.1) (2026-09-09)
 
 
