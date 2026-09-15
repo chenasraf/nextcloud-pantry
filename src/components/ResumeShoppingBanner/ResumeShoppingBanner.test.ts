@@ -57,6 +57,7 @@ function makeSession(createdAtMsAgo: number): ShoppingSession {
     updatedAt: now,
     listIds: [1],
     stores: [],
+    memberIds: ['admin'],
   }
 }
 

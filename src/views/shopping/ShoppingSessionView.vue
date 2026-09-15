@@ -270,13 +270,17 @@ const selfUid = getCurrentUserId()
 const isPrivate = computed(() => session.value?.isPrivate ?? false)
 const privacyLabel = computed(() => (isPrivate.value ? strings.privacyOn : strings.privacyOff))
 
-// Housemates (not the caller) attributed to each store, for the store-bar avatars.
+// Housemates (not the caller) attributed to each store, for the store-bar
+// avatars. A trip is attributed as a whole, so everyone shopping it — the
+// shopper who started it and whoever joined — shows at its active store.
 const presenceByStore = computed(() => {
   const map = new Map<number, string[]>()
   for (const entry of presence.value) {
-    if (entry.userId === selfUid || entry.activeStoreId == null) continue
+    if (entry.activeStoreId == null) continue
     const list = map.get(entry.activeStoreId) ?? []
-    list.push(entry.userId)
+    for (const uid of entry.memberIds) {
+      if (uid !== selfUid && !list.includes(uid)) list.push(uid)
+    }
     map.set(entry.activeStoreId, list)
   }
   return map
@@ -386,6 +390,23 @@ async function loadItems() {
   items.value = fetched.filter((i) => !doneIds.has(i.id) && !skippedIds.value.has(i.id))
 }
 
+// Toggles in flight. The check log is the shared source of truth for a trip, so
+// a poll overwrites the Done drawer from it — but doing that mid-toggle would
+// briefly undo the optimistic move the user just saw.
+let togglesInFlight = 0
+
+// Pull the shared check log back into the Done drawer, so items a housemate
+// checked off show up here rather than silently vanishing from the buy list.
+async function syncDoneItems() {
+  if (!session.value || togglesInFlight > 0) return
+  try {
+    const review = await getReview(houseIdNum.value, session.value.id)
+    doneItems.value = review.stores.flatMap((s) => s.items)
+  } catch {
+    /* keep the last-known drawer */
+  }
+}
+
 // Whole-row check records the item in the session log against the active store.
 // Checked items move into the Done drawer (kept visible so they can be
 // un-checked); un-checking moves them back. Optimistic, with a revert on failure.
@@ -397,6 +418,7 @@ async function handleToggle(id: number) {
     const [item] = items.value.splice(uncheckedIdx, 1)
     item.done = true
     doneItems.value = [item, ...doneItems.value]
+    togglesInFlight++
     try {
       await checkSessionItem(houseIdNum.value, sessionId, item.id)
     } catch (e) {
@@ -404,6 +426,8 @@ async function handleToggle(id: number) {
       item.done = false
       items.value.splice(uncheckedIdx, 0, item)
       showError((e as Error).message || strings.checkFailed)
+    } finally {
+      togglesInFlight--
     }
     return
   }
@@ -412,6 +436,7 @@ async function handleToggle(id: number) {
     const [item] = doneItems.value.splice(doneIdx, 1)
     item.done = false
     items.value = [...items.value, item]
+    togglesInFlight++
     try {
       await uncheckSessionItem(houseIdNum.value, sessionId, item.id)
     } catch (e) {
@@ -419,6 +444,8 @@ async function handleToggle(id: number) {
       item.done = true
       doneItems.value.splice(doneIdx, 0, item)
       showError((e as Error).message || strings.checkFailed)
+    } finally {
+      togglesInFlight--
     }
   }
 }
@@ -543,13 +570,28 @@ async function finish() {
 let pollTimer: ReturnType<typeof setInterval> | null = null
 const POLL_MS = 60000
 
-function pollTick() {
-  void loadItems()
+// A shared trip ends for everyone the moment any of its shoppers finishes it,
+// so each tick confirms the trip is still ours and still live before syncing.
+async function pollTick() {
+  try {
+    const current = await getCurrentSession()
+    if (!current || current.id !== sessionIdNum.value || !current.live) {
+      showInfo(strings.endedByHousemate)
+      await router.replace({ name: 'lists', params: { houseId: String(houseIdNum.value) } })
+      return
+    }
+    session.value = current
+  } catch {
+    // A failed probe is not evidence the trip ended; keep shopping.
+    return
+  }
+  await syncDoneItems()
+  await loadItems()
   void pollPresence()
 }
 
 function onVisibility() {
-  if (document.visibilityState === 'visible') pollTick()
+  if (document.visibilityState === 'visible') void pollTick()
 }
 
 onMounted(async () => {
@@ -588,7 +630,7 @@ onMounted(async () => {
     // Seed presence immediately (also stamps our first heartbeat), then poll.
     await pollPresence()
     pollTimer = setInterval(() => {
-      if (document.visibilityState === 'visible') pollTick()
+      if (document.visibilityState === 'visible') void pollTick()
     }, POLL_MS)
     document.addEventListener('visibilitychange', onVisibility)
   } catch (e) {
@@ -608,6 +650,7 @@ const strings = {
   nextStore: t('pantry', 'Next store'),
   finish: t('pantry', 'Finish'),
   finished: t('pantry', 'Shopping trip finished'),
+  endedByHousemate: t('pantry', 'This shopping trip was finished'),
   emptyStoreTitle: t('pantry', 'All checked off here'),
   emptyStoreBody: t('pantry', 'Move on to the next store when you are ready.'),
   emptyDoneTitle: t('pantry', 'All done'),

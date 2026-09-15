@@ -244,6 +244,7 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     listIds: list<int>,
  *     stores: list<PantryShoppingSessionStore>,
+ *     memberIds: list<string>,
  * }
  *
  * @psalm-type PantryShoppingEstimate = list<array{
@@ -280,8 +281,10 @@ namespace OCA\Pantry;
  *
  * @psalm-type PantryShoppingPresenceEntry = array{
  *     userId: string,
+ *     sessionId: int,
  *     activeStoreId: int|null,
  *     lastSeenAt: int,
+ *     memberIds: list<string>,
  * }
  *
  * @psalm-type PantryShoppingHistoryRow = array{

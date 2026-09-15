@@ -69,6 +69,26 @@ export async function closeSession(houseId: number, sessionId: number): Promise<
   return resp.data
 }
 
+/**
+ * Join a housemate's trip. A 409 means the caller still has a live trip of
+ * their own — the body carries it so the caller can offer to end it first.
+ */
+export async function joinSession(
+  houseId: number,
+  sessionId: number,
+): Promise<{ status: 'joined' | 'conflict'; session: ShoppingSession }> {
+  const resp = await ocs.post<ShoppingSession>(
+    `/houses/${houseId}/shopping/sessions/${sessionId}/join`,
+    {},
+    { validateStatus: (s) => s === 200 || s === 409 },
+  )
+  return { status: resp.status === 409 ? 'conflict' : 'joined', session: resp.data }
+}
+
+export async function leaveSession(houseId: number, sessionId: number): Promise<void> {
+  await ocs.post(`/houses/${houseId}/shopping/sessions/${sessionId}/leave`, {})
+}
+
 export async function listSessionItems(
   houseId: number,
   sessionId: number,

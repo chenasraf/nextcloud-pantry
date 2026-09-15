@@ -1610,12 +1610,18 @@
                 "type": "object",
                 "required": [
                     "userId",
+                    "sessionId",
                     "activeStoreId",
-                    "lastSeenAt"
+                    "lastSeenAt",
+                    "memberIds"
                 ],
                 "properties": {
                     "userId": {
                         "type": "string"
+                    },
+                    "sessionId": {
+                        "type": "integer",
+                        "format": "int64"
                     },
                     "activeStoreId": {
                         "type": "integer",
@@ -1625,6 +1631,12 @@
                     "lastSeenAt": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "memberIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 }
             },
@@ -1752,7 +1764,8 @@
                     "createdAt",
                     "updatedAt",
                     "listIds",
-                    "stores"
+                    "stores",
+                    "memberIds"
                 ],
                 "properties": {
                     "id": {
@@ -1817,6 +1830,12 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/ShoppingSessionStore"
+                        }
+                    },
+                    "memberIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
                         }
                     }
                 }
@@ -16821,6 +16840,256 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/join": {
+            "post": {
+                "operationId": "shopping_session-join",
+                "summary": "Join a housemate's shopping session",
+                "description": "Shops the same trip rather than starting a parallel one: both shoppers see the same items, checks land in the same log, and whoever ends the trip ends it for everyone. The trip must be live and not private.\nA caller who still has a live trip of their own gets 409 with that trip in the body — end it first, then join.",
+                "tags": [
+                    "shopping_session"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "description": "Session id to join.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Joined the session",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ShoppingSession"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The caller has a live session, or the target session is closed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ShoppingSession"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/leave": {
+            "post": {
+                "operationId": "shopping_session-leave",
+                "summary": "Leave a shopping session you joined",
+                "description": "Steps out without ending the trip for the others. The shopper who started the trip cannot leave it — closing it is the only way out.",
+                "tags": [
+                    "shopping_session"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "description": "Session id to leave.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Left the session",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/Success"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/items": {
             "get": {
                 "operationId": "shopping_session-items",
@@ -18222,6 +18491,7 @@
             "patch": {
                 "operationId": "shopping_session-amend-store-billed",
                 "summary": "Amend the actual paid amount for a store in a session",
+                "description": "The totals belong to the trip, not to the shopper who started it: anyone shopping it may correct what was paid at a till they stood at. Once the trip closes its joined members are no longer on it, leaving the starter as the only one who can amend a finished trip.",
                 "tags": [
                     "shopping_session"
                 ],
@@ -18366,6 +18636,7 @@
             "patch": {
                 "operationId": "shopping_session-amend-session-billed",
                 "summary": "Amend the storeless-session grand total",
+                "description": "Amendable by anyone shopping the trip, on the same terms as a store's total.",
                 "tags": [
                     "shopping_session"
                 ],

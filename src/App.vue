@@ -3,6 +3,7 @@
     <router-view name="navigation" />
     <NcAppContent id="pantry-main">
       <ResumeShoppingBanner />
+      <JoinShoppingBanner />
       <div id="pantry-router">
         <div v-if="isRouterLoading" class="router-loading">
           <NcLoadingIcon :size="48" />
@@ -18,6 +19,7 @@ import NcContent from '@nextcloud/vue/components/NcContent'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { ResumeShoppingBanner } from '@/components/ResumeShoppingBanner'
+import { JoinShoppingBanner } from '@/components/JoinShoppingBanner'
 
 export default {
   name: 'PantryApp',
@@ -26,6 +28,7 @@ export default {
     NcAppContent,
     NcLoadingIcon,
     ResumeShoppingBanner,
+    JoinShoppingBanner,
   },
   provide() {
     return { 'NcContent:setHasAppNavigation': () => true }

@@ -143,7 +143,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function advance(int $houseId, int $sessionId, int $storeId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $storeId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$updated = $this->sessions->advance($session, $storeId);
 			return new DataResponse($this->sessions->composeDto($updated));
 		});
@@ -168,13 +168,70 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function close(int $houseId, int $sessionId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			try {
 				$closed = $this->sessions->close($session);
 			} catch (ShoppingSessionConflictException $e) {
 				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
 			}
 			return new DataResponse($this->sessions->composeDto($closed));
+		});
+	}
+
+	/**
+	 * Join a housemate's shopping session
+	 *
+	 * Shops the same trip rather than starting a parallel one: both shoppers see
+	 * the same items, checks land in the same log, and whoever ends the trip ends
+	 * it for everyone. The trip must be live and not private.
+	 *
+	 * A caller who still has a live trip of their own gets 409 with that trip in
+	 * the body — end it first, then join.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id to join.
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_CONFLICT, PantryShoppingSession, array{}>
+	 *
+	 * 200: Joined the session
+	 * 409: The caller has a live session, or the target session is closed
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/join')]
+	#[NoAdminRequired]
+	#[Permission(['canCheckItems'])]
+	public function join(int $houseId, int $sessionId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadJoinableSession($sessionId, $houseId);
+			try {
+				$joined = $this->sessions->join($session, $this->requireUid());
+			} catch (ShoppingSessionConflictException $e) {
+				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
+			}
+			return new DataResponse($this->sessions->composeDto($joined));
+		});
+	}
+
+	/**
+	 * Leave a shopping session you joined
+	 *
+	 * Steps out without ending the trip for the others. The shopper who started
+	 * the trip cannot leave it — closing it is the only way out.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id to leave.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Left the session
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/leave')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function leave(int $houseId, int $sessionId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadJoinedSession($sessionId, $houseId);
+			$this->sessions->leave($session, $this->requireUid());
+			return new DataResponse(['success' => true]);
 		});
 	}
 
@@ -197,7 +254,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function items(int $houseId, int $sessionId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$items = $this->sessions->itemsForSession($session);
 			return new DataResponse($this->serializeItems($items));
 		});
@@ -223,7 +280,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function removedItems(int $houseId, int $sessionId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$items = $this->sessions->removedItemsForSession($session);
 			return new DataResponse($this->serializeItems($items));
 		});
@@ -248,7 +305,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canCheckItems'])]
 	public function checkItem(int $houseId, int $sessionId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$this->assertItemInScope($session, $itemId);
 			$this->sessions->checkItem($session, $itemId, $this->requireUid());
 			return new DataResponse(['success' => true]);
@@ -271,7 +328,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canCheckItems'])]
 	public function uncheckItem(int $houseId, int $sessionId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$this->sessions->uncheckItem($session, $itemId);
 			return new DataResponse(['success' => true]);
 		});
@@ -296,7 +353,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canCheckItems'])]
 	public function skipItem(int $houseId, int $sessionId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$this->assertItemInScope($session, $itemId);
 			$this->sessions->skipItem($session, $itemId);
 			return new DataResponse(['success' => true]);
@@ -319,7 +376,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canCheckItems'])]
 	public function unskipItem(int $houseId, int $sessionId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$this->sessions->unskipItem($session, $itemId);
 			return new DataResponse(['success' => true]);
 		});
@@ -344,7 +401,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function review(int $houseId, int $sessionId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			return new DataResponse($this->sessions->review($session));
 		});
 	}
@@ -482,6 +539,11 @@ final class ShoppingSessionController extends OCSController {
 	/**
 	 * Amend the actual paid amount for a store in a session
 	 *
+	 * The totals belong to the trip, not to the shopper who started it: anyone
+	 * shopping it may correct what was paid at a till they stood at. Once the
+	 * trip closes its joined members are no longer on it, leaving the starter
+	 * as the only one who can amend a finished trip.
+	 *
 	 * @param int $houseId House id.
 	 * @param int $sessionId Session id.
 	 * @param int $storeId Store id (must be in the session's sequence).
@@ -497,7 +559,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function amendStoreBilled(int $houseId, int $sessionId, int $storeId, ?float $billedTotal = null, ?string $billedCurrency = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $storeId, $billedTotal, $billedCurrency): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$this->sessions->amendStoreBilled($session, $storeId, $billedTotal, $billedCurrency);
 			return new DataResponse($this->sessions->composeDto($session));
 		});
@@ -505,6 +567,9 @@ final class ShoppingSessionController extends OCSController {
 
 	/**
 	 * Amend the storeless-session grand total
+	 *
+	 * Amendable by anyone shopping the trip, on the same terms as a store's
+	 * total.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $sessionId Session id.
@@ -520,7 +585,7 @@ final class ShoppingSessionController extends OCSController {
 	#[Permission(['canViewLists'])]
 	public function amendSessionBilled(int $houseId, int $sessionId, ?float $billedTotal = null, ?string $billedCurrency = null): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $billedTotal, $billedCurrency): DataResponse {
-			$session = $this->loadOwnedSession($sessionId, $houseId);
+			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$updated = $this->sessions->amendSessionBilled($session, $billedTotal, $billedCurrency);
 			return new DataResponse($this->sessions->composeDto($updated));
 		});
@@ -539,13 +604,47 @@ final class ShoppingSessionController extends OCSController {
 
 	/**
 	 * Load a session and assert it belongs to this house and to the caller.
-	 * Members can only act on their own session.
+	 * Reserved for actions only the shopper who started the trip may take.
 	 */
 	private function loadOwnedSession(int $sessionId, int $houseId): ShoppingSession {
 		$uid = $this->requireUid();
 		$this->auth->requireMember($houseId, $uid);
 		$session = $this->sessions->get($sessionId);
 		if ($session->getHouseId() !== $houseId || $session->getUserId() !== $uid) {
+			throw new NotFoundException('Shopping session not found');
+		}
+		return $session;
+	}
+
+	/**
+	 * Load a session the caller is shopping — as its starter or as a housemate
+	 * who joined it. The gate for everything done *during* a trip, so a joined
+	 * housemate checks items, advances stores and ends the trip exactly as the
+	 * starter does.
+	 */
+	private function loadJoinedSession(int $sessionId, int $houseId): ShoppingSession {
+		$uid = $this->requireUid();
+		$this->auth->requireMember($houseId, $uid);
+		$session = $this->sessions->get($sessionId);
+		if ($session->getHouseId() !== $houseId || !$this->sessions->isMember($session, $uid)) {
+			throw new NotFoundException('Shopping session not found');
+		}
+		return $session;
+	}
+
+	/**
+	 * Load a session the caller may join: in this house, and visible to them.
+	 * A private trip is not offered to housemates, so it cannot be joined either
+	 * — the same predicate that hides it from presence and history.
+	 */
+	private function loadJoinableSession(int $sessionId, int $houseId): ShoppingSession {
+		$uid = $this->requireUid();
+		$this->auth->requireMember($houseId, $uid);
+		$session = $this->sessions->get($sessionId);
+		if ($session->getHouseId() !== $houseId) {
+			throw new NotFoundException('Shopping session not found');
+		}
+		if ($session->getUserId() !== $uid && $session->getIsPrivate()) {
 			throw new NotFoundException('Shopping session not found');
 		}
 		return $session;

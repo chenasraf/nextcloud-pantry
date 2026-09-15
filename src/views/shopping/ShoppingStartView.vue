@@ -18,12 +18,12 @@
         <!-- One-live-session guard: resume or end the existing trip. -->
         <div v-if="existing" class="shop-start__guard">
           <p class="shop-start__guard-text">
-            {{ existingSameHouse ? strings.guardHere : guardOtherText }}
+            {{ guardText }}
           </p>
           <div class="shop-start__guard-actions">
             <NcButton variant="primary" @click="resumeExisting">{{ strings.resume }}</NcButton>
             <NcButton variant="secondary" :disabled="ending" @click="endExisting">
-              {{ strings.endPrevious }}
+              {{ existingIsMine ? strings.endPrevious : strings.leaveTrip }}
             </NcButton>
           </div>
         </div>
@@ -158,7 +158,13 @@ import { useHouses } from '@/composables/useHouses'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { listAllItems } from '@/api/lists'
-import { createSession, getCurrentSession, closeSession as apiCloseSession } from '@/api/shopping'
+import {
+  createSession,
+  getCurrentSession,
+  closeSession as apiCloseSession,
+  leaveSession,
+} from '@/api/shopping'
+import { getCurrentUserId } from '@/utils/currentUser'
 import type { ChecklistItem, ShoppingSession } from '@/api/types'
 
 const route = useRoute()
@@ -189,6 +195,13 @@ const guardOtherText = computed(() => {
   return name
     ? t('pantry', 'You have a shopping trip in progress in {house}.', { house: name })
     : strings.guardOther
+})
+
+const existingIsMine = computed(() => existing.value?.userId === getCurrentUserId())
+
+const guardText = computed(() => {
+  if (!existingIsMine.value) return strings.guardJoined
+  return existingSameHouse.value ? strings.guardHere : guardOtherText.value
 })
 
 const allSelected = computed(
@@ -433,11 +446,19 @@ function resumeExisting() {
   if (existing.value) void goToSession(existing.value)
 }
 
+// A trip the shopper merely joined is someone else's: stepping out of it clears
+// the guard, whereas closing it would end a housemate's trip from a screen that
+// only promised to clear the way for a new one.
 async function endExisting() {
-  if (!existing.value) return
+  const trip = existing.value
+  if (!trip) return
   ending.value = true
   try {
-    await apiCloseSession(existing.value.houseId, existing.value.id)
+    if (existingIsMine.value) {
+      await apiCloseSession(trip.houseId, trip.id)
+    } else {
+      await leaveSession(trip.houseId, trip.id)
+    }
     existing.value = null
     selectedListIds.value = initialSelection()
   } catch (e) {
@@ -475,6 +496,9 @@ const strings = {
   guardOther: t('pantry', 'You have a shopping trip in progress in another house.'),
   resume: t('pantry', 'Resume'),
   endPrevious: t('pantry', 'End previous trip'),
+  // TRANSLATORS: Verb, button that steps the shopper out of a housemate's trip without ending it for the others
+  leaveTrip: t('pantry', 'Leave trip'),
+  guardJoined: t('pantry', 'You are shopping a trip with a housemate.'),
   loadFailed: t('pantry', 'Could not load shopping setup.'),
   startFailed: t('pantry', 'Could not start shopping.'),
   endFailed: t('pantry', 'Could not end the previous trip.'),

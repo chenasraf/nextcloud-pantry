@@ -276,6 +276,8 @@ export interface ShoppingSession {
   updatedAt: number
   listIds: number[]
   stores: ShoppingSessionStore[]
+  /** Everyone shopping this trip: the shopper who started it, then whoever joined. */
+  memberIds: string[]
 }
 
 /** A per-currency total, range-aware (min === max for a point value). */
@@ -337,9 +339,13 @@ export interface ShoppingReminder {
 /** One present shopper in a house's derived shopping presence. */
 export interface ShoppingPresenceEntry {
   userId: string
+  /** The trip itself, so a housemate can join it straight from the presence read. */
+  sessionId: number
   /** The store the shopper is attributed to; null = live but no store chosen. */
   activeStoreId: number | null
   lastSeenAt: number
+  /** Everyone already shopping this trip, starter first. */
+  memberIds: string[]
 }
 
 export interface Note {

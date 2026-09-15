@@ -16,6 +16,8 @@ use OCA\Pantry\Db\ShoppingSessionItem;
 use OCA\Pantry\Db\ShoppingSessionItemMapper;
 use OCA\Pantry\Db\ShoppingSessionListMapper;
 use OCA\Pantry\Db\ShoppingSessionMapper;
+use OCA\Pantry\Db\ShoppingSessionMember;
+use OCA\Pantry\Db\ShoppingSessionMemberMapper;
 use OCA\Pantry\Db\ShoppingSessionSkip;
 use OCA\Pantry\Db\ShoppingSessionSkipMapper;
 use OCA\Pantry\Db\ShoppingSessionStore;
@@ -45,6 +47,7 @@ class ShoppingSessionService {
 		private ShoppingSessionStoreMapper $sessionStores,
 		private ShoppingSessionItemMapper $sessionItems,
 		private ShoppingSessionSkipMapper $sessionSkips,
+		private ShoppingSessionMemberMapper $sessionMembers,
 		private ChecklistItemMapper $items,
 		private ItemStoreMapper $itemStores,
 		private ItemPriceMapper $itemPrices,
@@ -62,10 +65,118 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * The caller's live session, across all houses, or null.
+	 * The caller's live session, across all houses, or null. A trip they joined
+	 * counts as theirs; their own trip wins if somehow both exist.
 	 */
 	public function findCurrentForUser(string $uid): ?ShoppingSession {
-		return $this->sessions->findLiveByUser($uid);
+		$own = $this->sessions->findLiveByUser($uid);
+		if ($own !== null) {
+			return $own;
+		}
+		$joinedId = $this->sessionMembers->findLiveJoinedSessionId($uid);
+		if ($joinedId === null) {
+			return null;
+		}
+		try {
+			return $this->sessions->findById($joinedId);
+		} catch (DoesNotExistException) {
+			return null;
+		}
+	}
+
+	/**
+	 * Whether the user is in this trip, as its starter or as a joined housemate.
+	 */
+	public function isMember(ShoppingSession $session, string $uid): bool {
+		if ($session->getUserId() === $uid) {
+			return true;
+		}
+		$member = $this->sessionMembers->findBySessionAndUser((int)$session->getId(), $uid);
+		return $member !== null && $member->getLeftAt() === null;
+	}
+
+	/**
+	 * Everyone in a trip: its starter first, then joined housemates by join time.
+	 *
+	 * @return list<string>
+	 */
+	public function memberUserIds(ShoppingSession $session): array {
+		$uids = [$session->getUserId()];
+		foreach ($this->sessionMembers->findActiveBySession((int)$session->getId()) as $member) {
+			$uids[] = $member->getUserId();
+		}
+		return array_values(array_unique($uids));
+	}
+
+	/**
+	 * Join a housemate to a live trip. Idempotent — joining a trip you are
+	 * already in is a no-op rather than an error, so a double-tapped banner
+	 * cannot fail. Rejoining after leaving clears `left_at` on the same row.
+	 *
+	 * The caller is responsible for ending the joiner's own live trip first;
+	 * this throws rather than silently abandoning it.
+	 *
+	 * @throws ShoppingSessionConflictException when the trip is closed, or the
+	 *                                          joiner still has a live trip of their own.
+	 */
+	public function join(ShoppingSession $session, string $uid, ?int $now = null): ShoppingSession {
+		if ($session->getClosedAt() !== null) {
+			throw new ShoppingSessionConflictException($session, 'Shopping session is already closed');
+		}
+		if ($session->getUserId() === $uid) {
+			return $session;
+		}
+		$own = $this->sessions->findLiveByUser($uid);
+		if ($own !== null) {
+			throw new ShoppingSessionConflictException($own, 'End your own shopping session before joining another');
+		}
+
+		$now ??= time();
+		// A shopper is on one trip at a time. Joining a second one moves them,
+		// rather than leaving them listed as a shopper on a trip they walked away
+		// from — which would keep showing their avatar at its store.
+		$previousId = $this->sessionMembers->findLiveJoinedSessionId($uid);
+		if ($previousId !== null && $previousId !== (int)$session->getId()) {
+			$previous = $this->sessionMembers->findBySessionAndUser($previousId, $uid);
+			if ($previous !== null) {
+				$previous->setLeftAt($now);
+				$this->sessionMembers->update($previous);
+			}
+		}
+
+		$existing = $this->sessionMembers->findBySessionAndUser((int)$session->getId(), $uid);
+		if ($existing !== null) {
+			if ($existing->getLeftAt() === null) {
+				return $session;
+			}
+			$existing->setLeftAt(null);
+			$existing->setJoinedAt($now);
+			$this->sessionMembers->update($existing);
+			return $session;
+		}
+
+		$member = new ShoppingSessionMember();
+		$member->setSessionId((int)$session->getId());
+		$member->setUserId($uid);
+		$member->setJoinedAt($now);
+		$this->sessionMembers->insert($member);
+		return $session;
+	}
+
+	/**
+	 * Step out of a trip without ending it for everyone else. The starter cannot
+	 * leave their own trip — closing it is the only way out.
+	 */
+	public function leave(ShoppingSession $session, string $uid, ?int $now = null): void {
+		if ($session->getUserId() === $uid) {
+			throw new \InvalidArgumentException('The shopper who started this trip cannot leave it');
+		}
+		$member = $this->sessionMembers->findBySessionAndUser((int)$session->getId(), $uid);
+		if ($member === null || $member->getLeftAt() !== null) {
+			return;
+		}
+		$member->setLeftAt($now ?? time());
+		$this->sessionMembers->update($member);
 	}
 
 	/**
@@ -76,7 +187,7 @@ class ShoppingSessionService {
 	 * doesn't stamp; the presence read still returns.
 	 */
 	public function heartbeat(int $houseId, string $uid, ?int $now = null): void {
-		$session = $this->sessions->findLiveByUser($uid);
+		$session = $this->findCurrentForUser($uid);
 		if ($session === null || $session->getHouseId() !== $houseId) {
 			return;
 		}
@@ -91,17 +202,29 @@ class ShoppingSessionService {
 	 * house, each attributed to its active store. Not self-filtered — the caller's
 	 * own session is included; the client decides whether to render it.
 	 *
-	 * @return list<array{userId: string, activeStoreId: int|null, lastSeenAt: int}>
+	 * Each entry carries its session id and member list so a housemate can join
+	 * the trip straight from the presence read.
+	 *
+	 * @return list<array{userId: string, sessionId: int, activeStoreId: int|null, lastSeenAt: int, memberIds: list<string>}>
 	 */
 	public function presence(int $houseId, ?int $now = null): array {
 		$now ??= time();
 		$cutoff = $now - self::PRESENCE_STALE_SECONDS;
+		$sessions = $this->sessions->findPresentInHouse($houseId, $cutoff);
+		$ids = array_map(static fn (ShoppingSession $s): int => (int)$s->getId(), $sessions);
+		$memberMap = $this->sessionMembers->findActiveUserIdsForSessions(array_values($ids));
 		$out = [];
-		foreach ($this->sessions->findPresentInHouse($houseId, $cutoff) as $session) {
+		foreach ($sessions as $session) {
+			$sessionId = (int)$session->getId();
 			$out[] = [
 				'userId' => $session->getUserId(),
+				'sessionId' => $sessionId,
 				'activeStoreId' => $session->getActiveStoreId(),
 				'lastSeenAt' => (int)$session->getLastSeenAt(),
+				'memberIds' => array_values(array_unique(array_merge(
+					[$session->getUserId()],
+					$memberMap[$sessionId] ?? [],
+				))),
 			];
 		}
 		return $out;
@@ -121,7 +244,9 @@ class ShoppingSessionService {
 	 * @throws ShoppingSessionConflictException when a live session already exists.
 	 */
 	public function create(int $houseId, string $uid, array $listIds, array $storeIds, bool $includeUnassigned): ShoppingSession {
-		$existing = $this->sessions->findLiveByUser($uid);
+		// Counts a joined housemate's trip too, so starting a second trip while
+		// out shopping with someone is the same 409 as starting two of your own.
+		$existing = $this->findCurrentForUser($uid);
 		if ($existing !== null) {
 			throw new ShoppingSessionConflictException($existing, 'A live shopping session already exists');
 		}
@@ -188,6 +313,9 @@ class ShoppingSessionService {
 		$session->setLastSeenAt($now);
 		$session->setUpdatedAt($now);
 		$this->sessions->update($session);
+		// Ending a shared trip ends it for everyone in it — no membership row
+		// may outlive its session, or its holder keeps resolving to a dead trip.
+		$this->sessionMembers->markAllLeft((int)$session->getId(), $now);
 		return $session;
 	}
 
@@ -209,6 +337,7 @@ class ShoppingSessionService {
 			$session->setClosedAt((int)$session->getLastSeenAt());
 			$session->setUpdatedAt($now);
 			$this->sessions->update($session);
+			$this->sessionMembers->markAllLeft((int)$session->getId(), $now);
 		}
 		return count($stale);
 	}
@@ -230,6 +359,7 @@ class ShoppingSessionService {
 		$aged = $this->sessions->findClosedBefore($cutoff);
 		foreach ($aged as $session) {
 			$sessionId = (int)$session->getId();
+			$this->sessionMembers->deleteBySession($sessionId);
 			$this->sessionItems->deleteBySession($sessionId);
 			$this->sessionSkips->deleteBySession($sessionId);
 			$this->sessionStores->deleteBySession($sessionId);
@@ -858,6 +988,7 @@ class ShoppingSessionService {
 			static fn ($s) => $s->jsonSerialize(),
 			$this->sessionStores->findBySession($sessionId),
 		);
+		$data['memberIds'] = $this->memberUserIds($session);
 		return $data;
 	}
 }

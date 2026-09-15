@@ -16,6 +16,8 @@ use OCA\Pantry\Db\ShoppingSessionItem;
 use OCA\Pantry\Db\ShoppingSessionItemMapper;
 use OCA\Pantry\Db\ShoppingSessionListMapper;
 use OCA\Pantry\Db\ShoppingSessionMapper;
+use OCA\Pantry\Db\ShoppingSessionMember;
+use OCA\Pantry\Db\ShoppingSessionMemberMapper;
 use OCA\Pantry\Db\ShoppingSessionSkip;
 use OCA\Pantry\Db\ShoppingSessionSkipMapper;
 use OCA\Pantry\Db\ShoppingSessionStore;
@@ -41,6 +43,8 @@ class ShoppingSessionServiceTest extends TestCase {
 	private ShoppingSessionItemMapper $sessionItems;
 	/** @var ShoppingSessionSkipMapper&MockObject */
 	private ShoppingSessionSkipMapper $sessionSkips;
+	/** @var ShoppingSessionMemberMapper&MockObject */
+	private ShoppingSessionMemberMapper $sessionMembers;
 	/** @var ChecklistItemMapper&MockObject */
 	private ChecklistItemMapper $items;
 	/** @var ItemStoreMapper&MockObject */
@@ -67,6 +71,7 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->sessionStores = $this->createMock(ShoppingSessionStoreMapper::class);
 		$this->sessionItems = $this->createMock(ShoppingSessionItemMapper::class);
 		$this->sessionSkips = $this->createMock(ShoppingSessionSkipMapper::class);
+		$this->sessionMembers = $this->createMock(ShoppingSessionMemberMapper::class);
 		$this->items = $this->createMock(ChecklistItemMapper::class);
 		$this->itemStores = $this->createMock(ItemStoreMapper::class);
 		$this->itemPrices = $this->createMock(ItemPriceMapper::class);
@@ -85,6 +90,7 @@ class ShoppingSessionServiceTest extends TestCase {
 			$this->sessionStores,
 			$this->sessionItems,
 			$this->sessionSkips,
+			$this->sessionMembers,
 			$this->items,
 			$this->itemStores,
 			$this->itemPrices,
@@ -179,6 +185,25 @@ class ShoppingSessionServiceTest extends TestCase {
 		} catch (ShoppingSessionConflictException $e) {
 			$this->assertSame($existing, $e->getSession());
 		}
+	}
+
+	public function testCreateIsUnaffectedByAHousemateShoppingSeparately(): void {
+		// Joining is an offer, never a requirement: a live trip belonging to
+		// someone the caller has not joined must not block their own.
+		$this->sessions->method('findLiveByUser')->with('bob')->willReturn(null);
+		$this->sessionMembers->method('findLiveJoinedSessionId')->with('bob')->willReturn(null);
+		$this->sessions->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ShoppingSession $s) {
+				$ref = new \ReflectionProperty($s, 'id');
+				$ref->setValue($s, 43);
+				return $s;
+			});
+
+		$session = $this->svc->create(1, 'bob', [10], [], true);
+
+		$this->assertSame('bob', $session->getUserId());
+		$this->assertNull($session->getClosedAt());
 	}
 
 	public function testCreateRejectsEmptyLists(): void {
@@ -657,16 +682,161 @@ class ShoppingSessionServiceTest extends TestCase {
 			->method('findPresentInHouse')
 			->with(1, $now - ShoppingSessionService::PRESENCE_STALE_SECONDS)
 			->willReturn([
-				$this->makeSession(['userId' => 'alice', 'activeStoreId' => 3, 'lastSeenAt' => 99000]),
-				$this->makeSession(['userId' => 'bob', 'activeStoreId' => null, 'lastSeenAt' => 99500]),
+				$this->makeSession(['id' => 7, 'userId' => 'alice', 'activeStoreId' => 3, 'lastSeenAt' => 99000]),
+				$this->makeSession(['id' => 8, 'userId' => 'bob', 'activeStoreId' => null, 'lastSeenAt' => 99500]),
 			]);
+		$this->sessionMembers->expects($this->once())
+			->method('findActiveUserIdsForSessions')
+			->with([7, 8])
+			->willReturn([7 => ['carol']]);
 
 		$presence = $this->svc->presence(1, $now);
 
 		$this->assertSame([
-			['userId' => 'alice', 'activeStoreId' => 3, 'lastSeenAt' => 99000],
-			['userId' => 'bob', 'activeStoreId' => null, 'lastSeenAt' => 99500],
+			['userId' => 'alice', 'sessionId' => 7, 'activeStoreId' => 3, 'lastSeenAt' => 99000, 'memberIds' => ['alice', 'carol']],
+			['userId' => 'bob', 'sessionId' => 8, 'activeStoreId' => null, 'lastSeenAt' => 99500, 'memberIds' => ['bob']],
 		], $presence);
+	}
+
+	public function testJoinAddsMemberToLiveSession(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$this->sessions->method('findLiveByUser')->with('bob')->willReturn(null);
+		$this->sessionMembers->method('findBySessionAndUser')->with(7, 'bob')->willReturn(null);
+		$this->sessionMembers->expects($this->once())
+			->method('insert')
+			->with($this->callback(static fn (ShoppingSessionMember $m): bool
+				=> $m->getSessionId() === 7 && $m->getUserId() === 'bob' && $m->getJoinedAt() === 4242))
+			->willReturnArgument(0);
+
+		$this->svc->join($session, 'bob', 4242);
+	}
+
+	public function testJoinIsIdempotentForAnExistingMember(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$member = new ShoppingSessionMember();
+		$member->setSessionId(7);
+		$member->setUserId('bob');
+		$this->sessions->method('findLiveByUser')->with('bob')->willReturn(null);
+		$this->sessionMembers->method('findBySessionAndUser')->with(7, 'bob')->willReturn($member);
+		$this->sessionMembers->expects($this->never())->method('insert');
+		$this->sessionMembers->expects($this->never())->method('update');
+
+		$this->svc->join($session, 'bob', 4242);
+	}
+
+	public function testJoinReopensTheRowAfterLeaving(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$member = new ShoppingSessionMember();
+		$member->setSessionId(7);
+		$member->setUserId('bob');
+		$member->setLeftAt(100);
+		$this->sessions->method('findLiveByUser')->with('bob')->willReturn(null);
+		$this->sessionMembers->method('findBySessionAndUser')->with(7, 'bob')->willReturn($member);
+		$this->sessionMembers->expects($this->never())->method('insert');
+		$this->sessionMembers->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$this->svc->join($session, 'bob', 4242);
+
+		$this->assertNull($member->getLeftAt());
+		$this->assertSame(4242, $member->getJoinedAt());
+	}
+
+	public function testJoinMovesTheShopperOutOfADifferentJoinedTrip(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$previous = new ShoppingSessionMember();
+		$previous->setSessionId(3);
+		$previous->setUserId('bob');
+		$this->sessions->method('findLiveByUser')->with('bob')->willReturn(null);
+		$this->sessionMembers->method('findLiveJoinedSessionId')->with('bob')->willReturn(3);
+		$this->sessionMembers->method('findBySessionAndUser')->willReturnMap([
+			[3, 'bob', $previous],
+			[7, 'bob', null],
+		]);
+		$this->sessionMembers->expects($this->once())->method('update')->willReturnArgument(0);
+		$this->sessionMembers->expects($this->once())->method('insert')->willReturnArgument(0);
+
+		$this->svc->join($session, 'bob', 4242);
+
+		$this->assertSame(4242, $previous->getLeftAt());
+	}
+
+	public function testJoinIsANoopForTheSessionOwner(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$this->sessionMembers->expects($this->never())->method('insert');
+
+		$this->svc->join($session, 'alice', 4242);
+	}
+
+	public function testJoinConflictsWhenTheJoinerHasTheirOwnLiveTrip(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$own = $this->makeSession(['id' => 9, 'userId' => 'bob']);
+		$this->sessions->method('findLiveByUser')->with('bob')->willReturn($own);
+		$this->sessionMembers->expects($this->never())->method('insert');
+
+		$this->expectException(ShoppingSessionConflictException::class);
+		$this->svc->join($session, 'bob', 4242);
+	}
+
+	public function testJoinConflictsWhenTheSessionIsClosed(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice', 'closedAt' => 500]);
+		$this->sessionMembers->expects($this->never())->method('insert');
+
+		$this->expectException(ShoppingSessionConflictException::class);
+		$this->svc->join($session, 'bob', 4242);
+	}
+
+	public function testClosingASharedTripReleasesEveryMember(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$this->sessionItems->method('findBySession')->willReturn([]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$this->sessionMembers->expects($this->once())->method('markAllLeft')->with(7, $this->isType('int'));
+
+		$this->svc->close($session);
+	}
+
+	public function testLeaveStampsTheMemberRowWithoutClosingTheTrip(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$member = new ShoppingSessionMember();
+		$member->setSessionId(7);
+		$member->setUserId('bob');
+		$this->sessionMembers->method('findBySessionAndUser')->with(7, 'bob')->willReturn($member);
+		$this->sessionMembers->expects($this->once())->method('update')->willReturnArgument(0);
+		$this->sessions->expects($this->never())->method('update');
+
+		$this->svc->leave($session, 'bob', 900);
+
+		$this->assertSame(900, $member->getLeftAt());
+	}
+
+	public function testTheStarterCannotLeaveTheirOwnTrip(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->leave($session, 'alice', 900);
+	}
+
+	public function testFindCurrentForUserFallsBackToAJoinedTrip(): void {
+		$joined = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$this->sessions->method('findLiveByUser')->with('bob')->willReturn(null);
+		$this->sessionMembers->method('findLiveJoinedSessionId')->with('bob')->willReturn(7);
+		$this->sessions->method('findById')->with(7)->willReturn($joined);
+
+		$this->assertSame($joined, $this->svc->findCurrentForUser('bob'));
+	}
+
+	public function testIsMemberCoversOwnerAndJoinedHousemate(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice']);
+		$member = new ShoppingSessionMember();
+		$member->setSessionId(7);
+		$member->setUserId('bob');
+		$this->sessionMembers->method('findBySessionAndUser')->willReturnMap([
+			[7, 'bob', $member],
+			[7, 'carol', null],
+		]);
+
+		$this->assertTrue($this->svc->isMember($session, 'alice'));
+		$this->assertTrue($this->svc->isMember($session, 'bob'));
+		$this->assertFalse($this->svc->isMember($session, 'carol'));
 	}
 
 	public function testSetPrivacyPersistsFlag(): void {
