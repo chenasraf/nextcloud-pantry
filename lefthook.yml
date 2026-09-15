@@ -3,28 +3,29 @@ pre-commit:
   commands:
     eslint:
       glob: "*.{ts,vue}"
-      run: pnpm eslint --fix {staged_files} && git add {staged_files}
+      run: pnpm eslint --fix {staged_files}
+      stage_fixed: true
     prettier:
       glob: "*.{scss,vue,ts,md}"
-      run: pnpm prettier --write {staged_files} && git add {staged_files}
+      run: pnpm prettier --write {staged_files}
+      stage_fixed: true
     prettier-json:
       glob: "*.json"
       exclude: "openapi.json"
-      run: pnpm prettier --write {staged_files} && git add {staged_files}
+      run: pnpm prettier --write {staged_files}
+      stage_fixed: true
     php-cs-fixer:
       glob: "*.php"
       exclude: "/gen/"
       env:
         PHP_CS_FIXER_IGNORE_ENV: "1"
       run: make php-cs-fixer && make test
+      stage_fixed: true
     openapi:
-      glob: "*Controller.php"
-      run: make openapi && git add openapi.json
-    openapi-capabilities:
-      glob: "lib/Capabilities.php"
-      run: make openapi && git add openapi.json
-    openapi-definitions:
-      glob: "lib/ResponseDefinitions.php"
+      glob:
+        - "*Controller.php"
+        - "lib/Capabilities.php"
+        - "lib/ResponseDefinitions.php"
       run: make openapi && git add openapi.json
     lint-appinfo:
       glob: "appinfo/info.xml"
