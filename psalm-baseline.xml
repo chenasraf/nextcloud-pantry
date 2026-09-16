@@ -1672,7 +1672,7 @@
   </file>
   <file src="lib/Controller/ShoppingSessionController.php">
     <LessSpecificReturnStatement>
-      <code><![CDATA[$this->runAction(function () use ($houseId, $listIds, $storeIds, $includeUnassigned): DataResponse {
+      <code><![CDATA[$this->runAction(function () use ($houseId, $listIds, $storeIds, $includeUnassigned, $itemIds): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 
@@ -1686,9 +1686,10 @@
 			}
 			$storeIds = array_map('intval', $storeIds);
 			$this->stores->assertStoresInHouse($houseId, $storeIds);
+			$itemIds = $itemIds === null ? null : array_values(array_unique(array_map('intval', $itemIds)));
 
 			try {
-				$session = $this->sessions->create($houseId, $uid, $listIds, $storeIds, $includeUnassigned);
+				$session = $this->sessions->create($houseId, $uid, $listIds, $storeIds, $includeUnassigned, $itemIds);
 			} catch (ShoppingSessionConflictException $e) {
 				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
 			}

@@ -14,6 +14,11 @@ export interface CreateSessionInput {
   storeIds: number[]
   /** Keep buy-anywhere items when narrowing by store. */
   includeUnassigned: boolean
+  /**
+   * The items to shop. Omitted (or empty) shops every item in scope; anything
+   * left out starts the trip in its Removed section, restorable while shopping.
+   */
+  itemIds?: number[]
 }
 
 /**

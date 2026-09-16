@@ -86,10 +86,14 @@ final class ShoppingSessionController extends OCSController {
 	 * One live session per user, globally: if one already exists this returns
 	 * 409 with that session in the body so the client can offer resume/end.
 	 *
+	 * Items left out of `itemIds` start the trip removed from it: they stay on
+	 * their checklist and the shopper can bring any of them back mid-trip.
+	 *
 	 * @param int $houseId House id.
 	 * @param list<int> $listIds Checklist ids in scope (at least one).
 	 * @param list<int> $storeIds Ordered store sequence (may be empty).
 	 * @param bool $includeUnassigned Keep buy-anywhere items when narrowing by store.
+	 * @param list<int>|null $itemIds Items to shop; null or empty shops every item in scope.
 	 *
 	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_CONFLICT, PantryShoppingSession, array{}>
 	 *
@@ -99,8 +103,8 @@ final class ShoppingSessionController extends OCSController {
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
-	public function create(int $houseId, array $listIds = [], array $storeIds = [], bool $includeUnassigned = true): DataResponse {
-		return $this->runAction(function () use ($houseId, $listIds, $storeIds, $includeUnassigned): DataResponse {
+	public function create(int $houseId, array $listIds = [], array $storeIds = [], bool $includeUnassigned = true, ?array $itemIds = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listIds, $storeIds, $includeUnassigned, $itemIds): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 
@@ -114,9 +118,10 @@ final class ShoppingSessionController extends OCSController {
 			}
 			$storeIds = array_map('intval', $storeIds);
 			$this->stores->assertStoresInHouse($houseId, $storeIds);
+			$itemIds = $itemIds === null ? null : array_values(array_unique(array_map('intval', $itemIds)));
 
 			try {
-				$session = $this->sessions->create($houseId, $uid, $listIds, $storeIds, $includeUnassigned);
+				$session = $this->sessions->create($houseId, $uid, $listIds, $storeIds, $includeUnassigned, $itemIds);
 			} catch (ShoppingSessionConflictException $e) {
 				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
 			}

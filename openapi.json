@@ -16776,7 +16776,7 @@
             "post": {
                 "operationId": "shopping_session-create",
                 "summary": "Start a shopping session in a house",
-                "description": "One live session per user, globally: if one already exists this returns 409 with that session in the body so the client can offer resume/end.",
+                "description": "One live session per user, globally: if one already exists this returns 409 with that session in the body so the client can offer resume/end.\nItems left out of `itemIds` start the trip removed from it: they stay on their checklist and the shopper can bring any of them back mid-trip.",
                 "tags": [
                     "shopping_session"
                 ],
@@ -16817,6 +16817,16 @@
                                         "type": "boolean",
                                         "default": true,
                                         "description": "Keep buy-anywhere items when narrowing by store."
+                                    },
+                                    "itemIds": {
+                                        "type": "array",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Items to shop; null or empty shops every item in scope.",
+                                        "items": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        }
                                     }
                                 }
                             }

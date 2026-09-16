@@ -114,10 +114,31 @@
             </NcCheckboxRadioSwitch>
           </section>
 
+          <section class="shop-start__section">
+            <button
+              type="button"
+              class="shop-start__items-tile"
+              :disabled="candidateItems.length === 0"
+              @click="itemsOpen = true"
+            >
+              <span class="shop-start__items-icon">
+                <FormatListChecksIcon :size="20" />
+              </span>
+              <span class="shop-start__items-text">
+                <span class="shop-start__items-title">{{ strings.itemsTitle }}</span>
+                <span class="shop-start__items-sub">{{ itemsSummary }}</span>
+              </span>
+              <ChevronRightIcon :size="20" />
+            </button>
+            <p v-if="nothingPicked" class="shop-start__hint shop-start__hint--warn">
+              {{ strings.itemsEmpty }}
+            </p>
+          </section>
+
           <div class="shop-start__actions">
             <NcButton
               variant="primary"
-              :disabled="starting || selectedListIds.length === 0"
+              :disabled="starting || selectedListIds.length === 0 || nothingPicked"
               @click="start"
             >
               <template #icon><CartIcon :size="20" /></template>
@@ -134,23 +155,36 @@
       :house-id="houseIdNum"
       @update:open="remindersOpen = $event"
     />
+
+    <ShoppingItemPicker
+      v-if="itemsOpen"
+      :open="itemsOpen"
+      :house-id="houseIdNum"
+      :items="candidateItems"
+      :excluded-ids="[...excludedItemIds]"
+      @update:open="itemsOpen = $event"
+      @update:excluded-ids="excludedItemIds = new Set($event)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import { showError } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import CartIcon from '@icons/Cart.vue'
+import ChevronRightIcon from '@icons/ChevronRight.vue'
 import ClipboardListIcon from '@icons/ClipboardList.vue'
 import DragVerticalIcon from '@icons/DragVertical.vue'
+import FormatListChecksIcon from '@icons/FormatListChecks.vue'
 import HistoryIcon from '@icons/History.vue'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
+import { ShoppingItemPicker } from '@/components/ShoppingItemPicker'
 import { ShoppingReminderBlock, ShoppingRemindersDialog } from '@/components/ShoppingReminders'
 import { useChecklists } from '@/composables/useChecklist'
 import { useStores } from '@/composables/useStores'
@@ -183,6 +217,7 @@ const loading = ref(true)
 const starting = ref(false)
 const ending = ref(false)
 const remindersOpen = ref(false)
+const itemsOpen = ref(false)
 
 const selectedListIds = ref<number[]>([])
 const houseItems = ref<ChecklistItem[]>([])
@@ -223,6 +258,39 @@ const availableStoreIds = computed<number[]>(() => {
   return [...ids].sort(
     (a, b) => (rank.get(a) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b) ?? Number.MAX_SAFE_INTEGER),
   )
+})
+
+// The items this trip could cover: everything still to buy on the selected
+// lists. The picker narrows it; a trip covers the lot unless it does.
+const candidateItems = computed<ChecklistItem[]>(() => {
+  const selected = new Set(selectedListIds.value)
+  return houseItems.value.filter((item) => !item.done && selected.has(item.listId))
+})
+
+// Items left out of the trip. Held as an exclusion rather than a selection so
+// that anything the shopper never ruled out is shopped — including items that
+// enter the scope after the picker was last open.
+const excludedItemIds = ref<Set<number>>(new Set())
+
+const includedItemIds = computed(() =>
+  candidateItems.value.map((i) => i.id).filter((id) => !excludedItemIds.value.has(id)),
+)
+
+// Leaving out every item is not a trip anyone can shop, and an empty selection
+// is how the API spells "shop everything" — so it never reaches the server.
+const nothingPicked = computed(
+  () => candidateItems.value.length > 0 && includedItemIds.value.length === 0,
+)
+
+const itemsSummary = computed(() => {
+  const total = candidateItems.value.length
+  const picked = includedItemIds.value.length
+  if (total === 0) return strings.itemsNone
+  if (picked === total) return n('pantry', 'All %n item', 'All %n items', total)
+  return t('pantry', '{picked} of {total} items', {
+    picked: String(picked),
+    total: String(total),
+  })
 })
 
 // The user's route: the available stores in a chosen order, each on/off.
@@ -419,10 +487,15 @@ async function start() {
   starting.value = true
   try {
     const storeIds = storeOrder.value.filter((id) => enabledStores.value.has(id))
+    const included = includedItemIds.value
     const result = await createSession(houseIdNum.value, {
       listIds: selectedListIds.value,
       storeIds,
       includeUnassigned: includeUnassigned.value,
+      // A full selection shops the whole scope, which is what an omitted
+      // `itemIds` already means — and it stays right if the lists gained an
+      // item between loading this screen and starting.
+      itemIds: included.length === candidateItems.value.length ? undefined : included,
     })
     if (result.status === 'conflict') {
       // Someone/somewhere already has a live trip — surface the guard instead.
@@ -487,6 +560,10 @@ const strings = {
   storesTitle: t('pantry', 'Stores'),
   storesHint: t('pantry', 'Turn the stores you will visit on or off, and drag to set the order.'),
   noStores: t('pantry', 'No stores have items on the selected lists.'),
+  // TRANSLATORS: Title of the tile that opens the item picker
+  itemsTitle: t('pantry', 'Items to shop'),
+  itemsNone: t('pantry', 'Nothing left to buy'),
+  itemsEmpty: t('pantry', 'Pick at least one item to shop.'),
   includeUnassigned: t('pantry', 'Include items not assigned to any store'),
   start: t('pantry', 'Start shopping'),
   dragHandle: t('pantry', 'Drag to reorder'),
@@ -560,6 +637,11 @@ const strings = {
     margin: 0 0 0.5rem;
     color: var(--color-text-maxcontrast);
     font-size: 0.9rem;
+
+    &--warn {
+      margin: 0.5rem 0 0;
+      color: var(--color-warning-text, var(--color-text-maxcontrast));
+    }
   }
 
   &__lists {
@@ -622,6 +704,47 @@ const strings = {
     background: rgba(var(--color-primary-element-rgb, 0, 120, 212), 0.08);
     list-style: none;
     margin: 4px 0;
+  }
+
+  &__items-tile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-large, 12px);
+    background: transparent;
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--color-background-hover);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+
+  &__items-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--color-primary-element);
+  }
+
+  &__items-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__items-sub {
+    color: var(--color-text-maxcontrast);
+    font-size: 0.9rem;
   }
 
   &__guard {

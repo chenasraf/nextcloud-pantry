@@ -240,10 +240,11 @@ class ShoppingSessionService {
 	 *
 	 * @param int[] $listIds Non-empty set of checklist ids in scope.
 	 * @param int[] $storeIds Ordered store sequence (may be empty = no narrowing).
+	 * @param int[]|null $itemIds The items to shop; null or empty means all of them.
 	 *
 	 * @throws ShoppingSessionConflictException when a live session already exists.
 	 */
-	public function create(int $houseId, string $uid, array $listIds, array $storeIds, bool $includeUnassigned): ShoppingSession {
+	public function create(int $houseId, string $uid, array $listIds, array $storeIds, bool $includeUnassigned, ?array $itemIds = null): ShoppingSession {
 		// Counts a joined housemate's trip too, so starting a second trip while
 		// out shopping with someone is the same 409 as starting two of your own.
 		$existing = $this->findCurrentForUser($uid);
@@ -275,8 +276,39 @@ class ShoppingSessionService {
 		$sessionId = (int)$saved->getId();
 		$this->sessionLists->setListsForSession($sessionId, $listIds);
 		$this->sessionStores->setStoresForSession($sessionId, $storeIds);
+		$this->applyItemSelection($sessionId, $listIds, $itemIds);
 
 		return $saved;
+	}
+
+	/**
+	 * Narrow a starting trip to a chosen subset of its scope by skipping
+	 * everything else up front. The skip is the same one the shopper applies
+	 * mid-trip, so an item left out of the plan lands in the trip's Removed
+	 * section and can be brought back on the spot.
+	 *
+	 * A null or empty selection shops the whole scope.
+	 *
+	 * @param int[] $listIds
+	 * @param int[]|null $itemIds
+	 */
+	private function applyItemSelection(int $sessionId, array $listIds, ?array $itemIds): void {
+		if ($itemIds === null || $itemIds === []) {
+			return;
+		}
+		$selected = array_fill_keys(array_map('intval', $itemIds), true);
+		$now = time();
+		foreach ($this->items->findForShoppingScope($listIds, null, true) as $item) {
+			$itemId = $item->getId();
+			if (isset($selected[$itemId])) {
+				continue;
+			}
+			$row = new ShoppingSessionSkip();
+			$row->setSessionId($sessionId);
+			$row->setItemId($itemId);
+			$row->setCreatedAt($now);
+			$this->sessionSkips->insert($row);
+		}
 	}
 
 	/**

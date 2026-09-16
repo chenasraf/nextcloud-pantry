@@ -248,6 +248,60 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertNull($session->getActiveStoreId());
 	}
 
+	public function testCreateWithoutAnItemSelectionShopsTheWholeScope(): void {
+		$this->sessions->method('findLiveByUser')->willReturn(null);
+		$this->sessions->method('insert')->willReturnCallback(function (ShoppingSession $s) {
+			$ref = new \ReflectionProperty($s, 'id');
+			$ref->setValue($s, 7);
+			return $s;
+		});
+		$this->items->expects($this->never())->method('findForShoppingScope');
+		$this->sessionSkips->expects($this->never())->method('insert');
+
+		$this->svc->create(1, 'alice', [10], [], true);
+	}
+
+	public function testCreateWithAnEmptyItemSelectionShopsTheWholeScope(): void {
+		$this->sessions->method('findLiveByUser')->willReturn(null);
+		$this->sessions->method('insert')->willReturnCallback(function (ShoppingSession $s) {
+			$ref = new \ReflectionProperty($s, 'id');
+			$ref->setValue($s, 7);
+			return $s;
+		});
+		$this->sessionSkips->expects($this->never())->method('insert');
+
+		$this->svc->create(1, 'alice', [10], [], true, []);
+	}
+
+	public function testCreateSkipsTheItemsLeftOutOfTheSelection(): void {
+		$this->sessions->method('findLiveByUser')->willReturn(null);
+		$this->sessions->method('insert')->willReturnCallback(function (ShoppingSession $s) {
+			$ref = new \ReflectionProperty($s, 'id');
+			$ref->setValue($s, 7);
+			return $s;
+		});
+		$this->items->expects($this->once())
+			->method('findForShoppingScope')
+			->with([10, 11], null, true)
+			->willReturn([
+				$this->makeItem(['id' => 1]),
+				$this->makeItem(['id' => 2]),
+				$this->makeItem(['id' => 3]),
+			]);
+		$skipped = [];
+		$this->sessionSkips->method('insert')->willReturnCallback(
+			function (ShoppingSessionSkip $row) use (&$skipped) {
+				$this->assertSame(7, $row->getSessionId());
+				$skipped[] = (int)$row->getItemId();
+				return $row;
+			},
+		);
+
+		$this->svc->create(1, 'alice', [10, 11], [], true, [2]);
+
+		$this->assertSame([1, 3], $skipped);
+	}
+
 	public function testAdvanceRejectsStoreOutsideSequence(): void {
 		$session = $this->makeSession(['id' => 5]);
 		$this->sessionStores->method('findBySession')->with(5)->willReturn([
