@@ -394,7 +394,9 @@ class Provider implements IProvider {
 
 	private function unknownActivity(): \InvalidArgumentException {
 		if (class_exists(UnknownActivityException::class)) {
-			return new UnknownActivityException();
+			/** @var \InvalidArgumentException $exception */
+			$exception = new UnknownActivityException();
+			return $exception;
 		}
 		return new \InvalidArgumentException();
 	}

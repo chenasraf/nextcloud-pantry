@@ -240,7 +240,7 @@ class StoreService {
 			$clean[] = ['day' => $day, 'start' => $start, 'end' => $end];
 		}
 		usort($clean, static fn (array $a, array $b): int => [$a['day'], $a['start']] <=> [$b['day'], $b['start']]);
-		return json_encode($clean);
+		return json_encode($clean, JSON_THROW_ON_ERROR);
 	}
 
 	private function normalizeTime(mixed $value): string {

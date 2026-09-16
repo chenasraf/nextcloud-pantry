@@ -32,6 +32,9 @@ class Version9Date20260615000000 extends SimpleMigrationStep {
 		return $schema;
 	}
 
+	/**
+	 * @param non-empty-string $indexName
+	 */
 	private function addDeletedAt(ISchemaWrapper $schema, string $tableName, string $indexName): void {
 		if (!$schema->hasTable($tableName)) {
 			return;

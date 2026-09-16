@@ -279,7 +279,9 @@ class Notifier implements INotifier {
 
 	private function unknownNotification(): \InvalidArgumentException {
 		if (class_exists(UnknownNotificationException::class)) {
-			return new UnknownNotificationException('Unknown notification');
+			/** @var \InvalidArgumentException $exception */
+			$exception = new UnknownNotificationException('Unknown notification');
+			return $exception;
 		}
 		return new \InvalidArgumentException('Unknown notification');
 	}

@@ -290,7 +290,7 @@ class NotificationService {
 					$uid,
 					Application::APP_ID,
 					$stateKey,
-					json_encode($state),
+					json_encode($state, JSON_THROW_ON_ERROR),
 				);
 
 				// Build final subject params: merge base params with aggregation data.

@@ -7,7 +7,13 @@
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
     findUnusedCode="true"
     findUnusedBaselineEntry="true"
+    findUnusedIssueHandlerSuppression="false"
 >
+    <!--
+        The app is analysed against every supported server version, so a
+        suppression that matches nothing under one set of OCP stubs is still
+        carrying its weight under another.
+    -->
     <projectFiles>
         <directory name="lib" />
         <ignoreFiles>
@@ -68,6 +74,7 @@
         <MoreSpecificReturnType errorLevel="suppress" />
         <LessSpecificReturnStatement errorLevel="suppress" />
         <MixedReturnTypeCoercion errorLevel="suppress" />
+        <IncompatibleTypeParameters errorLevel="suppress" />
 
         <!--
             Request payloads arrive as `array<string, mixed>`. Reading a key into
@@ -76,5 +83,29 @@
             the step psalm objects to.
         -->
         <MixedAssignment errorLevel="suppress" />
+
+        <!--
+            Services, controllers and entities are all mocked in the test suite,
+            and PHPUnit cannot double a final class.
+        -->
+        <ClassMustBeFinal errorLevel="suppress" />
+
+        <!--
+            `#[\Override]` landed in PHP 8.3; the app runs on 8.2 as well.
+        -->
+        <MissingOverrideAttribute errorLevel="suppress" />
+
+        <!--
+            `IUserConfig`, the replacement for the per-account shortcuts on
+            `IConfig`, only exists from server 32 onwards, and the app runs on
+            29 as well.
+        -->
+        <DeprecatedMethod>
+            <errorLevel type="suppress">
+                <referencedMethod name="OCP\IConfig::getUserValue" />
+                <referencedMethod name="OCP\IConfig::setUserValue" />
+                <referencedMethod name="OCP\IConfig::deleteUserValue" />
+            </errorLevel>
+        </DeprecatedMethod>
     </issueHandlers>
 </psalm>

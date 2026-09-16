@@ -830,7 +830,7 @@ class ShoppingSessionService {
 	private function collapseTotal(array $totals): array {
 		$out = [];
 		foreach ($totals as $currency => $range) {
-			$out[] = ['currency' => (string)$currency, 'amount' => ($range['min'] + $range['max']) / 2];
+			$out[] = ['currency' => (string)$currency, 'amount' => ($range['min'] + $range['max']) / 2.0];
 		}
 		return $out;
 	}
