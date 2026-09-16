@@ -7,6 +7,15 @@
     @update:open="$emit('update:open', $event)"
   >
     <div v-if="!catLoading && catItems.length > 0" class="pantry-cat-toolbar">
+      <NcButton
+        variant="tertiary"
+        :aria-label="strings.perStoreOrder"
+        :title="strings.perStoreOrder"
+        @click="showStoreOrder = true"
+      >
+        <template #icon><StoreIcon :size="20" /></template>
+        {{ strings.perStoreOrder }}
+      </NcButton>
       <NcActions :aria-label="strings.sortLabel" :title="strings.sortLabel" type="tertiary">
         <template #icon>
           <SortIcon :size="20" />
@@ -98,6 +107,13 @@
     </template>
   </NcDialog>
 
+  <!-- Per-store category order -->
+  <StoreCategoryOrderDialog
+    :open="showStoreOrder"
+    :house-id="houseId"
+    @update:open="showStoreOrder = $event"
+  />
+
   <!-- Create/edit form -->
   <CategoryFormDialog
     :open="showForm"
@@ -140,6 +156,7 @@ import SortIcon from '@icons/Sort.vue'
 import RadioboxBlankIcon from '@icons/RadioboxBlank.vue'
 import RadioboxMarkedIcon from '@icons/RadioboxMarked.vue'
 import DragVerticalIcon from '@icons/DragVertical.vue'
+import StoreIcon from '@icons/Store.vue'
 import type { Category } from '@/api/types'
 import type { CategorySort } from '@/api/prefs'
 import { getCategorySort, setCategorySort } from '@/api/prefs'
@@ -148,6 +165,7 @@ import { useChecklists } from '@/composables/useChecklist'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import CategoryFormDialog from './CategoryFormDialog.vue'
+import StoreCategoryOrderDialog from './StoreCategoryOrderDialog.vue'
 
 const props = defineProps<{ open: boolean; houseId: number }>()
 const emit = defineEmits<{
@@ -402,6 +420,7 @@ useTouchReorder(
 )
 
 // -------- Form state --------
+const showStoreOrder = ref(false)
 const showForm = ref(false)
 const editingCat = ref<Category | null>(null)
 const deletingCat = ref<Category | null>(null)
@@ -486,6 +505,8 @@ const strings = {
   deleteCategory: t('pantry', 'Delete'),
   deleteCategoryTitle: t('pantry', 'Delete category'),
   sortLabel: t('pantry', 'Sort order'),
+  // TRANSLATORS: Button opening the per-store category arrangement used while shopping
+  perStoreOrder: t('pantry', 'Per-store order'),
   dragHandle: t('pantry', 'Drag to reorder'),
   // TRANSLATORS: Header for categories available on every list (not tied to one list)
   globalGroup: t('pantry', 'All lists'),
@@ -501,7 +522,9 @@ const strings = {
 
 .pantry-cat-toolbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.25rem;
   margin-bottom: 0.25rem;
 }
 

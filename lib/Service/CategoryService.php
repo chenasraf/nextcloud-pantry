@@ -10,6 +10,7 @@ namespace OCA\Pantry\Service;
 use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\StoreCategoryOrderMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 
@@ -17,6 +18,7 @@ class CategoryService {
 	public function __construct(
 		private CategoryMapper $mapper,
 		private ChecklistMapper $listMapper,
+		private StoreCategoryOrderMapper $storeOrderMapper,
 	) {
 	}
 
@@ -153,7 +155,87 @@ class CategoryService {
 		$cat = $this->get($categoryId);
 		// Detach from any items first, then delete the row.
 		$this->mapper->detachFromItems((int)$cat->getId());
+		$this->storeOrderMapper->deleteByCategory((int)$cat->getId());
 		$this->mapper->delete($cat);
+	}
+
+	/**
+	 * The category ids a store is arranged by, in walking order.
+	 *
+	 * Only the categories the store names are listed; everything else trails
+	 * them in the house-wide order, so an empty result means the store follows
+	 * the house order throughout. That fallback is what carries the lifecycle:
+	 *
+	 * - A category created after a store was arranged has no row, so it lands
+	 *   at the end of that store — the same place the house-wide order appends
+	 *   it — until someone drags it into an aisle. Nothing is written on create,
+	 *   so adding a category stays one row rather than one row per store.
+	 * - A category deleted takes its rows with it, leaving gaps in each store's
+	 *   sequence exactly as a delete leaves them in the house-wide one. Only the
+	 *   relative order is read, so gaps are harmless.
+	 * - A category moved to another list keeps its aisle: a store is walked by
+	 *   aisle, not by which list an item came from, so its arrangement is flat
+	 *   across list scopes and a re-home means nothing to it.
+	 * - Dragging the house-wide order leaves arranged stores untouched, which is
+	 *   the whole point of arranging one.
+	 *
+	 * Ids whose category is gone are dropped here too, so a leaked row cannot
+	 * outlive what it points at.
+	 *
+	 * @return list<int>
+	 */
+	public function orderForStore(int $houseId, int $storeId): array {
+		$live = $this->categoryIdsInHouse($houseId);
+		$ordered = [];
+		foreach ($this->storeOrderMapper->findByStore($storeId) as $row) {
+			$id = $row->getCategoryId();
+			if (isset($live[$id])) {
+				$ordered[] = $id;
+			}
+		}
+		return $ordered;
+	}
+
+	/**
+	 * Arrange a store's categories. Ids that do not name a category of this
+	 * house are dropped, and duplicates collapse to their first position, so a
+	 * stale client list cannot write an order that outlives its categories.
+	 *
+	 * An empty result clears the arrangement and the store falls back to the
+	 * house-wide order.
+	 *
+	 * @param list<int> $categoryIds
+	 *
+	 * @return list<int> The order as stored.
+	 */
+	public function setOrderForStore(int $houseId, int $storeId, array $categoryIds): array {
+		$live = $this->categoryIdsInHouse($houseId);
+		$ordered = [];
+		$seen = [];
+		foreach ($categoryIds as $id) {
+			$id = (int)$id;
+			if (isset($live[$id]) && !isset($seen[$id])) {
+				$seen[$id] = true;
+				$ordered[] = $id;
+			}
+		}
+		$this->storeOrderMapper->replaceForStore($storeId, $ordered);
+		return $ordered;
+	}
+
+	public function clearOrderForStore(int $storeId): void {
+		$this->storeOrderMapper->deleteByStore($storeId);
+	}
+
+	/**
+	 * @return array<int, true> Category ids of the house, as a lookup set.
+	 */
+	private function categoryIdsInHouse(int $houseId): array {
+		$ids = [];
+		foreach ($this->mapper->findByHouse($houseId) as $cat) {
+			$ids[(int)$cat->getId()] = true;
+		}
+		return $ids;
 	}
 
 	/**

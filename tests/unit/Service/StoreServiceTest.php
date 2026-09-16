@@ -9,6 +9,7 @@ namespace OCA\Pantry\Tests\Unit\Service;
 
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Db\Store;
+use OCA\Pantry\Db\StoreCategoryOrderMapper;
 use OCA\Pantry\Db\StoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Service\StoreService;
@@ -23,13 +24,21 @@ class StoreServiceTest extends TestCase {
 	private ItemStoreMapper $itemStoreMapper;
 	/** @var \OCA\Pantry\Db\ItemPriceMapper&MockObject */
 	private \OCA\Pantry\Db\ItemPriceMapper $itemPriceMapper;
+	/** @var StoreCategoryOrderMapper&MockObject */
+	private StoreCategoryOrderMapper $categoryOrderMapper;
 	private StoreService $svc;
 
 	protected function setUp(): void {
 		$this->mapper = $this->createMock(StoreMapper::class);
 		$this->itemStoreMapper = $this->createMock(ItemStoreMapper::class);
 		$this->itemPriceMapper = $this->createMock(\OCA\Pantry\Db\ItemPriceMapper::class);
-		$this->svc = new StoreService($this->mapper, $this->itemStoreMapper, $this->itemPriceMapper);
+		$this->categoryOrderMapper = $this->createMock(StoreCategoryOrderMapper::class);
+		$this->svc = new StoreService(
+			$this->mapper,
+			$this->itemStoreMapper,
+			$this->itemPriceMapper,
+			$this->categoryOrderMapper,
+		);
 	}
 
 	private function makeStore(array $overrides = []): Store {

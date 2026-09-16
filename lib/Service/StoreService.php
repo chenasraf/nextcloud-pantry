@@ -10,6 +10,7 @@ namespace OCA\Pantry\Service;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Db\Store;
+use OCA\Pantry\Db\StoreCategoryOrderMapper;
 use OCA\Pantry\Db\StoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -19,6 +20,7 @@ class StoreService {
 		private StoreMapper $mapper,
 		private ItemStoreMapper $itemStoreMapper,
 		private ItemPriceMapper $itemPriceMapper,
+		private StoreCategoryOrderMapper $categoryOrderMapper,
 	) {
 	}
 
@@ -128,10 +130,11 @@ class StoreService {
 
 	public function delete(int $storeId): void {
 		$store = $this->get($storeId);
-		// Detach from any items and drop its per-store prices first, then delete
-		// the row.
+		// Detach from any items and drop its per-store prices and category
+		// arrangement first, then delete the row.
 		$this->itemStoreMapper->deleteByStore((int)$store->getId());
 		$this->itemPriceMapper->deleteByStore((int)$store->getId());
+		$this->categoryOrderMapper->deleteByStore((int)$store->getId());
 		$this->mapper->delete($store);
 	}
 

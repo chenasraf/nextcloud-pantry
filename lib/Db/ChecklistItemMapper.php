@@ -245,8 +245,11 @@ class ChecklistItemMapper extends QBMapper {
 	 *
 	 * Ordered by category sort_order then category name — the name keeps items
 	 * of categories sharing a sort_order from interleaving — then item
-	 * sort_order, with uncategorized items trailing. Returns a flat array the
-	 * caller groups by category.
+	 * sort_order, with uncategorized items trailing. An active store that has
+	 * been arranged (store_cat_order) leads with the categories it arranges, in
+	 * its own order, so the list follows the aisles of the shop being walked;
+	 * categories it does not name fall in behind by the house-wide order.
+	 * Returns a flat array the caller groups by category.
 	 *
 	 * @param int[] $listIds
 	 * @return ChecklistItem[]
@@ -270,9 +273,20 @@ class ChecklistItemMapper extends QBMapper {
 			->andWhere($qb->expr()->isNull('i.archived_at'));
 
 		if ($activeStoreId !== null) {
+			$storeParam = $qb->createNamedParameter($activeStoreId, IQueryBuilder::PARAM_INT);
+			$qb->leftJoin(
+				'c',
+				Application::tableName('store_cat_order'),
+				'sco',
+				$qb->expr()->andX(
+					$qb->expr()->eq('sco.category_id', 'c.id'),
+					$qb->expr()->eq('sco.store_id', $storeParam),
+				),
+			);
+
 			$itemStores = Application::tableName('item_stores');
 			$qb->leftJoin('i', $itemStores, 's', $qb->expr()->eq('i.id', 's.item_id'));
-			$storeMatch = $qb->expr()->eq('s.store_id', $qb->createNamedParameter($activeStoreId, IQueryBuilder::PARAM_INT));
+			$storeMatch = $qb->expr()->eq('s.store_id', $storeParam);
 			if ($includeUnassigned) {
 				// s.store_id IS NULL only occurs for items with no item_stores row
 				// (the LEFT JOIN's null side), i.e. truly buy-anywhere items.
@@ -285,8 +299,16 @@ class ChecklistItemMapper extends QBMapper {
 		$qb->orderBy(
 			$qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'),
 			'ASC',
-		)
-			->addOrderBy('c.sort_order', 'ASC')
+		);
+		if ($activeStoreId !== null) {
+			// An unarranged store leaves every sco.sort_order null, so both of
+			// these collapse to constants and the house-wide order below takes
+			// over unchanged. Splitting the nulls out first also keeps the
+			// databases that disagree on where nulls sort out of it.
+			$qb->addOrderBy($qb->createFunction('CASE WHEN sco.sort_order IS NULL THEN 1 ELSE 0 END'), 'ASC')
+				->addOrderBy('sco.sort_order', 'ASC');
+		}
+		$qb->addOrderBy('c.sort_order', 'ASC')
 			->addOrderBy('c.name', 'ASC')
 			->addOrderBy('i.sort_order', 'ASC')
 			->addOrderBy('i.id', 'ASC');

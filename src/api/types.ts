@@ -192,6 +192,16 @@ export interface Store {
 }
 
 /**
+ * The categories a store is arranged by, in the order its aisles are walked.
+ * Lists only what the store arranges; every other category trails them in the
+ * house-wide order.
+ */
+export interface StoreCategoryOrder {
+  storeId: number
+  categoryIds: number[]
+}
+
+/**
  * A price for an item, optionally attached to a store. A null store id is the
  * item's store-less (default) price; there is at most one per item and at most
  * one price per (item, store).

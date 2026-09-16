@@ -60,6 +60,7 @@ class Capabilities implements IPublicCapability {
 					'label-lists',
 					'stores',
 					'store-sort',
+					'store-category-order',
 					'custom-order-within-groups',
 					'barcode',
 					'item-price',

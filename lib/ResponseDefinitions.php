@@ -221,6 +221,11 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  * }
  *
+ * @psalm-type PantryStoreCategoryOrder = array{
+ *     storeId: int,
+ *     categoryIds: list<int>,
+ * }
+ *
  * @psalm-type PantryShoppingSessionStore = array{
  *     storeId: int,
  *     position: int,

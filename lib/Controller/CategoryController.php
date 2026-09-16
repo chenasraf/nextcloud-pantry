@@ -13,6 +13,7 @@ use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\CategoryService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\PrefsService;
+use OCA\Pantry\Service\StoreService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -23,6 +24,7 @@ use OCP\IUserSession;
 
 /**
  * @psalm-import-type PantryCategory from ResponseDefinitions
+ * @psalm-import-type PantryStoreCategoryOrder from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  */
 final class CategoryController extends OCSController {
@@ -32,6 +34,7 @@ final class CategoryController extends OCSController {
 		string $appName,
 		IRequest $request,
 		private CategoryService $categories,
+		private StoreService $stores,
 		private HouseAuthService $auth,
 		private PrefsService $prefs,
 		private IUserSession $userSession,
@@ -184,6 +187,85 @@ final class CategoryController extends OCSController {
 		return $this->runAction(function () use ($houseId, $items): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());
 			$this->categories->reorder($houseId, $items);
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
+	 * The category order a store is shopped in
+	 *
+	 * Lists only the categories the store arranges, in its own order. Every
+	 * other category trails them in the house-wide order, so an empty list
+	 * means the store follows the house order throughout.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $storeId Store id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryStoreCategoryOrder, array{}>
+	 *
+	 * 200: Store category order returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/stores/{storeId}/category-order')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function storeOrder(int $houseId, int $storeId): DataResponse {
+		return $this->runAction(function () use ($houseId, $storeId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->stores->assertInHouse($storeId, $houseId);
+			return new DataResponse([
+				'storeId' => $storeId,
+				'categoryIds' => $this->categories->orderForStore($houseId, $storeId),
+			]);
+		});
+	}
+
+	/**
+	 * Arrange a store's categories
+	 *
+	 * Replaces the store's whole arrangement. Ids that do not name a category
+	 * of this house are dropped; an empty list returns the store to the
+	 * house-wide order.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $storeId Store id.
+	 * @param list<int> $categoryIds Category ids in the order the store is walked.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryStoreCategoryOrder, array{}>
+	 *
+	 * 200: Store category order saved
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/stores/{storeId}/category-order')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function setStoreOrder(int $houseId, int $storeId, array $categoryIds = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $storeId, $categoryIds): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->stores->assertInHouse($storeId, $houseId);
+			$stored = $this->categories->setOrderForStore($houseId, $storeId, array_values($categoryIds));
+			return new DataResponse(['storeId' => $storeId, 'categoryIds' => $stored]);
+		});
+	}
+
+	/**
+	 * Drop a store's category arrangement
+	 *
+	 * The store falls back to the house-wide category order.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $storeId Store id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 *
+	 * 200: Store category order cleared
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/stores/{storeId}/category-order')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function clearStoreOrder(int $houseId, int $storeId): DataResponse {
+		return $this->runAction(function () use ($houseId, $storeId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			$this->stores->assertInHouse($storeId, $houseId);
+			$this->categories->clearOrderForStore($storeId);
 			return new DataResponse(['success' => true]);
 		});
 	}

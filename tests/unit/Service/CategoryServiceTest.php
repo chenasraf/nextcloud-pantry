@@ -11,6 +11,7 @@ use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\StoreCategoryOrderMapper;
 use OCA\Pantry\Service\CategoryService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -21,12 +22,15 @@ class CategoryServiceTest extends TestCase {
 	private CategoryMapper $mapper;
 	/** @var ChecklistMapper&MockObject */
 	private ChecklistMapper $listMapper;
+	/** @var StoreCategoryOrderMapper&MockObject */
+	private StoreCategoryOrderMapper $storeOrderMapper;
 	private CategoryService $svc;
 
 	protected function setUp(): void {
 		$this->mapper = $this->createMock(CategoryMapper::class);
 		$this->listMapper = $this->createMock(ChecklistMapper::class);
-		$this->svc = new CategoryService($this->mapper, $this->listMapper);
+		$this->storeOrderMapper = $this->createMock(StoreCategoryOrderMapper::class);
+		$this->svc = new CategoryService($this->mapper, $this->listMapper, $this->storeOrderMapper);
 	}
 
 	private function makeList(int $id, int $houseId): Checklist {
@@ -322,5 +326,85 @@ class CategoryServiceTest extends TestCase {
 		$updated = $this->svc->update(5, ['listId' => 7, 'sortOrder' => 3]);
 
 		$this->assertSame(3, $updated->getSortOrder());
+	}
+
+	private function makeOrderRow(int $categoryId, int $sortOrder): \OCA\Pantry\Db\StoreCategoryOrder {
+		$row = new \OCA\Pantry\Db\StoreCategoryOrder();
+		$row->setStoreId(9);
+		$row->setCategoryId($categoryId);
+		$row->setSortOrder($sortOrder);
+		return $row;
+	}
+
+	public function testDeleteDropsTheCategoryFromEveryStoreArrangement(): void {
+		$cat = $this->makeCategory(['id' => 5]);
+		$this->mapper->method('findById')->with(5)->willReturn($cat);
+
+		$this->storeOrderMapper->expects($this->once())->method('deleteByCategory')->with(5);
+
+		$this->svc->delete(5);
+	}
+
+	public function testOrderForStoreReturnsTheStoredOrder(): void {
+		$this->mapper->method('findByHouse')->willReturn([
+			$this->makeCategory(['id' => 1]),
+			$this->makeCategory(['id' => 2]),
+		]);
+		$this->storeOrderMapper->method('findByStore')->with(9)->willReturn([
+			$this->makeOrderRow(2, 0),
+			$this->makeOrderRow(1, 1),
+		]);
+
+		$this->assertSame([2, 1], $this->svc->orderForStore(1, 9));
+	}
+
+	public function testOrderForStoreDropsRowsWhoseCategoryIsGone(): void {
+		$this->mapper->method('findByHouse')->willReturn([$this->makeCategory(['id' => 1])]);
+		$this->storeOrderMapper->method('findByStore')->willReturn([
+			$this->makeOrderRow(99, 0),
+			$this->makeOrderRow(1, 1),
+		]);
+
+		$this->assertSame([1], $this->svc->orderForStore(1, 9));
+	}
+
+	public function testSetOrderForStoreDropsIdsOutsideTheHouse(): void {
+		$this->mapper->method('findByHouse')->willReturn([
+			$this->makeCategory(['id' => 1]),
+			$this->makeCategory(['id' => 2]),
+		]);
+
+		$this->storeOrderMapper->expects($this->once())
+			->method('replaceForStore')
+			->with(9, [2, 1]);
+
+		$this->assertSame([2, 1], $this->svc->setOrderForStore(1, 9, [2, 42, 1]));
+	}
+
+	public function testSetOrderForStoreCollapsesDuplicatesToTheirFirstPosition(): void {
+		$this->mapper->method('findByHouse')->willReturn([
+			$this->makeCategory(['id' => 1]),
+			$this->makeCategory(['id' => 2]),
+		]);
+
+		$this->storeOrderMapper->expects($this->once())
+			->method('replaceForStore')
+			->with(9, [2, 1]);
+
+		$this->svc->setOrderForStore(1, 9, [2, 1, 2]);
+	}
+
+	public function testSetOrderForStoreWithAnEmptyListClearsTheArrangement(): void {
+		$this->mapper->method('findByHouse')->willReturn([$this->makeCategory(['id' => 1])]);
+
+		$this->storeOrderMapper->expects($this->once())->method('replaceForStore')->with(9, []);
+
+		$this->assertSame([], $this->svc->setOrderForStore(1, 9, []));
+	}
+
+	public function testClearOrderForStoreDropsEveryRow(): void {
+		$this->storeOrderMapper->expects($this->once())->method('deleteByStore')->with(9);
+
+		$this->svc->clearOrderForStore(9);
 	}
 }

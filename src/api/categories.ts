@@ -1,5 +1,5 @@
 import { ocs } from '@/axios'
-import type { Category } from './types'
+import type { Category, StoreCategoryOrder } from './types'
 
 export async function listCategories(houseId: number): Promise<Category[]> {
   const resp = await ocs.get<Category[]>(`/houses/${houseId}/categories`)
@@ -38,4 +38,30 @@ export async function reorderCategories(
   items: { id: number; sortOrder: number }[],
 ): Promise<void> {
   await ocs.post(`/houses/${houseId}/categories/reorder`, { items })
+}
+
+export async function getStoreCategoryOrder(
+  houseId: number,
+  storeId: number,
+): Promise<StoreCategoryOrder> {
+  const resp = await ocs.get<StoreCategoryOrder>(
+    `/houses/${houseId}/stores/${storeId}/category-order`,
+  )
+  return resp.data
+}
+
+export async function setStoreCategoryOrder(
+  houseId: number,
+  storeId: number,
+  categoryIds: number[],
+): Promise<StoreCategoryOrder> {
+  const resp = await ocs.put<StoreCategoryOrder>(
+    `/houses/${houseId}/stores/${storeId}/category-order`,
+    { categoryIds },
+  )
+  return resp.data
+}
+
+export async function clearStoreCategoryOrder(houseId: number, storeId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/stores/${storeId}/category-order`)
 }
