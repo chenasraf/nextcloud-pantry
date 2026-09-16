@@ -86,12 +86,24 @@
     </template>
 
     <template #actions>
-      <NcButton @click="$emit('update:open', false)">
-        {{ readOnly ? strings.close : strings.back }}
-      </NcButton>
-      <NcButton v-if="!readOnly" variant="primary" :disabled="saving" @click="confirm">
-        {{ mode === 'close' ? strings.finish : strings.nextStore }}
-      </NcButton>
+      <template v-if="mode === 'history'">
+        <NcButton v-if="editing" variant="primary" :disabled="saving" @click="editing = false">
+          {{ strings.done }}
+        </NcButton>
+        <template v-else>
+          <NcButton @click="$emit('update:open', false)">{{ strings.close }}</NcButton>
+          <NcButton v-if="canEdit" variant="secondary" @click="editing = true">
+            <template #icon><PencilIcon :size="20" /></template>
+            {{ strings.editTotals }}
+          </NcButton>
+        </template>
+      </template>
+      <template v-else>
+        <NcButton @click="$emit('update:open', false)">{{ strings.back }}</NcButton>
+        <NcButton variant="primary" :disabled="saving" @click="confirm">
+          {{ mode === 'close' ? strings.finish : strings.nextStore }}
+        </NcButton>
+      </template>
     </template>
   </NcDialog>
 
@@ -111,6 +123,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import PencilIcon from '@icons/Pencil.vue'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { ShoppingReminderBlock, ShoppingRemindersDialog } from '@/components/ShoppingReminders'
 import { useStores } from '@/composables/useStores'
@@ -135,13 +148,19 @@ const props = defineProps<{
   mode: 'advance' | 'close' | 'history'
   /** In 'advance' mode, the store whose till is being reviewed. */
   storeId?: number | null
+  /** In 'history' mode, whether the viewer may amend this trip's totals. */
+  canEdit?: boolean
 }>()
 
-/** History is look-only: no billed inputs, no confirm action. */
-const readOnly = computed(() => props.mode === 'history')
+/** In 'history' mode the totals are amendable only once the viewer opts in. */
+const editing = ref(false)
+
+/** Look-only: no billed inputs, no confirm action. */
+const readOnly = computed(() => props.mode === 'history' && !editing.value)
 const emit = defineEmits<{
   'update:open': [value: boolean]
   confirm: []
+  updated: []
 }>()
 
 const { findById: findStore, load: loadStores } = useStores(props.houseId)
@@ -149,7 +168,7 @@ const { findById: findStore, load: loadStores } = useStores(props.houseId)
 const review = ref<ShoppingReview | null>(null)
 const loading = ref(false)
 const saving = ref(false)
-const billed = ref<Record<string, { total: string; currency: string }>>({})
+const billed = ref<Record<string, { total: BilledAmount; currency: string }>>({})
 const remindersOpen = ref(false)
 
 // Which reminder moment this dialog surfaces: the next-store confirm shows
@@ -160,16 +179,23 @@ const reminderMoment = computed<ShoppingReminderMoment | null>(() => {
   return null
 })
 
+// History reads the summary route, whose read-only intent stays independent of
+// the mid-trip review contract — amending totals does not change that.
+function fetchReview(): Promise<ShoppingReview> {
+  return props.mode === 'history'
+    ? getSessionSummary(props.houseId, props.sessionId)
+    : getReview(props.houseId, props.sessionId)
+}
+
 watch(
   () => props.open,
   async (isOpen) => {
     if (!isOpen) return
+    editing.value = false
     loading.value = true
     try {
       await loadStores()
-      review.value = readOnly.value
-        ? await getSessionSummary(props.houseId, props.sessionId)
-        : await getReview(props.houseId, props.sessionId)
+      review.value = await fetchReview()
       seedBilled()
     } catch (e) {
       showError((e as Error).message || strings.loadFailed)
@@ -193,8 +219,21 @@ function storeKey(storeId: number | null): string {
   return storeId === null ? 'none' : String(storeId)
 }
 
+/**
+ * The amount a number input holds: Vue casts a parsed value to a number and
+ * leaves an unparseable one (including the empty field) as the raw string.
+ */
+type BilledAmount = string | number
+
+/** The typed amount as a number, or null when the field is empty/unusable. */
+function parseAmount(value: BilledAmount): number | null {
+  if (typeof value === 'number') return value
+  const trimmed = value.trim()
+  return trimmed === '' ? null : Number(trimmed)
+}
+
 function seedBilled() {
-  const next: Record<string, { total: string; currency: string }> = {}
+  const next: Record<string, { total: BilledAmount; currency: string }> = {}
   for (const grp of review.value?.stores ?? []) {
     const key = storeKey(grp.storeId)
     next[key] = {
@@ -208,8 +247,7 @@ function seedBilled() {
 async function saveBilled(grp: ShoppingReviewStore) {
   const entry = billed.value[storeKey(grp.storeId)]
   if (!entry) return
-  const trimmed = entry.total.trim()
-  const total = trimmed === '' ? null : Number(trimmed)
+  const total = parseAmount(entry.total)
   if (total !== null && (!Number.isFinite(total) || total < 0)) return
   const currency = entry.currency.trim() || null
   try {
@@ -225,7 +263,8 @@ async function saveBilled(grp: ShoppingReviewStore) {
         billedCurrency: currency,
       })
     }
-    review.value = await getReview(props.houseId, props.sessionId)
+    review.value = await fetchReview()
+    emit('updated')
   } catch (e) {
     showError((e as Error).message || strings.saveFailed)
   } finally {
@@ -302,7 +341,7 @@ function uncheckedText(count: number): string {
 }
 
 const title = computed(() => {
-  if (props.mode === 'history') return strings.tripSummaryTitle
+  if (props.mode === 'history') return editing.value ? strings.editTitle : strings.tripSummaryTitle
   return props.mode === 'close' ? strings.reviewTitle : strings.storeSummaryTitle
 })
 
@@ -310,6 +349,11 @@ const strings = {
   reviewTitle: t('pantry', 'Review your trip'),
   storeSummaryTitle: t('pantry', 'Store summary'),
   tripSummaryTitle: t('pantry', 'Trip summary'),
+  editTitle: t('pantry', 'Edit trip totals'),
+  // TRANSLATORS: Verb, button that switches a past trip's totals into an editable state
+  editTotals: t('pantry', 'Edit totals'),
+  // TRANSLATORS: Verb, button that leaves the editable state of a past trip's totals
+  done: t('pantry', 'Done'),
   close: t('pantry', 'Close'),
   grandTotal: t('pantry', 'Grand total:'),
   actualPaid: t('pantry', 'Actual paid:'),

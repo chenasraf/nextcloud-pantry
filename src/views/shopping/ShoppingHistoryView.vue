@@ -81,12 +81,14 @@
     </div>
 
     <ShoppingReviewDialog
-      v-if="detailId !== null"
-      :open="detailId !== null"
+      v-if="detailRow"
+      :open="detailRow !== null"
       :house-id="houseIdNum"
-      :session-id="detailId"
+      :session-id="detailRow.id"
       mode="history"
-      @update:open="(v) => !v && (detailId = null)"
+      :can-edit="detailRow.userId === currentUid"
+      @updated="refreshDetailRow"
+      @update:open="(v) => !v && (detailRow = null)"
     />
   </div>
 </template>
@@ -109,6 +111,7 @@ import FormatListChecksIcon from '@icons/FormatListChecks.vue'
 import { ShoppingReviewDialog } from '@/components/ShoppingReview'
 import PantryChip from '@/components/PantryChip'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
+import { getCurrentUserId } from '@/utils/currentUser'
 import { getHistory } from '@/api/shopping'
 import { formatMoney } from '@/utils/price'
 import { formatDateTime, formatDuration } from '@/utils/datetime'
@@ -125,7 +128,8 @@ const rows = ref<ShoppingHistoryRow[]>([])
 const loading = ref(true)
 const loadingMore = ref(false)
 const canLoadMore = ref(false)
-const detailId = ref<number | null>(null)
+const detailRow = ref<ShoppingHistoryRow | null>(null)
+const currentUid = getCurrentUserId()
 
 async function load() {
   loading.value = true
@@ -158,7 +162,31 @@ watch(scope, load)
 onMounted(load)
 
 function openTrip(row: ShoppingHistoryRow) {
-  detailId.value = row.id
+  detailRow.value = row
+}
+
+/**
+ * Pull the open trip's row back down after its totals were amended, so the list
+ * figure matches the dialog. Rows are ordered deterministically, so the row's
+ * own position is a stable offset; a shifted position (a trip closed meanwhile)
+ * falls back to a full reload.
+ */
+async function refreshDetailRow() {
+  const open = detailRow.value
+  if (!open) return
+  const index = rows.value.findIndex((r) => r.id === open.id)
+  if (index === -1) return
+  try {
+    const [fetched] = await getHistory(houseIdNum.value, scope.value, 1, index)
+    if (fetched?.id === open.id) {
+      rows.value.splice(index, 1, fetched)
+      detailRow.value = fetched
+    } else {
+      await load()
+    }
+  } catch (e) {
+    showError((e as Error).message || strings.loadFailed)
+  }
 }
 
 function goBack() {
