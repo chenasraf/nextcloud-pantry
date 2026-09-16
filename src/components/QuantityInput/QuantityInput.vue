@@ -44,6 +44,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
 import MinusIcon from '@icons/Minus.vue'
+import { canStepDown, stepQuantity } from '@/utils/quantity'
 
 const props = defineProps<{
   modelValue: string
@@ -58,37 +59,15 @@ const text = computed({
   set: (v: string) => emit('update:modelValue', v),
 })
 
-const FIRST_NUMBER_RE = /\d+(?:\.\d+)?/
-
-function firstNumber(s: string): number | null {
-  const m = s.match(FIRST_NUMBER_RE)
-  if (!m) return null
-  const n = Number(m[0])
-  return Number.isFinite(n) ? n : null
-}
-
-function replaceFirstNumber(s: string, value: number): string {
-  return s.replace(FIRST_NUMBER_RE, String(value))
-}
-
-const canDecrement = computed(() => {
-  const n = firstNumber(text.value)
-  return n !== null && n > 1
-})
+const canDecrement = computed(() => canStepDown(text.value))
 
 function increment() {
-  const n = firstNumber(text.value)
-  if (n === null) {
-    text.value = '1'
-  } else {
-    text.value = replaceFirstNumber(text.value, n + 1)
-  }
+  text.value = stepQuantity(text.value, 1)
 }
 
 function decrement() {
-  const n = firstNumber(text.value)
-  if (n === null || n <= 1) return
-  text.value = replaceFirstNumber(text.value, n - 1)
+  if (!canDecrement.value) return
+  text.value = stepQuantity(text.value, -1)
 }
 
 const strings = {
