@@ -59,7 +59,6 @@ class BarcodeService {
 		$entity->setRaw($this->strOrNull($data['raw'] ?? null));
 		$entity->setResolvedAt(time());
 
-		/** @var BarcodeCache $saved */
 		$saved = $existing !== null ? $this->mapper->update($entity) : $this->mapper->insert($entity);
 		return $saved;
 	}

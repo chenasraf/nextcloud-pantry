@@ -23,7 +23,6 @@ class Version29Date20260824000000 extends SimpleMigrationStep {
 	 * @param Closure():ISchemaWrapper $schemaClosure
 	 */
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
-		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
 		$tableName = Application::tableName('lists');

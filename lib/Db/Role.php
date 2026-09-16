@@ -155,7 +155,7 @@ class Role extends Entity implements \JsonSerializable {
 	 */
 	public function capabilityMap(): array {
 		$out = [];
-		foreach (self::CAPABILITIES as $key => $prop) {
+		foreach (array_keys(self::CAPABILITIES) as $key) {
 			$out[$key] = $this->hasCapability($key);
 		}
 		return $out;

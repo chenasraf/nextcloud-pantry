@@ -28,7 +28,6 @@ class Version36Date20260916010000 extends SimpleMigrationStep {
 	 * @param Closure():ISchemaWrapper $schemaClosure
 	 */
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
-		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
 		$table = Application::tableName('store_cat_order');

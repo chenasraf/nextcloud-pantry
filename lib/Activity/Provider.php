@@ -53,7 +53,7 @@ class Provider implements IProvider {
 	}
 
 	/**
-	 * @param array<string, mixed> $params
+	 * @param array<array-key, mixed> $params
 	 * @return array{0: string, 1: array<string, array<string, string>>}|null
 	 */
 	private function buildRichSubject(string $subject, array $params, bool $isSelf, IL10N $l): ?array {
@@ -430,7 +430,7 @@ class Provider implements IProvider {
 	 * matching source string, so translators can inflect each form separately
 	 * (some languages, e.g. Estonian, use different noun cases for the two).
 	 *
-	 * @param array<string, mixed> $params
+	 * @param array<array-key, mixed> $params
 	 * @return array{0: list<string>, 1: int}
 	 */
 	private function itemsBatch(array $params): array {

@@ -320,6 +320,10 @@ final class HouseController extends OCSController {
 	public function autocompleteUsers(string $search = '', int $limit = 10): DataResponse {
 		return $this->runAction(function () use ($search, $limit): DataResponse {
 			$currentUid = $this->requireUid();
+			// Matches on account id, not display name: invites are addressed to
+			// an account, and the suggested replacement (searchDisplayName) would
+			// stop finding people whose id differs from what they display as.
+			/** @psalm-suppress DeprecatedMethod */
 			$users = $this->userManager->search(trim($search), $limit + 1);
 			$results = [];
 			foreach ($users as $user) {

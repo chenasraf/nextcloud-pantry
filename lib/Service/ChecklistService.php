@@ -130,11 +130,13 @@ class ChecklistService {
 		$this->applyRecurrenceDefault($list, $recurrenceDefault);
 		$list->setCreatedAt($now);
 		$list->setUpdatedAt($now);
-		/** @var Checklist $saved */
 		$saved = $this->listMapper->insert($list);
 		return $saved;
 	}
 
+	/**
+	 * @param array<string, mixed> $patch
+	 */
 	public function updateList(int $listId, array $patch): Checklist {
 		$list = $this->getList($listId);
 		if (isset($patch['name'])) {
@@ -165,6 +167,19 @@ class ChecklistService {
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
 		return $list;
+	}
+
+	/**
+	 * Coerce a raw request value into the id list the pivot mappers expect.
+	 * Clients are not consistent about sending ids as numbers or strings.
+	 *
+	 * @return list<int>
+	 */
+	private function toIntList(mixed $value): array {
+		if (!is_array($value)) {
+			return [];
+		}
+		return array_values(array_map(static fn (mixed $v): int => (int)$v, $value));
 	}
 
 	/**
@@ -400,13 +415,12 @@ class ChecklistService {
 		}
 		$item->setCreatedAt($now);
 		$item->setUpdatedAt($now);
-		/** @var ChecklistItem $saved */
 		$saved = $this->itemMapper->insert($item);
 		if (array_key_exists('storeIds', $data)) {
-			$this->itemStoreMapper->setStoresForItem((int)$saved->getId(), (array)$data['storeIds']);
+			$this->itemStoreMapper->setStoresForItem((int)$saved->getId(), $this->toIntList($data['storeIds']));
 		}
 		if (array_key_exists('labelIds', $data)) {
-			$this->itemLabelMapper->setLabelsForItem((int)$saved->getId(), (array)$data['labelIds']);
+			$this->itemLabelMapper->setLabelsForItem((int)$saved->getId(), $this->toIntList($data['labelIds']));
 		}
 		if (array_key_exists('prices', $data)) {
 			$this->itemPriceMapper->setPricesForItem((int)$saved->getId(), $this->normalizePrices($data['prices']));
@@ -485,10 +499,10 @@ class ChecklistService {
 		$item->setUpdatedAt(time());
 		$this->itemMapper->update($item);
 		if (array_key_exists('storeIds', $patch)) {
-			$this->itemStoreMapper->setStoresForItem((int)$item->getId(), (array)$patch['storeIds']);
+			$this->itemStoreMapper->setStoresForItem((int)$item->getId(), $this->toIntList($patch['storeIds']));
 		}
 		if (array_key_exists('labelIds', $patch)) {
-			$this->itemLabelMapper->setLabelsForItem((int)$item->getId(), (array)$patch['labelIds']);
+			$this->itemLabelMapper->setLabelsForItem((int)$item->getId(), $this->toIntList($patch['labelIds']));
 		}
 		// The whole price set is replaced when 'prices' is present in the patch.
 		if (array_key_exists('prices', $patch)) {
@@ -802,7 +816,6 @@ class ChecklistService {
 		if (array_key_exists($listId, $this->houseByList)) {
 			return $this->houseByList[$listId];
 		}
-		$house = null;
 		try {
 			$list = $this->listMapper->findById($listId, true);
 			$house = $this->houseMapper->findById($list->getHouseId());
@@ -921,7 +934,6 @@ class ChecklistService {
 		$copy->setSortOrder(0);
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
-		/** @var ChecklistItem $saved */
 		$saved = $this->itemMapper->insert($copy);
 		$this->itemStoreMapper->setStoresForItem(
 			(int)$saved->getId(),
@@ -1117,7 +1129,7 @@ class ChecklistService {
 	 * only the min; 'range' keeps both, and falls back to 'set' if no max is given.
 	 * The currency is retained only when a price actually exists.
 	 *
-	 * @param array<string, mixed> $data
+	 * @param array<array-key, mixed> $data
 	 * @return array{priceType: ?string, priceMin: ?float, priceMax: ?float, priceCurrency: ?string}
 	 */
 	private function normalizePriceEntry(array $data): array {

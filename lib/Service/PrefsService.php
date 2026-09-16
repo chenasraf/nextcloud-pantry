@@ -8,9 +8,13 @@ declare(strict_types=1);
 namespace OCA\Pantry\Service;
 
 use OCA\Pantry\AppInfo\Application;
+use OCA\Pantry\ResponseDefinitions;
 use OCP\IConfig;
 use OCP\IL10N;
 
+/**
+ * @psalm-import-type PantryUserPrefs from ResponseDefinitions
+ */
 class PrefsService {
 	private const KEY_LAST_HOUSE = 'last_house_id';
 	private const KEY_IMAGE_FOLDER = 'image_folder';
@@ -31,7 +35,9 @@ class PrefsService {
 	public function getFirstDayOfWeek(string $uid): int {
 		$value = $this->config->getUserValue($uid, 'core', 'first_day_of_week', '');
 		if ($value === '') {
-			return (int)$this->l->l('firstday', null);
+			// 'firstday' derives the weekday from the locale alone; the data
+			// argument is ignored, but the interface requires a non-null value.
+			return (int)$this->l->l('firstday', 0);
 		}
 		return (int)$value;
 	}
@@ -151,7 +157,7 @@ class PrefsService {
 	// ----- Unified user prefs -----
 
 	/**
-	 * @return array<string, mixed>
+	 * @return PantryUserPrefs
 	 */
 	public function getAllUserPrefs(string $uid): array {
 		return [

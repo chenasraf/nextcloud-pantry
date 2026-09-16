@@ -61,7 +61,6 @@ class NoteService {
 		$note->setIsPinned(false);
 		$note->setCreatedAt($now);
 		$note->setUpdatedAt($now);
-		/** @var Note $saved */
 		$saved = $this->noteMapper->insert($note);
 		return $saved;
 	}

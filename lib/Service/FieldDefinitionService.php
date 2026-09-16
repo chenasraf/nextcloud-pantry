@@ -62,10 +62,10 @@ class FieldDefinitionService {
 	 * @return array<string, mixed>
 	 */
 	public function serialize(FieldDefinition $def): array {
-		$options = array_map(
+		$options = array_values(array_map(
 			static fn (FieldOption $o): array => $o->jsonSerialize(),
 			$this->optionMapper->findByField((int)$def->getId()),
-		);
+		));
 		$counts = $this->valueMapper->countByOptions(
 			array_map(static fn (array $o): int => $o['id'], $options),
 		);
@@ -134,7 +134,6 @@ class FieldDefinitionService {
 		$def->setCreatedAt($now);
 		$def->setUpdatedAt($now);
 		$this->applyConfig($def, $type, $data);
-		/** @var FieldDefinition $def */
 		$def = $this->mapper->insert($def);
 
 		if ($type === FieldDefinition::TYPE_SELECT) {
@@ -433,25 +432,25 @@ class FieldDefinitionService {
 			}
 		};
 
-		$set('hint', fn ($v) => $def->setHint($v === null ? null : (string)$v));
+		$set('hint', fn (mixed $v) => $def->setHint($v === null ? null : (string)$v));
 
 		if ($type === FieldDefinition::TYPE_TEXT) {
-			$set('multiline', fn ($v) => $def->setMultiline((bool)$v));
-			$set('defaultText', fn ($v) => $def->setDefaultText($v === null ? null : (string)$v));
+			$set('multiline', fn (mixed $v) => $def->setMultiline((bool)$v));
+			$set('defaultText', fn (mixed $v) => $def->setDefaultText($v === null ? null : (string)$v));
 		}
 		if ($type === FieldDefinition::TYPE_NUMBER) {
-			$set('defaultNumber', fn ($v) => $def->setDefaultNumber($v === null ? null : (float)$v));
+			$set('defaultNumber', fn (mixed $v) => $def->setDefaultNumber($v === null ? null : (float)$v));
 		}
 		if ($type === FieldDefinition::TYPE_CHECKBOX) {
-			$set('defaultBool', fn ($v) => $def->setDefaultBool((bool)$v));
+			$set('defaultBool', fn (mixed $v) => $def->setDefaultBool((bool)$v));
 		}
 		if ($type === FieldDefinition::TYPE_DATE) {
-			$set('dateMode', fn ($v) => $def->setDateMode($this->normalizeDateMode($v)));
-			$set('defaultOffsetDays', fn ($v) => $def->setDefaultOffsetDays($v === null ? null : (int)$v));
-			$set('notifyDefault', fn ($v) => $def->setNotifyDefault((bool)$v));
-			$set('leadDays', fn ($v) => $def->setLeadDays($v === null ? 0 : max(0, (int)$v)));
-			$set('overridePolicy', fn ($v) => $def->setOverridePolicy($this->normalizeOverridePolicy($v)));
-			$set('stopWhenDone', fn ($v) => $def->setStopWhenDone((bool)$v));
+			$set('dateMode', fn (mixed $v) => $def->setDateMode($this->normalizeDateMode($v)));
+			$set('defaultOffsetDays', fn (mixed $v) => $def->setDefaultOffsetDays($v === null ? null : (int)$v));
+			$set('notifyDefault', fn (mixed $v) => $def->setNotifyDefault((bool)$v));
+			$set('leadDays', fn (mixed $v) => $def->setLeadDays($v === null ? 0 : max(0, (int)$v)));
+			$set('overridePolicy', fn (mixed $v) => $def->setOverridePolicy($this->normalizeOverridePolicy($v)));
+			$set('stopWhenDone', fn (mixed $v) => $def->setStopWhenDone((bool)$v));
 		}
 	}
 

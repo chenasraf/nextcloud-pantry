@@ -89,7 +89,6 @@ class HouseService {
 			$house->setOwnerUid($uid);
 			$house->setCreatedAt($now);
 			$house->setUpdatedAt($now);
-			/** @var House $house */
 			$house = $this->houseMapper->insert($house);
 
 			$member = new HouseMember();
@@ -97,7 +96,6 @@ class HouseService {
 			$member->setUserId($uid);
 			$member->setRole(HouseMember::ROLE_OWNER);
 			$member->setJoinedAt($now);
-			/** @var HouseMember $member */
 			$member = $this->memberMapper->insert($member);
 
 			[$adminRole] = $this->roles->seedBuiltins((int)$house->getId());
@@ -254,7 +252,6 @@ class HouseService {
 		$member->setUserId($userId);
 		$member->setRole($role);
 		$member->setJoinedAt(time());
-		/** @var HouseMember $saved */
 		$saved = $this->memberMapper->insert($member);
 
 		// Seed the pivot with the built-in role matching the requested role so a

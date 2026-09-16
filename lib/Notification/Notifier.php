@@ -38,13 +38,13 @@ class Notifier implements INotifier {
 		$count = (int)($params['count'] ?? 1);
 		$userParam = [
 			'type' => 'user',
-			'id' => $params['userId'] ?? '',
-			'name' => $params['userDisplayName'] ?? '',
+			'id' => (string)($params['userId'] ?? ''),
+			'name' => (string)($params['userDisplayName'] ?? ''),
 		];
 		$houseParam = [
 			'type' => 'highlight',
 			'id' => (string)($params['houseId'] ?? ''),
-			'name' => $params['houseName'] ?? '',
+			'name' => (string)($params['houseName'] ?? ''),
 		];
 
 		switch ($notification->getSubject()) {
@@ -75,7 +75,7 @@ class Notifier implements INotifier {
 							'title' => [
 								'type' => 'highlight',
 								'id' => (string)($params['noteId'] ?? ''),
-								'name' => $params['noteTitle'] ?? '',
+								'name' => (string)($params['noteTitle'] ?? ''),
 							],
 							'house' => $houseParam,
 						],
@@ -101,7 +101,7 @@ class Notifier implements INotifier {
 							'title' => [
 								'type' => 'highlight',
 								'id' => (string)($params['noteId'] ?? ''),
-								'name' => $params['noteTitle'] ?? '',
+								'name' => (string)($params['noteTitle'] ?? ''),
 							],
 							'house' => $houseParam,
 						],
@@ -122,7 +122,7 @@ class Notifier implements INotifier {
 				$listParam = [
 					'type' => 'highlight',
 					'id' => 'list',
-					'name' => $params['listName'] ?? '',
+					'name' => (string)($params['listName'] ?? ''),
 				];
 				if ($count <= 1) {
 					$notification->setRichSubject(
@@ -132,7 +132,7 @@ class Notifier implements INotifier {
 							'item' => [
 								'type' => 'highlight',
 								'id' => 'item',
-								'name' => $params['itemName'] ?? '',
+								'name' => (string)($params['itemName'] ?? ''),
 							],
 							'list' => $listParam,
 							'house' => $houseParam,
@@ -158,7 +158,7 @@ class Notifier implements INotifier {
 				$listParam = [
 					'type' => 'highlight',
 					'id' => 'list',
-					'name' => $params['listName'] ?? '',
+					'name' => (string)($params['listName'] ?? ''),
 				];
 				if ($count <= 1) {
 					$notification->setRichSubject(
@@ -168,7 +168,7 @@ class Notifier implements INotifier {
 							'item' => [
 								'type' => 'highlight',
 								'id' => 'item',
-								'name' => $params['itemName'] ?? '',
+								'name' => (string)($params['itemName'] ?? ''),
 							],
 							'list' => $listParam,
 							'house' => $houseParam,
@@ -191,7 +191,7 @@ class Notifier implements INotifier {
 				break;
 
 			case 'item_reminder':
-				$names = $params['itemNames'] ?? [];
+				$names = array_map(strval(...), (array)($params['itemNames'] ?? []));
 				$count = (int)($params['itemCount'] ?? count($names));
 				$reminderLabel = $count <= 3
 					? implode(', ', $names)
@@ -208,19 +208,19 @@ class Notifier implements INotifier {
 						'list' => [
 							'type' => 'highlight',
 							'id' => 'list',
-							'name' => $params['listName'] ?? '',
+							'name' => (string)($params['listName'] ?? ''),
 						],
 						'house' => [
 							'type' => 'highlight',
 							'id' => (string)($params['houseId'] ?? ''),
-							'name' => $params['houseName'] ?? '',
+							'name' => (string)($params['houseName'] ?? ''),
 						],
 					]
 				);
 				break;
 
 			case 'item_recurred':
-				$names = $params['itemNames'] ?? [];
+				$names = array_map(strval(...), (array)($params['itemNames'] ?? []));
 				$count = (int)($params['itemCount'] ?? count($names));
 				$itemLabel = $count <= 3
 					? implode(', ', $names)
@@ -237,12 +237,12 @@ class Notifier implements INotifier {
 						'list' => [
 							'type' => 'highlight',
 							'id' => 'list',
-							'name' => $params['listName'] ?? '',
+							'name' => (string)($params['listName'] ?? ''),
 						],
 						'house' => [
 							'type' => 'highlight',
 							'id' => (string)($params['houseId'] ?? ''),
-							'name' => $params['houseName'] ?? '',
+							'name' => (string)($params['houseName'] ?? ''),
 						],
 					]
 				);
@@ -258,12 +258,12 @@ class Notifier implements INotifier {
 						'item' => [
 							'type' => 'highlight',
 							'id' => (string)($params['itemId'] ?? ''),
-							'name' => $params['itemName'] ?? '',
+							'name' => (string)($params['itemName'] ?? ''),
 						],
 						'field' => [
 							'type' => 'highlight',
 							'id' => (string)($params['fieldId'] ?? ''),
-							'name' => $params['fieldName'] ?? '',
+							'name' => (string)($params['fieldName'] ?? ''),
 						],
 					],
 				);
@@ -288,7 +288,7 @@ class Notifier implements INotifier {
 		$placeholders = $replacements = [];
 		foreach ($notification->getRichSubjectParameters() as $placeholder => $parameter) {
 			$placeholders[] = '{' . $placeholder . '}';
-			$replacements[] = $parameter['name'] ?? '';
+			$replacements[] = (string)($parameter['name'] ?? '');
 		}
 		$notification->setParsedSubject(str_replace($placeholders, $replacements, $notification->getRichSubject()));
 	}

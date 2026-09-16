@@ -88,7 +88,6 @@ class CategoryService {
 		$cat->setSortOrder($position);
 		$cat->setCreatedAt($now);
 		$cat->setUpdatedAt($now);
-		/** @var Category $saved */
 		$saved = $this->mapper->insert($cat);
 		return $saved;
 	}

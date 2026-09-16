@@ -1,0 +1,122 @@
+<?php
+
+declare(strict_types=1);
+
+// SPDX-FileCopyrightText: Chen Asraf <contact@casraf.dev>
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+/**
+ * Stubs for Nextcloud server internals that the `nextcloud/ocp` package does not
+ * ship. Without them psalm resolves the affected types to `mixed`, which hides
+ * every real type error behind a wall of Mixed* noise.
+ *
+ * `OC\Hooks\Emitter` is only referenced transitively: `OCP\Files\IRootFolder`
+ * extends it, so an unresolved Emitter degrades every file-system call.
+ */
+
+namespace OC\Hooks;
+
+interface Emitter {
+	/**
+	 * @param string $scope
+	 * @param string $method
+	 * @return void
+	 */
+	public function listen($scope, $method, callable $callback);
+
+	/**
+	 * @param string $scope
+	 * @param string $method
+	 * @return void
+	 */
+	public function removeListener($scope = null, $method = null, ?callable $callback = null);
+}
+
+namespace OC\DB;
+
+use Doctrine\DBAL\Schema\Schema;
+
+class Connection extends \Doctrine\DBAL\Connections\PrimaryReadReplicaConnection {
+	/**
+	 * @return string|null Returns a string only if $dryRun is true.
+	 */
+	public function migrateToSchema(Schema $toSchema, bool $dryRun = false) {
+	}
+}
+
+class SchemaWrapper implements \OCP\DB\ISchemaWrapper {
+	public function __construct(Connection $connection) {
+	}
+
+	public function getWrappedSchema(): Schema {
+	}
+
+	/**
+	 * @param string $tableName
+	 */
+	public function getTable($tableName): \Doctrine\DBAL\Schema\Table {
+	}
+
+	/**
+	 * @param string $tableName
+	 */
+	public function hasTable($tableName): bool {
+	}
+
+	/**
+	 * @return list<\Doctrine\DBAL\Schema\Table>
+	 */
+	public function getTables(): array {
+	}
+
+	/**
+	 * @return list<string>
+	 */
+	public function getTableNames(): array {
+	}
+
+	/**
+	 * @return list<string>
+	 */
+	public function getTableNamesWithoutPrefix(): array {
+	}
+}
+
+namespace OCP\DB;
+
+use PDO;
+
+/**
+ * `IResult` is declared as returning `mixed` from every fetch method. Every
+ * query in this app uses the default `PDO::FETCH_ASSOC` mode, so the rows are
+ * string-keyed arrays; saying so here is what lets psalm check the row access
+ * at each call site instead of waving it through as mixed.
+ */
+interface IResult {
+	/**
+	 * @return true
+	 */
+	public function closeCursor(): bool;
+
+	/**
+	 * @return array<string, mixed>|false
+	 */
+	public function fetch(int $fetchMode = PDO::FETCH_ASSOC);
+
+	/**
+	 * @return list<array<string, mixed>>
+	 */
+	public function fetchAll(int $fetchMode = PDO::FETCH_ASSOC): array;
+
+	/**
+	 * @return scalar|null|false
+	 */
+	public function fetchColumn();
+
+	/**
+	 * @return scalar|null|false
+	 */
+	public function fetchOne();
+
+	public function rowCount(): int;
+}

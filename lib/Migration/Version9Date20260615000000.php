@@ -23,7 +23,6 @@ class Version9Date20260615000000 extends SimpleMigrationStep {
 	 * @param Closure():ISchemaWrapper $schemaClosure
 	 */
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
-		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
 		$this->addDeletedAt($schema, Application::tableName('lists'), 'pantry_lists_deleted_idx');

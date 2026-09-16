@@ -87,7 +87,6 @@ class LabelService {
 		$label->setSortOrder($this->mapper->findMaxSortOrder($houseId) + 1);
 		$label->setCreatedAt($now);
 		$label->setUpdatedAt($now);
-		/** @var Label $saved */
 		$saved = $this->mapper->insert($label);
 		return $saved;
 	}

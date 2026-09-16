@@ -51,7 +51,6 @@ class PhotoService {
 		$folder->setSortOrder(0);
 		$folder->setCreatedAt($now);
 		$folder->setUpdatedAt($now);
-		/** @var PhotoFolder $saved */
 		$saved = $this->folderMapper->insert($folder);
 		return $saved;
 	}
@@ -164,7 +163,6 @@ class PhotoService {
 		$photo->setSortOrder(0);
 		$photo->setCreatedAt($now);
 		$photo->setUpdatedAt($now);
-		/** @var Photo $saved */
 		$saved = $this->photoMapper->insert($photo);
 		return $saved;
 	}

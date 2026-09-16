@@ -46,26 +46,39 @@ class Application extends App implements IBootstrap {
 	 */
 	public static function getViteEntryScript(string $entryName): string {
 		$jsDir = realpath(__DIR__ . '/../' . Application::JS_DIR);
+		if ($jsDir === false) {
+			return '';
+		}
 		$manifestPath = dirname($jsDir) . '/.vite/manifest.json';
 
 		if (!file_exists($manifestPath)) {
 			return '';
 		}
 
-		$manifest = json_decode(file_get_contents($manifestPath), true);
-
-		if (isset($manifest[$entryName]['file'])) {
-			$manifestFile = $manifest[$entryName]['file'];
-			$fullPath = dirname($jsDir) . '/' . $manifestFile;
-
-			if (!file_exists($fullPath)) {
-				return '';
-			}
-
-			return pathinfo($manifestFile, PATHINFO_FILENAME);
+		$raw = file_get_contents($manifestPath);
+		if ($raw === false) {
+			return '';
+		}
+		$manifest = json_decode($raw, true);
+		if (!is_array($manifest)) {
+			return '';
 		}
 
-		return '';
+		$entry = $manifest[$entryName] ?? null;
+		if (!is_array($entry)) {
+			return '';
+		}
+		$manifestFile = $entry['file'] ?? null;
+		if (!is_string($manifestFile)) {
+			return '';
+		}
+		$fullPath = dirname($jsDir) . '/' . $manifestFile;
+
+		if (!file_exists($fullPath)) {
+			return '';
+		}
+
+		return pathinfo($manifestFile, PATHINFO_FILENAME);
 	}
 
 	public static function tableName(string $table): string {

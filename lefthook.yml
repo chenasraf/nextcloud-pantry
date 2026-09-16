@@ -19,8 +19,18 @@ pre-commit:
       exclude: "/gen/"
       env:
         PHP_CS_FIXER_IGNORE_ENV: "1"
-      run: make php-cs-fixer && make test
+      # Psalm runs after the fixer rather than beside it: the fixer rewrites the
+      # same files Psalm reads, and analysis covers the whole of lib/ regardless
+      # of what is staged.
+      run: make php-cs-fixer && make test && make psalm
       stage_fixed: true
+    psalm:
+      # The PHP files are covered above; these are the other inputs that decide
+      # what Psalm reports.
+      glob:
+        - "psalm.xml"
+        - "tests/stubs/*"
+      run: make psalm
     openapi:
       glob:
         - "*Controller.php"

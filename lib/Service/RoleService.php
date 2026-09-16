@@ -42,7 +42,6 @@ class RoleService {
 		$admin->setName('Admin');
 		$admin->setRoleType(Role::TYPE_ADMIN);
 		$this->grantAll($admin);
-		/** @var Role $admin */
 		$admin = $this->roleMapper->insert($admin);
 
 		$member = new Role();
@@ -50,7 +49,6 @@ class RoleService {
 		$member->setName('Member');
 		$member->setRoleType(Role::TYPE_DEFAULT);
 		$this->grantAll($member);
-		/** @var Role $member */
 		$member = $this->roleMapper->insert($member);
 
 		return [$admin, $member];
@@ -88,7 +86,6 @@ class RoleService {
 		$role->setName($name);
 		$role->setRoleType(Role::TYPE_NORMAL);
 		$this->applyCaps($role, $caps);
-		/** @var Role $role */
 		$role = $this->roleMapper->insert($role);
 		return $role;
 	}

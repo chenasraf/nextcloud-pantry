@@ -68,7 +68,6 @@ class ShoppingReminderService {
 		$reminder->setEnabled($enabled);
 		$reminder->setCreatedAt($now);
 		$reminder->setUpdatedAt($now);
-		/** @var ShoppingReminder $saved */
 		$saved = $this->mapper->insert($reminder);
 		return $saved;
 	}

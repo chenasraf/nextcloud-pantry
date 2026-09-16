@@ -41,7 +41,6 @@ class Version34Date20260908020000 extends SimpleMigrationStep {
 	public function postSchemaChange(IOutput $output, Closure $schemaClosure, array $options): void {
 		$categoriesTable = Application::tableName('categories');
 
-		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 		if (!$schema->hasTable($categoriesTable)) {
 			return;

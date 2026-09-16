@@ -307,6 +307,15 @@ lint:
 	pnpm lint
 	$(composer_bin) run lint
 
+# psalm:
+#   - Static analysis over lib/
+#   - Keeps Psalm's cache (in the system temp dir) so repeat runs only re-analyse
+#     what changed. CI runs the composer script instead, which starts cold.
+.PHONY: psalm
+psalm:
+	@echo "\x1b[33mRunning static analysis...\x1b[0m"
+	@$(CURDIR)/vendor/bin/psalm --threads=1 --monochrome
+
 # php-cs-fixer:
 #   - Fix staged PHP files with PHP-CS-Fixer shim (checks syntax first)
 .PHONY: php-cs-fixer

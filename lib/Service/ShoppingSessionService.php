@@ -270,7 +270,6 @@ class ShoppingSessionService {
 		$session->setIsPrivate(false);
 		$session->setCreatedAt($now);
 		$session->setUpdatedAt($now);
-		/** @var ShoppingSession $saved */
 		$saved = $this->sessions->insert($session);
 
 		$sessionId = (int)$saved->getId();

@@ -95,6 +95,9 @@ final class ImageController extends OCSController {
 		});
 	}
 
+	/**
+	 * @return FileDisplayResponse<Http::STATUS_OK, array{Content-Type: string}>|DataResponse<Http::STATUS_NOT_FOUND, array{error: string}, array{}>
+	 */
 	private function servePreview(string $ownerUid, int $fileId, int $size): FileDisplayResponse|DataResponse {
 		$size = max(16, min($size, 2048));
 

@@ -93,11 +93,13 @@ class StoreService {
 		$store->setSortOrder($this->mapper->findMaxSortOrder($houseId) + 1);
 		$store->setCreatedAt($now);
 		$store->setUpdatedAt($now);
-		/** @var Store $saved */
 		$saved = $this->mapper->insert($store);
 		return $saved;
 	}
 
+	/**
+	 * @param array<string, mixed> $patch
+	 */
 	public function update(int $storeId, array $patch): Store {
 		$store = $this->get($storeId);
 		if (isset($patch['name'])) {

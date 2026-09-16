@@ -982,10 +982,12 @@ final class ChecklistController extends OCSController {
 
 			$newImageFileId = null;
 			$newImageOwner = null;
-			if ($source->getImageFileId() !== null && $source->getImageUploadedBy() !== null) {
+			$sourceImageFileId = $source->getImageFileId();
+			$sourceImageOwner = $source->getImageUploadedBy();
+			if ($sourceImageFileId !== null && $sourceImageOwner !== null) {
 				$newImageFileId = $this->images->duplicateItemImage(
-					$source->getImageUploadedBy(),
-					$source->getImageFileId(),
+					$sourceImageOwner,
+					$sourceImageFileId,
 					$uid,
 					$houseId,
 				);
@@ -1428,10 +1430,12 @@ final class ChecklistController extends OCSController {
 			foreach ($collected['items'] as $source) {
 				$newImageFileId = null;
 				$newImageOwner = null;
-				if ($source->getImageFileId() !== null && $source->getImageUploadedBy() !== null) {
+				$sourceImageFileId = $source->getImageFileId();
+				$sourceImageOwner = $source->getImageUploadedBy();
+				if ($sourceImageFileId !== null && $sourceImageOwner !== null) {
 					$newImageFileId = $this->images->duplicateItemImage(
-						$source->getImageUploadedBy(),
-						$source->getImageFileId(),
+						$sourceImageOwner,
+						$sourceImageFileId,
 						$uid,
 						$houseId,
 					);

@@ -1,11 +1,10 @@
 name: Static analysis
 
 on:
-  # pull_request:
-  workflow_dispatch:
-  # push:
-  #   branches:
-  #     - master
+  pull_request:
+  push:
+    branches:
+      - master
 
 permissions:
   contents: read
@@ -21,3 +20,9 @@ jobs:
     secrets: inherit
     with:
       php-versions-min: "8.2"
+      # The default filters cover **.php and psalm.xml; the stubs decide which
+      # server internals resolve, so a change there moves the results too.
+      path-filters: |
+        - '**.php'
+        - 'psalm.xml'
+        - 'tests/stubs/**'

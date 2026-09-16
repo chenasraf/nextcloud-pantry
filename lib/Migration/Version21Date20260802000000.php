@@ -40,7 +40,6 @@ class Version21Date20260802000000 extends SimpleMigrationStep {
 	 * @param Closure():ISchemaWrapper $schemaClosure
 	 */
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
-		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
 		$items = Application::tableName('shopsess_items');
@@ -86,7 +85,6 @@ class Version21Date20260802000000 extends SimpleMigrationStep {
 		$logs = Application::tableName('shopsess_items');
 		$items = Application::tableName('list_items');
 
-		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 		if (!$schema->hasTable($items)) {
 			return;
