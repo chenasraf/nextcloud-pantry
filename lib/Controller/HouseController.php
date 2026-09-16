@@ -304,9 +304,10 @@ final class HouseController extends OCSController {
 	}
 
 	/**
-	 * Search Nextcloud users for autocomplete
+	 * Search Nextcloud accounts for autocomplete
 	 *
-	 * Excludes the current user from results.
+	 * Matches on display name, plus an exact account id. Excludes the current
+	 * account from results.
 	 *
 	 * @param string $search Search query.
 	 * @param int<1, 50> $limit Maximum results.
@@ -320,18 +321,31 @@ final class HouseController extends OCSController {
 	public function autocompleteUsers(string $search = '', int $limit = 10): DataResponse {
 		return $this->runAction(function () use ($search, $limit): DataResponse {
 			$currentUid = $this->requireUid();
-			// Matches on account id, not display name: invites are addressed to
-			// an account, and the suggested replacement (searchDisplayName) would
-			// stop finding people whose id differs from what they display as.
-			/** @psalm-suppress DeprecatedMethod */
-			$users = $this->userManager->search(trim($search), $limit + 1);
+			$pattern = trim($search);
+
+			$users = $this->userManager->searchDisplayName($pattern, $limit + 1);
+
+			// An account whose display name was changed away from its id is not
+			// reachable by name search, so an exact id resolves on its own and
+			// leads the results: invites are addressed to the id, and people
+			// paste one verbatim when they already know it.
+			if ($pattern !== '') {
+				$exact = $this->userManager->get($pattern);
+				if ($exact !== null) {
+					array_unshift($users, $exact);
+				}
+			}
+
 			$results = [];
+			$seen = [];
 			foreach ($users as $user) {
-				if ($user->getUID() === $currentUid) {
+				$uid = $user->getUID();
+				if ($uid === $currentUid || isset($seen[$uid])) {
 					continue;
 				}
+				$seen[$uid] = true;
 				$results[] = [
-					'id' => $user->getUID(),
+					'id' => $uid,
 					'label' => $user->getDisplayName(),
 				];
 				if (count($results) >= $limit) {

@@ -10455,8 +10455,8 @@
         "/ocs/v2.php/apps/pantry/api/users/autocomplete": {
             "get": {
                 "operationId": "house-autocomplete-users",
-                "summary": "Search Nextcloud users for autocomplete",
-                "description": "Excludes the current user from results.",
+                "summary": "Search Nextcloud accounts for autocomplete",
+                "description": "Matches on display name, plus an exact account id. Excludes the current account from results.",
                 "tags": [
                     "house"
                 ],
