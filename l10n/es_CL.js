@@ -54,6 +54,7 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Files" : "Archivo",
     "Saved." : "Guardado.",
+    "Uncategorized" : "Sin categoría",
     "Reminders" : "Recordatorios",
     "Enabled" : "Habilitado",
     "From:" : "De:",
@@ -73,7 +74,6 @@ OC.L10N.register(
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",
     "Documentation" : "Documentación",
-    "Uncategorized" : "Sin categoría",
     "Finish" : "Terminar",
     "Text" : "Texto",
     "Checkbox" : "Casilla de verificación"

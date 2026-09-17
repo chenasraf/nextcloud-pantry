@@ -50,6 +50,7 @@
     "Summary" : "Resumen",
     "Files" : "Archivo",
     "Saved." : "Guardado.",
+    "Uncategorized" : "Sin categoría",
     "Reminders" : "Recordatorios",
     "From:" : "De:",
     "To:" : "Para:",
@@ -69,7 +70,6 @@
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva ",
     "Documentation" : "Documentación",
-    "Uncategorized" : "Sin categoría",
     "Text" : "Texto",
     "Checkbox" : "Casilla de verificación"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"

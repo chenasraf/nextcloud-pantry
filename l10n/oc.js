@@ -59,6 +59,7 @@ OC.L10N.register(
     "Notifications" : "Notificacions",
     "Browse …" : "Percórrer...",
     "Viewer" : "Visualizaira",
+    "Uncategorized" : "Desorganizadas",
     "Reminders" : "Rapèls",
     "Enabled" : "Activada",
     "From:" : "Del :",
@@ -76,7 +77,6 @@ OC.L10N.register(
     "New folder" : "Novèl dorsièr",
     "Add a description" : "Apondre una descripcion",
     "Documentation" : "Documentacion",
-    "Uncategorized" : "Desorganizadas",
     "Text" : "Tèxt",
     "Date" : "Data"
 },

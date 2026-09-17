@@ -50,6 +50,7 @@ OC.L10N.register(
     "Monthly" : "ทุก ๆ เดือน",
     "Never" : "ไม่เคย",
     "Personal settings" : "การตั้งค่าส่วนบุคคล",
+    "Uncategorized" : "ไม่ได้จัดหมวดหมู่",
     "Reminders" : "การแจ้งเตือน",
     "Enabled" : "เปิดใช้งาน",
     "From:" : "จาก:",
@@ -67,7 +68,6 @@ OC.L10N.register(
     "Automation" : "อัตโนมัติ",
     "New folder" : "โฟลเดอร์ใหม่",
     "Documentation" : "เอกสารประกอบ",
-    "Uncategorized" : "ไม่ได้จัดหมวดหมู่",
     "Text" : "ข้อความ",
     "Checkbox" : "กล่องกาเครื่องหมาย",
     "Date" : "วันที่"

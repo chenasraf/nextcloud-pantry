@@ -57,6 +57,7 @@
     "Notifications" : "Notificacions",
     "Browse …" : "Percórrer...",
     "Viewer" : "Visualizaira",
+    "Uncategorized" : "Desorganizadas",
     "Reminders" : "Rapèls",
     "Enabled" : "Activada",
     "From:" : "Del :",
@@ -74,7 +75,6 @@
     "New folder" : "Novèl dorsièr",
     "Add a description" : "Apondre una descripcion",
     "Documentation" : "Documentacion",
-    "Uncategorized" : "Desorganizadas",
     "Text" : "Tèxt",
     "Date" : "Data"
 },"pluralForm" :"nplurals=2; plural=(n > 1);"
