@@ -85,6 +85,7 @@ OC.L10N.register(
     "Saved." : "Guardado.",
     "Viewer" : "Visor",
     "Editor" : "Editor",
+    "All" : "Todos",
     "Uncategorized" : "Sin categoría",
     "Reminders" : "Recordatorios",
     "Enabled" : "Habilitado",

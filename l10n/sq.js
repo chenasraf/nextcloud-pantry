@@ -59,6 +59,7 @@ OC.L10N.register(
     "Notifications" : "Njoftime",
     "Files" : "Skedarë",
     "Saved." : "Ruajtur.",
+    "All" : "Të gjithë",
     "Uncategorized" : "Të pakategorizuara",
     "Reminders" : "Kujtesë",
     "Enabled" : "E aktivizuar",

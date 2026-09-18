@@ -53,6 +53,7 @@ OC.L10N.register(
     "Never" : "არასდროს",
     "Summary" : "შეჯამება",
     "Saved." : "შენახულია.",
+    "All" : "ყველა",
     "Uncategorized" : "არაკატეგორიზირებული",
     "Reminders" : "შემახსენებლები",
     "Enabled" : "მოქმედია",

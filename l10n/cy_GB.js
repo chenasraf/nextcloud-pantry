@@ -40,6 +40,7 @@ OC.L10N.register(
     "On date" : "Ar ddyddiad",
     "Summary" : "Crynodeb",
     "Editor" : "gafygau",
+    "All" : "Popeth",
     "Uncategorized" : "Dim categori",
     "Reminders" : "Nodau atgoffa",
     "From:" : "Oddi wrth:",

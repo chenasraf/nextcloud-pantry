@@ -76,6 +76,7 @@ OC.L10N.register(
     "Notifications" : "Notificări",
     "Browse …" : "Navigare ...",
     "Viewer" : "Vizualizator",
+    "All" : "Toate ",
     "Reminders" : "Mementouri",
     "Enabled" : "Activat",
     "Back" : "Înapoi",

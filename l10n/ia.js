@@ -36,6 +36,7 @@ OC.L10N.register(
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
+    "All" : "Tote",
     "Reminders" : "Memento",
     "Enabled" : "Activate",
     "Location" : "Loco",

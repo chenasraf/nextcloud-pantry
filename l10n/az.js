@@ -37,6 +37,7 @@ OC.L10N.register(
     "Weekly" : "Həftəlik",
     "Never" : "Heç vaxt",
     "Summary" : "Xülasə",
+    "All" : "Hamısı",
     "Enabled" : "İşə salınıb",
     "Back" : "Geri",
     "From:" : "Kimdən:",

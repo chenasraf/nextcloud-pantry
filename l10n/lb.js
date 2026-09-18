@@ -56,6 +56,7 @@ OC.L10N.register(
     "Summary" : "Zesummefaassung",
     "Notifications" : "Notifikatiounen",
     "Files" : "Fichieren",
+    "All" : "All",
     "Reminders" : "Erennërungen",
     "Enabled" : "Aktivéiert",
     "Days" : "Deeg",

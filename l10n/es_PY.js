@@ -51,6 +51,7 @@ OC.L10N.register(
     "Files" : "Archivo",
     "Saved." : "Guardado.",
     "Viewer" : "Visor",
+    "All" : "Todos",
     "Uncategorized" : "Sin categoría",
     "Reminders" : "Recordatorios",
     "Enabled" : "Habilitado",

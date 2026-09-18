@@ -50,6 +50,7 @@ OC.L10N.register(
     "Monthly" : "ทุก ๆ เดือน",
     "Never" : "ไม่เคย",
     "Personal settings" : "การตั้งค่าส่วนบุคคล",
+    "All" : "ทั้งหมด",
     "Uncategorized" : "ไม่ได้จัดหมวดหมู่",
     "Reminders" : "การแจ้งเตือน",
     "Enabled" : "เปิดใช้งาน",

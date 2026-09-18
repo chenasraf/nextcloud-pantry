@@ -59,6 +59,7 @@ OC.L10N.register(
     "Never" : "Nunca",
     "Summary" : "Resumen",
     "Files" : "Archivo",
+    "All" : "Todos",
     "Reminders" : "Recordatorios",
     "Enabled" : "Habilitado",
     "Back" : "Volver",

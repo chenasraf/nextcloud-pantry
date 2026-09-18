@@ -70,6 +70,7 @@ OC.L10N.register(
     "Files" : "Fayllar",
     "Saved." : "Saqlangan.",
     "Editor" : "Tahrirchi",
+    "All" : "Barchasi",
     "Uncategorized" : "Kategoriyasiz",
     "Back" : "Orqaga",
     "Days" : "Kunlar",

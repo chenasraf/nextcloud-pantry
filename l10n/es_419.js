@@ -52,6 +52,7 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Files" : "Archivo",
     "Saved." : "Guardado.",
+    "All" : "Todos",
     "Uncategorized" : "Sin categoría",
     "Reminders" : "Recordatorios",
     "From:" : "De:",
