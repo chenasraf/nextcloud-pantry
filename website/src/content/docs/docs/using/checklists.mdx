@@ -45,19 +45,25 @@ an image, and a repeat schedule.
 	</TabItem>
 </Tabs>
 
-Each list has settings for its name, description, icon, color, and a **delete on done** default that
-controls whether checked items are removed automatically. **All lists** shows every item across the
-house in one place.
+Each list has settings for its name, description, icon, color and access, plus a **default
+recurrence** that decides what new items on it start as:
+
+- **Remember last** — a new item copies the recurrence of the last item added to this list.
+- **None** — new items stay on the list after they are marked done.
+- **One-time** — new items are removed from the list once marked done.
+- **Recurring** — new items come back on the schedule you set alongside.
+
+**All lists** shows every item across the house in one place.
 
 ## Add and check off items
 
 A composer adds an item to the list. Checking an item marks it done: it strikes through and drops
 to the bottom, and can be un-checked to bring it back.
 
-The composer carries a row of chips — **Category, Stores, Labels, Quantity, Price, Description, Item
-type, Image, Barcode** — so you can set an item's details as you add it.
+The composer carries a row of chips — **Category, Stores, Labels, Quantity, Price, Description,
+Recurrence, Image, Barcode** — so you can set an item's details as you add it.
 
-![The checklist composer with chips for category, stores, labels, quantity, price, description, item type, image and barcode.](/docs/checklists-composer.png)
+![The checklist composer with chips for category, stores, labels, quantity, price, description, recurrence, image and barcode.](/docs/checklists-composer.png)
 
 <Tabs syncKey="platform">
 	<TabItem label="Web">
@@ -102,11 +108,28 @@ What a tap or click on a row does is up to you, in **Settings**:
 	</TabItem>
 </Tabs>
 
+### Adding something the list already has
+
+As you type a name, matching items already on the list appear under the composer as **Already on
+this list**. Tap one to reuse it instead of creating a second row for the same thing — bringing a
+checked item back rather than duplicating it.
+
+Two settings shape this:
+
+- **Reuse existing items** — what happens when the name you add already exists: **Always ask** (the
+  default — a prompt offering **Reuse existing** or **Add anyway**), **Always reuse**, or **Never
+  reuse**.
+- **Suggest archived items** — off by default; turn it on to search archived items for suggestions
+  too. Reusing an archived item unarchives it.
+
 ## Item details
 
 Set any of these from the composer chips as you add an item, or open an existing item to change them:
 
-- **Quantity** — increase, decrease or clear it.
+- **Quantity** — free text, so a unit comes along for the ride ("3", "400 g", "2 x 1 L"). The **+**
+  and **−** buttons step the number inside it and leave the rest alone, in a 1-5-10 progression that
+  grows with the value — 8 → 9 → 10 → 15, 400 → 450 → 500 — so a large quantity is a few taps away
+  rather than a hundred.
 - **Price** — an amount (or a range) used to estimate shopping totals.
 - **Category** — one category, shown as a colored header that groups the list.
 - **Stores** — one or more shops where the item is bought.
@@ -154,21 +177,39 @@ narrow what you see.
 	</TabItem>
 </Tabs>
 
-## Repeat items
+## Recurrence
 
-An item can repeat on a schedule — for the groceries you buy every week. Set a repeat (for example
-**Every week** or **Every 2 weeks**) and Pantry brings the item back on its **next recurrence** after
-it is checked off.
+Every item is one of three kinds, set from the **Recurrence** chip:
 
-A repeat can be anchored two ways:
+- **Staple** — stays on the list after it is marked done.
+- **One-time** — removed from the list once marked done.
+- **Recurring** — comes back on a schedule.
+
+A new item starts as whatever its list's [default recurrence](#create-a-list) says.
+
+### Repeat schedules
+
+A recurring item repeats on a schedule — for the groceries you buy every week. Presets cover
+**Daily**, **Weekly**, **Every 2 weeks** and **Monthly**; past those, build the rule yourself from
+**Every _n_** days, weeks, months or years:
+
+- **Weeks** — the weekdays to repeat on.
+- **Months** — either **days of the month** (leave it empty to repeat on the same day each month),
+  or **a weekday of the month**: First, Second, Third, Fourth or Last, paired with a weekday — the
+  second Tuesday, the last Friday.
+- **Years** — a **date of the year** (leave it empty to repeat on the same date each year).
+
+A repeat can also **end**: never, after a number of occurrences, or on a date. A summary of the rule
+you built is shown as you go.
+
+Pantry brings the item back on its **next recurrence** after it is checked off, anchored one of two
+ways:
 
 - **On a fixed schedule** (default) — the item comes back on its next scheduled date, no matter when
   you actually tick it off. A weekly item stays on the same weekday even if you shop a few days late.
 - **Starts after completion** — turn this on to count the interval from when the item is ticked off
   instead. A "every week" item you buy two days late then returns a full week _from that purchase_,
   not from the original date.
-
-<Aside type="note">Leave the day empty on a monthly repeat to recur on the same day each month.</Aside>
 
 ## Import and export
 
@@ -185,6 +226,14 @@ You can also **copy** or **move** items to another list from the item menu.
   available to bring back later. Whole lists can be archived too.
 - **Trash** an item or list to soft-delete it. Trashed things can be restored, or permanently
   deleted, from the trash view.
+
+Once a shop or a chore is behind you, the **Done** section's menu clears it in one go:
+
+- **Archive all** moves every checked item in the list to the archive.
+- **Remove all** moves every checked item in the list to the trash.
+
+Both cover the whole list rather than only what a filter or search currently shows. Each asks for
+confirmation first, and the message that follows carries an **Undo**.
 
 <Aside type="caution">
 	Emptying the trash or permanently deleting cannot be undone. Everything else — checking off,
