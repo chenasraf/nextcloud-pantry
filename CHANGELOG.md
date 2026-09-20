@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.33.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.32.0...v0.33.0) (2026-09-20)
+
+
+### Features
+
+* **categories:** per-store category order for shopping mode ([86e2b98](https://github.com/chenasraf/nextcloud-pantry/commit/86e2b983430f0d8737216647b671de173639e21f)), closes [#254](https://github.com/chenasraf/nextcloud-pantry/issues/254)
+* **checklists:** scale the quantity +/- step with the value ([ad7da75](https://github.com/chenasraf/nextcloud-pantry/commit/ad7da755fb76be3e3ec9213cc7a6ae3c2e92932d))
+* **shopping:** amend a past trip's store and grand totals ([6ed85c4](https://github.com/chenasraf/nextcloud-pantry/commit/6ed85c48cad5ac99cca07a2d9ee4ab994ebaa302))
+* **shopping:** choose which items a trip covers when starting it ([5d70409](https://github.com/chenasraf/nextcloud-pantry/commit/5d7040915eb178469722f4dab0cb109ef8a8bb65)), closes [#261](https://github.com/chenasraf/nextcloud-pantry/issues/261)
+* **shopping:** join a housemate's shopping trip ([234c3a4](https://github.com/chenasraf/nextcloud-pantry/commit/234c3a487699f45899d28fb8efa9f8849d8bb5df))
+
+
+### Bug Fixes
+
+* **houses:** search accounts by display name and exact id ([df14d0a](https://github.com/chenasraf/nextcloud-pantry/commit/df14d0a5c7e29218bae66270422fc15736e2030c))
+* **l10n:** Update translations from Transifex ([fcc1642](https://github.com/chenasraf/nextcloud-pantry/commit/fcc16428ce27a5ff7b59ba0e6ffe26f9dd0210bf))
+* **l10n:** Update translations from Transifex ([6706e39](https://github.com/chenasraf/nextcloud-pantry/commit/6706e3904d28ee18e41b54220a81546186348a7b))
+* **l10n:** Update translations from Transifex ([e7c6ef0](https://github.com/chenasraf/nextcloud-pantry/commit/e7c6ef06ed2779abee429132bb46b7872578d2cf))
+* **l10n:** Update translations from Transifex ([937dd62](https://github.com/chenasraf/nextcloud-pantry/commit/937dd620d0ce83ba6aba6fc6f0e68cc4bb27aedb))
+* **l10n:** Update translations from Transifex ([5b36b01](https://github.com/chenasraf/nextcloud-pantry/commit/5b36b01761f837291d6c46d0f05cab505bc3d9f0))
+
 ## [0.32.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.31.1...v0.32.0) (2026-09-15)
 
 
