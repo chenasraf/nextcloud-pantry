@@ -69,6 +69,7 @@ class Capabilities implements IPublicCapability {
 					'photos',
 					'notes',
 					'note-pinning',
+					'note-file-sync',
 					'notifications',
 					'item-images',
 					'recurring-items',

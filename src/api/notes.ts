@@ -59,6 +59,35 @@ export async function emptyNotesTrash(houseId: number): Promise<void> {
   await ocs.delete(`/houses/${houseId}/notes/trash`)
 }
 
+/**
+ * Create a file under `folderPath` seeded with the note, and keep the two in
+ * sync from then on.
+ */
+export async function startNoteSync(
+  houseId: number,
+  noteId: number,
+  folderPath: string,
+): Promise<Note> {
+  const resp = await ocs.post<Note>(`/houses/${houseId}/notes/${noteId}/sync`, { folderPath })
+  return resp.data
+}
+
+/** Stop syncing, leaving the note and the file as they are. */
+export async function stopNoteSync(houseId: number, noteId: number): Promise<Note> {
+  const resp = await ocs.delete<Note>(`/houses/${houseId}/notes/${noteId}/sync`)
+  return resp.data
+}
+
+/** Create a note from a text file, optionally keeping the two in sync. */
+export async function importNoteFromFile(
+  houseId: number,
+  path: string,
+  sync = true,
+): Promise<Note> {
+  const resp = await ocs.post<Note>(`/houses/${houseId}/notes/import`, { path, sync })
+  return resp.data
+}
+
 export async function reorderNotes(
   houseId: number,
   items: { id: number; sortOrder: number }[],

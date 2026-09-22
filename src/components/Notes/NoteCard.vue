@@ -35,6 +35,22 @@
           {{ strings.importToList }}
         </NcActionButton>
         <NcActionButton
+          v-if="!trashMode && canEditNote && !note.syncFileId"
+          close-after-click
+          @click.stop="$emit('start-sync', note)"
+        >
+          <template #icon><FileSyncIcon :size="20" /></template>
+          {{ strings.startSync }}
+        </NcActionButton>
+        <NcActionButton
+          v-if="!trashMode && canEditNote && note.syncFileId"
+          close-after-click
+          @click.stop="$emit('stop-sync', note)"
+        >
+          <template #icon><LinkVariantOffIcon :size="20" /></template>
+          {{ strings.stopSync }}
+        </NcActionButton>
+        <NcActionButton
           v-if="can.canDeleteNotes"
           close-after-click
           @click.stop="$emit('delete', note)"
@@ -60,6 +76,10 @@
     <div v-if="note.content" class="note-card__content" dir="auto">
       <NcRichText :text="note.content" :use-markdown="true" :use-extended-markdown="true" />
     </div>
+    <div v-if="note.syncFileId" class="note-card__sync" :title="syncLabel">
+      <FileSyncIcon :size="14" />
+      <span class="note-card__sync-path">{{ syncLabel }}</span>
+    </div>
   </div>
 </template>
 
@@ -71,6 +91,8 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcRichText from '@nextcloud/vue/components/NcRichText'
 import DeleteIcon from '@icons/Delete.vue'
+import FileSyncIcon from '@icons/FileSync.vue'
+import LinkVariantOffIcon from '@icons/LinkVariantOff.vue'
 import PlaylistPlusIcon from '@icons/PlaylistPlus.vue'
 import PinIcon from '@icons/Pin.vue'
 import PinOutlineIcon from '@icons/PinOutline.vue'
@@ -98,6 +120,8 @@ const emit = defineEmits<{
   edit: [note: Note]
   delete: [note: Note]
   'import-to-list': [note: Note]
+  'start-sync': [note: Note]
+  'stop-sync': [note: Note]
   restore: [note: Note]
   'toggle-pin': [note: Note]
   'drag-start': [noteId: number]
@@ -106,6 +130,12 @@ const emit = defineEmits<{
 }>()
 
 const isDragging = ref(false)
+
+// A synced note whose path will not resolve is bound to a file that is out of
+// reach — in the trash, or gone. Saying so beats showing an empty path.
+const syncLabel = computed(() =>
+  props.note.syncPath ? props.note.syncPath.replace(/^\//, '') : strings.fileMissing,
+)
 
 const cardStyle = computed(() => {
   if (!props.note.color) return {}
@@ -141,6 +171,12 @@ const strings = {
   restore: t('pantry', 'Restore'),
   pin: t('pantry', 'Pin to top'),
   unpin: t('pantry', 'Unpin'),
+  // TRANSLATORS: Menu action that starts mirroring this note into a file.
+  startSync: t('pantry', 'Sync to file …'),
+  // TRANSLATORS: Menu action that stops mirroring; the note and the file both remain.
+  stopSync: t('pantry', 'Stop syncing'),
+  // TRANSLATORS: Shown on a note whose file cannot be found, e.g. it is in the trash.
+  fileMissing: t('pantry', 'Synced file is missing'),
 }
 </script>
 
@@ -308,6 +344,24 @@ const strings = {
     :deep(*) {
       color: inherit !important;
     }
+  }
+
+  &__sync {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    // Sits below the content's fade-out, whatever height the content took.
+    margin-top: auto;
+    padding-top: 0.35rem;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    color: inherit;
+  }
+
+  &__sync-path {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 </style>

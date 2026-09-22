@@ -11,6 +11,7 @@ use OCA\Pantry\Db\Note;
 use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Service\NoteService;
+use OCA\Pantry\Service\NoteSyncService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -18,11 +19,14 @@ use PHPUnit\Framework\TestCase;
 class NoteServiceTest extends TestCase {
 	/** @var NoteMapper&MockObject */
 	private NoteMapper $noteMapper;
+	/** @var NoteSyncService&MockObject */
+	private NoteSyncService $sync;
 	private NoteService $svc;
 
 	protected function setUp(): void {
 		$this->noteMapper = $this->createMock(NoteMapper::class);
-		$this->svc = new NoteService($this->noteMapper);
+		$this->sync = $this->createMock(NoteSyncService::class);
+		$this->svc = new NoteService($this->noteMapper, $this->sync);
 	}
 
 	private function makeNote(array $overrides = []): Note {

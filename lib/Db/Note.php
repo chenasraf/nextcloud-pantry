@@ -30,6 +30,14 @@ use OCP\AppFramework\Db\Entity;
  * @method void setUpdatedAt(int $updatedAt)
  * @method int|null getDeletedAt()
  * @method void setDeletedAt(?int $deletedAt)
+ * @method int|null getSyncFileId()
+ * @method void setSyncFileId(?int $syncFileId)
+ * @method string|null getSyncOwnerUid()
+ * @method void setSyncOwnerUid(?string $syncOwnerUid)
+ * @method string|null getSyncHash()
+ * @method void setSyncHash(?string $syncHash)
+ * @method int|null getSyncAt()
+ * @method void setSyncAt(?int $syncAt)
  */
 class Note extends Entity implements \JsonSerializable {
 	protected int $houseId = 0;
@@ -42,6 +50,10 @@ class Note extends Entity implements \JsonSerializable {
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
 	protected ?int $deletedAt = null;
+	protected ?int $syncFileId = null;
+	protected ?string $syncOwnerUid = null;
+	protected ?string $syncHash = null;
+	protected ?int $syncAt = null;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -50,6 +62,15 @@ class Note extends Entity implements \JsonSerializable {
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 		$this->addType('deletedAt', 'integer');
+		$this->addType('syncFileId', 'integer');
+		$this->addType('syncAt', 'integer');
+	}
+
+	/**
+	 * Whether this note mirrors a file.
+	 */
+	public function isSynced(): bool {
+		return $this->syncFileId !== null;
 	}
 
 	public function jsonSerialize(): array {
@@ -65,6 +86,9 @@ class Note extends Entity implements \JsonSerializable {
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,
 			'deletedAt' => $this->deletedAt,
+			'syncFileId' => $this->syncFileId,
+			'syncOwnerUid' => $this->syncOwnerUid,
+			'syncAt' => $this->syncAt,
 		];
 	}
 }

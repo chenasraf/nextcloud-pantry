@@ -11,6 +11,9 @@ const mockApi = vi.hoisted(() => ({
   restoreNote: vi.fn(),
   permanentlyDeleteNote: vi.fn(),
   emptyNotesTrash: vi.fn(),
+  startNoteSync: vi.fn(),
+  stopNoteSync: vi.fn(),
+  importNoteFromFile: vi.fn(),
 }))
 
 vi.mock('@/api/notes', () => mockApi)
@@ -30,6 +33,10 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,
+    syncFileId: null,
+    syncOwnerUid: null,
+    syncPath: null,
+    syncAt: null,
     ...overrides,
   }
 }
@@ -213,6 +220,48 @@ describe('useNotes', () => {
 
       expect(wall.deletedNotes.value).toHaveLength(0)
       expect(mockApi.emptyNotesTrash).toHaveBeenCalledWith(1)
+    })
+  })
+
+  describe('file sync', () => {
+    it('startSync replaces the note with the bound one', async () => {
+      mockApi.listNotes.mockResolvedValue([makeNote({ id: 5 })])
+      mockApi.startNoteSync.mockResolvedValue(
+        makeNote({ id: 5, syncFileId: 42, syncPath: '/Notes/Groceries.md' }),
+      )
+
+      const wall = useNotes(1)
+      await wall.load()
+      const synced = await wall.startSync(5, '/Notes')
+
+      expect(mockApi.startNoteSync).toHaveBeenCalledWith(1, 5, '/Notes')
+      expect(synced.syncFileId).toBe(42)
+      expect(wall.notes.value[0].syncPath).toBe('/Notes/Groceries.md')
+    })
+
+    it('stopSync clears the binding on the note in the wall', async () => {
+      mockApi.listNotes.mockResolvedValue([makeNote({ id: 5, syncFileId: 42 })])
+      mockApi.stopNoteSync.mockResolvedValue(makeNote({ id: 5, syncFileId: null }))
+
+      const wall = useNotes(1)
+      await wall.load()
+      await wall.stopSync(5)
+
+      expect(mockApi.stopNoteSync).toHaveBeenCalledWith(1, 5)
+      expect(wall.notes.value[0].syncFileId).toBeNull()
+    })
+
+    it('importFromFile appends the created note', async () => {
+      mockApi.listNotes.mockResolvedValue([])
+      mockApi.importNoteFromFile.mockResolvedValue(makeNote({ id: 11, title: 'Shopping' }))
+
+      const wall = useNotes(1)
+      await wall.load()
+      const created = await wall.importFromFile('/Notes/Shopping.md', true)
+
+      expect(mockApi.importNoteFromFile).toHaveBeenCalledWith(1, '/Notes/Shopping.md', true)
+      expect(created.title).toBe('Shopping')
+      expect(wall.notes.value).toHaveLength(1)
     })
   })
 })

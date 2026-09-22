@@ -382,6 +382,10 @@ namespace OCA\Pantry;
  *     createdAt: int,
  *     updatedAt: int,
  *     deletedAt: int|null,
+ *     syncFileId: int|null,
+ *     syncOwnerUid: string|null,
+ *     syncPath: string|null,
+ *     syncAt: int|null,
  *     canEdit: bool,
  * }
  *

@@ -17,6 +17,7 @@ use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\NoteService;
+use OCA\Pantry\Service\NoteSyncService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\ShareService;
@@ -39,6 +40,7 @@ final class NoteController extends OCSController {
 		string $appName,
 		IRequest $request,
 		private NoteService $notes,
+		private NoteSyncService $noteSync,
 		private HouseAuthService $auth,
 		private HouseService $houses,
 		private NotificationService $notifications,
@@ -73,7 +75,7 @@ final class NoteController extends OCSController {
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
 			$shareMap = $this->shares->userShareMap($houseId, $uid);
-			return new DataResponse(array_map(fn ($n) => $this->noteJson($n, $roleEdit, $shareMap), $sliced));
+			return new DataResponse($this->noteListJson($sliced, $roleEdit, $shareMap));
 		});
 	}
 
@@ -101,7 +103,7 @@ final class NoteController extends OCSController {
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
 			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
 			$shareMap = $this->shares->userShareMap($houseId, $uid);
-			return new DataResponse(array_map(fn ($n) => $this->noteJson($n, $roleEdit, $shareMap), $sliced));
+			return new DataResponse($this->noteListJson($sliced, $roleEdit, $shareMap));
 		});
 	}
 
@@ -303,6 +305,96 @@ final class NoteController extends OCSController {
 	}
 
 	/**
+	 * Start syncing a note with a file
+	 *
+	 * Creates the file under `folderPath` in the calling account's storage,
+	 * seeded with the note's content, and binds the two. From then on an edit to
+	 * either side is written straight through to the other.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $noteId Note id.
+	 * @param string $folderPath Folder to create the file in, relative to the account's files root.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryNote, array{}>
+	 *
+	 * 200: Sync started
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/notes/{noteId}/sync', requirements: ['noteId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canUpdateNotes'])]
+	public function startNoteSync(int $houseId, int $noteId, string $folderPath = '/'): DataResponse {
+		return $this->runAction(function () use ($houseId, $noteId, $folderPath): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$note = $this->notes->getNote($noteId);
+			$this->assertInHouse($note->getHouseId(), $houseId);
+			$synced = $this->noteSync->startSync($note, $uid, $folderPath);
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($synced, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		});
+	}
+
+	/**
+	 * Stop syncing a note with its file
+	 *
+	 * The note and the file both survive with their current content; neither
+	 * sees the other's later edits.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $noteId Note id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryNote, array{}>
+	 *
+	 * 200: Sync stopped
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/notes/{noteId}/sync', requirements: ['noteId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canUpdateNotes'])]
+	public function stopNoteSync(int $houseId, int $noteId): DataResponse {
+		return $this->runAction(function () use ($houseId, $noteId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$note = $this->notes->getNote($noteId, includeDeleted: true);
+			$this->assertInHouse($note->getHouseId(), $houseId);
+			$unlinked = $this->noteSync->stopSync($note);
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($unlinked, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		});
+	}
+
+	/**
+	 * Create a note from a text file
+	 *
+	 * @param int $houseId House id.
+	 * @param string $path File to import, relative to the account's files root.
+	 * @param bool $sync Whether to keep the note and the file in sync afterwards.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryNote, array{}>
+	 *
+	 * 200: Note created from the file
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/notes/import')]
+	#[NoAdminRequired]
+	#[Permission(['canCreateNotes'])]
+	public function importNoteFromFile(int $houseId, string $path, bool $sync = true): DataResponse {
+		return $this->runAction(function () use ($houseId, $path, $sync): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$note = $this->noteSync->importFile($houseId, $uid, $path, $sync);
+			$this->notifications->notifyNoteCreated($houseId, $uid, (int)$note->getId(), $note->getTitle());
+			$this->activity->publishNoteCreated(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$note->getId(),
+				$note->getTitle(),
+			);
+			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdateNotes');
+			return new DataResponse($this->noteJson($note, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+		});
+	}
+
+	/**
 	 * Batch reorder notes
 	 *
 	 * @param int $houseId House id.
@@ -325,14 +417,41 @@ final class NoteController extends OCSController {
 
 	/**
 	 * Serialize a note with the current user's effective `canEdit` flag
-	 * (role capability or an editor share on the note).
+	 * (role capability or an editor share on the note), plus the path of the
+	 * file it syncs with.
+	 *
+	 * `syncPath` is resolved rather than stored, so it can never name a file
+	 * that has since moved. It costs a lookup in the syncing account's storage,
+	 * which `$folderCache` shares across a batch — and which unsynced notes,
+	 * the overwhelming majority, skip entirely.
 	 *
 	 * @param array<string, array<int, string>> $shareMap
+	 * @param array<string, \OCP\Files\Folder|null> $folderCache
 	 */
-	private function noteJson(Note $note, bool $roleEdit, array $shareMap): array {
+	private function noteJson(Note $note, bool $roleEdit, array $shareMap, array &$folderCache = []): array {
 		return array_merge($note->jsonSerialize(), [
 			'canEdit' => $this->shares->canEditFromMap(Share::TYPE_NOTE, (int)$note->getId(), $roleEdit, $shareMap),
+			'syncPath' => $this->noteSync->resolvePath($note, $folderCache),
 		]);
+	}
+
+	/**
+	 * Serialize a batch of notes, resolving every sync path against one shared
+	 * folder cache.
+	 *
+	 * @param Note[] $notes
+	 * @param array<string, array<int, string>> $shareMap
+	 * @return list<array<string, mixed>>
+	 */
+	private function noteListJson(array $notes, bool $roleEdit, array $shareMap): array {
+		// By reference: an arrow function would copy the cache per note and the
+		// sharing that makes the batch cheap would be lost.
+		$folderCache = [];
+		$serialize = function (Note $n) use ($roleEdit, $shareMap, &$folderCache): array {
+			return $this->noteJson($n, $roleEdit, $shareMap, $folderCache);
+		};
+
+		return array_values(array_map($serialize, $notes));
 	}
 
 	private function requireUid(): string {

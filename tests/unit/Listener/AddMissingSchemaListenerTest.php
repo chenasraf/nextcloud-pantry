@@ -45,14 +45,22 @@ class AddMissingSchemaListenerTest extends TestCase {
 		$this->addToAssertionCount(1);
 	}
 
-	public function testIndicesListenerDeclaresArchivedIndex(): void {
+	public function testIndicesListenerDeclaresExpectedIndices(): void {
+		$declared = [];
+
 		/** @var AddMissingIndicesEvent&MockObject $event */
 		$event = $this->createMock(AddMissingIndicesEvent::class);
-		$event->expects($this->once())
-			->method('addMissingIndex')
-			->with('pantry_list_items', 'pantry_items_archived_idx', ['archived_at']);
+		$event->method('addMissingIndex')
+			->willReturnCallback(function (string $table, string $name, array $columns) use (&$declared): void {
+				$declared[] = [$table, $name, $columns];
+			});
 
 		(new AddMissingIndicesListener())->handle($event);
+
+		$this->assertSame([
+			['pantry_list_items', 'pantry_items_archived_idx', ['archived_at']],
+			['pantry_notes', 'pantry_nsync_file_idx', ['sync_file_id']],
+		], $declared);
 	}
 
 	public function testIndicesListenerIgnoresUnrelatedEvents(): void {

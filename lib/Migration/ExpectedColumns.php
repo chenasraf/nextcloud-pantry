@@ -93,6 +93,14 @@ final class ExpectedColumns {
 			self::col('field_values', 'notify_enabled', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
 			self::col('field_values', 'notify_lead_days', Types::INTEGER, ['notnull' => false, 'default' => null]),
 			self::col('field_values', 'notified_for_date', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+
+			// notes — file sync binding (Version37). Every file write on the
+			// instance looks a note up by sync_file_id, so a missing column takes
+			// down writes to unrelated files as well as the notes wall.
+			self::col('notes', 'sync_file_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('notes', 'sync_owner_uid', Types::STRING, ['notnull' => false, 'length' => 64, 'default' => null]),
+			self::col('notes', 'sync_hash', Types::STRING, ['notnull' => false, 'length' => 64, 'default' => null]),
+			self::col('notes', 'sync_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 		];
 	}
 

@@ -89,6 +89,26 @@ export function useNotes(houseId: number) {
     await api.reorderNotes(houseId, items)
   }
 
+  function replace(updated: Note): void {
+    notes.value = notes.value.map((n) => (n.id === updated.id ? updated : n))
+  }
+
+  async function startSync(noteId: number, folderPath: string): Promise<Note> {
+    const synced = await api.startNoteSync(houseId, noteId, folderPath)
+    replace(synced)
+    return synced
+  }
+
+  async function stopSync(noteId: number): Promise<void> {
+    replace(await api.stopNoteSync(houseId, noteId))
+  }
+
+  async function importFromFile(path: string, sync: boolean): Promise<Note> {
+    const created = await api.importNoteFromFile(houseId, path, sync)
+    notes.value = [...notes.value, created]
+    return created
+  }
+
   async function togglePin(noteId: number): Promise<void> {
     const note = notes.value.find((n) => n.id === noteId)
     if (!note) return
@@ -112,5 +132,8 @@ export function useNotes(houseId: number) {
     emptyTrash,
     reorder,
     togglePin,
+    startSync,
+    stopSync,
+    importFromFile,
   }
 }

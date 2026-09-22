@@ -104,6 +104,10 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,
+    syncFileId: null,
+    syncOwnerUid: null,
+    syncPath: null,
+    syncAt: null,
     ...overrides,
   }
 }

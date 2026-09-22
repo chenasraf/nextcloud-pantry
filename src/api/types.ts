@@ -370,6 +370,14 @@ export interface Note {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  /** File this note mirrors, or null when it stands alone. */
+  syncFileId: number | null
+  /** Account whose storage holds the file; edits by any member are written as them. */
+  syncOwnerUid: string | null
+  /** Path of the file, resolved per request — null while the file is out of reach. */
+  syncPath: string | null
+  /** When the two sides last agreed. */
+  syncAt: number | null
   /** Effective edit permission for the current user (role capability or an editor share). */
   canEdit?: boolean
 }

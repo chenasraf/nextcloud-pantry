@@ -15,6 +15,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
 class NoteService {
 	public function __construct(
 		private NoteMapper $noteMapper,
+		private NoteSyncService $sync,
 	) {
 	}
 
@@ -94,6 +95,9 @@ class NoteService {
 			$note->setIsPinned((bool)$patch['isPinned']);
 		}
 		$note->setUpdatedAt(time());
+		// Writes the file and folds the resulting sync state back into $note, so
+		// the single update below persists both the edit and the sync markers.
+		$this->sync->pushToFile($note);
 		$this->noteMapper->update($note);
 		return $note;
 	}

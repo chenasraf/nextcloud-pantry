@@ -10,6 +10,7 @@ namespace OCA\Pantry\AppInfo;
 use OCA\Pantry\Capabilities;
 use OCA\Pantry\Listener\AddMissingColumnsListener;
 use OCA\Pantry\Listener\AddMissingIndicesListener;
+use OCA\Pantry\Listener\NoteFileSyncListener;
 use OCA\Pantry\Middleware\PermissionMiddleware;
 use OCA\Pantry\Notification\Notifier;
 use OCP\AppFramework\App;
@@ -18,6 +19,8 @@ use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\DB\Events\AddMissingColumnsEvent;
 use OCP\DB\Events\AddMissingIndicesEvent;
+use OCP\Files\Events\Node\NodeRenamedEvent;
+use OCP\Files\Events\Node\NodeWrittenEvent;
 
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'pantry';
@@ -36,6 +39,8 @@ class Application extends App implements IBootstrap {
 		$context->registerMiddleware(PermissionMiddleware::class);
 		$context->registerEventListener(AddMissingColumnsEvent::class, AddMissingColumnsListener::class);
 		$context->registerEventListener(AddMissingIndicesEvent::class, AddMissingIndicesListener::class);
+		$context->registerEventListener(NodeWrittenEvent::class, NoteFileSyncListener::class);
+		$context->registerEventListener(NodeRenamedEvent::class, NoteFileSyncListener::class);
 	}
 
 	public function boot(IBootContext $context): void {

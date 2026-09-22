@@ -58,6 +58,8 @@
               @edit="openEditDialog"
               @delete="confirmDelete"
               @import-to-list="openImportDialog"
+              @start-sync="onStartSync"
+              @stop-sync="onStopSync"
               @restore="onRestore"
               @toggle-pin="onTogglePin"
               @drag-start="onDragStart"
@@ -144,7 +146,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { n, t } from '@nextcloud/l10n'
-import { showInfo, showUndo, showError, showSuccess } from '@nextcloud/dialogs'
+import {
+  showInfo,
+  showUndo,
+  showError,
+  showSuccess,
+  getFilePickerBuilder,
+  FilePickerType,
+} from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -154,6 +163,7 @@ import { NoteCard, NoteDialog } from '@/components/Notes'
 import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
 import PlusIcon from '@icons/Plus.vue'
 import NoteIcon from '@icons/Note.vue'
+import FileImportIcon from '@icons/FileImport.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
@@ -185,6 +195,9 @@ const {
   emptyTrash,
   reorder,
   togglePin,
+  startSync,
+  stopSync,
+  importFromFile,
   sortBy,
   trashMode,
 } = useNotes(houseIdNum.value)
@@ -220,6 +233,80 @@ async function submitEmptyTrash() {
 async function onRestore(note: Note) {
   await restore(note.id)
   showInfo(strings.noteRestored)
+}
+
+// ----- Note/file sync -----
+
+/**
+ * Pick a folder, create the file in it, and keep the two in sync. Sync always
+ * creates the file it binds to, so there is no existing-file case to reconcile.
+ */
+async function onStartSync(note: Note) {
+  const picker = getFilePickerBuilder(strings.syncPickerTitle)
+    .setMultiSelect(false)
+    .setMimeTypeFilter([])
+    .allowDirectories(true)
+    .setType(FilePickerType.Choose)
+    .startAt('/')
+    .build()
+
+  let folderPath: string
+  try {
+    const picked = await picker.pick()
+    folderPath = Array.isArray(picked) ? picked[0] : picked
+  } catch {
+    return // Cancelled.
+  }
+  if (typeof folderPath !== 'string') return
+
+  try {
+    const synced = await startSync(note.id, folderPath)
+    showInfo(t('pantry', 'Syncing with {path}', { path: synced.syncPath ?? folderPath }))
+  } catch (e) {
+    showError(errorMessage(e, strings.syncFailed))
+  }
+}
+
+async function onStopSync(note: Note) {
+  try {
+    await stopSync(note.id)
+    showInfo(strings.syncStopped)
+  } catch (e) {
+    showError(errorMessage(e, strings.syncFailed))
+  }
+}
+
+/** Create a note from a text file, keeping the two in sync afterwards. */
+async function onImportFromFile() {
+  const picker = getFilePickerBuilder(strings.importPickerTitle)
+    .setMultiSelect(false)
+    .setMimeTypeFilter(['text/markdown', 'text/plain'])
+    .allowDirectories(false)
+    .setType(FilePickerType.Choose)
+    .startAt('/')
+    .build()
+
+  let path: string
+  try {
+    const picked = await picker.pick()
+    path = Array.isArray(picked) ? picked[0] : picked
+  } catch {
+    return // Cancelled.
+  }
+  if (typeof path !== 'string') return
+
+  try {
+    const created = await importFromFile(path, true)
+    showInfo(t('pantry', 'Imported {title}', { title: created.title }))
+  } catch (e) {
+    showError(errorMessage(e, strings.importFailed))
+  }
+}
+
+function errorMessage(e: unknown, fallback: string): string {
+  const ocsMessage = (e as { response?: { data?: { ocs?: { meta?: { message?: string } } } } })
+    ?.response?.data?.ocs?.meta?.message
+  return ocsMessage || fallback
 }
 
 // ----- Import note into a list -----
@@ -625,6 +712,14 @@ const strings = {
   noteMovedToTrash: t('pantry', 'Note moved to trash'),
   notePermanentlyDeleted: t('pantry', 'Note permanently deleted'),
   restoreFailed: t('pantry', 'Could not restore from trash'),
+  // TRANSLATORS: Title of the folder picker for choosing where to create the synced file.
+  syncPickerTitle: t('pantry', 'Choose a folder for the synced file'),
+  importPickerTitle: t('pantry', 'Choose a text file to import'),
+  // TRANSLATORS: Toolbar action that creates a note from an existing text file.
+  importFromFile: t('pantry', 'Import from file …'),
+  syncStopped: t('pantry', 'Stopped syncing. The note and the file both remain.'),
+  syncFailed: t('pantry', 'Could not change the sync for this note'),
+  importFailed: t('pantry', 'Could not import this file'),
 }
 
 const sortMenuName = computed(() => {
@@ -664,6 +759,13 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   })
 
   if (!trashMode.value && can.value.canCreateNotes) {
+    actions.push({
+      key: 'import-file',
+      label: strings.importFromFile,
+      icon: FileImportIcon,
+      priority: 3,
+      onClick: onImportFromFile,
+    })
     actions.push({
       key: 'new-note',
       label: strings.newNote,

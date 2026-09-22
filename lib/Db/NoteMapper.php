@@ -76,6 +76,26 @@ class NoteMapper extends QBMapper {
 	}
 
 	/**
+	 * Find the note bound to a file, if any.
+	 *
+	 * Trashed notes are included so a file edited while its note sits in the
+	 * trash still lands, and restoring the note brings back current content.
+	 */
+	public function findBySyncFileId(int $fileId): ?Note {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('sync_file_id', $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT)))
+			->setMaxResults(1);
+
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException) {
+			return null;
+		}
+	}
+
+	/**
 	 * Find soft-deleted notes in a house, most recently deleted first.
 	 *
 	 * @return Note[]

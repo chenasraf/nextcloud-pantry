@@ -33,5 +33,13 @@ class AddMissingIndicesListener implements IEventListener {
 			'pantry_items_archived_idx',
 			['archived_at'],
 		);
+
+		// Companion to sync_file_id (Version37). Every file write on the instance
+		// probes this column, so a full scan here is a full scan on every upload.
+		$event->addMissingIndex(
+			Application::tableName('notes'),
+			'pantry_nsync_file_idx',
+			['sync_file_id'],
+		);
 	}
 }

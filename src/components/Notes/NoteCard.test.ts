@@ -79,6 +79,10 @@ function makeNote(overrides: Partial<Note> = {}): Note {
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,
+    syncFileId: null,
+    syncOwnerUid: null,
+    syncPath: null,
+    syncAt: null,
     ...overrides,
   }
 }
@@ -188,6 +192,41 @@ describe('NoteCard', () => {
       await restoreBtn.trigger('click')
       expect(wrapper.emitted('restore')).toBeTruthy()
       expect(wrapper.emitted('restore')![0]).toEqual([note])
+    })
+
+    it('offers Sync to file on an unsynced note', async () => {
+      const note = makeNote()
+      const wrapper = mount(NoteCard, { props: { note } })
+      const btn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Sync to file …')!
+      await btn.trigger('click')
+      expect(wrapper.emitted('start-sync')![0]).toEqual([note])
+    })
+
+    it('offers Stop syncing instead once the note is bound to a file', async () => {
+      const note = makeNote({ syncFileId: 42, syncPath: '/Notes/Groceries.md' })
+      const wrapper = mount(NoteCard, { props: { note } })
+      const labels = wrapper.findAll('.nc-action-button').map((b) => b.text())
+      expect(labels).toContain('Stop syncing')
+      expect(labels).not.toContain('Sync to file …')
+
+      const btn = wrapper.findAll('.nc-action-button').find((b) => b.text() === 'Stop syncing')!
+      await btn.trigger('click')
+      expect(wrapper.emitted('stop-sync')![0]).toEqual([note])
+    })
+
+    it('shows the synced path, and says so when the file is out of reach', () => {
+      const bound = mount(NoteCard, {
+        props: { note: makeNote({ syncFileId: 42, syncPath: '/Notes/Groceries.md' }) },
+      })
+      expect(bound.find('.note-card__sync-path').text()).toBe('Notes/Groceries.md')
+
+      const missing = mount(NoteCard, {
+        props: { note: makeNote({ syncFileId: 42, syncPath: null }) },
+      })
+      expect(missing.find('.note-card__sync-path').text()).toBe('Synced file is missing')
+
+      const unsynced = mount(NoteCard, { props: { note: makeNote() } })
+      expect(unsynced.find('.note-card__sync').exists()).toBe(false)
     })
 
     it('emits drag-start on dragstart', async () => {
