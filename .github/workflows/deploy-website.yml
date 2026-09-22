@@ -1,5 +1,9 @@
 name: Deploy website
 
+# Deploys on demand — `make deploy-website`, the Actions tab, or a release
+# dispatch from pantry-flutter. A website commit does not publish itself, so
+# docs can land in master and go live when they are meant to.
+#
 # The desktop download links embed the app version (e.g. pantry-0.29.0-macos.dmg),
 # so the site is rebuilt with the current pantry-flutter version. The version is
 # resolved once per build (never client-side) in this order:
@@ -19,14 +23,6 @@ name: Deploy website
 #       client-payload: '{"version": "${{ steps.meta.outputs.version }}"}'
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'website/**'
-      - 'pnpm-workspace.yaml'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/deploy-website.yml'
   workflow_dispatch:
     inputs:
       app_version:

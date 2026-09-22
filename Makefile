@@ -502,3 +502,29 @@ website-dev:
 		echo "\x1b[33mCould not resolve the app version, falling back to the default in website/src/config.ts\x1b[0m"; \
 	fi; \
 	cd website && PUBLIC_PANTRY_APP_VERSION="$$VER" $(pnpm_cmd) dev
+
+# deploy-website:
+#   - Publish website/ to GitHub Pages by dispatching the deploy workflow
+#   - APP_VERSION pins the version the download links embed; left unset, the
+#     workflow resolves pantry-flutter's latest release itself
+#   - Runs against the pushed branch, not the working tree: the workflow checks
+#     the ref out on the runner, so unpushed edits are not in what goes live
+.PHONY: deploy-website
+deploy-website:
+	@command -v gh >/dev/null 2>&1 || { \
+		echo "\x1b[31m❌ gh CLI is required — https://cli.github.com\x1b[0m"; exit 1; \
+	}
+	@REF="$${REF:-$$(git rev-parse --abbrev-ref HEAD)}"; \
+	if [ -n "$$(git status --porcelain website/)" ]; then \
+		echo "\x1b[33m⚠️  website/ has uncommitted changes — they will not be deployed\x1b[0m"; \
+	fi; \
+	if ! git diff --quiet "origin/$$REF" -- website/ 2>/dev/null; then \
+		echo "\x1b[33m⚠️  website/ differs from origin/$$REF — push first to deploy your changes\x1b[0m"; \
+	fi; \
+	echo "\x1b[33mDispatching website deploy for $$REF...\x1b[0m"; \
+	if [ -n "$(APP_VERSION)" ]; then \
+		gh workflow run deploy-website.yml --ref "$$REF" -f app_version="$(APP_VERSION)"; \
+	else \
+		gh workflow run deploy-website.yml --ref "$$REF"; \
+	fi; \
+	echo "\x1b[32m🚀 Dispatched. Follow it with: gh run watch\x1b[0m"
