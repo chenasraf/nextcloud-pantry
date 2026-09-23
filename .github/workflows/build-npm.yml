@@ -18,3 +18,8 @@ jobs:
   build-npm:
     uses: chenasraf/workflows/.github/workflows/nextcloud-build-npm.yml@nextcloud-latest
     secrets: inherit
+    with:
+      # Runs whatever changed. A filtered-out job reports success, so a commit
+      # touching nothing it watches would paint over the previous commit's red.
+      path-filters: |
+        - '**'

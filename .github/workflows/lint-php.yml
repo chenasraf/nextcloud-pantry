@@ -20,3 +20,7 @@ jobs:
     secrets: inherit
     with:
       php-versions-min: "8.2"
+      # Runs whatever changed. A filtered-out job reports success, so a commit
+      # touching nothing it watches would paint over the previous commit's red.
+      path-filters: |
+        - '**'
