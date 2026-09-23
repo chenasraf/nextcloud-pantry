@@ -1,0 +1,39 @@
+name: Lint OCP compatibility
+
+# Holds every OCP symbol the app names to the server API of the oldest version
+# appinfo/info.xml claims to support. Psalm analyses one set of stubs and the
+# PHPUnit matrix only reaches the oldest server after a full install, so a
+# symbol that arrived too late otherwise surfaces as a red build late on.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-ocp-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  lint-ocp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: none
+
+      # The check reads vendor/nextcloud/ocp, which is a dev dependency.
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Check OCP symbols against min-version
+        run: php scripts/check-ocp-compat.php --verbose

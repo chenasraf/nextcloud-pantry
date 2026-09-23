@@ -22,7 +22,7 @@ pre-commit:
       # Psalm runs after the fixer rather than beside it: the fixer rewrites the
       # same files Psalm reads, and analysis covers the whole of lib/ regardless
       # of what is staged.
-      run: make php-cs-fixer && make test && make psalm
+      run: make php-cs-fixer && make lint-ocp && make test && make psalm
       stage_fixed: true
     psalm:
       # The PHP files are covered above; these are the other inputs that decide
@@ -40,3 +40,11 @@ pre-commit:
     lint-appinfo:
       glob: "appinfo/info.xml"
       run: make lint-appinfo
+    lint-ocp:
+      # The PHP files are covered above; these two move the answer without any
+      # PHP changing — min-version is what symbols are checked against, and the
+      # lockfile decides which OCP stubs they are checked in.
+      glob:
+        - "appinfo/info.xml"
+        - "composer.lock"
+      run: make lint-ocp

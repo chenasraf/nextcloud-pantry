@@ -151,6 +151,7 @@ source:
 		--exclude="**/.git/**/*" \
 		--exclude="build" \
 		--exclude="tests" \
+		--exclude="/scripts" \
 		--exclude="/src" \
 		--exclude="/website" \
 		--exclude="js/node_modules" \
@@ -202,6 +203,7 @@ appstore:
 		--exclude="protractor\.*" \
 		--exclude="/gen" \
 		--exclude="/.*" \
+		--exclude="/scripts" \
 		--exclude="/src" \
 		--exclude="/website" \
 		--exclude="rename-template.sh" \
@@ -300,10 +302,20 @@ lint-appinfo: $(info_xsd)
 	@xmllint --noout --schema $(info_xsd) appinfo/info.xml
 	@echo "\x1b[32mappinfo/info.xml is valid.\x1b[0m"
 
+# lint-ocp:
+#   - Check every OCP symbol lib/ and tests/ use against appinfo's min-version
+#   - Psalm analyses one set of OCP stubs and `make test` runs against whichever
+#     server is checked out locally, so neither notices a symbol that arrived
+#     after the oldest supported server — only CI's oldest matrix leg does
+.PHONY: lint-ocp
+lint-ocp:
+	@echo "\x1b[33mChecking OCP symbols against the supported server range...\x1b[0m"
+	@php scripts/check-ocp-compat.php
+
 # lint:
 #   - Lint JS via pnpm and PHP via composer script "lint"
 .PHONY: lint
-lint:
+lint: lint-ocp
 	pnpm lint
 	$(composer_bin) run lint
 
