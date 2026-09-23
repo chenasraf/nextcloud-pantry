@@ -14,7 +14,6 @@ use OCA\Pantry\Service\NoteSyncService;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
-use OCP\Files\IUserFolder;
 use OCP\Files\NotFoundException as FilesNotFoundException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -25,14 +24,14 @@ class NoteSyncServiceTest extends TestCase {
 	private NoteMapper $noteMapper;
 	/** @var IRootFolder&MockObject */
 	private IRootFolder $rootFolder;
-	/** @var IUserFolder&MockObject */
-	private IUserFolder $userFolder;
+	/** @var Folder&MockObject */
+	private Folder $userFolder;
 	private NoteSyncService $svc;
 
 	protected function setUp(): void {
 		$this->noteMapper = $this->createMock(NoteMapper::class);
 		$this->rootFolder = $this->createMock(IRootFolder::class);
-		$this->userFolder = $this->createMock(IUserFolder::class);
+		$this->userFolder = $this->createMock(self::userFolderClass());
 		$this->rootFolder->method('getUserFolder')->willReturn($this->userFolder);
 
 		$this->svc = new NoteSyncService(
@@ -40,6 +39,22 @@ class NoteSyncServiceTest extends TestCase {
 			$this->rootFolder,
 			$this->createMock(LoggerInterface::class),
 		);
+	}
+
+	/**
+	 * What `getUserFolder()` is declared to return on the server under test.
+	 *
+	 * The declared type differs across the supported server range — a plain
+	 * `Folder`, and `IUserFolder` on newer ones — and PHPUnit rejects a double
+	 * of the other one, so the type is read off the interface rather than
+	 * named here. Both satisfy the `Folder` the tests use.
+	 *
+	 * @return class-string
+	 */
+	private static function userFolderClass(): string {
+		$type = (new \ReflectionMethod(IRootFolder::class, 'getUserFolder'))->getReturnType();
+
+		return $type instanceof \ReflectionNamedType ? $type->getName() : Folder::class;
 	}
 
 	private function makeNote(array $overrides = []): Note {
