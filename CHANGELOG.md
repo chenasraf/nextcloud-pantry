@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.34.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.33.0...v0.34.0) (2026-09-24)
+
+
+### Features
+
+* **notes:** two-way sync between notes and files ([3420b83](https://github.com/chenasraf/nextcloud-pantry/commit/3420b8357f8a1a88846214d3b999ff41c640e892))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([5bd2d04](https://github.com/chenasraf/nextcloud-pantry/commit/5bd2d044fa2b98f0e8293545b50a2169e078f2be))
+* **l10n:** Update translations from Transifex ([fc36851](https://github.com/chenasraf/nextcloud-pantry/commit/fc368519cd56f5a23813a61cd3869b94f092bb87))
+* **l10n:** Update translations from Transifex ([32ed336](https://github.com/chenasraf/nextcloud-pantry/commit/32ed3364d3c273cf6292dc9cf970b32cd99d82ba))
+
 ## [0.33.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.32.0...v0.33.0) (2026-09-20)
 
 
