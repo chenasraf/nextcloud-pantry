@@ -701,6 +701,7 @@ OC.L10N.register(
     "Choose a folder for the synced file" : "Escolha uma pasta para o arquivo sincronizado",
     "Choose a text file to import" : "Escolha um arquivo de texto para importar",
     "Import from file …" : "Importar a partir de um arquivo …",
+    "Stopped syncing. The note and the file both remain." : "A sincronização foi interrompida. A nota e o arquivo continuam lá.",
     "Could not change the sync for this note" : "Não foi possível alterar a sincronização para esta nota",
     "Could not import this file" : "Não foi possível importar este arquivo",
     "By description A–Z" : "Por descrição A–Z",
