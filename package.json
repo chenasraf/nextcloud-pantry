@@ -51,7 +51,7 @@
     "lefthook": "^2.1.14",
     "prettier": "^3.9.8",
     "rollup-plugin-visualizer": "^7.1.1",
-    "sass": "^1.104.1",
+    "sass": "^1.105.0",
     "sass-embedded": "^1.104.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.0",
