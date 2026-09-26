@@ -20,9 +20,9 @@ place.
 
 ## Screenshots
 
-|                                                       |                                                       |                                                       |
-| ----------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
-| ![Screenshot 1](screenshots/screenshot-0.33.0-01.png) | ![Screenshot 2](screenshots/screenshot-0.33.0-02.png) | ![Screenshot 3](screenshots/screenshot-0.33.0-03.png) |
+| Checklist                                          | Photo Board                                          | Notes Wall                                          |
+| -------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------- |
+| ![Checklist](screenshots/screenshot-0.33.0-01.png) | ![Photo Board](screenshots/screenshot-0.33.0-02.png) | ![Notes Wall](screenshots/screenshot-0.33.0-03.png) |
 
 ## Features
 
