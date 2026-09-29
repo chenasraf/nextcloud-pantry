@@ -11,6 +11,7 @@ use OCA\Pantry\AppInfo\Application;
 use OCA\Pantry\ResponseDefinitions;
 use OCP\IConfig;
 use OCP\IL10N;
+use OCP\L10N\IFactory;
 
 /**
  * @psalm-import-type PantryUserPrefs from ResponseDefinitions
@@ -22,6 +23,7 @@ class PrefsService {
 	private const KEY_ROW_CLICK_ACTION = 'row_click_action';
 	private const KEY_REUSE_EXISTING_ITEMS = 'reuse_existing_items';
 	private const KEY_SUGGEST_ARCHIVED_ITEMS = 'suggest_archived_items';
+	private const KEY_LANGUAGE = 'language';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
 	public const ROW_CLICK_ACTION_OPTIONS = ['done', 'view', 'edit', 'none'];
 	public const REUSE_EXISTING_ITEMS_OPTIONS = ['ask', 'reuse', 'never'];
@@ -29,7 +31,65 @@ class PrefsService {
 	public function __construct(
 		private IConfig $config,
 		private IL10N $l,
+		private IFactory $l10nFactory,
 	) {
+	}
+
+	// ----- Language -----
+
+	/**
+	 * Language codes Pantry ships a translation for (always includes `en`).
+	 *
+	 * @return string[]
+	 */
+	public function getAvailableLanguages(): array {
+		return $this->l10nFactory->findAvailableLanguages(Application::APP_ID);
+	}
+
+	/**
+	 * Languages Pantry can be displayed in, with their native names.
+	 *
+	 * @return list<array{code: string, name: string}>
+	 */
+	public function getAvailableLanguageOptions(): array {
+		$options = [];
+		foreach ($this->getAvailableLanguages() as $code) {
+			$core = $this->l10nFactory->get('lib', $code);
+			$name = $core->t('__language_name__');
+			if ($core->getLanguageCode() !== $code || $name === '' || $name[0] === '_') {
+				// Unknown name: fall back to the code, with English spelled out.
+				$name = $code === 'en' ? 'English (US)' : $code;
+			}
+			$options[] = ['code' => $code, 'name' => $name];
+		}
+		usort(
+			$options,
+			static fn (array $a, array $b): int => strcasecmp((string)$a['name'], (string)$b['name']),
+		);
+		return $options;
+	}
+
+	/**
+	 * Per-user language override, or null when the app should follow the
+	 * user's Nextcloud language.
+	 */
+	public function getLanguage(string $uid): ?string {
+		$value = $this->config->getUserValue($uid, Application::APP_ID, self::KEY_LANGUAGE, '');
+		if ($value === '') {
+			return null;
+		}
+		return in_array($value, $this->getAvailableLanguages(), true) ? $value : null;
+	}
+
+	public function setLanguage(string $uid, ?string $language): void {
+		if ($language === null || $language === '') {
+			$this->config->deleteUserValue($uid, Application::APP_ID, self::KEY_LANGUAGE);
+			return;
+		}
+		if (!in_array($language, $this->getAvailableLanguages(), true)) {
+			throw new \InvalidArgumentException('Unsupported language: ' . $language);
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_LANGUAGE, $language);
 	}
 
 	public function getFirstDayOfWeek(string $uid): int {
@@ -167,6 +227,7 @@ class PrefsService {
 			'rowClickAction' => $this->getRowClickAction($uid),
 			'reuseExistingItems' => $this->getReuseExistingItems($uid),
 			'suggestArchivedItems' => $this->getSuggestArchivedItems($uid),
+			'language' => $this->getLanguage($uid) ?? '',
 		];
 	}
 
@@ -189,6 +250,9 @@ class PrefsService {
 		}
 		if (array_key_exists('suggestArchivedItems', $patch) && is_bool($patch['suggestArchivedItems'])) {
 			$this->setSuggestArchivedItems($uid, $patch['suggestArchivedItems']);
+		}
+		if (array_key_exists('language', $patch) && is_string($patch['language'])) {
+			$this->setLanguage($uid, $patch['language'] === '' ? null : $patch['language']);
 		}
 	}
 

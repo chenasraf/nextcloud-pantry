@@ -11,6 +11,7 @@ use OCA\Pantry\AppInfo\Application;
 use OCA\Pantry\Service\PrefsService;
 use OCP\IConfig;
 use OCP\IL10N;
+use OCP\L10N\IFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -19,13 +20,17 @@ class PrefsServiceTest extends TestCase {
 	private IConfig $config;
 	/** @var IL10N&MockObject */
 	private IL10N $l;
+	/** @var IFactory&MockObject */
+	private IFactory $l10nFactory;
 	private PrefsService $svc;
 
 	protected function setUp(): void {
 		$this->config = $this->createMock(IConfig::class);
 		$this->l = $this->createMock(IL10N::class);
 		$this->l->method('l')->willReturn('1'); // Monday fallback
-		$this->svc = new PrefsService($this->config, $this->l);
+		$this->l10nFactory = $this->createMock(IFactory::class);
+		$this->l10nFactory->method('findAvailableLanguages')->willReturn(['en', 'de', 'fr']);
+		$this->svc = new PrefsService($this->config, $this->l, $this->l10nFactory);
 	}
 
 	// ----- Notification preferences -----
@@ -595,5 +600,120 @@ class PrefsServiceTest extends TestCase {
 		$this->assertSame('view', $prefs['rowClickAction']);
 		// The derived tap-to-complete mirror stays consistent.
 		$this->assertFalse($prefs['tapRowToComplete']);
+	}
+
+	// ----- Language -----
+
+	public function testGetLanguageDefaultsToNullWhenUnset(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'language', '')
+			->willReturn('');
+
+		$this->assertNull($this->svc->getLanguage('alice'));
+	}
+
+	public function testGetLanguageReturnsStoredValueWhenAvailable(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'language', '')
+			->willReturn('de');
+
+		$this->assertSame('de', $this->svc->getLanguage('alice'));
+	}
+
+	public function testGetLanguageIgnoresValueWithoutTranslation(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'language', '')
+			->willReturn('xx');
+
+		$this->assertNull($this->svc->getLanguage('alice'));
+	}
+
+	public function testSetLanguageStoresValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'language', 'de');
+
+		$this->svc->setLanguage('alice', 'de');
+	}
+
+	public function testSetLanguageClearsWithNull(): void {
+		$this->config->expects($this->once())
+			->method('deleteUserValue')
+			->with('alice', Application::APP_ID, 'language');
+
+		$this->svc->setLanguage('alice', null);
+	}
+
+	public function testSetLanguageRejectsUnavailableLanguage(): void {
+		$this->config->expects($this->never())->method('setUserValue');
+		$this->expectException(\InvalidArgumentException::class);
+
+		$this->svc->setLanguage('alice', 'xx');
+	}
+
+	public function testGetAvailableLanguageOptionsUsesNativeNames(): void {
+		$de = $this->languageMock('de', 'Deutsch');
+		$fr = $this->languageMock('fr', 'Français');
+		$en = $this->languageMock('en', '__language_name__');
+		$this->l10nFactory->method('get')->willReturnCallback(
+			static fn (string $app, ?string $lang): IL10N => match ($lang) {
+				'de' => $de,
+				'fr' => $fr,
+				default => $en,
+			}
+		);
+
+		$this->assertSame([
+			['code' => 'de', 'name' => 'Deutsch'],
+			['code' => 'en', 'name' => 'English (US)'],
+			['code' => 'fr', 'name' => 'Français'],
+		], $this->svc->getAvailableLanguageOptions());
+	}
+
+	public function testGetAllUserPrefsIncludesLanguageOverride(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'language') {
+					return 'fr';
+				}
+				return $default;
+			}
+		);
+
+		$this->assertSame('fr', $this->svc->getAllUserPrefs('alice')['language']);
+	}
+
+	public function testSetLanguageClearsWithEmptyString(): void {
+		$this->config->expects($this->once())
+			->method('deleteUserValue')
+			->with('alice', Application::APP_ID, 'language');
+
+		$this->svc->setLanguage('alice', '');
+	}
+
+	public function testSetUserPrefsStoresLanguage(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'language', 'de');
+
+		$this->svc->setUserPrefs('alice', ['language' => 'de']);
+	}
+
+	public function testSetUserPrefsClearsLanguageWithEmptyString(): void {
+		$this->config->expects($this->once())
+			->method('deleteUserValue')
+			->with('alice', Application::APP_ID, 'language');
+
+		$this->svc->setUserPrefs('alice', ['language' => '']);
+	}
+
+	/**
+	 * @return IL10N&MockObject
+	 */
+	private function languageMock(string $code, string $name): IL10N {
+		$l = $this->createMock(IL10N::class);
+		$l->method('getLanguageCode')->willReturn($code);
+		$l->method('t')->with('__language_name__')->willReturn($name);
+		return $l;
 	}
 }

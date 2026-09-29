@@ -809,6 +809,35 @@
                     "star-shooting"
                 ]
             },
+            "Language": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "name"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "LanguageList": {
+                "type": "object",
+                "required": [
+                    "languages"
+                ],
+                "properties": {
+                    "languages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Language"
+                        }
+                    }
+                }
+            },
             "List": {
                 "type": "object",
                 "required": [
@@ -2096,7 +2125,8 @@
                     "tapRowToComplete",
                     "rowClickAction",
                     "reuseExistingItems",
-                    "suggestArchivedItems"
+                    "suggestArchivedItems",
+                    "language"
                 ],
                 "properties": {
                     "lastHouseId": {
@@ -2119,6 +2149,9 @@
                     },
                     "suggestArchivedItems": {
                         "type": "boolean"
+                    },
+                    "language": {
+                        "type": "string"
                     }
                 }
             }
@@ -14845,6 +14878,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Whether reuse suggestions also search archived items."
+                                    },
+                                    "language": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Pantry UI language override. An empty string clears the override so the app follows the Nextcloud language again."
                                     }
                                 }
                             }
@@ -14886,6 +14925,95 @@
                                                 },
                                                 "data": {
                                                     "$ref": "#/components/schemas/UserPrefs"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/prefs/languages": {
+            "get": {
+                "operationId": "prefs-get-languages",
+                "summary": "List the languages Pantry can be displayed in",
+                "tags": [
+                    "prefs"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Languages returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/LanguageList"
                                                 }
                                             }
                                         }

@@ -4,6 +4,12 @@ import { ocs } from '@/axios'
 
 export type ReuseExistingItems = 'ask' | 'reuse' | 'never'
 
+/** A language Pantry can be displayed in. */
+export interface LanguageOption {
+  code: string
+  name: string
+}
+
 /** What clicking a checklist row body does. */
 export type RowClickAction = 'done' | 'view' | 'edit' | 'none'
 
@@ -19,6 +25,8 @@ export interface UserPrefs {
   reuseExistingItems: ReuseExistingItems
   /** When true, reuse suggestions also search archived items. */
   suggestArchivedItems: boolean
+  /** Pantry UI language override; an empty string follows the Nextcloud language. */
+  language: string
 }
 
 const userPrefsDefaults: UserPrefs = {
@@ -28,6 +36,7 @@ const userPrefsDefaults: UserPrefs = {
   rowClickAction: 'none',
   reuseExistingItems: 'ask',
   suggestArchivedItems: false,
+  language: '',
 }
 
 let userPrefsInflight: Promise<UserPrefs> | null = null
@@ -90,6 +99,24 @@ export async function getSuggestArchivedItems(): Promise<boolean> {
 export async function setSuggestArchivedItems(value: boolean): Promise<boolean> {
   const prefs = await setUserPrefs({ suggestArchivedItems: value })
   return prefs.suggestArchivedItems
+}
+
+/** List the languages Pantry ships a translation for. */
+export async function getLanguages(): Promise<LanguageOption[]> {
+  const resp = await ocs.get<{ languages: LanguageOption[] }>('/prefs/languages')
+  return resp.data.languages ?? []
+}
+
+/** Current Pantry language override (`''` follows the Nextcloud language). */
+export async function getLanguagePref(): Promise<string> {
+  const prefs = await getUserPrefs()
+  return prefs.language
+}
+
+/** Persist the Pantry language override and return the stored value. */
+export async function setLanguagePref(value: string): Promise<string> {
+  const prefs = await setUserPrefs({ language: value })
+  return prefs.language
 }
 
 // ----- Per-house prefs -----

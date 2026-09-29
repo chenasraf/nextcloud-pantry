@@ -21,6 +21,12 @@ vi.mock('@/api/prefs', () => ({
   setSuggestArchivedItems: vi.fn().mockResolvedValue(false),
   getHousePrefs: vi.fn().mockResolvedValue({ showAddedBy: false }),
   setHousePrefs: vi.fn().mockResolvedValue({ showAddedBy: false }),
+  getLanguages: vi.fn().mockResolvedValue([]),
+  getLanguagePref: vi.fn().mockResolvedValue(''),
+  setLanguagePref: vi.fn().mockResolvedValue(''),
+}))
+vi.mock('@/l10n/language', () => ({
+  applyLanguage: vi.fn().mockResolvedValue(undefined),
 }))
 
 // Mock Nextcloud Vue components that pull in CSS
@@ -77,8 +83,12 @@ import {
   setImageFolder,
   getNotificationPrefs,
   setNotificationPrefs,
+  getLanguages,
+  getLanguagePref,
+  setLanguagePref,
 } from '@/api/prefs'
 import { leaveHouse } from '@/api/houses'
+import { applyLanguage } from '@/l10n/language'
 import SettingsDialog from './SettingsDialog.vue'
 
 const NcAppSettingsDialogStub = {
@@ -145,6 +155,13 @@ describe('SettingsDialog', () => {
       notifyItemRecur: true,
       notifyItemDone: true,
     })
+    vi.mocked(getLanguages).mockResolvedValue([
+      { code: 'de', name: 'Deutsch' },
+      { code: 'fr', name: 'Français' },
+    ])
+    vi.mocked(getLanguagePref).mockResolvedValue('')
+    vi.mocked(setLanguagePref).mockResolvedValue('de')
+    vi.mocked(applyLanguage).mockResolvedValue(undefined)
   })
 
   describe('rendering', () => {
@@ -163,11 +180,12 @@ describe('SettingsDialog', () => {
       expect(dialog.props('name')).toBe('Personal settings')
     })
 
-    it('has Interface, Notifications and Files sections', async () => {
+    it('has Language, Interface, Notifications and Files sections', async () => {
       const wrapper = mountComponent({ open: true, houseId: 1 })
       await flushPromises()
 
       const ids = wrapper.findAll('.nc-app-settings-section').map((s) => s.attributes('id'))
+      expect(ids).toContain('pantry-language')
       expect(ids).toContain('pantry-interface')
       expect(ids).toContain('pantry-notifications')
       expect(ids).toContain('pantry-files')
@@ -297,6 +315,73 @@ describe('SettingsDialog', () => {
       await flushPromises()
 
       expect(setNotificationPrefs).toHaveBeenCalledWith(3, { notifyPhoto: false })
+    })
+  })
+
+  describe('language', () => {
+    function languageSelect(wrapper: ReturnType<typeof mountComponent>) {
+      return wrapper
+        .findAllComponents({ name: 'NcSelect' })
+        .find((c) => c.attributes('data-testid') === 'language-select')!
+    }
+
+    it('loads the language preference and options on open', async () => {
+      const wrapper = mountComponent({ open: true, houseId: 1 })
+      await flushPromises()
+      expect(getLanguagePref).toHaveBeenCalled()
+      expect(getLanguages).toHaveBeenCalled()
+      const options = languageSelect(wrapper).props('options') as Array<{ value: string }>
+      expect(options[0].value).toBe('')
+    })
+
+    it('maps a stored preference to the selected option', async () => {
+      vi.mocked(getLanguagePref).mockResolvedValue('de')
+      const wrapper = mountComponent({ open: true, houseId: 1 })
+      await flushPromises()
+      const selected = languageSelect(wrapper).props('modelValue') as { value: string }
+      expect(selected.value).toBe('de')
+    })
+
+    it('saves and applies the selected language', async () => {
+      const wrapper = mountComponent({ open: true, houseId: 1 })
+      await flushPromises()
+      languageSelect(wrapper).vm.$emit('update:modelValue', { value: 'de', label: 'Deutsch' })
+      await flushPromises()
+      expect(setLanguagePref).toHaveBeenCalledWith('de')
+      expect(applyLanguage).toHaveBeenCalledWith('de')
+    })
+
+    it('follows the Nextcloud language when the default is selected', async () => {
+      vi.mocked(getLanguagePref).mockResolvedValue('de')
+      const wrapper = mountComponent({ open: true, houseId: 1 })
+      await flushPromises()
+      languageSelect(wrapper).vm.$emit('update:modelValue', {
+        value: '',
+        label: 'Use Nextcloud language',
+      })
+      await flushPromises()
+      expect(setLanguagePref).toHaveBeenCalledWith('')
+      expect(applyLanguage).toHaveBeenCalledWith('')
+    })
+
+    it('does not persist when the language is unchanged', async () => {
+      vi.mocked(getLanguagePref).mockResolvedValue('de')
+      const wrapper = mountComponent({ open: true, houseId: 1 })
+      await flushPromises()
+      languageSelect(wrapper).vm.$emit('update:modelValue', { value: 'de', label: 'Deutsch' })
+      await flushPromises()
+      expect(setLanguagePref).not.toHaveBeenCalled()
+    })
+
+    it('reverts the selection when saving the language fails', async () => {
+      vi.mocked(setLanguagePref).mockRejectedValueOnce(new Error('nope'))
+      const wrapper = mountComponent({ open: true, houseId: 1 })
+      await flushPromises()
+      languageSelect(wrapper).vm.$emit('update:modelValue', { value: 'de', label: 'Deutsch' })
+      await flushPromises()
+      expect(applyLanguage).not.toHaveBeenCalled()
+      const selected = languageSelect(wrapper).props('modelValue') as { value: string }
+      expect(selected.value).toBe('')
     })
   })
 })

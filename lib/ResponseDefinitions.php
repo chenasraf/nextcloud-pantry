@@ -338,6 +338,16 @@ namespace OCA\Pantry;
  *     rowClickAction: string,
  *     reuseExistingItems: string,
  *     suggestArchivedItems: bool,
+ *     language: string,
+ * }
+ *
+ * @psalm-type PantryLanguage = array{
+ *     code: string,
+ *     name: string,
+ * }
+ *
+ * @psalm-type PantryLanguageList = array{
+ *     languages: list<PantryLanguage>,
  * }
  *
  * @psalm-type PantryHousePrefs = array{
