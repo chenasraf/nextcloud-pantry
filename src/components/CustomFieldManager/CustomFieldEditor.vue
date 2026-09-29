@@ -260,7 +260,10 @@ const groupSuffix = Math.random().toString(36).slice(2, 8)
 const typeGroupName = `cf-type-${groupSuffix}`
 const dateGroupName = `cf-datemode-${groupSuffix}`
 
-const typeOptions: Opt<FieldType>[] = FIELD_TYPES.map((f) => ({ value: f.key, label: f.label }))
+const typeOptions: Opt<FieldType>[] = FIELD_TYPES.map((f) => ({
+  value: f.key,
+  label: t('pantry', f.labelKey),
+}))
 const leadOptions: Opt<number>[] = [
   { value: 0, label: t('pantry', 'On the day') },
   { value: 1, label: t('pantry', '1 day before') },

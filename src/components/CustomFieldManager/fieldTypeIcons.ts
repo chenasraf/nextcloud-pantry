@@ -9,17 +9,18 @@ import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 
 export interface FieldTypeOption {
   key: FieldType
-  label: string
+  /** Untranslated source string, resolved with `t()` at render time so a runtime language switch is picked up. */
+  labelKey: string
   component: Component
 }
 
 /** The five field types in their locked presentation order (per the UI contract). */
 export const FIELD_TYPES: FieldTypeOption[] = [
-  { key: 'text', label: t('pantry', 'Text'), component: FormatTextIcon },
-  { key: 'number', label: t('pantry', 'Number'), component: NumericIcon },
-  { key: 'checkbox', label: t('pantry', 'Checkbox'), component: CheckboxMarkedOutlineIcon },
-  { key: 'date', label: t('pantry', 'Date'), component: CalendarIcon },
-  { key: 'select', label: t('pantry', 'Select'), component: FormatListBulletedTypeIcon },
+  { key: 'text', labelKey: 'Text', component: FormatTextIcon },
+  { key: 'number', labelKey: 'Number', component: NumericIcon },
+  { key: 'checkbox', labelKey: 'Checkbox', component: CheckboxMarkedOutlineIcon },
+  { key: 'date', labelKey: 'Date', component: CalendarIcon },
+  { key: 'select', labelKey: 'Select', component: FormatListBulletedTypeIcon },
 ]
 
 const byKey = Object.fromEntries(FIELD_TYPES.map((o) => [o.key, o])) as Record<
@@ -32,5 +33,6 @@ export function fieldTypeIconComponent(type: FieldType): Component {
 }
 
 export function fieldTypeLabel(type: FieldType): string {
-  return byKey[type]?.label ?? type
+  const option = byKey[type]
+  return option ? t('pantry', option.labelKey) : type
 }

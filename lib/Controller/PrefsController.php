@@ -22,6 +22,7 @@ use OCP\IUserSession;
 /**
  * @psalm-import-type PantryUserPrefs from ResponseDefinitions
  * @psalm-import-type PantryHousePrefs from ResponseDefinitions
+ * @psalm-import-type PantryLanguageList from ResponseDefinitions
  */
 final class PrefsController extends OCSController {
 	use TranslatesDomainExceptions;
@@ -77,6 +78,7 @@ final class PrefsController extends OCSController {
 	 * @param bool|null $barcodeFillName Whether a resolved barcode fills in the item name.
 	 * @param bool|null $barcodeFillCategory Whether a resolved barcode fills in the item category.
 	 * @param bool|null $barcodeFillImage Whether a resolved barcode fills in the item image.
+	 * @param string|null $language Pantry UI language override. An empty string clears the override so the app follows the Nextcloud language again.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>
 	 *
@@ -84,8 +86,8 @@ final class PrefsController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null, ?bool $suggestArchivedItems = null, ?bool $barcodeFillName = null, ?bool $barcodeFillCategory = null, ?bool $barcodeFillImage = null): DataResponse {
-		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems, $suggestArchivedItems, $barcodeFillName, $barcodeFillCategory, $barcodeFillImage): DataResponse {
+	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null, ?bool $suggestArchivedItems = null, ?bool $barcodeFillName = null, ?bool $barcodeFillCategory = null, ?bool $barcodeFillImage = null, ?string $language = null): DataResponse {
+		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems, $suggestArchivedItems, $barcodeFillName, $barcodeFillCategory, $barcodeFillImage, $language): DataResponse {
 			$uid = $this->requireUid();
 			$patch = [];
 			if ($lastHouseId !== null) {
@@ -113,8 +115,27 @@ final class PrefsController extends OCSController {
 			if ($barcodeFillImage !== null) {
 				$patch['barcodeFillImage'] = $barcodeFillImage;
 			}
+			if ($language !== null) {
+				$patch['language'] = $language;
+			}
 			$this->prefs->setUserPrefs($uid, $patch);
 			return new DataResponse($this->prefs->getAllUserPrefs($uid));
+		});
+	}
+
+	/**
+	 * List the languages Pantry can be displayed in
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryLanguageList, array{}>
+	 *
+	 * 200: Languages returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/prefs/languages')]
+	#[NoAdminRequired]
+	public function getLanguages(): DataResponse {
+		return $this->runAction(function (): DataResponse {
+			$this->requireUid();
+			return new DataResponse(['languages' => $this->prefs->getAvailableLanguageOptions()]);
 		});
 	}
 
