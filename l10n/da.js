@@ -186,6 +186,7 @@ OC.L10N.register(
     "View store {name}" : "Vis butik {name}",
     "Any store" : "Enhver butik",
     "Store" : "Opbevares",
+    "Added" : "Tilføjet",
     "you" : "dig",
     "Yes" : "Ja",
     "No" : "Nej",
