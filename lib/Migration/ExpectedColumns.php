@@ -46,6 +46,10 @@ final class ExpectedColumns {
 			self::col('lists', 'default_rrule', Types::STRING, ['notnull' => false, 'length' => 255, 'default' => null]),
 			self::col('lists', 'default_repeat_from_completion', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
 
+			// lists — list completion stamp (Version38). Same SELECT * hydration as
+			// the recurrence defaults above, so a missing column breaks the index.
+			self::col('lists', 'last_completed_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+
 			// categories — list scoping (Version27); category queries filter on
 			// list_id, so a missing column breaks category loading and the
 			// category-sorted item list.

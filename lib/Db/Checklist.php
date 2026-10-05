@@ -38,6 +38,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setDeletedAt(?int $deletedAt)
  * @method int|null getArchivedAt()
  * @method void setArchivedAt(?int $archivedAt)
+ * @method int|null getLastCompletedAt()
+ * @method void setLastCompletedAt(?int $lastCompletedAt)
  */
 class Checklist extends Entity implements \JsonSerializable {
 	public const RECURRENCE_MODE_REMEMBER = 'remember';
@@ -74,6 +76,7 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected int $updatedAt = 0;
 	protected ?int $deletedAt = null;
 	protected ?int $archivedAt = null;
+	protected ?int $lastCompletedAt = null;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -83,6 +86,7 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('updatedAt', 'integer');
 		$this->addType('deletedAt', 'integer');
 		$this->addType('archivedAt', 'integer');
+		$this->addType('lastCompletedAt', 'integer');
 		// Force the defaulted fields to be included in INSERTs even when their
 		// value matches the PHP default — the magic setter wouldn't otherwise
 		// mark them dirty. fromRow() resets updated fields after hydration, so
@@ -110,6 +114,7 @@ class Checklist extends Entity implements \JsonSerializable {
 			'updatedAt' => $this->updatedAt,
 			'deletedAt' => $this->deletedAt,
 			'archivedAt' => $this->archivedAt,
+			'lastCompletedAt' => $this->lastCompletedAt,
 		];
 	}
 }

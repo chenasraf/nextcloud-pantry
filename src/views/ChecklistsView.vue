@@ -172,6 +172,11 @@
               <div class="pantry-list-card__body">
                 <h3>{{ item.list.name }}</h3>
                 <p v-if="item.list.description">{{ item.list.description }}</p>
+                <p v-if="item.list.lastCompletedAt" class="pantry-list-card__completed">
+                  {{ strings.completed }}
+                  <span class="pantry-list-card__completed-sep" aria-hidden="true">·</span>
+                  <NcDateTime :timestamp="item.list.lastCompletedAt * 1000" />
+                </p>
               </div>
             </router-link>
             <NcActions
@@ -186,6 +191,14 @@
               >
                 <template #icon><PencilIcon :size="20" /></template>
                 {{ strings.edit }}
+              </NcActionButton>
+              <NcActionButton
+                v-if="can.canCreateLists"
+                close-after-click
+                @click="startDuplicate(item.list)"
+              >
+                <template #icon><ContentCopyIcon :size="20" /></template>
+                {{ strings.duplicate }}
               </NcActionButton>
               <NcActionButton
                 v-if="item.list.canEdit ?? can.canEditLists"
@@ -220,6 +233,14 @@
       :list="editing"
       @update:open="(v) => !v && (editing = null)"
       @save="submitEdit"
+    />
+
+    <ChecklistDuplicateDialog
+      :open="!!duplicating"
+      :list="duplicating"
+      :submitting="duplicatingInFlight"
+      @update:open="(v) => !v && (duplicating = null)"
+      @duplicate="submitDuplicate"
     />
 
     <NcDialog
@@ -289,16 +310,19 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcDateTime from '@nextcloud/vue/components/NcDateTime'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { CategoryManagerDialog } from '@/components/CategoryManager'
 import { LabelManagerDialog } from '@/components/LabelManager'
 import { StoreManagerDialog } from '@/components/StoreManager'
 import { CustomFieldManagerDialog } from '@/components/CustomFieldManager'
+import { ChecklistDuplicateDialog } from '@/components/ChecklistDuplicateDialog'
 import PlusIcon from '@icons/Plus.vue'
 import CartIcon from '@icons/Cart.vue'
 import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import PencilIcon from '@icons/Pencil.vue'
+import ContentCopyIcon from '@icons/ContentCopy.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import SortIcon from '@icons/Sort.vue'
 import TrashCanIcon from '@icons/TrashCan.vue'
@@ -350,6 +374,7 @@ const {
   emptyTrash,
   archive,
   unarchive,
+  duplicate,
   reorder,
   sortBy,
   viewMode,
@@ -493,6 +518,31 @@ async function submitEdit(data: ChecklistFormData) {
     defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
   })
   editing.value = null
+}
+
+const duplicating = ref<Checklist | null>(null)
+const duplicatingInFlight = ref(false)
+
+function startDuplicate(list: Checklist) {
+  duplicating.value = list
+}
+
+async function submitDuplicate(data: { name: string; resetDone: boolean }) {
+  const target = duplicating.value
+  if (!target) return
+  duplicatingInFlight.value = true
+  try {
+    const created = await duplicate(target.id, data.name, data.resetDone)
+    duplicating.value = null
+    await router.push({
+      name: 'list-detail',
+      params: { houseId: String(houseIdNum.value), listId: String(created.id) },
+    })
+  } catch {
+    showError(strings.duplicateFailed)
+  } finally {
+    duplicatingInFlight.value = false
+  }
 }
 
 const deleting = ref<Checklist | null>(null)
@@ -675,6 +725,11 @@ const strings = {
   cancel: t('pantry', 'Cancel'),
   // TRANSLATORS: Verb, menu button that opens a checklist for editing.
   edit: t('pantry', 'Edit'),
+  // TRANSLATORS: Verb, menu button that creates a copy of a checklist.
+  duplicate: t('pantry', 'Duplicate'),
+  duplicateFailed: t('pantry', 'Could not duplicate the checklist'),
+  // TRANSLATORS: Prefix before a relative time on a list card, e.g. "Completed · 3 days ago". The whole list was checked off then.
+  completed: t('pantry', 'Completed'),
   // TRANSLATORS: Verb, menu button that moves a checklist to the trash.
   remove: t('pantry', 'Remove'),
   deletePermanently: t('pantry', 'Delete permanently'),
@@ -943,6 +998,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
       color: var(--color-text-maxcontrast);
       font-size: 0.9rem;
     }
+
+    .pantry-list-card__completed {
+      margin-top: 4px;
+      font-size: 0.8rem;
+    }
+  }
+
+  &__completed-sep {
+    margin: 0 0.25em;
   }
 }
 

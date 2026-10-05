@@ -443,6 +443,14 @@
       @save="submitEditList"
     />
 
+    <ChecklistDuplicateDialog
+      :open="duplicatingList"
+      :list="list"
+      :submitting="duplicatingInFlight"
+      @update:open="(v) => (duplicatingList = v)"
+      @duplicate="submitDuplicateList"
+    />
+
     <CategoryManagerDialog
       :open="showCategoryManager"
       :house-id="houseIdNum"
@@ -837,6 +845,7 @@ import {
   contrastColor,
   type ChecklistFormData,
 } from '@/components/ChecklistIconPicker'
+import { ChecklistDuplicateDialog } from '@/components/ChecklistDuplicateDialog'
 import { entityIcon } from '@/utils/entityIcons'
 
 const CategoryEntityIcon = entityIcon.category
@@ -2093,6 +2102,26 @@ async function submitEditList(data: ChecklistFormData) {
   }
 }
 
+const duplicatingList = ref(false)
+const duplicatingInFlight = ref(false)
+
+async function submitDuplicateList(data: { name: string; resetDone: boolean }) {
+  if (!list.value) return
+  duplicatingInFlight.value = true
+  try {
+    const created = await duplicateList(listIdNum.value, data.name, data.resetDone)
+    duplicatingList.value = false
+    await router.push({
+      name: 'list-detail',
+      params: { houseId: String(houseIdNum.value), listId: String(created.id) },
+    })
+  } catch (e) {
+    showError((e as Error).message)
+  } finally {
+    duplicatingInFlight.value = false
+  }
+}
+
 /** The recurrence new items start with, from the list's default. */
 const defaultRecurrence = computed(() => {
   const mode = list.value?.defaultRecurrenceMode ?? 'remember'
@@ -2304,7 +2333,12 @@ async function onCategorySortChanged() {
 
 // ----- Move item to another list -----
 
-const { lists: allLists, create: createList, load: loadLists } = useChecklists(houseIdNum.value)
+const {
+  lists: allLists,
+  create: createList,
+  load: loadLists,
+  duplicate: duplicateList,
+} = useChecklists(houseIdNum.value)
 
 // Drop any persisted list-filter ids that no longer correspond to an existing
 // list (e.g. a list was deleted) once the catalog has loaded.
@@ -2803,6 +2837,8 @@ const strings = {
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
   editList: t('pantry', 'Edit list'),
+  // TRANSLATORS: Verb, toolbar action that creates a copy of this list.
+  duplicateList: t('pantry', 'Duplicate list'),
   // TRANSLATORS: Button that opens Shopping Mode for this list.
   shop: t('pantry', 'Start shopping'),
   // TRANSLATORS: Verb. Toolbar button that exports the list as Markdown.
@@ -2920,6 +2956,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         icon: PencilIcon,
         priority: 4,
         onClick: () => (editingList.value = true),
+      })
+    }
+    if (list.value && can.value.canCreateLists) {
+      actions.push({
+        key: 'duplicate',
+        label: strings.duplicateList,
+        icon: ContentCopyIcon,
+        alwaysCollapsed: true,
+        onClick: () => (duplicatingList.value = true),
       })
     }
     actions.push(

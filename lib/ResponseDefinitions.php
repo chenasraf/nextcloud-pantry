@@ -79,6 +79,7 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     deletedAt: int|null,
  *     archivedAt: int|null,
+ *     lastCompletedAt: int|null,
  *     canEdit: bool,
  *     sharedOnly: bool,
  * }

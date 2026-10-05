@@ -87,6 +87,8 @@ export interface Checklist {
   updatedAt: number
   deletedAt: number | null
   archivedAt: number | null
+  /** When the list last had no open items left, stamped by the check that closed the final one. */
+  lastCompletedAt: number | null
   /** Effective edit permission for the current user (role capability or an editor share). */
   canEdit?: boolean
   /**

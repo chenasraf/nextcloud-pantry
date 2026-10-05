@@ -54,6 +54,7 @@ function makeList(overrides: Partial<Checklist> = {}): Checklist {
     updatedAt: 0,
     deletedAt: null,
     archivedAt: null,
+    lastCompletedAt: null,
     ...overrides,
   }
 }

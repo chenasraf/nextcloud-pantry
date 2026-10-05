@@ -105,6 +105,19 @@ export async function unarchiveList(houseId: number, listId: number): Promise<Ch
   return resp.data
 }
 
+export async function duplicateList(
+  houseId: number,
+  listId: number,
+  name: string,
+  resetDone: boolean,
+): Promise<Checklist> {
+  const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists/${listId}/duplicate`, {
+    name,
+    resetDone,
+  })
+  return resp.data
+}
+
 // Server item endpoints page their results (indexItems caps at 200 by default,
 // indexHouseItems at 1000). Page through with an explicit limit/offset until a
 // short page comes back so long, category-sorted lists don't drop their tail.

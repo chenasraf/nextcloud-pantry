@@ -31,6 +31,20 @@ class ChecklistServiceTest extends TestCase {
 	private \OCA\Pantry\Db\ItemPriceMapper $itemPriceMapper;
 	/** @var \OCP\IDBConnection&MockObject */
 	private \OCP\IDBConnection $db;
+	/** @var \OCA\Pantry\Db\ListRoleMapper&MockObject */
+	private \OCA\Pantry\Db\ListRoleMapper $listRoleMapper;
+	/** @var \OCA\Pantry\Db\CategoryMapper&MockObject */
+	private \OCA\Pantry\Db\CategoryMapper $categoryMapper;
+	/** @var \OCA\Pantry\Db\LabelMapper&MockObject */
+	private \OCA\Pantry\Db\LabelMapper $labelMapper;
+	/** @var \OCA\Pantry\Db\ItemLabelMapper&MockObject */
+	private \OCA\Pantry\Db\ItemLabelMapper $itemLabelMapper;
+	/** @var \OCA\Pantry\Db\FieldDefinitionMapper&MockObject */
+	private \OCA\Pantry\Db\FieldDefinitionMapper $fieldDefMapper;
+	/** @var \OCA\Pantry\Db\FieldOptionMapper&MockObject */
+	private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper;
+	/** @var \OCA\Pantry\Db\FieldValueMapper&MockObject */
+	private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper;
 	private ChecklistService $svc;
 
 	protected function setUp(): void {
@@ -38,6 +52,13 @@ class ChecklistServiceTest extends TestCase {
 		$this->itemMapper = $this->createMock(ChecklistItemMapper::class);
 		$this->itemStoreMapper = $this->createMock(\OCA\Pantry\Db\ItemStoreMapper::class);
 		$this->itemPriceMapper = $this->createMock(\OCA\Pantry\Db\ItemPriceMapper::class);
+		$this->listRoleMapper = $this->createMock(ListRoleMapper::class);
+		$this->categoryMapper = $this->createMock(\OCA\Pantry\Db\CategoryMapper::class);
+		$this->labelMapper = $this->createMock(\OCA\Pantry\Db\LabelMapper::class);
+		$this->itemLabelMapper = $this->createMock(\OCA\Pantry\Db\ItemLabelMapper::class);
+		$this->fieldDefMapper = $this->createMock(\OCA\Pantry\Db\FieldDefinitionMapper::class);
+		$this->fieldOptionMapper = $this->createMock(\OCA\Pantry\Db\FieldOptionMapper::class);
+		$this->fieldValueMapper = $this->createMock(\OCA\Pantry\Db\FieldValueMapper::class);
 		// Houses reopen recurring items at 08:00 (the default) by which
 		// computeNextDueAt snaps the time of day of every non-sub-daily occurrence.
 		$house = new House();
@@ -49,16 +70,16 @@ class ChecklistServiceTest extends TestCase {
 			$this->listMapper,
 			$this->itemMapper,
 			new RecurrenceService(),
-			$this->createMock(ListRoleMapper::class),
+			$this->listRoleMapper,
 			$this->itemStoreMapper,
 			$this->itemPriceMapper,
 			$houseMapper,
-			$this->createMock(\OCA\Pantry\Db\CategoryMapper::class),
-			$this->createMock(\OCA\Pantry\Db\ItemLabelMapper::class),
-			$this->createMock(\OCA\Pantry\Db\LabelMapper::class),
-			$this->createMock(\OCA\Pantry\Db\FieldDefinitionMapper::class),
-			$this->createMock(\OCA\Pantry\Db\FieldOptionMapper::class),
-			$this->createMock(\OCA\Pantry\Db\FieldValueMapper::class),
+			$this->categoryMapper,
+			$this->itemLabelMapper,
+			$this->labelMapper,
+			$this->fieldDefMapper,
+			$this->fieldOptionMapper,
+			$this->fieldValueMapper,
 			$this->createMock(\OCA\Pantry\Service\CustomFieldReminderService::class),
 			$this->db,
 		);
@@ -1112,5 +1133,200 @@ class ChecklistServiceTest extends TestCase {
 			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_RECURRING,
 			'defaultRrule' => 'every other tuesday',
 		]);
+	}
+
+	// ----- List completion stamp -----
+
+	public function testCheckingTheLastOpenItemStampsTheList(): void {
+		$now = 1_700_000_000;
+		$item = $this->makeItem(['listId' => 9]);
+		$list = new Checklist();
+		$list->setId(9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->method('update')->willReturn($item);
+		$this->itemMapper->method('countOpenByList')->with(9)->willReturn(0);
+		$this->listMapper->method('findById')->willReturn($list);
+		$this->listMapper->expects($this->once())->method('update')->willReturn($list);
+
+		$this->svc->toggleItem(42, 'alice', $now);
+		$this->assertSame($now, $list->getLastCompletedAt());
+	}
+
+	public function testCheckingAnItemLeavesTheStampAloneWhileOthersAreOpen(): void {
+		$item = $this->makeItem(['listId' => 9]);
+		$list = new Checklist();
+		$list->setId(9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->method('update')->willReturn($item);
+		$this->itemMapper->method('countOpenByList')->with(9)->willReturn(2);
+		$this->listMapper->method('findById')->willReturn($list);
+		$this->listMapper->expects($this->never())->method('update');
+
+		$this->svc->toggleItem(42, 'alice', 1_700_000_000);
+		$this->assertNull($list->getLastCompletedAt());
+	}
+
+	public function testCheckingTheLastOnceItemStampsTheList(): void {
+		// A "once" item is soft-deleted by the check rather than left done, and
+		// it still closes out the list.
+		$now = 1_700_000_000;
+		$item = $this->makeItem(['listId' => 9, 'deleteOnDone' => true]);
+		$list = new Checklist();
+		$list->setId(9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->method('update')->willReturn($item);
+		$this->itemMapper->method('countOpenByList')->with(9)->willReturn(0);
+		$this->listMapper->method('findById')->willReturn($list);
+		$this->listMapper->expects($this->once())->method('update')->willReturn($list);
+
+		$this->svc->toggleItem(42, 'alice', $now);
+		$this->assertSame($now, $list->getLastCompletedAt());
+	}
+
+	public function testUncheckingAnItemKeepsTheStamp(): void {
+		$item = $this->makeItem(['listId' => 9, 'done' => true, 'doneAt' => 500, 'doneBy' => 'alice']);
+		$list = new Checklist();
+		$list->setId(9);
+		$list->setLastCompletedAt(500);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->method('update')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($list);
+		$this->listMapper->expects($this->never())->method('update');
+
+		$this->svc->toggleItem(42, 'alice', 1_700_000_000);
+		$this->assertSame(500, $list->getLastCompletedAt());
+	}
+
+	// ----- Duplicate list -----
+
+	/**
+	 * @param ChecklistItem[] $items
+	 * @return array{0: Checklist, 1: list<ChecklistItem>} The inserted list copy and
+	 *                                                     the item copies captured on their way into the mapper.
+	 */
+	private function captureDuplicate(Checklist $source, array $items, bool $resetDone): array {
+		$this->listMapper->method('findById')->willReturn($source);
+		$insertedList = null;
+		$this->listMapper->method('insert')
+			->willReturnCallback(function (Checklist $l) use (&$insertedList) {
+				$l->setId(77);
+				$insertedList = $l;
+				return $l;
+			});
+		$this->itemMapper->method('findByList')->willReturn($items);
+		$copies = [];
+		$nextId = 100;
+		$this->itemMapper->method('insert')
+			->willReturnCallback(function (ChecklistItem $i) use (&$copies, &$nextId) {
+				$i->setId($nextId++);
+				$copies[] = $i;
+				return $i;
+			});
+
+		$this->svc->duplicateList(
+			(int)$source->getId(),
+			'Duplicate of Leaving the yacht',
+			$resetDone,
+			'alice',
+			static fn (int $fileId, string $owner): ?int => null,
+		);
+
+		$this->assertNotNull($insertedList);
+		return [$insertedList, $copies];
+	}
+
+	private function makeSourceList(): Checklist {
+		$source = new Checklist();
+		$source->setId(5);
+		$source->setHouseId(1);
+		$source->setName('Leaving the yacht');
+		$source->setDescription('Before stepping off');
+		$source->setIcon('clipboard-check');
+		return $source;
+	}
+
+	public function testDuplicateListCopiesTheListAttributesUnderTheNewName(): void {
+		[$copy] = $this->captureDuplicate($this->makeSourceList(), [], true);
+
+		$this->assertSame('Duplicate of Leaving the yacht', $copy->getName());
+		$this->assertSame('Before stepping off', $copy->getDescription());
+		$this->assertSame(1, $copy->getHouseId());
+		$this->assertNull($copy->getLastCompletedAt());
+	}
+
+	public function testDuplicateListResetsEveryItemToUndone(): void {
+		$done = $this->makeItem(['done' => true, 'doneAt' => 500, 'doneBy' => 'bob']);
+		$done->setId(1);
+
+		[, $copies] = $this->captureDuplicate($this->makeSourceList(), [$done], true);
+
+		$this->assertCount(1, $copies);
+		$this->assertFalse($copies[0]->getDone());
+		$this->assertNull($copies[0]->getDoneAt());
+		$this->assertNull($copies[0]->getDoneBy());
+		$this->assertSame(77, $copies[0]->getListId());
+		$this->assertSame('alice', $copies[0]->getAddedBy());
+	}
+
+	public function testDuplicateListCanKeepEveryItemAsItWasChecked(): void {
+		$done = $this->makeItem(['done' => true, 'doneAt' => 500, 'doneBy' => 'bob']);
+		$done->setId(1);
+		$open = $this->makeItem(['name' => 'Close seacocks']);
+		$open->setId(2);
+
+		[, $copies] = $this->captureDuplicate($this->makeSourceList(), [$done, $open], false);
+
+		$this->assertTrue($copies[0]->getDone());
+		$this->assertSame(500, $copies[0]->getDoneAt());
+		$this->assertSame('bob', $copies[0]->getDoneBy());
+		$this->assertFalse($copies[1]->getDone());
+	}
+
+	public function testDuplicateListPointsItemsAtTheCopiedCategory(): void {
+		$scoped = new \OCA\Pantry\Db\Category();
+		$scoped->setId(31);
+		$scoped->setHouseId(1);
+		$scoped->setListId(5);
+		$scoped->setName('Engine room');
+		$scoped->setIcon('wrench');
+		$scoped->setColor('#4caf50');
+		$global = new \OCA\Pantry\Db\Category();
+		$global->setId(32);
+		$global->setHouseId(1);
+		$global->setName('Shared');
+		$global->setIcon('tag');
+		$global->setColor('#2196f3');
+		$this->categoryMapper->method('findByHouse')->willReturn([$scoped, $global]);
+		$this->categoryMapper->method('insert')
+			->willReturnCallback(static function (\OCA\Pantry\Db\Category $c) {
+				$c->setId(131);
+				return $c;
+			});
+
+		$scopedItem = $this->makeItem(['categoryId' => 31]);
+		$scopedItem->setId(1);
+		$globalItem = $this->makeItem(['categoryId' => 32]);
+		$globalItem->setId(2);
+
+		[, $copies] = $this->captureDuplicate($this->makeSourceList(), [$scopedItem, $globalItem], true);
+
+		$this->assertSame(131, $copies[0]->getCategoryId(), 'A list-scoped category is remapped');
+		$this->assertSame(32, $copies[1]->getCategoryId(), 'A house-wide category is shared');
+	}
+
+	public function testDuplicateListCarriesTheSourceRoleAccess(): void {
+		$this->listRoleMapper->method('findRoleIdsForList')->willReturn([4, 6]);
+		$this->listRoleMapper->expects($this->once())
+			->method('setRolesForList')
+			->with(77, [4, 6]);
+
+		$this->captureDuplicate($this->makeSourceList(), [], true);
+	}
+
+	public function testDuplicateListRejectsAnEmptyName(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeSourceList());
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->duplicateList(5, '   ', true, 'alice', static fn (int $f, string $o): ?int => null);
 	}
 }

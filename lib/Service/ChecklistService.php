@@ -7,16 +7,20 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
+use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\FieldDefinition;
+use OCA\Pantry\Db\FieldOption;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
+use OCA\Pantry\Db\Label;
 use OCA\Pantry\Db\LabelMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -322,6 +326,273 @@ class ChecklistService {
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
 		return $list;
+	}
+
+	/**
+	 * Create a copy of a list under a new name, carrying over its live items.
+	 *
+	 * Items in the trash or the archive are left behind — the copy starts from
+	 * the list as it currently reads. `$resetDone` makes every copied item
+	 * unchecked, which is what turns a finished run into a fresh one.
+	 *
+	 * Categories, labels and custom-field definitions scoped to the source list
+	 * are duplicated into the copy and the copied items point at the new ones.
+	 * Sharing the originals would leave the copy dependent on a list that, when
+	 * deleted, takes its own scoped taxonomy with it. House-wide ones are shared
+	 * as they are.
+	 *
+	 * An item's image lives in an account's storage, so duplicating the file is
+	 * the caller's business: `$duplicateImage` is handed the source file id and
+	 * its owner, and returns the new file id (or null when it could not copy it).
+	 *
+	 * @param callable(int $fileId, string $ownerUid): ?int $duplicateImage
+	 */
+	public function duplicateList(
+		int $listId,
+		string $name,
+		bool $resetDone,
+		?string $addedBy,
+		callable $duplicateImage,
+	): Checklist {
+		$source = $this->getList($listId);
+		$name = trim($name);
+		if ($name === '') {
+			throw new \InvalidArgumentException('List name cannot be empty');
+		}
+
+		$now = time();
+		$houseId = (int)$source->getHouseId();
+		$sourceId = (int)$source->getId();
+
+		$copy = new Checklist();
+		$copy->setHouseId($houseId);
+		$copy->setName($name);
+		$copy->setDescription($source->getDescription());
+		$copy->setIcon($source->getIcon());
+		$copy->setColor($source->getColor());
+		$copy->setSortOrder($source->getSortOrder());
+		$copy->setDefaultRecurrenceMode($source->getDefaultRecurrenceMode());
+		$copy->setDefaultRecurrenceKind($source->getDefaultRecurrenceKind());
+		$copy->setDefaultRrule($source->getDefaultRrule());
+		$copy->setDefaultRepeatFromCompletion($source->getDefaultRepeatFromCompletion());
+		$copy->setCreatedAt($now);
+		$copy->setUpdatedAt($now);
+		$copy = $this->listMapper->insert($copy);
+		$copyId = (int)$copy->getId();
+
+		// Without this the copy would be reachable by every role while the source
+		// is restricted — a duplicate must not widen who can see the content.
+		$this->listRoleMapper->setRolesForList($copyId, $this->listRoleMapper->findRoleIdsForList($sourceId));
+
+		$categoryMap = $this->duplicateListCategories($houseId, $sourceId, $copyId, $now);
+		$labelMap = $this->duplicateListLabels($houseId, $sourceId, $copyId, $now);
+		[$fieldMap, $optionMap] = $this->duplicateListFields($houseId, $sourceId, $copyId, $now);
+
+		foreach ($this->itemMapper->findByList($sourceId) as $item) {
+			$this->duplicateItemInto($item, $copyId, $resetDone, $addedBy, $now, $duplicateImage, [
+				'categories' => $categoryMap,
+				'labels' => $labelMap,
+				'fields' => $fieldMap,
+				'options' => $optionMap,
+			]);
+		}
+
+		return $copy;
+	}
+
+	/**
+	 * Copy the categories scoped to the source list onto the copy.
+	 *
+	 * @return array<int, int> Source category id → the copy's category id.
+	 */
+	private function duplicateListCategories(int $houseId, int $sourceId, int $copyId, int $now): array {
+		$map = [];
+		foreach ($this->categoryMapper->findByHouse($houseId) as $category) {
+			if ((int)$category->getListId() !== $sourceId) {
+				continue;
+			}
+			$copy = new Category();
+			$copy->setHouseId($houseId);
+			$copy->setListId($copyId);
+			$copy->setName($category->getName());
+			$copy->setIcon($category->getIcon());
+			$copy->setColor($category->getColor());
+			$copy->setSortOrder($category->getSortOrder());
+			$copy->setCreatedAt($now);
+			$copy->setUpdatedAt($now);
+			$map[(int)$category->getId()] = (int)$this->categoryMapper->insert($copy)->getId();
+		}
+		return $map;
+	}
+
+	/**
+	 * Copy the labels scoped to the source list onto the copy.
+	 *
+	 * @return array<int, int> Source label id → the copy's label id.
+	 */
+	private function duplicateListLabels(int $houseId, int $sourceId, int $copyId, int $now): array {
+		$map = [];
+		foreach ($this->labelMapper->findByHouse($houseId) as $label) {
+			if ((int)$label->getListId() !== $sourceId) {
+				continue;
+			}
+			$copy = new Label();
+			$copy->setHouseId($houseId);
+			$copy->setListId($copyId);
+			$copy->setName($label->getName());
+			$copy->setIcon($label->getIcon());
+			$copy->setColor($label->getColor());
+			$copy->setSortOrder($label->getSortOrder());
+			$copy->setCreatedAt($now);
+			$copy->setUpdatedAt($now);
+			$map[(int)$label->getId()] = (int)$this->labelMapper->insert($copy)->getId();
+		}
+		return $map;
+	}
+
+	/**
+	 * Copy the custom-field definitions scoped to the source list onto the copy,
+	 * along with each definition's select options.
+	 *
+	 * @return array{0: array<int, int>, 1: array<int, int>} Source field id → the
+	 *                                                       copy's field id, and source option id → the copy's option id.
+	 */
+	private function duplicateListFields(int $houseId, int $sourceId, int $copyId, int $now): array {
+		$fieldMap = [];
+		$optionMap = [];
+		foreach ($this->fieldDefMapper->findByHouse($houseId) as $definition) {
+			if ((int)$definition->getListId() !== $sourceId || $definition->getDeletedAt() !== null) {
+				continue;
+			}
+			$copy = new FieldDefinition();
+			$copy->setHouseId($houseId);
+			$copy->setListId($copyId);
+			$copy->setName($definition->getName());
+			$copy->setType($definition->getType());
+			$copy->setSortOrder($definition->getSortOrder());
+			$copy->setHint($definition->getHint());
+			$copy->setMultiline($definition->getMultiline());
+			$copy->setDefaultText($definition->getDefaultText());
+			$copy->setDefaultNumber($definition->getDefaultNumber());
+			$copy->setDefaultBool($definition->getDefaultBool());
+			$copy->setDateMode($definition->getDateMode());
+			$copy->setDefaultOffsetDays($definition->getDefaultOffsetDays());
+			$copy->setNotifyDefault($definition->getNotifyDefault());
+			$copy->setLeadDays($definition->getLeadDays());
+			$copy->setOverridePolicy($definition->getOverridePolicy());
+			$copy->setStopWhenDone($definition->getStopWhenDone());
+			$copy->setCreatedAt($now);
+			$copy->setUpdatedAt($now);
+			$copy = $this->fieldDefMapper->insert($copy);
+			$copyFieldId = (int)$copy->getId();
+			$fieldMap[(int)$definition->getId()] = $copyFieldId;
+
+			foreach ($this->fieldOptionMapper->findByField((int)$definition->getId()) as $option) {
+				$optionCopy = new FieldOption();
+				$optionCopy->setFieldId($copyFieldId);
+				$optionCopy->setLabel($option->getLabel());
+				$optionCopy->setSortOrder($option->getSortOrder());
+				$optionMap[(int)$option->getId()] = (int)$this->fieldOptionMapper->insert($optionCopy)->getId();
+			}
+
+			// The default option is one of the options just copied, so it can only
+			// be pointed at the new row after they exist.
+			$defaultOptionId = $definition->getDefaultOptionId();
+			if ($defaultOptionId !== null && isset($optionMap[$defaultOptionId])) {
+				$copy->setDefaultOptionId($optionMap[$defaultOptionId]);
+				$this->fieldDefMapper->update($copy);
+			}
+		}
+		return [$fieldMap, $optionMap];
+	}
+
+	/**
+	 * Copy one item onto the duplicated list, rewriting every reference that the
+	 * duplication remapped.
+	 *
+	 * @param callable(int $fileId, string $ownerUid): ?int $duplicateImage
+	 * @param array{categories: array<int, int>, labels: array<int, int>, fields: array<int, int>, options: array<int, int>} $maps
+	 */
+	private function duplicateItemInto(
+		ChecklistItem $source,
+		int $copyListId,
+		bool $resetDone,
+		?string $addedBy,
+		int $now,
+		callable $duplicateImage,
+		array $maps,
+	): void {
+		$copy = new ChecklistItem();
+		$copy->setListId($copyListId);
+		$copy->setName($source->getName());
+		$copy->setDescription($source->getDescription());
+		$sourceCategoryId = $source->getCategoryId();
+		$copy->setCategoryId(
+			$sourceCategoryId !== null ? ($maps['categories'][$sourceCategoryId] ?? $sourceCategoryId) : null,
+		);
+		$copy->setQuantity($source->getQuantity());
+		$copy->setRrule($source->getRrule());
+		$copy->setRepeatFromCompletion($source->getRepeatFromCompletion());
+		$copy->setDeleteOnDone($source->getDeleteOnDone());
+		$copy->setBarcode($source->getBarcode());
+		$copy->setSortOrder($source->getSortOrder());
+		$copy->setAddedBy($addedBy);
+		$copy->setCreatedAt($now);
+		$copy->setUpdatedAt($now);
+
+		if ($resetDone || !$source->getDone()) {
+			$copy->setDone(false);
+			$copy->setDoneAt(null);
+			$copy->setDoneBy(null);
+			// An unchecked item on a fixed schedule gets its next occurrence now,
+			// the same way a newly added one does.
+			$copy->setNextDueAt(
+				$source->getRrule() !== null && !$source->getRepeatFromCompletion()
+					? $this->computeNextDueAt($copy, $now)?->getTimestamp()
+					: null,
+			);
+		} else {
+			$copy->setDone(true);
+			$copy->setDoneAt($source->getDoneAt());
+			$copy->setDoneBy($source->getDoneBy());
+			// Same rule and same completion time as the source, so its scheduled
+			// reopen carries over unchanged.
+			$copy->setNextDueAt($source->getNextDueAt());
+		}
+
+		$sourceImageFileId = $source->getImageFileId();
+		$sourceImageOwner = $source->getImageUploadedBy();
+		if ($sourceImageFileId !== null && $sourceImageOwner !== null) {
+			$newFileId = $duplicateImage($sourceImageFileId, $sourceImageOwner);
+			$copy->setImageFileId($newFileId);
+			$copy->setImageUploadedBy($newFileId !== null ? $addedBy : null);
+		}
+
+		$saved = $this->itemMapper->insert($copy);
+		$savedId = (int)$saved->getId();
+		$sourceId = (int)$source->getId();
+
+		$this->itemStoreMapper->setStoresForItem($savedId, $this->itemStoreMapper->findStoreIdsForItem($sourceId));
+		$this->itemLabelMapper->setLabelsForItem($savedId, array_map(
+			static fn (int $labelId): int => $maps['labels'][$labelId] ?? $labelId,
+			$this->itemLabelMapper->findLabelIdsForItem($sourceId),
+		));
+		$this->itemPriceMapper->setPricesForItem($savedId, $this->itemPriceMapper->findForItem($sourceId));
+
+		$values = [];
+		foreach ($this->fieldValueMapper->findForItem($sourceId) as $value) {
+			$fieldId = (int)$value['fieldId'];
+			$value['fieldId'] = $maps['fields'][$fieldId] ?? $fieldId;
+			$optionId = $value['valueOptionId'] ?? null;
+			if ($optionId !== null) {
+				$value['valueOptionId'] = $maps['options'][(int)$optionId] ?? $optionId;
+			}
+			$values[] = $value;
+		}
+		if ($values !== []) {
+			$rearmed = $this->fieldValueMapper->setValuesForItem($savedId, $values);
+			$this->fieldReminders->onValuesRearmed($savedId, $rearmed);
+		}
 	}
 
 	// ----- Items -----
@@ -675,6 +946,7 @@ class ChecklistService {
 				$item->setUpdatedAt($now);
 				$this->itemMapper->update($item);
 				$this->fieldReminders->onItemDeleted((int)$item->getId());
+				$this->stampListCompletion((int)$item->getListId(), $now);
 				return $item;
 			}
 			if ($item->getRrule() !== null) {
@@ -689,7 +961,32 @@ class ChecklistService {
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
 		$this->fieldReminders->onItemDoneChanged((int)$item->getId(), $item->getDone());
+		if ($item->getDone()) {
+			$this->stampListCompletion((int)$item->getListId(), $now);
+		}
 		return $item;
+	}
+
+	/**
+	 * Record that the list reached a fully-checked state, if it just did.
+	 *
+	 * Called after the item write lands, so the item that triggered it is already
+	 * out of the open count. The stamp is a record of completion, not a state
+	 * flag: reopening an item or adding a new one leaves it standing, so a list
+	 * that was signed off still shows when that happened.
+	 */
+	private function stampListCompletion(int $listId, int $now): void {
+		if ($this->itemMapper->countOpenByList($listId) > 0) {
+			return;
+		}
+		try {
+			$list = $this->listMapper->findById($listId);
+		} catch (DoesNotExistException) {
+			return;
+		}
+		$list->setLastCompletedAt($now);
+		$list->setUpdatedAt($now);
+		$this->listMapper->update($list);
 	}
 
 	/**

@@ -355,6 +355,24 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * How many live items in the list are still unchecked. Archived and
+	 * soft-deleted items are not open — they have left the list's working set.
+	 */
+	public function countOpenByList(int $listId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*'))
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('done', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
+		$result = $qb->executeQuery();
+		$count = $result->fetchOne();
+		$result->closeCursor();
+		return $count === false ? 0 : (int)$count;
+	}
+
+	/**
 	 * @throws DoesNotExistException
 	 */
 	public function findById(int $id, bool $includeDeleted = false): ChecklistItem {

@@ -545,6 +545,62 @@ final class ChecklistController extends OCSController {
 	}
 
 	/**
+	 * Duplicate a checklist, copying its items into a new list
+	 *
+	 * Items in the list's trash or archive are not copied. Each copied item's
+	 * image file is duplicated so the two lists never share a file. Categories,
+	 * labels and custom fields scoped to the source list are duplicated too, and
+	 * the copied items point at the new ones.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Id of the list to duplicate.
+	 * @param string $name Name for the new list.
+	 * @param bool $resetDone Whether every copied item starts unchecked.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
+	 *
+	 * 200: List duplicated
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/duplicate', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canCreateLists'])]
+	public function duplicateList(int $houseId, int $listId, string $name, bool $resetDone = true): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $resetDone): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$source = $this->lists->getList($listId);
+			$this->assertListInHouse($source->getHouseId(), $houseId);
+			if (!$this->permissions->isAdmin($houseId, $uid)
+				&& !$this->permissions->canAccessList($houseId, $uid, $listId)) {
+				throw new ForbiddenException('No access to this list');
+			}
+
+			$copy = $this->lists->duplicateList(
+				$listId,
+				$name,
+				$resetDone,
+				$uid,
+				fn (int $fileId, string $ownerUid): ?int => $this->images->duplicateItemImage(
+					$ownerUid,
+					$fileId,
+					$uid,
+					$houseId,
+				),
+			);
+
+			$this->activity->publishListCreated(
+				$houseId,
+				$this->houses->get($houseId)->getName(),
+				$uid,
+				(int)$copy->getId(),
+				$copy->getName(),
+			);
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			return new DataResponse($this->listJson($copy, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		});
+	}
+
+	/**
 	 * Permanently delete a checklist, bypassing the trash
 	 *
 	 * Works on both live lists and lists already in trash. Also wipes every

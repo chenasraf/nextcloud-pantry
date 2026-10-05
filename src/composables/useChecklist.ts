@@ -157,6 +157,12 @@ export function useChecklists(houseId: number) {
     lists.value = [...lists.value, restored]
   }
 
+  async function duplicate(listId: number, name: string, resetDone: boolean): Promise<Checklist> {
+    const created = await api.duplicateList(houseId, listId, name, resetDone)
+    lists.value = [...lists.value, created]
+    return created
+  }
+
   async function reorder(items: { id: number; sortOrder: number }[]): Promise<void> {
     // Apply optimistically so there's no visual jump while the API call is in flight.
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
@@ -187,6 +193,7 @@ export function useChecklists(houseId: number) {
     emptyTrash,
     archive,
     unarchive,
+    duplicate,
     reorder,
   }
 }
