@@ -375,12 +375,12 @@ update-deps:
 		exit 1; \
 	fi
 	@$(MAKE) update-pnpm-deps update-composer-deps
+	git add package.json pnpm-lock.yaml composer.lock vendor-bin/*/composer.lock
+	git commit -m "chore(deps): update dependencies"
 	@echo "\x1b[36mAll dependencies updated.\x1b[0m"
 	@echo "\x1b[36mPush changes? [Y/n]\x1b[0m"
 	@read ans; \
 		if [ "$$ans" != "n" ] && [ "$$ans" != "N" ]; then \
-			git add package.json pnpm-lock.yaml composer.lock vendor-bin/*/composer.lock; \
-			git commit -m "chore(deps): update dependencies"; \
 			git push; \
 		else \
 			echo "Changes not pushed."; \
