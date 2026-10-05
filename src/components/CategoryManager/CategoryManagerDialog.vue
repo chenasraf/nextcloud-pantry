@@ -6,7 +6,7 @@
     close-on-click-outside
     @update:open="$emit('update:open', $event)"
   >
-    <div v-if="!catLoading && catItems.length > 0" class="pantry-cat-toolbar">
+    <div v-if="!catLoading && visibleItems.length > 0" class="pantry-cat-toolbar">
       <NcButton
         variant="tertiary"
         :aria-label="strings.perStoreOrder"
@@ -39,7 +39,7 @@
       <NcLoadingIcon :size="28" />
     </div>
     <template v-else>
-      <p v-if="catItems.length === 0" class="pantry-cat-hint">
+      <p v-if="visibleItems.length === 0" class="pantry-cat-hint">
         {{ strings.noCategoriesHint }}
       </p>
       <ul v-else ref="listRef" class="pantry-cat-list">
@@ -119,6 +119,7 @@
     :open="showForm"
     :house-id="houseId"
     :category="editingCat"
+    :default-list-id="listId ?? null"
     :saving="catSaving"
     :error="catError"
     @update:open="closeForm"
@@ -167,7 +168,15 @@ import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons
 import CategoryFormDialog from './CategoryFormDialog.vue'
 import StoreCategoryOrderDialog from './StoreCategoryOrderDialog.vue'
 
-const props = defineProps<{ open: boolean; houseId: number }>()
+const props = defineProps<{
+  open: boolean
+  houseId: number
+  /**
+   * List the dialog was opened from. Narrows the dialog to the categories that
+   * apply there — globals plus that list's own. Null shows the whole house.
+   */
+  listId?: number | null
+}>()
 const emit = defineEmits<{
   'update:open': [value: boolean]
   'sort-changed': []
@@ -179,6 +188,9 @@ const emit = defineEmits<{
 
 const categories = useCategories(props.houseId)
 const catItems = computed(() => categories.items.value)
+const visibleItems = computed(() =>
+  props.listId == null ? catItems.value : categories.categoriesForList(props.listId),
+)
 const catLoading = computed(() => categories.loading.value)
 
 const { lists, load: loadLists } = useChecklists(props.houseId)
@@ -191,10 +203,10 @@ interface CategoryGroup {
   title: string
   cats: Category[]
 }
-const groups = computed<CategoryGroup[]>(() => {
+function buildGroups(cats: Category[]): CategoryGroup[] {
   const byList = new Map<number, Category[]>()
   const globals: Category[] = []
-  for (const c of catItems.value) {
+  for (const c of cats) {
     if (c.listId == null) {
       globals.push(c)
     } else {
@@ -206,17 +218,23 @@ const groups = computed<CategoryGroup[]>(() => {
   const out: CategoryGroup[] = []
   if (globals.length) out.push({ listId: null, title: strings.globalGroup, cats: globals })
   for (const l of lists.value) {
-    const cats = byList.get(l.id)
-    if (cats && cats.length) out.push({ listId: l.id, title: l.name, cats })
+    const scoped = byList.get(l.id)
+    if (scoped && scoped.length) out.push({ listId: l.id, title: l.name, cats: scoped })
   }
   // Categories whose list is not currently loaded (defensive; keeps them visible).
-  for (const [lid, cats] of byList) {
+  for (const [lid, scoped] of byList) {
     if (!lists.value.some((l) => l.id === lid)) {
-      out.push({ listId: lid, title: t('pantry', 'List #{id}', { id: String(lid) }), cats })
+      out.push({ listId: lid, title: t('pantry', 'List #{id}', { id: String(lid) }), cats: scoped })
     }
   }
   return out
-})
+}
+const groups = computed<CategoryGroup[]>(() => buildGroups(visibleItems.value))
+// The house-wide grouping, which reordering renumbers against so positions stay
+// coherent for the categories a narrowed view hides.
+const allGroups = computed<CategoryGroup[]>(() =>
+  props.listId == null ? groups.value : buildGroups(catItems.value),
+)
 const showGroups = computed(() => groups.value.length > 1)
 
 const currentSort = ref<CategorySort>('name_asc')
@@ -371,7 +389,7 @@ async function commitReorder() {
   // Renumber the whole house-wide sequence, substituting the reordered group,
   // so sort_order stays a single coherent order that also keeps groups intact.
   const flat: Category[] = []
-  for (const g of groups.value) {
+  for (const g of allGroups.value) {
     flat.push(...(g.listId === groupId ? newGroupCats : g.cats))
   }
   const entries = flat.map((c, n) => ({ id: c.id, sortOrder: n }))

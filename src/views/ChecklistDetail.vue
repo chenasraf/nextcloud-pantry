@@ -446,6 +446,7 @@
     <CategoryManagerDialog
       :open="showCategoryManager"
       :house-id="houseIdNum"
+      :list-id="isMeta ? null : listIdNum"
       @update:open="showCategoryManager = $event"
       @sort-changed="onCategorySortChanged"
       @items-affected="load"
