@@ -199,6 +199,7 @@ OC.L10N.register(
     "Options" : "Muligheder",
     "Option" : "Mulighed",
     "Add option" : "Tilføj valgmulighed",
+    "Remove option" : "Fjern valgmulighed",
     "Remind" : "Minder",
     "Default value" : "Standard værdi",
     "Delete field" : "Slet felt",
