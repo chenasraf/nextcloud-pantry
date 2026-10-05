@@ -46,19 +46,19 @@
     "@vitejs/plugin-vue": "^6.0.9",
     "@vue/test-utils": "^2.5.1",
     "@vue/tsconfig": "^0.9.1",
-    "eslint": "^10.11.0",
+    "eslint": "^10.12.0",
     "happy-dom": "^20.14.5",
-    "lefthook": "^2.1.14",
+    "lefthook": "^2.1.16",
     "prettier": "^3.9.9",
     "rollup-plugin-visualizer": "^7.1.1",
-    "sass": "^1.105.0",
-    "sass-embedded": "^1.105.0",
+    "sass": "^1.105.1",
+    "sass-embedded": "^1.105.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.70.1",
-    "vite": "^8.3.1",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.2",
     "vite-plugin-checker": "^0.14.5",
-    "vitest": "^5.0.2",
+    "vitest": "^5.0.3",
     "vue-router": "^5.3.1",
-    "vue-tsc": "^3.3.11"
+    "vue-tsc": "^3.3.12"
   }
 }
