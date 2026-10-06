@@ -367,7 +367,7 @@ OC.L10N.register(
     "Import to list" : "In Liste importieren",
     "Remove" : "Entfernen",
     "Pin to top" : "Oben anheften",
-    "Unpin" : "Abheften",
+    "Unpin" : "Ablösen",
     "Sync to file …" : "Mit Datei synchronisieren …",
     "Stop syncing" : "Synchronisation stoppen",
     "Synced file is missing" : "Synchronisierte Datei fehlt",
