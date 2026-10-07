@@ -59,7 +59,7 @@ class PrefsService {
 		foreach ($this->getAvailableLanguages() as $code) {
 			$core = $this->l10nFactory->get('lib', $code);
 			$name = $core->t('__language_name__');
-			if ($core->getLanguageCode() !== $code || $name === '' || $name[0] === '_') {
+			if ($core->getLanguageCode() !== $code || str_starts_with($name, '_')) {
 				// Unknown name: fall back to the code, with English spelled out.
 				$name = $code === 'en' ? 'English (US)' : $code;
 			}
