@@ -37,6 +37,16 @@ const STUBS = ROOT . '/vendor/nextcloud/ocp';
 const SCAN_DIRS = ['lib', 'tests'];
 const SKIP_DIRS = ['tests/stubs'];
 
+/**
+ * Files whose newer OCP use counts as guarded because they only load behind
+ * a guard elsewhere. A class implementing a newer interface cannot guard its
+ * own declaration, so the guard lives at the one place that loads it.
+ */
+const GUARDED_FILES = [
+	// Registered by Application::register() behind interface_exists(ILexicon::class).
+	'lib/Config/ConfigLexicon.php',
+];
+
 $verbose = in_array('--verbose', $argv, true);
 
 $minVersion = readMinVersion(ROOT . '/appinfo/info.xml');
@@ -79,7 +89,7 @@ foreach ($refs as $symbol => $files) {
 	// supported way to support both servers at once.
 	$unguarded = array_values(array_filter(
 		array_unique($files),
-		static fn (string $file): bool => !guardsSymbol($file, $symbol),
+		static fn (string $file): bool => !in_array($file, GUARDED_FILES, true) && !guardsSymbol($file, $symbol),
 	));
 	if ($unguarded === []) {
 		$guarded[$symbol] = $since;
@@ -246,10 +256,17 @@ function stubPath(string $symbol): ?string {
 function readSince(string $stubFile): ?int {
 	$source = (string)file_get_contents($stubFile);
 
-	// The docblock attached to the type declaration, not to a method above it.
-	if (!preg_match('/\/\*\*(?:(?!\*\/).)*\*\/\s*(?:#\[[^\]]*\]\s*)*(?:final\s+|abstract\s+|readonly\s+)*(?:class|interface|trait|enum)\s+\w/s', $source, $m)) {
+	// The docblock and attributes attached to the type declaration, not to a method above it.
+	if (!preg_match('/(?:\/\*\*(?:(?!\*\/).)*\*\/\s*)?(?:#\[[^\]]*\]\s*)*(?:final\s+|abstract\s+|readonly\s+)*(?:class|interface|trait|enum)\s+\w/s', $source, $m)) {
 		return null;
 	}
 
-	return preg_match('/@since\s+(\d+)/', $m[0], $s) ? (int)$s[1] : null;
+	if (preg_match('/@since\s+(\d+)/', $m[0], $s)) {
+		return (int)$s[1];
+	}
+
+	// Some types carry their version only on an attribute such as
+	// #[Consumable(since: '32.0.0')]. The docblock wins when both exist: the
+	// attribute can postdate the type, e.g. an interface opened to apps later.
+	return preg_match('/#\[\w+\(\s*since:\s*[\'"](\d+)/', $m[0], $s) ? (int)$s[1] : null;
 }

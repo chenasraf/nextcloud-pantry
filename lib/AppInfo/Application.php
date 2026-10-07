@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\Pantry\AppInfo;
 
 use OCA\Pantry\Capabilities;
+use OCA\Pantry\Config\ConfigLexicon;
 use OCA\Pantry\Listener\AddMissingColumnsListener;
 use OCA\Pantry\Listener\AddMissingIndicesListener;
 use OCA\Pantry\Listener\NoteFileSyncListener;
@@ -17,6 +18,7 @@ use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\Config\Lexicon\ILexicon;
 use OCP\DB\Events\AddMissingColumnsEvent;
 use OCP\DB\Events\AddMissingIndicesEvent;
 use OCP\Files\Events\Node\NodeRenamedEvent;
@@ -41,6 +43,11 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(AddMissingIndicesEvent::class, AddMissingIndicesListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, NoteFileSyncListener::class);
 		$context->registerEventListener(NodeRenamedEvent::class, NoteFileSyncListener::class);
+		// Nextcloud 31 has registerConfigLexicon() but expects the lexicon
+		// under NCU\Config\Lexicon, so check for the OCP interface instead.
+		if (interface_exists(ILexicon::class)) {
+			$context->registerConfigLexicon(ConfigLexicon::class);
+		}
 	}
 
 	public function boot(IBootContext $context): void {
