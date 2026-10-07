@@ -262,7 +262,7 @@ const dateGroupName = `cf-datemode-${groupSuffix}`
 
 const typeOptions: Opt<FieldType>[] = FIELD_TYPES.map((f) => ({
   value: f.key,
-  label: t('pantry', f.labelKey),
+  label: f.label(),
 }))
 const leadOptions: Opt<number>[] = [
   { value: 0, label: t('pantry', 'On the day') },
