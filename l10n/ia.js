@@ -43,6 +43,7 @@ OC.L10N.register(
     "Export" : "Exportar",
     "Select" : "Selectionar",
     "Apply" : "Applicar",
+    "Completed" : "Completate",
     "General" : "General",
     "New folder" : "Nove dossier",
     "Documentation" : "Documentation"

@@ -64,6 +64,7 @@ OC.L10N.register(
     "Export" : "Exportar",
     "Import" : "Importar",
     "Apply" : "Aplicar",
+    "Completed" : "Completado",
     "General" : "General",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",

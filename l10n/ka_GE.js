@@ -68,6 +68,7 @@ OC.L10N.register(
     "Export" : "ექსპორტი",
     "Import" : "იმპორტი",
     "Apply" : "გამოყენება",
+    "Completed" : "დასრულებული",
     "General" : "ზოგადი",
     "Note restored" : "ჩანაწერი აღდგა",
     "New folder" : "ახალი დირექტორია",

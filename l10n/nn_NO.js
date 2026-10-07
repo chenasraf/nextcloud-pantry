@@ -393,6 +393,7 @@ OC.L10N.register(
     "Permanently delete {name}? Every item in this list will also be erased. This cannot be undone." : "Vil du slette {name} permanent? Kvar oppføring i lista vil òg bli sletta. Dette kan ikkje angrast.",
     "Move {name} to the trash? You can restore it later." : "Flytt {name} til papirkorga? Du kan gjenopprette det seinare.",
     "Checklists trash" : "Papirkorg for sjekklister",
+    "Completed" : "Fullført",
     "List actions" : "Listehandlingar",
     "Remove checklist" : "Fjern sjekkliste",
     "Delete checklist permanently" : "Slett sjekkliste permanent",

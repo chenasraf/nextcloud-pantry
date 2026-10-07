@@ -166,6 +166,7 @@ OC.L10N.register(
     "Selected image" : "Ausgewähltes Bild",
     "Barcode attached" : "Barcode angefügt",
     "Already on this list" : "Ist bereits auf dieser Liste",
+    "Duplicate" : "Duplizieren",
     "Type to filter …" : "Etwas eingeben, um zu filtern …",
     "All categories" : "Alle Kategorien",
     "No category" : "Keine Kategorie",

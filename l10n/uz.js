@@ -15,6 +15,7 @@ OC.L10N.register(
     "Category" : "Kategoriya",
     "Labels" : "Yorliqlar",
     "Description" : "Tavsif",
+    "Duplicate" : "Nusxa",
     "No category" : "Kategoriyasiz",
     "Lists" : "Ro'yxatlar",
     "Categories" : "Kategoriyalar",

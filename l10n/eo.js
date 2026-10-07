@@ -76,6 +76,7 @@ OC.L10N.register(
     "Import" : "Importi",
     "Select" : "Elekti",
     "Apply" : "Validigi",
+    "Completed" : "Plenumita",
     "General" : "Ĝenerala",
     "Automation" : "Aŭtomatigo",
     "New folder" : "Nova dosierujo",

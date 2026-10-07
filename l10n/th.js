@@ -65,6 +65,7 @@ OC.L10N.register(
     "Import" : "นำเข้า",
     "Select" : "เลือก",
     "Apply" : "นำไปใช้",
+    "Completed" : "เสร็จแล้ว",
     "General" : "ทั่วไป",
     "Automation" : "อัตโนมัติ",
     "New folder" : "โฟลเดอร์ใหม่",

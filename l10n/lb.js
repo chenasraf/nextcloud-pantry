@@ -73,6 +73,7 @@ OC.L10N.register(
     "Import" : "Import",
     "Select" : "Auswielen",
     "Apply" : "Uwenden",
+    "Completed" : "Erfëllt",
     "General" : "Allgemeng",
     "New folder" : "Neien Dossier",
     "Documentation" : "Dokumentatioun",

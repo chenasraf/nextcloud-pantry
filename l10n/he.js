@@ -106,6 +106,7 @@ OC.L10N.register(
     "Select" : "בחר",
     "Clear selection" : "נקה בחירה",
     "Apply" : "החלה",
+    "Completed" : "הושלם",
     "No lists yet" : "אין רשימות עדיין",
     "General" : "כללי",
     "Shopping" : "קניות",

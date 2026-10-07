@@ -73,6 +73,7 @@ OC.L10N.register(
     "Export" : "Exportar",
     "Import" : "Importar",
     "Apply" : "Aplicar",
+    "Completed" : "Acabat",
     "General" : "Generals",
     "Shopping" : "Crompas",
     "Danger zone" : "Zòna perilhosa",

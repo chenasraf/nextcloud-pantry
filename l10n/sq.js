@@ -76,6 +76,7 @@ OC.L10N.register(
     "Import" : "Import",
     "Select" : "Përzgjidh",
     "Apply" : "Apliko",
+    "Completed" : "Të plotësuara",
     "General" : "Të përgjithshme",
     "Note restored" : "Shënimi i rivendos",
     "New folder" : "Dosje e re",

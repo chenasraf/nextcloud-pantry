@@ -143,6 +143,7 @@ OC.L10N.register(
     "Select" : "Valitse",
     "Clear selection" : "Tyhjennä valinta",
     "Apply" : "Toteuta",
+    "Completed" : "Valmiit",
     "No lists yet" : "Ei vielä listoja",
     "General" : "Yleiset",
     "Automation" : "Automaatio",

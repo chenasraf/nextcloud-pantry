@@ -67,6 +67,7 @@ OC.L10N.register(
     "Import" : "Importar",
     "Select" : "Seleccionar",
     "Apply" : "Aplicar",
+    "Completed" : "Completado",
     "General" : "General",
     "New note" : "Nota nueva",
     "Note restored" : "Nota restaurada",

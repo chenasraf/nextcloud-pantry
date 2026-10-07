@@ -98,6 +98,7 @@ OC.L10N.register(
     "New list" : "Lista noa",
     "Select" : "Seletziona",
     "Apply" : "Àplica",
+    "Completed" : "Cumpletadu",
     "No lists yet" : "Perunu elencu ancora",
     "Shopping" : "Còmporas",
     "Danger zone" : "Zona de perìgulu",

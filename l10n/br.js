@@ -53,6 +53,7 @@ OC.L10N.register(
     "Import" : "Emporzhiañ ",
     "Select" : "Diuzañ",
     "Apply" : "Lakaat",
+    "Completed" : "Echu",
     "General" : "Hollek",
     "Shopping" : "Staliaoua",
     "New note" : "Notenn nevez",

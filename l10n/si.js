@@ -42,6 +42,7 @@ OC.L10N.register(
     "Days" : "දින",
     "Location" : "ස්ථානය",
     "Archive" : "සංරක්ෂණය",
+    "Completed" : "සම්පුර්ණයි",
     "General" : "සමාන්‍යය",
     "No notes yet" : "තවම සටහන් නැත",
     "New folder" : "නව බහාලුම",

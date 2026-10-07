@@ -69,6 +69,7 @@ OC.L10N.register(
     "Export" : "Exportar",
     "Import" : "Importar",
     "Apply" : "Aplicar",
+    "Completed" : "Completado",
     "General" : "General",
     "Automation" : "Automatización",
     "New note" : "Nota nueva",

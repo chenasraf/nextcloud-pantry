@@ -93,6 +93,7 @@ OC.L10N.register(
     "Import" : "Nhập vào",
     "Select" : "Chọn",
     "Apply" : "Áp dụng",
+    "Completed" : "Hoàn thành",
     "No lists yet" : "Chưa có danh sách",
     "General" : "Cài đặt chung",
     "Automation" : "Tự động",
