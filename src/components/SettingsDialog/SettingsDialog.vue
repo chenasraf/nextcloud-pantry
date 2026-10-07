@@ -5,6 +5,22 @@
     :show-navigation="true"
     @update:open="(v) => emit('update:open', v)"
   >
+    <NcAppSettingsSection id="pantry-language" :name="strings.languageSection">
+      <div class="settings__field">
+        <label class="settings__label">{{ strings.languageLabel }}</label>
+        <p class="settings__hint">{{ strings.languageHint }}</p>
+        <NcSelect
+          data-testid="language-select"
+          :model-value="selectedLanguageOption"
+          :options="languageOptions"
+          :clearable="false"
+          :searchable="true"
+          input-label=""
+          @update:model-value="updateLanguage"
+        />
+      </div>
+    </NcAppSettingsSection>
+
     <NcAppSettingsSection id="pantry-interface" :name="strings.interfaceSection">
       <div class="settings__field">
         <label class="settings__label">{{ strings.rowClickActionLabel }}</label>
@@ -173,7 +189,11 @@ import {
   setImageFolder,
   getNotificationPrefs,
   setNotificationPrefs,
+  getLanguages,
+  getLanguagePref,
+  setLanguagePref,
   type BarcodeFillPrefs,
+  type LanguageOption,
   type NotificationPrefs,
   type ReuseExistingItems,
   type RowClickAction,
@@ -187,6 +207,47 @@ import { useBarcodeFill } from '@/composables/useBarcodeFill'
 
 const props = defineProps<{ open: boolean; houseId: number | null; isOwner: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean]; left: [] }>()
+
+// ----- Language (global) -----
+
+const availableLanguages = ref<LanguageOption[]>([])
+const selectedLanguage = ref('')
+
+const languageOptions = computed(() => [
+  { value: '', label: strings.languageFollowDefault },
+  ...availableLanguages.value.map((language) => ({
+    value: language.code,
+    label: language.name,
+  })),
+])
+
+const selectedLanguageOption = computed(
+  () =>
+    languageOptions.value.find((option) => option.value === selectedLanguage.value) ??
+    languageOptions.value[0],
+)
+
+async function loadLanguage() {
+  try {
+    const [preference, languages] = await Promise.all([getLanguagePref(), getLanguages()])
+    selectedLanguage.value = preference
+    availableLanguages.value = languages
+  } catch {
+    // Keep the "follow Nextcloud" option only.
+  }
+}
+
+async function updateLanguage(option: { value: string; label: string } | null) {
+  if (!option || option.value === selectedLanguage.value) return
+  const previous = selectedLanguage.value
+  selectedLanguage.value = option.value
+  try {
+    await setLanguagePref(option.value)
+    window.location.reload()
+  } catch {
+    selectedLanguage.value = previous
+  }
+}
 
 // ----- Images (per-house upload folder) -----
 
@@ -399,6 +460,7 @@ watch(
       folderSaved.value = false
       void loadFolder()
       void loadNotifPrefs()
+      void loadLanguage()
     }
   },
   { immediate: true },
@@ -406,6 +468,13 @@ watch(
 
 const strings = {
   title: t('pantry', 'Personal settings'),
+  languageSection: t('pantry', 'Language'),
+  languageLabel: t('pantry', 'Interface language'),
+  languageHint: t(
+    'pantry',
+    'Language used for the Pantry interface. Choose "Use Nextcloud language" to follow your account setting.',
+  ),
+  languageFollowDefault: t('pantry', 'Use Nextcloud language'),
   interfaceSection: t('pantry', 'Interface'),
   rowClickActionLabel: t('pantry', 'Default item click action'),
   rowClickActionHint: t('pantry', 'What happens when you click an item row.'),

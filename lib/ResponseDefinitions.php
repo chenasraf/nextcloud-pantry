@@ -342,6 +342,16 @@ namespace OCA\Pantry;
  *     barcodeFillName: bool,
  *     barcodeFillCategory: bool,
  *     barcodeFillImage: bool,
+ *     language: string,
+ * }
+ *
+ * @psalm-type PantryLanguage = array{
+ *     code: string,
+ *     name: string,
+ * }
+ *
+ * @psalm-type PantryLanguageList = array{
+ *     languages: list<PantryLanguage>,
  * }
  *
  * @psalm-type PantryHousePrefs = array{
