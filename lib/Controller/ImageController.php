@@ -11,6 +11,7 @@ use OCA\Pantry\Db\PhotoMapper;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Service\HouseAuthService;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -62,7 +63,12 @@ final class ImageController extends OCSController {
 		return $this->runAction(function () use ($houseId, $photoId, $size) {
 			$this->auth->requireMember($houseId, $this->requireUid());
 
-			$photo = $this->photoMapper->findById($photoId);
+			// Trashed photos still render in the trash view, and their files stay in place until purged.
+			try {
+				$photo = $this->photoMapper->findById($photoId, true);
+			} catch (DoesNotExistException) {
+				throw new NotFoundException('Photo not found');
+			}
 			if ($photo->getHouseId() !== $houseId) {
 				throw new NotFoundException('Photo does not belong to this house');
 			}
