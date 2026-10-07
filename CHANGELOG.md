@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.35.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.34.0...v0.35.0) (2026-10-07)
+
+
+### Features
+
+* **i18n:** add per-user language switcher ([#282](https://github.com/chenasraf/nextcloud-pantry/issues/282)) ([c7812f3](https://github.com/chenasraf/nextcloud-pantry/commit/c7812f357168ef3081d82992d073c756609419ae))
+* **lists:** list completion timestamp and list duplication ([893ccbe](https://github.com/chenasraf/nextcloud-pantry/commit/893ccbed4fe7a599def0afae952cd53fa7a21c32)), closes [#274](https://github.com/chenasraf/nextcloud-pantry/issues/274)
+* **prefs:** choose which details a barcode scan fills ([4074f0e](https://github.com/chenasraf/nextcloud-pantry/commit/4074f0e3a4c08efa4082e32bd2f16602b1de8c74))
+
+
+### Bug Fixes
+
+* **categories:** show only the open list's categories in the manager ([4fdcaaa](https://github.com/chenasraf/nextcloud-pantry/commit/4fdcaaa2971c05123712657044d5875d0ac31259)), closes [#281](https://github.com/chenasraf/nextcloud-pantry/issues/281)
+* **l10n:** Update translations from Transifex ([6dd79b8](https://github.com/chenasraf/nextcloud-pantry/commit/6dd79b84403b8b442bc114266cecedf6f7beba48))
+* **l10n:** Update translations from Transifex ([1e4c51a](https://github.com/chenasraf/nextcloud-pantry/commit/1e4c51aa66264c0709dad0dba465858c35d3d2d6))
+* **l10n:** Update translations from Transifex ([511d127](https://github.com/chenasraf/nextcloud-pantry/commit/511d127426f3c1b5ae40f2b308cd991d130cf570))
+* **l10n:** Update translations from Transifex ([3a265a4](https://github.com/chenasraf/nextcloud-pantry/commit/3a265a419bc2027be4e22c886f2ee893a75026bd))
+* **l10n:** Update translations from Transifex ([455d793](https://github.com/chenasraf/nextcloud-pantry/commit/455d793d8df46083b3b64a9c4e2833d68b41bc87))
+* **l10n:** Update translations from Transifex ([15afd03](https://github.com/chenasraf/nextcloud-pantry/commit/15afd037a5a36429230a6ea6106a72de731b68c6))
+
 ## [0.34.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.33.0...v0.34.0) (2026-09-24)
 
 
