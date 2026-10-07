@@ -25,9 +25,6 @@ vi.mock('@/api/prefs', () => ({
   getLanguagePref: vi.fn().mockResolvedValue(''),
   setLanguagePref: vi.fn().mockResolvedValue(''),
 }))
-vi.mock('@/l10n/language', () => ({
-  applyLanguage: vi.fn().mockResolvedValue(undefined),
-}))
 
 // Mock Nextcloud Vue components that pull in CSS
 vi.mock('@nextcloud/vue/components/NcAppSettingsDialog', () => ({
@@ -88,7 +85,6 @@ import {
   setLanguagePref,
 } from '@/api/prefs'
 import { leaveHouse } from '@/api/houses'
-import { applyLanguage } from '@/l10n/language'
 import SettingsDialog from './SettingsDialog.vue'
 
 const NcAppSettingsDialogStub = {
@@ -134,6 +130,8 @@ function mountComponent(
   })
 }
 
+const reloadPage = vi.fn()
+
 describe('SettingsDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -161,7 +159,10 @@ describe('SettingsDialog', () => {
     ])
     vi.mocked(getLanguagePref).mockResolvedValue('')
     vi.mocked(setLanguagePref).mockResolvedValue('de')
-    vi.mocked(applyLanguage).mockResolvedValue(undefined)
+    vi.spyOn(window, 'location', 'get').mockReturnValue({
+      ...window.location,
+      reload: reloadPage,
+    })
   })
 
   describe('rendering', () => {
@@ -342,13 +343,13 @@ describe('SettingsDialog', () => {
       expect(selected.value).toBe('de')
     })
 
-    it('saves and applies the selected language', async () => {
+    it('saves the selected language and reloads', async () => {
       const wrapper = mountComponent({ open: true, houseId: 1 })
       await flushPromises()
       languageSelect(wrapper).vm.$emit('update:modelValue', { value: 'de', label: 'Deutsch' })
       await flushPromises()
       expect(setLanguagePref).toHaveBeenCalledWith('de')
-      expect(applyLanguage).toHaveBeenCalledWith('de')
+      expect(reloadPage).toHaveBeenCalled()
     })
 
     it('follows the Nextcloud language when the default is selected', async () => {
@@ -361,7 +362,7 @@ describe('SettingsDialog', () => {
       })
       await flushPromises()
       expect(setLanguagePref).toHaveBeenCalledWith('')
-      expect(applyLanguage).toHaveBeenCalledWith('')
+      expect(reloadPage).toHaveBeenCalled()
     })
 
     it('does not persist when the language is unchanged', async () => {
@@ -371,6 +372,7 @@ describe('SettingsDialog', () => {
       languageSelect(wrapper).vm.$emit('update:modelValue', { value: 'de', label: 'Deutsch' })
       await flushPromises()
       expect(setLanguagePref).not.toHaveBeenCalled()
+      expect(reloadPage).not.toHaveBeenCalled()
     })
 
     it('reverts the selection when saving the language fails', async () => {
@@ -379,7 +381,7 @@ describe('SettingsDialog', () => {
       await flushPromises()
       languageSelect(wrapper).vm.$emit('update:modelValue', { value: 'de', label: 'Deutsch' })
       await flushPromises()
-      expect(applyLanguage).not.toHaveBeenCalled()
+      expect(reloadPage).not.toHaveBeenCalled()
       const selected = languageSelect(wrapper).props('modelValue') as { value: string }
       expect(selected.value).toBe('')
     })

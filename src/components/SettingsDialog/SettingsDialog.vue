@@ -199,7 +199,6 @@ import {
   type RowClickAction,
 } from '@/api/prefs'
 import { leaveHouse } from '@/api/houses'
-import { applyLanguage } from '@/l10n/language'
 import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
@@ -244,7 +243,7 @@ async function updateLanguage(option: { value: string; label: string } | null) {
   selectedLanguage.value = option.value
   try {
     await setLanguagePref(option.value)
-    await applyLanguage(option.value)
+    window.location.reload()
   } catch {
     selectedLanguage.value = previous
   }

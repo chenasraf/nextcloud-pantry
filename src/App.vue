@@ -1,5 +1,5 @@
 <template>
-  <NcContent app-name="pantry" :key="languageVersion">
+  <NcContent app-name="pantry">
     <router-view name="navigation" />
     <NcAppContent id="pantry-main">
       <ResumeShoppingBanner />
@@ -20,7 +20,6 @@ import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { ResumeShoppingBanner } from '@/components/ResumeShoppingBanner'
 import { JoinShoppingBanner } from '@/components/JoinShoppingBanner'
-import { languageVersion as languageVersionRef } from '@/l10n/language'
 
 export default {
   name: 'PantryApp',
@@ -33,12 +32,6 @@ export default {
   },
   provide() {
     return { 'NcContent:setHasAppNavigation': () => true }
-  },
-  computed: {
-    /** Re-keying the root remounts the tree when the language changes. */
-    languageVersion() {
-      return languageVersionRef.value
-    },
   },
   data() {
     return {

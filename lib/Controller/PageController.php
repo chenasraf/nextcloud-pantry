@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\AppInfo\Application;
+use OCA\Pantry\Service\PrefsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 class PageController extends Controller {
@@ -21,6 +24,9 @@ class PageController extends Controller {
 		IRequest $request,
 		private LoggerInterface $logger,
 		private IEventDispatcher $eventDispatcher,
+		private IInitialState $initialState,
+		private IUserSession $userSession,
+		private PrefsService $prefs,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -51,6 +57,10 @@ class PageController extends Controller {
 	#[NoCSRFRequired]
 	public function index(): TemplateResponse {
 		$this->loadTextEditor();
+		// The frontend applies the Pantry language override before its first
+		// render, so it has to arrive with the page rather than over the API.
+		$uid = $this->userSession->getUser()?->getUID();
+		$this->initialState->provideInitialState('language', $uid !== null ? ($this->prefs->getLanguage($uid) ?? '') : '');
 		$response = new TemplateResponse(Application::APP_ID, 'app', [
 			'script' => Application::getViteEntryScript('app.ts'),
 			'style' => Application::getViteEntryScript('style.css'),
