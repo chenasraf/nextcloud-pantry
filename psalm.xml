@@ -107,5 +107,31 @@
                 <referencedMethod name="OCP\IConfig::deleteUserValue" />
             </errorLevel>
         </DeprecatedMethod>
+
+        <!--
+            The config lexicon types arrive in server 32 and are registered
+            behind interface_exists(ILexicon::class). Server 31 declares
+            registerConfigLexicon() against NCU\Config\Lexicon, and 29-30 lack it.
+        -->
+        <UndefinedClass>
+            <errorLevel type="suppress">
+                <referencedClass name="OCP\Config\Lexicon\ILexicon" />
+            </errorLevel>
+        </UndefinedClass>
+        <MissingDependency>
+            <errorLevel type="suppress">
+                <file name="lib/AppInfo/Application.php" />
+            </errorLevel>
+        </MissingDependency>
+        <UndefinedInterfaceMethod>
+            <errorLevel type="suppress">
+                <referencedMethod name="OCP\AppFramework\Bootstrap\IRegistrationContext::registerConfigLexicon" />
+            </errorLevel>
+        </UndefinedInterfaceMethod>
+        <InvalidArgument>
+            <errorLevel type="suppress">
+                <referencedFunction name="OCP\AppFramework\Bootstrap\IRegistrationContext::registerConfigLexicon" />
+            </errorLevel>
+        </InvalidArgument>
     </issueHandlers>
 </psalm>
