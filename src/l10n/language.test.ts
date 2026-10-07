@@ -22,7 +22,7 @@ describe('applyLanguage', () => {
     vi.clearAllMocks()
     l10n.getLanguage.mockReturnValue('fr')
     bundle.loadLanguageBundle.mockImplementation(() => Promise.resolve())
-    document.documentElement.dir = 'ltr'
+    document.body.dir = 'ltr'
   })
 
   it('swaps in the override bundle', async () => {
@@ -50,7 +50,15 @@ describe('applyLanguage', () => {
 
   it('applies the text direction of the selected language', async () => {
     await applyLanguage('ar')
-    expect(document.documentElement.dir).toBe('rtl')
+    expect(document.body.dir).toBe('rtl')
+  })
+
+  it('switches back to left-to-right over a right-to-left Nextcloud language', async () => {
+    l10n.getLanguage.mockReturnValue('ar')
+    document.body.dir = 'rtl'
+
+    await applyLanguage('de')
+    expect(document.body.dir).toBe('ltr')
   })
 
   it('resolves when the bundle fails to load', async () => {

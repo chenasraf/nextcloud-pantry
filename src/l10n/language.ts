@@ -24,7 +24,8 @@ export async function applyLanguage(preference: string): Promise<void> {
 
   unregister(APP_ID)
   setLanguage(preference)
-  document.documentElement.dir = isRTL(preference) ? 'rtl' : 'ltr'
+  // Nextcloud sets the direction on <body>, which would win over <html>.
+  document.body.dir = isRTL(preference) ? 'rtl' : 'ltr'
 
   try {
     await loadLanguageBundle(preference)
