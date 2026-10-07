@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.35.0...v0.35.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **photos:** serve previews for trashed photos, 404 for missing ones ([6f2497b](https://github.com/chenasraf/nextcloud-pantry/commit/6f2497b190992def63c456048d9e86d5e4a5ecba))
+
 ## [0.35.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.34.0...v0.35.0) (2026-10-07)
 
 
