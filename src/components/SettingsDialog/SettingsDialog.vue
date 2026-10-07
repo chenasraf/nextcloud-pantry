@@ -50,6 +50,30 @@
       </div>
     </NcAppSettingsSection>
 
+    <NcAppSettingsSection id="pantry-barcode" :name="strings.barcodeSection">
+      <p class="settings__hint">{{ strings.barcodeHint }}</p>
+      <div class="settings__checks">
+        <NcCheckboxRadioSwitch
+          :model-value="barcodeFill.name"
+          @update:model-value="updateBarcodeFill('name', $event)"
+        >
+          {{ strings.barcodeFillName }}
+        </NcCheckboxRadioSwitch>
+        <NcCheckboxRadioSwitch
+          :model-value="barcodeFill.category"
+          @update:model-value="updateBarcodeFill('category', $event)"
+        >
+          {{ strings.barcodeFillCategory }}
+        </NcCheckboxRadioSwitch>
+        <NcCheckboxRadioSwitch
+          :model-value="barcodeFill.image"
+          @update:model-value="updateBarcodeFill('image', $event)"
+        >
+          {{ strings.barcodeFillImage }}
+        </NcCheckboxRadioSwitch>
+      </div>
+    </NcAppSettingsSection>
+
     <NcAppSettingsSection id="pantry-notifications" :name="strings.notificationsSection">
       <p class="settings__hint">{{ strings.notificationsHint }}</p>
       <div class="settings__checks">
@@ -149,6 +173,7 @@ import {
   setImageFolder,
   getNotificationPrefs,
   setNotificationPrefs,
+  type BarcodeFillPrefs,
   type NotificationPrefs,
   type ReuseExistingItems,
   type RowClickAction,
@@ -158,6 +183,7 @@ import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
+import { useBarcodeFill } from '@/composables/useBarcodeFill'
 
 const props = defineProps<{ open: boolean; houseId: number | null; isOwner: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean]; left: [] }>()
@@ -322,6 +348,18 @@ async function updateSuggestArchivedItems(value: boolean) {
   }
 }
 
+// ----- Barcode fill (global) -----
+
+const { barcodeFill, set: setBarcodeFillPref } = useBarcodeFill()
+
+async function updateBarcodeFill(field: keyof BarcodeFillPrefs, value: boolean) {
+  try {
+    await setBarcodeFillPref(field, value)
+  } catch {
+    // Composable already reverted the optimistic update.
+  }
+}
+
 // ----- Display: show added-by (per-house) -----
 
 const showAddedBy = computed(() => {
@@ -392,6 +430,14 @@ const strings = {
     'pantry',
     'When adding an item, also search archived items for reuse suggestions. Reusing an archived item unarchives it.',
   ),
+  barcodeSection: t('pantry', 'Barcode scanning'),
+  barcodeHint: t('pantry', 'Choose which details a barcode scan fills in.'),
+  // TRANSLATORS: Noun, the product name a barcode scan fills into the item.
+  barcodeFillName: t('pantry', 'Name'),
+  // TRANSLATORS: Noun, the item category a barcode scan picks a best match for.
+  barcodeFillCategory: t('pantry', 'Category'),
+  // TRANSLATORS: Noun, the product photo a barcode scan attaches to the item.
+  barcodeFillImage: t('pantry', 'Image'),
   notificationsSection: t('pantry', 'Notifications'),
   notificationsHint: t(
     'pantry',

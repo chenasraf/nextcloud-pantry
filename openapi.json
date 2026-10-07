@@ -2102,7 +2102,10 @@
                     "tapRowToComplete",
                     "rowClickAction",
                     "reuseExistingItems",
-                    "suggestArchivedItems"
+                    "suggestArchivedItems",
+                    "barcodeFillName",
+                    "barcodeFillCategory",
+                    "barcodeFillImage"
                 ],
                 "properties": {
                     "lastHouseId": {
@@ -2124,6 +2127,15 @@
                         "type": "string"
                     },
                     "suggestArchivedItems": {
+                        "type": "boolean"
+                    },
+                    "barcodeFillName": {
+                        "type": "boolean"
+                    },
+                    "barcodeFillCategory": {
+                        "type": "boolean"
+                    },
+                    "barcodeFillImage": {
                         "type": "boolean"
                     }
                 }
@@ -14985,6 +14997,24 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Whether reuse suggestions also search archived items."
+                                    },
+                                    "barcodeFillName": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether a resolved barcode fills in the item name."
+                                    },
+                                    "barcodeFillCategory": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether a resolved barcode fills in the item category."
+                                    },
+                                    "barcodeFillImage": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether a resolved barcode fills in the item image."
                                     }
                                 }
                             }

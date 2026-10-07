@@ -22,9 +22,12 @@ class PrefsService {
 	private const KEY_ROW_CLICK_ACTION = 'row_click_action';
 	private const KEY_REUSE_EXISTING_ITEMS = 'reuse_existing_items';
 	private const KEY_SUGGEST_ARCHIVED_ITEMS = 'suggest_archived_items';
+	private const KEY_BARCODE_FILL_PREFIX = 'barcode_fill_';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
 	public const ROW_CLICK_ACTION_OPTIONS = ['done', 'view', 'edit', 'none'];
 	public const REUSE_EXISTING_ITEMS_OPTIONS = ['ask', 'reuse', 'never'];
+	/** Item details a resolved barcode can fill in. */
+	public const BARCODE_FILL_FIELDS = ['name', 'category', 'image'];
 
 	public function __construct(
 		private IConfig $config,
@@ -154,6 +157,31 @@ class PrefsService {
 		return $value;
 	}
 
+	/**
+	 * @param value-of<self::BARCODE_FILL_FIELDS> $field
+	 */
+	public function getBarcodeFill(string $uid, string $field): bool {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_BARCODE_FILL_PREFIX . $field,
+			'1',
+		) === '1';
+	}
+
+	/**
+	 * @param value-of<self::BARCODE_FILL_FIELDS> $field
+	 */
+	public function setBarcodeFill(string $uid, string $field, bool $value): bool {
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_BARCODE_FILL_PREFIX . $field,
+			$value ? '1' : '0',
+		);
+		return $value;
+	}
+
 	// ----- Unified user prefs -----
 
 	/**
@@ -167,6 +195,9 @@ class PrefsService {
 			'rowClickAction' => $this->getRowClickAction($uid),
 			'reuseExistingItems' => $this->getReuseExistingItems($uid),
 			'suggestArchivedItems' => $this->getSuggestArchivedItems($uid),
+			'barcodeFillName' => $this->getBarcodeFill($uid, 'name'),
+			'barcodeFillCategory' => $this->getBarcodeFill($uid, 'category'),
+			'barcodeFillImage' => $this->getBarcodeFill($uid, 'image'),
 		];
 	}
 
@@ -189,6 +220,12 @@ class PrefsService {
 		}
 		if (array_key_exists('suggestArchivedItems', $patch) && is_bool($patch['suggestArchivedItems'])) {
 			$this->setSuggestArchivedItems($uid, $patch['suggestArchivedItems']);
+		}
+		foreach (self::BARCODE_FILL_FIELDS as $field) {
+			$key = 'barcodeFill' . ucfirst($field);
+			if (array_key_exists($key, $patch) && is_bool($patch[$key])) {
+				$this->setBarcodeFill($uid, $field, $patch[$key]);
+			}
 		}
 	}
 

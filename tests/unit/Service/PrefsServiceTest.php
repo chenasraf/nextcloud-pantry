@@ -252,6 +252,80 @@ class PrefsServiceTest extends TestCase {
 		$this->assertTrue($prefs['suggestArchivedItems']);
 	}
 
+	// ----- Barcode fill -----
+
+	public function testGetBarcodeFillDefaultsToTrue(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'barcode_fill_name', '1')
+			->willReturn('1');
+
+		$this->assertTrue($this->svc->getBarcodeFill('alice', 'name'));
+	}
+
+	public function testGetBarcodeFillReturnsFalseWhenDisabled(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'barcode_fill_image', '1')
+			->willReturn('0');
+
+		$this->assertFalse($this->svc->getBarcodeFill('alice', 'image'));
+	}
+
+	public function testSetBarcodeFillStoresZero(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'barcode_fill_category', '0');
+
+		$this->assertFalse($this->svc->setBarcodeFill('alice', 'category', false));
+	}
+
+	public function testSetBarcodeFillStoresOne(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('bob', Application::APP_ID, 'barcode_fill_name', '1');
+
+		$this->assertTrue($this->svc->setBarcodeFill('bob', 'name', true));
+	}
+
+	public function testGetAllUserPrefsDefaultsEveryBarcodeFillToTrue(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			fn (string $uid, string $app, string $key, string $default): string => $default
+		);
+
+		$prefs = $this->svc->getAllUserPrefs('alice');
+		$this->assertTrue($prefs['barcodeFillName']);
+		$this->assertTrue($prefs['barcodeFillCategory']);
+		$this->assertTrue($prefs['barcodeFillImage']);
+	}
+
+	public function testGetAllUserPrefsReflectsDisabledBarcodeFill(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			function (string $uid, string $app, string $key, string $default): string {
+				if ($key === 'barcode_fill_image') {
+					return '0';
+				}
+				return $default;
+			}
+		);
+
+		$prefs = $this->svc->getAllUserPrefs('alice');
+		$this->assertTrue($prefs['barcodeFillName']);
+		$this->assertFalse($prefs['barcodeFillImage']);
+	}
+
+	public function testSetUserPrefsWritesOnlyThePatchedBarcodeFillField(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'barcode_fill_category', '0');
+
+		$this->svc->setUserPrefs('alice', ['barcodeFillCategory' => false]);
+	}
+
+	public function testSetUserPrefsIgnoresNonBooleanBarcodeFillValues(): void {
+		$this->config->expects($this->never())->method('setUserValue');
+
+		$this->svc->setUserPrefs('alice', ['barcodeFillName' => 'nope']);
+	}
+
 	// ----- Show added-by -----
 
 	public function testGetShowAddedByDefaultsToFalse(): void {

@@ -19,6 +19,19 @@ export interface UserPrefs {
   reuseExistingItems: ReuseExistingItems
   /** When true, reuse suggestions also search archived items. */
   suggestArchivedItems: boolean
+  /** When true, a resolved barcode fills in the item name. */
+  barcodeFillName: boolean
+  /** When true, a resolved barcode fills in the item category. */
+  barcodeFillCategory: boolean
+  /** When true, a resolved barcode fills in the item image. */
+  barcodeFillImage: boolean
+}
+
+/** Which item details a resolved barcode is allowed to fill in. */
+export interface BarcodeFillPrefs {
+  name: boolean
+  category: boolean
+  image: boolean
 }
 
 const userPrefsDefaults: UserPrefs = {
@@ -28,6 +41,9 @@ const userPrefsDefaults: UserPrefs = {
   rowClickAction: 'none',
   reuseExistingItems: 'ask',
   suggestArchivedItems: false,
+  barcodeFillName: true,
+  barcodeFillCategory: true,
+  barcodeFillImage: true,
 }
 
 let userPrefsInflight: Promise<UserPrefs> | null = null
@@ -90,6 +106,28 @@ export async function getSuggestArchivedItems(): Promise<boolean> {
 export async function setSuggestArchivedItems(value: boolean): Promise<boolean> {
   const prefs = await setUserPrefs({ suggestArchivedItems: value })
   return prefs.suggestArchivedItems
+}
+
+export async function getBarcodeFillPrefs(): Promise<BarcodeFillPrefs> {
+  return toBarcodeFillPrefs(await getUserPrefs())
+}
+
+export async function setBarcodeFillPrefs(
+  patch: Partial<BarcodeFillPrefs>,
+): Promise<BarcodeFillPrefs> {
+  const userPatch: Partial<UserPrefs> = {}
+  if (patch.name !== undefined) userPatch.barcodeFillName = patch.name
+  if (patch.category !== undefined) userPatch.barcodeFillCategory = patch.category
+  if (patch.image !== undefined) userPatch.barcodeFillImage = patch.image
+  return toBarcodeFillPrefs(await setUserPrefs(userPatch))
+}
+
+function toBarcodeFillPrefs(prefs: UserPrefs): BarcodeFillPrefs {
+  return {
+    name: prefs.barcodeFillName,
+    category: prefs.barcodeFillCategory,
+    image: prefs.barcodeFillImage,
+  }
 }
 
 // ----- Per-house prefs -----

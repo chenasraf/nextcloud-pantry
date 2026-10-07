@@ -339,6 +339,9 @@ namespace OCA\Pantry;
  *     rowClickAction: string,
  *     reuseExistingItems: string,
  *     suggestArchivedItems: bool,
+ *     barcodeFillName: bool,
+ *     barcodeFillCategory: bool,
+ *     barcodeFillImage: bool,
  * }
  *
  * @psalm-type PantryHousePrefs = array{

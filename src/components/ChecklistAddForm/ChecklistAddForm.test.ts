@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ItemInput } from '@/api/lists'
@@ -159,11 +159,12 @@ vi.mock('@/components/CategoryPicker/categoryIcons', () => ({
 vi.mock('@/components/LabelPicker/labelIcons', () => ({
   labelIconComponent: () => ({ name: 'StubLabelIcon', template: '<span />' }),
 }))
+const categoryMocks = vi.hoisted(() => ({ categories: [] as { id: number; name: string }[] }))
 vi.mock('@/composables/useCategories', () => ({
   useCategories: () => ({
-    items: { value: [] },
+    items: { value: categoryMocks.categories },
     load: vi.fn().mockResolvedValue(undefined),
-    categoriesForList: () => [],
+    categoriesForList: () => categoryMocks.categories,
   }),
 }))
 vi.mock('@/composables/useStores', () => ({
@@ -196,6 +197,19 @@ vi.mock('@/composables/useSuggestArchivedItems', async () => {
 vi.mock('@/api/lists', () => ({
   listArchivedItems: archivedMocks.listArchivedItems,
 }))
+const barcodeFillMocks = vi.hoisted(() => ({
+  barcodeFill: null as unknown as { name: boolean; category: boolean; image: boolean },
+}))
+vi.mock('@/composables/useBarcodeFill', async () => {
+  const { reactive } = await import('vue')
+  barcodeFillMocks.barcodeFill = reactive({ name: true, category: true, image: true })
+  return {
+    useBarcodeFill: () => ({
+      barcodeFill: barcodeFillMocks.barcodeFill,
+      set: vi.fn().mockResolvedValue(undefined),
+    }),
+  }
+})
 vi.mock('@/utils/rrule', () => ({
   DEFAULT_RRULE: 'FREQ=WEEKLY;INTERVAL=1',
   formatRrule: (s: string) => `text(${s})`,
@@ -637,6 +651,80 @@ describe('ChecklistAddForm', () => {
       const emitted = wrapper.emitted('reuse-existing')
       expect(emitted).toBeTruthy()
       expect((emitted![0][0] as ChecklistItem).archivedAt).toBe(123)
+    })
+  })
+
+  describe('barcode fill preferences', () => {
+    const resolved = {
+      ean: '4001724819103',
+      name: 'Chocolate Bar',
+      brand: null,
+      category: 'Snacks',
+      imageUrl: 'https://example.test/product.jpg',
+      provider: 'openfoodfacts',
+    }
+
+    let fetchMock: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      categoryMocks.categories = [{ id: 7, name: 'Snacks' }]
+      fetchMock = vi.fn().mockResolvedValue({ ok: false })
+      vi.stubGlobal('fetch', fetchMock)
+    })
+
+    afterEach(() => {
+      categoryMocks.categories = []
+      Object.assign(barcodeFillMocks.barcodeFill, { name: true, category: true, image: true })
+      vi.unstubAllGlobals()
+    })
+
+    async function resolveBarcode(wrapper: ReturnType<typeof mountForm>) {
+      wrapper
+        .findComponent({ name: 'BarcodeLookupDialog' })
+        .vm.$emit('resolved', resolved.ean, resolved)
+      await flushPromises()
+    }
+
+    it('fills name, category and image when every field is enabled', async () => {
+      const wrapper = mountForm({ currentListId: 10 })
+      await resolveBarcode(wrapper)
+      expect((wrapper.find('.nc-text-field').element as HTMLInputElement).value).toBe(
+        'Chocolate Bar',
+      )
+      expect(chipForKey(wrapper, 'Snacks').exists()).toBe(true)
+      expect(fetchMock).toHaveBeenCalledWith(resolved.imageUrl)
+    })
+
+    it('leaves the typed name untouched when name filling is disabled', async () => {
+      barcodeFillMocks.barcodeFill.name = false
+      const wrapper = mountForm({ currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('Own wording')
+      await resolveBarcode(wrapper)
+      expect((wrapper.find('.nc-text-field').element as HTMLInputElement).value).toBe('Own wording')
+      // The other details still fill in.
+      expect(chipForKey(wrapper, 'Snacks').exists()).toBe(true)
+    })
+
+    it('skips the category match when category filling is disabled', async () => {
+      barcodeFillMocks.barcodeFill.category = false
+      const wrapper = mountForm({ currentListId: 10 })
+      await resolveBarcode(wrapper)
+      expect(chipForKey(wrapper, 'Snacks')).toBeUndefined()
+      expect(chipForKey(wrapper, 'Category').exists()).toBe(true)
+    })
+
+    it('never downloads the product image when image filling is disabled', async () => {
+      barcodeFillMocks.barcodeFill.image = false
+      const wrapper = mountForm({ currentListId: 10 })
+      await resolveBarcode(wrapper)
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it('still records the scanned barcode when every detail is disabled', async () => {
+      Object.assign(barcodeFillMocks.barcodeFill, { name: false, category: false, image: false })
+      const wrapper = mountForm({ currentListId: 10 })
+      await resolveBarcode(wrapper)
+      expect(chipForKey(wrapper, 'Barcode attached').exists()).toBe(true)
     })
   })
 })

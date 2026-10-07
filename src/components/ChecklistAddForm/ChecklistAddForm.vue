@@ -256,6 +256,7 @@ import { useStores } from '@/composables/useStores'
 import { useLabels } from '@/composables/useLabels'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
+import { useBarcodeFill } from '@/composables/useBarcodeFill'
 import { listArchivedItems } from '@/api/lists'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
@@ -529,7 +530,9 @@ onBeforeUnmount(revokeObjectUrl)
 // ----- Barcode -----
 //
 // A resolved barcode prefills the draft: name, a best-match category, and the
-// product image.
+// product image — each one only if the user leaves it enabled.
+
+const { barcodeFill } = useBarcodeFill()
 
 function onBarcodeResolved(ean: string, result: BarcodeResult | null) {
   if (!result) {
@@ -539,12 +542,16 @@ function onBarcodeResolved(ean: string, result: BarcodeResult | null) {
     return
   }
   barcode.value = ean
-  name.value = result.name
-  const matched = matchCategory(result.category)
-  if (matched && categoryId.value == null) {
-    categoryId.value = matched.id
+  if (barcodeFill.name) {
+    name.value = result.name
   }
-  if (result.imageUrl && !multiple.value) {
+  if (barcodeFill.category) {
+    const matched = matchCategory(result.category)
+    if (matched && categoryId.value == null) {
+      categoryId.value = matched.id
+    }
+  }
+  if (barcodeFill.image && result.imageUrl && !multiple.value) {
     void prefillImageFromUrl(result.imageUrl)
   }
 }

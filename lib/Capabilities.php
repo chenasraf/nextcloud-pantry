@@ -94,6 +94,7 @@ class Capabilities implements IPublicCapability {
 					'pref-category-spacing',
 					'reuse-existing-items',
 					'pref-suggest-archived-items',
+					'pref-barcode-fill',
 					'roles',
 					'share-users',
 					'custom-fields',
