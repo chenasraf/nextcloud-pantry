@@ -1242,6 +1242,11 @@ class ChecklistServiceTest extends TestCase {
 		$source->setName('Leaving the yacht');
 		$source->setDescription('Before stepping off');
 		$source->setIcon('clipboard-check');
+		// A source that has been run through and shelved — every duplicate test
+		// starts from one, so a stamp leaking onto the copy fails loudly.
+		$source->setLastCompletedAt(1500);
+		$source->setArchivedAt(1600);
+		$source->setDeletedAt(1700);
 		return $source;
 	}
 
@@ -1251,7 +1256,27 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertSame('Duplicate of Leaving the yacht', $copy->getName());
 		$this->assertSame('Before stepping off', $copy->getDescription());
 		$this->assertSame(1, $copy->getHouseId());
+	}
+
+	public function testDuplicateListStartsTheCopyWithAFreshHistory(): void {
+		[$copy] = $this->captureDuplicate($this->makeSourceList(), [], true);
+
+		// The copy is a list nobody has finished, archived or trashed yet, however
+		// far the source got.
 		$this->assertNull($copy->getLastCompletedAt());
+		$this->assertNull($copy->getArchivedAt());
+		$this->assertNull($copy->getDeletedAt());
+	}
+
+	public function testDuplicateListStartsEveryItemCopyWithAFreshHistory(): void {
+		$item = $this->makeItem(['archivedAt' => 1600]);
+		$item->setId(1);
+		$item->setDeletedAt(1700);
+
+		[, $copies] = $this->captureDuplicate($this->makeSourceList(), [$item], true);
+
+		$this->assertNull($copies[0]->getArchivedAt());
+		$this->assertNull($copies[0]->getDeletedAt());
 	}
 
 	public function testDuplicateListResetsEveryItemToUndone(): void {
