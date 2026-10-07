@@ -1,3 +1,12 @@
 .action-button__text {
   cursor: pointer;
 }
+
+// NcSelect's fallback `inset-inline-start: 0` resolves to `right: 0` in RTL, which
+// over-constrains the computed inline `left` and pins the menu to the viewport's
+// right edge. The extra class outranks the library rule, whose stylesheet loads
+// after this one.
+.nc-select__dropdown.vs__dropdown-menu.vs__dropdown-menu--floating {
+  inset-inline-start: auto;
+  inset-inline-end: auto;
+}
