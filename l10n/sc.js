@@ -1,6 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Testu",
+    "Checkbox" : "Casella de seletzione",
+    "Date" : "Data",
+    "Select" : "Seletziona",
     "Cancel" : "Cancel",
     "Name" : "Nùmene",
     "Create" : "Crea",
@@ -77,6 +81,7 @@ OC.L10N.register(
     "On date" : "In data",
     "Summary" : "Resumu",
     "Resume" : "Torra a cumintzare",
+    "Language" : "Limba",
     "Mark as done" : "Marca comente cumpletadu",
     "Notifications" : "Notìficas",
     "Files" : "Archìvios",
@@ -96,7 +101,6 @@ OC.L10N.register(
     "Export" : "Esporta",
     "Import" : "Importa",
     "New list" : "Lista noa",
-    "Select" : "Seletziona",
     "Apply" : "Àplica",
     "Completed" : "Cumpletadu",
     "No lists yet" : "Perunu elencu ancora",
@@ -106,9 +110,6 @@ OC.L10N.register(
     "New folder" : "Cartella noa",
     "Add a description" : "Agiunghe una descritzione",
     "Documentation" : "Documentatzione",
-    "Load more" : "Càrriga àteru",
-    "Text" : "Testu",
-    "Checkbox" : "Casella de seletzione",
-    "Date" : "Data"
+    "Load more" : "Càrriga àteru"
 },
 "nplurals=2; plural=(n != 1);");

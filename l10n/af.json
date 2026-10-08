@@ -1,4 +1,5 @@
 { "translations": {
+    "Text" : "Teks",
     "Cancel" : "Cancel",
     "Save" : "Stoor",
     "Saving …" : "Bewaar tans…",
@@ -43,8 +44,8 @@
     "Archive" : "Argief",
     "Export" : "Voer uit",
     "Import" : "Invoer",
+    "Completed" : "Voltooid",
     "New folder" : "Nuwe gids",
-    "Documentation" : "Dokumentasie",
-    "Text" : "Teks"
+    "Documentation" : "Dokumentasie"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

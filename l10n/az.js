@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Select" : "Seç",
     "Cancel" : "Cancel",
     "Name" : "Ad",
     "Save" : "Saxla",
@@ -47,7 +48,7 @@ OC.L10N.register(
     "Archive" : "Arxiv",
     "Export" : "Çıxarış",
     "Import" : "Əlavə et",
-    "Select" : "Seç",
+    "Completed" : "Bitmişdir",
     "General" : "Ümumi",
     "New folder" : "Yeni qovluq",
     "Documentation" : "Sənədlər"

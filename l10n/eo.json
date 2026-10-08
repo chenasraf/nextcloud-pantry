@@ -1,4 +1,8 @@
 { "translations": {
+    "Text" : "Teksto",
+    "Checkbox" : "Markobutono",
+    "Date" : "Dato",
+    "Select" : "Elekti",
     "Cancel" : "Cancel",
     "Name" : "Nomo",
     "Save" : "Konservi",
@@ -55,6 +59,7 @@
     "Ends" : "Finiĝas",
     "Never" : "Neniam",
     "Summary" : "Resumo",
+    "Language" : "Lingvo",
     "Notifications" : "Atentigoj",
     "Viewer" : "Vidigilo",
     "Editor" : "Redaktilo",
@@ -72,15 +77,11 @@
     "Archive" : "Arĥivujo",
     "Export" : "Eksporti",
     "Import" : "Importi",
-    "Select" : "Elekti",
     "Apply" : "Validigi",
     "Completed" : "Plenumita",
     "General" : "Ĝenerala",
     "Automation" : "Aŭtomatigo",
     "New folder" : "Nova dosierujo",
-    "Documentation" : "Dokumentaro",
-    "Text" : "Teksto",
-    "Checkbox" : "Markobutono",
-    "Date" : "Dato"
+    "Documentation" : "Dokumentaro"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

@@ -1,4 +1,8 @@
 { "translations": {
+    "Text" : "Text",
+    "Checkbox" : "Checkbox",
+    "Date" : "Datum",
+    "Select" : "Auswielen",
     "Cancel" : "Cancel",
     "Name" : "Numm",
     "Create" : "Erstellen",
@@ -52,6 +56,7 @@
     "Weekly" : "All Woch",
     "Never" : "Ni",
     "Summary" : "Zesummefaassung",
+    "Language" : "Sprooch",
     "Notifications" : "Notifikatiounen",
     "Files" : "Fichieren",
     "All" : "All",
@@ -69,15 +74,11 @@
     "Archive" : "Archiv",
     "Export" : "Exportéieren",
     "Import" : "Import",
-    "Select" : "Auswielen",
     "Apply" : "Uwenden",
     "Completed" : "Erfëllt",
     "General" : "Allgemeng",
     "New folder" : "Neien Dossier",
     "Documentation" : "Dokumentatioun",
-    "Mine" : "Meng",
-    "Text" : "Text",
-    "Checkbox" : "Checkbox",
-    "Date" : "Datum"
+    "Mine" : "Meng"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

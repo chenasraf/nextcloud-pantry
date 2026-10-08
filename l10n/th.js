@@ -1,6 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "ข้อความ",
+    "Checkbox" : "กล่องกาเครื่องหมาย",
+    "Date" : "วันที่",
+    "Select" : "เลือก",
     "Cancel" : "Cancel",
     "Name" : "ชื่อ",
     "Create" : "สร้าง",
@@ -50,6 +54,7 @@ OC.L10N.register(
     "Monthly" : "ทุก ๆ เดือน",
     "Never" : "ไม่เคย",
     "Personal settings" : "การตั้งค่าส่วนบุคคล",
+    "Language" : "ภาษา",
     "All" : "ทั้งหมด",
     "Uncategorized" : "ไม่ได้จัดหมวดหมู่",
     "Reminders" : "การแจ้งเตือน",
@@ -63,15 +68,11 @@ OC.L10N.register(
     "Archive" : "ที่เก็บถาวร",
     "Export" : "ส่งออก",
     "Import" : "นำเข้า",
-    "Select" : "เลือก",
     "Apply" : "นำไปใช้",
     "Completed" : "เสร็จแล้ว",
     "General" : "ทั่วไป",
     "Automation" : "อัตโนมัติ",
     "New folder" : "โฟลเดอร์ใหม่",
-    "Documentation" : "เอกสารประกอบ",
-    "Text" : "ข้อความ",
-    "Checkbox" : "กล่องกาเครื่องหมาย",
-    "Date" : "วันที่"
+    "Documentation" : "เอกสารประกอบ"
 },
 "nplurals=1; plural=0;");

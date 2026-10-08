@@ -1,6 +1,8 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "ტექსტი",
+    "Checkbox" : "ჩექბოქსი",
     "Cancel" : "Cancel",
     "Name" : "სახელი",
     "Save" : "შენახვა",
@@ -52,6 +54,7 @@ OC.L10N.register(
     "Ends" : "მთავრდება",
     "Never" : "არასდროს",
     "Summary" : "შეჯამება",
+    "Language" : "ენა",
     "Saved." : "შენახულია.",
     "All" : "ყველა",
     "Uncategorized" : "არაკატეგორიზირებული",
@@ -73,8 +76,6 @@ OC.L10N.register(
     "Note restored" : "ჩანაწერი აღდგა",
     "New folder" : "ახალი დირექტორია",
     "Documentation" : "დოკუმენტაცია",
-    "Finish" : "დასრულება",
-    "Text" : "ტექსტი",
-    "Checkbox" : "ჩექბოქსი"
+    "Finish" : "დასრულება"
 },
 "nplurals=2; plural=(n!=1);");

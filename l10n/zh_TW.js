@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n 個項目"],
+    "Text" : "文字",
+    "Number" : "數字",
+    "Checkbox" : "核取方塊",
+    "Date" : "日期",
+    "Select" : "選取",
     "Barcode" : "條碼",
     "Cancel" : "取消",
     "Edit category" : "編輯分類",
@@ -123,6 +127,7 @@ OC.L10N.register(
     "Summary" : "摘要",
     "Resume" : "繼續",
     "Personal settings" : "個人設定",
+    "Language" : "語言",
     "Mark as done" : "標記為完成",
     "Notifications" : "通知",
     "Files" : "檔案",
@@ -151,7 +156,6 @@ OC.L10N.register(
     "Export" : "匯出",
     "Import" : "匯入",
     "New list" : "新清單",
-    "Select" : "選取",
     "Clear selection" : "清除選取",
     "Apply" : "套用",
     "Completed" : "已完成",
@@ -169,12 +173,9 @@ OC.L10N.register(
     "Move to folder" : "移動至資料夾",
     "Documentation" : "文件",
     "Creating …" : "建立中…",
+    "_%n item_::_%n items_" : ["%n 個項目"],
     "Mine" : "我的",
     "Load more" : "載入更多",
-    "Finish" : "完成",
-    "Text" : "文字",
-    "Number" : "數字",
-    "Checkbox" : "核取方塊",
-    "Date" : "日期"
+    "Finish" : "完成"
 },
 "nplurals=1; plural=0;");

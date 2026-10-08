@@ -1,7 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n atriði","%n atriði"],
+    "Text" : "Texti",
+    "Checkbox" : "Gátreitur",
+    "Date" : "Dagsetning",
+    "Select" : "Velja",
     "Cancel" : "Cancel",
     "Name" : "Heiti",
     "Create" : "Búa til",
@@ -101,6 +104,7 @@ OC.L10N.register(
     "Summary" : "Samantekt",
     "Resume" : "Halda áfram",
     "Personal settings" : "Persónulegar stillingar",
+    "Language" : "Tungumál",
     "Mark as done" : "Merkja sem lokið",
     "Files" : "Skráaforrit",
     "Upload folder" : "Senda inn möppu",
@@ -127,7 +131,6 @@ OC.L10N.register(
     "Export" : "Flytja út",
     "Import" : "Flytja inn",
     "New list" : "Nýr listi",
-    "Select" : "Velja",
     "Clear selection" : "Hreinsa valið",
     "Apply" : "Virkja",
     "Completed" : "Lokið",
@@ -140,10 +143,8 @@ OC.L10N.register(
     "Add a description" : "Settu inn lýsingu",
     "Remove folder" : "Fjarlægja möppu",
     "Documentation" : "Leiðbeiningar",
+    "_%n item_::_%n items_" : ["%n atriði","%n atriði"],
     "Load more" : "Hlaða inn fleiri",
-    "Finish" : "Ljúka",
-    "Text" : "Texti",
-    "Checkbox" : "Gátreitur",
-    "Date" : "Dagsetning"
+    "Finish" : "Ljúka"
 },
 "nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);");

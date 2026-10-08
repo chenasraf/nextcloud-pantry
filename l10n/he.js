@@ -1,6 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "טקסט",
+    "Checkbox" : "תיבת סימון",
+    "Date" : "תאריך",
+    "Select" : "בחר",
     "Cancel" : "ביטול",
     "Name" : "שם",
     "Create" : "יצירה",
@@ -80,6 +84,7 @@ OC.L10N.register(
     "On date" : "בתאריך",
     "Summary" : "תקציר",
     "Resume" : "להמשיך",
+    "Language" : "שפה",
     "Notifications" : "התראות",
     "Files" : "קבצים",
     "Saved." : "נשמר.",
@@ -103,7 +108,6 @@ OC.L10N.register(
     "Archive" : "לארכיון",
     "Export" : "ייצוא",
     "Import" : "ייבוא",
-    "Select" : "בחר",
     "Clear selection" : "נקה בחירה",
     "Apply" : "החלה",
     "Completed" : "הושלם",
@@ -116,9 +120,6 @@ OC.L10N.register(
     "Add a description" : "הוסף תיאור",
     "Documentation" : "תיעוד",
     "Load more" : "לטעון עוד",
-    "Finish" : "סיים",
-    "Text" : "טקסט",
-    "Checkbox" : "תיבת סימון",
-    "Date" : "תאריך"
+    "Finish" : "סיים"
 },
 "nplurals=3; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: 2;");

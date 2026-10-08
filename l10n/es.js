@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n ítem","%n ítems","%n ítems"],
+    "Text" : "Texto",
+    "Number" : "Número",
+    "Checkbox" : "Casilla de verificación",
+    "Date" : "Fecha",
+    "Select" : "Seleccionar",
     "Barcode" : "Código de barras",
     "Cancel" : "Cancelar",
     "Name" : "Nombre",
@@ -115,6 +119,7 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Resume" : "Reanudar",
     "Personal settings" : "Ajustes personales",
+    "Language" : "Lenguaje",
     "Mark as done" : "Marcar como listo",
     "Notifications" : "Notificaciones",
     "Files" : "Archivos",
@@ -144,7 +149,6 @@ OC.L10N.register(
     "Export" : "Exportar",
     "Import" : "Importar",
     "New list" : "Nueva lista",
-    "Select" : "Seleccionar",
     "Clear selection" : "Limpiar selección",
     "Apply" : "Aplicar",
     "Completed" : "Completado",
@@ -161,11 +165,8 @@ OC.L10N.register(
     "Remove folder" : "Eliminar carpeta",
     "Move to folder" : "Mover a la carpeta",
     "Documentation" : "Documentación",
+    "_%n item_::_%n items_" : ["%n ítem","%n ítems","%n ítems"],
     "Load more" : "Cargar más",
-    "Finish" : "Terminar",
-    "Text" : "Texto",
-    "Number" : "Número",
-    "Checkbox" : "Casilla de verificación",
-    "Date" : "Fecha"
+    "Finish" : "Terminar"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

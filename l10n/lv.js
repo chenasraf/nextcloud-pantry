@@ -1,15 +1,9 @@
 OC.L10N.register(
     "pantry",
     {
-    "You deleted list {list} in {house}" : "Tu {house} izdzēsi sarakstu {list}",
-    "You completed {item} on {list} in {house}" : "Tu {house} pabeidzi {item} no {list}",
-    "You deleted {item} from {list} in {house}" : "Tu {house} izdzēsi {item} no {list}",
-    "You deleted {items} from {list} in {house}" : "Tu {house} izdzēsi {items} no {list}",
-    "_You deleted %n item from {list} in {house}_::_You deleted %n items from {list} in {house}_" : ["Tu {house} izdzēsi %n vienumus no {list}","Tu {house} izdzēsi %n vienumu no {list}","Tu {house} izdzēsi %n vienumus no {list}"],
-    "You deleted a photo from {folder} in {house}" : "Tu {house} izdzēsi fotoattēlu no {folder}",
-    "You deleted a photo in {house}" : "Tu {house} izdzēsi fotoattēlu",
-    "You deleted photo folder {folder} in {house}" : "Tu {house} izdzēsi fotoattēlu mapi {folder}",
-    "You deleted note {note} in {house}" : "Tu {house} izdzēsi piezīmi {note}",
+    "Text" : "Teksts",
+    "Date" : "Datums",
+    "Select" : "Atzīmēt",
     "Cancel" : "Atcelt",
     "Name" : "Nosaukums",
     "Save" : "Saglabāt",
@@ -76,6 +70,7 @@ OC.L10N.register(
     "On date" : "Datumā",
     "Summary" : "Kopsavilkums",
     "Personal settings" : "Personiskie iestatījumi",
+    "Language" : "Valoda",
     "Interface" : "Saskarne",
     "Files" : "Datnes",
     "Saved." : "Saglabāts",
@@ -97,7 +92,6 @@ OC.L10N.register(
     "Archive" : "Arhīvs",
     "Export" : "Izgūt",
     "Import" : "Ievietot",
-    "Select" : "Atzīmēt",
     "Apply" : "Apstiprināt",
     "Completed" : "Pabeigts",
     "General" : "Vispārīgi",
@@ -107,8 +101,6 @@ OC.L10N.register(
     "Add a description" : "Pievienot aprakstu",
     "Documentation" : "Dokumentācija",
     "Load more" : "Ielādēt vairāk",
-    "Finish" : "Pabeigt",
-    "Text" : "Teksts",
-    "Date" : "Datums"
+    "Finish" : "Pabeigt"
 },
 "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);");

@@ -1,5 +1,9 @@
 { "translations": {
-    "_%n item_::_%n items_" : ["%n kohde","%n kohdetta"],
+    "Text" : "Teksti",
+    "Number" : "Numero",
+    "Checkbox" : "Valintaruutu",
+    "Date" : "Päivä",
+    "Select" : "Valitse",
     "Cancel" : "Peruuta",
     "New category" : "Uusi luokka",
     "Edit category" : "Muokkaa luokkaa",
@@ -110,6 +114,7 @@
     "Summary" : "Yhteenveto",
     "Resume" : "Palauta",
     "Personal settings" : "Henkilökohtaiset asetukset",
+    "Language" : "Kieli",
     "Mark as done" : "Merkitse valmiiksi",
     "Notifications" : "Ilmoitukset",
     "Files" : "Tiedostot",
@@ -138,7 +143,6 @@
     "Export" : "Vie",
     "Import" : "Tuo",
     "New list" : "Uusi luettelo",
-    "Select" : "Valitse",
     "Clear selection" : "Tyhjennä valinta",
     "Apply" : "Toteuta",
     "Completed" : "Valmiit",
@@ -154,12 +158,9 @@
     "Remove folder" : "Poista kansio",
     "Move to folder" : "Siirrä kansioon",
     "Documentation" : "Dokumentaatio",
+    "_%n item_::_%n items_" : ["%n kohde","%n kohdetta"],
     "Mine" : "Omat",
     "Load more" : "Lataa lisää",
-    "Finish" : "Valmis",
-    "Text" : "Teksti",
-    "Number" : "Numero",
-    "Checkbox" : "Valintaruutu",
-    "Date" : "Päivä"
+    "Finish" : "Valmis"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

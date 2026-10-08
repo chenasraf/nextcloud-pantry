@@ -1,4 +1,5 @@
 { "translations": {
+    "Select" : "Seç",
     "Cancel" : "Cancel",
     "Name" : "Ad",
     "Save" : "Saxla",
@@ -45,7 +46,7 @@
     "Archive" : "Arxiv",
     "Export" : "Çıxarış",
     "Import" : "Əlavə et",
-    "Select" : "Seç",
+    "Completed" : "Bitmişdir",
     "General" : "Ümumi",
     "New folder" : "Yeni qovluq",
     "Documentation" : "Sənədlər"

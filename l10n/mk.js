@@ -1,7 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n ставка","%n ставки"],
+    "Text" : "Текст",
+    "Checkbox" : "Поле за избирање",
+    "Date" : "Датум",
+    "Select" : "Избери",
     "Cancel" : "Откажи",
     "Name" : "Име",
     "Create" : "Креирај",
@@ -82,6 +85,7 @@ OC.L10N.register(
     "Summary" : "Резиме",
     "Resume" : "Продолжи",
     "Personal settings" : "Лични параметри",
+    "Language" : "Јазик",
     "Mark as done" : "Означи како готово",
     "Files" : "Датотеки",
     "Upload folder" : "Папка за прикачување",
@@ -103,7 +107,6 @@ OC.L10N.register(
     "Export" : "Извези",
     "Import" : "Увези",
     "New list" : "Нова листа",
-    "Select" : "Избери",
     "Clear selection" : "Исчисти ги селектираните",
     "Apply" : "Примени",
     "Completed" : "Завршено",
@@ -116,10 +119,8 @@ OC.L10N.register(
     "Add a description" : "Додади опис",
     "Move to folder" : "Помести во папка",
     "Documentation" : "Документација",
+    "_%n item_::_%n items_" : ["%n ставка","%n ставки"],
     "Load more" : "Вчитај повеќе",
-    "Finish" : "Крај",
-    "Text" : "Текст",
-    "Checkbox" : "Поле за избирање",
-    "Date" : "Датум"
+    "Finish" : "Крај"
 },
 "nplurals=2; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : 1;");

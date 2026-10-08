@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n element","%nelementer"],
+    "Text" : "Tekst",
+    "Number" : "Nummer",
+    "Checkbox" : "Avkryssningsboks",
+    "Date" : "Dato",
+    "Select" : "Velg",
     "Barcode" : "Strekkode",
     "Cancel" : "Cancel",
     "Name" : "Navn",
@@ -105,6 +109,7 @@ OC.L10N.register(
     "Summary" : "Oppsummering",
     "Resume" : "Gjenoppta",
     "Personal settings" : "Personlige innstillinger",
+    "Language" : "Språk",
     "Mark as done" : "Marker som fullført",
     "Notifications" : "Varsel",
     "Files" : "Filer",
@@ -133,7 +138,6 @@ OC.L10N.register(
     "Export" : "Eksporter",
     "Import" : "Importer",
     "New list" : "Ny liste",
-    "Select" : "Velg",
     "Clear selection" : "Tøm utvalg",
     "Apply" : "Bruk",
     "Completed" : "Ferdig",
@@ -150,11 +154,8 @@ OC.L10N.register(
     "Remove folder" : "Fjern mappe",
     "Move to folder" : "Flytt til mappe",
     "Documentation" : "Dokumentasjo",
+    "_%n item_::_%n items_" : ["%n element","%nelementer"],
     "Load more" : "Last mer",
-    "Finish" : "Fullfør",
-    "Text" : "Tekst",
-    "Number" : "Nummer",
-    "Checkbox" : "Avkryssningsboks",
-    "Date" : "Dato"
+    "Finish" : "Fullfør"
 },
 "nplurals=2; plural=(n != 1);");

@@ -1,6 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Text",
+    "Checkbox" : "Checkbox",
+    "Date" : "თარიღი",
+    "Select" : "მონიშვნა",
     "Cancel" : "გაუქმება",
     "Name" : "სახელი",
     "Create" : "Create",
@@ -67,6 +71,7 @@ OC.L10N.register(
     "On date" : "On date",
     "Summary" : "Summary",
     "Personal settings" : "Personal settings",
+    "Language" : "Language",
     "Mark as done" : "Mark as done",
     "Notifications" : "შეტყობინებები",
     "Files" : "ფაილები",
@@ -88,7 +93,6 @@ OC.L10N.register(
     "Export" : "Export",
     "Import" : "Import",
     "New list" : "New list",
-    "Select" : "მონიშვნა",
     "Clear selection" : "Clear selection",
     "Completed" : "Completed",
     "General" : "General",
@@ -100,9 +104,6 @@ OC.L10N.register(
     "New folder" : "New folder",
     "Add a description" : "Add a description",
     "Documentation" : "დოკუმენტაცია",
-    "Load more" : "Load more",
-    "Text" : "Text",
-    "Checkbox" : "Checkbox",
-    "Date" : "თარიღი"
+    "Load more" : "Load more"
 },
 "nplurals=2; plural=(n!=1);");

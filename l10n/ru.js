@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n объект","%n объекта","%n объектов","%n объекта"],
+    "Text" : "Текст",
+    "Number" : "Число",
+    "Checkbox" : "Чекбокс",
+    "Date" : "Дата",
+    "Select" : "Выбрать",
     "Cancel" : "Отменить",
     "Name" : "Имя",
     "Create" : "Создать",
@@ -109,6 +113,7 @@ OC.L10N.register(
     "Summary" : "Всего",
     "Resume" : "Возобновить",
     "Personal settings" : "Личные настройки",
+    "Language" : "Язык",
     "Mark as done" : "Отметить как выполненную",
     "Notifications" : "Уведомления",
     "Files" : "Файлы",
@@ -136,7 +141,6 @@ OC.L10N.register(
     "Export" : "Экспорт",
     "Import" : "Импортировать",
     "New list" : "Новый список",
-    "Select" : "Выбрать",
     "Clear selection" : "Очистить выбор",
     "Apply" : "Применить",
     "Completed" : "Завершённые",
@@ -154,12 +158,9 @@ OC.L10N.register(
     "Remove folder" : "Удалить каталог",
     "Move to folder" : "Переместить в папку",
     "Documentation" : "Документация",
+    "_%n item_::_%n items_" : ["%n объект","%n объекта","%n объектов","%n объекта"],
     "Mine" : "Мои",
     "Load more" : "Загрузить больше",
-    "Finish" : "Завершить",
-    "Text" : "Текст",
-    "Number" : "Число",
-    "Checkbox" : "Чекбокс",
-    "Date" : "Дата"
+    "Finish" : "Завершить"
 },
 "nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);");

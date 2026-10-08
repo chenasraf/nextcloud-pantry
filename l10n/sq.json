@@ -1,4 +1,7 @@
 { "translations": {
+    "Text" : "Tekst",
+    "Checkbox" : "Checkbox",
+    "Select" : "Përzgjidh",
     "Cancel" : "Cancel",
     "Name" : "Emër",
     "Create" : "Krijo",
@@ -54,6 +57,7 @@
     "Ends" : "Mbarim",
     "Never" : "Kurrë",
     "Summary" : "Përmbledhje",
+    "Language" : "Gjuha",
     "Notifications" : "Njoftime",
     "Files" : "Skedarë",
     "Saved." : "Ruajtur.",
@@ -72,15 +76,12 @@
     "Archive" : "Arkiva",
     "Export" : "Eksport",
     "Import" : "Import",
-    "Select" : "Përzgjidh",
     "Apply" : "Apliko",
     "Completed" : "Të plotësuara",
     "General" : "Të përgjithshme",
     "Note restored" : "Shënimi i rivendos",
     "New folder" : "Dosje e re",
     "Documentation" : "Dokumentacioni",
-    "Finish" : "Përfundo",
-    "Text" : "Tekst",
-    "Checkbox" : "Checkbox"
+    "Finish" : "Përfundo"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

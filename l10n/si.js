@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Date" : "දිනය",
     "Cancel" : "Cancel",
     "Name" : "නම",
     "Create" : "සාදන්න",
@@ -35,6 +36,7 @@ OC.L10N.register(
     "Daily" : "දිනපතා",
     "Weekly" : "සතිපතා",
     "Summary" : "සාරාංශය",
+    "Language" : "භාෂාව",
     "Files" : "ගොනු",
     "All" : "සියල්ල",
     "Enabled" : "සබල කර ඇත",
@@ -45,7 +47,6 @@ OC.L10N.register(
     "Completed" : "සම්පුර්ණයි",
     "General" : "සමාන්‍යය",
     "No notes yet" : "තවම සටහන් නැත",
-    "New folder" : "නව බහාලුම",
-    "Date" : "දිනය"
+    "New folder" : "නව බහාලුම"
 },
 "nplurals=2; plural=(n != 1);");

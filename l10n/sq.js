@@ -1,6 +1,9 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Tekst",
+    "Checkbox" : "Checkbox",
+    "Select" : "Përzgjidh",
     "Cancel" : "Cancel",
     "Name" : "Emër",
     "Create" : "Krijo",
@@ -56,6 +59,7 @@ OC.L10N.register(
     "Ends" : "Mbarim",
     "Never" : "Kurrë",
     "Summary" : "Përmbledhje",
+    "Language" : "Gjuha",
     "Notifications" : "Njoftime",
     "Files" : "Skedarë",
     "Saved." : "Ruajtur.",
@@ -74,15 +78,12 @@ OC.L10N.register(
     "Archive" : "Arkiva",
     "Export" : "Eksport",
     "Import" : "Import",
-    "Select" : "Përzgjidh",
     "Apply" : "Apliko",
     "Completed" : "Të plotësuara",
     "General" : "Të përgjithshme",
     "Note restored" : "Shënimi i rivendos",
     "New folder" : "Dosje e re",
     "Documentation" : "Dokumentacioni",
-    "Finish" : "Përfundo",
-    "Text" : "Tekst",
-    "Checkbox" : "Checkbox"
+    "Finish" : "Përfundo"
 },
 "nplurals=2; plural=(n != 1);");

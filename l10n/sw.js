@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n item","%n vipengele"],
+    "Text" : "Maandishi",
+    "Number" : "Namba",
+    "Checkbox" : "Kisanduku cha kuteua",
+    "Date" : "Tarehe",
+    "Select" : "Chagua",
     "Barcode" : "Msimbo pau",
     "Cancel" : "Ghairi",
     "Edit category" : "Edit category",
@@ -103,6 +107,7 @@ OC.L10N.register(
     "Summary" : "Muhtasari",
     "Resume" : "Rejea",
     "Personal settings" : "Mipangilio ya kibinafsi",
+    "Language" : "Lugha",
     "Mark as done" : "Weka alama kama iliyotendeka",
     "Notifications" : "Arifa",
     "Files" : "Faili",
@@ -127,7 +132,6 @@ OC.L10N.register(
     "Export" : "Agiza",
     "Import" : "Ingiza",
     "New list" : "Orodha mpya",
-    "Select" : "Chagua",
     "Apply" : "Omba",
     "Completed" : "Imekamilika",
     "No lists yet" : "Bado hakuna orodha",
@@ -141,10 +145,7 @@ OC.L10N.register(
     "Caption" : "Manukuu",
     "Remove folder" : "Ondoa folda",
     "Documentation" : "Uhifadhi wa nyaraka",
-    "Load more" : "Pakia zaidi",
-    "Text" : "Maandishi",
-    "Number" : "Namba",
-    "Checkbox" : "Kisanduku cha kuteua",
-    "Date" : "Tarehe"
+    "_%n item_::_%n items_" : ["%n item","%n vipengele"],
+    "Load more" : "Pakia zaidi"
 },
 "nplurals=2; plural=(n != 1);");

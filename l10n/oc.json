@@ -1,4 +1,6 @@
 { "translations": {
+    "Text" : "Tèxt",
+    "Date" : "Data",
     "Cancel" : "Cancel",
     "Name" : "Nom",
     "Create" : "Crear",
@@ -55,6 +57,7 @@
     "Weekly" : "Setmanièr",
     "Monthly" : "Cada mes",
     "Never" : "Jamai",
+    "Language" : "Lenga",
     "Notifications" : "Notificacions",
     "Browse …" : "Percórrer...",
     "Viewer" : "Visualizaira",
@@ -77,8 +80,6 @@
     "Danger zone" : "Zòna perilhosa",
     "New folder" : "Novèl dorsièr",
     "Add a description" : "Apondre una descripcion",
-    "Documentation" : "Documentacion",
-    "Text" : "Tèxt",
-    "Date" : "Data"
+    "Documentation" : "Documentacion"
 },"pluralForm" :"nplurals=2; plural=(n > 1);"
 }

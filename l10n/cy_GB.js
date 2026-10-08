@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Checkbox" : "Blwch ticio",
     "Cancel" : "Cancel",
     "Name" : "Enw",
     "Save" : "Cadw",
@@ -39,6 +40,7 @@ OC.L10N.register(
     "Ends" : "Yn gorffen",
     "On date" : "Ar ddyddiad",
     "Summary" : "Crynodeb",
+    "Language" : "Iaith",
     "Editor" : "gafygau",
     "All" : "Popeth",
     "Uncategorized" : "Dim categori",
@@ -59,7 +61,6 @@ OC.L10N.register(
     "Note restored" : "Nodyn wedi'i adfer",
     "New folder" : "Ffolder newydd",
     "Add a description" : "Ychwanegu disgrifiad",
-    "Documentation" : "Dogfennaeth",
-    "Checkbox" : "Blwch ticio"
+    "Documentation" : "Dogfennaeth"
 },
 "nplurals=4; plural=(n==1) ? 0 : (n==2) ? 1 : (n != 8 && n != 11) ? 2 : 3;");

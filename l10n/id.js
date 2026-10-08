@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n jumlah"],
+    "Text" : "Teks",
+    "Number" : "Angka",
+    "Checkbox" : "Kotak centang",
+    "Date" : "Tanggal",
+    "Select" : "Pilih",
     "Barcode" : "Kode batang",
     "Cancel" : "Batal",
     "Edit category" : "Edit kategori",
@@ -123,6 +127,7 @@ OC.L10N.register(
     "Summary" : "Kesimpulan",
     "Resume" : "Lanjutkan",
     "Personal settings" : "Pengaturan pribadi",
+    "Language" : "Bahasa",
     "Mark as done" : "Tandai sebagai selesai",
     "Notifications" : "Notifikasi",
     "Files" : "File",
@@ -147,7 +152,6 @@ OC.L10N.register(
     "Export" : "Ekspor",
     "Import" : "Impor",
     "New list" : "Daftar baru",
-    "Select" : "Pilih",
     "Clear selection" : "Hapus pilihan",
     "Apply" : "Terapkan",
     "Completed" : "Selesai",
@@ -160,12 +164,9 @@ OC.L10N.register(
     "Remove folder" : "Hapus folder",
     "Documentation" : "Dokumentasi",
     "Creating …" : "Membuat …",
+    "_%n item_::_%n items_" : ["%n jumlah"],
     "Mine" : "Milik saya",
     "Load more" : "Muat lebih banyak",
-    "Finish" : "Selesai",
-    "Text" : "Teks",
-    "Number" : "Angka",
-    "Checkbox" : "Kotak centang",
-    "Date" : "Tanggal"
+    "Finish" : "Selesai"
 },
 "nplurals=1; plural=0;");

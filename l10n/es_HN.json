@@ -1,4 +1,7 @@
 { "translations": {
+    "Text" : "Texto",
+    "Checkbox" : "Casilla de verificación",
+    "Date" : "Fecha",
     "Cancel" : "Cancel",
     "Name" : "Nombre",
     "Save" : "Guardar",
@@ -47,6 +50,7 @@
     "Ends" : "Termina",
     "Never" : "Nunca",
     "Summary" : "Resumen",
+    "Language" : "Idioma",
     "Files" : "Archivo",
     "Saved." : "Guardado.",
     "All" : "Todos",
@@ -69,9 +73,6 @@
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",
     "Documentation" : "Documentación",
-    "Finish" : "Terminar",
-    "Text" : "Texto",
-    "Checkbox" : "Casilla de verificación",
-    "Date" : "Fecha"
+    "Finish" : "Terminar"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

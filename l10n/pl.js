@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n element","%n elementów","%n elementów","%n elementów"],
+    "Text" : "Tekst",
+    "Number" : "Liczba",
+    "Checkbox" : "Pole checkbox",
+    "Date" : "Data",
+    "Select" : "Wybierz",
     "Barcode" : "Kod kreskowy",
     "Cancel" : "Anuluj",
     "Name" : "Nazwa",
@@ -110,6 +114,7 @@ OC.L10N.register(
     "Summary" : "Podsumowanie",
     "Resume" : "Wznów",
     "Personal settings" : "Ustawienia osobiste",
+    "Language" : "Język",
     "Interface" : "Interfejs",
     "Mark as done" : "Oznacz jako wykonane",
     "Always ask" : "Zawsze pytaj",
@@ -140,7 +145,6 @@ OC.L10N.register(
     "Export" : "Eksportuj",
     "Import" : "Importuj",
     "New list" : "Nowa lista",
-    "Select" : "Wybierz",
     "Clear selection" : "Wyczyść zaznaczenie",
     "Apply" : "Zastosuj",
     "Completed" : "Zakończone",
@@ -158,12 +162,9 @@ OC.L10N.register(
     "Remove folder" : "Usuń katalog",
     "Move to folder" : "Przenieś do katalogu",
     "Documentation" : "Dokumentacja",
+    "_%n item_::_%n items_" : ["%n element","%n elementów","%n elementów","%n elementów"],
     "Mine" : "Moje",
     "Load more" : "Wczytaj więcej",
-    "Finish" : "Koniec",
-    "Text" : "Tekst",
-    "Number" : "Liczba",
-    "Checkbox" : "Pole checkbox",
-    "Date" : "Data"
+    "Finish" : "Koniec"
 },
 "nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);");

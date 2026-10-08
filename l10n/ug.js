@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n تۈر","%n تۈرلەر"],
+    "Text" : "تېكىست",
+    "Number" : "سان",
+    "Checkbox" : "تەكشۈرۈش رامكىسى",
+    "Date" : "چېسلا",
+    "Select" : "تاللا",
     "Barcode" : "تاياقچە كودى",
     "Cancel" : "ۋاز كەچ",
     "Edit category" : "تۈرنى تەھرىرلەش",
@@ -109,6 +113,7 @@ OC.L10N.register(
     "Summary" : "خۇلاسە",
     "Resume" : "ئەسلىگە كەلتۈرۈش",
     "Personal settings" : "شەخسىي تەڭشەكلەر",
+    "Language" : "تىل",
     "Mark as done" : "تاماملانغاندەك بەلگە",
     "Notifications" : "ئۇقتۇرۇش",
     "Files" : "ھۆججەتلەر",
@@ -134,7 +139,6 @@ OC.L10N.register(
     "Export" : "ئېكسپورت",
     "Import" : "ئەكىر",
     "New list" : "يېڭى تىزىملىك",
-    "Select" : "تاللا",
     "Clear selection" : "تاللاشنى تازىلاش",
     "Apply" : "ئىلتىماس قىلىڭ",
     "Completed" : "تاماملاندى",
@@ -151,11 +155,8 @@ OC.L10N.register(
     "Remove folder" : "ھۆججەت قىسقۇچنى ئۆچۈرۈڭ",
     "Move to folder" : "قىسقۇچقا يۆتكەڭ",
     "Documentation" : "پۈتۈك",
+    "_%n item_::_%n items_" : ["%n تۈر","%n تۈرلەر"],
     "Load more" : "تېخىمۇ كۆپ يۈكلەڭ",
-    "Finish" : "تامام",
-    "Text" : "تېكىست",
-    "Number" : "سان",
-    "Checkbox" : "تەكشۈرۈش رامكىسى",
-    "Date" : "چېسلا"
+    "Finish" : "تامام"
 },
 "nplurals=2; plural=(n != 1);");

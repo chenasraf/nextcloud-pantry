@@ -1,5 +1,9 @@
 { "translations": {
-    "_%n item_::_%n items_" : ["%nелементи ","%n елементи"],
+    "Text" : "Текст",
+    "Number" : "Номер",
+    "Checkbox" : "Отметка",
+    "Date" : "Дата",
+    "Select" : "Избери",
     "Cancel" : "Cancel",
     "Name" : "Име",
     "Create" : "Създаване",
@@ -96,6 +100,7 @@
     "Summary" : "Резюме",
     "Resume" : " Възобновяване",
     "Personal settings" : "Лични настройки",
+    "Language" : "Език",
     "Mark as done" : "Маркирай като готово",
     "Notifications" : "Известия",
     "Files" : "Файлове",
@@ -118,7 +123,6 @@
     "Export" : "Експорт /изнасям/",
     "Import" : "Импортиране /внасяне/",
     "New list" : "Нов списък",
-    "Select" : "Избери",
     "Clear selection" : "Изчистване на селекцията",
     "Apply" : "Приложи",
     "Completed" : "Завършен",
@@ -135,11 +139,8 @@
     "Remove folder" : "Премахване на папка",
     "Move to folder" : "Преместване в папка",
     "Documentation" : "Документация",
+    "_%n item_::_%n items_" : ["%nелементи ","%n елементи"],
     "Load more" : "Зареждане на още",
-    "Finish" : "Край",
-    "Text" : "Текст",
-    "Number" : "Номер",
-    "Checkbox" : "Отметка",
-    "Date" : "Дата"
+    "Finish" : "Край"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

@@ -1,4 +1,7 @@
 { "translations": {
+    "Text" : "Texto",
+    "Checkbox" : "Casilla de verificación",
+    "Select" : "Seleccionar",
     "Cancel" : "Cancel",
     "Name" : "Nombre",
     "Save" : "Guardar",
@@ -49,6 +52,7 @@
     "Ends" : "Termina",
     "Never" : "Nunca",
     "Summary" : "Resumen",
+    "Language" : "Idioma",
     "Files" : "Archivo",
     "Saved." : "Guardado.",
     "All" : "Todos",
@@ -65,7 +69,6 @@
     "Archive" : "Archivar",
     "Export" : "Exportar",
     "Import" : "Importar",
-    "Select" : "Seleccionar",
     "Apply" : "Aplicar",
     "Completed" : "Completado",
     "General" : "General",
@@ -73,8 +76,6 @@
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva ",
     "Documentation" : "Documentación",
-    "Finish" : "Terminar",
-    "Text" : "Texto",
-    "Checkbox" : "Casilla de verificación"
+    "Finish" : "Terminar"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

@@ -1,6 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Teksto",
+    "Checkbox" : "Markobutono",
+    "Date" : "Dato",
+    "Select" : "Elekti",
     "Cancel" : "Cancel",
     "Name" : "Nomo",
     "Save" : "Konservi",
@@ -57,6 +61,7 @@ OC.L10N.register(
     "Ends" : "Finiĝas",
     "Never" : "Neniam",
     "Summary" : "Resumo",
+    "Language" : "Lingvo",
     "Notifications" : "Atentigoj",
     "Viewer" : "Vidigilo",
     "Editor" : "Redaktilo",
@@ -74,15 +79,11 @@ OC.L10N.register(
     "Archive" : "Arĥivujo",
     "Export" : "Eksporti",
     "Import" : "Importi",
-    "Select" : "Elekti",
     "Apply" : "Validigi",
     "Completed" : "Plenumita",
     "General" : "Ĝenerala",
     "Automation" : "Aŭtomatigo",
     "New folder" : "Nova dosierujo",
-    "Documentation" : "Dokumentaro",
-    "Text" : "Teksto",
-    "Checkbox" : "Markobutono",
-    "Date" : "Dato"
+    "Documentation" : "Dokumentaro"
 },
 "nplurals=2; plural=(n != 1);");

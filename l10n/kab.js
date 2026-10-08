@@ -1,6 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Aḍris",
+    "Number" : "Uṭṭun",
+    "Checkbox" : "Tanaka n ṛṛcem",
+    "Date" : "Azemz",
+    "Select" : "Fren",
     "Cancel" : "Semmet",
     "Name" : "Isem",
     "Create" : "Snulfu-d",
@@ -75,6 +80,7 @@ OC.L10N.register(
     "After" : "Sdeffir",
     "Summary" : "Agzul",
     "Resume" : "Agzul",
+    "Language" : "Tutlayt",
     "Notifications" : "Ilɣa",
     "Files" : "Ifuyla",
     "Editor" : "Amaẓrag",
@@ -94,7 +100,6 @@ OC.L10N.register(
     "Archive" : "Taṛcivt",
     "Export" : "Sifeḍ",
     "Import" : "Kter",
-    "Select" : "Fren",
     "Apply" : "Snes",
     "Completed" : "Yemmed",
     "General" : "Amatu",
@@ -102,10 +107,6 @@ OC.L10N.register(
     "Documentation" : "Tasemlit",
     "Mine" : "Inu",
     "Load more" : "Sali-d ugar",
-    "Finish" : "Fak",
-    "Text" : "Aḍris",
-    "Number" : "Uṭṭun",
-    "Checkbox" : "Tanaka n ṛṛcem",
-    "Date" : "Azemz"
+    "Finish" : "Fak"
 },
 "nplurals=2; plural=(n != 1);");

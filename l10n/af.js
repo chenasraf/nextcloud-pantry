@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Teks",
     "Cancel" : "Cancel",
     "Save" : "Stoor",
     "Saving …" : "Bewaar tans…",
@@ -45,8 +46,8 @@ OC.L10N.register(
     "Archive" : "Argief",
     "Export" : "Voer uit",
     "Import" : "Invoer",
+    "Completed" : "Voltooid",
     "New folder" : "Nuwe gids",
-    "Documentation" : "Dokumentasie",
-    "Text" : "Teks"
+    "Documentation" : "Dokumentasie"
 },
 "nplurals=2; plural=(n != 1);");

@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%nアイテム"],
+    "Text" : "テキスト",
+    "Number" : "数字",
+    "Checkbox" : "チェックボックス",
+    "Date" : "日付",
+    "Select" : "選択",
     "Cancel" : "キャンセル",
     "Name" : "名前",
     "Create" : "作成",
@@ -103,6 +107,7 @@ OC.L10N.register(
     "Summary" : "要約",
     "Resume" : "再開",
     "Personal settings" : "個人設定",
+    "Language" : "言語",
     "Mark as done" : "完了としてマーク",
     "Notifications" : "通知",
     "Files" : "ファイル",
@@ -131,7 +136,6 @@ OC.L10N.register(
     "Archive" : "アーカイブ",
     "Export" : "エクスポート",
     "Import" : "インポート",
-    "Select" : "選択",
     "Clear selection" : "選択をクリア",
     "Apply" : "適用",
     "Completed" : "完了",
@@ -147,12 +151,9 @@ OC.L10N.register(
     "Add a description" : "説明を追加",
     "Remove folder" : "フォルダーを削除",
     "Documentation" : "ドキュメント",
+    "_%n item_::_%n items_" : ["%nアイテム"],
     "Mine" : "私",
     "Load more" : "さらに読み込む",
-    "Finish" : "完了",
-    "Text" : "テキスト",
-    "Number" : "数字",
-    "Checkbox" : "チェックボックス",
-    "Date" : "日付"
+    "Finish" : "完了"
 },
 "nplurals=1; plural=0;");

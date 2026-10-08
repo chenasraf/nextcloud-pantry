@@ -1,5 +1,8 @@
 { "translations": {
-    "_%n item_::_%n items_" : ["%n atriði","%n atriði"],
+    "Text" : "Texti",
+    "Checkbox" : "Gátreitur",
+    "Date" : "Dagsetning",
+    "Select" : "Velja",
     "Cancel" : "Cancel",
     "Name" : "Heiti",
     "Create" : "Búa til",
@@ -99,6 +102,7 @@
     "Summary" : "Samantekt",
     "Resume" : "Halda áfram",
     "Personal settings" : "Persónulegar stillingar",
+    "Language" : "Tungumál",
     "Mark as done" : "Merkja sem lokið",
     "Files" : "Skráaforrit",
     "Upload folder" : "Senda inn möppu",
@@ -125,7 +129,6 @@
     "Export" : "Flytja út",
     "Import" : "Flytja inn",
     "New list" : "Nýr listi",
-    "Select" : "Velja",
     "Clear selection" : "Hreinsa valið",
     "Apply" : "Virkja",
     "Completed" : "Lokið",
@@ -138,10 +141,8 @@
     "Add a description" : "Settu inn lýsingu",
     "Remove folder" : "Fjarlægja möppu",
     "Documentation" : "Leiðbeiningar",
+    "_%n item_::_%n items_" : ["%n atriði","%n atriði"],
     "Load more" : "Hlaða inn fleiri",
-    "Finish" : "Ljúka",
-    "Text" : "Texti",
-    "Checkbox" : "Gátreitur",
-    "Date" : "Dagsetning"
+    "Finish" : "Ljúka"
 },"pluralForm" :"nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);"
 }

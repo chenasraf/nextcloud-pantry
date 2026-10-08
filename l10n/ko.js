@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n개 항목"],
+    "Text" : "텍스트",
+    "Number" : "숫자",
+    "Checkbox" : "체크 상자",
+    "Date" : "날짜",
+    "Select" : "선택",
     "Barcode" : "바코드",
     "Cancel" : "취소",
     "Name" : "이름",
@@ -93,6 +97,7 @@ OC.L10N.register(
     "Summary" : "요약",
     "Resume" : "다시 시작",
     "Personal settings" : "개인 설정",
+    "Language" : "언어",
     "Mark as done" : "완료된 것으로 표시",
     "Files" : "파일",
     "Browse …" : "탐색…",
@@ -117,7 +122,6 @@ OC.L10N.register(
     "Archive" : "압축",
     "Export" : "내보내기",
     "Import" : "가져오기",
-    "Select" : "선택",
     "Apply" : "적용",
     "Completed" : "완료됨",
     "No lists yet" : "리스트 없음",
@@ -130,11 +134,8 @@ OC.L10N.register(
     "Add a description" : "설명 추가",
     "Move to folder" : "폴더로 이동",
     "Documentation" : "문서",
+    "_%n item_::_%n items_" : ["%n개 항목"],
     "Load more" : "더 불러오기",
-    "Finish" : "끝내기",
-    "Text" : "텍스트",
-    "Number" : "숫자",
-    "Checkbox" : "체크 상자",
-    "Date" : "날짜"
+    "Finish" : "끝내기"
 },
 "nplurals=1; plural=0;");

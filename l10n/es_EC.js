@@ -1,7 +1,9 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n elemento","%n elementos","%n elementos"],
+    "Text" : "Texto",
+    "Number" : "Número",
+    "Checkbox" : "Casilla de verificación",
     "Cancel" : "Cancelar",
     "Edit category" : "Editar categoría",
     "Name" : "Nombre",
@@ -95,6 +97,7 @@ OC.L10N.register(
     "Summary" : "Resumen",
     "Resume" : "Continuar",
     "Personal settings" : "Configuración personal",
+    "Language" : "Idioma",
     "Mark as done" : "Marcar como hecha",
     "Notifications" : "Notificaciones",
     "Files" : "Archivo",
@@ -137,9 +140,7 @@ OC.L10N.register(
     "Remove folder" : "Eliminar carpeta",
     "Move to folder" : "Mover a carpeta",
     "Documentation" : "Documentación",
-    "Load more" : "Cargar más",
-    "Text" : "Texto",
-    "Number" : "Número",
-    "Checkbox" : "Casilla de verificación"
+    "_%n item_::_%n items_" : ["%n elemento","%n elementos","%n elementos"],
+    "Load more" : "Cargar más"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

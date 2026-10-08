@@ -1,4 +1,5 @@
 { "translations": {
+    "Date" : "දිනය",
     "Cancel" : "Cancel",
     "Name" : "නම",
     "Create" : "සාදන්න",
@@ -33,6 +34,7 @@
     "Daily" : "දිනපතා",
     "Weekly" : "සතිපතා",
     "Summary" : "සාරාංශය",
+    "Language" : "භාෂාව",
     "Files" : "ගොනු",
     "All" : "සියල්ල",
     "Enabled" : "සබල කර ඇත",
@@ -43,7 +45,6 @@
     "Completed" : "සම්පුර්ණයි",
     "General" : "සමාන්‍යය",
     "No notes yet" : "තවම සටහන් නැත",
-    "New folder" : "නව බහාලුම",
-    "Date" : "දිනය"
+    "New folder" : "නව බහාලුම"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

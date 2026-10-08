@@ -1,6 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Text",
+    "Number" : "Número",
+    "Checkbox" : "Casella de selecció",
+    "Date" : "Data",
+    "Select" : "Seleccioneu",
     "Cancel" : "Cancel",
     "Edit category" : "Edita la categoria",
     "Name" : "Nom",
@@ -109,6 +114,7 @@ OC.L10N.register(
     "Summary" : "Resum",
     "Resume" : "Reprèn",
     "Personal settings" : "Paràmetres personals",
+    "Language" : "Llengua",
     "Mark as done" : "Marcat com a fet",
     "Notifications" : "Notificacions",
     "Files" : "Fitxers",
@@ -137,7 +143,6 @@ OC.L10N.register(
     "Export" : "Exporta",
     "Import" : "Importa",
     "New list" : "Llista nova",
-    "Select" : "Seleccioneu",
     "Apply" : "Aplica",
     "Completed" : "S'ha completat",
     "No lists yet" : "Encara no hi ha llistes",
@@ -154,10 +159,6 @@ OC.L10N.register(
     "Remove folder" : "Suprimeix la carpeta",
     "Documentation" : "Documentació",
     "Load more" : "Carrega'n més",
-    "Finish" : "Acabeu",
-    "Text" : "Text",
-    "Number" : "Número",
-    "Checkbox" : "Casella de selecció",
-    "Date" : "Data"
+    "Finish" : "Acabeu"
 },
 "nplurals=2; plural=(n != 1);");

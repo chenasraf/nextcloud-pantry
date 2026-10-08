@@ -1,6 +1,7 @@
 OC.L10N.register(
     "pantry",
     {
+    "Select" : "Selectionar",
     "Cancel" : "Cancel",
     "Save" : "Salveguardar",
     "Custom" : "Personalisate",
@@ -36,12 +37,12 @@ OC.L10N.register(
     "Ends" : "Fini",
     "Never" : "Nunquam",
     "Summary" : "Summario",
+    "Language" : "Lingua",
     "All" : "Tote",
     "Reminders" : "Memento",
     "Enabled" : "Activate",
     "Location" : "Loco",
     "Export" : "Exportar",
-    "Select" : "Selectionar",
     "Apply" : "Applicar",
     "Completed" : "Completate",
     "General" : "General",

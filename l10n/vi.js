@@ -1,6 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Văn bản",
+    "Number" : "Số",
+    "Checkbox" : "Hộp chọn",
+    "Date" : "Ngày",
+    "Select" : "Chọn",
     "Cancel" : "Cancel",
     "Name" : "Tên",
     "Create" : "Tạo",
@@ -70,6 +75,7 @@ OC.L10N.register(
     "Never" : "Không bao giờ",
     "On date" : "Vào ngày",
     "Summary" : "Tóm tắt",
+    "Language" : "Ngôn ngữ",
     "Mark as done" : "Đánh dấu là đã hoàn thành",
     "Notifications" : "Thông báo",
     "Files" : "Tệp Tin",
@@ -91,7 +97,6 @@ OC.L10N.register(
     "Archive" : "Lưu trữ",
     "Export" : "Xuất ra",
     "Import" : "Nhập vào",
-    "Select" : "Chọn",
     "Apply" : "Áp dụng",
     "Completed" : "Hoàn thành",
     "No lists yet" : "Chưa có danh sách",
@@ -104,10 +109,6 @@ OC.L10N.register(
     "Add a description" : "Thêm vào một mô tả",
     "Remove folder" : "Xoá thư mục",
     "Documentation" : "Tài liệu",
-    "Load more" : "Xem thêm",
-    "Text" : "Văn bản",
-    "Number" : "Số",
-    "Checkbox" : "Hộp chọn",
-    "Date" : "Ngày"
+    "Load more" : "Xem thêm"
 },
 "nplurals=1; plural=0;");

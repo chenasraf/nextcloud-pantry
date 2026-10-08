@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n predmet","%n predmeta","%n predmeti","%n predmetov"],
+    "Text" : "Besedilo",
+    "Number" : "Številčne vrednosti",
+    "Checkbox" : "Izbirno polje",
+    "Date" : "Datum",
+    "Select" : "Izbor",
     "Barcode" : "Črtna koda",
     "Cancel" : "Prekliči",
     "Name" : "Ime podpisnika",
@@ -99,6 +103,7 @@ OC.L10N.register(
     "Summary" : "Povzetek",
     "Resume" : "Nadaljuj",
     "Personal settings" : "Osebne nastavitve",
+    "Language" : "Jezik",
     "Mark as done" : "Označi kot končano",
     "Notifications" : "Obvestila",
     "Files" : "Datoteke",
@@ -126,7 +131,6 @@ OC.L10N.register(
     "Archive" : "Arhiv",
     "Export" : "Izvozi",
     "Import" : "Uvozi",
-    "Select" : "Izbor",
     "Clear selection" : "Počisti izbor",
     "Apply" : "Uveljavi",
     "Completed" : "Končano",
@@ -143,10 +147,7 @@ OC.L10N.register(
     "Remove folder" : "Odstrani mapo",
     "Move to folder" : "Premakni v mapo",
     "Documentation" : "Dokumentacija",
-    "Load more" : "Naloži več",
-    "Text" : "Besedilo",
-    "Number" : "Številčne vrednosti",
-    "Checkbox" : "Izbirno polje",
-    "Date" : "Datum"
+    "_%n item_::_%n items_" : ["%n predmet","%n predmeta","%n predmeti","%n predmetov"],
+    "Load more" : "Naloži več"
 },
 "nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);");

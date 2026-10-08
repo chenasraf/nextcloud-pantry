@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n ставка","%n ставке","%n ставки"],
+    "Text" : "Текст",
+    "Number" : "Број",
+    "Checkbox" : "Кућица",
+    "Date" : "Датум",
+    "Select" : "Обележи",
     "Barcode" : "Баркод",
     "Cancel" : "Откажи",
     "Name" : "Име",
@@ -109,6 +113,7 @@ OC.L10N.register(
     "Summary" : "Сумарно",
     "Resume" : "Настави",
     "Personal settings" : "Лична подешавања",
+    "Language" : "Језик",
     "Mark as done" : "Означи као завршен",
     "Notifications" : "Упозорења",
     "Files" : "Фајлови",
@@ -137,7 +142,6 @@ OC.L10N.register(
     "Export" : "Извези",
     "Import" : "Увоз",
     "New list" : "Нова листа",
-    "Select" : "Обележи",
     "Clear selection" : "Уклони избор",
     "Apply" : "Примени",
     "Completed" : "Завршено",
@@ -154,11 +158,8 @@ OC.L10N.register(
     "Remove folder" : "Уклони фолдер",
     "Move to folder" : "Премести у фолдер",
     "Documentation" : "Документација",
+    "_%n item_::_%n items_" : ["%n ставка","%n ставке","%n ставки"],
     "Load more" : "Учитај још",
-    "Finish" : "Заврши",
-    "Text" : "Текст",
-    "Number" : "Број",
-    "Checkbox" : "Кућица",
-    "Date" : "Датум"
+    "Finish" : "Заврши"
 },
 "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);");

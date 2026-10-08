@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n ລາຍການ"],
+    "Text" : "ຂໍ້ຄວາມ",
+    "Number" : "ຕົວເລກ",
+    "Checkbox" : "ເຄື່ອງໝາຍກ່ອງ",
+    "Date" : "Date",
+    "Select" : "ເລືອກ",
     "Cancel" : "ຍົກເລີກ",
     "Name" : "ຊື່",
     "Create" : "ສ້າງ",
@@ -98,6 +102,7 @@ OC.L10N.register(
     "Summary" : "ສະຫຼຸບ",
     "Resume" : "ສືບຕໍ່",
     "Personal settings" : "Personal settings",
+    "Language" : "ພາສາ",
     "Mark as done" : "ໝາຍວ່າແລ້ວ",
     "Notifications" : "ການແຈ້ງເຕືອນ",
     "Files" : "ໄຟລ໌",
@@ -121,7 +126,6 @@ OC.L10N.register(
     "Export" : "ສົ່ງອອກ",
     "Import" : "ນຳເຂົ້າ",
     "New list" : "New list",
-    "Select" : "ເລືອກ",
     "Clear selection" : "Clear selection",
     "Apply" : "Apply",
     "Completed" : "ສຳເລັດແລ້ວ",
@@ -136,11 +140,8 @@ OC.L10N.register(
     "Remove folder" : "Remove folder",
     "Move to folder" : "ຍ້າຍໄປທີ່ໂຟນເດີ",
     "Documentation" : "ເອກະສານ",
+    "_%n item_::_%n items_" : ["%n ລາຍການ"],
     "Load more" : "Load more",
-    "Finish" : "ສຳເລັດ",
-    "Text" : "ຂໍ້ຄວາມ",
-    "Number" : "ຕົວເລກ",
-    "Checkbox" : "ເຄື່ອງໝາຍກ່ອງ",
-    "Date" : "Date"
+    "Finish" : "ສຳເລັດ"
 },
 "nplurals=1; plural=0;");

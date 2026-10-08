@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n object","%n objecten"],
+    "Text" : "Tekst",
+    "Number" : "Nummer",
+    "Checkbox" : "Aanvinkvakje",
+    "Date" : "Datum",
+    "Select" : "Selecteren",
     "Cancel" : "Annuleer",
     "Name" : "Naam",
     "Icon:" : "Icoon:",
@@ -115,6 +119,7 @@ OC.L10N.register(
     "Summary" : "Samenvatting",
     "Resume" : "Hervat",
     "Personal settings" : "Persoonlijke instellingen",
+    "Language" : "Taal",
     "Mark as done" : "Markeer als voltooid",
     "Notifications" : "Meldingen",
     "Files" : "Bestanden",
@@ -142,7 +147,6 @@ OC.L10N.register(
     "Export" : "Exporteren",
     "Import" : "Import",
     "New list" : "Nieuwe lijst",
-    "Select" : "Selecteren",
     "Clear selection" : "Deselecteren",
     "Apply" : "Pas toe",
     "Completed" : "Voltooid",
@@ -160,12 +164,9 @@ OC.L10N.register(
     "Remove folder" : "Map verwijderen",
     "Move to folder" : "Verplaatsen naar map",
     "Documentation" : "Documentatie",
+    "_%n item_::_%n items_" : ["%n object","%n objecten"],
     "Mine" : "Mijn",
     "Load more" : "Laad meer",
-    "Finish" : "Afronden",
-    "Text" : "Tekst",
-    "Number" : "Nummer",
-    "Checkbox" : "Aanvinkvakje",
-    "Date" : "Datum"
+    "Finish" : "Afronden"
 },
 "nplurals=2; plural=(n != 1);");

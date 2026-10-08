@@ -1,4 +1,5 @@
 { "translations": {
+    "Checkbox" : "Blwch ticio",
     "Cancel" : "Cancel",
     "Name" : "Enw",
     "Save" : "Cadw",
@@ -37,6 +38,7 @@
     "Ends" : "Yn gorffen",
     "On date" : "Ar ddyddiad",
     "Summary" : "Crynodeb",
+    "Language" : "Iaith",
     "Editor" : "gafygau",
     "All" : "Popeth",
     "Uncategorized" : "Dim categori",
@@ -57,7 +59,6 @@
     "Note restored" : "Nodyn wedi'i adfer",
     "New folder" : "Ffolder newydd",
     "Add a description" : "Ychwanegu disgrifiad",
-    "Documentation" : "Dogfennaeth",
-    "Checkbox" : "Blwch ticio"
+    "Documentation" : "Dogfennaeth"
 },"pluralForm" :"nplurals=4; plural=(n==1) ? 0 : (n==2) ? 1 : (n != 8 && n != 11) ? 2 : 3;"
 }

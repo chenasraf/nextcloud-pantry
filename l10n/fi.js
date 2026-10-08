@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n kohde","%n kohdetta"],
+    "Text" : "Teksti",
+    "Number" : "Numero",
+    "Checkbox" : "Valintaruutu",
+    "Date" : "Päivä",
+    "Select" : "Valitse",
     "Cancel" : "Peruuta",
     "New category" : "Uusi luokka",
     "Edit category" : "Muokkaa luokkaa",
@@ -112,6 +116,7 @@ OC.L10N.register(
     "Summary" : "Yhteenveto",
     "Resume" : "Palauta",
     "Personal settings" : "Henkilökohtaiset asetukset",
+    "Language" : "Kieli",
     "Mark as done" : "Merkitse valmiiksi",
     "Notifications" : "Ilmoitukset",
     "Files" : "Tiedostot",
@@ -140,7 +145,6 @@ OC.L10N.register(
     "Export" : "Vie",
     "Import" : "Tuo",
     "New list" : "Uusi luettelo",
-    "Select" : "Valitse",
     "Clear selection" : "Tyhjennä valinta",
     "Apply" : "Toteuta",
     "Completed" : "Valmiit",
@@ -156,12 +160,9 @@ OC.L10N.register(
     "Remove folder" : "Poista kansio",
     "Move to folder" : "Siirrä kansioon",
     "Documentation" : "Dokumentaatio",
+    "_%n item_::_%n items_" : ["%n kohde","%n kohdetta"],
     "Mine" : "Omat",
     "Load more" : "Lataa lisää",
-    "Finish" : "Valmis",
-    "Text" : "Teksti",
-    "Number" : "Numero",
-    "Checkbox" : "Valintaruutu",
-    "Date" : "Päivä"
+    "Finish" : "Valmis"
 },
 "nplurals=2; plural=(n != 1);");

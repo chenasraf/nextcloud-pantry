@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["elementu %n","%n elementu"],
+    "Text" : "Testua",
+    "Number" : "Zenbakia",
+    "Checkbox" : "Kontrol laukia",
+    "Date" : "Data",
+    "Select" : "Hautatu",
     "Barcode" : "Barra-kodea",
     "Cancel" : "Cancel",
     "Name" : "Izena",
@@ -106,6 +110,7 @@ OC.L10N.register(
     "Summary" : "Laburpena",
     "Resume" : "Jarraitu",
     "Personal settings" : "Ezarpen pertsonalak",
+    "Language" : "Hizkuntza",
     "Mark as done" : "Markatu egindako gisa",
     "Notifications" : "Jakinarazpenak",
     "Files" : "Fitxategiak",
@@ -134,7 +139,6 @@ OC.L10N.register(
     "Export" : "Esportatu",
     "Import" : "Inportatu",
     "New list" : "Zerrenda berria",
-    "Select" : "Hautatu",
     "Clear selection" : "Garbitu hautapena",
     "Apply" : "Aplikatu",
     "Completed" : "Osatua",
@@ -151,11 +155,8 @@ OC.L10N.register(
     "Remove folder" : "Kendu karpeta",
     "Move to folder" : "Eraman karpetara",
     "Documentation" : "Dokumentazioa",
+    "_%n item_::_%n items_" : ["elementu %n","%n elementu"],
     "Load more" : "Kargatu gehiago",
-    "Finish" : "Amaitu",
-    "Text" : "Testua",
-    "Number" : "Zenbakia",
-    "Checkbox" : "Kontrol laukia",
-    "Date" : "Data"
+    "Finish" : "Amaitu"
 },
 "nplurals=2; plural=(n != 1);");

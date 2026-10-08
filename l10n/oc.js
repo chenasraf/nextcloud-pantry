@@ -1,6 +1,8 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Tèxt",
+    "Date" : "Data",
     "Cancel" : "Cancel",
     "Name" : "Nom",
     "Create" : "Crear",
@@ -57,6 +59,7 @@ OC.L10N.register(
     "Weekly" : "Setmanièr",
     "Monthly" : "Cada mes",
     "Never" : "Jamai",
+    "Language" : "Lenga",
     "Notifications" : "Notificacions",
     "Browse …" : "Percórrer...",
     "Viewer" : "Visualizaira",
@@ -79,8 +82,6 @@ OC.L10N.register(
     "Danger zone" : "Zòna perilhosa",
     "New folder" : "Novèl dorsièr",
     "Add a description" : "Apondre una descripcion",
-    "Documentation" : "Documentacion",
-    "Text" : "Tèxt",
-    "Date" : "Data"
+    "Documentation" : "Documentacion"
 },
 "nplurals=2; plural=(n > 1);");

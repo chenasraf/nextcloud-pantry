@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n elem","%n elem"],
+    "Text" : "Szöveg",
+    "Number" : "Szám",
+    "Checkbox" : "Jelölőmező",
+    "Date" : "Dátum",
+    "Select" : "Kiválasztás",
     "Barcode" : "Vonalkód",
     "Cancel" : "Mégse",
     "Name" : "Név",
@@ -108,6 +112,7 @@ OC.L10N.register(
     "Summary" : "Összefoglalás",
     "Resume" : "Folytatás",
     "Personal settings" : "Személyes beállítások",
+    "Language" : "Nyelv",
     "Mark as done" : "Megjelölés készként",
     "Notifications" : "Értesítések",
     "Files" : "Fájlok",
@@ -136,7 +141,6 @@ OC.L10N.register(
     "Export" : "Exportálás",
     "Import" : "Importálás",
     "New list" : "Új lista",
-    "Select" : "Kiválasztás",
     "Clear selection" : "Kiválasztás törlése",
     "Apply" : "Alkalmaz",
     "Completed" : "Kész",
@@ -153,12 +157,9 @@ OC.L10N.register(
     "Remove folder" : "Mappa eltávolítása",
     "Move to folder" : "Áthelyezés mappába",
     "Documentation" : "Dokumentáció",
+    "_%n item_::_%n items_" : ["%n elem","%n elem"],
     "Mine" : "Saját",
     "Load more" : "Továbbiak betöltése",
-    "Finish" : "Befejez",
-    "Text" : "Szöveg",
-    "Number" : "Szám",
-    "Checkbox" : "Jelölőmező",
-    "Date" : "Dátum"
+    "Finish" : "Befejez"
 },
 "nplurals=2; plural=(n != 1);");

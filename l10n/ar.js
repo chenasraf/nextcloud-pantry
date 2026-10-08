@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n عناصر","%n عنصر","%n عناصر","%n عناصر","%n عناصر","%n عناصر"],
+    "Text" : "نص",
+    "Number" : "رقم",
+    "Checkbox" : "مربع التأشير checkbox",
+    "Date" : "التاريخ",
+    "Select" : "تحديد",
     "Barcode" : "الباركود",
     "Cancel" : "Cancel",
     "Name" : "الاسم",
@@ -21,6 +25,7 @@ OC.L10N.register(
     "Description" : "الوصف",
     "Image" : "صورة",
     "Remove image" : "إزالة الصورة",
+    "Duplicate" : "تكرار",
     "All categories" : "كُلَّ الفئات",
     "No category" : "لا تصنيف",
     "Lists" : "قوائم",
@@ -127,9 +132,9 @@ OC.L10N.register(
     "Export" : "تصدير",
     "Import" : "إستيراد",
     "New list" : "قائمة جديدة",
-    "Select" : "تحديد",
     "Clear selection" : "إلغاء التحديد",
     "Apply" : "حفظ",
+    "Completed" : "مُكتمل",
     "No lists yet" : "لا توجد قائمة حتى الآن",
     "General" : "عامٌّ",
     "Automation" : "أتمتة",
@@ -144,12 +149,9 @@ OC.L10N.register(
     "Remove folder" : "حذف المجلد",
     "Move to folder" : "أنقُل إلى المجلد",
     "Documentation" : "توثيق النظام",
+    "_%n item_::_%n items_" : ["%n عناصر","%n عنصر","%n عناصر","%n عناصر","%n عناصر","%n عناصر"],
     "Mine" : "ملكي",
     "Load more" : "حمّل أكثر",
-    "Finish" : "تم",
-    "Text" : "نص",
-    "Number" : "رقم",
-    "Checkbox" : "مربع التأشير checkbox",
-    "Date" : "التاريخ"
+    "Finish" : "تم"
 },
 "nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;");

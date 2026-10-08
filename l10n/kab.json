@@ -1,4 +1,9 @@
 { "translations": {
+    "Text" : "Aḍris",
+    "Number" : "Uṭṭun",
+    "Checkbox" : "Tanaka n ṛṛcem",
+    "Date" : "Azemz",
+    "Select" : "Fren",
     "Cancel" : "Semmet",
     "Name" : "Isem",
     "Create" : "Snulfu-d",
@@ -73,6 +78,7 @@
     "After" : "Sdeffir",
     "Summary" : "Agzul",
     "Resume" : "Agzul",
+    "Language" : "Tutlayt",
     "Notifications" : "Ilɣa",
     "Files" : "Ifuyla",
     "Editor" : "Amaẓrag",
@@ -92,7 +98,6 @@
     "Archive" : "Taṛcivt",
     "Export" : "Sifeḍ",
     "Import" : "Kter",
-    "Select" : "Fren",
     "Apply" : "Snes",
     "Completed" : "Yemmed",
     "General" : "Amatu",
@@ -100,10 +105,6 @@
     "Documentation" : "Tasemlit",
     "Mine" : "Inu",
     "Load more" : "Sali-d ugar",
-    "Finish" : "Fak",
-    "Text" : "Aḍris",
-    "Number" : "Uṭṭun",
-    "Checkbox" : "Tanaka n ṛṛcem",
-    "Date" : "Azemz"
+    "Finish" : "Fak"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

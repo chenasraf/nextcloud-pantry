@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%n 个项目"],
+    "Text" : "文本 ",
+    "Number" : "数字",
+    "Checkbox" : "复选框",
+    "Date" : "日期",
+    "Select" : "选择",
     "Cancel" : "取消",
     "Name" : "名称",
     "Create" : "创建",
@@ -106,6 +110,7 @@ OC.L10N.register(
     "Summary" : "总结",
     "Resume" : "继续",
     "Personal settings" : "个人设置",
+    "Language" : "语言",
     "Mark as done" : "标记为已完成",
     "Notifications" : "通知",
     "Files" : "文件",
@@ -134,7 +139,6 @@ OC.L10N.register(
     "Export" : "导出",
     "Import" : "导入",
     "New list" : "新列表",
-    "Select" : "选择",
     "Clear selection" : "清除选择",
     "Apply" : "应用",
     "Completed" : "已完成",
@@ -150,11 +154,8 @@ OC.L10N.register(
     "Remove folder" : "移除文件夹",
     "Move to folder" : "移动到文件夹",
     "Documentation" : "文档",
+    "_%n item_::_%n items_" : ["%n 个项目"],
     "Load more" : "加载更多",
-    "Finish" : "完成",
-    "Text" : "文本 ",
-    "Number" : "数字",
-    "Checkbox" : "复选框",
-    "Date" : "日期"
+    "Finish" : "完成"
 },
 "nplurals=1; plural=0;");

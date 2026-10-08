@@ -1,6 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Text",
+    "Checkbox" : "Checkbox",
+    "Date" : "Datum",
+    "Select" : "Auswielen",
     "Cancel" : "Cancel",
     "Name" : "Numm",
     "Create" : "Erstellen",
@@ -54,6 +58,7 @@ OC.L10N.register(
     "Weekly" : "All Woch",
     "Never" : "Ni",
     "Summary" : "Zesummefaassung",
+    "Language" : "Sprooch",
     "Notifications" : "Notifikatiounen",
     "Files" : "Fichieren",
     "All" : "All",
@@ -71,15 +76,11 @@ OC.L10N.register(
     "Archive" : "Archiv",
     "Export" : "Exportéieren",
     "Import" : "Import",
-    "Select" : "Auswielen",
     "Apply" : "Uwenden",
     "Completed" : "Erfëllt",
     "General" : "Allgemeng",
     "New folder" : "Neien Dossier",
     "Documentation" : "Dokumentatioun",
-    "Mine" : "Meng",
-    "Text" : "Text",
-    "Checkbox" : "Checkbox",
-    "Date" : "Datum"
+    "Mine" : "Meng"
 },
 "nplurals=2; plural=(n != 1);");

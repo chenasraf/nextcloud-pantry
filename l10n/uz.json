@@ -1,4 +1,8 @@
 { "translations": {
+    "Text" : "Matn",
+    "Checkbox" : "Belgilash katagi",
+    "Date" : "Sana",
+    "Select" : "Tanlash",
     "Cancel" : "Bekor qilish",
     "Name" : "Nomi",
     "Create" : "Yaratish",
@@ -64,6 +68,7 @@
     "Monthly" : "Oylik",
     "Never" : "Hech qachon",
     "On date" : "Sanada",
+    "Language" : "Language",
     "Mark as done" : "Bajarildi deb belgilang",
     "Notifications" : "Bildirishnomalar",
     "Files" : "Fayllar",
@@ -78,7 +83,6 @@
     "Archive" : "Arxiv",
     "Export" : "Eksport",
     "Import" : "Import",
-    "Select" : "Tanlash",
     "No lists yet" : "Hozircha roʻyxatlar yoʻq",
     "General" : "Umumiy",
     "Automation" : "Avtomatlashtirish",
@@ -86,9 +90,6 @@
     "No notes yet" : "Hozircha qaydlar yoʻq",
     "New folder" : "Yangi jild",
     "Add a description" : "Tavsif qo'shing",
-    "Documentation" : "Hujjatlar",
-    "Text" : "Matn",
-    "Checkbox" : "Belgilash katagi",
-    "Date" : "Sana"
+    "Documentation" : "Hujjatlar"
 },"pluralForm" :"nplurals=1; plural=0;"
 }

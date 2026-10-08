@@ -1,6 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Matn",
+    "Checkbox" : "Belgilash katagi",
+    "Date" : "Sana",
+    "Select" : "Tanlash",
     "Cancel" : "Bekor qilish",
     "Name" : "Nomi",
     "Create" : "Yaratish",
@@ -66,6 +70,7 @@ OC.L10N.register(
     "Monthly" : "Oylik",
     "Never" : "Hech qachon",
     "On date" : "Sanada",
+    "Language" : "Language",
     "Mark as done" : "Bajarildi deb belgilang",
     "Notifications" : "Bildirishnomalar",
     "Files" : "Fayllar",
@@ -80,7 +85,6 @@ OC.L10N.register(
     "Archive" : "Arxiv",
     "Export" : "Eksport",
     "Import" : "Import",
-    "Select" : "Tanlash",
     "No lists yet" : "Hozircha roʻyxatlar yoʻq",
     "General" : "Umumiy",
     "Automation" : "Avtomatlashtirish",
@@ -88,9 +92,6 @@ OC.L10N.register(
     "No notes yet" : "Hozircha qaydlar yoʻq",
     "New folder" : "Yangi jild",
     "Add a description" : "Tavsif qo'shing",
-    "Documentation" : "Hujjatlar",
-    "Text" : "Matn",
-    "Checkbox" : "Belgilash katagi",
-    "Date" : "Sana"
+    "Documentation" : "Hujjatlar"
 },
 "nplurals=1; plural=0;");

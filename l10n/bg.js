@@ -1,7 +1,11 @@
 OC.L10N.register(
     "pantry",
     {
-    "_%n item_::_%n items_" : ["%nелементи ","%n елементи"],
+    "Text" : "Текст",
+    "Number" : "Номер",
+    "Checkbox" : "Отметка",
+    "Date" : "Дата",
+    "Select" : "Избери",
     "Cancel" : "Cancel",
     "Name" : "Име",
     "Create" : "Създаване",
@@ -98,6 +102,7 @@ OC.L10N.register(
     "Summary" : "Резюме",
     "Resume" : " Възобновяване",
     "Personal settings" : "Лични настройки",
+    "Language" : "Език",
     "Mark as done" : "Маркирай като готово",
     "Notifications" : "Известия",
     "Files" : "Файлове",
@@ -120,7 +125,6 @@ OC.L10N.register(
     "Export" : "Експорт /изнасям/",
     "Import" : "Импортиране /внасяне/",
     "New list" : "Нов списък",
-    "Select" : "Избери",
     "Clear selection" : "Изчистване на селекцията",
     "Apply" : "Приложи",
     "Completed" : "Завършен",
@@ -137,11 +141,8 @@ OC.L10N.register(
     "Remove folder" : "Премахване на папка",
     "Move to folder" : "Преместване в папка",
     "Documentation" : "Документация",
+    "_%n item_::_%n items_" : ["%nелементи ","%n елементи"],
     "Load more" : "Зареждане на още",
-    "Finish" : "Край",
-    "Text" : "Текст",
-    "Number" : "Номер",
-    "Checkbox" : "Отметка",
-    "Date" : "Дата"
+    "Finish" : "Край"
 },
 "nplurals=2; plural=(n != 1);");

@@ -1,6 +1,10 @@
 OC.L10N.register(
     "pantry",
     {
+    "Text" : "Testenn",
+    "Checkbox" : "Log-askañ",
+    "Date" : "Deiz",
+    "Select" : "Diuzañ",
     "Cancel" : "Cancel",
     "Name" : "Anv",
     "Save" : "Enrollañ",
@@ -41,6 +45,7 @@ OC.L10N.register(
     "Never" : "James",
     "Summary" : "Diverrañ",
     "Resume" : "Kendec'hel",
+    "Language" : "Yezh",
     "Notifications" : "Kemennadennoù",
     "Viewer" : "Gweller",
     "All" : "Pep tra",
@@ -51,7 +56,6 @@ OC.L10N.register(
     "Newest first" : "An hini nevesañ da gentañ",
     "Oldest first" : "An hini kozhoñ da gentañ",
     "Import" : "Emporzhiañ ",
-    "Select" : "Diuzañ",
     "Apply" : "Lakaat",
     "Completed" : "Echu",
     "General" : "Hollek",
@@ -59,9 +63,6 @@ OC.L10N.register(
     "New note" : "Notenn nevez",
     "New folder" : "Teuliad nevez",
     "Add a description" : "Ouzhpennañ un deskrivadur",
-    "Documentation" : "Diellvadur",
-    "Text" : "Testenn",
-    "Checkbox" : "Log-askañ",
-    "Date" : "Deiz"
+    "Documentation" : "Diellvadur"
 },
 "nplurals=5; plural=((n%10 == 1) && (n%100 != 11) && (n%100 !=71) && (n%100 !=91) ? 0 :(n%10 == 2) && (n%100 != 12) && (n%100 !=72) && (n%100 !=92) ? 1 :(n%10 ==3 || n%10==4 || n%10==9) && (n%100 < 10 || n% 100 > 19) && (n%100 < 70 || n%100 > 79) && (n%100 < 90 || n%100 > 99) ? 2 :(n != 0 && n % 1000000 == 0) ? 3 : 4);");
