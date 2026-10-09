@@ -3,7 +3,7 @@
     <FieldCard
       v-for="field in applicableFields"
       :key="field.id"
-      :label="field.type === 'checkbox' ? undefined : field.name"
+      :label="field.type === 'checkbox' || asDefaults ? undefined : field.name"
       class="cf-values__field"
     >
       <NcTextField
