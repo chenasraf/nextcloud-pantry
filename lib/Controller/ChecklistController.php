@@ -25,6 +25,7 @@ use OCA\Pantry\Service\FieldDefinitionService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
+use OCA\Pantry\Service\ItemDefaultsService;
 use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
@@ -69,6 +70,7 @@ final class ChecklistController extends OCSController {
 		private PrefsService $prefs,
 		private PermissionService $permissions,
 		private ShareService $shares,
+		private ItemDefaultsService $itemDefaults,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
 	) {
@@ -434,6 +436,55 @@ final class ChecklistController extends OCSController {
 			}
 			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
 			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
+		});
+	}
+
+	/**
+	 * Update the values new items on a list start with
+	 *
+	 * Each key is merged on its own; omitted keys are left as they are, and a
+	 * mode of "none" clears a key. Custom fields merge by field id, where "none"
+	 * returns the field to its own default. Without edit rights on the list, only
+	 * keys already in "remember" mode can be updated, and only their value.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param array{mode: 'none'|'fixed'|'remember', value?: array{kind: 'none'|'once'|'recurring', rrule?: string|null, repeatFromCompletion?: bool}|null}|null $recurrence Recurrence new items start with.
+	 * @param array{mode: 'none'|'fixed'|'remember', value?: list<int>|null}|null $stores Stores new items start with.
+	 * @param array{mode: 'none'|'fixed'|'remember', value?: int|null}|null $category Category new items start with.
+	 * @param array{mode: 'none'|'fixed'|'remember', value?: list<int>|null}|null $labels Labels new items start with.
+	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $quantity Quantity new items start with.
+	 * @param list<array{fieldId: int, mode: 'none'|'fixed'|'remember', value?: array{valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null}|null}>|null $fields Custom-field values new items start with.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
+	 *
+	 * 200: Item defaults updated
+	 */
+	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}/item-defaults', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canAddItems'])]
+	public function updateItemDefaults(int $houseId, int $listId, ?array $recurrence = null, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $recurrence, $stores, $category, $labels, $quantity, $fields): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->lists->getList($listId);
+			$this->assertListInHouse($list->getHouseId(), $houseId);
+			$patch = array_filter([
+				'recurrence' => $recurrence,
+				'stores' => $stores,
+				'category' => $category,
+				'labels' => $labels,
+				'quantity' => $quantity,
+				'fields' => $fields,
+			], static fn (?array $entry): bool => $entry !== null);
+
+			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+			$shareMap = $this->shares->userShareMap($houseId, $uid);
+			$roleAccess = $this->permissions->hasRoleAccessToList($houseId, $uid, $listId);
+			$canEdit = $this->canEditList($list, $canEditLists, $roleAccess, $shareMap);
+
+			$list = $this->lists->setItemDefaults($list, $this->itemDefaults->merge($list, $patch, $canEdit));
+			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $shareMap));
 		});
 	}
 
@@ -1891,11 +1942,18 @@ final class ChecklistController extends OCSController {
 	 */
 	private function listJson(Checklist $list, bool $canEditLists, int $houseId, string $uid, array $shareMap): array {
 		$roleAccess = $this->permissions->hasRoleAccessToList($houseId, $uid, (int)$list->getId());
-		$roleEdit = $canEditLists && $roleAccess;
 		return array_merge($list->jsonSerialize(), [
-			'canEdit' => $this->shares->canEditFromMap(Share::TYPE_CHECKLIST, (int)$list->getId(), $roleEdit, $shareMap),
+			'itemDefaults' => $this->itemDefaults->forList($list),
+			'canEdit' => $this->canEditList($list, $canEditLists, $roleAccess, $shareMap),
 			'sharedOnly' => !$roleAccess,
 		]);
+	}
+
+	/**
+	 * @param array<string, array<int, string>> $shareMap
+	 */
+	private function canEditList(Checklist $list, bool $canEditLists, bool $roleAccess, array $shareMap): bool {
+		return $this->shares->canEditFromMap(Share::TYPE_CHECKLIST, (int)$list->getId(), $canEditLists && $roleAccess, $shareMap);
 	}
 
 	private function requireUid(): string {

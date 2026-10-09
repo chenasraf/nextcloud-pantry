@@ -623,6 +623,188 @@
                     }
                 }
             },
+            "ItemDefaultField": {
+                "type": "object",
+                "required": [
+                    "fieldId",
+                    "mode"
+                ],
+                "properties": {
+                    "fieldId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "mode": {
+                        "$ref": "#/components/schemas/ItemDefaultMode"
+                    },
+                    "value": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "valueText": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "valueNumber": {
+                                "type": "number",
+                                "format": "double",
+                                "nullable": true
+                            },
+                            "valueBool": {
+                                "type": "boolean"
+                            },
+                            "valueDate": {
+                                "type": "integer",
+                                "format": "int64",
+                                "nullable": true
+                            },
+                            "valueOptionId": {
+                                "type": "integer",
+                                "format": "int64",
+                                "nullable": true
+                            },
+                            "offsetDays": {
+                                "type": "integer",
+                                "format": "int64",
+                                "nullable": true
+                            }
+                        }
+                    }
+                }
+            },
+            "ItemDefaultMode": {
+                "type": "string",
+                "enum": [
+                    "none",
+                    "fixed",
+                    "remember"
+                ]
+            },
+            "ItemDefaults": {
+                "type": "object",
+                "required": [
+                    "recurrence",
+                    "stores",
+                    "category",
+                    "labels",
+                    "quantity",
+                    "fields"
+                ],
+                "properties": {
+                    "recurrence": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "$ref": "#/components/schemas/ItemDefaultMode"
+                            },
+                            "value": {
+                                "type": "object",
+                                "required": [
+                                    "kind",
+                                    "rrule",
+                                    "repeatFromCompletion"
+                                ],
+                                "properties": {
+                                    "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                            "none",
+                                            "once",
+                                            "recurring"
+                                        ]
+                                    },
+                                    "rrule": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "repeatFromCompletion": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "stores": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "$ref": "#/components/schemas/ItemDefaultMode"
+                            },
+                            "value": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                }
+                            }
+                        }
+                    },
+                    "category": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "$ref": "#/components/schemas/ItemDefaultMode"
+                            },
+                            "value": {
+                                "type": "integer",
+                                "format": "int64",
+                                "nullable": true
+                            }
+                        }
+                    },
+                    "labels": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "$ref": "#/components/schemas/ItemDefaultMode"
+                            },
+                            "value": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                }
+                            }
+                        }
+                    },
+                    "quantity": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "fixed"
+                                ]
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "fields": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemDefaultField"
+                        }
+                    }
+                }
+            },
             "ItemPrice": {
                 "type": "object",
                 "required": [
@@ -848,6 +1030,7 @@
                     "icon",
                     "color",
                     "sortOrder",
+                    "itemDefaults",
                     "deleteOnDoneDefault",
                     "defaultRecurrenceMode",
                     "defaultRecurrenceKind",
@@ -891,6 +1074,9 @@
                     "sortOrder": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "itemDefaults": {
+                        "$ref": "#/components/schemas/ItemDefaults"
                     },
                     "deleteOnDoneDefault": {
                         "type": "boolean"
@@ -4560,6 +4746,331 @@
                                                 },
                                                 "data": {
                                                     "$ref": "#/components/schemas/Success"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/lists/{listId}/item-defaults": {
+            "patch": {
+                "operationId": "checklist-update-item-defaults",
+                "summary": "Update the values new items on a list start with",
+                "description": "Each key is merged on its own; omitted keys are left as they are, and a mode of \"none\" clears a key. Custom fields merge by field id, where \"none\" returns the field to its own default. Without edit rights on the list, only keys already in \"remember\" mode can be updated, and only their value.",
+                "tags": [
+                    "checklist"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "recurrence": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Recurrence new items start with.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed",
+                                                    "remember"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "object",
+                                                "nullable": true,
+                                                "required": [
+                                                    "kind"
+                                                ],
+                                                "properties": {
+                                                    "kind": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "none",
+                                                            "once",
+                                                            "recurring"
+                                                        ]
+                                                    },
+                                                    "rrule": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "repeatFromCompletion": {
+                                                        "type": "boolean"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "stores": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Stores new items start with.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed",
+                                                    "remember"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "array",
+                                                "nullable": true,
+                                                "items": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "category": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Category new items start with.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed",
+                                                    "remember"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "integer",
+                                                "format": "int64",
+                                                "nullable": true
+                                            }
+                                        }
+                                    },
+                                    "labels": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Labels new items start with.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed",
+                                                    "remember"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "array",
+                                                "nullable": true,
+                                                "items": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "quantity": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Quantity new items start with.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "string",
+                                                "nullable": true
+                                            }
+                                        }
+                                    },
+                                    "fields": {
+                                        "type": "array",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Custom-field values new items start with.",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "fieldId",
+                                                "mode"
+                                            ],
+                                            "properties": {
+                                                "fieldId": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                },
+                                                "mode": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "none",
+                                                        "fixed",
+                                                        "remember"
+                                                    ]
+                                                },
+                                                "value": {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "properties": {
+                                                        "valueText": {
+                                                            "type": "string",
+                                                            "nullable": true
+                                                        },
+                                                        "valueNumber": {
+                                                            "type": "number",
+                                                            "format": "double",
+                                                            "nullable": true
+                                                        },
+                                                        "valueBool": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "valueDate": {
+                                                            "type": "integer",
+                                                            "format": "int64",
+                                                            "nullable": true
+                                                        },
+                                                        "valueOptionId": {
+                                                            "type": "integer",
+                                                            "format": "int64",
+                                                            "nullable": true
+                                                        },
+                                                        "offsetDays": {
+                                                            "type": "integer",
+                                                            "format": "int64",
+                                                            "nullable": true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "listId",
+                        "in": "path",
+                        "description": "List id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item defaults updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/List"
                                                 }
                                             }
                                         }

@@ -100,6 +100,7 @@ class Capabilities implements IPublicCapability {
 					'share-users',
 					'custom-fields',
 					'list-default-recurrence',
+					'list-item-defaults',
 					'shopping-join-session',
 					'shopping-item-selection',
 				],
