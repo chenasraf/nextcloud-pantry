@@ -68,128 +68,38 @@
         </NcButton>
       </div>
 
-      <div class="checklist-add__chips">
-        <PantryChip
-          v-for="chip in chips"
-          :key="chip.key"
-          :variant="chipVariant(chip)"
-          class="checklist-add__chip"
-          @click="toggleSection(chip.key)"
-        >
-          <template #icon>
-            <component :is="chip.icon" :size="14" :style="chip.iconStyle" />
-          </template>
-          {{ chip.text }}
-        </PantryChip>
-        <PantryChip
-          v-if="!multiple"
-          :variant="barcode ? 'secondary' : 'tertiary'"
-          class="checklist-add__chip"
-          @click="barcodeDialogOpen = true"
-        >
-          <template #icon>
-            <BarcodeScanIcon :size="14" />
-          </template>
-          {{ barcode ? strings.barcodeAttached : strings.barcode }}
-        </PantryChip>
-      </div>
-
-      <div v-if="openSection" class="checklist-add__section">
-        <CategoryChipList
-          v-if="openSection === 'category'"
-          v-model="categoryId"
-          :house-id="houseId"
-          :list-id="effectiveListId"
-        />
-
-        <StoreChipList
-          v-else-if="openSection === 'stores'"
-          v-model="storeIds"
-          :house-id="houseId"
-        />
-
-        <LabelChipList
-          v-else-if="openSection === 'labels'"
-          v-model="labelIds"
-          :house-id="houseId"
-          :list-id="effectiveListId"
-        />
-
-        <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
-
-        <ItemPricesEditor
-          v-else-if="openSection === 'price'"
-          v-model="prices"
-          :house-id="houseId"
-          :default-currency="defaultCurrency"
-        />
-
-        <ItemCustomFieldsEditor
-          v-else-if="openSection === 'customfields'"
-          v-model="customFieldValues"
-          :house-id="houseId"
-          :list-id="effectiveListId"
-        />
-
-        <AutoResizeTextarea
-          v-else-if="openSection === 'description'"
-          v-model="description"
-          :label="strings.descriptionLabel"
-          :placeholder="strings.descriptionPlaceholder"
-          autocomplete="off"
-        />
-
-        <!-- Item type + (inline recurrence when Recurring) -->
-        <div v-else-if="openSection === 'type'" class="checklist-add__type">
-          <ItemTypeSelector
-            :delete-on-done="deleteOnDone"
-            :rrule="rrule"
-            @select-staple="selectStaple"
-            @select-one-time="selectOneTime"
-            @select-recurring="selectRecurring"
-          />
-          <RecurrenceForm
-            v-if="currentType === 'recurring'"
-            v-model="rrule"
-            v-model:from-completion="repeatFromCompletion"
-          />
-        </div>
-
-        <div v-else-if="openSection === 'image'" class="checklist-add__image">
-          <div v-if="previewImageUrl" class="checklist-add__image-row">
-            <img
-              class="checklist-add__image-preview"
-              :src="previewImageUrl"
-              :alt="strings.imageAlt"
-            />
-            <NcButton variant="tertiary" type="button" @click="triggerImagePick">
-              <template #icon>
-                <UploadIcon :size="20" />
-              </template>
-              {{ strings.replaceImage }}
-            </NcButton>
-            <NcButton variant="tertiary" type="button" @click="clearPendingImage">
-              <template #icon>
-                <DeleteIcon :size="20" />
-              </template>
-              {{ strings.removeImage }}
-            </NcButton>
-          </div>
-          <NcButton v-else variant="tertiary" type="button" @click="triggerImagePick">
+      <ItemFieldChips
+        v-model:category-id="categoryId"
+        v-model:store-ids="storeIds"
+        v-model:label-ids="labelIds"
+        v-model:quantity="quantity"
+        v-model:prices="prices"
+        v-model:custom-field-values="customFieldValues"
+        v-model:description="description"
+        v-model:delete-on-done="deleteOnDone"
+        v-model:rrule="rrule"
+        v-model:repeat-from-completion="repeatFromCompletion"
+        v-model:image="pendingImage"
+        v-model:open-section="openSection"
+        v-model:type-picked="userPickedType"
+        :house-id="houseId"
+        :list-id="effectiveListId"
+        :hide-image="multiple"
+        :default-currency="defaultCurrency"
+      >
+        <template #chips-after>
+          <PantryChip
+            v-if="!multiple"
+            :variant="barcode ? 'secondary' : 'tertiary'"
+            @click="barcodeDialogOpen = true"
+          >
             <template #icon>
-              <ImagePlusIcon :size="20" />
+              <BarcodeScanIcon :size="14" />
             </template>
-            {{ strings.addImage }}
-          </NcButton>
-          <input
-            ref="imageInputRef"
-            type="file"
-            accept="image/*"
-            class="checklist-add__image-input"
-            @change="onImagePicked"
-          />
-        </div>
-      </div>
+            {{ barcode ? strings.barcodeAttached : strings.barcode }}
+          </PantryChip>
+        </template>
+      </ItemFieldChips>
 
       <!-- Live "reuse existing item" suggestions. Mutually exclusive with an open
          meta tray (they share this vertical slot) — only shown while typing a
@@ -217,35 +127,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { extract, token_set_ratio } from 'fuzzball'
-import { t, n } from '@nextcloud/l10n'
+import { t } from '@nextcloud/l10n'
 import { showWarning } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
-import FormatListBulletedIcon from '@icons/FormatListBulleted.vue'
-import TextIcon from '@icons/Text.vue'
-import PinIcon from '@icons/Pin.vue'
-import DeleteIcon from '@icons/Delete.vue'
-import RepeatIcon from '@icons/Repeat.vue'
-import ImageIcon from '@icons/Image.vue'
-import ImagePlusIcon from '@icons/ImagePlus.vue'
-import UploadIcon from '@icons/Upload.vue'
 import BarcodeScanIcon from '@icons/BarcodeScan.vue'
-import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
-import { RecurrenceForm } from '@/components/RecurrenceEditor'
-import CategoryChipList from '@/components/CategoryChipList'
-import StoreChipList from '@/components/StoreChipList'
-import LabelChipList from '@/components/LabelChipList'
-import ItemTypeSelector from '@/components/ItemTypeSelector'
-import QuantityInput from '@/components/QuantityInput'
-import ItemPricesEditor from '@/components/ItemPricesEditor'
-import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { defaultCustomFieldValues } from '@/components/ItemCustomFieldsEditor/defaults'
+import ItemFieldChips, { type ItemFieldSection } from '@/components/ItemFieldChips'
 import PantryChip from '@/components/PantryChip'
 import FieldCard from '@/components/FieldCard'
 import BarcodeLookupDialog from '@/components/BarcodeLookupDialog'
@@ -258,14 +152,9 @@ import { useCustomFields } from '@/composables/useCustomFields'
 import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
 import { useBarcodeFill } from '@/composables/useBarcodeFill'
 import { listArchivedItems } from '@/api/lists'
-import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
-import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
-import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
-import { entityIcon } from '@/utils/entityIcons'
-import { DEFAULT_RRULE, formatRrule } from '@/utils/rrule'
-import { formatPrice, storelessPrice } from '@/utils/price'
+import { DEFAULT_RRULE } from '@/utils/rrule'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ItemInput } from '@/api/lists'
 import type {
@@ -278,17 +167,6 @@ import type {
   ItemCustomFieldValue,
   RecurrenceKind,
 } from '@/api/types'
-
-type SectionKey =
-  | 'category'
-  | 'labels'
-  | 'stores'
-  | 'quantity'
-  | 'price'
-  | 'customfields'
-  | 'description'
-  | 'type'
-  | 'image'
 
 const props = withDefaults(
   defineProps<{
@@ -351,7 +229,7 @@ const targetListId = ref<number | null>(null)
 const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
 const deleteOnDone = ref(false)
-const openSection = ref<SectionKey | null>(null)
+const openSection = ref<ItemFieldSection | null>(null)
 const barcode = ref<string | null>(null)
 const barcodeDialogOpen = ref(false)
 
@@ -385,28 +263,14 @@ function listIconStyle(list: Checklist) {
 }
 
 const pendingImage = ref<File | null>(null)
-const pendingImageObjectUrl = ref<string | null>(null)
-const imageInputRef = ref<HTMLInputElement | null>(null)
-
-// Tracks whether the user has explicitly chosen an item type via the button
-// group, so the chip can stay a neutral "Recurrence" until they pick one.
 const userPickedType = ref(false)
 
-// Categories are loaded so the chip can show the selected category's name/icon.
-const { items: categories, load: loadCategories, categoriesForList } = useCategories(props.houseId)
-void loadCategories()
+// Loaded by the chips; read here for reuse-suggestion rows and barcode matching.
+const { items: categories, categoriesForList } = useCategories(props.houseId)
+const { items: stores } = useStores(props.houseId)
+const { items: labels } = useLabels(props.houseId)
+const { items: fieldDefs } = useCustomFields(props.houseId)
 
-const { items: stores, load: loadStores } = useStores(props.houseId)
-void loadStores()
-
-const { items: labels, load: loadLabels } = useLabels(props.houseId)
-void loadLabels()
-
-const { items: fieldDefs, load: loadFields } = useCustomFields(props.houseId)
-void loadFields()
-const hasCustomFields = computed(() =>
-  fieldDefs.value.some((f) => f.listId == null || f.listId === effectiveListId.value),
-)
 // New items start pre-filled with each applicable field's default value.
 watch(
   [fieldDefs, effectiveListId],
@@ -414,15 +278,6 @@ watch(
     customFieldValues.value = defaultCustomFieldValues(fieldDefs.value, effectiveListId.value)
   },
   { immediate: true },
-)
-
-watch(
-  () => props.houseId,
-  () => {
-    void useCategories(props.houseId).load()
-    void useStores(props.houseId).load()
-    void useLabels(props.houseId).load()
-  },
 )
 
 /** Start a fresh item on the target list's default recurrence. */
@@ -441,91 +296,13 @@ watch(
 )
 
 watch(multiple, (on) => {
-  if (!on) return
-  if (openSection.value === 'image') openSection.value = null
-  revokeObjectUrl()
-  pendingImage.value = null
-})
-
-function toggleSection(key: SectionKey) {
-  openSection.value = openSection.value === key ? null : key
-}
-
-// ----- Item type -----
-
-type ItemType = 'staple' | 'oneTime' | 'recurring'
-
-const currentType = computed<ItemType>(() => {
-  if (deleteOnDone.value) return 'oneTime'
-  if (rrule.value) return 'recurring'
-  return 'staple'
+  if (on) pendingImage.value = null
 })
 
 /** The recurrence the composed item carries, in the list default's own terms. */
 const currentRecurrenceKind = computed<RecurrenceKind>(() =>
-  currentType.value === 'oneTime'
-    ? 'once'
-    : currentType.value === 'recurring'
-      ? 'recurring'
-      : 'none',
+  deleteOnDone.value ? 'once' : rrule.value ? 'recurring' : 'none',
 )
-
-function selectStaple() {
-  rrule.value = null
-  repeatFromCompletion.value = false
-  deleteOnDone.value = false
-  userPickedType.value = true
-}
-
-function selectOneTime() {
-  rrule.value = null
-  repeatFromCompletion.value = false
-  deleteOnDone.value = true
-  userPickedType.value = true
-}
-
-function selectRecurring() {
-  deleteOnDone.value = false
-  userPickedType.value = true
-  // The RecurrenceForm renders inline below the type selector once
-  // currentType becomes 'recurring'. It will live-emit a default rrule
-  // (weekly) as soon as it mounts, which flips currentType for us.
-  if (!rrule.value) {
-    rrule.value = DEFAULT_RRULE
-  }
-}
-
-// ----- Image -----
-
-function revokeObjectUrl() {
-  if (pendingImageObjectUrl.value) {
-    URL.revokeObjectURL(pendingImageObjectUrl.value)
-    pendingImageObjectUrl.value = null
-  }
-}
-
-const previewImageUrl = computed(() => pendingImageObjectUrl.value)
-
-function triggerImagePick() {
-  imageInputRef.value?.click()
-}
-
-function onImagePicked(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  revokeObjectUrl()
-  pendingImage.value = file
-  pendingImageObjectUrl.value = URL.createObjectURL(file)
-  input.value = ''
-}
-
-function clearPendingImage() {
-  revokeObjectUrl()
-  pendingImage.value = null
-}
-
-onBeforeUnmount(revokeObjectUrl)
 
 // ----- Barcode -----
 //
@@ -585,40 +362,10 @@ async function prefillImageFromUrl(url: string) {
     const blob = await resp.blob()
     if (!blob.type.startsWith('image/')) return
     const ext = blob.type.split('/')[1] || 'jpg'
-    const file = new File([blob], `barcode-product.${ext}`, { type: blob.type })
-    revokeObjectUrl()
-    pendingImage.value = file
-    pendingImageObjectUrl.value = URL.createObjectURL(file)
+    pendingImage.value = new File([blob], `barcode-product.${ext}`, { type: blob.type })
   } catch {
     // Ignore — image prefill is a bonus, never a blocker.
   }
-}
-
-// ----- Chips -----
-
-const selectedCategory = computed(() =>
-  categoryId.value != null
-    ? (categories.value.find((c) => c.id === categoryId.value) ?? null)
-    : null,
-)
-
-const selectedStores = computed(() => stores.value.filter((s) => storeIds.value.includes(s.id)))
-
-const selectedLabels = computed(() => labels.value.filter((l) => labelIds.value.includes(l.id)))
-
-// The chip summarizes the store-less (default) price; per-store prices show in
-// their grouped rows.
-const priceText = computed(() => {
-  const s = storelessPrice(prices.value)
-  return s ? formatPrice(s) : null
-})
-
-interface Chip {
-  key: SectionKey
-  text: string
-  icon: Component
-  iconStyle?: Record<string, string>
-  filled: boolean
 }
 
 const itemNames = computed(() =>
@@ -639,118 +386,6 @@ const canSubmit = computed(() => {
   if (props.requireListSelector && targetListId.value === null) return false
   return true
 })
-
-const chips = computed<Chip[]>(() => {
-  const list: Chip[] = []
-
-  list.push({
-    key: 'category',
-    text: selectedCategory.value ? selectedCategory.value.name : strings.category,
-    icon: selectedCategory.value
-      ? categoryIconComponent(selectedCategory.value.icon)
-      : entityIcon.category,
-    iconStyle: selectedCategory.value ? { color: selectedCategory.value.color } : undefined,
-    filled: selectedCategory.value !== null,
-  })
-
-  const stored = selectedStores.value
-  list.push({
-    key: 'stores',
-    text:
-      stored.length === 0
-        ? strings.stores
-        : stored.length === 1
-          ? stored[0]!.name
-          : n('pantry', '%n store', '%n stores', stored.length),
-    icon: stored.length === 1 ? storeIconComponent(stored[0]!.icon) : entityIcon.store,
-    iconStyle: stored.length === 1 ? { color: stored[0]!.color } : undefined,
-    filled: stored.length > 0,
-  })
-
-  const labeled = selectedLabels.value
-  list.push({
-    key: 'labels',
-    text:
-      labeled.length === 0
-        ? strings.labels
-        : labeled.length === 1
-          ? labeled[0]!.name
-          : n('pantry', '%n label', '%n labels', labeled.length),
-    icon: labeled.length === 1 ? labelIconComponent(labeled[0]!.icon) : entityIcon.label,
-    iconStyle: labeled.length === 1 ? { color: labeled[0]!.color } : undefined,
-    filled: labeled.length > 0,
-  })
-
-  list.push({
-    key: 'quantity',
-    text: quantity.value.trim() || strings.quantity,
-    icon: FormatListBulletedIcon,
-    filled: quantity.value.trim().length > 0,
-  })
-
-  list.push({
-    key: 'price',
-    text: priceText.value ?? strings.price,
-    icon: entityIcon.price,
-    filled: priceText.value !== null,
-  })
-
-  if (hasCustomFields.value) {
-    list.push({
-      key: 'customfields',
-      text: strings.customFields,
-      icon: FormatListBulletedTypeIcon,
-      filled: customFieldValues.value.length > 0,
-    })
-  }
-
-  list.push({
-    key: 'description',
-    text: strings.description,
-    icon: TextIcon,
-    filled: description.value.trim().length > 0,
-  })
-
-  // Item type chip — stays neutral "Recurrence" until the user explicitly picks
-  // one of the three options, or the list's default already gives new items a
-  // recurrence worth showing.
-  if (!userPickedType.value && currentType.value === 'staple') {
-    list.push({
-      key: 'type',
-      text: strings.itemType,
-      icon: RepeatIcon,
-      filled: false,
-    })
-  } else if (currentType.value === 'staple') {
-    list.push({ key: 'type', text: strings.staple, icon: PinIcon, filled: true })
-  } else if (currentType.value === 'oneTime') {
-    list.push({ key: 'type', text: strings.oneTime, icon: DeleteIcon, filled: true })
-  } else {
-    list.push({
-      key: 'type',
-      text: rrule.value ? formatRrule(rrule.value) : strings.recurring,
-      icon: RepeatIcon,
-      filled: true,
-    })
-  }
-
-  if (!multiple.value) {
-    list.push({
-      key: 'image',
-      text: pendingImage.value ? strings.imageAttached : strings.image,
-      icon: ImageIcon,
-      filled: pendingImage.value !== null,
-    })
-  }
-
-  return list
-})
-
-function chipVariant(chip: Chip): 'primary' | 'secondary' | 'tertiary' {
-  if (openSection.value === chip.key) return 'primary'
-  if (chip.filled) return 'secondary'
-  return 'tertiary'
-}
 
 // ----- Reuse suggestions -----
 //
@@ -924,7 +559,6 @@ function submitAdd() {
     applyRecurrenceDefault()
   }
   userPickedType.value = false
-  revokeObjectUrl()
   pendingImage.value = null
   openSection.value = null
 }
@@ -942,29 +576,6 @@ const strings = {
   nameLabel: t('pantry', 'Item name'),
   namePlaceholder: t('pantry', 'e.g. Milk'),
   list: t('pantry', 'Pick a list …'),
-  category: t('pantry', 'Category'),
-  // TRANSLATORS: Noun (plural), shops where the item can be bought. Chip label.
-  stores: t('pantry', 'Stores'),
-  // TRANSLATORS: Noun (plural), tags on the item. Chip label.
-  labels: t('pantry', 'Labels'),
-  quantity: t('pantry', 'Quantity'),
-  price: t('pantry', 'Price'),
-  customFields: t('pantry', 'Custom fields'),
-  description: t('pantry', 'Description'),
-  descriptionLabel: t('pantry', 'Description'),
-  // TRANSLATORS: Noun, chip label for the staple / one-time / recurring choice.
-  itemType: t('pantry', 'Recurrence'),
-  descriptionPlaceholder: t('pantry', 'Notes, instructions, links …'),
-  // TRANSLATORS: An item type. A staple is a recurring household essential that stays on the list after being checked off (e.g. milk, bread).
-  staple: t('pantry', 'Staple'),
-  oneTime: t('pantry', 'One-time'),
-  recurring: t('pantry', 'Recurring'),
-  image: t('pantry', 'Image'),
-  imageAttached: t('pantry', 'Image attached'),
-  addImage: t('pantry', 'Add image'),
-  replaceImage: t('pantry', 'Replace image'),
-  removeImage: t('pantry', 'Remove image'),
-  imageAlt: t('pantry', 'Selected image'),
   // TRANSLATORS: Noun, chip button that opens the barcode lookup dialog to fill in the item from a product barcode.
   barcode: t('pantry', 'Barcode'),
   // TRANSLATORS: State of the barcode chip once a barcode has been attached to the item being added.
@@ -1057,30 +668,6 @@ const strings = {
     margin-block-start: -6px;
   }
 
-  &__chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-
-  &__chip {
-    flex: 0 0 auto;
-    cursor: pointer;
-  }
-
-  &__section {
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-large, 8px);
-    background: var(--color-background-hover);
-  }
-
-  &__type {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
   &__list-option {
     display: inline-flex;
     align-items: center;
@@ -1098,25 +685,6 @@ const strings = {
     background: var(--color-background-dark);
     color: var(--color-main-text);
     flex-shrink: 0;
-  }
-
-  &__image-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  &__image-preview {
-    width: 72px;
-    height: 72px;
-    object-fit: cover;
-    border-radius: var(--border-radius, 6px);
-    border: 1px solid var(--color-border);
-  }
-
-  &__image-input {
-    display: none;
   }
 
   &__suggestions {
