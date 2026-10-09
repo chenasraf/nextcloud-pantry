@@ -154,6 +154,21 @@ class ItemDefaultsServiceTest extends TestCase {
 		$this->assertSame(['mode' => 'remember', 'value' => [3]], $merged['stores']);
 	}
 
+	public function testAValueOnlyPatchFromAnEditorKeepsTheMode(): void {
+		$list = $this->list([
+			'stores' => ['mode' => 'remember', 'value' => [2]],
+			'fields' => [['fieldId' => 30, 'mode' => 'remember']],
+		]);
+
+		$merged = $this->svc->merge($list, [
+			'stores' => ['value' => [3]],
+			'fields' => [['fieldId' => 30, 'value' => ['valueOptionId' => 40]]],
+		], true);
+
+		$this->assertSame(['mode' => 'remember', 'value' => [3]], $merged['stores']);
+		$this->assertSame([['fieldId' => 30, 'mode' => 'remember', 'value' => ['valueOptionId' => 40]]], $merged['fields']);
+	}
+
 	public function testWithoutEditRightsAPinnedValueCannotChange(): void {
 		$list = $this->list(['stores' => ['mode' => 'fixed', 'value' => [2]]]);
 

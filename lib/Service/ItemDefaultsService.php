@@ -174,7 +174,12 @@ class ItemDefaultsService {
 	 */
 	private function authorize(?array $current, mixed $incoming, bool $canEdit): array {
 		if ($canEdit) {
-			return is_array($incoming) ? $incoming : ['mode' => ItemDefaults::MODE_NONE];
+			if (!is_array($incoming)) {
+				return ['mode' => ItemDefaults::MODE_NONE];
+			}
+			// A value-only patch (the add-item form's write-back) keeps the mode.
+			$incoming['mode'] ??= $current['mode'] ?? ItemDefaults::MODE_NONE;
+			return $incoming;
 		}
 		if (($current['mode'] ?? null) !== ItemDefaults::MODE_REMEMBER
 			|| !is_array($incoming)
