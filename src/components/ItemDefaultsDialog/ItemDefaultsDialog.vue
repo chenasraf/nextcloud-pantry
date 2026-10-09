@@ -76,7 +76,7 @@
                 :list-id="list.id"
                 :field-ids="[field.id]"
                 as-defaults
-                @update:model-value="setFieldValue(field.id, $event)"
+                @update:model-value="setFieldValue(field, $event)"
               />
               <p v-else class="item-defaults__hint">
                 {{
@@ -111,6 +111,7 @@ import ItemFieldChips, { type ItemFieldSection } from '@/components/ItemFieldChi
 import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { updateItemDefaults } from '@/api/lists'
+import { defaultValueFor, toFieldValue } from '@/utils/itemDefaults'
 import type {
   Checklist,
   FieldDefinition,
@@ -118,14 +119,7 @@ import type {
   ItemDefaultKey,
   ItemDefaultMode,
 } from '@/api/types'
-import {
-  draftFromDefaults,
-  fromFieldValue,
-  patchFromDraft,
-  toFieldValue,
-  type FieldDraft,
-  type ItemDefaultsDraft,
-} from './draft'
+import { draftFromDefaults, patchFromDraft, type FieldDraft, type ItemDefaultsDraft } from './draft'
 
 const props = defineProps<{
   open: boolean
@@ -253,10 +247,13 @@ function setFieldMode(fieldId: number, mode: ItemDefaultMode) {
   draft.value.fields[fieldId] = { ...fieldDraft(fieldId), mode }
 }
 
-function setFieldValue(fieldId: number, values: ItemCustomFieldValue[]) {
-  draft.value.fields[fieldId] = {
+function setFieldValue(field: FieldDefinition, values: ItemCustomFieldValue[]) {
+  draft.value.fields[field.id] = {
     mode: 'fixed',
-    value: fromFieldValue(values.find((v) => v.fieldId === fieldId)),
+    value: defaultValueFor(
+      field,
+      values.find((v) => v.fieldId === field.id),
+    ),
   }
 }
 

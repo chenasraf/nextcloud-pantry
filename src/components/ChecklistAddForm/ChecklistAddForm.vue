@@ -152,7 +152,6 @@ import PlusIcon from '@icons/Plus.vue'
 import BarcodeScanIcon from '@icons/BarcodeScan.vue'
 import TuneVariantIcon from '@icons/TuneVariant.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
-import { defaultCustomFieldValues } from '@/components/ItemCustomFieldsEditor/defaults'
 import ItemFieldChips, { type ItemFieldSection } from '@/components/ItemFieldChips'
 import PantryChip from '@/components/PantryChip'
 import FieldCard from '@/components/FieldCard'
@@ -168,8 +167,8 @@ import { useBarcodeFill } from '@/composables/useBarcodeFill'
 import { listArchivedItems } from '@/api/lists'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
-import { DEFAULT_RRULE } from '@/utils/rrule'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
+import { configSignature, rememberPatch, startValues, withRemembered } from '@/utils/itemDefaults'
 import type { ItemInput } from '@/api/lists'
 import type {
   Checklist,
@@ -179,6 +178,8 @@ import type {
   Label,
   ItemPrice,
   ItemCustomFieldValue,
+  ItemDefaults,
+  ItemDefaultsPatch,
   RecurrenceKind,
 } from '@/api/types'
 
@@ -186,15 +187,11 @@ const props = withDefaults(
   defineProps<{
     houseId: number
     adding: boolean
-    /** Recurrence new items start with, resolved from the target list's default. */
-    defaultRecurrenceKind?: RecurrenceKind
-    defaultRrule?: string | null
-    defaultRepeatFromCompletion?: boolean
     /**
-     * The list follows the last item added, so the form reports back whatever
-     * recurrence was used. Pinned defaults are left alone.
+     * The values new items on the list in focus start with. In the meta "All
+     * lists" view each target list's own defaults apply instead.
      */
-    remembersRecurrence?: boolean
+    itemDefaults?: ItemDefaults | null
     requireListSelector?: boolean
     availableLists?: Checklist[]
     /**
@@ -212,10 +209,7 @@ const props = withDefaults(
     showDefaultsButton?: boolean
   }>(),
   {
-    defaultRecurrenceKind: 'none',
-    defaultRrule: null,
-    defaultRepeatFromCompletion: false,
-    remembersRecurrence: false,
+    itemDefaults: null,
     requireListSelector: false,
     availableLists: () => [],
     reuseCandidates: () => [],
@@ -227,9 +221,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   add: [input: ItemInput, pendingImage: File | null, targetListId: number | null]
-  'update:recurrenceDefault': [
-    value: { kind: RecurrenceKind; rrule: string | null; repeatFromCompletion: boolean },
-  ]
+  /** Values for the target list's "remember last" defaults, from the item just added. */
+  'remember-defaults': [patch: ItemDefaultsPatch, listId: number]
   'reuse-existing': [item: ChecklistItem]
   'open-defaults': []
 }>()
@@ -289,28 +282,32 @@ const { items: stores } = useStores(props.houseId)
 const { items: labels } = useLabels(props.houseId)
 const { items: fieldDefs } = useCustomFields(props.houseId)
 
-// New items start pre-filled with each applicable field's default value.
-watch(
-  [fieldDefs, effectiveListId],
-  () => {
-    customFieldValues.value = defaultCustomFieldValues(fieldDefs.value, effectiveListId.value)
-  },
-  { immediate: true },
+const activeDefaults = computed<ItemDefaults | null>(() =>
+  props.requireListSelector
+    ? (props.availableLists.find((l) => l.id === targetListId.value)?.itemDefaults ?? null)
+    : props.itemDefaults,
 )
 
-/** Start a fresh item on the target list's default recurrence. */
-function applyRecurrenceDefault() {
-  const kind = props.defaultRecurrenceKind
-  deleteOnDone.value = kind === 'once'
-  rrule.value = kind === 'recurring' ? (props.defaultRrule ?? DEFAULT_RRULE) : null
-  repeatFromCompletion.value = kind === 'recurring' && props.defaultRepeatFromCompletion
+/** Start a fresh item on the target list's defaults. */
+function applyDefaults(defaults: ItemDefaults | null = activeDefaults.value) {
+  const start = startValues(defaults, fieldDefs.value, effectiveListId.value)
+  categoryId.value = start.categoryId
+  storeIds.value = start.storeIds
+  labelIds.value = start.labelIds
+  quantity.value = start.quantity
+  deleteOnDone.value = start.recurrence.kind === 'once'
+  rrule.value = start.recurrence.rrule
+  repeatFromCompletion.value = start.recurrence.repeatFromCompletion
+  customFieldValues.value = start.customFieldValues
 }
 
-applyRecurrenceDefault()
-
+// Keyed on the configured defaults rather than the defaults object: a
+// remember write-back landing while the next item is being composed must not
+// overwrite chips that were already changed.
 watch(
-  () => [props.defaultRecurrenceKind, props.defaultRrule, props.defaultRepeatFromCompletion],
-  () => applyRecurrenceDefault(),
+  [fieldDefs, effectiveListId, () => configSignature(activeDefaults.value)],
+  () => applyDefaults(),
+  { immediate: true },
 )
 
 watch(multiple, (on) => {
@@ -503,26 +500,6 @@ function clearName() {
   name.value = ''
 }
 
-/**
- * Report the recurrence just used, so a list that follows the last item added
- * starts the next one the same way.
- */
-function rememberRecurrence(usedRrule: string | null, usedFromCompletion: boolean) {
-  if (!props.remembersRecurrence) return
-  const kind = currentRecurrenceKind.value
-  const unchanged =
-    kind === props.defaultRecurrenceKind &&
-    (kind !== 'recurring' ||
-      (usedRrule === props.defaultRrule &&
-        usedFromCompletion === props.defaultRepeatFromCompletion))
-  if (unchanged) return
-  emit('update:recurrenceDefault', {
-    kind,
-    rrule: usedRrule,
-    repeatFromCompletion: usedFromCompletion,
-  })
-}
-
 defineExpose({ clearName })
 
 // ----- Submit -----
@@ -557,25 +534,36 @@ function submitAdd() {
       targetListId.value,
     )
   })
+  const defaults = activeDefaults.value
+  const remembered = rememberPatch(
+    defaults,
+    {
+      categoryId: categoryId.value,
+      storeIds: storeIds.value,
+      labelIds: labelIds.value,
+      recurrence: {
+        kind: currentRecurrenceKind.value,
+        rrule: usedRrule,
+        repeatFromCompletion: usedFromCompletion,
+      },
+      customFieldValues: customFieldValues.value,
+    },
+    fieldDefs.value,
+  )
+  const listId = effectiveListId.value
+  if (listId != null && Object.keys(remembered).length > 0) {
+    emit('remember-defaults', remembered, listId)
+  }
   // Reset form — keep the chosen list so users can add multiple items in a row.
   name.value = ''
   description.value = ''
-  quantity.value = ''
   // Drop the amounts; the next item's default currency comes from the house's
   // remembered currency (updated after the add).
   prices.value = []
-  customFieldValues.value = defaultCustomFieldValues(fieldDefs.value, effectiveListId.value)
-  categoryId.value = null
-  storeIds.value = []
-  labelIds.value = []
   barcode.value = null
-  rememberRecurrence(usedRrule, usedFromCompletion)
-  // A list that follows the last item added keeps the recurrence just used, so
-  // a run of matching items needs picking it only once; a pinned default wins
-  // back the next item.
-  if (!props.remembersRecurrence) {
-    applyRecurrenceDefault()
-  }
+  // Seed from what was just remembered rather than waiting for the write-back,
+  // so a run of matching items needs picking a value only once.
+  applyDefaults(defaults ? withRemembered(defaults, remembered) : null)
   userPickedType.value = false
   pendingImage.value = null
   openSection.value = null

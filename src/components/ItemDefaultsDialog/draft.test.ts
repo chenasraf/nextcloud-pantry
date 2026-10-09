@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ItemDefaults } from '@/api/types'
-import { draftFromDefaults, fromFieldValue, patchFromDraft, toFieldValue } from './draft'
+import { draftFromDefaults, patchFromDraft } from './draft'
 
 function defaults(overrides: Partial<ItemDefaults> = {}): ItemDefaults {
   return {
@@ -98,14 +98,6 @@ describe('item defaults draft', () => {
         { fieldId: 7, mode: 'none' },
         { fieldId: 9, mode: 'fixed', value: { offsetDays: 3 } },
       ],
-    })
-  })
-
-  it('round-trips a field value through the editor shape, dropping per-item settings', () => {
-    const value = toFieldValue(7, { valueOptionId: 4 })
-    expect(value.valueOptionId).toBe(4)
-    expect(fromFieldValue({ ...value, notifyEnabled: true, notifyLeadDays: 2 })).toEqual({
-      valueOptionId: 4,
     })
   })
 })

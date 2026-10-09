@@ -5,8 +5,6 @@ import type {
   ItemCustomFieldValue,
   ItemDefaultsPatch,
   ItemPrice,
-  RecurrenceKind,
-  RecurrenceMode,
 } from './types'
 
 export async function listLists(houseId: number, sortBy?: string): Promise<Checklist[]> {
@@ -53,10 +51,6 @@ export async function updateList(
     icon?: string
     color?: string | null
     sortOrder?: number
-    defaultRecurrenceMode?: RecurrenceMode
-    defaultRecurrenceKind?: RecurrenceKind
-    defaultRrule?: string | null
-    defaultRepeatFromCompletion?: boolean
   },
 ): Promise<Checklist> {
   const resp = await ocs.patch<Checklist>(`/houses/${houseId}/lists/${listId}`, patch)

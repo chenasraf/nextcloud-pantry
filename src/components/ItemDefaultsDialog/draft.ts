@@ -1,5 +1,5 @@
+import { sameValue } from '@/utils/itemDefaults'
 import type {
-  ItemCustomFieldValue,
   ItemDefaultField,
   ItemDefaultFieldValue,
   ItemDefaultKey,
@@ -26,15 +26,6 @@ export interface ItemDefaultsDraft {
 }
 
 const STAPLE: RecurrenceDefaultValue = { kind: 'none', rrule: null, repeatFromCompletion: false }
-
-const FIELD_VALUE_KEYS = [
-  'valueText',
-  'valueNumber',
-  'valueBool',
-  'valueDate',
-  'valueOptionId',
-  'offsetDays',
-] as const
 
 /**
  * Seed the editor from the stored defaults. A remembered value seeds the
@@ -78,10 +69,6 @@ function draftValue(draft: ItemDefaultsDraft, key: ItemDefaultKey): unknown {
   }
 }
 
-function same(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
-}
-
 /**
  * Only the keys the dialog actually changed. A key left on "remember" is not
  * sent, so saving never wipes what the list has learned since it was opened.
@@ -96,7 +83,7 @@ export function patchFromDraft(
     const before = original?.[key] ?? { mode: 'none' as const }
     const mode = draft.modes[key]
     const value = draftValue(draft, key)
-    if (mode === before.mode && (mode !== 'fixed' || same(value, before.value))) continue
+    if (mode === before.mode && (mode !== 'fixed' || sameValue(value, before.value))) continue
     const entry = mode === 'fixed' ? { mode, value } : { mode }
     Object.assign(patch, { [key]: entry })
   }
@@ -107,7 +94,7 @@ export function patchFromDraft(
   for (const fieldId of ids) {
     const before: ItemDefaultField = stored.get(fieldId) ?? { fieldId, mode: 'none' }
     const now = draft.fields[fieldId] ?? { mode: 'none', value: null }
-    if (now.mode === before.mode && (now.mode !== 'fixed' || same(now.value, before.value))) {
+    if (now.mode === before.mode && (now.mode !== 'fixed' || sameValue(now.value, before.value))) {
       continue
     }
     fields.push(now.mode === 'fixed' ? { fieldId, ...now } : { fieldId, mode: now.mode })
@@ -115,35 +102,4 @@ export function patchFromDraft(
   if (fields.length > 0) patch.fields = fields
 
   return patch
-}
-
-/** A field default in the shape the custom-field editor works with. */
-export function toFieldValue(
-  fieldId: number,
-  value: ItemDefaultFieldValue | null,
-): ItemCustomFieldValue {
-  return {
-    fieldId,
-    valueText: value?.valueText ?? null,
-    valueNumber: value?.valueNumber ?? null,
-    valueBool: value?.valueBool ?? false,
-    valueDate: value?.valueDate ?? null,
-    valueOptionId: value?.valueOptionId ?? null,
-    offsetDays: value?.offsetDays ?? null,
-    notifyOverride: false,
-    notifyEnabled: false,
-    notifyLeadDays: null,
-  }
-}
-
-/** The editor's value, keeping only the columns a default carries. */
-export function fromFieldValue(
-  value: ItemCustomFieldValue | undefined,
-): ItemDefaultFieldValue | null {
-  if (!value) return null
-  const out: ItemDefaultFieldValue = {}
-  for (const key of FIELD_VALUE_KEYS) {
-    if (value[key] != null && value[key] !== false) Object.assign(out, { [key]: value[key] })
-  }
-  return out
 }

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ItemInput } from '@/api/lists'
-import type { ChecklistItem, RecurrenceKind } from '@/api/types'
+import type { ChecklistItem, ItemDefaultMode, ItemDefaults, RecurrenceKind } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@nextcloud/dialogs', () => ({
@@ -257,14 +257,32 @@ function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
   }
 }
 
+function makeDefaults(overrides: Partial<ItemDefaults> = {}): ItemDefaults {
+  return {
+    recurrence: { mode: 'none' },
+    stores: { mode: 'none' },
+    category: { mode: 'none' },
+    labels: { mode: 'none' },
+    quantity: { mode: 'none' },
+    fields: [],
+    ...overrides,
+  }
+}
+
+function recurrenceDefault(
+  mode: ItemDefaultMode,
+  kind: RecurrenceKind,
+  rrule: string | null = null,
+  repeatFromCompletion = false,
+): Partial<ItemDefaults> {
+  return { recurrence: { mode, value: { kind, rrule, repeatFromCompletion } } }
+}
+
 function mountForm(
   props: {
     houseId?: number
     adding?: boolean
-    defaultRecurrenceKind?: RecurrenceKind
-    defaultRrule?: string | null
-    defaultRepeatFromCompletion?: boolean
-    remembersRecurrence?: boolean
+    itemDefaults?: ItemDefaults | null
     reuseCandidates?: ChecklistItem[]
     currentListId?: number | null
   } = {},
@@ -273,10 +291,7 @@ function mountForm(
     props: {
       houseId: props.houseId ?? 1,
       adding: props.adding ?? false,
-      defaultRecurrenceKind: props.defaultRecurrenceKind ?? 'none',
-      defaultRrule: props.defaultRrule ?? null,
-      defaultRepeatFromCompletion: props.defaultRepeatFromCompletion ?? false,
-      remembersRecurrence: props.remembersRecurrence ?? false,
+      itemDefaults: props.itemDefaults ?? null,
       reuseCandidates: props.reuseCandidates ?? [],
       currentListId: props.currentListId ?? null,
     },
@@ -322,7 +337,7 @@ describe('ChecklistAddForm', () => {
   })
 
   it("item type chip names the list's one-time default before any explicit pick", () => {
-    const wrapper = mountForm({ defaultRecurrenceKind: 'once' })
+    const wrapper = mountForm({ itemDefaults: makeDefaults(recurrenceDefault('fixed', 'once')) })
     expect(wrapper.findAll('.pantry-chip').some((c) => c.text() === 'One-time')).toBe(true)
   })
 
@@ -414,18 +429,22 @@ describe('ChecklistAddForm', () => {
   })
 
   it('selecting One-time emits deleteOnDone=true and remembers it on submit', async () => {
-    const wrapper = mountForm({ remembersRecurrence: true })
+    const wrapper = mountForm({
+      itemDefaults: makeDefaults(recurrenceDefault('remember', 'none')),
+      currentListId: 10,
+    })
     await wrapper.find('.nc-text-field').setValue('Milk')
     await chipForKey(wrapper, 'Recurrence').trigger('click')
     await wrapper.find('.mock-one-time').trigger('click')
 
-    expect(wrapper.emitted('update:recurrenceDefault')).toBeFalsy()
+    expect(wrapper.emitted('remember-defaults')).toBeFalsy()
 
     await wrapper.find('form').trigger('submit')
     const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
     expect(input.deleteOnDone).toBe(true)
-    expect(wrapper.emitted('update:recurrenceDefault')![0]).toEqual([
-      { kind: 'once', rrule: null, repeatFromCompletion: false },
+    expect(wrapper.emitted('remember-defaults')![0]).toEqual([
+      { recurrence: { value: { kind: 'once', rrule: null, repeatFromCompletion: false } } },
+      10,
     ])
   })
 
@@ -439,7 +458,7 @@ describe('ChecklistAddForm', () => {
   })
 
   it("starts a new item on the list's one-time default", async () => {
-    const wrapper = mountForm({ defaultRecurrenceKind: 'once' })
+    const wrapper = mountForm({ itemDefaults: makeDefaults(recurrenceDefault('fixed', 'once')) })
     await wrapper.find('.nc-text-field').setValue('Milk')
 
     await wrapper.find('form').trigger('submit')
@@ -449,9 +468,9 @@ describe('ChecklistAddForm', () => {
 
   it("starts a new item on the list's recurring default", async () => {
     const wrapper = mountForm({
-      defaultRecurrenceKind: 'recurring',
-      defaultRrule: 'FREQ=DAILY;INTERVAL=2',
-      defaultRepeatFromCompletion: true,
+      itemDefaults: makeDefaults(
+        recurrenceDefault('fixed', 'recurring', 'FREQ=DAILY;INTERVAL=2', true),
+      ),
     })
     await wrapper.find('.nc-text-field').setValue('Milk')
 
@@ -463,7 +482,10 @@ describe('ChecklistAddForm', () => {
   })
 
   it('does not report a recurrence that already matches the default', async () => {
-    const wrapper = mountForm({ defaultRecurrenceKind: 'once', remembersRecurrence: true })
+    const wrapper = mountForm({
+      itemDefaults: makeDefaults(recurrenceDefault('remember', 'once')),
+      currentListId: 10,
+    })
     await wrapper.find('.nc-text-field').setValue('Milk')
     // Pick One-time again — it already matches the list default, which the chip
     // already names rather than the neutral "Recurrence".
@@ -471,17 +493,101 @@ describe('ChecklistAddForm', () => {
     await wrapper.find('.mock-one-time').trigger('click')
 
     await wrapper.find('form').trigger('submit')
-    expect(wrapper.emitted('update:recurrenceDefault')).toBeFalsy()
+    expect(wrapper.emitted('remember-defaults')).toBeFalsy()
   })
 
   it('does not report the recurrence used when the list default is pinned', async () => {
-    const wrapper = mountForm()
+    const wrapper = mountForm({
+      itemDefaults: makeDefaults(recurrenceDefault('fixed', 'none')),
+      currentListId: 10,
+    })
     await wrapper.find('.nc-text-field').setValue('Milk')
     await chipForKey(wrapper, 'Recurrence').trigger('click')
     await wrapper.find('.mock-one-time').trigger('click')
 
     await wrapper.find('form').trigger('submit')
-    expect(wrapper.emitted('update:recurrenceDefault')).toBeFalsy()
+    expect(wrapper.emitted('remember-defaults')).toBeFalsy()
+  })
+
+  describe('item defaults', () => {
+    it('starts every new item on the pinned store, category, labels and quantity', async () => {
+      const wrapper = mountForm({
+        itemDefaults: makeDefaults({
+          stores: { mode: 'fixed', value: [3] },
+          category: { mode: 'fixed', value: 5 },
+          labels: { mode: 'fixed', value: [7] },
+          quantity: { mode: 'fixed', value: '2' },
+        }),
+        currentListId: 10,
+      })
+      await wrapper.find('.nc-text-field').setValue('Milk')
+      await wrapper.find('form').trigger('submit')
+      await wrapper.find('.nc-text-field').setValue('Bread')
+      await wrapper.find('form').trigger('submit')
+
+      for (const [input] of wrapper.emitted('add') as [ItemInput][]) {
+        expect(input.storeIds).toEqual([3])
+        expect(input.categoryId).toBe(5)
+        expect(input.labelIds).toEqual([7])
+        expect(input.quantity).toBe('2')
+      }
+      expect(wrapper.emitted('remember-defaults')).toBeFalsy()
+    })
+
+    it('goes back to a pinned value after an item used something else', async () => {
+      const wrapper = mountForm({
+        itemDefaults: makeDefaults({ stores: { mode: 'fixed', value: [3] } }),
+        currentListId: 10,
+      })
+      await chipForKey(wrapper, 'Stores').trigger('click')
+      wrapper.findComponent({ name: 'StoreChipList' }).vm.$emit('update:modelValue', [4])
+      await wrapper.find('.nc-text-field').setValue('Milk')
+      await wrapper.find('form').trigger('submit')
+      await wrapper.find('.nc-text-field').setValue('Bread')
+      await wrapper.find('form').trigger('submit')
+
+      const adds = wrapper.emitted('add') as [ItemInput][]
+      expect(adds[0]![0].storeIds).toEqual([4])
+      expect(adds[1]![0].storeIds).toEqual([3])
+    })
+
+    it('remembers the store used and starts the next item on it', async () => {
+      const wrapper = mountForm({
+        itemDefaults: makeDefaults({ stores: { mode: 'remember', value: [3] } }),
+        currentListId: 10,
+      })
+      await chipForKey(wrapper, 'Stores').trigger('click')
+      wrapper.findComponent({ name: 'StoreChipList' }).vm.$emit('update:modelValue', [4])
+      await wrapper.find('.nc-text-field').setValue('Milk')
+      await wrapper.find('form').trigger('submit')
+
+      expect(wrapper.emitted('remember-defaults')![0]).toEqual([{ stores: { value: [4] } }, 10])
+      // The parent stores the write-back on the list.
+      await wrapper.setProps({
+        itemDefaults: makeDefaults({ stores: { mode: 'remember', value: [4] } }),
+      })
+
+      await wrapper.find('.nc-text-field').setValue('Bread')
+      await wrapper.find('form').trigger('submit')
+      const adds = wrapper.emitted('add') as [ItemInput][]
+      expect(adds[1]![0].storeIds).toEqual([4])
+      // Same store again: nothing new to remember.
+      expect(wrapper.emitted('remember-defaults')).toHaveLength(1)
+    })
+
+    it('leaves fields without a default empty after an add', async () => {
+      const wrapper = mountForm({ itemDefaults: makeDefaults(), currentListId: 10 })
+      await chipForKey(wrapper, 'Quantity').trigger('click')
+      await wrapper.find('.mock-quantity-input').setValue('3')
+      await wrapper.find('.nc-text-field').setValue('Milk')
+      await wrapper.find('form').trigger('submit')
+      await wrapper.find('.nc-text-field').setValue('Bread')
+      await wrapper.find('form').trigger('submit')
+
+      const adds = wrapper.emitted('add') as [ItemInput][]
+      expect(adds[0]![0].quantity).toBe('3')
+      expect(adds[1]![0].quantity).toBeNull()
+    })
   })
 
   it('toggling Multiple swaps the name input for a textarea and shows a hint', async () => {
