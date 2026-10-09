@@ -45,13 +45,8 @@ an image, and a repeat schedule.
 	</TabItem>
 </Tabs>
 
-Each list has settings for its name, description, icon, color and access, plus a **default
-recurrence** that decides what new items on it start as:
-
-- **Remember last** — a new item copies the recurrence of the last item added to this list.
-- **None** — new items stay on the list after they are marked done.
-- **One-time** — new items are removed from the list once marked done.
-- **Recurring** — new items come back on the schedule you set alongside.
+Each list has settings for its name, description, icon, color and access, plus
+[item defaults](#item-defaults) that decide what new items on it start with.
 
 **All lists** shows every item across the house in one place.
 
@@ -122,6 +117,36 @@ Two settings shape this:
 - **Suggest archived items** — off by default; turn it on to search archived items for suggestions
   too. Reusing an archived item unarchives it.
 
+## Item defaults
+
+A list can pre-fill the composer, so that every item you add to your groceries list starts at your
+usual store, or every item on a chores list starts as recurring. Open **Item defaults** from the
+list's **⋯** menu, from the tune button at the end of the composer's chip row, or from **Edit item
+defaults** in the list's settings.
+
+The dialog shows the composer's chips for the details a list can pre-fill: **Recurrence, Stores,
+Category, Labels, Quantity** and **Custom fields**. Open a chip and pick how it starts:
+
+- **Not set** — new items start without a value, as on a list without defaults.
+- **Fixed** — new items always start with the value you pick below.
+- **Remember last** — new items start with whatever the last item added to this list used. The
+  chip reads, for example, **Stores: last used**.
+
+Quantity can be **Fixed** but not remembered. Price, description, image and barcode always start
+empty, since they belong to a single item.
+
+Each custom field can likewise use its **Field default** (the default set on the field itself),
+a **Fixed** value for this list, or **Remember last**.
+
+A pre-filled chip is only a starting point: change it in the composer before adding, and only that
+item is affected — unless the detail is set to **Remember last**, in which case the next item starts
+with your change. In **All lists**, the composer uses the defaults of the list you pick to add to.
+
+<Aside type="note">
+	Item defaults are shared by everyone in the house. Only people who can edit a list can change
+	its defaults, but anyone who adds items to it updates what **Remember last** remembers.
+</Aside>
+
 ## Item details
 
 Set any of these from the composer chips as you add an item, or open an existing item to change them:
@@ -185,7 +210,8 @@ Every item is one of three kinds, set from the **Recurrence** chip:
 - **One-time** — removed from the list once marked done.
 - **Recurring** — comes back on a schedule.
 
-A new item starts as whatever its list's [default recurrence](#create-a-list) says.
+A new item starts with whatever recurrence its list's [item defaults](#item-defaults) give it. A
+new list remembers the recurrence of the last item added.
 
 ### Repeat schedules
 
