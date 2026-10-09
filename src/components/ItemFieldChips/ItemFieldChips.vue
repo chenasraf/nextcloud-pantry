@@ -19,92 +19,100 @@
     <div v-if="openSection" class="item-field-chips__section">
       <slot name="section-header" :section="openSection" />
 
-      <CategoryChipList
-        v-if="openSection === 'category'"
-        v-model="categoryId"
-        :house-id="houseId"
-        :list-id="listId"
-      />
+      <slot v-if="$slots[`section-${openSection}`]" :name="`section-${openSection}`" />
 
-      <StoreChipList v-else-if="openSection === 'stores'" v-model="storeIds" :house-id="houseId" />
-
-      <LabelChipList
-        v-else-if="openSection === 'labels'"
-        v-model="labelIds"
-        :house-id="houseId"
-        :list-id="listId"
-      />
-
-      <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
-
-      <ItemPricesEditor
-        v-else-if="openSection === 'price'"
-        v-model="prices"
-        :house-id="houseId"
-        :default-currency="defaultCurrency"
-      />
-
-      <ItemCustomFieldsEditor
-        v-else-if="openSection === 'customfields'"
-        v-model="customFieldValues"
-        :house-id="houseId"
-        :list-id="listId"
-      />
-
-      <AutoResizeTextarea
-        v-else-if="openSection === 'description'"
-        v-model="description"
-        :label="strings.descriptionLabel"
-        :placeholder="strings.descriptionPlaceholder"
-        autocomplete="off"
-      />
-
-      <!-- Item type + (inline recurrence when Recurring) -->
-      <div v-else-if="openSection === 'type'" class="item-field-chips__type">
-        <ItemTypeSelector
-          :delete-on-done="deleteOnDone"
-          :rrule="rrule"
-          @select-staple="selectStaple"
-          @select-one-time="selectOneTime"
-          @select-recurring="selectRecurring"
+      <template v-else-if="!editsDefaults || sectionModes[openSection] === 'fixed'">
+        <CategoryChipList
+          v-if="openSection === 'category'"
+          v-model="categoryId"
+          :house-id="houseId"
+          :list-id="listId"
         />
-        <RecurrenceForm
-          v-if="currentType === 'recurring'"
-          v-model="rrule"
-          v-model:from-completion="repeatFromCompletion"
-        />
-      </div>
 
-      <div v-else-if="openSection === 'image'" class="item-field-chips__image">
-        <div v-if="imageUrl" class="item-field-chips__image-row">
-          <img class="item-field-chips__image-preview" :src="imageUrl" :alt="strings.imageAlt" />
-          <NcButton variant="tertiary" type="button" @click="triggerImagePick">
-            <template #icon>
-              <UploadIcon :size="20" />
-            </template>
-            {{ strings.replaceImage }}
-          </NcButton>
-          <NcButton variant="tertiary" type="button" @click="image = null">
-            <template #icon>
-              <DeleteIcon :size="20" />
-            </template>
-            {{ strings.removeImage }}
-          </NcButton>
+        <StoreChipList
+          v-else-if="openSection === 'stores'"
+          v-model="storeIds"
+          :house-id="houseId"
+        />
+
+        <LabelChipList
+          v-else-if="openSection === 'labels'"
+          v-model="labelIds"
+          :house-id="houseId"
+          :list-id="listId"
+        />
+
+        <QuantityInput v-else-if="openSection === 'quantity'" v-model="quantity" />
+
+        <ItemPricesEditor
+          v-else-if="openSection === 'price'"
+          v-model="prices"
+          :house-id="houseId"
+          :default-currency="defaultCurrency"
+        />
+
+        <ItemCustomFieldsEditor
+          v-else-if="openSection === 'customfields'"
+          v-model="customFieldValues"
+          :house-id="houseId"
+          :list-id="listId"
+        />
+
+        <AutoResizeTextarea
+          v-else-if="openSection === 'description'"
+          v-model="description"
+          :label="strings.descriptionLabel"
+          :placeholder="strings.descriptionPlaceholder"
+          autocomplete="off"
+        />
+
+        <!-- Item type + (inline recurrence when Recurring) -->
+        <div v-else-if="openSection === 'type'" class="item-field-chips__type">
+          <ItemTypeSelector
+            :delete-on-done="deleteOnDone"
+            :rrule="rrule"
+            @select-staple="selectStaple"
+            @select-one-time="selectOneTime"
+            @select-recurring="selectRecurring"
+          />
+          <RecurrenceForm
+            v-if="currentType === 'recurring'"
+            v-model="rrule"
+            v-model:from-completion="repeatFromCompletion"
+          />
         </div>
-        <NcButton v-else variant="tertiary" type="button" @click="triggerImagePick">
-          <template #icon>
-            <ImagePlusIcon :size="20" />
-          </template>
-          {{ strings.addImage }}
-        </NcButton>
-        <input
-          ref="imageInputRef"
-          type="file"
-          accept="image/*"
-          class="item-field-chips__image-input"
-          @change="onImagePicked"
-        />
-      </div>
+
+        <div v-else-if="openSection === 'image'" class="item-field-chips__image">
+          <div v-if="imageUrl" class="item-field-chips__image-row">
+            <img class="item-field-chips__image-preview" :src="imageUrl" :alt="strings.imageAlt" />
+            <NcButton variant="tertiary" type="button" @click="triggerImagePick">
+              <template #icon>
+                <UploadIcon :size="20" />
+              </template>
+              {{ strings.replaceImage }}
+            </NcButton>
+            <NcButton variant="tertiary" type="button" @click="image = null">
+              <template #icon>
+                <DeleteIcon :size="20" />
+              </template>
+              {{ strings.removeImage }}
+            </NcButton>
+          </div>
+          <NcButton v-else variant="tertiary" type="button" @click="triggerImagePick">
+            <template #icon>
+              <ImagePlusIcon :size="20" />
+            </template>
+            {{ strings.addImage }}
+          </NcButton>
+          <input
+            ref="imageInputRef"
+            type="file"
+            accept="image/*"
+            class="item-field-chips__image-input"
+            @change="onImagePicked"
+          />
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -143,7 +151,7 @@ import { entityIcon } from '@/utils/entityIcons'
 import { DEFAULT_RRULE, formatRrule } from '@/utils/rrule'
 import { formatPrice, storelessPrice } from '@/utils/price'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
-import type { ItemPrice, ItemCustomFieldValue } from '@/api/types'
+import type { ItemPrice, ItemCustomFieldValue, ItemDefaultMode } from '@/api/types'
 import { ITEM_ONLY_SECTIONS, type ItemFieldChipsMode, type ItemFieldSection } from './types'
 
 const props = withDefaults(
@@ -155,13 +163,24 @@ const props = withDefaults(
     hideImage?: boolean
     /** Currency preselected for new prices (house's last-used). */
     defaultCurrency?: string
+    /**
+     * In defaults mode, how each field is pre-filled. Only a `fixed` field shows
+     * its editor; a `remember` one names itself as following the last item.
+     */
+    sectionModes?: Partial<Record<ItemFieldSection, ItemDefaultMode>>
+    /** Replace a chip's own summary. */
+    chipOverrides?: Partial<Record<ItemFieldSection, { text: string; filled: boolean }>>
   }>(),
   {
     mode: 'compose',
     hideImage: false,
     defaultCurrency: DEFAULT_CURRENCY,
+    sectionModes: () => ({}),
+    chipOverrides: () => ({}),
   },
 )
+
+const editsDefaults = computed(() => props.mode === 'defaults')
 
 const categoryId = defineModel<number | null>('categoryId', { default: null })
 const storeIds = defineModel<number[]>('storeIds', { default: () => [] })
@@ -401,8 +420,43 @@ const chips = computed<Chip[]>(() => {
     filled: image.value !== null,
   })
 
-  return list.filter((chip) => shows(chip.key))
+  return list.filter((chip) => shows(chip.key)).map(withDefaultMode)
 })
+
+function baseLabel(key: ItemFieldSection): string {
+  const labels: Record<ItemFieldSection, string> = {
+    category: strings.category,
+    stores: strings.stores,
+    labels: strings.labels,
+    quantity: strings.quantity,
+    price: strings.price,
+    customfields: strings.customFields,
+    description: strings.description,
+    type: strings.itemType,
+    image: strings.image,
+  }
+  return labels[key]
+}
+
+function withDefaultMode(chip: Chip): Chip {
+  const override = props.chipOverrides[chip.key]
+  if (override) return { ...chip, ...override }
+  if (!editsDefaults.value) return chip
+  switch (props.sectionModes[chip.key] ?? 'none') {
+    case 'remember':
+      return {
+        ...chip,
+        text: strings.lastUsed(baseLabel(chip.key)),
+        icon: chip.key === 'type' ? RepeatIcon : chip.icon,
+        iconStyle: undefined,
+        filled: true,
+      }
+    case 'none':
+      return { ...chip, text: baseLabel(chip.key), iconStyle: undefined, filled: false }
+    default:
+      return chip
+  }
+}
 
 function chipVariant(chip: Chip): 'primary' | 'secondary' | 'tertiary' {
   if (openSection.value === chip.key) return 'primary'
@@ -434,6 +488,8 @@ const strings = {
   replaceImage: t('pantry', 'Replace image'),
   removeImage: t('pantry', 'Remove image'),
   imageAlt: t('pantry', 'Selected image'),
+  // TRANSLATORS: Chip label for a list default that reuses the last item's value. {field} is the field name, e.g. "Stores: last used".
+  lastUsed: (field: string) => t('pantry', '{field}: last used', { field }),
 }
 </script>
 

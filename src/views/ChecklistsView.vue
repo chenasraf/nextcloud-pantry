@@ -233,6 +233,14 @@
       :list="editing"
       @update:open="(v) => !v && (editing = null)"
       @save="submitEdit"
+      @open-item-defaults="openItemDefaults"
+    />
+
+    <ItemDefaultsDialog
+      :open="!!editingDefaults"
+      :list="editingDefaults"
+      @update:open="(v) => !v && (editingDefaults = null)"
+      @saved="onItemDefaultsSaved"
     />
 
     <ChecklistDuplicateDialog
@@ -343,6 +351,7 @@ import {
   contrastColor,
   type ChecklistFormData,
 } from '@/components/ChecklistIconPicker'
+import ItemDefaultsDialog from '@/components/ItemDefaultsDialog'
 import { entityIcon } from '@/utils/entityIcons'
 
 const CategoryEntityIcon = entityIcon.category
@@ -368,6 +377,7 @@ const {
   loadArchived,
   create,
   update,
+  replace,
   remove,
   restore,
   removePermanently,
@@ -487,11 +497,7 @@ const showStoreManager = ref(false)
 const showCreate = ref(false)
 
 async function submitCreate(data: ChecklistFormData) {
-  const list = await create(data.name, data.description || null, data.icon, data.color || null, {
-    defaultRecurrenceMode: data.defaultRecurrenceMode,
-    defaultRrule: data.defaultRrule,
-    defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
-  })
+  const list = await create(data.name, data.description || null, data.icon, data.color || null)
   showCreate.value = false
   await router.push({
     name: 'list-detail',
@@ -513,11 +519,19 @@ async function submitEdit(data: ChecklistFormData) {
     description: data.description,
     icon: data.icon,
     color: data.color || null,
-    defaultRecurrenceMode: data.defaultRecurrenceMode,
-    defaultRrule: data.defaultRrule,
-    defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
   })
   editing.value = null
+}
+
+const editingDefaults = ref<Checklist | null>(null)
+
+function openItemDefaults() {
+  editingDefaults.value = editing.value
+  editing.value = null
+}
+
+function onItemDefaultsSaved(updated: Checklist) {
+  replace(updated)
 }
 
 const duplicating = ref<Checklist | null>(null)

@@ -151,7 +151,6 @@ describe('useChecklists', () => {
         'desc',
         'cart',
         undefined,
-        undefined,
       )
       expect(result).toEqual(newList)
       expect(c.lists.value).toHaveLength(1)

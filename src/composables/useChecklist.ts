@@ -92,15 +92,15 @@ export function useChecklists(houseId: number) {
     description?: string | null,
     icon?: string | null,
     color?: string | null,
-    recurrenceDefault?: {
-      defaultRecurrenceMode?: RecurrenceMode
-      defaultRrule?: string | null
-      defaultRepeatFromCompletion?: boolean
-    },
   ): Promise<Checklist> {
-    const created = await api.createList(houseId, name, description, icon, color, recurrenceDefault)
+    const created = await api.createList(houseId, name, description, icon, color)
     lists.value = [...lists.value, created]
     return created
+  }
+
+  /** Swap in a list the server returned from an update made elsewhere. */
+  function replace(updated: Checklist): void {
+    lists.value = lists.value.map((l) => (l.id === updated.id ? updated : l))
   }
 
   async function update(
@@ -187,6 +187,7 @@ export function useChecklists(houseId: number) {
     loadArchived,
     create,
     update,
+    replace,
     remove,
     restore,
     removePermanently,

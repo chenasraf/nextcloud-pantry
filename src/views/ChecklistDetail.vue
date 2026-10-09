@@ -152,6 +152,8 @@
         :reuse-candidates="reuseCandidates"
         :current-list-id="isMeta ? null : listIdNum"
         :default-currency="defaultCurrency"
+        :show-defaults-button="!isMeta && canEditItemDefaults"
+        @open-defaults="openItemDefaults"
         @add="handleAdd"
         @update:recurrence-default="handleRecurrenceDefaultChange"
         @reuse-existing="onReuseFromSuggestion"
@@ -441,6 +443,15 @@
       :list="list"
       @update:open="(v) => (editingList = v)"
       @save="submitEditList"
+      @open-item-defaults="openItemDefaults"
+    />
+
+    <ItemDefaultsDialog
+      v-if="list"
+      :open="editingItemDefaults"
+      :list="list"
+      @update:open="(v) => (editingItemDefaults = v)"
+      @saved="(updated) => (list = updated)"
     />
 
     <ChecklistDuplicateDialog
@@ -814,10 +825,12 @@ import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
 import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ViewListIcon from '@icons/ViewList.vue'
 import PencilIcon from '@icons/Pencil.vue'
+import TuneVariantIcon from '@icons/TuneVariant.vue'
 import FileExportIcon from '@icons/FileExport.vue'
 import FileImportIcon from '@icons/FileImport.vue'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
+import ItemDefaultsDialog from '@/components/ItemDefaultsDialog'
 import {
   ChecklistFilter,
   NO_CATEGORY_ID,
@@ -2092,14 +2105,21 @@ async function submitEditList(data: ChecklistFormData) {
       description: data.description,
       icon: data.icon,
       color: data.color || null,
-      defaultRecurrenceMode: data.defaultRecurrenceMode,
-      defaultRrule: data.defaultRrule,
-      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
     })
     editingList.value = false
   } catch (e) {
     showError((e as Error).message)
   }
+}
+
+const editingItemDefaults = ref(false)
+const canEditItemDefaults = computed(
+  () => !!list.value?.itemDefaults && (list.value.canEdit ?? can.value.canEditLists),
+)
+
+function openItemDefaults() {
+  editingList.value = false
+  editingItemDefaults.value = true
 }
 
 const duplicatingList = ref(false)
@@ -2429,11 +2449,6 @@ async function submitCreateListAndMove(data: ChecklistFormData) {
     data.description || null,
     data.icon || null,
     data.color || null,
-    {
-      defaultRecurrenceMode: data.defaultRecurrenceMode,
-      defaultRrule: data.defaultRrule,
-      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
-    },
   )
   showCreateForMove.value = false
   await submitMoveItem(newList.id)
@@ -2510,11 +2525,6 @@ async function submitCreateListAndCopy(data: ChecklistFormData) {
     data.description || null,
     data.icon || null,
     data.color || null,
-    {
-      defaultRecurrenceMode: data.defaultRecurrenceMode,
-      defaultRrule: data.defaultRrule,
-      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
-    },
   )
   showCreateForCopy.value = false
   await submitCopyItem(newList.id)
@@ -2837,6 +2847,8 @@ const strings = {
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
   editList: t('pantry', 'Edit list'),
+  // TRANSLATORS: Menu entry that opens the values new items on this list start with.
+  itemDefaults: t('pantry', 'Item defaults'),
   // TRANSLATORS: Verb, toolbar action that creates a copy of this list.
   duplicateList: t('pantry', 'Duplicate list'),
   // TRANSLATORS: Button that opens Shopping Mode for this list.
@@ -2956,6 +2968,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         icon: PencilIcon,
         priority: 4,
         onClick: () => (editingList.value = true),
+      })
+    }
+    if (canEditItemDefaults.value) {
+      actions.push({
+        key: 'item-defaults',
+        label: strings.itemDefaults,
+        icon: TuneVariantIcon,
+        alwaysCollapsed: true,
+        onClick: openItemDefaults,
       })
     }
     if (list.value && can.value.canCreateLists) {

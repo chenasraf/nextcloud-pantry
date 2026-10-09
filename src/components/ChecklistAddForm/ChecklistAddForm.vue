@@ -98,6 +98,19 @@
             </template>
             {{ barcode ? strings.barcodeAttached : strings.barcode }}
           </PantryChip>
+          <NcButton
+            v-if="showDefaultsButton"
+            class="checklist-add__defaults"
+            variant="tertiary-no-background"
+            type="button"
+            :aria-label="strings.itemDefaults"
+            :title="strings.itemDefaults"
+            @click="$emit('open-defaults')"
+          >
+            <template #icon>
+              <TuneVariantIcon :size="18" />
+            </template>
+          </NcButton>
         </template>
       </ItemFieldChips>
 
@@ -137,6 +150,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PlusIcon from '@icons/Plus.vue'
 import BarcodeScanIcon from '@icons/BarcodeScan.vue'
+import TuneVariantIcon from '@icons/TuneVariant.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { defaultCustomFieldValues } from '@/components/ItemCustomFieldsEditor/defaults'
 import ItemFieldChips, { type ItemFieldSection } from '@/components/ItemFieldChips'
@@ -194,6 +208,8 @@ const props = withDefaults(
     currentListId?: number | null
     /** Currency preselected for new prices (house's last-used). */
     defaultCurrency?: string
+    /** Offer a shortcut to the list's item defaults at the end of the chip row. */
+    showDefaultsButton?: boolean
   }>(),
   {
     defaultRecurrenceKind: 'none',
@@ -205,6 +221,7 @@ const props = withDefaults(
     reuseCandidates: () => [],
     currentListId: null,
     defaultCurrency: DEFAULT_CURRENCY,
+    showDefaultsButton: false,
   },
 )
 
@@ -214,6 +231,7 @@ const emit = defineEmits<{
     value: { kind: RecurrenceKind; rrule: string | null; repeatFromCompletion: boolean },
   ]
   'reuse-existing': [item: ChecklistItem]
+  'open-defaults': []
 }>()
 
 const name = ref('')
@@ -580,6 +598,8 @@ const strings = {
   barcode: t('pantry', 'Barcode'),
   // TRANSLATORS: State of the barcode chip once a barcode has been attached to the item being added.
   barcodeAttached: t('pantry', 'Barcode attached'),
+  // TRANSLATORS: Tooltip of the button that opens the values new items on this list start with.
+  itemDefaults: t('pantry', 'Item defaults'),
   // TRANSLATORS: Header above the list of existing items that match what the user is typing, offered so they can reuse one instead of adding a duplicate.
   suggestionsHeader: t('pantry', 'Already on this list'),
 }
@@ -666,6 +686,11 @@ const strings = {
 
   &__submit--compact {
     margin-block-start: -6px;
+  }
+
+  // Sits at the end of the chip row, apart from the field chips.
+  &__defaults {
+    margin-inline-start: auto;
   }
 
   &__list-option {
