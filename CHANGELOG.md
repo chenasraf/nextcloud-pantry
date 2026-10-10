@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.36.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.35.1...v0.36.0) (2026-10-10)
+
+
+### Features
+
+* **lists:** per-list item defaults ([#291](https://github.com/chenasraf/nextcloud-pantry/issues/291)) ([797e207](https://github.com/chenasraf/nextcloud-pantry/commit/797e2071aa84dc5163e1e5b8d31e350f5bf65789))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([5e008ca](https://github.com/chenasraf/nextcloud-pantry/commit/5e008cae90cf71d1ab1204fc440857f56d85f4fe))
+* **l10n:** Update translations from Transifex ([7c004ff](https://github.com/chenasraf/nextcloud-pantry/commit/7c004ffc8e3e7cd1be841f6e66ed78df61d34fc5))
+* **l10n:** Update translations from Transifex ([c8c7380](https://github.com/chenasraf/nextcloud-pantry/commit/c8c738030c767327ef6e0d01311c9b4b315550e7))
+
 ## [0.35.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.35.0...v0.35.1) (2026-10-07)
 
 
