@@ -14,7 +14,9 @@ use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\ListRoleMapper;
+use OCA\Pantry\Migration\Version39Date20261009000000;
 use OCA\Pantry\Service\ChecklistService;
+use OCA\Pantry\Service\ItemDefaults;
 use OCA\Pantry\Service\RecurrenceService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -1040,12 +1042,28 @@ class ChecklistServiceTest extends TestCase {
 		$list->setId($overrides['id'] ?? 3);
 		$list->setHouseId(1);
 		$list->setName('Groceries');
-		$list->setDefaultRecurrenceMode($overrides['mode'] ?? Checklist::RECURRENCE_MODE_REMEMBER);
-		$list->setDefaultRecurrenceKind($overrides['kind'] ?? Checklist::RECURRENCE_KIND_NONE);
-		$list->setDefaultRrule($overrides['rrule'] ?? null);
-		$list->setDefaultRepeatFromCompletion($overrides['repeatFromCompletion'] ?? false);
+		$entry = Version39Date20261009000000::recurrenceEntry(
+			$overrides['mode'] ?? Checklist::RECURRENCE_MODE_REMEMBER,
+			$overrides['kind'] ?? Checklist::RECURRENCE_KIND_NONE,
+			$overrides['rrule'] ?? null,
+			$overrides['repeatFromCompletion'] ?? false,
+		);
+		$list->setItemDefaults($entry === null ? null : ItemDefaults::encode(['recurrence' => $entry]));
 		$this->listMapper->method('findById')->willReturn($list);
 		return $list;
+	}
+
+	/**
+	 * @return array{mode: string, kind: string, rrule: string|null, repeatFromCompletion: bool}
+	 */
+	private function recurrenceOf(Checklist $list): array {
+		$json = $list->jsonSerialize();
+		return [
+			'mode' => $json['defaultRecurrenceMode'],
+			'kind' => $json['defaultRecurrenceKind'],
+			'rrule' => $json['defaultRrule'],
+			'repeatFromCompletion' => $json['defaultRepeatFromCompletion'],
+		];
 	}
 
 	public function testNewListRemembersTheLastRecurrenceUsed(): void {
@@ -1053,8 +1071,9 @@ class ChecklistServiceTest extends TestCase {
 
 		$list = $this->svc->createList(1, 'Groceries', null);
 
-		$this->assertSame(Checklist::RECURRENCE_MODE_REMEMBER, $list->getDefaultRecurrenceMode());
-		$this->assertSame(Checklist::RECURRENCE_KIND_NONE, $list->getDefaultRecurrenceKind());
+		$this->assertSame(Checklist::RECURRENCE_MODE_REMEMBER, $this->recurrenceOf($list)['mode']);
+		$this->assertSame(Checklist::RECURRENCE_KIND_NONE, $this->recurrenceOf($list)['kind']);
+		$this->assertSame(ItemDefaults::MODE_REMEMBER, $list->jsonSerialize()['itemDefaults']['recurrence']['mode']);
 	}
 
 	public function testPinningARecurrenceAlsoSetsWhatNewItemsStartWith(): void {
@@ -1064,8 +1083,12 @@ class ChecklistServiceTest extends TestCase {
 			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_ONCE,
 		]);
 
-		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $list->getDefaultRecurrenceMode());
-		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $list->getDefaultRecurrenceKind());
+		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $this->recurrenceOf($list)['mode']);
+		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $this->recurrenceOf($list)['kind']);
+		$this->assertSame(
+			['mode' => ItemDefaults::MODE_FIXED, 'value' => ['kind' => 'once', 'rrule' => null, 'repeatFromCompletion' => false]],
+			$list->jsonSerialize()['itemDefaults']['recurrence'],
+		);
 	}
 
 	public function testPinningARecurringDefaultWithoutARuleFallsBackToWeekly(): void {
@@ -1075,7 +1098,27 @@ class ChecklistServiceTest extends TestCase {
 			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_RECURRING,
 		]);
 
-		$this->assertSame('FREQ=WEEKLY;INTERVAL=1', $list->getDefaultRrule());
+		$this->assertSame('FREQ=WEEKLY;INTERVAL=1', $this->recurrenceOf($list)['rrule']);
+	}
+
+	public function testPinningStaplesClearsTheRecurrenceDefault(): void {
+		$list = $this->makeListWithRecurrence(['mode' => Checklist::RECURRENCE_KIND_ONCE]);
+
+		$this->svc->updateList(3, [
+			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_NONE,
+		]);
+
+		$this->assertSame(Checklist::RECURRENCE_KIND_NONE, $this->recurrenceOf($list)['mode']);
+		$this->assertSame(['mode' => ItemDefaults::MODE_NONE], $list->jsonSerialize()['itemDefaults']['recurrence']);
+	}
+
+	public function testUpdatingOtherListFieldsLeavesItemDefaultsAlone(): void {
+		$list = $this->makeListWithRecurrence(['mode' => Checklist::RECURRENCE_KIND_ONCE]);
+		$before = $list->getItemDefaults();
+
+		$this->svc->updateList(3, ['name' => 'Pharmacy']);
+
+		$this->assertSame($before, $list->getItemDefaults());
 	}
 
 	public function testARecurrenceThatIsNotRecurringCarriesNoRule(): void {
@@ -1087,11 +1130,11 @@ class ChecklistServiceTest extends TestCase {
 		]);
 
 		$this->svc->updateList(3, [
-			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_NONE,
+			'defaultRecurrenceMode' => Checklist::RECURRENCE_KIND_ONCE,
 		]);
 
-		$this->assertNull($list->getDefaultRrule());
-		$this->assertFalse($list->getDefaultRepeatFromCompletion());
+		$this->assertNull($this->recurrenceOf($list)['rrule']);
+		$this->assertFalse($this->recurrenceOf($list)['repeatFromCompletion']);
 	}
 
 	public function testRememberingLeavesTheModeAloneWhileTrackingTheLastItemAdded(): void {
@@ -1103,10 +1146,12 @@ class ChecklistServiceTest extends TestCase {
 			'defaultRepeatFromCompletion' => true,
 		]);
 
-		$this->assertSame(Checklist::RECURRENCE_MODE_REMEMBER, $list->getDefaultRecurrenceMode());
-		$this->assertSame(Checklist::RECURRENCE_KIND_RECURRING, $list->getDefaultRecurrenceKind());
-		$this->assertSame('FREQ=DAILY;INTERVAL=2', $list->getDefaultRrule());
-		$this->assertTrue($list->getDefaultRepeatFromCompletion());
+		$this->assertSame([
+			'mode' => Checklist::RECURRENCE_MODE_REMEMBER,
+			'kind' => Checklist::RECURRENCE_KIND_RECURRING,
+			'rrule' => 'FREQ=DAILY;INTERVAL=2',
+			'repeatFromCompletion' => true,
+		], $this->recurrenceOf($list));
 	}
 
 	public function testTheOnceToggleFromOlderClientsLandsOnTheRecurrenceDefault(): void {
@@ -1114,7 +1159,7 @@ class ChecklistServiceTest extends TestCase {
 
 		$this->svc->updateList(3, ['deleteOnDoneDefault' => true]);
 
-		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $list->getDefaultRecurrenceKind());
+		$this->assertSame(Checklist::RECURRENCE_KIND_ONCE, $this->recurrenceOf($list)['kind']);
 		$this->assertTrue($list->jsonSerialize()['deleteOnDoneDefault']);
 	}
 
@@ -1337,6 +1382,33 @@ class ChecklistServiceTest extends TestCase {
 
 		$this->assertSame(131, $copies[0]->getCategoryId(), 'A list-scoped category is remapped');
 		$this->assertSame(32, $copies[1]->getCategoryId(), 'A house-wide category is shared');
+	}
+
+	public function testDuplicateListPointsItemDefaultsAtTheCopiedCategory(): void {
+		$scoped = new \OCA\Pantry\Db\Category();
+		$scoped->setId(31);
+		$scoped->setHouseId(1);
+		$scoped->setListId(5);
+		$scoped->setName('Engine room');
+		$scoped->setIcon('wrench');
+		$scoped->setColor('#4caf50');
+		$this->categoryMapper->method('findByHouse')->willReturn([$scoped]);
+		$this->categoryMapper->method('insert')
+			->willReturnCallback(static function (\OCA\Pantry\Db\Category $c) {
+				$c->setId(131);
+				return $c;
+			});
+		$source = $this->makeSourceList();
+		$source->setItemDefaults(ItemDefaults::encode([
+			'category' => ['mode' => 'fixed', 'value' => 31],
+			'stores' => ['mode' => 'remember', 'value' => [2]],
+		]));
+
+		[$copy] = $this->captureDuplicate($source, [], true);
+
+		$defaults = ItemDefaults::decode($copy->getItemDefaults());
+		$this->assertSame(['mode' => 'fixed', 'value' => 131], $defaults['category']);
+		$this->assertSame(['mode' => 'remember', 'value' => [2]], $defaults['stores']);
 	}
 
 	public function testDuplicateListCarriesTheSourceRoleAccess(): void {

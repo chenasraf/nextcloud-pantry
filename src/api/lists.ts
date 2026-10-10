@@ -3,9 +3,8 @@ import type {
   Checklist,
   ChecklistItem,
   ItemCustomFieldValue,
+  ItemDefaultsPatch,
   ItemPrice,
-  RecurrenceKind,
-  RecurrenceMode,
 } from './types'
 
 export async function listLists(houseId: number, sortBy?: string): Promise<Checklist[]> {
@@ -28,18 +27,12 @@ export async function createList(
   description?: string | null,
   icon?: string | null,
   color?: string | null,
-  recurrenceDefault?: {
-    defaultRecurrenceMode?: RecurrenceMode
-    defaultRrule?: string | null
-    defaultRepeatFromCompletion?: boolean
-  },
 ): Promise<Checklist> {
   const resp = await ocs.post<Checklist>(`/houses/${houseId}/lists`, {
     name,
     description: description ?? null,
     icon: icon ?? null,
     color: color ?? null,
-    ...recurrenceDefault,
   })
   return resp.data
 }
@@ -58,13 +51,19 @@ export async function updateList(
     icon?: string
     color?: string | null
     sortOrder?: number
-    defaultRecurrenceMode?: RecurrenceMode
-    defaultRecurrenceKind?: RecurrenceKind
-    defaultRrule?: string | null
-    defaultRepeatFromCompletion?: boolean
   },
 ): Promise<Checklist> {
   const resp = await ocs.patch<Checklist>(`/houses/${houseId}/lists/${listId}`, patch)
+  return resp.data
+}
+
+/** Merge a patch into the list's item defaults, key by key (custom fields by field id). */
+export async function updateItemDefaults(
+  houseId: number,
+  listId: number,
+  patch: ItemDefaultsPatch,
+): Promise<Checklist> {
+  const resp = await ocs.patch<Checklist>(`/houses/${houseId}/lists/${listId}/item-defaults`, patch)
   return resp.data
 }
 

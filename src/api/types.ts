@@ -68,6 +68,56 @@ export type RecurrenceMode = 'remember' | RecurrenceKind
 /** The recurrence a new item starts with. */
 export type RecurrenceKind = 'none' | 'once' | 'recurring'
 
+/**
+ * How a list pre-fills one field of a new item: leave it empty (`none`), always
+ * use `value` (`fixed`), or reuse what the last item added used (`remember`).
+ */
+export type ItemDefaultMode = 'none' | 'fixed' | 'remember'
+
+export interface ItemDefaultEntry<T> {
+  mode: ItemDefaultMode
+  value?: T | null
+}
+
+export interface RecurrenceDefaultValue {
+  kind: RecurrenceKind
+  rrule: string | null
+  repeatFromCompletion: boolean
+}
+
+/** The value columns a custom-field default carries; only the field type's own column is set. */
+export type ItemDefaultFieldValue = Partial<
+  Pick<
+    ItemCustomFieldValue,
+    'valueText' | 'valueNumber' | 'valueBool' | 'valueDate' | 'valueOptionId' | 'offsetDays'
+  >
+>
+
+/** A custom field's default on a list. A field without one inherits its own default. */
+export interface ItemDefaultField {
+  fieldId: number
+  mode: ItemDefaultMode
+  value?: ItemDefaultFieldValue | null
+}
+
+export interface ItemDefaults {
+  recurrence: ItemDefaultEntry<RecurrenceDefaultValue>
+  stores: ItemDefaultEntry<number[]>
+  category: ItemDefaultEntry<number>
+  labels: ItemDefaultEntry<number[]>
+  quantity: ItemDefaultEntry<string>
+  fields: ItemDefaultField[]
+}
+
+/** Keys of {@link ItemDefaults} holding a single entry. */
+export type ItemDefaultKey = Exclude<keyof ItemDefaults, 'fields'>
+
+export type ItemDefaultsPatch = Partial<{
+  [K in ItemDefaultKey]: Partial<ItemDefaults[K]>
+}> & {
+  fields?: (Partial<ItemDefaultField> & { fieldId: number })[]
+}
+
 export interface Checklist {
   id: number
   houseId: number
@@ -76,6 +126,8 @@ export interface Checklist {
   icon: string
   color: string | null
   sortOrder: number
+  /** Values new items on this list start with. Present when the server has `list-item-defaults`. */
+  itemDefaults?: ItemDefaults
   /** True when new items default to one-time. Derived from the recurrence default. */
   deleteOnDoneDefault: boolean
   defaultRecurrenceMode: RecurrenceMode

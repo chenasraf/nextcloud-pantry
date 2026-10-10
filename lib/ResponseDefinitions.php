@@ -62,6 +62,23 @@ namespace OCA\Pantry;
  *
  * @psalm-type PantryChecklistIcon = 'clipboard-check'|'clipboard-list'|'format-list-checks'|'cart'|'basket'|'star'|'heart'|'home'|'calendar'|'bell'|'flag'|'bookmark'|'pin'|'map-marker'|'briefcase'|'wrench'|'silverware'|'coffee'|'gift'|'book'|'school'|'palette'|'camera'|'music'|'gamepad'|'run'|'dumbbell'|'pill'|'paw'|'flower'|'tree'|'broom'|'lightbulb'|'package'|'car'|'bike'|'beach'|'tag'
  *
+ * @psalm-type PantryItemDefaultMode = 'none'|'fixed'|'remember'
+ *
+ * @psalm-type PantryItemDefaultField = array{
+ *     fieldId: int,
+ *     mode: PantryItemDefaultMode,
+ *     value?: array{valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null}|null,
+ * }
+ *
+ * @psalm-type PantryItemDefaults = array{
+ *     recurrence: array{mode: PantryItemDefaultMode, value?: array{kind: 'none'|'once'|'recurring', rrule: string|null, repeatFromCompletion: bool}},
+ *     stores: array{mode: PantryItemDefaultMode, value?: list<int>},
+ *     category: array{mode: PantryItemDefaultMode, value?: int|null},
+ *     labels: array{mode: PantryItemDefaultMode, value?: list<int>},
+ *     quantity: array{mode: 'none'|'fixed', value?: string},
+ *     fields: list<PantryItemDefaultField>,
+ * }
+ *
  * @psalm-type PantryList = array{
  *     id: int,
  *     houseId: int,
@@ -70,6 +87,7 @@ namespace OCA\Pantry;
  *     icon: PantryChecklistIcon,
  *     color: PantryChecklistColor|null,
  *     sortOrder: int,
+ *     itemDefaults: PantryItemDefaults,
  *     deleteOnDoneDefault: bool,
  *     defaultRecurrenceMode: 'remember'|'none'|'once'|'recurring',
  *     defaultRecurrenceKind: 'none'|'once'|'recurring',

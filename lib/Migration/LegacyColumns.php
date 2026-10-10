@@ -43,6 +43,15 @@ final class LegacyColumns {
 			// default by Version32 and dropped by Version33. If the drop drifted,
 			// every list load throws "deleteOnDoneDefault is not a valid attribute".
 			self::col('lists', 'delete_on_done_default'),
+
+			// lists — per-column recurrence default (Version32) folded into
+			// item_defaults by Version39 and dropped by Version40. If the drop
+			// drifted, every list load throws "defaultRecurrenceMode is not a
+			// valid attribute".
+			self::col('lists', 'default_recurrence_mode'),
+			self::col('lists', 'default_recurrence_kind'),
+			self::col('lists', 'default_rrule'),
+			self::col('lists', 'default_repeat_from_completion'),
 		];
 	}
 

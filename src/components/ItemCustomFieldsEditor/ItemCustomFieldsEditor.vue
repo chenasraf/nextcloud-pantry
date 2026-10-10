@@ -3,7 +3,7 @@
     <FieldCard
       v-for="field in applicableFields"
       :key="field.id"
-      :label="field.type === 'checkbox' ? undefined : field.name"
+      :label="field.type === 'checkbox' || asDefaults ? undefined : field.name"
       class="cf-values__field"
     >
       <NcTextField
@@ -67,7 +67,7 @@
           :placeholder="strings.daysFromToday"
           @update:model-value="setOffset(field.id, $event)"
         />
-        <div v-if="draft[field.id]?.date" class="cf-values__anchor">
+        <div v-if="draft[field.id]?.date && !asDefaults" class="cf-values__anchor">
           <span class="cf-values__due">{{ dueLabel(draft[field.id]?.date) }}</span>
           <NcButton variant="tertiary" @click="reanchor(field.id)">
             <template #icon><RefreshIcon :size="18" /></template>
@@ -76,7 +76,7 @@
         </div>
       </div>
 
-      <div v-if="showReminderOverride(field)" class="cf-values__reminder">
+      <div v-if="!asDefaults && showReminderOverride(field)" class="cf-values__reminder">
         <hr class="cf-values__divider" />
         <NcCheckboxRadioSwitch
           :model-value="remindOn(field)"
@@ -126,6 +126,13 @@ const props = defineProps<{
   houseId: number
   /** The item's list, so list-scoped fields apply. */
   listId: number | null
+  /** Show only these fields instead of every field that applies to the list. */
+  fieldIds?: number[] | null
+  /**
+   * Editing a list's default rather than an item's value. Reminders and
+   * re-anchoring belong to a single item, so they are hidden.
+   */
+  asDefaults?: boolean
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: ItemCustomFieldValue[]] }>()
 
@@ -157,7 +164,11 @@ onMounted(() => void fields.load())
 
 /** House-wide ∪ this list's fields, in display order. */
 const applicableFields = computed<FieldDefinition[]>(() =>
-  fields.items.value.filter((f) => f.listId == null || f.listId === props.listId),
+  fields.items.value.filter(
+    (f) =>
+      (f.listId == null || f.listId === props.listId) &&
+      (props.fieldIds == null || props.fieldIds.includes(f.id)),
+  ),
 )
 
 interface DraftValue {

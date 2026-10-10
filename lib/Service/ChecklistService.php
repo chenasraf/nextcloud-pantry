@@ -31,7 +31,6 @@ class ChecklistService {
 	use TTransactional;
 
 	/** Rule a list falls back to when it defaults to recurring items without naming one. */
-	private const DEFAULT_RRULE = 'FREQ=WEEKLY;INTERVAL=1';
 
 	/**
 	 * Per-list house lookups, memoized for the lifetime of the service so the
@@ -131,6 +130,7 @@ class ChecklistService {
 		}
 		$list->setColor($color !== null && $color !== '' ? $color : null);
 		$list->setSortOrder(0);
+		$list->setItemDefaults(ItemDefaults::encode(ItemDefaults::initial()));
 		$this->applyRecurrenceDefault($list, $recurrenceDefault);
 		$list->setCreatedAt($now);
 		$list->setUpdatedAt($now);
@@ -187,7 +187,21 @@ class ChecklistService {
 	}
 
 	/**
-	 * Apply the list's recurrence default.
+	 * Store a list's item defaults, already merged and validated by
+	 * {@see ItemDefaultsService::merge()}.
+	 *
+	 * @param array<string, mixed> $defaults
+	 */
+	public function setItemDefaults(Checklist $list, array $defaults): Checklist {
+		$list->setItemDefaults(ItemDefaults::encode($defaults));
+		$list->setUpdatedAt(time());
+		$this->listMapper->update($list);
+		return $list;
+	}
+
+	/**
+	 * Apply the per-column recurrence default that clients predating item
+	 * defaults send, onto the item defaults' recurrence entry.
 	 *
 	 * `defaultRecurrenceMode` is what an editor picks; the other keys are the
 	 * recurrence new items actually start with, which the add-item form keeps
@@ -196,49 +210,49 @@ class ChecklistService {
 	 * @param array<string, mixed> $patch
 	 */
 	private function applyRecurrenceDefault(Checklist $list, array $patch): void {
+		$keys = ['defaultRecurrenceMode', 'defaultRecurrenceKind', 'deleteOnDoneDefault', 'defaultRrule', 'defaultRepeatFromCompletion'];
+		if (array_intersect($keys, array_keys($patch)) === []) {
+			return;
+		}
+		$defaults = ItemDefaults::decode($list->getItemDefaults());
+		$legacy = ItemDefaults::legacyRecurrence($defaults);
+		$mode = $legacy['mode'];
+		$value = ['kind' => $legacy['kind'], 'rrule' => $legacy['rrule'], 'repeatFromCompletion' => $legacy['repeatFromCompletion']];
+
 		if (array_key_exists('defaultRecurrenceMode', $patch)) {
 			$mode = (string)$patch['defaultRecurrenceMode'];
 			if (!in_array($mode, Checklist::RECURRENCE_MODES, true)) {
 				throw new \InvalidArgumentException('Unknown recurrence default: ' . $mode);
 			}
-			$list->setDefaultRecurrenceMode($mode);
 			if ($mode !== Checklist::RECURRENCE_MODE_REMEMBER) {
-				$list->setDefaultRecurrenceKind($mode);
+				$value['kind'] = $mode;
 			}
 		}
 
 		if (array_key_exists('defaultRecurrenceKind', $patch)) {
-			$kind = (string)$patch['defaultRecurrenceKind'];
-			if (!in_array($kind, Checklist::RECURRENCE_KINDS, true)) {
-				throw new \InvalidArgumentException('Unknown recurrence: ' . $kind);
+			$value['kind'] = (string)$patch['defaultRecurrenceKind'];
+			if (!in_array($value['kind'], Checklist::RECURRENCE_KINDS, true)) {
+				throw new \InvalidArgumentException('Unknown recurrence: ' . $value['kind']);
 			}
-			$list->setDefaultRecurrenceKind($kind);
 		} elseif (array_key_exists('deleteOnDoneDefault', $patch)) {
 			// Clients predating the recurrence default write back only the
 			// "Once" choice, which lands on the same effective default.
-			$list->setDefaultRecurrenceKind(
-				(bool)$patch['deleteOnDoneDefault'] ? Checklist::RECURRENCE_KIND_ONCE : Checklist::RECURRENCE_KIND_NONE,
-			);
+			$value['kind'] = (bool)$patch['deleteOnDoneDefault'] ? Checklist::RECURRENCE_KIND_ONCE : Checklist::RECURRENCE_KIND_NONE;
 		}
-
 		if (array_key_exists('defaultRrule', $patch)) {
-			$rrule = $patch['defaultRrule'];
-			$rrule = is_string($rrule) ? trim($rrule) : '';
-			if ($rrule !== '') {
-				$this->recurrence->validate($rrule);
-			}
-			$list->setDefaultRrule($rrule !== '' ? $rrule : null);
+			$value['rrule'] = is_string($patch['defaultRrule']) ? $patch['defaultRrule'] : null;
 		}
 		if (array_key_exists('defaultRepeatFromCompletion', $patch)) {
-			$list->setDefaultRepeatFromCompletion((bool)$patch['defaultRepeatFromCompletion']);
+			$value['repeatFromCompletion'] = (bool)$patch['defaultRepeatFromCompletion'];
 		}
 
-		if ($list->getDefaultRecurrenceKind() !== Checklist::RECURRENCE_KIND_RECURRING) {
-			$list->setDefaultRrule(null);
-			$list->setDefaultRepeatFromCompletion(false);
-		} elseif ($list->getDefaultRrule() === null) {
-			$list->setDefaultRrule(self::DEFAULT_RRULE);
+		$entry = ItemDefaults::recurrenceFromLegacy($mode, $value, $this->recurrence);
+		if ($entry['mode'] === ItemDefaults::MODE_NONE) {
+			unset($defaults[ItemDefaults::KEY_RECURRENCE]);
+		} else {
+			$defaults[ItemDefaults::KEY_RECURRENCE] = $entry;
 		}
+		$list->setItemDefaults(ItemDefaults::encode($defaults));
 	}
 
 	/**
@@ -371,10 +385,6 @@ class ChecklistService {
 		$copy->setIcon($source->getIcon());
 		$copy->setColor($source->getColor());
 		$copy->setSortOrder($source->getSortOrder());
-		$copy->setDefaultRecurrenceMode($source->getDefaultRecurrenceMode());
-		$copy->setDefaultRecurrenceKind($source->getDefaultRecurrenceKind());
-		$copy->setDefaultRrule($source->getDefaultRrule());
-		$copy->setDefaultRepeatFromCompletion($source->getDefaultRepeatFromCompletion());
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
 		$copy = $this->listMapper->insert($copy);
@@ -387,14 +397,21 @@ class ChecklistService {
 		$categoryMap = $this->duplicateListCategories($houseId, $sourceId, $copyId, $now);
 		$labelMap = $this->duplicateListLabels($houseId, $sourceId, $copyId, $now);
 		[$fieldMap, $optionMap] = $this->duplicateListFields($houseId, $sourceId, $copyId, $now);
+		$maps = [
+			'categories' => $categoryMap,
+			'labels' => $labelMap,
+			'fields' => $fieldMap,
+			'options' => $optionMap,
+		];
+
+		$sourceDefaults = ItemDefaults::decode($source->getItemDefaults());
+		if ($sourceDefaults !== []) {
+			$copy->setItemDefaults(ItemDefaults::encode(ItemDefaults::remap($sourceDefaults, $maps)));
+			$this->listMapper->update($copy);
+		}
 
 		foreach ($this->itemMapper->findByList($sourceId) as $item) {
-			$this->duplicateItemInto($item, $copyId, $resetDone, $addedBy, $now, $duplicateImage, [
-				'categories' => $categoryMap,
-				'labels' => $labelMap,
-				'fields' => $fieldMap,
-				'options' => $optionMap,
-			]);
+			$this->duplicateItemInto($item, $copyId, $resetDone, $addedBy, $now, $duplicateImage, $maps);
 		}
 
 		return $copy;

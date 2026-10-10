@@ -76,6 +76,7 @@ class ChecklistControllerStoreSerializationTest extends TestCase {
 			$this->createMock(PrefsService::class),
 			$this->createMock(PermissionService::class),
 			$this->createMock(ShareService::class),
+			$this->createMock(\OCA\Pantry\Service\ItemDefaultsService::class),
 			$this->createMock(IUserSession::class),
 			$this->logger,
 		);

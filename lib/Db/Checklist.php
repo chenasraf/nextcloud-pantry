@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Db;
 
+use OCA\Pantry\Service\ItemDefaults;
 use OCP\AppFramework\Db\Entity;
 
 /**
@@ -22,14 +23,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setColor(?string $color)
  * @method int getSortOrder()
  * @method void setSortOrder(int $sortOrder)
- * @method string getDefaultRecurrenceMode()
- * @method void setDefaultRecurrenceMode(string $defaultRecurrenceMode)
- * @method string getDefaultRecurrenceKind()
- * @method void setDefaultRecurrenceKind(string $defaultRecurrenceKind)
- * @method string|null getDefaultRrule()
- * @method void setDefaultRrule(?string $defaultRrule)
- * @method bool getDefaultRepeatFromCompletion()
- * @method void setDefaultRepeatFromCompletion(bool $defaultRepeatFromCompletion)
+ * @method string|null getItemDefaults()
+ * @method void setItemDefaults(?string $itemDefaults)
  * @method int getCreatedAt()
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
@@ -68,10 +63,8 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected string $icon = 'clipboard-check';
 	protected ?string $color = null;
 	protected int $sortOrder = 0;
-	protected string $defaultRecurrenceMode = self::RECURRENCE_MODE_REMEMBER;
-	protected string $defaultRecurrenceKind = self::RECURRENCE_KIND_NONE;
-	protected ?string $defaultRrule = null;
-	protected bool $defaultRepeatFromCompletion = false;
+	/** JSON, see {@see ItemDefaults}. */
+	protected ?string $itemDefaults = null;
 	protected int $createdAt = 0;
 	protected int $updatedAt = 0;
 	protected ?int $deletedAt = null;
@@ -81,22 +74,16 @@ class Checklist extends Entity implements \JsonSerializable {
 	public function __construct() {
 		$this->addType('houseId', 'integer');
 		$this->addType('sortOrder', 'integer');
-		$this->addType('defaultRepeatFromCompletion', 'boolean');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 		$this->addType('deletedAt', 'integer');
 		$this->addType('archivedAt', 'integer');
 		$this->addType('lastCompletedAt', 'integer');
-		// Force the defaulted fields to be included in INSERTs even when their
-		// value matches the PHP default — the magic setter wouldn't otherwise
-		// mark them dirty. fromRow() resets updated fields after hydration, so
-		// reads are unaffected.
-		$this->markFieldUpdated('defaultRecurrenceMode');
-		$this->markFieldUpdated('defaultRecurrenceKind');
-		$this->markFieldUpdated('defaultRepeatFromCompletion');
 	}
 
 	public function jsonSerialize(): array {
+		$defaults = ItemDefaults::decode($this->itemDefaults);
+		$recurrence = ItemDefaults::legacyRecurrence($defaults);
 		return [
 			'id' => $this->id,
 			'houseId' => $this->houseId,
@@ -105,11 +92,12 @@ class Checklist extends Entity implements \JsonSerializable {
 			'icon' => $this->icon,
 			'color' => $this->color,
 			'sortOrder' => $this->sortOrder,
-			'deleteOnDoneDefault' => $this->defaultRecurrenceKind === self::RECURRENCE_KIND_ONCE,
-			'defaultRecurrenceMode' => $this->defaultRecurrenceMode,
-			'defaultRecurrenceKind' => $this->defaultRecurrenceKind,
-			'defaultRrule' => $this->defaultRrule,
-			'defaultRepeatFromCompletion' => $this->defaultRepeatFromCompletion,
+			'itemDefaults' => ItemDefaults::complete($defaults),
+			'deleteOnDoneDefault' => $recurrence['kind'] === self::RECURRENCE_KIND_ONCE,
+			'defaultRecurrenceMode' => $recurrence['mode'],
+			'defaultRecurrenceKind' => $recurrence['kind'],
+			'defaultRrule' => $recurrence['rrule'],
+			'defaultRepeatFromCompletion' => $recurrence['repeatFromCompletion'],
 			'createdAt' => $this->createdAt,
 			'updatedAt' => $this->updatedAt,
 			'deletedAt' => $this->deletedAt,

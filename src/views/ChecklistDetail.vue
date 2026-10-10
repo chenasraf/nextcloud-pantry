@@ -143,17 +143,16 @@
         ref="addForm"
         :house-id="houseIdNum"
         :adding="adding"
-        :default-recurrence-kind="defaultRecurrence.kind"
-        :default-rrule="defaultRecurrence.rrule"
-        :default-repeat-from-completion="defaultRecurrence.repeatFromCompletion"
-        :remembers-recurrence="defaultRecurrence.remembers"
+        :item-defaults="list?.itemDefaults ?? null"
         :require-list-selector="isMeta"
         :available-lists="isMeta ? allLists : []"
         :reuse-candidates="reuseCandidates"
         :current-list-id="isMeta ? null : listIdNum"
         :default-currency="defaultCurrency"
+        :show-defaults-button="!isMeta && canEditItemDefaults"
+        @open-defaults="openItemDefaults"
         @add="handleAdd"
-        @update:recurrence-default="handleRecurrenceDefaultChange"
+        @remember-defaults="handleRememberDefaults"
         @reuse-existing="onReuseFromSuggestion"
       />
 
@@ -441,6 +440,15 @@
       :list="list"
       @update:open="(v) => (editingList = v)"
       @save="submitEditList"
+      @open-item-defaults="openItemDefaults"
+    />
+
+    <ItemDefaultsDialog
+      v-if="list"
+      :open="editingItemDefaults"
+      :list="list"
+      @update:open="(v) => (editingItemDefaults = v)"
+      @saved="(updated) => (list = updated)"
     />
 
     <ChecklistDuplicateDialog
@@ -814,10 +822,12 @@ import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
 import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ViewListIcon from '@icons/ViewList.vue'
 import PencilIcon from '@icons/Pencil.vue'
+import TuneVariantIcon from '@icons/TuneVariant.vue'
 import FileExportIcon from '@icons/FileExport.vue'
 import FileImportIcon from '@icons/FileImport.vue'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
+import ItemDefaultsDialog from '@/components/ItemDefaultsDialog'
 import {
   ChecklistFilter,
   NO_CATEGORY_ID,
@@ -862,7 +872,7 @@ import { useLabels } from '@/composables/useLabels'
 import { useStores } from '@/composables/useStores'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { useLongPress } from '@/composables/useLongPress'
-import { getList, updateList as apiUpdateList } from '@/api/lists'
+import { getList, updateItemDefaults, updateList as apiUpdateList } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
 import type {
   Checklist,
@@ -871,8 +881,9 @@ import type {
   Store,
   Label,
   ItemPrice,
-  RecurrenceKind,
+  ItemDefaultsPatch,
 } from '@/api/types'
+import { withRemembered } from '@/utils/itemDefaults'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
 import {
   getChecklistItemSort,
@@ -2092,14 +2103,21 @@ async function submitEditList(data: ChecklistFormData) {
       description: data.description,
       icon: data.icon,
       color: data.color || null,
-      defaultRecurrenceMode: data.defaultRecurrenceMode,
-      defaultRrule: data.defaultRrule,
-      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
     })
     editingList.value = false
   } catch (e) {
     showError((e as Error).message)
   }
+}
+
+const editingItemDefaults = ref(false)
+const canEditItemDefaults = computed(
+  () => !!list.value?.itemDefaults && (list.value.canEdit ?? can.value.canEditLists),
+)
+
+function openItemDefaults() {
+  editingList.value = false
+  editingItemDefaults.value = true
 }
 
 const duplicatingList = ref(false)
@@ -2122,38 +2140,23 @@ async function submitDuplicateList(data: { name: string; resetDone: boolean }) {
   }
 }
 
-/** The recurrence new items start with, from the list's default. */
-const defaultRecurrence = computed(() => {
-  const mode = list.value?.defaultRecurrenceMode ?? 'remember'
-  return {
-    kind: mode === 'remember' ? (list.value?.defaultRecurrenceKind ?? 'none') : mode,
-    rrule: list.value?.defaultRrule ?? null,
-    repeatFromCompletion: list.value?.defaultRepeatFromCompletion ?? false,
-    remembers: mode === 'remember',
+/**
+ * Store what the item just added used for the target list's "remember last"
+ * defaults. Applied locally first so the next add already sees it.
+ */
+async function handleRememberDefaults(patch: ItemDefaultsPatch, targetListId: number) {
+  const target =
+    list.value?.id === targetListId ? list.value : allLists.value.find((l) => l.id === targetListId)
+  if (!target?.itemDefaults) return
+  const setTarget = (next: Checklist) => {
+    if (list.value?.id === next.id) list.value = next
+    replaceList(next)
   }
-})
-
-async function handleRecurrenceDefaultChange(value: {
-  kind: RecurrenceKind
-  rrule: string | null
-  repeatFromCompletion: boolean
-}) {
-  if (!list.value) return
-  const prev = list.value
-  list.value = {
-    ...prev,
-    defaultRecurrenceKind: value.kind,
-    defaultRrule: value.rrule,
-    defaultRepeatFromCompletion: value.repeatFromCompletion,
-  }
+  setTarget({ ...target, itemDefaults: withRemembered(target.itemDefaults, patch) })
   try {
-    list.value = await apiUpdateList(houseIdNum.value, listIdNum.value, {
-      defaultRecurrenceKind: value.kind,
-      defaultRrule: value.rrule,
-      defaultRepeatFromCompletion: value.repeatFromCompletion,
-    })
+    setTarget(await updateItemDefaults(houseIdNum.value, targetListId, patch))
   } catch (e) {
-    list.value = prev
+    setTarget(target)
     showError((e as Error).message)
   }
 }
@@ -2337,6 +2340,7 @@ const {
   lists: allLists,
   create: createList,
   load: loadLists,
+  replace: replaceList,
   duplicate: duplicateList,
 } = useChecklists(houseIdNum.value)
 
@@ -2429,11 +2433,6 @@ async function submitCreateListAndMove(data: ChecklistFormData) {
     data.description || null,
     data.icon || null,
     data.color || null,
-    {
-      defaultRecurrenceMode: data.defaultRecurrenceMode,
-      defaultRrule: data.defaultRrule,
-      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
-    },
   )
   showCreateForMove.value = false
   await submitMoveItem(newList.id)
@@ -2510,11 +2509,6 @@ async function submitCreateListAndCopy(data: ChecklistFormData) {
     data.description || null,
     data.icon || null,
     data.color || null,
-    {
-      defaultRecurrenceMode: data.defaultRecurrenceMode,
-      defaultRrule: data.defaultRrule,
-      defaultRepeatFromCompletion: data.defaultRepeatFromCompletion,
-    },
   )
   showCreateForCopy.value = false
   await submitCopyItem(newList.id)
@@ -2837,6 +2831,8 @@ const strings = {
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
   editList: t('pantry', 'Edit list'),
+  // TRANSLATORS: Menu entry that opens the values new items on this list start with.
+  itemDefaults: t('pantry', 'Item defaults'),
   // TRANSLATORS: Verb, toolbar action that creates a copy of this list.
   duplicateList: t('pantry', 'Duplicate list'),
   // TRANSLATORS: Button that opens Shopping Mode for this list.
@@ -2956,6 +2952,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         icon: PencilIcon,
         priority: 4,
         onClick: () => (editingList.value = true),
+      })
+    }
+    if (canEditItemDefaults.value) {
+      actions.push({
+        key: 'item-defaults',
+        label: strings.itemDefaults,
+        icon: TuneVariantIcon,
+        alwaysCollapsed: true,
+        onClick: openItemDefaults,
       })
     }
     if (list.value && can.value.canCreateLists) {
