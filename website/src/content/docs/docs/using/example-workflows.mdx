@@ -1,0 +1,120 @@
+---
+title: Example workflows
+description: Ways to set up lists for groceries, one-off errands, shared chores and repeatable projects — and how they carry over from one week to the next.
+sidebar:
+  order: 0
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components'
+
+Pantry doesn't force one way of working — lists, items and [Shopping Mode](/docs/using/shopping-mode)
+can be mixed however suits your house. The workflows below are common starting points. Each one
+answers the same question: what happens to the list once you're done with it?
+
+## The weekly grocery list
+
+**One list you keep, not a new list every trip.** Lists are meant to be reused: items carry their
+stores, price, category, labels and [custom fields](/docs/using/custom-fields), and all of that
+would be lost if you started from scratch each week.
+
+<Steps>
+
+1. **Create one "Groceries" list** and add items to it whenever you notice you need something.
+
+2. **Pick a [recurrence](/docs/using/checklists#recurrence) for each item.**
+   - Milk you buy every week? Make it **Recurring**, repeating weekly on your shopping day.
+   - Something you need once — a birthday cake, a replacement bulb? Make it **One-time**, so it
+     leaves the list once you check it off.
+   - Something always on hand that you restock whenever you run out? A **Staple** stays on the list
+     after being checked, ready to un-check when it's needed again.
+
+3. **Go shopping.** Open **Start shopping** from the list, pick the stores you'll visit, and check
+   items off as they go into the cart.
+
+4. **Finish the trip** and enter what you actually paid in the review, if you want to track
+   spending. Past trips stay in your shopping history.
+
+5. **Let the list reset itself.** Recurring items come back un-checked on their schedule, one-time
+   items are gone, and the list is ready for next week — no duplicating, archiving or renaming
+   needed.
+
+</Steps>
+
+<Aside type="tip">
+	Set the list's [item defaults](/docs/using/checklists#item-defaults) so new items start the way
+	most of yours do — for example, **Recurring** every week at your usual store.
+</Aside>
+
+### Resetting by hand
+
+If you'd rather not use schedules, the **Done** section's **⋯** menu works on every checked item in
+the list at once:
+
+- **Uncheck all** returns them all to the active list, ready for the next trip.
+- **Archive all** puts them away, out of sight but available to bring back later.
+- **Remove all** moves them to the trash.
+
+## Errands and pickups
+
+**A list whose items never come back.** Package pickups, returns, one-off errands — once done,
+there's nothing to keep.
+
+<Steps>
+
+1. **Create a list** — for example "Mail pickups".
+
+2. **Open its [item defaults](/docs/using/checklists#item-defaults)** and set **Recurrence** to
+   **One-time**, so every new item leaves the list once it's checked off.
+
+3. **Add each errand** with what you need to get it done — a tracking number and pickup point in
+   the description, or in a [custom field](/docs/using/custom-fields).
+
+</Steps>
+
+The list empties itself as you go, and only shows what's still waiting.
+
+## Shared household chores
+
+**One list, mixed recurrence, the whole house working from it.** A general to-do list that anyone
+in the house can pick up from.
+
+- **Recurring** for regular chores — water the plants every few days, change the bedsheets every
+  two weeks. Turn on **Starts after completion** for chores that should come back a set time after
+  they were last done, rather than on fixed dates.
+- **One-time** for things that only need doing once — fix the cabinet hinge, call the plumber.
+
+Everyone sees the list update as items are checked off, so nobody does the same chore twice. See
+[Sharing](/docs/using/sharing) for who can see and edit a list.
+
+## A repeatable project checklist
+
+**A template list you copy each time.** Some checklists are the same every time but each run needs
+its own record — a packing list for every trip, the steps for setting up each new project, the
+checks for each move-out.
+
+<Steps>
+
+1. **Build the template** once, as a list with every step, organized with categories and labels.
+
+2. **Duplicate it for each run.** Choose **Duplicate list** from the list's menu, give the copy a
+   name — for example, the trip or project it's for — and keep **Set all items to undone** on so
+   the copy starts fresh. The copy brings along every item, category and setting.
+
+3. **Work through the copy.** The template stays untouched, ready for next time.
+
+4. **Archive the copy** when the run is over, so it's out of the way but still there to look back
+   on.
+
+</Steps>
+
+<Aside type="note">
+	Use this when each run needs its own history. For things you simply do again and again — like
+	the weekly shop — one reused list with recurring items is simpler.
+</Aside>
+
+<Aside type="tip" title="Tip: Naming your lists">
+	Name a list after what it's _for_, not when you're using it: "Groceries", "Hardware store",
+	"Chores", "Packing — beach". Reused lists keep the same name indefinitely. For duplicated lists,
+	add the run to the name — "Packing — Lisbon, May" — so finished ones are easy to tell apart in the
+	archive.
+</Aside>
