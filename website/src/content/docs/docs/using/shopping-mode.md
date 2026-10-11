@@ -121,5 +121,7 @@ house happens to list its categories. Open the category manager and choose **Per
 arrange one: pick a store, then drag its categories into the order you walk its aisles. **Use the
 shared order** drops the arrangement and hands the store back to the house-wide order.
 
+<img width="624" alt="Per-store order dialog: a store picker and the house's categories in a numbered, drag-reorderable list" src="/docs/category-store-order.png" />
+
 A store names only the categories it has been arranged with. Everything else — including one created
 after the arrangement — falls in after them, in the house-wide order.
