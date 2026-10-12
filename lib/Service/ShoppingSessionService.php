@@ -389,15 +389,33 @@ class ShoppingSessionService {
 		$cutoff = $now - $retentionDays * 86400;
 		$aged = $this->sessions->findClosedBefore($cutoff);
 		foreach ($aged as $session) {
-			$sessionId = (int)$session->getId();
-			$this->sessionMembers->deleteBySession($sessionId);
-			$this->sessionItems->deleteBySession($sessionId);
-			$this->sessionSkips->deleteBySession($sessionId);
-			$this->sessionStores->deleteBySession($sessionId);
-			$this->sessionLists->deleteBySession($sessionId);
-			$this->sessions->delete($session);
+			$this->deleteWithChildren($session);
 		}
 		return count($aged);
+	}
+
+	/**
+	 * Permanently delete a closed trip from history, with its child rows. A live
+	 * trip is refused: deleting it would pull the session out from under anyone
+	 * still shopping it.
+	 *
+	 * @throws ShoppingSessionConflictException when the session is still live.
+	 */
+	public function delete(ShoppingSession $session): void {
+		if ($session->getClosedAt() === null) {
+			throw new ShoppingSessionConflictException($session, 'Shopping session is still live');
+		}
+		$this->deleteWithChildren($session);
+	}
+
+	private function deleteWithChildren(ShoppingSession $session): void {
+		$sessionId = (int)$session->getId();
+		$this->sessionMembers->deleteBySession($sessionId);
+		$this->sessionItems->deleteBySession($sessionId);
+		$this->sessionSkips->deleteBySession($sessionId);
+		$this->sessionStores->deleteBySession($sessionId);
+		$this->sessionLists->deleteBySession($sessionId);
+		$this->sessions->delete($session);
 	}
 
 	/**

@@ -468,6 +468,36 @@ final class ShoppingSessionController extends OCSController {
 	}
 
 	/**
+	 * Delete a shopping trip from history
+	 *
+	 * Permanently removes a closed trip and everything logged against it. Only the
+	 * shopper who started the trip may delete it. A live trip returns 409 with the
+	 * session in the body — end it first.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>|DataResponse<Http::STATUS_CONFLICT, PantryShoppingSession, array{}>
+	 *
+	 * 200: Trip deleted
+	 * 409: The trip is still live
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function destroy(int $houseId, int $sessionId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadOwnedSession($sessionId, $houseId);
+			try {
+				$this->sessions->delete($session);
+			} catch (ShoppingSessionConflictException $e) {
+				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
+			}
+			return new DataResponse(['success' => true]);
+		});
+	}
+
+	/**
 	 * Presence heartbeat for a house
 	 *
 	 * Stamps the caller's live-session `last_seen_at` (if their trip is in this

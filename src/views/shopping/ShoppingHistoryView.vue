@@ -42,7 +42,7 @@
 
       <template v-else>
         <ul class="shop-history__list">
-          <li v-for="row in rows" :key="row.id">
+          <li v-for="row in rows" :key="row.id" class="shop-history__item">
             <button type="button" class="shop-history__row" @click="openTrip(row)">
               <NcAvatar
                 class="shop-history__avatar"
@@ -71,6 +71,15 @@
                 {{ totalLabel(row) }}
               </span>
             </button>
+            <NcButton
+              v-if="row.userId === currentUid"
+              variant="tertiary"
+              :aria-label="strings.deleteTrip"
+              :title="strings.deleteTrip"
+              @click="deletingRow = row"
+            >
+              <template #icon><DeleteIcon :size="20" /></template>
+            </NcButton>
           </li>
         </ul>
 
@@ -90,6 +99,22 @@
       @updated="refreshDetailRow"
       @update:open="(v) => !v && (detailRow = null)"
     />
+
+    <NcDialog
+      v-if="deletingRow"
+      :name="strings.deleteTripTitle"
+      :open="!!deletingRow"
+      close-on-click-outside
+      @update:open="(v) => !v && (deletingRow = null)"
+    >
+      <p>{{ strings.deleteTripBody }}</p>
+      <template #actions>
+        <NcButton @click="deletingRow = null">{{ strings.cancel }}</NcButton>
+        <NcButton variant="error" :disabled="deleting" @click="submitDelete">
+          {{ strings.delete }}
+        </NcButton>
+      </template>
+    </NcDialog>
   </div>
 </template>
 
@@ -103,7 +128,9 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcAvatar from '@nextcloud/vue/components/NcAvatar'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import ArrowLeftIcon from '@icons/ArrowLeft.vue'
+import DeleteIcon from '@icons/Delete.vue'
 import HistoryIcon from '@icons/History.vue'
 import CartOffIcon from '@icons/CartOff.vue'
 import ClockOutlineIcon from '@icons/ClockOutline.vue'
@@ -112,7 +139,7 @@ import { ShoppingReviewDialog } from '@/components/ShoppingReview'
 import PantryChip from '@/components/PantryChip'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { getCurrentUserId } from '@/utils/currentUser'
-import { getHistory } from '@/api/shopping'
+import { deleteSession, getHistory } from '@/api/shopping'
 import { formatMoney } from '@/utils/price'
 import { formatDateTime, formatDuration } from '@/utils/datetime'
 import type { ShoppingHistoryRow } from '@/api/types'
@@ -129,6 +156,8 @@ const loading = ref(true)
 const loadingMore = ref(false)
 const canLoadMore = ref(false)
 const detailRow = ref<ShoppingHistoryRow | null>(null)
+const deletingRow = ref<ShoppingHistoryRow | null>(null)
+const deleting = ref(false)
 const currentUid = getCurrentUserId()
 
 async function load() {
@@ -189,6 +218,21 @@ async function refreshDetailRow() {
   }
 }
 
+async function submitDelete() {
+  const row = deletingRow.value
+  if (!row) return
+  deleting.value = true
+  try {
+    await deleteSession(houseIdNum.value, row.id)
+    rows.value = rows.value.filter((r) => r.id !== row.id)
+    deletingRow.value = null
+  } catch (e) {
+    showError((e as Error).message || strings.deleteFailed)
+  } finally {
+    deleting.value = false
+  }
+}
+
 function goBack() {
   router.push({ name: 'shopping-start', params: { houseId: String(houseIdNum.value) } })
 }
@@ -229,6 +273,16 @@ const strings = {
   emptyHouseBody: t('pantry', 'Finished trips in this house will show up here.'),
   loadMore: t('pantry', 'Load more'),
   loadFailed: t('pantry', 'Could not load shopping history.'),
+  deleteTrip: t('pantry', 'Delete trip'),
+  deleteTripTitle: t('pantry', 'Delete trip'),
+  deleteTripBody: t(
+    'pantry',
+    'This trip and its totals will be permanently removed from shopping history. This cannot be undone.',
+  ),
+  cancel: t('pantry', 'Cancel'),
+  // TRANSLATORS: Verb, button confirming a shopping trip's deletion.
+  delete: t('pantry', 'Delete'),
+  deleteFailed: t('pantry', 'Could not delete the trip.'),
 }
 </script>
 
@@ -272,6 +326,12 @@ const strings = {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 
   // Mirrors the checklist item row: bordered, rounded card on the main

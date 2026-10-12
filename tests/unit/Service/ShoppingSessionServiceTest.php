@@ -704,6 +704,27 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame(1, $this->svc->purgeAgedSessions(180, 100000000));
 	}
 
+	public function testDeleteClosedSessionCascadesChildRows(): void {
+		$closed = $this->makeSession(['id' => 5, 'closedAt' => 10]);
+		$this->sessionMembers->expects($this->once())->method('deleteBySession')->with(5);
+		$this->sessionItems->expects($this->once())->method('deleteBySession')->with(5);
+		$this->sessionSkips->expects($this->once())->method('deleteBySession')->with(5);
+		$this->sessionStores->expects($this->once())->method('deleteBySession')->with(5);
+		$this->sessionLists->expects($this->once())->method('deleteBySession')->with(5);
+		$this->sessions->expects($this->once())->method('delete')->with($closed);
+
+		$this->svc->delete($closed);
+	}
+
+	public function testDeleteLiveSessionConflicts(): void {
+		$live = $this->makeSession(['id' => 5]);
+		$this->sessionItems->expects($this->never())->method('deleteBySession');
+		$this->sessions->expects($this->never())->method('delete');
+
+		$this->expectException(ShoppingSessionConflictException::class);
+		$this->svc->delete($live);
+	}
+
 	public function testHeartbeatStampsOwnLiveSessionInHouse(): void {
 		$session = $this->makeSession(['id' => 5, 'houseId' => 1, 'userId' => 'alice', 'lastSeenAt' => 100]);
 		$this->sessions->method('findLiveByUser')->with('alice')->willReturn($session);

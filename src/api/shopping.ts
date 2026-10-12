@@ -169,6 +169,11 @@ export async function getHistory(
   return resp.data ?? []
 }
 
+/** Permanently delete one of the caller's closed trips from history. */
+export async function deleteSession(houseId: number, sessionId: number): Promise<void> {
+  await ocs.delete(`/houses/${houseId}/shopping/sessions/${sessionId}`)
+}
+
 /** Read-only detail of a (usually closed) trip — the shared review computation. */
 export async function getSessionSummary(
   houseId: number,

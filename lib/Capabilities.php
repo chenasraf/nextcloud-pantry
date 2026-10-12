@@ -103,6 +103,7 @@ class Capabilities implements IPublicCapability {
 					'list-item-defaults',
 					'shopping-join-session',
 					'shopping-item-selection',
+					'shopping-history-delete',
 				],
 			],
 		];
