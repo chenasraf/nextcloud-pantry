@@ -89,6 +89,7 @@ OC.L10N.register(
     "Add image" : "新增影像",
     "Join" : "加入",
     "New label" : "新標籤",
+    "Edit label" : "編輯標籤",
     "Rich text" : "RTF",
     "Export to Markdown" : "匯出為 Markdown",
     "Close" : "關閉",
