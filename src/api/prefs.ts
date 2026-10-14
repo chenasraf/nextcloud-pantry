@@ -271,17 +271,30 @@ export async function setNoteSort(houseId: number, sort: NoteSort): Promise<{ so
   return { sort: p.noteSort }
 }
 
-export async function getChecklistItemSort(houseId: number): Promise<{ sort: ChecklistItemSort }> {
-  const p = await getHousePrefs(houseId)
-  return { sort: p.checklistItemSort }
+// ----- Per-list prefs -----
+
+export interface ListPrefs {
+  itemSort: ChecklistItemSort
+}
+
+/** Item sort for one list; `listId` 0 is the "All lists" view. */
+export async function getChecklistItemSort(
+  houseId: number,
+  listId: number,
+): Promise<{ sort: ChecklistItemSort }> {
+  const resp = await ocs.get<ListPrefs>(`/houses/${houseId}/lists/${listId}/prefs`)
+  return { sort: resp.data.itemSort }
 }
 
 export async function setChecklistItemSort(
   houseId: number,
+  listId: number,
   sort: ChecklistItemSort,
 ): Promise<{ sort: ChecklistItemSort }> {
-  const p = await setHousePrefs(houseId, { checklistItemSort: sort })
-  return { sort: p.checklistItemSort }
+  const resp = await ocs.put<ListPrefs>(`/houses/${houseId}/lists/${listId}/prefs`, {
+    itemSort: sort,
+  })
+  return { sort: resp.data.itemSort }
 }
 
 export async function getChecklistSort(houseId: number): Promise<{ sort: ChecklistSort }> {

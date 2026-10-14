@@ -8,7 +8,10 @@ declare(strict_types=1);
 namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Exception\ForbiddenException;
+use OCA\Pantry\Exception\NotFoundException;
+use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
+use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\PrefsService;
 use OCP\AppFramework\Http;
@@ -22,6 +25,7 @@ use OCP\IUserSession;
 /**
  * @psalm-import-type PantryUserPrefs from ResponseDefinitions
  * @psalm-import-type PantryHousePrefs from ResponseDefinitions
+ * @psalm-import-type PantryListPrefs from ResponseDefinitions
  * @psalm-import-type PantryLanguageList from ResponseDefinitions
  */
 final class PrefsController extends OCSController {
@@ -32,6 +36,7 @@ final class PrefsController extends OCSController {
 		IRequest $request,
 		private PrefsService $prefs,
 		private HouseAuthService $auth,
+		private ChecklistService $lists,
 		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -234,6 +239,67 @@ final class PrefsController extends OCSController {
 			$this->prefs->setHousePrefs($uid, $houseId, $patch);
 			return new DataResponse($this->prefs->getAllHousePrefs($uid, $houseId));
 		});
+	}
+
+	/**
+	 * Get the current user's preferences for one checklist
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id, or 0 for the "All lists" view.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListPrefs, array{}>
+	 *
+	 * 200: Prefs returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/prefs', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function getListPrefs(int $houseId, int $listId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$this->requireListInHouse($houseId, $listId);
+			return new DataResponse(['itemSort' => $this->prefs->getListItemSort($uid, $houseId, $listId)]);
+		});
+	}
+
+	/**
+	 * Update the current user's preferences for one checklist
+	 *
+	 * Only the fields present in the request body are updated; omitted fields
+	 * are left unchanged.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id, or 0 for the "All lists" view.
+	 * @param string|null $itemSort Item sort mode. One of: custom, newest, oldest, name_asc, name_desc, category, store.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListPrefs, array{}>
+	 *
+	 * 200: Prefs updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/lists/{listId}/prefs', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function setListPrefs(int $houseId, int $listId, ?string $itemSort = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemSort): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$this->requireListInHouse($houseId, $listId);
+			if ($itemSort !== null) {
+				$this->prefs->setListItemSort($uid, $houseId, $listId, $itemSort);
+			}
+			return new DataResponse(['itemSort' => $this->prefs->getListItemSort($uid, $houseId, $listId)]);
+		});
+	}
+
+	private function requireListInHouse(int $houseId, int $listId): void {
+		if ($listId === 0) {
+			return;
+		}
+		$list = $this->lists->getList($listId, includeDeleted: true);
+		if ($list->getHouseId() !== $houseId) {
+			throw new NotFoundException('List does not belong to this house');
+		}
 	}
 
 	private function requireUid(): string {

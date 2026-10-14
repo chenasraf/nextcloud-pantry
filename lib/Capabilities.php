@@ -96,6 +96,7 @@ class Capabilities implements IPublicCapability {
 					'pref-suggest-archived-items',
 					'pref-barcode-fill',
 					'pref-language',
+					'pref-list-item-sort',
 					'roles',
 					'share-users',
 					'custom-fields',

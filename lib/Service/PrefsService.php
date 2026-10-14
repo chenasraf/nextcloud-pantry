@@ -351,6 +351,7 @@ class PrefsService {
 	// ----- Checklist item sort preferences -----
 
 	private const KEY_CHECKLIST_ITEM_SORT = 'checklist_item_sort';
+	public const CHECKLIST_ITEM_SORT_OPTIONS = ['custom', 'newest', 'oldest', 'name_asc', 'name_desc', 'category', 'store'];
 
 	public function getChecklistItemSort(string $uid, int $houseId): string {
 		return $this->config->getUserValue(
@@ -362,12 +363,42 @@ class PrefsService {
 	}
 
 	public function setChecklistItemSort(string $uid, int $houseId, string $sort): string {
-		$allowed = ['custom', 'newest', 'oldest', 'name_asc', 'name_desc', 'category', 'store'];
-		if (!in_array($sort, $allowed, true)) {
+		if (!in_array($sort, self::CHECKLIST_ITEM_SORT_OPTIONS, true)) {
 			$sort = 'custom';
 		}
 		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_CHECKLIST_ITEM_SORT . '_' . $houseId, $sort);
 		return $sort;
+	}
+
+	/**
+	 * Item sort for one list. List ID 0 is the house's "All lists" view.
+	 *
+	 * A list without its own choice inherits the house-wide item sort, so a
+	 * sort picked before sorting was per-list keeps applying until changed.
+	 */
+	public function getListItemSort(string $uid, int $houseId, int $listId): string {
+		$value = $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			$this->listItemSortKey($houseId, $listId),
+			'',
+		);
+		if (in_array($value, self::CHECKLIST_ITEM_SORT_OPTIONS, true)) {
+			return $value;
+		}
+		return $this->getChecklistItemSort($uid, $houseId);
+	}
+
+	public function setListItemSort(string $uid, int $houseId, int $listId, string $sort): string {
+		if (!in_array($sort, self::CHECKLIST_ITEM_SORT_OPTIONS, true)) {
+			$sort = 'custom';
+		}
+		$this->config->setUserValue($uid, Application::APP_ID, $this->listItemSortKey($houseId, $listId), $sort);
+		return $sort;
+	}
+
+	private function listItemSortKey(int $houseId, int $listId): string {
+		return self::KEY_CHECKLIST_ITEM_SORT . '_' . $houseId . '_' . $listId;
 	}
 
 	// ----- Category sort preferences -----

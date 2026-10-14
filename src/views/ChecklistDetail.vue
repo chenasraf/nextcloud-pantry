@@ -1083,7 +1083,7 @@ const sortMenuName = computed(() => {
 })
 
 async function loadSortPref() {
-  const prefs = await getChecklistItemSort(houseIdNum.value)
+  const prefs = await getChecklistItemSort(houseIdNum.value, listIdNum.value)
   // Custom sort is per-list — meta view falls back to "newest" instead.
   const sort: ChecklistItemSort = isMeta.value && prefs.sort === 'custom' ? 'newest' : prefs.sort
   currentSort.value = sort
@@ -1093,7 +1093,7 @@ async function loadSortPref() {
 async function changeSort(value: ChecklistItemSort) {
   currentSort.value = value
   sortBy.value = value
-  await setChecklistItemSort(houseIdNum.value, value)
+  await setChecklistItemSort(houseIdNum.value, listIdNum.value, value)
   await load(value)
 }
 

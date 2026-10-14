@@ -392,6 +392,10 @@ namespace OCA\Pantry;
  *     notifyItemDone: bool,
  * }
  *
+ * @psalm-type PantryListPrefs = array{
+ *     itemSort: string,
+ * }
+ *
  * @psalm-type PantryPhotoFolder = array{
  *     id: int,
  *     houseId: int,

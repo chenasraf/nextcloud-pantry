@@ -208,6 +208,48 @@ class PrefsServiceTest extends TestCase {
 		$this->assertSame('ask', $this->svc->setReuseExistingItems('alice', 'bogus'));
 	}
 
+	// ----- List item sort -----
+
+	public function testListItemSortIsScopedPerList(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			static fn (string $uid, string $app, string $key, string $default): string => match ($key) {
+				'checklist_item_sort_1_10' => 'name_asc',
+				'checklist_item_sort_1_11' => 'store',
+				default => $default,
+			},
+		);
+
+		$this->assertSame('name_asc', $this->svc->getListItemSort('alice', 1, 10));
+		$this->assertSame('store', $this->svc->getListItemSort('alice', 1, 11));
+	}
+
+	public function testListItemSortInheritsHouseSortWhenUnset(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			static fn (string $uid, string $app, string $key, string $default): string => match ($key) {
+				'checklist_item_sort_1' => 'category',
+				default => $default,
+			},
+		);
+
+		$this->assertSame('category', $this->svc->getListItemSort('alice', 1, 10));
+	}
+
+	public function testSetListItemSortStoresUnderListKey(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'checklist_item_sort_1_10', 'oldest');
+
+		$this->assertSame('oldest', $this->svc->setListItemSort('alice', 1, 10, 'oldest'));
+	}
+
+	public function testSetListItemSortFallsBackForUnknownValue(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'checklist_item_sort_1_10', 'custom');
+
+		$this->assertSame('custom', $this->svc->setListItemSort('alice', 1, 10, 'bogus'));
+	}
+
 	// ----- Suggest archived items -----
 
 	public function testGetSuggestArchivedItemsDefaultsToFalse(): void {
