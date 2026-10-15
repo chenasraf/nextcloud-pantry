@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.36.0...v0.37.0) (2026-10-15)
+
+
+### Features
+
+* **prefs:** per-list item sort ([46dc6f3](https://github.com/chenasraf/nextcloud-pantry/commit/46dc6f383af9686343be8854d09c3fbffadef94b)), closes [#299](https://github.com/chenasraf/nextcloud-pantry/issues/299)
+* **shopping:** delete trips from history ([b1e93c6](https://github.com/chenasraf/nextcloud-pantry/commit/b1e93c6bd90145325652a999c8dfd218312db954))
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([826c0b5](https://github.com/chenasraf/nextcloud-pantry/commit/826c0b5de3b92ab524e976532ebc51fd78ba492a))
+* **l10n:** Update translations from Transifex ([7879e16](https://github.com/chenasraf/nextcloud-pantry/commit/7879e16e84179cdf6a90b7574750e1e719b21d5a))
+* **l10n:** Update translations from Transifex ([067e835](https://github.com/chenasraf/nextcloud-pantry/commit/067e835e1bc4858e7a613f8d47ad6d308b2bac0c))
+* **l10n:** Update translations from Transifex ([5fff372](https://github.com/chenasraf/nextcloud-pantry/commit/5fff372d3cd462738fe38d0a37c9df0c70ebcb87))
+* **l10n:** Update translations from Transifex ([aac7ffc](https://github.com/chenasraf/nextcloud-pantry/commit/aac7ffc814083abb4add54dd2660365f6aab6a2c))
+
 ## [0.36.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.35.1...v0.36.0) (2026-10-10)
 
 
