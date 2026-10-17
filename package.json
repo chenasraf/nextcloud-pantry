@@ -36,30 +36,30 @@
     "fuzzball": "^2.2.6",
     "linkifyjs": "^4.3.3",
     "rrule": "^2.8.1",
-    "vue": "^3.5.43",
-    "vue-material-design-icons": "^5.3.1"
+    "vue": "^3.5.44",
+    "vue-material-design-icons": "^5.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@nextcloud/browserslist-config": "^3.1.2",
     "@nextcloud/eslint-config": "^9.0.1",
     "@nextcloud/stylelint-config": "^3.2.2",
-    "@vitejs/plugin-vue": "^6.0.9",
+    "@vitejs/plugin-vue": "^6.0.10",
     "@vue/test-utils": "^2.5.1",
     "@vue/tsconfig": "^0.9.1",
     "eslint": "^10.12.0",
     "happy-dom": "^20.14.6",
-    "lefthook": "^2.2.1",
-    "prettier": "^3.9.9",
+    "lefthook": "^2.2.2",
+    "prettier": "^3.9.10",
     "rollup-plugin-visualizer": "^7.1.1",
-    "sass": "^1.105.1",
-    "sass-embedded": "^1.105.1",
+    "sass": "^1.105.2",
+    "sass-embedded": "^1.105.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.1",
+    "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4",
     "vite-plugin-checker": "^0.14.5",
-    "vitest": "^5.0.3",
+    "vitest": "^5.0.5",
     "vue-router": "^5.4.0",
-    "vue-tsc": "^3.3.12"
+    "vue-tsc": "^3.3.13"
   }
 }
