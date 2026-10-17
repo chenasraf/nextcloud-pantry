@@ -50,7 +50,7 @@
     "eslint": "^10.12.0",
     "happy-dom": "^20.14.6",
     "lefthook": "^2.2.1",
-    "prettier": "^3.9.9",
+    "prettier": "^3.9.10",
     "rollup-plugin-visualizer": "^7.1.1",
     "sass": "^1.105.1",
     "sass-embedded": "^1.105.1",
