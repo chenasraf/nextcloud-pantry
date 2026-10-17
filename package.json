@@ -37,7 +37,7 @@
     "linkifyjs": "^4.3.3",
     "rrule": "^2.8.1",
     "vue": "^3.5.43",
-    "vue-material-design-icons": "^5.3.1"
+    "vue-material-design-icons": "^5.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
