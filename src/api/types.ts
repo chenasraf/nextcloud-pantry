@@ -333,6 +333,8 @@ export interface ShoppingSession {
   closedAt: number | null
   includeUnassigned: boolean
   isPrivate: boolean
+  /** Every store in `stores` is shopped from one combined list, with no active store. */
+  allStores: boolean
   billedTotal: number | null
   billedCurrency: string | null
   live: boolean

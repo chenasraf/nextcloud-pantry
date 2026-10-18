@@ -94,6 +94,7 @@ final class ShoppingSessionController extends OCSController {
 	 * @param list<int> $storeIds Ordered store sequence (may be empty).
 	 * @param bool $includeUnassigned Keep buy-anywhere items when narrowing by store.
 	 * @param list<int>|null $itemIds Items to shop; null or empty shops every item in scope.
+	 * @param bool $allStores Shop every store in `storeIds` from one combined list instead of one store at a time.
 	 *
 	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_CONFLICT, PantryShoppingSession, array{}>
 	 *
@@ -103,8 +104,8 @@ final class ShoppingSessionController extends OCSController {
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
-	public function create(int $houseId, array $listIds = [], array $storeIds = [], bool $includeUnassigned = true, ?array $itemIds = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $listIds, $storeIds, $includeUnassigned, $itemIds): DataResponse {
+	public function create(int $houseId, array $listIds = [], array $storeIds = [], bool $includeUnassigned = true, ?array $itemIds = null, bool $allStores = false): DataResponse {
+		return $this->runAction(function () use ($houseId, $listIds, $storeIds, $includeUnassigned, $itemIds, $allStores): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 
@@ -121,7 +122,7 @@ final class ShoppingSessionController extends OCSController {
 			$itemIds = $itemIds === null ? null : array_values(array_unique(array_map('intval', $itemIds)));
 
 			try {
-				$session = $this->sessions->create($houseId, $uid, $listIds, $storeIds, $includeUnassigned, $itemIds);
+				$session = $this->sessions->create($houseId, $uid, $listIds, $storeIds, $includeUnassigned, $itemIds, $allStores);
 			} catch (ShoppingSessionConflictException $e) {
 				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
 			}

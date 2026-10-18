@@ -317,6 +317,66 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Unchecked, in-scope items for a trip that shops several stores from one
+	 * list: items assigned to any of $storeIds, plus — when $includeUnassigned —
+	 * items with no store assignment at all. Store membership is tested with
+	 * subqueries rather than a join, so an item assigned to more than one of the
+	 * stores still appears once.
+	 *
+	 * No single store's aisle order applies to a combined list, so items follow
+	 * the house-wide category order, uncategorized trailing.
+	 *
+	 * @param int[] $listIds
+	 * @param int[] $storeIds
+	 * @return ChecklistItem[]
+	 */
+	public function findForShoppingStores(array $listIds, array $storeIds, bool $includeUnassigned): array {
+		$listIds = array_values(array_unique(array_map('intval', $listIds)));
+		$storeIds = array_values(array_unique(array_map('intval', $storeIds)));
+		if ($listIds === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$categories = Application::tableName('categories');
+		$itemStores = Application::tableName('item_stores');
+
+		$qb->select('i.*')
+			->from($this->getTableName(), 'i')
+			->leftJoin('i', $categories, 'c', $qb->expr()->eq('i.category_id', 'c.id'))
+			->where($qb->expr()->in('i.list_id', $qb->createNamedParameter($listIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->andWhere($qb->expr()->eq('i.done', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->isNull('i.deleted_at'))
+			->andWhere($qb->expr()->isNull('i.archived_at'));
+
+		$matches = [];
+		if ($storeIds !== []) {
+			$inStores = $this->db->getQueryBuilder();
+			$inStores->select('ist.item_id')
+				->from($itemStores, 'ist')
+				->where($inStores->expr()->in('ist.store_id', $qb->createNamedParameter($storeIds, IQueryBuilder::PARAM_INT_ARRAY)));
+			$matches[] = $qb->expr()->in('i.id', $qb->createFunction($inStores->getSQL()));
+		}
+		if ($includeUnassigned) {
+			$anyStore = $this->db->getQueryBuilder();
+			$anyStore->select('isa.item_id')->from($itemStores, 'isa');
+			$matches[] = $qb->expr()->notIn('i.id', $qb->createFunction($anyStore->getSQL()));
+		}
+		if ($matches === []) {
+			return [];
+		}
+		$qb->andWhere($qb->expr()->orX(...$matches));
+
+		$qb->orderBy($qb->createFunction('CASE WHEN i.category_id IS NULL THEN 1 ELSE 0 END'), 'ASC')
+			->addOrderBy('c.sort_order', 'ASC')
+			->addOrderBy('c.name', 'ASC')
+			->addOrderBy('i.sort_order', 'ASC')
+			->addOrderBy('i.id', 'ASC');
+
+		return $this->findEntities($qb);
+	}
+
+	/**
 	 * Fetch items by id regardless of their deleted/archived state. Used by the
 	 * shopping review, which must still show items checked off during the trip
 	 * even when a "delete on done" item was soft-deleted by that check.

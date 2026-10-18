@@ -299,6 +299,40 @@ class PrefsServiceTest extends TestCase {
 		$this->assertTrue($prefs['suggestArchivedItems']);
 	}
 
+	// ----- Shop all stores -----
+
+	public function testGetShopAllStoresDefaultsToFalse(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'shop_all_stores', '0')
+			->willReturn('0');
+
+		$this->assertFalse($this->svc->getShopAllStores('alice'));
+	}
+
+	public function testSetShopAllStoresStoresOne(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'shop_all_stores', '1');
+
+		$this->assertTrue($this->svc->setShopAllStores('alice', true));
+	}
+
+	public function testGetAllUserPrefsIncludesShopAllStores(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			fn (string $uid, string $app, string $key, string $default): string => $key === 'shop_all_stores' ? '1' : $default,
+		);
+
+		$this->assertTrue($this->svc->getAllUserPrefs('alice')['shopAllStores']);
+	}
+
+	public function testSetUserPrefsWritesShopAllStores(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'shop_all_stores', '1');
+
+		$this->svc->setUserPrefs('alice', ['shopAllStores' => true]);
+	}
+
 	// ----- Barcode fill -----
 
 	public function testGetBarcodeFillDefaultsToTrue(): void {

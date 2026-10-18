@@ -59,8 +59,21 @@
           </section>
 
           <section class="shop-start__section">
+            <NcCheckboxRadioSwitch
+              type="switch"
+              :model-value="shopAllStores"
+              @update:model-value="toggleShopAllStores"
+            >
+              {{ strings.shopAllStores }}
+            </NcCheckboxRadioSwitch>
+            <p class="shop-start__hint">{{ strings.shopAllStoresHint }}</p>
+          </section>
+
+          <section class="shop-start__section">
             <h3>{{ strings.storesTitle }}</h3>
-            <p class="shop-start__hint">{{ strings.storesHint }}</p>
+            <p class="shop-start__hint">
+              {{ shopAllStores ? strings.storesHintAll : strings.storesHint }}
+            </p>
             <p v-if="availableStoreIds.length === 0" class="shop-start__hint">
               {{ strings.noStores }}
             </p>
@@ -80,13 +93,14 @@
                     'shop-start__store--off': !enabledStores.has(gi.id),
                   }"
                   :data-drag-id="gi.id"
-                  draggable="true"
+                  :draggable="!shopAllStores"
                   @dragstart="onStoreDragStart($event, gi.id)"
                   @dragend="onStoreDragEnd"
                   @dragover.prevent="onStoreDragOver($event, gi.id)"
                   @drop.prevent.stop="commitStoreReorder"
                 >
                   <span
+                    v-if="!shopAllStores"
                     class="shop-start__store-handle"
                     :aria-label="strings.dragHandle"
                     :title="strings.dragHandle"
@@ -191,6 +205,7 @@ import { useStores } from '@/composables/useStores'
 import { useHouses } from '@/composables/useHouses'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useTouchReorder } from '@/composables/useTouchReorder'
+import { useShopAllStores } from '@/composables/useShopAllStores'
 import { listAllItems } from '@/api/lists'
 import {
   createSession,
@@ -212,6 +227,7 @@ const houseIdNum = computed(() => houseId.value ?? 0)
 const { lists, load: loadLists } = useChecklists(houseIdNum.value)
 const { items: storeCatalog, load: loadStores, findById: findStore } = useStores(houseIdNum.value)
 const { load: loadHouses, findById: findHouse } = useHouses()
+const { shopAllStores, load: loadShopAllStores, set: setShopAllStoresPref } = useShopAllStores()
 
 const loading = ref(true)
 const starting = ref(false)
@@ -339,6 +355,7 @@ onMounted(async () => {
       loadLists(true),
       loadStores(),
       listAllItems(houseIdNum.value),
+      loadShopAllStores(),
     ])
     houseItems.value = items
     existing.value = await getCurrentSession()
@@ -363,6 +380,14 @@ function toggleList(id: number, checked: boolean) {
 
 function toggleSelectAll() {
   selectedListIds.value = allSelected.value ? [] : lists.value.map((l) => l.id)
+}
+
+async function toggleShopAllStores(on: boolean) {
+  try {
+    await setShopAllStoresPref(on)
+  } catch (e) {
+    showError((e as Error).message || strings.saveFailed)
+  }
 }
 
 function toggleStore(id: number, on: boolean) {
@@ -463,22 +488,27 @@ watch(storeListRef, (newEl, oldEl) => {
 })
 onBeforeUnmount(() => unbindStoreDragEnd(storeListRef.value))
 
-useTouchReorder(storeListRef, {
-  onDragStart: (id) => {
-    draggingStoreId.value = id
-    storeDropIndex.value = null
+useTouchReorder(
+  storeListRef,
+  {
+    onDragStart: (id) => {
+      draggingStoreId.value = id
+      storeDropIndex.value = null
+    },
+    onReorderOver(hoveredId, _clientX, clientY) {
+      const el =
+        storeListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
+      computeStoreDropIndex(hoveredId, clientY, el)
+    },
+    onDrop: commitStoreReorder,
+    onCancel() {
+      draggingStoreId.value = null
+      storeDropIndex.value = null
+    },
   },
-  onReorderOver(hoveredId, _clientX, clientY) {
-    const el =
-      storeListRef.value?.querySelector<HTMLElement>(`[data-drag-id="${hoveredId}"]`) ?? null
-    computeStoreDropIndex(hoveredId, clientY, el)
-  },
-  onDrop: commitStoreReorder,
-  onCancel() {
-    draggingStoreId.value = null
-    storeDropIndex.value = null
-  },
-})
+  // A combined trip visits no store first, so there is no route to order.
+  computed(() => !shopAllStores.value),
+)
 
 // -------- Lifecycle --------
 
@@ -496,6 +526,7 @@ async function start() {
       // `itemIds` already means — and it stays right if the lists gained an
       // item between loading this screen and starting.
       itemIds: included.length === candidateItems.value.length ? undefined : included,
+      allStores: shopAllStores.value,
     })
     if (result.status === 'conflict') {
       // Someone/somewhere already has a live trip — surface the guard instead.
@@ -559,6 +590,12 @@ const strings = {
   noLists: t('pantry', 'No lists to shop'),
   storesTitle: t('pantry', 'Stores'),
   storesHint: t('pantry', 'Turn the stores you will visit on or off, and drag to set the order.'),
+  storesHintAll: t('pantry', 'Turn the stores you are shopping for on or off.'),
+  shopAllStores: t('pantry', 'Shop all at once'),
+  shopAllStoresHint: t(
+    'pantry',
+    'Selecting this will unify all stores into a single tab to shop in one go',
+  ),
   noStores: t('pantry', 'No stores have items on the selected lists.'),
   // TRANSLATORS: Title of the tile that opens the item picker
   itemsTitle: t('pantry', 'Items to shop'),
@@ -579,6 +616,7 @@ const strings = {
   loadFailed: t('pantry', 'Could not load shopping setup.'),
   startFailed: t('pantry', 'Could not start shopping.'),
   endFailed: t('pantry', 'Could not end the previous trip.'),
+  saveFailed: t('pantry', 'Could not save the setting.'),
 }
 </script>
 

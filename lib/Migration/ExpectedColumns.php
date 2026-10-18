@@ -60,6 +60,10 @@ final class ExpectedColumns {
 			self::col('shopsess_items', 'price_max', Types::FLOAT, ['notnull' => false, 'default' => null]),
 			self::col('shopsess_items', 'price_currency', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
 
+			// shopping_sessions — combined-stores trip flag (Version41). The session
+			// SELECT * hydrates every column, so a missing one breaks shopping mode.
+			self::col('shopping_sessions', 'all_stores', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+
 			// roles — custom-fields capability (Version30). The role SELECT * hydrates
 			// every column into the entity, so a missing column breaks role loading
 			// and, with it, every permission-gated request.

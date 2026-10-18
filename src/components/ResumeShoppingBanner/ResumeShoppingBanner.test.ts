@@ -50,6 +50,7 @@ function makeSession(createdAtMsAgo: number): ShoppingSession {
     closedAt: null,
     includeUnassigned: true,
     isPrivate: false,
+    allStores: false,
     billedTotal: null,
     billedCurrency: null,
     live: true,

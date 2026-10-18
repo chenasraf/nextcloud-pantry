@@ -31,6 +31,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setIncludeUnassigned(bool $includeUnassigned)
  * @method bool getIsPrivate()
  * @method void setIsPrivate(bool $isPrivate)
+ * @method bool getAllStores()
+ * @method void setAllStores(bool $allStores)
  * @method float|null getBilledTotal()
  * @method void setBilledTotal(?float $billedTotal)
  * @method string|null getBilledCurrency()
@@ -48,6 +50,7 @@ class ShoppingSession extends Entity implements \JsonSerializable {
 	protected ?int $closedAt = null;
 	protected bool $includeUnassigned = true;
 	protected bool $isPrivate = false;
+	protected bool $allStores = false;
 	protected ?float $billedTotal = null;
 	protected ?string $billedCurrency = null;
 	protected int $createdAt = 0;
@@ -60,6 +63,7 @@ class ShoppingSession extends Entity implements \JsonSerializable {
 		$this->addType('closedAt', 'integer');
 		$this->addType('includeUnassigned', 'boolean');
 		$this->addType('isPrivate', 'boolean');
+		$this->addType('allStores', 'boolean');
 		$this->addType('billedTotal', 'float');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
@@ -69,6 +73,7 @@ class ShoppingSession extends Entity implements \JsonSerializable {
 		// so reads are unaffected. (Same idiom as ChecklistItem.)
 		$this->markFieldUpdated('includeUnassigned');
 		$this->markFieldUpdated('isPrivate');
+		$this->markFieldUpdated('allStores');
 	}
 
 	public function jsonSerialize(): array {
@@ -81,6 +86,7 @@ class ShoppingSession extends Entity implements \JsonSerializable {
 			'closedAt' => $this->closedAt,
 			'includeUnassigned' => $this->includeUnassigned,
 			'isPrivate' => $this->isPrivate,
+			'allStores' => $this->allStores,
 			'billedTotal' => $this->billedTotal,
 			'billedCurrency' => $this->billedCurrency,
 			'live' => $this->closedAt === null,

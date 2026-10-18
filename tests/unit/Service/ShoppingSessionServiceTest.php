@@ -357,6 +357,89 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame([], $this->svc->itemsForSession($session));
 	}
 
+	public function testCreateAllStoresKeepsSequenceWithNoActiveStore(): void {
+		$this->sessions->method('findLiveByUser')->willReturn(null);
+		$this->sessions->method('insert')->willReturnCallback(function (ShoppingSession $s) {
+			$ref = new \ReflectionProperty($s, 'id');
+			$ref->setValue($s, 42);
+			return $s;
+		});
+		$this->sessionStores->expects($this->once())
+			->method('setStoresForSession')
+			->with(42, [3, 7]);
+
+		$session = $this->svc->create(1, 'alice', [10], [3, 7], true, null, true);
+
+		$this->assertTrue($session->getAllStores());
+		$this->assertNull($session->getActiveStoreId());
+	}
+
+	public function testAdvanceRejectsAllStoresSession(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$session->setAllStores(true);
+		$this->sessions->expects($this->never())->method('update');
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->advance($session, 3);
+	}
+
+	public function testItemsForAllStoresSessionNarrowsToEveryStoreInSequence(): void {
+		$session = $this->makeSession(['id' => 5, 'includeUnassigned' => false]);
+		$session->setAllStores(true);
+		$this->sessionLists->method('findListIdsForSession')->with(5)->willReturn([10]);
+		$this->sessionStores->method('findBySession')->with(5)->willReturn([
+			$this->makeSessionStore(3, 0),
+			$this->makeSessionStore(7, 1),
+		]);
+		$this->items->expects($this->never())->method('findForShoppingScope');
+		$this->items->expects($this->once())
+			->method('findForShoppingStores')
+			->with([10], [3, 7], false)
+			->willReturn([]);
+
+		$this->assertSame([], $this->svc->itemsForSession($session));
+	}
+
+	public function testItemsForAllStoresSessionWithoutStoresNarrowsNothing(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$session->setAllStores(true);
+		$this->sessionLists->method('findListIdsForSession')->with(5)->willReturn([10]);
+		$this->sessionStores->method('findBySession')->with(5)->willReturn([]);
+		$this->items->expects($this->never())->method('findForShoppingStores');
+		$this->items->expects($this->once())
+			->method('findForShoppingScope')
+			->with([10], null, true)
+			->willReturn([]);
+
+		$this->assertSame([], $this->svc->itemsForSession($session));
+	}
+
+	public function testReviewOfAllStoresSessionHasOneStorelessGroup(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$session->setAllStores(true);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([
+			$this->makeLog(10, null),
+			$this->makeLog(11, null),
+		]);
+		$this->items->method('findByIds')->willReturn([
+			$this->makeItem(['id' => 10, 'done' => true]),
+			$this->makeItem(['id' => 11, 'done' => true]),
+		]);
+		$this->itemStores->method('findStoreIdsForItems')->willReturn([]);
+		$this->sessionStores->method('findBySession')->with(5)->willReturn([
+			$this->makeSessionStore(3, 0),
+			$this->makeSessionStore(7, 1),
+		]);
+		$this->sessionLists->method('findListIdsForSession')->willReturn([1]);
+		$this->items->method('findForShoppingScope')->willReturn([]);
+
+		$review = $this->svc->review($session);
+
+		$this->assertCount(1, $review['stores']);
+		$this->assertNull($review['stores'][0]['storeId']);
+		$this->assertCount(2, $review['stores'][0]['items']);
+	}
+
 	public function testComposeDtoEmbedsScopeAndStores(): void {
 		$session = $this->makeSession(['id' => 5, 'houseId' => 2, 'activeStoreId' => 3]);
 		$this->sessionLists->method('findListIdsForSession')->with(5)->willReturn([10, 11]);

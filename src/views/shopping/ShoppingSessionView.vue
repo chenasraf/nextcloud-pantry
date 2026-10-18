@@ -7,7 +7,15 @@
     <template v-else-if="session">
       <header class="shop__bar">
         <div class="shop__bar-inner">
-          <div v-if="sequence.length" class="shop__stores">
+          <div v-if="session.allStores" class="shop__stores">
+            <span class="shop__store shop__store--active shop__store--static">
+              <span class="shop__store-icon">
+                <StorefrontIcon :size="18" />
+              </span>
+              <span class="shop__store-name">{{ strings.allItems }}</span>
+            </span>
+          </div>
+          <div v-else-if="sequence.length" class="shop__stores">
             <button
               v-for="(entry, index) in sequence"
               :key="entry.storeId"
@@ -81,6 +89,7 @@
                 :item="item"
                 :category="group.category"
                 :labels="labelsFor(item.labelIds)"
+                :stores="storesFor(item)"
                 :hide-category="true"
                 :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
@@ -108,6 +117,7 @@
                 :item="item"
                 :category="categoryFor(item.categoryId)"
                 :labels="labelsFor(item.labelIds)"
+                :stores="storesFor(item)"
                 :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
                 :row-click-action="rowClickAction"
@@ -131,6 +141,7 @@
                 :item="item"
                 :category="categoryFor(item.categoryId)"
                 :labels="labelsFor(item.labelIds)"
+                :stores="storesFor(item)"
                 :price-store-id="session.activeStoreId"
                 :house-id="houseIdNum"
                 :list-writable="false"
@@ -187,6 +198,7 @@ import ChevronDownIcon from '@icons/ChevronDown.vue'
 import ChevronRightIcon from '@icons/ChevronRight.vue'
 import IncognitoIcon from '@icons/Incognito.vue'
 import IncognitoOffIcon from '@icons/IncognitoOff.vue'
+import StorefrontIcon from '@icons/Storefront.vue'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistImagePreview } from '@/components/ChecklistImagePreview'
 import { ShoppingReviewDialog } from '@/components/ShoppingReview'
@@ -219,6 +231,7 @@ import type {
   Label,
   ShoppingPresenceEntry,
   ShoppingSession,
+  Store,
 } from '@/api/types'
 
 const route = useRoute()
@@ -293,9 +306,26 @@ const sequence = computed(() => session.value?.stores ?? [])
 const activeIndex = computed(() =>
   sequence.value.findIndex((s) => s.storeId === session.value?.activeStoreId),
 )
+// A trip shopping all stores at once has the one combined tab, so it goes
+// straight to finishing.
 const hasNextStore = computed(
-  () => activeIndex.value >= 0 && activeIndex.value < sequence.value.length - 1,
+  () =>
+    !session.value?.allStores &&
+    activeIndex.value >= 0 &&
+    activeIndex.value < sequence.value.length - 1,
 )
+
+// Store chips only matter when stores share one list: elsewhere the tab already
+// says which store a row is for. Only the trip's own stores are shown — an
+// item's other stores are not where this shopper is going.
+const tripStoreIds = computed(() => new Set(sequence.value.map((s) => s.storeId)))
+function storesFor(item: ChecklistItem): Store[] {
+  if (!session.value?.allStores) return []
+  const ids = tripStoreIds.value.size
+    ? item.storeIds.filter((id) => tripStoreIds.value.has(id))
+    : item.storeIds
+  return ids.map((id) => findStore(id)).filter((s): s is Store => s != null)
+}
 
 const progressPct = computed(() => {
   const total = doneItems.value.length + items.value.length
@@ -647,6 +677,8 @@ onBeforeUnmount(() => {
 
 const strings = {
   uncategorized: t('pantry', 'Uncategorized'),
+  // TRANSLATORS: Label of the single tab in a shopping trip that combines every store into one list
+  allItems: t('pantry', 'All items'),
   nextStore: t('pantry', 'Next store'),
   finish: t('pantry', 'Finish'),
   finished: t('pantry', 'Shopping trip finished'),
@@ -731,6 +763,10 @@ const strings = {
 
     &--past {
       opacity: 0.5;
+    }
+
+    &--static {
+      cursor: default;
     }
   }
 

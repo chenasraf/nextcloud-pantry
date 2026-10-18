@@ -23,6 +23,7 @@ class PrefsService {
 	private const KEY_ROW_CLICK_ACTION = 'row_click_action';
 	private const KEY_REUSE_EXISTING_ITEMS = 'reuse_existing_items';
 	private const KEY_SUGGEST_ARCHIVED_ITEMS = 'suggest_archived_items';
+	private const KEY_SHOP_ALL_STORES = 'shop_all_stores';
 	private const KEY_BARCODE_FILL_PREFIX = 'barcode_fill_';
 	private const KEY_LANGUAGE = 'language';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
@@ -217,6 +218,25 @@ class PrefsService {
 		return $value;
 	}
 
+	public function getShopAllStores(string $uid): bool {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_SHOP_ALL_STORES,
+			'0',
+		) === '1';
+	}
+
+	public function setShopAllStores(string $uid, bool $value): bool {
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_SHOP_ALL_STORES,
+			$value ? '1' : '0',
+		);
+		return $value;
+	}
+
 	/**
 	 * @param value-of<self::BARCODE_FILL_FIELDS> $field
 	 */
@@ -255,6 +275,7 @@ class PrefsService {
 			'rowClickAction' => $this->getRowClickAction($uid),
 			'reuseExistingItems' => $this->getReuseExistingItems($uid),
 			'suggestArchivedItems' => $this->getSuggestArchivedItems($uid),
+			'shopAllStores' => $this->getShopAllStores($uid),
 			'barcodeFillName' => $this->getBarcodeFill($uid, 'name'),
 			'barcodeFillCategory' => $this->getBarcodeFill($uid, 'category'),
 			'barcodeFillImage' => $this->getBarcodeFill($uid, 'image'),
@@ -281,6 +302,9 @@ class PrefsService {
 		}
 		if (array_key_exists('suggestArchivedItems', $patch) && is_bool($patch['suggestArchivedItems'])) {
 			$this->setSuggestArchivedItems($uid, $patch['suggestArchivedItems']);
+		}
+		if (array_key_exists('shopAllStores', $patch) && is_bool($patch['shopAllStores'])) {
+			$this->setShopAllStores($uid, $patch['shopAllStores']);
 		}
 		foreach (self::BARCODE_FILL_FIELDS as $field) {
 			$key = 'barcodeFill' . ucfirst($field);

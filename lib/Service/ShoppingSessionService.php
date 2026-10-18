@@ -241,10 +241,11 @@ class ShoppingSessionService {
 	 * @param int[] $listIds Non-empty set of checklist ids in scope.
 	 * @param int[] $storeIds Ordered store sequence (may be empty = no narrowing).
 	 * @param int[]|null $itemIds The items to shop; null or empty means all of them.
+	 * @param bool $allStores Shop every store from one combined list instead of one store at a time.
 	 *
 	 * @throws ShoppingSessionConflictException when a live session already exists.
 	 */
-	public function create(int $houseId, string $uid, array $listIds, array $storeIds, bool $includeUnassigned, ?array $itemIds = null): ShoppingSession {
+	public function create(int $houseId, string $uid, array $listIds, array $storeIds, bool $includeUnassigned, ?array $itemIds = null, bool $allStores = false): ShoppingSession {
 		// Counts a joined housemate's trip too, so starting a second trip while
 		// out shopping with someone is the same 409 as starting two of your own.
 		$existing = $this->findCurrentForUser($uid);
@@ -262,8 +263,10 @@ class ShoppingSessionService {
 		$session = new ShoppingSession();
 		$session->setHouseId($houseId);
 		$session->setUserId($uid);
-		// Active store is the first in the planned sequence, or none.
-		$session->setActiveStoreId($storeIds[0] ?? null);
+		// Active store is the first in the planned sequence, or none. A combined
+		// trip is never at one store, so its checks log storeless.
+		$session->setActiveStoreId($allStores ? null : ($storeIds[0] ?? null));
+		$session->setAllStores($allStores);
 		$session->setLastSeenAt($now);
 		$session->setClosedAt(null);
 		$session->setIncludeUnassigned($includeUnassigned);
@@ -317,6 +320,9 @@ class ShoppingSessionService {
 	 * @throws \InvalidArgumentException when $storeId is not in the sequence.
 	 */
 	public function advance(ShoppingSession $session, int $storeId): ShoppingSession {
+		if ($session->getAllStores()) {
+			throw new \InvalidArgumentException('A trip shopping all stores at once has no active store');
+		}
 		$sequence = $this->storeIdsForSession((int)$session->getId());
 		if (!in_array($storeId, $sequence, true)) {
 			throw new \InvalidArgumentException('Store is not part of this session');
@@ -419,18 +425,25 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * The unchecked, in-scope, active-store-narrowed items to shop, ordered.
-	 * Flat array; the client groups by category.
+	 * The unchecked, in-scope items to shop, ordered: narrowed to the active
+	 * store, or — on a trip shopping all stores at once — to any store in its
+	 * sequence. Flat array; the client groups by category.
 	 *
 	 * @return ChecklistItem[]
 	 */
 	public function itemsForSession(ShoppingSession $session): array {
-		$listIds = $this->sessionLists->findListIdsForSession((int)$session->getId());
-		$items = $this->items->findForShoppingScope(
-			$listIds,
-			$session->getActiveStoreId(),
-			$session->getIncludeUnassigned(),
-		);
+		$sessionId = (int)$session->getId();
+		$listIds = $this->sessionLists->findListIdsForSession($sessionId);
+		$storeIds = $session->getAllStores() ? $this->storeIdsForSession($sessionId) : [];
+		// A combined trip with no stores picked narrows nothing, like any
+		// storeless trip.
+		$items = $storeIds !== []
+			? $this->items->findForShoppingStores($listIds, $storeIds, $session->getIncludeUnassigned())
+			: $this->items->findForShoppingScope(
+				$listIds,
+				$session->getActiveStoreId(),
+				$session->getIncludeUnassigned(),
+			);
 		// Drop items the shopper skipped from this trip (kept on the list, not
 		// marked done — the skip is session-scoped and reversible).
 		$skipped = $this->sessionSkips->findItemIdsForSession((int)$session->getId());
@@ -584,14 +597,17 @@ class ShoppingSessionService {
 		$grand = [];
 		$groups = [];
 
-		foreach ($this->sessionStores->findBySession($sessionId) as $store) {
+		// A trip shopping all stores at once checks everything storeless, so its
+		// stores would only add empty groups; it has the one till below.
+		$sessionStores = $session->getAllStores() ? [] : $this->sessionStores->findBySession($sessionId);
+		foreach ($sessionStores as $store) {
 			$sid = (int)$store->getStoreId();
 			$groups[] = $this->buildReviewGroup($sid, $byStore[$sid] ?? [], $store, null, $grand);
 			unset($byStore[$sid]);
 		}
 
-		// Checks with no active store (storeless sessions). The session-level
-		// billed total is the fallback here.
+		// Checks with no active store (storeless and all-stores sessions). The
+		// session-level billed total is the fallback here.
 		if (isset($byStore['none'])) {
 			$groups[] = $this->buildReviewGroup(null, $byStore['none'], null, $session, $grand);
 			unset($byStore['none']);

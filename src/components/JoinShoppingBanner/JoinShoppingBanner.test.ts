@@ -85,6 +85,7 @@ function session(over: Partial<ShoppingSession> = {}): ShoppingSession {
     closedAt: null,
     includeUnassigned: true,
     isPrivate: false,
+    allStores: false,
     billedTotal: null,
     billedCurrency: null,
     live: true,

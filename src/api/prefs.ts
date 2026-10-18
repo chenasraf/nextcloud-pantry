@@ -25,6 +25,8 @@ export interface UserPrefs {
   reuseExistingItems: ReuseExistingItems
   /** When true, reuse suggestions also search archived items. */
   suggestArchivedItems: boolean
+  /** When true, a shopping trip starts with every store combined into one list. */
+  shopAllStores: boolean
   /** When true, a resolved barcode fills in the item name. */
   barcodeFillName: boolean
   /** When true, a resolved barcode fills in the item category. */
@@ -49,6 +51,7 @@ const userPrefsDefaults: UserPrefs = {
   rowClickAction: 'none',
   reuseExistingItems: 'ask',
   suggestArchivedItems: false,
+  shopAllStores: false,
   barcodeFillName: true,
   barcodeFillCategory: true,
   barcodeFillImage: true,
@@ -115,6 +118,16 @@ export async function getSuggestArchivedItems(): Promise<boolean> {
 export async function setSuggestArchivedItems(value: boolean): Promise<boolean> {
   const prefs = await setUserPrefs({ suggestArchivedItems: value })
   return prefs.suggestArchivedItems
+}
+
+export async function getShopAllStores(): Promise<boolean> {
+  const prefs = await getUserPrefs()
+  return prefs.shopAllStores
+}
+
+export async function setShopAllStores(value: boolean): Promise<boolean> {
+  const prefs = await setUserPrefs({ shopAllStores: value })
+  return prefs.shopAllStores
 }
 
 export async function getBarcodeFillPrefs(): Promise<BarcodeFillPrefs> {

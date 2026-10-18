@@ -2012,6 +2012,7 @@
                     "closedAt",
                     "includeUnassigned",
                     "isPrivate",
+                    "allStores",
                     "billedTotal",
                     "billedCurrency",
                     "live",
@@ -2051,6 +2052,9 @@
                         "type": "boolean"
                     },
                     "isPrivate": {
+                        "type": "boolean"
+                    },
+                    "allStores": {
                         "type": "boolean"
                     },
                     "billedTotal": {
@@ -2329,6 +2333,7 @@
                     "rowClickAction",
                     "reuseExistingItems",
                     "suggestArchivedItems",
+                    "shopAllStores",
                     "barcodeFillName",
                     "barcodeFillCategory",
                     "barcodeFillImage",
@@ -2354,6 +2359,9 @@
                         "type": "string"
                     },
                     "suggestArchivedItems": {
+                        "type": "boolean"
+                    },
+                    "shopAllStores": {
                         "type": "boolean"
                     },
                     "barcodeFillName": {
@@ -15553,6 +15561,12 @@
                                         "default": null,
                                         "description": "Whether reuse suggestions also search archived items."
                                     },
+                                    "shopAllStores": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether shopping trips start with every store combined into one list."
+                                    },
                                     "barcodeFillName": {
                                         "type": "boolean",
                                         "nullable": true,
@@ -18262,6 +18276,11 @@
                                             "type": "integer",
                                             "format": "int64"
                                         }
+                                    },
+                                    "allStores": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Shop every store in `storeIds` from one combined list instead of one store at a time."
                                     }
                                 }
                             }

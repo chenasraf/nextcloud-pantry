@@ -80,6 +80,7 @@ final class PrefsController extends OCSController {
 	 * @param string|null $rowClickAction What clicking a checklist row does. One of: done, view, edit, none.
 	 * @param string|null $reuseExistingItems How to handle adding an item that already exists in the list. One of: ask, reuse, never.
 	 * @param bool|null $suggestArchivedItems Whether reuse suggestions also search archived items.
+	 * @param bool|null $shopAllStores Whether shopping trips start with every store combined into one list.
 	 * @param bool|null $barcodeFillName Whether a resolved barcode fills in the item name.
 	 * @param bool|null $barcodeFillCategory Whether a resolved barcode fills in the item category.
 	 * @param bool|null $barcodeFillImage Whether a resolved barcode fills in the item image.
@@ -91,8 +92,8 @@ final class PrefsController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null, ?bool $suggestArchivedItems = null, ?bool $barcodeFillName = null, ?bool $barcodeFillCategory = null, ?bool $barcodeFillImage = null, ?string $language = null): DataResponse {
-		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems, $suggestArchivedItems, $barcodeFillName, $barcodeFillCategory, $barcodeFillImage, $language): DataResponse {
+	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null, ?bool $suggestArchivedItems = null, ?bool $shopAllStores = null, ?bool $barcodeFillName = null, ?bool $barcodeFillCategory = null, ?bool $barcodeFillImage = null, ?string $language = null): DataResponse {
+		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems, $suggestArchivedItems, $shopAllStores, $barcodeFillName, $barcodeFillCategory, $barcodeFillImage, $language): DataResponse {
 			$uid = $this->requireUid();
 			$patch = [];
 			if ($lastHouseId !== null) {
@@ -110,6 +111,9 @@ final class PrefsController extends OCSController {
 			}
 			if ($suggestArchivedItems !== null) {
 				$patch['suggestArchivedItems'] = $suggestArchivedItems;
+			}
+			if ($shopAllStores !== null) {
+				$patch['shopAllStores'] = $shopAllStores;
 			}
 			if ($barcodeFillName !== null) {
 				$patch['barcodeFillName'] = $barcodeFillName;

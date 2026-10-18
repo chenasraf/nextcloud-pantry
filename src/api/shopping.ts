@@ -19,6 +19,8 @@ export interface CreateSessionInput {
    * left out starts the trip in its Removed section, restorable while shopping.
    */
   itemIds?: number[]
+  /** Shop every store in `storeIds` from one combined list instead of one at a time. */
+  allStores?: boolean
 }
 
 /**
