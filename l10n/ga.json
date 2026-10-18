@@ -239,6 +239,8 @@
     "Field default" : "Réamhshocrú réimse",
     "Fixed" : "Socraithe",
     "Remember last" : "Cuimhnigh an ceann deireanach",
+    "_In %n day_::_In %n days_" : ["I gceann %n lá","I gceann %n lá","I gceann %n lá","I gceann %n lá","I gceann %n lá"],
+    "_%n field set_::_%n fields set_" : ["Socraíodh %n réimse","Socraíodh %n réimse","Socraíodh %n réimse","Socraíodh %n réimse","Socraíodh %n réimse"],
     "New items on this list start with these values." : "Tosaíonn míreanna nua ar an liosta seo leis na luachanna seo.",
     "Only people who can edit this list can change its item defaults." : "Ní féidir ach le daoine ar féidir leo an liosta seo a chur in eagar na réamhshocruithe dá chuid míreanna a athrú.",
     "Not set" : "Gan socraithe",
