@@ -93,6 +93,7 @@ OC.L10N.register(
     "None" : "Niciuna",
     "Notifications" : "Notificări",
     "Files" : "Fișiere",
+    "Upload folder" : "Dosar de încărcare",
     "Browse …" : "Navigare ...",
     "Viewer" : "Vizualizator",
     "All" : "Toate ",
