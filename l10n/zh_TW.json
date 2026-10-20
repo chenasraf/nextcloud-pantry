@@ -157,10 +157,13 @@
     "Export" : "匯出",
     "Import" : "匯入",
     "New list" : "新清單",
+    "Empty trash" : "清空回收桶",
+    "Empty trash?" : "清空回收桶？",
     "Clear selection" : "清除選取",
     "Apply" : "套用",
     "Completed" : "已完成",
     "No lists yet" : "尚無清單",
+    "Trash emptied" : "已清空回收桶",
     "General" : "一般",
     "Automation" : "自動化",
     "Shopping" : "購物",
@@ -172,11 +175,13 @@
     "Add a description" : "加入描述",
     "Remove folder" : "移除資料夾",
     "Move to folder" : "移動至資料夾",
+    "Deleted photos will appear here." : "已刪除的照片將會顯示於此。",
     "Documentation" : "文件",
     "Creating …" : "建立中…",
     "_%n item_::_%n items_" : ["%n 個項目"],
     "Mine" : "我的",
     "Load more" : "載入更多",
-    "Finish" : "完成"
+    "Finish" : "完成",
+    "{hours} h {minutes} min" : "{hours} 小時 {minutes} 分鐘"
 },"pluralForm" :"nplurals=1; plural=0;"
 }
