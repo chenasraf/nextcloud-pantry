@@ -87,6 +87,7 @@ OC.L10N.register(
     "Language" : "Јазик",
     "Mark as done" : "Означи како готово",
     "None" : "Ништо",
+    "Notifications" : "Известувања",
     "Files" : "Датотеки",
     "Upload folder" : "Папка за прикачување",
     "Viewer" : "Прегледувач",
