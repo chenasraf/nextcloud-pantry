@@ -201,7 +201,7 @@ class HouseService {
 			$this->itemPriceMapper->deleteByHouse($houseId);
 			$this->fieldValueMapper->deleteByHouse($houseId);
 			// Delete all items (and their role access rows) under all lists
-			foreach ($this->listMapper->findByHouse($houseId) as $list) {
+			foreach ($this->listMapper->findAllByHouse($houseId) as $list) {
 				$this->itemMapper->deleteByList((int)$list->getId());
 				$this->listRoleMapper->deleteByList((int)$list->getId());
 			}

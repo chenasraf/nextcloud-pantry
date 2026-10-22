@@ -164,7 +164,8 @@ import { useLabels } from '@/composables/useLabels'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
 import { useBarcodeFill } from '@/composables/useBarcodeFill'
-import { listArchivedItems } from '@/api/lists'
+import { listApi } from '@/api/lists'
+import { useListKind } from '@/composables/useListKind'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
@@ -226,6 +227,8 @@ const emit = defineEmits<{
   'reuse-existing': [item: ChecklistItem]
   'open-defaults': []
 }>()
+
+const { kind } = useListKind()
 
 const name = ref('')
 const multiple = ref(false)
@@ -424,7 +427,7 @@ async function ensureArchivedLoaded(listId: number): Promise<void> {
   if (archivedByList.value.has(listId) || archivedLoading.has(listId)) return
   archivedLoading.add(listId)
   try {
-    const loaded = await listArchivedItems(props.houseId, listId)
+    const loaded = await listApi(kind.value).listArchivedItems(props.houseId, listId)
     archivedByList.value = new Map(archivedByList.value).set(listId, loaded)
   } catch {
     // Leave it unloaded so the next search retries.

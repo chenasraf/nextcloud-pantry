@@ -49,6 +49,24 @@ const routes: RouteRecordRaw[] = [
         props: true,
       },
       {
+        path: 'templates',
+        name: 'templates',
+        meta: { listKind: 'template' },
+        component: () => import('@/views/ChecklistsView.vue'),
+        props: (route) => ({ houseId: route.params.houseId, kind: 'template' }),
+      },
+      {
+        path: 'templates/:listId',
+        name: 'template-detail',
+        meta: { listKind: 'template' },
+        component: () => import('@/views/ChecklistDetail.vue'),
+        props: (route) => ({
+          houseId: route.params.houseId,
+          listId: route.params.listId,
+          kind: 'template',
+        }),
+      },
+      {
         path: 'manage',
         name: 'house-manage',
         component: () => import('@/views/HouseManageView.vue'),

@@ -31,7 +31,7 @@
             <li v-for="list in deletedLists" :key="'t-' + list.id" class="pantry-list-card-wrap">
               <router-link
                 :to="{
-                  name: 'list-detail',
+                  name: detailRoute,
                   params: { houseId: String(houseIdNum), listId: String(list.id) },
                 }"
                 class="pantry-list-card pantry-list-card--trash"
@@ -77,7 +77,7 @@
           <li v-for="list in archivedLists" :key="'a-' + list.id" class="pantry-list-card-wrap">
             <router-link
               :to="{
-                name: 'list-detail',
+                name: detailRoute,
                 params: { houseId: String(houseIdNum), listId: String(list.id) },
               }"
               class="pantry-list-card pantry-list-card--archive"
@@ -114,7 +114,8 @@
         :description="strings.emptyBody"
       >
         <template #icon>
-          <ClipboardCheckIcon />
+          <ClipboardCheckIcon v-if="isChecklist" />
+          <ClipboardTextMultipleIcon v-else />
         </template>
         <template #action>
           <NcButton v-if="can.canCreateLists" variant="primary" @click="showCreate = true">
@@ -124,7 +125,7 @@
       </NcEmptyContent>
 
       <ul v-else class="pantry-lists__grid">
-        <li class="pantry-list-card-wrap pantry-list-card-wrap--meta">
+        <li v-if="isChecklist" class="pantry-list-card-wrap pantry-list-card-wrap--meta">
           <router-link
             :to="{ name: 'all-lists', params: { houseId: String(houseIdNum) } }"
             class="pantry-list-card pantry-list-card--meta"
@@ -157,7 +158,7 @@
           >
             <router-link
               :to="{
-                name: 'list-detail',
+                name: detailRoute,
                 params: { houseId: String(houseIdNum), listId: String(item.list.id) },
               }"
               class="pantry-list-card"
@@ -224,6 +225,7 @@
 
     <ChecklistFormDialog
       :open="showCreate"
+      :kind="kind"
       @update:open="showCreate = $event"
       @save="submitCreate"
     />
@@ -231,6 +233,7 @@
     <ChecklistFormDialog
       :open="!!editing"
       :list="editing"
+      :kind="kind"
       @update:open="(v) => !v && (editing = null)"
       @save="submitEdit"
       @open-item-defaults="openItemDefaults"
@@ -246,6 +249,7 @@
     <ChecklistDuplicateDialog
       :open="!!duplicating"
       :list="duplicating"
+      :kind="kind"
       :submitting="duplicatingInFlight"
       @update:open="(v) => !v && (duplicating = null)"
       @duplicate="submitDuplicate"
@@ -329,6 +333,7 @@ import PlusIcon from '@icons/Plus.vue'
 import CartIcon from '@icons/Cart.vue'
 import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
+import ClipboardTextMultipleIcon from '@icons/ClipboardTextMultiple.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import DeleteIcon from '@icons/Delete.vue'
@@ -339,11 +344,12 @@ import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
 import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
 import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ViewListIcon from '@icons/ViewList.vue'
-import type { Checklist } from '@/api/types'
+import type { Checklist, ListKind } from '@/api/types'
 import type { ChecklistSort } from '@/api/prefs'
 import { getChecklistSort, setChecklistSort } from '@/api/prefs'
 import { useChecklists } from '@/composables/useChecklist'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
+import { LIST_KIND_ROUTES, listKindStrings, provideListKind } from '@/composables/useListKind'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import {
   checklistIconComponent,
@@ -363,8 +369,15 @@ function iconWrapStyle(color: string | null) {
   return { background: color, color: contrastColor(color) }
 }
 
-const props = defineProps<{ houseId: string }>()
+const props = withDefaults(defineProps<{ houseId: string; kind?: ListKind }>(), {
+  kind: 'checklist',
+})
 const router = useRouter()
+
+const kindRef = computed(() => props.kind)
+provideListKind(kindRef)
+const isChecklist = computed(() => props.kind === 'checklist')
+const detailRoute = LIST_KIND_ROUTES[props.kind].detail
 
 const houseIdNum = computed(() => Number(props.houseId))
 const {
@@ -390,7 +403,7 @@ const {
   viewMode,
   trashMode,
   archiveMode,
-} = useChecklists(houseIdNum.value)
+} = useChecklists(houseIdNum.value, props.kind)
 
 const { can } = useCurrentHouse()
 
@@ -500,7 +513,7 @@ async function submitCreate(data: ChecklistFormData) {
   const list = await create(data.name, data.description || null, data.icon, data.color || null)
   showCreate.value = false
   await router.push({
-    name: 'list-detail',
+    name: detailRoute,
     params: { houseId: String(houseIdNum.value), listId: String(list.id) },
   })
 }
@@ -549,7 +562,7 @@ async function submitDuplicate(data: { name: string; resetDone: boolean }) {
     const created = await duplicate(target.id, data.name, data.resetDone)
     duplicating.value = null
     await router.push({
-      name: 'list-detail',
+      name: detailRoute,
       params: { houseId: String(houseIdNum.value), listId: String(created.id) },
     })
   } catch {
@@ -725,10 +738,7 @@ useTouchReorder(
 )
 
 const strings = {
-  title: t('pantry', 'Checklists'),
-  trashTitle: t('pantry', 'Checklists trash'),
-  archiveTitle: t('pantry', 'Archived checklists'),
-  newList: t('pantry', 'New list'),
+  ...listKindStrings(props.kind),
   // TRANSLATORS: Button that opens Shopping Mode to shop the house's lists.
   shop: t('pantry', 'Start shopping'),
   manageCategories: t('pantry', 'Manage categories'),
@@ -737,51 +747,33 @@ const strings = {
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar button opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
   cancel: t('pantry', 'Cancel'),
-  // TRANSLATORS: Verb, menu button that opens a checklist for editing.
+  // TRANSLATORS: Verb, menu button that opens a list for editing.
   edit: t('pantry', 'Edit'),
-  // TRANSLATORS: Verb, menu button that creates a copy of a checklist.
+  // TRANSLATORS: Verb, menu button that creates a copy of a list.
   duplicate: t('pantry', 'Duplicate'),
-  duplicateFailed: t('pantry', 'Could not duplicate the checklist'),
   // TRANSLATORS: Prefix before a relative time on a list card, e.g. "Completed · 3 days ago". The whole list was checked off then.
   completed: t('pantry', 'Completed'),
-  // TRANSLATORS: Verb, menu button that moves a checklist to the trash.
+  // TRANSLATORS: Verb, menu button that moves a list to the trash.
   remove: t('pantry', 'Remove'),
   deletePermanently: t('pantry', 'Delete permanently'),
-  // TRANSLATORS: Verb, menu button that restores a checklist from the trash.
+  // TRANSLATORS: Verb, menu button that restores a list from the trash.
   restore: t('pantry', 'Restore'),
-  // TRANSLATORS: Verb, menu button that archives a checklist.
+  // TRANSLATORS: Verb, menu button that archives a list.
   archive: t('pantry', 'Archive'),
-  // TRANSLATORS: Verb, menu button that restores a checklist from the archive.
+  // TRANSLATORS: Verb, menu button that restores a list from the archive.
   unarchive: t('pantry', 'Unarchive'),
-  listMenu: t('pantry', 'List actions'),
-  deleteDialogTitle: t('pantry', 'Remove checklist'),
-  deletePermanentlyDialogTitle: t('pantry', 'Delete checklist permanently'),
-  emptyTitle: t('pantry', 'No lists yet'),
-  emptyBody: t('pantry', 'Create your first checklist to start adding items.'),
-  allListsTitle: t('pantry', 'All lists'),
-  allListsBody: t('pantry', 'Items from every list in this house.'),
+  allListsTitle: t('pantry', 'All checklists'),
+  allListsBody: t('pantry', 'Items from every checklist in this house.'),
   sortLabel: t('pantry', 'Sort order'),
-  // TRANSLATORS: Noun, label of the toggle button that shows deleted checklists.
+  // TRANSLATORS: Noun, label of the toggle button that shows deleted lists.
   trashLabel: t('pantry', 'Trash'),
-  // TRANSLATORS: Noun, label of the toggle button that shows archived checklists.
+  // TRANSLATORS: Noun, label of the toggle button that shows archived lists.
   archiveLabel: t('pantry', 'Archive'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
-  trashEmptyBody: t('pantry', 'Deleted checklists will appear here.'),
-  archiveEmptyTitle: t('pantry', 'No archived checklists'),
-  archiveEmptyBody: t('pantry', 'Archived checklists will appear here.'),
   emptyTrashAction: t('pantry', 'Empty trash'),
   emptyTrashTitle: t('pantry', 'Empty trash?'),
-  emptyTrashBody: t(
-    'pantry',
-    'This will permanently delete every checklist in the trash, along with all of their items. This cannot be undone.',
-  ),
   trashEmptiedToast: t('pantry', 'Trash emptied'),
-  listRestored: t('pantry', 'Checklist restored'),
-  listMovedToTrash: t('pantry', 'Checklist moved to trash'),
-  listPermanentlyDeleted: t('pantry', 'Checklist permanently deleted'),
   restoreFailed: t('pantry', 'Could not restore from trash'),
-  listArchived: t('pantry', 'Checklist archived'),
-  listUnarchived: t('pantry', 'Checklist unarchived'),
   unarchiveFailed: t('pantry', 'Could not restore from the archive'),
 }
 
@@ -876,7 +868,7 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     })
   }
 
-  if (isActiveView.value && lists.value.length > 0) {
+  if (isActiveView.value && isChecklist.value && lists.value.length > 0) {
     actions.push({
       key: 'shop',
       label: strings.shop,

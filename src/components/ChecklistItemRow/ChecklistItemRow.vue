@@ -33,7 +33,11 @@
       <DragVerticalIcon :size="20" />
     </span>
     <div class="checklist-row__body">
-      <div v-if="!suggestion && !selectionMode" class="checklist-row__check" @click.stop>
+      <div
+        v-if="isChecklist && !suggestion && !selectionMode"
+        class="checklist-row__check"
+        @click.stop
+      >
         <NcCheckboxRadioSwitch
           :model-value="item.done"
           :disabled="!canCheck"
@@ -91,7 +95,7 @@
             </template>
           </PantryChip>
           <PantryChip
-            v-if="item.rrule && !compact"
+            v-if="isChecklist && item.rrule && !compact"
             class="checklist-row__recurrence"
             size="sm"
             :interactive="false"
@@ -300,6 +304,7 @@ import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import type { ChecklistItem, Category, Checklist, Store, Label } from '@/api/types'
 import type { RowClickAction } from '@/api/prefs'
+import { useListKind } from '@/composables/useListKind'
 
 const { can } = useCurrentHouse()
 
@@ -400,7 +405,12 @@ const props = withDefaults(
 
 // Write affordances require both the list to be writable (a view-only shared
 // list disables all of them) and the specific role capability.
-const canCheck = computed(() => props.listWritable && can.value.canCheckItems)
+const { isChecklist } = useListKind()
+const canCheck = computed(() => isChecklist.value && props.listWritable && can.value.canCheckItems)
+// Items that are never checked off open instead of toggling.
+const clickAction = computed<RowClickAction>(() =>
+  !isChecklist.value && props.rowClickAction === 'done' ? 'view' : props.rowClickAction,
+)
 const canEditItem = computed(() => props.listWritable && can.value.canEditLists)
 const canMoveItem = computed(() => props.listWritable && can.value.canMoveItems)
 const canCopyItem = computed(() => props.listWritable && can.value.canCopyItems)
@@ -441,11 +451,11 @@ function onRowClick() {
     return
   }
   if (props.compact) return
-  if (props.rowClickAction === 'view') {
+  if (clickAction.value === 'view') {
     emit('view', props.item)
-  } else if (props.rowClickAction === 'edit' && canEditItem.value) {
+  } else if (clickAction.value === 'edit' && canEditItem.value) {
     emit('edit', props.item)
-  } else if (props.rowClickAction === 'done' && canCheck.value) {
+  } else if (clickAction.value === 'done' && canCheck.value) {
     emit('toggle', props.item.id)
   }
 }
@@ -457,9 +467,9 @@ const rowClickable = computed(
     !props.suggestion &&
     !props.selectionMode &&
     !props.compact &&
-    (props.rowClickAction === 'view' ||
-      (props.rowClickAction === 'edit' && canEditItem.value) ||
-      (props.rowClickAction === 'done' && canCheck.value)),
+    (clickAction.value === 'view' ||
+      (clickAction.value === 'edit' && canEditItem.value) ||
+      (clickAction.value === 'done' && canCheck.value)),
 )
 
 // Keep the store chip's click from bubbling to the row's own click handler.

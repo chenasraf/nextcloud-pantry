@@ -1,9 +1,9 @@
 import { computed, ref, type Ref } from 'vue'
 import * as api from '@/api/lists'
-import type { Checklist, ChecklistItem } from '@/api/types'
+import type { Checklist, ChecklistItem, ListKind } from '@/api/types'
 import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
 
-// Per-house state shared across all callers so sidebar and views stay in sync.
+// Per-house, per-kind state shared across all callers so sidebar and views stay in sync.
 interface HouseChecklistState {
   lists: Ref<Checklist[]>
   deletedLists: Ref<Checklist[]>
@@ -14,10 +14,11 @@ interface HouseChecklistState {
   viewMode: Ref<'active' | 'trash' | 'archive'>
   inflight: Promise<Checklist[]> | null
 }
-const houseStates = new Map<number, HouseChecklistState>()
+const houseStates = new Map<string, HouseChecklistState>()
 
-function getState(houseId: number): HouseChecklistState {
-  let s = houseStates.get(houseId)
+function getState(houseId: number, kind: ListKind): HouseChecklistState {
+  const key = `${kind}:${houseId}`
+  let s = houseStates.get(key)
   if (!s) {
     s = {
       lists: ref<Checklist[]>([]),
@@ -29,13 +30,14 @@ function getState(houseId: number): HouseChecklistState {
       viewMode: ref<'active' | 'trash' | 'archive'>('active'),
       inflight: null,
     }
-    houseStates.set(houseId, s)
+    houseStates.set(key, s)
   }
   return s
 }
 
-export function useChecklists(houseId: number) {
-  const state = getState(houseId)
+export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
+  const state = getState(houseId, kind)
+  const resource = api.listApi(kind)
   const { lists, deletedLists, archivedLists, loading, error, sortBy, viewMode } = state
   const trashMode = computed(() => viewMode.value === 'trash')
   const archiveMode = computed(() => viewMode.value === 'archive')
@@ -46,7 +48,7 @@ export function useChecklists(houseId: number) {
     if (state.inflight && !force) return state.inflight
     loading.value = true
     error.value = null
-    state.inflight = api
+    state.inflight = resource
       .listLists(houseId, sort)
       .then((result) => {
         lists.value = result
@@ -67,7 +69,7 @@ export function useChecklists(houseId: number) {
     loading.value = true
     error.value = null
     try {
-      deletedLists.value = await api.listDeletedLists(houseId)
+      deletedLists.value = await resource.listDeletedLists(houseId)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -79,7 +81,7 @@ export function useChecklists(houseId: number) {
     loading.value = true
     error.value = null
     try {
-      archivedLists.value = await api.listArchivedLists(houseId)
+      archivedLists.value = await resource.listArchivedLists(houseId)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -93,7 +95,7 @@ export function useChecklists(houseId: number) {
     icon?: string | null,
     color?: string | null,
   ): Promise<Checklist> {
-    const created = await api.createList(houseId, name, description, icon, color)
+    const created = await resource.createList(houseId, name, description, icon, color)
     lists.value = [...lists.value, created]
     return created
   }
@@ -112,49 +114,49 @@ export function useChecklists(houseId: number) {
       color?: string | null
     },
   ): Promise<void> {
-    const updated = await api.updateList(houseId, listId, patch)
+    const updated = await resource.updateList(houseId, listId, patch)
     lists.value = lists.value.map((l) => (l.id === listId ? updated : l))
   }
 
   async function remove(listId: number): Promise<void> {
-    await api.deleteList(houseId, listId)
+    await resource.deleteList(houseId, listId)
     lists.value = lists.value.filter((l) => l.id !== listId)
   }
 
   async function restore(listId: number): Promise<void> {
-    const restored = await api.restoreList(houseId, listId)
+    const restored = await resource.restoreList(houseId, listId)
     deletedLists.value = deletedLists.value.filter((l) => l.id !== listId)
     // Append so it shows up immediately if the user toggles back to the active view.
     lists.value = [...lists.value, restored]
   }
 
   async function removePermanently(listId: number): Promise<void> {
-    await api.permanentlyDeleteList(houseId, listId)
+    await resource.permanentlyDeleteList(houseId, listId)
     deletedLists.value = deletedLists.value.filter((l) => l.id !== listId)
     lists.value = lists.value.filter((l) => l.id !== listId)
   }
 
   async function emptyTrash(): Promise<void> {
-    await api.emptyListsTrash(houseId)
+    await resource.emptyListsTrash(houseId)
     deletedLists.value = []
   }
 
   async function archive(listId: number): Promise<void> {
-    const archived = await api.archiveList(houseId, listId)
+    const archived = await resource.archiveList(houseId, listId)
     lists.value = lists.value.filter((l) => l.id !== listId)
     // Prepend so it leads the archive view (most recently archived first).
     archivedLists.value = [archived, ...archivedLists.value]
   }
 
   async function unarchive(listId: number): Promise<void> {
-    const restored = await api.unarchiveList(houseId, listId)
+    const restored = await resource.unarchiveList(houseId, listId)
     archivedLists.value = archivedLists.value.filter((l) => l.id !== listId)
     // Append so it shows up immediately if the user toggles back to the active view.
     lists.value = [...lists.value, restored]
   }
 
   async function duplicate(listId: number, name: string, resetDone: boolean): Promise<Checklist> {
-    const created = await api.duplicateList(houseId, listId, name, resetDone)
+    const created = await resource.duplicateList(houseId, listId, name, resetDone)
     lists.value = [...lists.value, created]
     return created
   }
@@ -195,11 +197,33 @@ export function useChecklists(houseId: number) {
   }
 }
 
+/**
+ * Active lists of every kind, in their shared sort order. For pickers where any
+ * kind can appear, such as category, label and custom-field scoping.
+ */
+export function useAllKindLists(houseId: number) {
+  const checklists = useChecklists(houseId, 'checklist')
+  const templates = useChecklists(houseId, 'template')
+  const lists = computed(() =>
+    [...checklists.lists.value, ...templates.lists.value].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
+    ),
+  )
+
+  async function load(): Promise<Checklist[]> {
+    await Promise.all([checklists.load(), templates.load()])
+    return lists.value
+  }
+
+  return { lists, load }
+}
+
 // Sentinel for the "All lists" meta view. Items are aggregated from every
 // list in the house; per-item operations resolve to the item's real listId.
 export const ALL_LISTS_ID = 0
 
-export function useChecklistItems(houseId: number, listId: number) {
+export function useChecklistItems(houseId: number, listId: number, kind: ListKind = 'checklist') {
+  const resource = api.listApi(kind)
   const items = ref<ChecklistItem[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -230,11 +254,11 @@ export function useChecklistItems(houseId: number, listId: number) {
       if (isMeta) {
         items.value = await api.listAllItems(houseId, s)
       } else if (archiveMode.value) {
-        items.value = await api.listArchivedItems(houseId, listId)
+        items.value = await resource.listArchivedItems(houseId, listId)
       } else if (trashMode.value) {
-        items.value = await api.listDeletedItems(houseId, listId)
+        items.value = await resource.listDeletedItems(houseId, listId)
       } else {
-        items.value = await api.listItems(houseId, listId, s)
+        items.value = await resource.listItems(houseId, listId, s)
       }
     } catch (e) {
       if (!silent) error.value = (e as Error).message
@@ -248,13 +272,13 @@ export function useChecklistItems(houseId: number, listId: number) {
     if (useListId === undefined || useListId <= 0) {
       throw new Error('A target list is required to add an item')
     }
-    const created = await api.addItem(houseId, useListId, input)
+    const created = await resource.addItem(houseId, useListId, input)
     items.value = [...items.value, created]
     return created
   }
 
   async function update(itemId: number, patch: Partial<api.ItemInput>): Promise<void> {
-    const updated = await api.updateItem(houseId, listIdFor(itemId), itemId, patch)
+    const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, patch)
     if (isMeta && patch.targetListId !== undefined && patch.targetListId !== updated.listId) {
       // Should not happen — the backend canonicalizes listId via targetListId.
     }
@@ -263,7 +287,7 @@ export function useChecklistItems(houseId: number, listId: number) {
 
   async function copy(itemId: number, targetListId: number): Promise<ChecklistItem> {
     const sourceListId = listIdFor(itemId)
-    const created = await api.copyItem(houseId, sourceListId, itemId, targetListId)
+    const created = await resource.copyItem(houseId, sourceListId, itemId, targetListId)
     if (isMeta || targetListId === listId) {
       items.value = [...items.value, created]
     }
@@ -309,7 +333,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     const useListId = isMeta ? prevItem.listId : listId
     const stillPresent = items.value.some((i) => i.id === prevItem.id)
     if (!stillPresent) {
-      await api.restoreItem(houseId, useListId, prevItem.id)
+      await resource.restoreItem(houseId, useListId, prevItem.id)
     }
     const updated = await api.toggleItem(houseId, useListId, prevItem.id)
     if (stillPresent) {
@@ -327,28 +351,28 @@ export function useChecklistItems(houseId: number, listId: number) {
     items.value = items.value
       .map((i) => (map.has(i.id) ? { ...i, sortOrder: map.get(i.id)! } : i))
       .sort((a, b) => a.sortOrder - b.sortOrder)
-    await api.reorderItems(houseId, listId, reorderEntries)
+    await resource.reorderItems(houseId, listId, reorderEntries)
   }
 
   async function remove(itemId: number): Promise<void> {
-    await api.deleteItem(houseId, listIdFor(itemId), itemId)
+    await resource.deleteItem(houseId, listIdFor(itemId), itemId)
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function undoRemove(prevItem: ChecklistItem): Promise<void> {
     // Restores a soft-deleted item without changing its done state.
     const useListId = isMeta ? prevItem.listId : listId
-    const restored = await api.restoreItem(houseId, useListId, prevItem.id)
+    const restored = await resource.restoreItem(houseId, useListId, prevItem.id)
     items.value = [...items.value, restored]
   }
 
   async function removePermanently(itemId: number): Promise<void> {
-    await api.permanentlyDeleteItem(houseId, listIdFor(itemId), itemId)
+    await resource.permanentlyDeleteItem(houseId, listIdFor(itemId), itemId)
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function restore(itemId: number): Promise<void> {
-    await api.restoreItem(houseId, listIdFor(itemId), itemId)
+    await resource.restoreItem(houseId, listIdFor(itemId), itemId)
     // The item leaves the current view: in trash mode it returns to the active
     // list (and stays hidden here); in active mode it was never visible.
     items.value = items.value.filter((i) => i.id !== itemId)
@@ -356,20 +380,20 @@ export function useChecklistItems(houseId: number, listId: number) {
 
   async function emptyTrash(): Promise<void> {
     if (isMeta) return
-    await api.emptyTrash(houseId, listId)
+    await resource.emptyTrash(houseId, listId)
     if (trashMode.value) {
       items.value = []
     }
   }
 
   async function archive(itemId: number): Promise<void> {
-    await api.archiveItem(houseId, listIdFor(itemId), itemId)
+    await resource.archiveItem(houseId, listIdFor(itemId), itemId)
     // The item leaves the active view for the archive.
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function unarchive(itemId: number): Promise<void> {
-    await api.unarchiveItem(houseId, listIdFor(itemId), itemId)
+    await resource.unarchiveItem(houseId, listIdFor(itemId), itemId)
     // The item leaves the archive view; it returns to the active list.
     items.value = items.value.filter((i) => i.id !== itemId)
   }
@@ -377,7 +401,7 @@ export function useChecklistItems(houseId: number, listId: number) {
   async function undoArchive(prevItem: ChecklistItem): Promise<void> {
     // Reverses a just-archived item without changing its state.
     const useListId = isMeta ? prevItem.listId : listId
-    const restored = await api.unarchiveItem(houseId, useListId, prevItem.id)
+    const restored = await resource.unarchiveItem(houseId, useListId, prevItem.id)
     items.value = [...items.value, restored]
   }
 
@@ -485,18 +509,18 @@ export function useChecklistItems(houseId: number, listId: number) {
     const restored: ChecklistItem[] = []
     for (const prev of prevItems) {
       const useListId = isMeta ? prev.listId : listId
-      restored.push(await api.restoreItem(houseId, useListId, prev.id))
+      restored.push(await resource.restoreItem(houseId, useListId, prev.id))
     }
     items.value = [...items.value, ...restored]
   }
 
   async function uploadImage(itemId: number, file: File): Promise<void> {
-    const updated = await api.uploadItemImage(houseId, listIdFor(itemId), itemId, file)
+    const updated = await resource.uploadItemImage(houseId, listIdFor(itemId), itemId, file)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
   async function clearImage(itemId: number): Promise<void> {
-    const updated = await api.clearItemImage(houseId, listIdFor(itemId), itemId)
+    const updated = await resource.clearItemImage(houseId, listIdFor(itemId), itemId)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 

@@ -64,8 +64,17 @@ class ChecklistService {
 	/**
 	 * @return Checklist[]
 	 */
-	public function listForHouse(int $houseId, string $sortBy = 'custom'): array {
-		return $this->listMapper->findByHouse($houseId, $sortBy);
+	public function listForHouse(int $houseId, string $sortBy = 'custom', string $kind = Checklist::KIND_CHECKLIST): array {
+		return $this->listMapper->findByHouse($houseId, $sortBy, $kind);
+	}
+
+	/**
+	 * Active lists of every kind, in their shared sort order.
+	 *
+	 * @return Checklist[]
+	 */
+	public function listAllKindsForHouse(int $houseId): array {
+		return $this->listMapper->findByHouse($houseId);
 	}
 
 	/**
@@ -96,33 +105,46 @@ class ChecklistService {
 	}
 
 	/**
-	 * List soft-deleted checklists in a house. Most recently deleted first.
+	 * List soft-deleted lists of a kind in a house. Most recently deleted first.
 	 *
 	 * @return Checklist[]
 	 */
-	public function listDeletedForHouse(int $houseId): array {
-		return $this->listMapper->findDeletedByHouse($houseId);
+	public function listDeletedForHouse(int $houseId, string $kind = Checklist::KIND_CHECKLIST): array {
+		return $this->listMapper->findDeletedByHouse($houseId, $kind);
 	}
 
-	public function getList(int $listId, bool $includeDeleted = false): Checklist {
+	/**
+	 * Load a list, optionally only when it is of `$kind`. A list of another
+	 * kind is reported as missing, so each kind's resource only ever sees its
+	 * own lists.
+	 */
+	public function getList(int $listId, bool $includeDeleted = false, ?string $kind = null): Checklist {
 		try {
-			return $this->listMapper->findById($listId, $includeDeleted);
+			$list = $this->listMapper->findById($listId, $includeDeleted);
 		} catch (DoesNotExistException) {
 			throw new NotFoundException('List not found');
 		}
+		if ($kind !== null && $list->getKind() !== $kind) {
+			throw new NotFoundException('List not found');
+		}
+		return $list;
 	}
 
 	/**
 	 * @param array<string, mixed> $recurrenceDefault Recurrence keys accepted by {@see self::applyRecurrenceDefault()}.
 	 */
-	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null, ?string $color = null, array $recurrenceDefault = []): Checklist {
+	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null, ?string $color = null, array $recurrenceDefault = [], string $kind = Checklist::KIND_CHECKLIST): Checklist {
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('List name cannot be empty');
 		}
+		if (!in_array($kind, Checklist::KINDS, true)) {
+			throw new \InvalidArgumentException('Unknown list kind: ' . $kind);
+		}
 		$now = time();
 		$list = new Checklist();
 		$list->setHouseId($houseId);
+		$list->setKind($kind);
 		$list->setName($name);
 		$list->setDescription($description !== null && $description !== '' ? $description : null);
 		if ($icon !== null && $icon !== '') {
@@ -294,11 +316,11 @@ class ChecklistService {
 	}
 
 	/**
-	 * Hard-delete every soft-deleted checklist in the house, along with any
-	 * items those lists contained.
+	 * Hard-delete every soft-deleted list of a kind in the house, along with
+	 * any items those lists contained.
 	 */
-	public function emptyListsTrash(int $houseId): void {
-		$removed = $this->listMapper->emptyTrashForHouse($houseId);
+	public function emptyListsTrash(int $houseId, string $kind = Checklist::KIND_CHECKLIST): void {
+		$removed = $this->listMapper->emptyTrashForHouse($houseId, $kind);
 		foreach ($removed as $list) {
 			$this->itemMapper->deleteByList((int)$list->getId());
 			$this->categoryMapper->deleteByList((int)$list->getId());
@@ -309,12 +331,12 @@ class ChecklistService {
 	}
 
 	/**
-	 * List archived checklists in a house. Most recently archived first.
+	 * List archived lists of a kind in a house. Most recently archived first.
 	 *
 	 * @return Checklist[]
 	 */
-	public function listArchivedForHouse(int $houseId): array {
-		return $this->listMapper->findArchivedByHouse($houseId);
+	public function listArchivedForHouse(int $houseId, string $kind = Checklist::KIND_CHECKLIST): array {
+		return $this->listMapper->findArchivedByHouse($houseId, $kind);
 	}
 
 	/**
@@ -380,6 +402,7 @@ class ChecklistService {
 
 		$copy = new Checklist();
 		$copy->setHouseId($houseId);
+		$copy->setKind($source->getKind());
 		$copy->setName($name);
 		$copy->setDescription($source->getDescription());
 		$copy->setIcon($source->getIcon());
@@ -410,8 +433,9 @@ class ChecklistService {
 			$this->listMapper->update($copy);
 		}
 
+		$schedules = $copy->isChecklist();
 		foreach ($this->itemMapper->findByList($sourceId) as $item) {
-			$this->duplicateItemInto($item, $copyId, $resetDone, $addedBy, $now, $duplicateImage, $maps);
+			$this->duplicateItemInto($item, $copyId, $resetDone, $addedBy, $now, $duplicateImage, $maps, $schedules);
 		}
 
 		return $copy;
@@ -538,6 +562,7 @@ class ChecklistService {
 		int $now,
 		callable $duplicateImage,
 		array $maps,
+		bool $schedules,
 	): void {
 		$copy = new ChecklistItem();
 		$copy->setListId($copyListId);
@@ -564,7 +589,7 @@ class ChecklistService {
 			// An unchecked item on a fixed schedule gets its next occurrence now,
 			// the same way a newly added one does.
 			$copy->setNextDueAt(
-				$source->getRrule() !== null && !$source->getRepeatFromCompletion()
+				$schedules && $source->getRrule() !== null && !$source->getRepeatFromCompletion()
 					? $this->computeNextDueAt($copy, $now)?->getTimestamp()
 					: null,
 			);
@@ -655,8 +680,7 @@ class ChecklistService {
 	}
 
 	public function addItem(int $listId, array $data, ?string $addedBy = null): ChecklistItem {
-		// Ensure the list exists.
-		$this->getList($listId);
+		$list = $this->getList($listId);
 
 		$name = trim((string)($data['name'] ?? ''));
 		if ($name === '') {
@@ -684,8 +708,9 @@ class ChecklistService {
 		$repeatFromCompletion = !empty($data['repeatFromCompletion']);
 		$item->setRepeatFromCompletion($repeatFromCompletion);
 		$item->setDeleteOnDone(!empty($data['deleteOnDone']));
-		// For fixed-schedule items, compute the first due time immediately.
-		if ($rrule !== null && !$repeatFromCompletion) {
+		// For fixed-schedule items, compute the first due time immediately. Only
+		// checklists run recurrence; other kinds keep the rule without a schedule.
+		if ($list->isChecklist() && $rrule !== null && !$repeatFromCompletion) {
 			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 		} else {
 			$item->setNextDueAt(null);
@@ -776,8 +801,7 @@ class ChecklistService {
 		}
 		if (isset($patch['listId'])) {
 			$targetListId = (int)$patch['listId'];
-			// Ensure the target list exists.
-			$this->getList($targetListId);
+			$this->assertSameKind($item->getListId(), $targetListId);
 			$item->setListId($targetListId);
 		}
 		if (isset($patch['sortOrder'])) {
@@ -949,6 +973,9 @@ class ChecklistService {
 
 	public function toggleItem(int $itemId, string $uid, ?int $now = null): ChecklistItem {
 		$item = $this->getItem($itemId);
+		if (!$this->getList($item->getListId(), includeDeleted: true)->isChecklist()) {
+			throw new \InvalidArgumentException('Only checklist items can be checked off');
+		}
 		$now ??= time();
 
 		if (!$item->getDone()) {
@@ -1222,7 +1249,7 @@ class ChecklistService {
 		?string $imageUploadedBy,
 	): ChecklistItem {
 		$source = $this->getItem($itemId);
-		$this->getList($targetListId);
+		$target = $this->assertSameKind($source->getListId(), $targetListId);
 
 		$now = time();
 		$copy = new ChecklistItem();
@@ -1237,7 +1264,7 @@ class ChecklistService {
 		$copy->setRrule($source->getRrule());
 		$copy->setRepeatFromCompletion($source->getRepeatFromCompletion());
 		$copy->setDeleteOnDone($source->getDeleteOnDone());
-		if ($source->getRrule() !== null && !$source->getRepeatFromCompletion()) {
+		if ($target->isChecklist() && $source->getRrule() !== null && !$source->getRepeatFromCompletion()) {
 			$copy->setNextDueAt($this->computeNextDueAt($copy, $now)?->getTimestamp());
 		} else {
 			$copy->setNextDueAt(null);
@@ -1266,6 +1293,19 @@ class ChecklistService {
 			$this->fieldValueMapper->findForItem((int)$source->getId()),
 		);
 		return $saved;
+	}
+
+	/**
+	 * Items move and copy only between lists of the same kind, since item
+	 * shapes differ by kind.
+	 */
+	private function assertSameKind(int $sourceListId, int $targetListId): Checklist {
+		$target = $this->getList($targetListId);
+		$source = $this->getList($sourceListId, includeDeleted: true);
+		if ($source->getKind() !== $target->getKind()) {
+			throw new \InvalidArgumentException('Items can only move or copy to a list of the same kind');
+		}
+		return $target;
 	}
 
 	public function deleteItem(int $itemId): void {

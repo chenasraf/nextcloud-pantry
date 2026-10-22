@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Tests\Unit\Service;
 
+use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
@@ -33,6 +34,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class ShoppingSessionServiceTest extends TestCase {
+	private const TEMPLATE_LIST_ID = 99;
+
 	/** @var ShoppingSessionMapper&MockObject */
 	private ShoppingSessionMapper $sessions;
 	/** @var ShoppingSessionListMapper&MockObject */
@@ -83,6 +86,12 @@ class ShoppingSessionServiceTest extends TestCase {
 			),
 		);
 		$this->checklists = $this->createMock(ChecklistService::class);
+		$this->checklists->method('getList')->willReturnCallback(function (int $id): Checklist {
+			$list = new Checklist();
+			$list->setHouseId(1);
+			$list->setKind($id === self::TEMPLATE_LIST_ID ? Checklist::KIND_TEMPLATE : Checklist::KIND_CHECKLIST);
+			return $list;
+		});
 		$this->storeMapper = $this->createMock(StoreMapper::class);
 		$this->svc = new ShoppingSessionService(
 			$this->sessions,
@@ -210,6 +219,27 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->sessions->method('findLiveByUser')->willReturn(null);
 		$this->expectException(\InvalidArgumentException::class);
 		$this->svc->create(1, 'alice', [], [2], true);
+	}
+
+	public function testCreateLeavesTemplatesOutOfTheScope(): void {
+		$this->sessions->method('findLiveByUser')->willReturn(null);
+		$this->sessions->method('insert')->willReturnCallback(function (ShoppingSession $s) {
+			$ref = new \ReflectionProperty($s, 'id');
+			$ref->setValue($s, 42);
+			return $s;
+		});
+		$this->sessionLists->expects($this->once())
+			->method('setListsForSession')
+			->with(42, [10]);
+
+		$this->svc->create(1, 'alice', [10, self::TEMPLATE_LIST_ID], [], true);
+	}
+
+	public function testCreateRejectsAScopeOfOnlyTemplates(): void {
+		$this->sessions->method('findLiveByUser')->willReturn(null);
+		$this->sessions->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->create(1, 'alice', [self::TEMPLATE_LIST_ID], [], true);
 	}
 
 	public function testCreateInsertsSessionWithFirstStoreActive(): void {

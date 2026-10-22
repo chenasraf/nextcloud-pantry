@@ -103,7 +103,7 @@ vi.mock('@/composables/useCategories', () => ({
 
 const mockLists = ref<Checklist[]>([])
 vi.mock('@/composables/useChecklist', () => ({
-  useChecklists: () => ({
+  useAllKindLists: () => ({
     lists: mockLists,
     load: vi.fn().mockResolvedValue(undefined),
   }),

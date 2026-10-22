@@ -185,7 +185,7 @@ import DragVerticalIcon from '@icons/DragVertical.vue'
 import type { FieldDefinition } from '@/api/types'
 import type { CreateFieldInput, OptionDeleteAction, UpdateFieldPatch } from '@/api/customFields'
 import { useCustomFields } from '@/composables/useCustomFields'
-import { useChecklists } from '@/composables/useChecklist'
+import { useAllKindLists } from '@/composables/useChecklist'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
 import { fieldTypeIconComponent, fieldTypeLabel } from './fieldTypeIcons'
@@ -199,7 +199,7 @@ defineEmits<{ 'update:open': [value: boolean] }>()
 const fields = useCustomFields(props.houseId)
 const items = computed(() => fields.items.value)
 const loading = computed(() => fields.loading.value)
-const { lists, load: loadLists } = useChecklists(props.houseId)
+const { lists, load: loadLists } = useAllKindLists(props.houseId)
 
 const openId = ref<number | null>(null)
 const creating = ref(false)

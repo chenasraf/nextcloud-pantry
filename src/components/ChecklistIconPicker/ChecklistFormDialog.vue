@@ -68,7 +68,9 @@
           </template>
           {{ strings.itemDefaultsButton }}
         </NcButton>
-        <p class="pantry-access-hint">{{ strings.itemDefaultsHint }}</p>
+        <p class="pantry-access-hint">
+          {{ kind === 'checklist' ? strings.itemDefaultsHint : strings.templateItemDefaultsHint }}
+        </p>
       </div>
       <div v-if="showAccess">
         <label class="pantry-icon-picker__label">{{ strings.accessLabel }}</label>
@@ -111,7 +113,8 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import CloseIcon from '@icons/Close.vue'
 import TuneIcon from '@icons/TuneVariant.vue'
-import type { Checklist } from '@/api/types'
+import type { Checklist, ListKind } from '@/api/types'
+import { listKindStrings } from '@/composables/useListKind'
 import type { ChecklistFormData } from './checklistForm'
 import { CHECKLIST_ICONS, DEFAULT_CHECKLIST_ICON_KEY } from './checklistIcons'
 import { checklistColorOptions, contrastColor } from './checklistColors'
@@ -123,7 +126,11 @@ import { ShareEditor } from '@/components/ShareEditor'
 const props = defineProps<{
   open: boolean
   list?: Checklist | null
+  /** The kind being created or edited; falls back to the list's own. */
+  kind?: ListKind
 }>()
+
+const kind = computed<ListKind>(() => props.kind ?? props.list?.kind ?? 'checklist')
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
@@ -193,7 +200,10 @@ watch(
   { immediate: true },
 )
 
-const dialogName = computed(() => (props.list ? strings.editTitle : strings.createTitle))
+const dialogName = computed(() => {
+  const kindStrings = listKindStrings(kind.value)
+  return props.list ? kindStrings.editTitle : kindStrings.createTitle
+})
 
 const activeIconStyle = computed(() =>
   colorValue.value
@@ -213,8 +223,6 @@ function submit() {
 }
 
 const strings = {
-  createTitle: t('pantry', 'Create a checklist'),
-  editTitle: t('pantry', 'Edit checklist'),
   nameLabel: t('pantry', 'Name'),
   namePlaceholder: t('pantry', 'e.g. Weekly groceries'),
   descriptionLabel: t('pantry', 'Description (optional)'),
@@ -228,6 +236,10 @@ const strings = {
   itemDefaultsHint: t(
     'pantry',
     'Pre-fill the recurrence, stores, category, labels, quantity and custom fields of new items.',
+  ),
+  templateItemDefaultsHint: t(
+    'pantry',
+    'Pre-fill the stores, category, labels, quantity and custom fields of new items.',
   ),
   accessLabel: t('pantry', 'Access:'),
   accessEveryone: t('pantry', 'Everyone'),

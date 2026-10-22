@@ -32,7 +32,15 @@ const mockApi = vi.hoisted(() => ({
   batchUncheckItems: vi.fn(),
 }))
 
-vi.mock('@/api/lists', () => mockApi)
+const apiKinds = vi.hoisted(() => [] as string[])
+
+vi.mock('@/api/lists', () => ({
+  ...mockApi,
+  listApi: (kind: string) => {
+    apiKinds.push(kind)
+    return mockApi
+  },
+}))
 
 import { useChecklists, useChecklistItems } from './useChecklist'
 
@@ -274,6 +282,21 @@ describe('useChecklists', () => {
 
       expect(a.lists.value).not.toEqual(b.lists.value)
       expect(a.lists.value[0].id).not.toBe(b.lists.value[0].id)
+    })
+
+    it('keeps each kind of list apart within a house', async () => {
+      const templates = [makeList({ id: 5, kind: 'template' })]
+      mockApi.listLists.mockResolvedValue(templates)
+      apiKinds.length = 0
+
+      const checklists = useChecklists(houseCounter)
+      const templateLists = useChecklists(houseCounter, 'template')
+      await templateLists.load()
+
+      expect(apiKinds).toEqual(['checklist', 'template'])
+      expect(templateLists.lists.value).toEqual(templates)
+      expect(checklists.lists.value).toEqual([])
+      expect(checklists.lists).not.toBe(templateLists.lists)
     })
   })
 

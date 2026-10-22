@@ -243,7 +243,7 @@ const strings = {
   // TRANSLATORS: Button that checks the unchecked items and unchecks the checked ones
   invert: t('pantry', 'Invert'),
   uncategorized: t('pantry', 'Uncategorized'),
-  empty: t('pantry', 'The selected lists have nothing left to buy.'),
+  empty: t('pantry', 'The selected checklists have nothing left to buy.'),
   cancel: t('pantry', 'Cancel'),
   done: t('pantry', 'Done'),
 }

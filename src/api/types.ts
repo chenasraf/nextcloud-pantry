@@ -118,9 +118,18 @@ export type ItemDefaultsPatch = Partial<{
   fields?: (Partial<ItemDefaultField> & { fieldId: number })[]
 }
 
+/** What a list is for; fixed at creation. */
+export type ListKind = 'checklist' | 'template'
+
+/**
+ * A list of any kind. Templates carry the same fields minus the checklist-only
+ * ones (completion and the per-column recurrence default), which read as
+ * undefined on them.
+ */
 export interface Checklist {
   id: number
   houseId: number
+  kind?: ListKind
   name: string
   description: string | null
   icon: string
@@ -286,6 +295,10 @@ export interface ItemCustomFieldValue {
   notifyLeadDays: number | null
 }
 
+/**
+ * An item on a list of any kind. Template items are never checked off: the
+ * server leaves out `done`, `doneAt`, `doneBy` and `nextDueAt`.
+ */
 export interface ChecklistItem {
   id: number
   listId: number

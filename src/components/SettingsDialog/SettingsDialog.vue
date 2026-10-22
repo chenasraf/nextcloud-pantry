@@ -515,7 +515,7 @@ const strings = {
   notifyPhoto: t('pantry', 'Photo uploads'),
   notifyNoteCreate: t('pantry', 'New notes'),
   notifyNoteEdit: t('pantry', 'Note edits'),
-  notifyItemAdd: t('pantry', 'Checklist items added'),
+  notifyItemAdd: t('pantry', 'List items added'),
   notifyItemRecur: t('pantry', 'Recurring items reappearing'),
   notifyItemDone: t('pantry', 'Checklist items completed'),
   filesSection: t('pantry', 'Files'),

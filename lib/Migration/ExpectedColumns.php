@@ -47,6 +47,10 @@ final class ExpectedColumns {
 			// the item defaults above, so a missing column breaks the index.
 			self::col('lists', 'last_completed_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
+			// lists — list kind (Version42). Every list query filters on it, so a
+			// missing column breaks the list index for every kind.
+			self::col('lists', 'kind', Types::STRING, ['notnull' => false, 'length' => 16, 'default' => 'checklist']),
+
 			// categories — list scoping (Version27); category queries filter on
 			// list_id, so a missing column breaks category loading and the
 			// category-sorted item list.

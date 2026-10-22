@@ -154,8 +154,8 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
-	 * Find non-deleted items across every non-deleted list in the house. The
-	 * "custom" sort mode is not supported here because sort_order is scoped
+	 * Find non-deleted items across every non-deleted checklist in the house.
+	 * The "custom" sort mode is not supported here because sort_order is scoped
 	 * to a single list — callers should fall back to a deterministic sort.
 	 *
 	 * @return ChecklistItem[]
@@ -164,6 +164,10 @@ class ChecklistItemMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$items = $this->getTableName();
 		$lists = Application::tableName('lists');
+		$isChecklist = $qb->expr()->orX(
+			$qb->expr()->eq('l.kind', $qb->createNamedParameter(Checklist::KIND_CHECKLIST)),
+			$qb->expr()->isNull('l.kind'),
+		);
 
 		if ($sortBy === 'category') {
 			$categories = Application::tableName('categories');
@@ -172,6 +176,7 @@ class ChecklistItemMapper extends QBMapper {
 				->innerJoin('i', $lists, 'l', $qb->expr()->andX(
 					$qb->expr()->eq('i.list_id', 'l.id'),
 					$qb->expr()->isNull('l.deleted_at'),
+					$isChecklist,
 				))
 				->leftJoin(
 					'i',
@@ -208,6 +213,7 @@ class ChecklistItemMapper extends QBMapper {
 			->innerJoin('i', $lists, 'l', $qb->expr()->andX(
 				$qb->expr()->eq('i.list_id', 'l.id'),
 				$qb->expr()->isNull('l.deleted_at'),
+				$isChecklist,
 			))
 			->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNull('i.deleted_at'))

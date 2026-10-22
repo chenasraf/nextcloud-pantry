@@ -144,7 +144,7 @@ import type { Label } from '@/api/types'
 import type { LabelSort } from '@/api/prefs'
 import { getLabelSort, setLabelSort } from '@/api/prefs'
 import { useLabels } from '@/composables/useLabels'
-import { useChecklists } from '@/composables/useChecklist'
+import { useAllKindLists } from '@/composables/useChecklist'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import LabelFormDialog from './LabelFormDialog.vue'
@@ -163,7 +163,7 @@ const labels = useLabels(props.houseId)
 const labelItems = computed(() => labels.items.value)
 const labelLoading = computed(() => labels.loading.value)
 
-const { lists, load: loadLists } = useChecklists(props.houseId)
+const { lists, load: loadLists } = useAllKindLists(props.houseId)
 
 // Labels grouped by their list scope: globals first, then one group per list
 // that has labels, in the lists' own display order. Grouping is purely visual —
@@ -478,7 +478,7 @@ async function submitDeleteLabel() {
 
 const strings = {
   title: t('pantry', 'Manage labels'),
-  noLabelsHint: t('pantry', 'No labels yet. Labels help tag and filter checklist items.'),
+  noLabelsHint: t('pantry', 'No labels yet. Labels help tag and filter list items.'),
   newLabel: t('pantry', 'New label'),
   cancel: t('pantry', 'Cancel'),
   delete: t('pantry', 'Delete'),

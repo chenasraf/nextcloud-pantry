@@ -144,6 +144,7 @@ import { useCategories } from '@/composables/useCategories'
 import { useStores } from '@/composables/useStores'
 import { useLabels } from '@/composables/useLabels'
 import { useCustomFields } from '@/composables/useCustomFields'
+import { useListKind } from '@/composables/useListKind'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
@@ -218,8 +219,12 @@ const hasCustomFields = computed(() =>
   fieldDefs.value.some((f) => f.listId == null || f.listId === props.listId),
 )
 
+const { isChecklist } = useListKind()
+
 function shows(key: ItemFieldSection): boolean {
   if (props.mode === 'defaults' && ITEM_ONLY_SECTIONS.includes(key)) return false
+  // Only checklist items recur.
+  if (key === 'type') return isChecklist.value
   if (key === 'image') return !props.hideImage
   if (key === 'customfields') return hasCustomFields.value
   return true

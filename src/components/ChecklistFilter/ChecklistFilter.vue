@@ -250,9 +250,9 @@ const strings = {
   // TRANSLATORS: First row of the category filter that clears it to show every category.
   allCategories: t('pantry', 'All categories'),
   noCategory: t('pantry', 'No category'),
-  // TRANSLATORS: Noun (plural). Label of the list filter dropdown.
-  lists: t('pantry', 'Lists'),
-  allLists: t('pantry', 'All lists'),
+  // TRANSLATORS: Noun (plural). Label of the checklist filter dropdown.
+  lists: t('pantry', 'Checklists'),
+  allLists: t('pantry', 'All checklists'),
   // TRANSLATORS: Noun (plural). Label of the category filter dropdown.
   categories: t('pantry', 'Categories'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Label of the store filter dropdown.

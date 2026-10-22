@@ -35,8 +35,17 @@ use OCP\AppFramework\Db\Entity;
  * @method void setArchivedAt(?int $archivedAt)
  * @method int|null getLastCompletedAt()
  * @method void setLastCompletedAt(?int $lastCompletedAt)
+ * @method void setKind(?string $kind)
  */
 class Checklist extends Entity implements \JsonSerializable {
+	public const KIND_CHECKLIST = 'checklist';
+	public const KIND_TEMPLATE = 'template';
+
+	public const KINDS = [
+		self::KIND_CHECKLIST,
+		self::KIND_TEMPLATE,
+	];
+
 	public const RECURRENCE_MODE_REMEMBER = 'remember';
 	public const RECURRENCE_KIND_NONE = 'none';
 	public const RECURRENCE_KIND_ONCE = 'once';
@@ -70,6 +79,7 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected ?int $deletedAt = null;
 	protected ?int $archivedAt = null;
 	protected ?int $lastCompletedAt = null;
+	protected ?string $kind = self::KIND_CHECKLIST;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -81,12 +91,27 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('lastCompletedAt', 'integer');
 	}
 
+	/**
+	 * The column is nullable for the schema self-heal; a row without a kind is
+	 * a checklist.
+	 *
+	 * @return 'checklist'|'template'
+	 */
+	public function getKind(): string {
+		return $this->kind === self::KIND_TEMPLATE ? self::KIND_TEMPLATE : self::KIND_CHECKLIST;
+	}
+
+	public function isChecklist(): bool {
+		return $this->getKind() === self::KIND_CHECKLIST;
+	}
+
 	public function jsonSerialize(): array {
 		$defaults = ItemDefaults::decode($this->itemDefaults);
 		$recurrence = ItemDefaults::legacyRecurrence($defaults);
 		return [
 			'id' => $this->id,
 			'houseId' => $this->houseId,
+			'kind' => $this->getKind(),
 			'name' => $this->name,
 			'description' => $this->description,
 			'icon' => $this->icon,

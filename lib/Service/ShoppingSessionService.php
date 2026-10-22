@@ -253,7 +253,10 @@ class ShoppingSessionService {
 			throw new ShoppingSessionConflictException($existing, 'A live shopping session already exists');
 		}
 
-		$listIds = array_values(array_unique(array_map('intval', $listIds)));
+		$listIds = array_values(array_filter(
+			array_unique(array_map('intval', $listIds)),
+			fn (int $listId): bool => $this->isChecklistInHouse($listId, $houseId),
+		));
 		if ($listIds === []) {
 			throw new \InvalidArgumentException('Pick at least one checklist to shop');
 		}
@@ -281,6 +284,19 @@ class ShoppingSessionService {
 		$this->applyItemSelection($sessionId, $listIds, $itemIds);
 
 		return $saved;
+	}
+
+	/**
+	 * Only checklists can be shopped; a list of another kind, or one outside
+	 * the house, drops out of the scope.
+	 */
+	private function isChecklistInHouse(int $listId, int $houseId): bool {
+		try {
+			$list = $this->checklists->getList($listId);
+		} catch (NotFoundException) {
+			return false;
+		}
+		return $list->getHouseId() === $houseId && $list->isChecklist();
 	}
 
 	/**

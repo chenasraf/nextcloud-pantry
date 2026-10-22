@@ -76,7 +76,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import type { Label } from '@/api/types'
-import { useChecklists } from '@/composables/useChecklist'
+import { useAllKindLists } from '@/composables/useChecklist'
 import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
 import {
   LABEL_COLORS,
@@ -128,7 +128,7 @@ interface ListOption {
   label: string
   listId: number | null
 }
-const { lists, load: loadLists } = useChecklists(props.houseId)
+const { lists, load: loadLists } = useAllKindLists(props.houseId)
 
 onMounted(() => {
   void loadLists()

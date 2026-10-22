@@ -38,7 +38,7 @@
               name: 'list-detail',
               params: { houseId: String(currentHouseId), listId: String(list.id) },
             }"
-            :active="currentListId === list.id"
+            :active="route.name === 'list-detail' && currentListId === list.id"
           >
             <template #icon>
               <span class="pantry-nav__list-icon" :style="iconWrapStyle(list.color)">
@@ -55,6 +55,36 @@
             <template #icon>
               <span class="pantry-nav__list-icon pantry-nav__list-icon--meta">
                 <HistoryIcon :size="16" />
+              </span>
+            </template>
+          </NcAppNavigationItem>
+        </NcAppNavigationItem>
+
+        <NcAppNavigationItem
+          v-if="perms.canViewLists"
+          :name="strings.templates"
+          :to="{ name: 'templates', params: { houseId: String(currentHouseId) } }"
+          :active="route.name === 'templates'"
+          :allow-collapse="true"
+          :open="templatesExpanded"
+          @update:open="templatesExpanded = $event"
+        >
+          <template #icon>
+            <ClipboardTextMultipleIcon :size="20" />
+          </template>
+          <NcAppNavigationItem
+            v-for="list in templates"
+            :key="list.id"
+            :name="list.name"
+            :to="{
+              name: 'template-detail',
+              params: { houseId: String(currentHouseId), listId: String(list.id) },
+            }"
+            :active="route.name === 'template-detail' && currentListId === list.id"
+          >
+            <template #icon>
+              <span class="pantry-nav__list-icon" :style="iconWrapStyle(list.color)">
+                <component :is="checklistIconComponent(list.icon)" :size="16" />
               </span>
             </template>
           </NcAppNavigationItem>
@@ -228,6 +258,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import HomeIcon from '@icons/Home.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
+import ClipboardTextMultipleIcon from '@icons/ClipboardTextMultiple.vue'
 import ViewListIcon from '@icons/ViewList.vue'
 import HistoryIcon from '@icons/History.vue'
 import ImageIcon from '@icons/Image.vue'
@@ -244,6 +275,7 @@ import { useHouses } from '@/composables/useHouses'
 import { NO_CAPS } from '@/composables/useCurrentHouse'
 import type { Capabilities } from '@/api/types'
 import { useChecklists } from '@/composables/useChecklist'
+import { listKindStrings } from '@/composables/useListKind'
 import { checklistIconComponent, contrastColor } from '@/components/ChecklistIconPicker'
 
 function iconWrapStyle(color: string | null) {
@@ -295,11 +327,19 @@ const checklists = computed(() => {
   return useChecklists(id).lists.value
 })
 
+const templatesExpanded = ref(true)
+const templates = computed(() => {
+  const id = currentHouseId.value
+  if (id === null) return []
+  return useChecklists(id, 'template').lists.value
+})
+
 watch(
   currentHouseId,
   (id) => {
     if (id === null) return
     void useChecklists(id).load()
+    void useChecklists(id, 'template').load()
   },
   { immediate: true },
 )
@@ -394,8 +434,9 @@ async function submitCreate() {
 watch(currentHouseId, closeMenu)
 
 const strings = {
-  lists: t('pantry', 'Checklists'),
-  allLists: t('pantry', 'All lists'),
+  lists: listKindStrings('checklist').title,
+  allLists: t('pantry', 'All checklists'),
+  templates: listKindStrings('template').title,
   pastTrips: t('pantry', 'Shopping history'),
   // TRANSLATORS: Sidebar item, noun — the pinboard/corkboard view where photos are displayed, not a plank of wood.
   photos: t('pantry', 'Photo board'),

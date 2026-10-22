@@ -63,7 +63,7 @@
         />
       </template>
 
-      <FieldCard :label="strings.typeLabel">
+      <FieldCard v-if="isChecklist" :label="strings.typeLabel">
         <div class="edit-item-form__type">
           <ItemTypeSelector
             :delete-on-done="editDeleteOnDone"
@@ -148,6 +148,9 @@ import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ChecklistItem, ItemCustomFieldValue, ItemPrice } from '@/api/types'
 import type { ItemInput } from '@/api/lists'
 import { useCustomFields } from '@/composables/useCustomFields'
+import { useListKind } from '@/composables/useListKind'
+
+const { isChecklist } = useListKind()
 
 const props = withDefaults(
   defineProps<{
@@ -285,9 +288,13 @@ function submitEdit() {
       categoryId: editCategoryId.value,
       storeIds: editStoreIds.value,
       labelIds: editLabelIds.value,
-      rrule: once ? null : editRrule.value,
-      repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
-      deleteOnDone: once,
+      ...(isChecklist.value
+        ? {
+            rrule: once ? null : editRrule.value,
+            repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
+            deleteOnDone: once,
+          }
+        : {}),
       // The full price set is replaced; an empty array clears all prices.
       prices: editPrices.value,
       // Likewise, the full custom-field value set is replaced.

@@ -50,7 +50,7 @@
         <FieldCard v-if="item.quantity" :label="strings.quantity" class="item-view__tile">
           <span class="item-view__tile-value">{{ item.quantity }}</span>
         </FieldCard>
-        <FieldCard :label="strings.type" class="item-view__tile">
+        <FieldCard v-if="isChecklist" :label="strings.type" class="item-view__tile">
           <span class="item-view__tile-value item-view__tile-value--type">
             <component :is="typeIcon" :size="20" />
             {{ typeLabel }}
@@ -174,6 +174,7 @@ import { linkifySegments, type TextSegment } from '@/utils/linkify'
 import { getCurrentUserId } from '@/utils/currentUser'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useHouseMembers } from '@/composables/useHouseMembers'
+import { useListKind } from '@/composables/useListKind'
 import type {
   ChecklistItem,
   Category,
@@ -281,6 +282,8 @@ const chips = computed<Chip[]>(() => {
 })
 
 // ----- Item type tile -----
+
+const { isChecklist } = useListKind()
 
 const isOneTime = computed(() => props.item.deleteOnDone)
 const isRecurring = computed(() => !props.item.deleteOnDone && !!props.item.rrule)

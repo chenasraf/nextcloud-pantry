@@ -162,7 +162,7 @@ import type { Category } from '@/api/types'
 import type { CategorySort } from '@/api/prefs'
 import { getCategorySort, setCategorySort } from '@/api/prefs'
 import { useCategories } from '@/composables/useCategories'
-import { useChecklists } from '@/composables/useChecklist'
+import { useAllKindLists } from '@/composables/useChecklist'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import CategoryFormDialog from './CategoryFormDialog.vue'
@@ -193,7 +193,7 @@ const visibleItems = computed(() =>
 )
 const catLoading = computed(() => categories.loading.value)
 
-const { lists, load: loadLists } = useChecklists(props.houseId)
+const { lists, load: loadLists } = useAllKindLists(props.houseId)
 
 // Categories grouped by their list scope: globals first, then one group per
 // list that has categories, in the lists' own display order. Grouping is purely
@@ -515,7 +515,7 @@ async function submitDeleteCat() {
 
 const strings = {
   title: t('pantry', 'Manage categories'),
-  noCategoriesHint: t('pantry', 'No categories yet. Categories help organize checklist items.'),
+  noCategoriesHint: t('pantry', 'No categories yet. Categories help organize list items.'),
   newCategory: t('pantry', 'New category'),
   cancel: t('pantry', 'Cancel'),
   delete: t('pantry', 'Delete'),

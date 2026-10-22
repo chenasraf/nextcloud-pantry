@@ -79,9 +79,26 @@ namespace OCA\Pantry;
  *     fields: list<PantryItemDefaultField>,
  * }
  *
+ * @psalm-type PantryHouseDetail = array{
+ *     id: int,
+ *     name: string,
+ *     description: string|null,
+ *     ownerUid: string,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     trashRetentionDays: int,
+ *     recurrenceTime: int,
+ *     fieldReminderTime: int,
+ *     role: string,
+ *     isAdmin: bool,
+ *     permissions: array<string, bool>,
+ *     lists: list<PantryListSummary>,
+ * }
+ *
  * @psalm-type PantryList = array{
  *     id: int,
  *     houseId: int,
+ *     kind: 'checklist',
  *     name: string,
  *     description: string|null,
  *     icon: PantryChecklistIcon,
@@ -100,6 +117,33 @@ namespace OCA\Pantry;
  *     lastCompletedAt: int|null,
  *     canEdit: bool,
  *     sharedOnly: bool,
+ * }
+ *
+ * @psalm-type PantryTemplate = array{
+ *     id: int,
+ *     houseId: int,
+ *     kind: 'template',
+ *     name: string,
+ *     description: string|null,
+ *     icon: PantryChecklistIcon,
+ *     color: PantryChecklistColor|null,
+ *     sortOrder: int,
+ *     itemDefaults: PantryItemDefaults,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     deletedAt: int|null,
+ *     archivedAt: int|null,
+ *     canEdit: bool,
+ *     sharedOnly: bool,
+ * }
+ *
+ * @psalm-type PantryListSummary = array{
+ *     id: int,
+ *     kind: 'checklist'|'template',
+ *     name: string,
+ *     icon: PantryChecklistIcon,
+ *     color: PantryChecklistColor|null,
+ *     sortOrder: int,
  * }
  *
  * @psalm-type PantryItemPrice = array{
@@ -170,6 +214,31 @@ namespace OCA\Pantry;
  *     repeatFromCompletion: bool,
  *     deleteOnDone: bool,
  *     nextDueAt: int|null,
+ *     imageFileId: int|null,
+ *     imageUploadedBy: string|null,
+ *     addedBy: string|null,
+ *     barcode: string|null,
+ *     prices: list<PantryItemPrice>,
+ *     customFields: list<PantryFieldValue>,
+ *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     deletedAt: int|null,
+ *     archivedAt: int|null,
+ * }
+ *
+ * @psalm-type PantryTemplateItem = array{
+ *     id: int,
+ *     listId: int,
+ *     name: string,
+ *     description: string|null,
+ *     categoryId: int|null,
+ *     labelIds: list<int>,
+ *     storeIds: list<int>,
+ *     quantity: string|null,
+ *     rrule: string|null,
+ *     repeatFromCompletion: bool,
+ *     deleteOnDone: bool,
  *     imageFileId: int|null,
  *     imageUploadedBy: string|null,
  *     addedBy: string|null,

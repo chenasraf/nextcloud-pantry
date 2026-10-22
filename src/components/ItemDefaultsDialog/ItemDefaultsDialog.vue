@@ -110,7 +110,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import ItemFieldChips, { type ItemFieldSection } from '@/components/ItemFieldChips'
 import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { useCustomFields } from '@/composables/useCustomFields'
-import { updateItemDefaults } from '@/api/lists'
+import { listApi } from '@/api/lists'
 import { defaultValueFor, toFieldValue } from '@/utils/itemDefaults'
 import type {
   Checklist,
@@ -305,7 +305,11 @@ async function save() {
   }
   saving.value = true
   try {
-    const updated = await updateItemDefaults(list.houseId, list.id, patch)
+    const updated = await listApi(list.kind ?? 'checklist').updateItemDefaults(
+      list.houseId,
+      list.id,
+      patch,
+    )
     emit('saved', updated)
     emit('update:open', false)
   } catch (e) {

@@ -146,6 +146,7 @@ class ChecklistServiceTest extends TestCase {
 	public function testToggleItemOnNonRecurringDoesNotSetNextDue(): void {
 		$item = $this->makeItem();
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', 1_000_000_000);
@@ -163,6 +164,7 @@ class ChecklistServiceTest extends TestCase {
 			'createdAt' => $now - 86400 * 30, // irrelevant in this mode
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
@@ -184,6 +186,7 @@ class ChecklistServiceTest extends TestCase {
 			'createdAt' => $anchor,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
@@ -199,6 +202,7 @@ class ChecklistServiceTest extends TestCase {
 			'repeatFromCompletion' => true,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
@@ -219,6 +223,7 @@ class ChecklistServiceTest extends TestCase {
 			'createdAt' => $anchor,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
@@ -323,6 +328,7 @@ class ChecklistServiceTest extends TestCase {
 			'nextDueAt' => 456,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', 999);
@@ -350,6 +356,7 @@ class ChecklistServiceTest extends TestCase {
 			'deleteOnDone' => true,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		// Once items are soft-deleted (deleted_at set) rather than removed.
 		$this->itemMapper->expects($this->never())->method('delete');
 		$this->itemMapper->expects($this->once())
@@ -364,6 +371,94 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertSame($now, $toggled->getDoneAt());
 		$this->assertSame('alice', $toggled->getDoneBy());
 		$this->assertSame($now, $toggled->getDeletedAt());
+	}
+
+	private function makeList(string $kind, int $houseId = 1): Checklist {
+		$list = new Checklist();
+		$list->setHouseId($houseId);
+		$list->setKind($kind);
+		return $list;
+	}
+
+	public function testListWithoutAKindReadsAsAChecklist(): void {
+		$list = new Checklist();
+		$list->setKind(null);
+		$this->assertSame(Checklist::KIND_CHECKLIST, $list->getKind());
+		$this->assertTrue($list->isChecklist());
+	}
+
+	public function testGetListOfAnotherKindIsNotFound(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->expectException(\OCA\Pantry\Exception\NotFoundException::class);
+		$this->svc->getList(7, kind: Checklist::KIND_CHECKLIST);
+	}
+
+	public function testGetListOfTheSameKindIsReturned(): void {
+		$template = $this->makeList(Checklist::KIND_TEMPLATE);
+		$this->listMapper->method('findById')->willReturn($template);
+		$this->assertSame($template, $this->svc->getList(7, kind: Checklist::KIND_TEMPLATE));
+	}
+
+	public function testCreateListStoresItsKind(): void {
+		$this->listMapper->method('insert')->willReturnArgument(0);
+		$list = $this->svc->createList(1, 'Weekly staples', null, kind: Checklist::KIND_TEMPLATE);
+		$this->assertSame(Checklist::KIND_TEMPLATE, $list->getKind());
+	}
+
+	public function testCreateListRejectsAnUnknownKind(): void {
+		$this->listMapper->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->createList(1, 'Odd', null, kind: 'shelf');
+	}
+
+	public function testToggleItemRefusesTemplateItems(): void {
+		$this->itemMapper->method('findById')->willReturn($this->makeItem());
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->toggleItem(42, 'alice');
+	}
+
+	public function testAddItemToATemplateKeepsTheRuleWithoutASchedule(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Bread', 'rrule' => 'FREQ=WEEKLY']);
+
+		$this->assertSame('FREQ=WEEKLY', $item->getRrule());
+		$this->assertNull($item->getNextDueAt(), 'recurrence never runs on a template');
+	}
+
+	public function testCopyItemBetweenTemplatesKeepsTheRuleWithoutASchedule(): void {
+		$source = $this->makeItem(['listId' => 10, 'rrule' => 'FREQ=WEEKLY']);
+		$this->itemMapper->method('findById')->willReturn($source);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertSame('FREQ=WEEKLY', $copy->getRrule());
+		$this->assertNull($copy->getNextDueAt());
+	}
+
+	public function testCopyItemRefusesAListOfAnotherKind(): void {
+		$this->itemMapper->method('findById')->willReturn($this->makeItem(['listId' => 10]));
+		$this->listMapper->method('findById')->willReturnCallback(
+			fn (int $id): Checklist => $this->makeList($id === 20 ? Checklist::KIND_TEMPLATE : Checklist::KIND_CHECKLIST),
+		);
+		$this->itemMapper->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->copyItem(42, 20, 'bob', null, null);
+	}
+
+	public function testMoveItemRefusesAListOfAnotherKind(): void {
+		$this->itemMapper->method('findById')->willReturn($this->makeItem(['listId' => 10]));
+		$this->listMapper->method('findById')->willReturnCallback(
+			fn (int $id): Checklist => $this->makeList($id === 20 ? Checklist::KIND_TEMPLATE : Checklist::KIND_CHECKLIST),
+		);
+		$this->itemMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateItem(42, ['listId' => 20]);
 	}
 
 	public function testCopyItemClonesFieldsAndStartsUndone(): void {
@@ -498,6 +593,7 @@ class ChecklistServiceTest extends TestCase {
 			'deleteOnDone' => true,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 		$this->itemMapper->expects($this->never())->method('delete');
 

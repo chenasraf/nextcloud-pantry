@@ -5,7 +5,7 @@
         <NcButton
           variant="tertiary"
           :aria-label="strings.back"
-          @click="$router.push({ name: 'lists', params: { houseId } })"
+          @click="$router.push({ name: kindRoutes.index, params: { houseId } })"
         >
           <template #icon>
             <ArrowLeftIcon :size="20" />
@@ -454,6 +454,7 @@
     <ChecklistDuplicateDialog
       :open="duplicatingList"
       :list="list"
+      :kind="kind"
       :submitting="duplicatingInFlight"
       @update:open="(v) => (duplicatingList = v)"
       @duplicate="submitDuplicateList"
@@ -522,6 +523,7 @@
 
     <ChecklistFormDialog
       :open="showCreateForMove"
+      :kind="kind"
       @update:open="showCreateForMove = $event"
       @save="submitCreateListAndMove"
     />
@@ -552,6 +554,7 @@
 
     <ChecklistFormDialog
       :open="showCreateForCopy"
+      :kind="kind"
       @update:open="showCreateForCopy = $event"
       @save="submitCreateListAndCopy"
     />
@@ -872,7 +875,7 @@ import { useLabels } from '@/composables/useLabels'
 import { useStores } from '@/composables/useStores'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { useLongPress } from '@/composables/useLongPress'
-import { getList, updateItemDefaults, updateList as apiUpdateList } from '@/api/lists'
+import { listApi } from '@/api/lists'
 import type { ItemInput } from '@/api/lists'
 import type {
   Checklist,
@@ -882,6 +885,7 @@ import type {
   Label,
   ItemPrice,
   ItemDefaultsPatch,
+  ListKind,
 } from '@/api/types'
 import { withRemembered } from '@/utils/itemDefaults'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
@@ -901,10 +905,19 @@ import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
+import { LIST_KIND_ROUTES, listKindStrings, provideListKind } from '@/composables/useListKind'
 
-const props = defineProps<{ houseId: string; listId: string }>()
+const props = withDefaults(defineProps<{ houseId: string; listId: string; kind?: ListKind }>(), {
+  kind: 'checklist',
+})
 const router = useRouter()
 const route = useRoute()
+
+const kindRef = computed(() => props.kind)
+provideListKind(kindRef)
+const isChecklist = computed(() => props.kind === 'checklist')
+const kindRoutes = LIST_KIND_ROUTES[props.kind]
+const resource = listApi(props.kind)
 
 function startShopping() {
   void router.push({
@@ -956,7 +969,7 @@ const {
   viewMode,
   trashMode,
   archiveMode,
-} = useChecklistItems(houseIdNum.value, listIdNum.value)
+} = useChecklistItems(houseIdNum.value, listIdNum.value, props.kind)
 
 async function toggleTrash() {
   exitSelection()
@@ -1132,7 +1145,11 @@ async function runReseed(basis: ReseedBasis | null) {
 // lists or accounts without the check-items permission.
 const canUncheckAll = computed(
   () =>
-    !isMeta.value && viewMode.value === 'active' && writableHere.value && can.value.canCheckItems,
+    isChecklist.value &&
+    !isMeta.value &&
+    viewMode.value === 'active' &&
+    writableHere.value &&
+    can.value.canCheckItems,
 )
 const confirmingUncheckAll = ref(false)
 const unchecking = ref(false)
@@ -1234,7 +1251,7 @@ async function loadList() {
     list.value = null
     return
   }
-  list.value = await getList(houseIdNum.value, listIdNum.value)
+  list.value = await resource.getList(houseIdNum.value, listIdNum.value)
 }
 
 const { rowClickAction } = useRowClickAction()
@@ -2098,7 +2115,7 @@ const editingList = ref(false)
 async function submitEditList(data: ChecklistFormData) {
   if (!list.value) return
   try {
-    list.value = await apiUpdateList(houseIdNum.value, listIdNum.value, {
+    list.value = await resource.updateList(houseIdNum.value, listIdNum.value, {
       name: data.name,
       description: data.description,
       icon: data.icon,
@@ -2130,7 +2147,7 @@ async function submitDuplicateList(data: { name: string; resetDone: boolean }) {
     const created = await duplicateList(listIdNum.value, data.name, data.resetDone)
     duplicatingList.value = false
     await router.push({
-      name: 'list-detail',
+      name: kindRoutes.detail,
       params: { houseId: String(houseIdNum.value), listId: String(created.id) },
     })
   } catch (e) {
@@ -2154,7 +2171,7 @@ async function handleRememberDefaults(patch: ItemDefaultsPatch, targetListId: nu
   }
   setTarget({ ...target, itemDefaults: withRemembered(target.itemDefaults, patch) })
   try {
-    setTarget(await updateItemDefaults(houseIdNum.value, targetListId, patch))
+    setTarget(await resource.updateItemDefaults(houseIdNum.value, targetListId, patch))
   } catch (e) {
     setTarget(target)
     showError((e as Error).message)
@@ -2342,7 +2359,7 @@ const {
   load: loadLists,
   replace: replaceList,
   duplicate: duplicateList,
-} = useChecklists(houseIdNum.value)
+} = useChecklists(houseIdNum.value, props.kind)
 
 // Drop any persisted list-filter ids that no longer correspond to an existing
 // list (e.g. a list was deleted) once the catalog has loaded.
@@ -2769,9 +2786,11 @@ async function bulkUnarchive() {
   }
 }
 
+const kindStrings = listKindStrings(props.kind)
+
 const strings = {
-  back: t('pantry', 'Back to lists'),
-  allListsTitle: t('pantry', 'All lists'),
+  back: kindStrings.back,
+  allListsTitle: t('pantry', 'All checklists'),
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
@@ -2830,11 +2849,10 @@ const strings = {
   manageLabels: t('pantry', 'Manage labels'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
-  editList: t('pantry', 'Edit list'),
+  editList: kindStrings.editTitle,
   // TRANSLATORS: Menu entry that opens the values new items on this list start with.
   itemDefaults: t('pantry', 'Item defaults'),
-  // TRANSLATORS: Verb, toolbar action that creates a copy of this list.
-  duplicateList: t('pantry', 'Duplicate list'),
+  duplicateList: kindStrings.duplicateTitle,
   // TRANSLATORS: Button that opens Shopping Mode for this list.
   shop: t('pantry', 'Start shopping'),
   // TRANSLATORS: Verb. Toolbar button that exports the list as Markdown.
@@ -2843,7 +2861,7 @@ const strings = {
   importMarkdown: t('pantry', 'Import'),
   moveToList: t('pantry', 'Move to list'),
   copyToList: t('pantry', 'Copy to list'),
-  newList: t('pantry', 'New list'),
+  newList: kindStrings.newList,
   emptyTrashAction: t('pantry', 'Empty trash'),
   emptyTrashTitle: t('pantry', 'Empty trash?'),
   emptyTrashConfirm: t(
@@ -2897,30 +2915,31 @@ const strings = {
 }
 
 const toolbarActions = computed<ToolbarAction[]>(() => {
-  const actions: ToolbarAction[] = [
-    {
+  const actions: ToolbarAction[] = []
+  if (isChecklist.value) {
+    actions.push({
       key: 'shop',
       label: strings.shop,
       icon: CartIcon,
       variant: 'primary',
       priority: 7,
       onClick: startShopping,
-    },
-    {
-      key: 'sort',
-      type: 'menu',
-      label: sortMenuName.value,
-      caption: strings.sortLabel,
-      icon: SortIcon,
-      priority: 5,
-      options: itemSortOptions.value.map((opt) => ({
-        key: opt.value,
-        label: opt.label,
-        active: currentSort.value === opt.value,
-        onClick: () => changeSort(opt.value),
-      })),
-    },
-  ]
+    })
+  }
+  actions.push({
+    key: 'sort',
+    type: 'menu',
+    label: sortMenuName.value,
+    caption: strings.sortLabel,
+    icon: SortIcon,
+    priority: 5,
+    options: itemSortOptions.value.map((opt) => ({
+      key: opt.value,
+      label: opt.label,
+      active: currentSort.value === opt.value,
+      onClick: () => changeSort(opt.value),
+    })),
+  })
 
   if (canResetOrder.value) {
     const reseedOption = (key: ReseedBasis, label: string) => ({
