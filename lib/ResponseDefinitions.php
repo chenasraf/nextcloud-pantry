@@ -300,6 +300,36 @@ namespace OCA\Pantry;
  *     archivedAt: int|null,
  * }
  *
+ * @psalm-type PantryListTemplates = array{
+ *     templateIds: list<int>,
+ *     everyListTemplateIds: list<int>,
+ * }
+ *
+ * @psalm-type PantryTemplateLists = array{
+ *     everyList: bool,
+ *     listIds: list<int>,
+ * }
+ *
+ * @psalm-type PantryTemplateSource = array{
+ *     id: int,
+ *     name: string,
+ * }
+ *
+ * @psalm-type PantryTemplateSuggestion = array{
+ *     item: PantryTemplateItem,
+ *     templates: list<PantryTemplateSource>,
+ * }
+ *
+ * @psalm-type PantryListSuggestions = array{
+ *     archived: list<PantryListItem>,
+ *     templates: list<PantryTemplateSuggestion>,
+ * }
+ *
+ * @psalm-type PantryInventorySuggestions = array{
+ *     archived: list<PantryInventoryItem>,
+ *     templates: list<PantryTemplateSuggestion>,
+ * }
+ *
  * @psalm-type PantryCategoryIcon = 'tag'|'food'|'fruit'|'vegetable'|'bakery'|'dairy'|'meat'|'fish'|'snacks'|'cookie'|'drinks'|'coffee'|'frozen'|'household'|'pets'|'baby'|'home'|'leaf'|'pizza'|'clipboard-check'|'clipboard-list'|'format-list-checks'|'cart'|'basket'|'star'|'heart'|'calendar'|'bell'|'flag'|'bookmark'|'pin'|'map-marker'|'briefcase'|'wrench'|'silverware'|'gift'|'book'|'school'|'palette'|'camera'|'music'|'gamepad'|'run'|'dumbbell'|'pill'|'paw'|'flower'|'tree'|'broom'|'lightbulb'|'package'|'car'|'bike'|'beach'
  *
  * @psalm-type PantryCategoryColor = '#ef4444'|'#f97316'|'#eab308'|'#22c55e'|'#14b8a6'|'#0ea5e9'|'#6366f1'|'#a855f7'|'#ec4899'|'#78716c'

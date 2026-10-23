@@ -33,6 +33,7 @@ use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ShareService;
 use OCA\Pantry\Service\StoreService;
+use OCA\Pantry\Service\TemplateAttachmentService;
 use OCP\AppFramework\OCS\OCSNotFoundException;
 use OCP\IRequest;
 use OCP\IUser;
@@ -46,9 +47,12 @@ class ListKindControllerTest extends TestCase {
 	private ChecklistService $lists;
 	/** @var PermissionService&MockObject */
 	private PermissionService $permissions;
+	/** @var TemplateAttachmentService&MockObject */
+	private TemplateAttachmentService $attachments;
 
 	protected function setUp(): void {
 		$this->lists = $this->createMock(ChecklistService::class);
+		$this->attachments = $this->createMock(TemplateAttachmentService::class);
 		$this->permissions = $this->createMock(PermissionService::class);
 		$this->permissions->method('isAdmin')->willReturn(true);
 	}
@@ -93,6 +97,7 @@ class ListKindControllerTest extends TestCase {
 			$itemDefaults,
 			$session,
 			$this->createMock(LoggerInterface::class),
+			$this->attachments,
 		);
 	}
 
@@ -286,6 +291,54 @@ class ListKindControllerTest extends TestCase {
 		$data = $this->makeController(ChecklistController::class)->batchCopyItems(1, [3, 4], 7)->getData();
 
 		$this->assertSame([], $data['skipped']);
+	}
+
+	public function testSuggestionsReturnTemplateRowsInTheTemplateItemShape(): void {
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$bread = new ChecklistItem();
+		$bread->setId(30);
+		$bread->setListId(9);
+		$bread->setName('Bread');
+		$bread->setRrule('FREQ=WEEKLY');
+		$this->attachments->method('suggestions')->willReturn([
+			['item' => $bread, 'templates' => [['id' => 9, 'name' => 'Weekly']]],
+		]);
+		$this->lists->expects($this->never())->method('listArchivedItems');
+
+		$data = $this->makeController(ChecklistController::class)->listSuggestions(1, 7)->getData();
+
+		$this->assertSame([], $data['archived'], 'archived items only when asked for');
+		$this->assertCount(1, $data['templates']);
+		$this->assertSame('Bread', $data['templates'][0]['item']['name']);
+		$this->assertSame('FREQ=WEEKLY', $data['templates'][0]['item']['rrule']);
+		$this->assertArrayNotHasKey('done', $data['templates'][0]['item']);
+		$this->assertSame([['id' => 9, 'name' => 'Weekly']], $data['templates'][0]['templates']);
+	}
+
+	public function testInventorySuggestionsIncludeArchivedItemsWhenAskedFor(): void {
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$flour = new ChecklistItem();
+		$flour->setId(3);
+		$flour->setListId(7);
+		$flour->setName('Flour');
+		$this->lists->expects($this->once())->method('listArchivedItems')->with(7)->willReturn([$flour]);
+		$this->attachments->method('suggestions')->willReturn([]);
+
+		$data = $this->makeController(InventoryController::class)->inventorySuggestions(1, 7, true)->getData();
+
+		$this->assertSame('Flour', $data['archived'][0]['name']);
+		$this->assertArrayNotHasKey('rrule', $data['archived'][0], 'archived items take the inventory shape');
+	}
+
+	public function testDuplicateCarriesTemplateAttachments(): void {
+		$source = $this->makeList(Checklist::KIND_CHECKLIST);
+		$copy = $this->makeList(Checklist::KIND_CHECKLIST);
+		$copy->setId(8);
+		$this->lists->method('getList')->willReturn($source);
+		$this->lists->method('duplicateList')->willReturn($copy);
+		$this->attachments->expects($this->once())->method('copyAttachments')->with($source, $copy);
+
+		$this->makeController(ChecklistController::class)->duplicateList(1, 7, 'Copy');
 	}
 
 	public function testBatchUncheckSkipsItemsOfOtherKinds(): void {

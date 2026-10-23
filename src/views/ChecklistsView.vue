@@ -512,7 +512,13 @@ const showStoreManager = ref(false)
 const showCreate = ref(false)
 
 async function submitCreate(data: ChecklistFormData) {
-  const list = await create(data.name, data.description || null, data.icon, data.color || null)
+  const list = await create(
+    data.name,
+    data.description || null,
+    data.icon,
+    data.color || null,
+    data.attachments,
+  )
   showCreate.value = false
   await router.push({
     name: detailRoute,

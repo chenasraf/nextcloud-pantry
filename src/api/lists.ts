@@ -1,11 +1,14 @@
 import { ocs } from '@/axios'
 import type {
+  AttachedTemplates,
   Checklist,
   ChecklistItem,
   ItemCustomFieldValue,
   ItemDefaultsPatch,
   ItemPrice,
   ListKind,
+  ListSuggestions,
+  TemplateLists,
 } from './types'
 
 // Server item endpoints page their results (indexItems caps at 200 by default,
@@ -207,6 +210,50 @@ export function listApi(kind: ListKind) {
     async listArchivedItems(houseId: number, listId: number): Promise<ChecklistItem[]> {
       const resp = await ocs.get<ChecklistItem[]>(`${base(houseId)}/${listId}/items/archive`)
       return resp.data ?? []
+    },
+
+    /** Checklists and inventories only: what their add box suggests. */
+    async listSuggestions(
+      houseId: number,
+      listId: number,
+      archived: boolean,
+    ): Promise<ListSuggestions> {
+      const resp = await ocs.get<ListSuggestions>(`${base(houseId)}/${listId}/suggestions`, {
+        params: { archived },
+      })
+      return resp.data
+    },
+
+    /** Checklists and inventories only: the templates attached to the list. */
+    async getAttachedTemplates(houseId: number, listId: number): Promise<AttachedTemplates> {
+      const resp = await ocs.get<AttachedTemplates>(`${base(houseId)}/${listId}/templates`)
+      return resp.data
+    },
+
+    async setAttachedTemplates(
+      houseId: number,
+      listId: number,
+      templateIds: number[],
+    ): Promise<AttachedTemplates> {
+      const resp = await ocs.put<AttachedTemplates>(`${base(houseId)}/${listId}/templates`, {
+        templateIds,
+      })
+      return resp.data
+    },
+
+    /** Templates only: the lists the template is attached to. */
+    async getTemplateLists(houseId: number, listId: number): Promise<TemplateLists> {
+      const resp = await ocs.get<TemplateLists>(`${base(houseId)}/${listId}/lists`)
+      return resp.data
+    },
+
+    async setTemplateLists(
+      houseId: number,
+      listId: number,
+      value: TemplateLists,
+    ): Promise<TemplateLists> {
+      const resp = await ocs.put<TemplateLists>(`${base(houseId)}/${listId}/lists`, value)
+      return resp.data
     },
 
     async addItem(houseId: number, listId: number, input: ItemInput): Promise<ChecklistItem> {

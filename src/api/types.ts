@@ -122,6 +122,34 @@ export type ItemDefaultsPatch = Partial<{
 /** What a list is for; fixed at creation. */
 export type ListKind = 'checklist' | 'template' | 'inventory'
 
+/** The templates a checklist or inventory draws suggestions from. */
+export interface AttachedTemplates {
+  /** Templates attached to this list by name. */
+  templateIds: number[]
+  /** Templates attached to every list, this one included. */
+  everyListTemplateIds: number[]
+}
+
+/** The lists a template feeds suggestions to. */
+export interface TemplateLists {
+  /** Attached to every checklist and inventory in the house, including later ones. */
+  everyList: boolean
+  listIds: number[]
+}
+
+/** A template item offered in an add box, once per name. */
+export interface TemplateSuggestion {
+  item: ChecklistItem
+  /** Every attached template the name is in. */
+  templates: { id: number; name: string }[]
+}
+
+export interface ListSuggestions {
+  /** The list's archived items; empty unless asked for. */
+  archived: ChecklistItem[]
+  templates: TemplateSuggestion[]
+}
+
 /**
  * A list of any kind. Templates and inventories carry the same fields minus the
  * checklist-only ones (completion and the per-column recurrence default), which

@@ -26,6 +26,8 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryListItem from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  * @psalm-import-type PantryBatchResult from ResponseDefinitions
+ * @psalm-import-type PantryListSuggestions from ResponseDefinitions
+ * @psalm-import-type PantryListTemplates from ResponseDefinitions
  */
 final class ChecklistController extends ListKindOCSController {
 	use TranslatesDomainExceptions;
@@ -489,6 +491,74 @@ final class ChecklistController extends ListKindOCSController {
 	#[Permission(['canViewLists'])]
 	public function indexArchivedItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->doIndexArchivedItems($houseId, $listId, $limit, $offset);
+	}
+
+	/**
+	 * Suggestion candidates for a checklist's add box
+	 *
+	 * The checklist's archived items, when asked for, and the items of the
+	 * templates attached to it — explicitly or as every-list templates — that
+	 * the caller can access. Archived and trashed templates are left out.
+	 * Template items with the same name (ignoring case and spacing) collapse
+	 * into one row naming every template it is in, taken from the most
+	 * recently edited copy. Matching what was typed is up to the client.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param bool $archived Whether to include the checklist's archived items.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListSuggestions, array{}>
+	 *
+	 * 200: Suggestions returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/suggestions', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function listSuggestions(int $houseId, int $listId, bool $archived = false): DataResponse {
+		return $this->doSuggestions($houseId, $listId, $archived);
+	}
+
+	/**
+	 * Templates attached to a checklist
+	 *
+	 * `templateIds` are the templates attached to this checklist;
+	 * `everyListTemplateIds` are the templates attached to every list, this one
+	 * included. Only active templates are named.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListTemplates, array{}>
+	 *
+	 * 200: Attached templates returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/templates', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function listTemplates(int $houseId, int $listId): DataResponse {
+		return $this->doListTemplates($houseId, $listId);
+	}
+
+	/**
+	 * Set the templates attached to a checklist
+	 *
+	 * Replaces the checklist's own attachments. Every-list templates stay
+	 * attached regardless, and attachments to templates the caller cannot
+	 * access, or that are archived or trashed, are kept.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param list<int> $templateIds Ids of templates in the same house.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListTemplates, array{}>
+	 *
+	 * 200: Attached templates updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/lists/{listId}/templates', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function setListTemplates(int $houseId, int $listId, array $templateIds = []): DataResponse {
+		return $this->doSetListTemplates($houseId, $listId, $templateIds);
 	}
 
 	/**

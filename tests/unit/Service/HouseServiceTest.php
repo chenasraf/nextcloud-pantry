@@ -30,10 +30,13 @@ use PHPUnit\Framework\TestCase;
 class HouseServiceTest extends TestCase {
 	/** @var HouseMapper&MockObject */
 	private HouseMapper $houseMapper;
+	/** @var \OCA\Pantry\Db\ListTemplateMapper&MockObject */
+	private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper;
 	private HouseService $svc;
 
 	protected function setUp(): void {
 		$this->houseMapper = $this->createMock(HouseMapper::class);
+		$this->listTemplateMapper = $this->createMock(\OCA\Pantry\Db\ListTemplateMapper::class);
 		$this->svc = new HouseService(
 			$this->houseMapper,
 			$this->createMock(HouseMemberMapper::class),
@@ -60,7 +63,15 @@ class HouseServiceTest extends TestCase {
 			$this->createMock(RoleService::class),
 			$this->createMock(IDBConnection::class),
 			$this->createMock(IUserManager::class),
+			$this->listTemplateMapper,
 		);
+	}
+
+	public function testDeleteClearsTemplateAttachments(): void {
+		$this->houseMapper->method('findById')->willReturn($this->makeHouse());
+		$this->listTemplateMapper->expects($this->once())->method('deleteByHouse')->with(7);
+
+		$this->svc->delete(7);
 	}
 
 	private function makeHouse(): House {

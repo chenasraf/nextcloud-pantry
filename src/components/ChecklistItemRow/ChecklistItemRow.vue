@@ -60,6 +60,18 @@
         </span>
         <div class="checklist-row__meta">
           <PantryChip
+            v-if="suggestion && suggestionTemplates?.length"
+            class="checklist-row__archived"
+            size="sm"
+            :interactive="false"
+            :aria-label="strings.fromTemplates(suggestionTemplates.join(', '))"
+          >
+            <template #icon>
+              <ClipboardTextMultipleIcon :size="14" />
+            </template>
+            {{ suggestionTemplates.join(', ') }}
+          </PantryChip>
+          <PantryChip
             v-if="suggestion && item.archivedAt"
             class="checklist-row__archived"
             size="sm"
@@ -290,6 +302,7 @@ import DeleteRestoreIcon from '@icons/DeleteRestore.vue'
 import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
 import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
+import ClipboardTextMultipleIcon from '@icons/ClipboardTextMultiple.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import { categoryIconComponent } from '@/components/CategoryPicker'
@@ -363,6 +376,8 @@ const props = withDefaults(
      * whole row a single tap target that emits `select`.
      */
     suggestion?: boolean
+    /** On a suggestion from the list's templates: the names of those templates. */
+    suggestionTemplates?: string[]
     /**
      * Hides the per-row actions (view / edit / move / archive / delete). Used
      * where those operations do not belong, e.g. the shopping view, while
@@ -397,6 +412,7 @@ const props = withDefaults(
     selectionMode: false,
     selected: false,
     suggestion: false,
+    suggestionTemplates: undefined,
     compact: false,
     sessionRemovable: false,
     sessionRestorable: false,
@@ -534,6 +550,9 @@ const strings = {
   archived: t('pantry', 'Archived'),
   // TRANSLATORS: Accessible label for the chip marking an archived reuse suggestion.
   archivedItem: t('pantry', 'Archived item'),
+  fromTemplates: (names: string) =>
+    // TRANSLATORS: Accessible label for the chip on a suggestion that comes from templates. {templates} is a comma-separated list of template names.
+    t('pantry', 'From templates: {templates}', { templates: names }),
   selectItem: t('pantry', 'Select item'),
   viewImage: t('pantry', 'View image'),
   viewItem: t('pantry', 'View item'),

@@ -22,6 +22,7 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryTemplate from ResponseDefinitions
  * @psalm-import-type PantryTemplateItem from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-import-type PantryTemplateLists from ResponseDefinitions
  */
 final class TemplateController extends ListKindOCSController {
 	/** Checklist-only list fields: completion and the per-column recurrence default. */
@@ -34,9 +35,6 @@ final class TemplateController extends ListKindOCSController {
 		'lastCompletedAt',
 	];
 
-	/** Checklist-only item fields: the done state and the reopen schedule. */
-	private const CHECKLIST_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt'];
-
 	protected function kind(): string {
 		return Checklist::KIND_TEMPLATE;
 	}
@@ -46,7 +44,7 @@ final class TemplateController extends ListKindOCSController {
 	}
 
 	protected function shapeItem(array $data): array {
-		return array_diff_key($data, array_flip(self::CHECKLIST_ITEM_FIELDS));
+		return array_diff_key($data, array_flip(self::TEMPLATE_DROPPED_ITEM_FIELDS));
 	}
 
 	/**
@@ -419,6 +417,50 @@ final class TemplateController extends ListKindOCSController {
 	#[Permission(['canViewLists'])]
 	public function indexArchivedTemplateItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->doIndexArchivedItems($houseId, $listId, $limit, $offset);
+	}
+
+	/**
+	 * Lists a template is attached to
+	 *
+	 * `everyList` attaches the template to every checklist and inventory in the
+	 * house, including ones made later; `listIds` are the lists it is attached
+	 * to by name. Archived and trashed lists are left out.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Template id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryTemplateLists, array{}>
+	 *
+	 * 200: Attached lists returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/templates/{listId}/lists', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function templateLists(int $houseId, int $listId): DataResponse {
+		return $this->doTemplateLists($houseId, $listId);
+	}
+
+	/**
+	 * Set the lists a template is attached to
+	 *
+	 * Replaces the template's attachments and its every-list switch.
+	 * Attachments to lists the caller cannot access, or that are archived or
+	 * trashed, are kept. Templates never attach to templates.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Template id.
+	 * @param bool $everyList Whether the template is attached to every checklist and inventory in the house.
+	 * @param list<int> $listIds Ids of checklists and inventories in the same house.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryTemplateLists, array{}>
+	 *
+	 * 200: Attached lists updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/templates/{listId}/lists', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function setTemplateLists(int $houseId, int $listId, bool $everyList = false, array $listIds = []): DataResponse {
+		return $this->doSetTemplateLists($houseId, $listId, $everyList, $listIds);
 	}
 
 	/**

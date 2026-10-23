@@ -47,6 +47,8 @@ class ChecklistServiceTest extends TestCase {
 	private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper;
 	/** @var \OCA\Pantry\Db\FieldValueMapper&MockObject */
 	private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper;
+	/** @var \OCA\Pantry\Db\ListTemplateMapper&MockObject */
+	private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper;
 	private ChecklistService $svc;
 
 	protected function setUp(): void {
@@ -61,6 +63,7 @@ class ChecklistServiceTest extends TestCase {
 		$this->fieldDefMapper = $this->createMock(\OCA\Pantry\Db\FieldDefinitionMapper::class);
 		$this->fieldOptionMapper = $this->createMock(\OCA\Pantry\Db\FieldOptionMapper::class);
 		$this->fieldValueMapper = $this->createMock(\OCA\Pantry\Db\FieldValueMapper::class);
+		$this->listTemplateMapper = $this->createMock(\OCA\Pantry\Db\ListTemplateMapper::class);
 		// Houses reopen recurring items at 08:00 (the default) by which
 		// computeNextDueAt snaps the time of day of every non-sub-daily occurrence.
 		$house = new House();
@@ -84,6 +87,7 @@ class ChecklistServiceTest extends TestCase {
 			$this->fieldValueMapper,
 			$this->createMock(\OCA\Pantry\Service\CustomFieldReminderService::class),
 			$this->db,
+			$this->listTemplateMapper,
 		);
 	}
 
@@ -1083,6 +1087,7 @@ class ChecklistServiceTest extends TestCase {
 		$ref->setValue($list, 99);
 		$this->listMapper->method('findById')->willReturn($list);
 		$this->itemMapper->expects($this->once())->method('deleteByList')->with(99);
+		$this->listTemplateMapper->expects($this->once())->method('deleteByList')->with(99);
 		$this->listMapper->expects($this->once())->method('delete')->with($list);
 
 		$this->svc->permanentlyDeleteList(99);
@@ -1108,8 +1113,15 @@ class ChecklistServiceTest extends TestCase {
 				$deletedListIds[] = $id;
 			});
 
+		$detachedListIds = [];
+		$this->listTemplateMapper->method('deleteByList')
+			->willReturnCallback(function (int $id) use (&$detachedListIds) {
+				$detachedListIds[] = $id;
+			});
+
 		$this->svc->emptyListsTrash(7);
 		$this->assertSame([1, 2], $deletedListIds);
+		$this->assertSame([1, 2], $detachedListIds, 'purged lists lose their template attachments');
 	}
 
 	// ----- Batch (group) actions -----

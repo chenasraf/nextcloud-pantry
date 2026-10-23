@@ -51,6 +51,10 @@ final class ExpectedColumns {
 			// missing column breaks the list index for every kind.
 			self::col('lists', 'kind', Types::STRING, ['notnull' => false, 'length' => 16, 'default' => 'checklist']),
 
+			// lists — template attached to every list (Version43). Every add-item
+			// search reads it through the suggestions endpoint.
+			self::col('lists', 'every_list', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+
 			// categories — list scoping (Version27); category queries filter on
 			// list_id, so a missing column breaks category loading and the
 			// category-sorted item list.

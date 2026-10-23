@@ -56,6 +56,7 @@ class ChecklistService {
 		private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper,
 		private CustomFieldReminderService $fieldReminders,
 		private IDBConnection $db,
+		private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper,
 	) {
 	}
 
@@ -308,6 +309,7 @@ class ChecklistService {
 		$list = $this->getList($listId, includeDeleted: true);
 		$this->itemMapper->deleteByList((int)$list->getId());
 		$this->listRoleMapper->deleteByList((int)$list->getId());
+		$this->listTemplateMapper->deleteByList((int)$list->getId());
 		$this->categoryMapper->deleteByList((int)$list->getId());
 		$this->labelMapper->deleteByList((int)$list->getId());
 		$this->fieldOptionMapper->deleteByList((int)$list->getId());
@@ -323,6 +325,7 @@ class ChecklistService {
 		$removed = $this->listMapper->emptyTrashForHouse($houseId, $kind);
 		foreach ($removed as $list) {
 			$this->itemMapper->deleteByList((int)$list->getId());
+			$this->listTemplateMapper->deleteByList((int)$list->getId());
 			$this->categoryMapper->deleteByList((int)$list->getId());
 			$this->labelMapper->deleteByList((int)$list->getId());
 			$this->fieldOptionMapper->deleteByList((int)$list->getId());

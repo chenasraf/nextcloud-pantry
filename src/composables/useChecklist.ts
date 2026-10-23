@@ -2,6 +2,7 @@ import { computed, ref, type Ref } from 'vue'
 import * as api from '@/api/lists'
 import type { Checklist, ChecklistItem, ListKind } from '@/api/types'
 import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
+import type { ChecklistFormData } from '@/components/ChecklistIconPicker/checklistForm'
 
 // Per-house, per-kind state shared across all callers so sidebar and views stay in sync.
 interface HouseChecklistState {
@@ -94,9 +95,18 @@ export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
     description?: string | null,
     icon?: string | null,
     color?: string | null,
+    attachments?: ChecklistFormData['attachments'],
   ): Promise<Checklist> {
     const created = await resource.createList(houseId, name, description, icon, color)
     lists.value = [...lists.value, created]
+    if (attachments && 'templateLists' in attachments) {
+      const { everyList, listIds } = attachments.templateLists
+      if (everyList || listIds.length > 0) {
+        await resource.setTemplateLists(houseId, created.id, attachments.templateLists)
+      }
+    } else if (attachments && attachments.templateIds.length > 0) {
+      await resource.setAttachedTemplates(houseId, created.id, attachments.templateIds)
+    }
     return created
   }
 

@@ -36,6 +36,7 @@ use OCP\AppFramework\Db\Entity;
  * @method int|null getLastCompletedAt()
  * @method void setLastCompletedAt(?int $lastCompletedAt)
  * @method void setKind(?string $kind)
+ * @method void setEveryList(?bool $everyList)
  */
 class Checklist extends Entity implements \JsonSerializable {
 	public const KIND_CHECKLIST = 'checklist';
@@ -82,6 +83,8 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected ?int $archivedAt = null;
 	protected ?int $lastCompletedAt = null;
 	protected ?string $kind = self::KIND_CHECKLIST;
+	/** A template attached to every checklist and inventory in its house. */
+	protected ?bool $everyList = false;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -91,6 +94,11 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('deletedAt', 'integer');
 		$this->addType('archivedAt', 'integer');
 		$this->addType('lastCompletedAt', 'integer');
+		$this->addType('everyList', 'boolean');
+	}
+
+	public function isEveryList(): bool {
+		return $this->getKind() === self::KIND_TEMPLATE && (bool)$this->everyList;
 	}
 
 	/**

@@ -117,19 +117,20 @@
       <!-- Live "reuse existing item" suggestions. Mutually exclusive with an open
          meta tray (they share this vertical slot) — only shown while typing a
          single item name. -->
-      <div v-if="reuseMatches.length > 0" class="checklist-add__suggestions">
+      <div v-if="suggestionRows.length > 0" class="checklist-add__suggestions">
         <span class="checklist-add__suggestions-header">{{ strings.suggestionsHeader }}</span>
         <ul class="checklist-add__suggestions-list">
           <ChecklistItemRow
-            v-for="match in reuseMatches"
-            :key="match.id"
-            :item="match"
-            :category="categoryForItem(match.categoryId)"
-            :stores="storesForItem(match.storeIds)"
-            :labels="labelsForItem(match.labelIds)"
+            v-for="row in suggestionRows"
+            :key="row.key"
+            :item="row.item"
+            :category="categoryForItem(row.item.categoryId)"
+            :stores="storesForItem(row.item.storeIds)"
+            :labels="labelsForItem(row.item.labelIds)"
             :house-id="houseId"
+            :suggestion-templates="row.templateNames"
             suggestion
-            @select="$emit('reuse-existing', $event)"
+            @select="onSuggestionPicked(row)"
           />
         </ul>
       </div>
@@ -181,6 +182,7 @@ import type {
   ItemCustomFieldValue,
   ItemDefaults,
   ItemDefaultsPatch,
+  ListSuggestions,
   RecurrenceKind,
 } from '@/api/types'
 
@@ -225,6 +227,8 @@ const emit = defineEmits<{
   /** Values for the target list's "remember last" defaults, from the item just added. */
   'remember-defaults': [patch: ItemDefaultsPatch, listId: number]
   'reuse-existing': [item: ChecklistItem]
+  /** A suggested item from one of the list's templates was picked. */
+  'pick-template-item': [item: ChecklistItem]
   'open-defaults': []
 }>()
 
@@ -415,29 +419,41 @@ const canSubmit = computed(() => {
 // meta mode, otherwise the list in focus.
 const reuseTargetListId = effectiveListId
 
-// When the pref is on, archived items on the target list are folded into the
-// same fuzzy pool. They are fetched lazily — the first time the user searches a
-// given list — and cached per list so repeat searches don't refetch.
+// Archived items on the target list (when the pref is on) and the items of the
+// templates attached to it join the active items as candidates. They are
+// fetched lazily — the first time the user searches a given list — and cached
+// per list and pref so repeat searches don't refetch. Templates draw from no
+// templates, so a template only looks up its own archived items.
 const { suggestArchivedItems } = useSuggestArchivedItems()
-const archivedByList = ref<Map<number, ChecklistItem[]>>(new Map())
-const archivedLoading = new Set<number>()
+const fetchedByKey = ref<Map<string, ListSuggestions>>(new Map())
+const fetching = new Set<string>()
 
-async function ensureArchivedLoaded(listId: number): Promise<void> {
-  if (!suggestArchivedItems.value) return
-  if (archivedByList.value.has(listId) || archivedLoading.has(listId)) return
-  archivedLoading.add(listId)
+function suggestionsKey(listId: number): string {
+  return `${listId}:${suggestArchivedItems.value}`
+}
+
+async function ensureSuggestionsLoaded(listId: number): Promise<void> {
+  const key = suggestionsKey(listId)
+  if (fetchedByKey.value.has(key) || fetching.has(key)) return
+  const resource = listApi(kind.value)
+  const archived = suggestArchivedItems.value
+  if (kind.value === 'template' && !archived) return
+  fetching.add(key)
   try {
-    const loaded = await listApi(kind.value).listArchivedItems(props.houseId, listId)
-    archivedByList.value = new Map(archivedByList.value).set(listId, loaded)
+    const loaded: ListSuggestions =
+      kind.value === 'template'
+        ? { archived: await resource.listArchivedItems(props.houseId, listId), templates: [] }
+        : await resource.listSuggestions(props.houseId, listId, archived)
+    fetchedByKey.value = new Map(fetchedByKey.value).set(key, loaded)
   } catch {
     // Leave it unloaded so the next search retries.
   } finally {
-    archivedLoading.delete(listId)
+    fetching.delete(key)
   }
 }
 
 // The list being actively searched (single-item name typed, no meta tray open),
-// or null when suggestions are suppressed. Drives the lazy archive fetch.
+// or null when suggestions are suppressed. Drives the lazy fetch.
 const searchListId = computed<number | null>(() => {
   if (multiple.value || openSection.value !== null) return null
   if (!name.value.trim()) return null
@@ -447,13 +463,27 @@ const searchListId = computed<number | null>(() => {
 
 watch(
   [searchListId, suggestArchivedItems],
-  ([listId, on]) => {
-    if (listId != null && on) void ensureArchivedLoaded(listId)
+  ([listId]) => {
+    if (listId != null) void ensureSuggestionsLoaded(listId)
   },
   { immediate: true },
 )
 
-const reuseMatches = computed<ChecklistItem[]>(() => {
+/** One row in the Suggestions panel: an item of the list, or of its templates. */
+interface SuggestionRow {
+  key: string
+  item: ChecklistItem
+  /** Set on a template row: the names of the templates it comes from. */
+  templateNames?: string[]
+}
+
+const SUGGESTION_LIMIT = 6
+
+function nameKey(itemName: string): string {
+  return itemName.trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+const suggestionRows = computed<SuggestionRow[]>(() => {
   // Never in bulk mode, only while typing a name, and never while a meta tray
   // occupies the same slot.
   if (multiple.value || openSection.value !== null) return []
@@ -461,28 +491,62 @@ const reuseMatches = computed<ChecklistItem[]>(() => {
   if (!query) return []
   const listId = reuseTargetListId.value
   if (listId == null || listId <= 0) return []
+  const fetched = fetchedByKey.value.get(suggestionsKey(listId))
   const active = props.reuseCandidates.filter((i) => i.listId === listId)
-  // Fold in archived items only when the pref is on. Drop any that have since
-  // become active (e.g. just reused) so they aren't offered twice.
+  // Drop archived items that have since become active (e.g. just reused) so
+  // they aren't offered twice.
   const activeIds = new Set(active.map((i) => i.id))
   const archived = suggestArchivedItems.value
-    ? (archivedByList.value.get(listId) ?? []).filter(
-        (i) => i.listId === listId && !activeIds.has(i.id),
-      )
+    ? (fetched?.archived ?? []).filter((i) => i.listId === listId && !activeIds.has(i.id))
     : []
-  const candidates = [...active, ...archived]
-  if (candidates.length === 0) return []
-  // token_set_ratio is the fuzzball scorer that reproduces the intended ranking
-  // (e.g. "Organic milk" surfaces "Milk" as the top match). Cutoff 60 lets weak
-  // single-word overlaps through; results come back sorted best-first.
-  const results = extract(query, candidates, {
-    processor: (i: ChecklistItem) => i.name,
-    scorer: token_set_ratio,
-    limit: 6,
-    cutoff: 60,
-  })
-  return results.map((r) => r[0] as ChecklistItem)
+  // A template item the list already has (active or archived) is never offered
+  // over the list's own copy.
+  const ownNames = new Set([...active, ...archived].map((i) => nameKey(i.name)))
+  const templates = (fetched?.templates ?? []).filter((s) => !ownNames.has(nameKey(s.item.name)))
+
+  // The list's own matches rank first — active, then archived — then template
+  // matches, under one shared limit.
+  const rows: SuggestionRow[] = []
+  const take = <T,>(
+    candidates: T[],
+    itemOf: (c: T) => ChecklistItem,
+    toRow: (c: T) => SuggestionRow,
+  ) => {
+    const room = SUGGESTION_LIMIT - rows.length
+    if (room <= 0 || candidates.length === 0) return
+    // token_set_ratio is the fuzzball scorer that reproduces the intended
+    // ranking (e.g. "Organic milk" surfaces "Milk" as the top match). Cutoff 60
+    // lets weak single-word overlaps through; results come back best-first.
+    const results = extract(query, candidates, {
+      processor: (c: T) => itemOf(c).name,
+      scorer: token_set_ratio,
+      limit: room,
+      cutoff: 60,
+    })
+    rows.push(...results.map((r) => toRow(r[0] as T)))
+  }
+  const ownRow = (i: ChecklistItem): SuggestionRow => ({ key: `item-${i.id}`, item: i })
+  take(active, (i) => i, ownRow)
+  take(archived, (i) => i, ownRow)
+  take(
+    templates,
+    (s) => s.item,
+    (s) => ({
+      key: `template-${s.item.id}`,
+      item: s.item,
+      templateNames: s.templates.map((tpl) => tpl.name),
+    }),
+  )
+  return rows
 })
+
+function onSuggestionPicked(row: SuggestionRow) {
+  if (row.templateNames) {
+    emit('pick-template-item', row.item)
+  } else {
+    emit('reuse-existing', row.item)
+  }
+}
 
 function categoryForItem(id: number | null): Category | null {
   return id == null ? null : (categories.value.find((c) => c.id === id) ?? null)
@@ -591,8 +655,8 @@ const strings = {
   barcodeAttached: t('pantry', 'Barcode attached'),
   // TRANSLATORS: Tooltip of the button that opens the values new items on this list start with.
   itemDefaults: t('pantry', 'Item defaults'),
-  // TRANSLATORS: Header above the list of existing items that match what the user is typing, offered so they can reuse one instead of adding a duplicate.
-  suggestionsHeader: t('pantry', 'Already on this list'),
+  // TRANSLATORS: Header above the items that match what the user is typing: ones already on this list, and ones from its templates.
+  suggestionsHeader: t('pantry', 'Suggestions'),
 }
 </script>
 

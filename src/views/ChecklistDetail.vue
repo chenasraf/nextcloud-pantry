@@ -2514,6 +2514,7 @@ async function submitCreateListAndMove(data: ChecklistFormData) {
     data.description || null,
     data.icon || null,
     data.color || null,
+    data.attachments,
   )
   showCreateForMove.value = false
   await submitMoveItem(newList.id)
@@ -2599,6 +2600,7 @@ async function submitCreateListAndCopy(data: ChecklistFormData) {
     data.description || null,
     data.icon || null,
     data.color || null,
+    data.attachments,
   )
   showCreateForCopy.value = false
   await submitCopyItem(newList.id)

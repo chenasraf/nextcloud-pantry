@@ -22,6 +22,8 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryInventory from ResponseDefinitions
  * @psalm-import-type PantryInventoryItem from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-import-type PantryInventorySuggestions from ResponseDefinitions
+ * @psalm-import-type PantryListTemplates from ResponseDefinitions
  */
 final class InventoryController extends ListKindOCSController {
 	/** Checklist-only list fields: completion and the per-column recurrence default. */
@@ -423,6 +425,74 @@ final class InventoryController extends ListKindOCSController {
 	#[Permission(['canViewLists'])]
 	public function indexArchivedInventoryItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
 		return $this->doIndexArchivedItems($houseId, $listId, $limit, $offset);
+	}
+
+	/**
+	 * Suggestion candidates for an inventory's add box
+	 *
+	 * The inventory's archived items, when asked for, and the items of the
+	 * templates attached to it — explicitly or as every-list templates — that
+	 * the caller can access. Archived and trashed templates are left out.
+	 * Template items with the same name (ignoring case and spacing) collapse
+	 * into one row naming every template it is in, taken from the most
+	 * recently edited copy. Matching what was typed is up to the client.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Inventory id.
+	 * @param bool $archived Whether to include the inventory's archived items.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryInventorySuggestions, array{}>
+	 *
+	 * 200: Suggestions returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/inventories/{listId}/suggestions', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function inventorySuggestions(int $houseId, int $listId, bool $archived = false): DataResponse {
+		return $this->doSuggestions($houseId, $listId, $archived);
+	}
+
+	/**
+	 * Templates attached to an inventory
+	 *
+	 * `templateIds` are the templates attached to this inventory;
+	 * `everyListTemplateIds` are the templates attached to every list, this one
+	 * included. Only active templates are named.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Inventory id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListTemplates, array{}>
+	 *
+	 * 200: Attached templates returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/inventories/{listId}/templates', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function inventoryTemplates(int $houseId, int $listId): DataResponse {
+		return $this->doListTemplates($houseId, $listId);
+	}
+
+	/**
+	 * Set the templates attached to an inventory
+	 *
+	 * Replaces the inventory's own attachments. Every-list templates stay
+	 * attached regardless, and attachments to templates the caller cannot
+	 * access, or that are archived or trashed, are kept.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Inventory id.
+	 * @param list<int> $templateIds Ids of templates in the same house.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListTemplates, array{}>
+	 *
+	 * 200: Attached templates updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/inventories/{listId}/templates', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function setInventoryTemplates(int $houseId, int $listId, array $templateIds = []): DataResponse {
+		return $this->doSetListTemplates($houseId, $listId, $templateIds);
 	}
 
 	/**

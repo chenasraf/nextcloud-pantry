@@ -74,6 +74,21 @@
           }}
         </p>
       </div>
+      <template v-if="houseId !== null">
+        <TemplateListsField
+          v-if="kind === 'template'"
+          :model-value="templateLists"
+          :house-id="houseId"
+          @update:model-value="changeTemplateLists"
+        />
+        <ListTemplatesField
+          v-else
+          :model-value="templateIds"
+          :house-id="houseId"
+          :every-list-template-ids="everyListTemplateIds"
+          @update:model-value="changeTemplateIds"
+        />
+      </template>
       <div v-if="showAccess">
         <label class="pantry-icon-picker__label">{{ strings.accessLabel }}</label>
         <NcSelect
@@ -115,8 +130,11 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import CloseIcon from '@icons/Close.vue'
 import TuneIcon from '@icons/TuneVariant.vue'
-import type { Checklist, ListKind } from '@/api/types'
+import { showError } from '@nextcloud/dialogs'
+import type { Checklist, ListKind, TemplateLists } from '@/api/types'
+import { listApi } from '@/api/lists'
 import { listKindStrings } from '@/composables/useListKind'
+import { ListTemplatesField, TemplateListsField } from '@/components/TemplateAttachments'
 import type { ChecklistFormData } from './checklistForm'
 import { CHECKLIST_ICONS, DEFAULT_CHECKLIST_ICON_KEY } from './checklistIcons'
 import { checklistColorOptions, contrastColor } from './checklistColors'
@@ -181,16 +199,67 @@ async function changeAccess(options: AccessOption[]) {
   )
 }
 
+// -------- Attached templates --------
+// Editing saves each change as it is made, like access; creating keeps the
+// picks until the list exists (see ChecklistFormData.attachments).
+const templateIds = ref<number[]>([])
+const everyListTemplateIds = ref<number[]>([])
+const templateLists = ref<TemplateLists>({ everyList: false, listIds: [] })
+
+async function loadAttachments(list: Checklist) {
+  const resource = listApi(kind.value)
+  if (kind.value === 'template') {
+    templateLists.value = await resource.getTemplateLists(list.houseId, list.id)
+  } else {
+    const attached = await resource.getAttachedTemplates(list.houseId, list.id)
+    templateIds.value = attached.templateIds
+    everyListTemplateIds.value = attached.everyListTemplateIds
+  }
+}
+
+async function changeTemplateIds(ids: number[]) {
+  templateIds.value = ids
+  if (!props.list) return
+  try {
+    const saved = await listApi(kind.value).setAttachedTemplates(
+      props.list.houseId,
+      props.list.id,
+      ids,
+    )
+    templateIds.value = saved.templateIds
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function changeTemplateLists(value: TemplateLists) {
+  templateLists.value = value
+  if (!props.list) return
+  try {
+    templateLists.value = await listApi('template').setTemplateLists(
+      props.list.houseId,
+      props.list.id,
+      value,
+    )
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
 watch(
   () => props.open,
   (isOpen) => {
     if (isOpen) {
+      templateIds.value = []
+      everyListTemplateIds.value = []
+      templateLists.value = { everyList: false, listIds: [] }
       if (props.list) {
         nameValue.value = props.list.name
         descriptionValue.value = props.list.description ?? ''
         iconValue.value = props.list.icon ?? DEFAULT_CHECKLIST_ICON_KEY
         colorValue.value = props.list.color ?? ''
         if (isAdmin.value) void loadListAccess()
+        void loadAttachments(props.list).catch(() => {})
       } else {
         nameValue.value = ''
         descriptionValue.value = ''
@@ -221,6 +290,14 @@ function submit() {
     description: descriptionValue.value.trim(),
     icon: iconValue.value,
     color: colorValue.value,
+    ...(props.list
+      ? {}
+      : {
+          attachments:
+            kind.value === 'template'
+              ? { templateLists: templateLists.value }
+              : { templateIds: templateIds.value },
+        }),
   })
 }
 

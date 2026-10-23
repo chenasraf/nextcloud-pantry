@@ -30,6 +30,7 @@ use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ShareService;
 use OCA\Pantry\Service\StoreService;
+use OCA\Pantry\Service\TemplateAttachmentService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
@@ -70,9 +71,13 @@ abstract class ListKindOCSController extends OCSController {
 		protected ItemDefaultsService $itemDefaults,
 		protected IUserSession $userSession,
 		protected LoggerInterface $logger,
+		protected TemplateAttachmentService $attachments,
 	) {
 		parent::__construct($appName, $request);
 	}
+
+	/** Item fields a template item does not have: the done state and the reopen schedule. */
+	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt'];
 
 	/**
 	 * @return 'checklist'|'template'|'inventory'
@@ -108,10 +113,14 @@ abstract class ListKindOCSController extends OCSController {
 	 * not apply), we must not let that sink the whole item list — items render
 	 * with no attached stores rather than the endpoint returning a 500.
 	 *
+	 * `$shape` shapes each item; it defaults to this resource's kind.
+	 *
 	 * @param ChecklistItem[] $items
+	 * @param (callable(array<array-key, mixed>): array<array-key, mixed>)|null $shape
 	 * @return list<array<string, mixed>>
 	 */
-	protected function serializeItems(array $items): array {
+	protected function serializeItems(array $items, ?callable $shape = null): array {
+		$shape ??= $this->shapeItem(...);
 		$ids = array_map(static fn ($i) => (int)$i->getId(), $items);
 		try {
 			$storeMap = $this->itemStores->findStoreIdsForItems($ids);
@@ -137,13 +146,13 @@ abstract class ListKindOCSController extends OCSController {
 			$this->logger->error('Failed to load custom fields for items; serializing without them', ['exception' => $e]);
 			$fieldMap = [];
 		}
-		return array_values(array_map(function ($i) use ($storeMap, $priceMap, $labelMap, $fieldMap) {
+		return array_values(array_map(function ($i) use ($storeMap, $priceMap, $labelMap, $fieldMap, $shape) {
 			$data = $i->jsonSerialize();
 			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
 			$data['prices'] = $priceMap[(int)$i->getId()] ?? [];
 			$data['labelIds'] = $labelMap[(int)$i->getId()] ?? [];
 			$data['customFields'] = $fieldMap[(int)$i->getId()] ?? [];
-			return $this->shapeItem($data);
+			return $shape($data);
 		}, $items));
 	}
 
@@ -426,6 +435,7 @@ abstract class ListKindOCSController extends OCSController {
 			),
 			$this->kind(),
 		);
+		$this->attachments->copyAttachments($this->lists->getList($listId), $copy);
 
 		$this->activity->publishListCreated(
 			$houseId,
@@ -844,7 +854,107 @@ abstract class ListKindOCSController extends OCSController {
 		});
 	}
 
+	// ----- Attached templates -----
+
+	/**
+	 * @return DataResponse<Http::STATUS_OK, array{templateIds: list<int>, everyListTemplateIds: list<int>}, array{}>
+	 */
+	protected function doListTemplates(int $houseId, int $listId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->loadList($houseId, $listId, includeDeleted: true);
+			return new DataResponse($this->attachments->forList($list));
+		});
+	}
+
+	/**
+	 * @param list<int> $templateIds
+	 * @return DataResponse<Http::STATUS_OK, array{templateIds: list<int>, everyListTemplateIds: list<int>}, array{}>
+	 */
+	protected function doSetListTemplates(int $houseId, int $listId, array $templateIds): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $templateIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->loadList($houseId, $listId);
+			$this->attachments->setForList($list, $templateIds, $this->accessCheck($houseId, $uid));
+			return new DataResponse($this->attachments->forList($list));
+		});
+	}
+
+	/**
+	 * The list's archived items, when asked for, and the items of its attached
+	 * templates the caller can access, one row per name.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{archived: list<array<string, mixed>>, templates: list<array{item: array<string, mixed>, templates: list<array{id: int, name: string}>}>}, array{}>
+	 */
+	protected function doSuggestions(int $houseId, int $listId, bool $archived): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $archived): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->loadList($houseId, $listId);
+			if (!$this->permissions->isAdmin($houseId, $uid)
+				&& !$this->permissions->canAccessList($houseId, $uid, $listId)) {
+				throw new ForbiddenException('No access to this list');
+			}
+
+			$rows = $this->attachments->suggestions($list, $this->accessCheck($houseId, $uid));
+			$templateItems = $this->serializeItems(
+				array_map(static fn (array $row): ChecklistItem => $row['item'], $rows),
+				static fn (array $data): array => array_diff_key($data, array_flip(self::TEMPLATE_DROPPED_ITEM_FIELDS)),
+			);
+			$templates = [];
+			foreach ($rows as $i => $row) {
+				$templates[] = ['item' => $templateItems[$i], 'templates' => $row['templates']];
+			}
+
+			return new DataResponse([
+				'archived' => $archived ? $this->serializeItems($this->lists->listArchivedItems($listId)) : [],
+				'templates' => $templates,
+			]);
+		});
+	}
+
+	/**
+	 * @return DataResponse<Http::STATUS_OK, array{everyList: bool, listIds: list<int>}, array{}>
+	 */
+	protected function doTemplateLists(int $houseId, int $listId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$template = $this->loadList($houseId, $listId, includeDeleted: true);
+			return new DataResponse($this->attachments->forTemplate($template));
+		});
+	}
+
+	/**
+	 * @param list<int> $listIds
+	 * @return DataResponse<Http::STATUS_OK, array{everyList: bool, listIds: list<int>}, array{}>
+	 */
+	protected function doSetTemplateLists(int $houseId, int $listId, bool $everyList, array $listIds): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $everyList, $listIds): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$template = $this->loadList($houseId, $listId);
+			$this->attachments->setForTemplate($template, $everyList, $listIds, $this->accessCheck($houseId, $uid));
+			return new DataResponse($this->attachments->forTemplate($template));
+		});
+	}
+
 	// ----- Helpers -----
+
+	/**
+	 * @return callable(int $listId): bool Whether the caller can access a list.
+	 */
+	private function accessCheck(int $houseId, string $uid): callable {
+		if ($this->permissions->isAdmin($houseId, $uid)) {
+			return static fn (int $listId): bool => true;
+		}
+		$cache = [];
+		return function (int $listId) use ($houseId, $uid, &$cache): bool {
+			return $cache[$listId] ??= $this->permissions->canAccessList($houseId, $uid, $listId);
+		};
+	}
 
 	/**
 	 * Duplicate a source item's image file for a copy, so deleting either
