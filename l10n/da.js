@@ -213,7 +213,7 @@ OC.L10N.register(
     "Move" : "Flyt",
     "Manage custom fields" : "Administrer brugerdefinerede felter",
     "Photos" : "Fotos",
-    "Upload" : "Upload",
+    "Upload" : "Overfør",
     "Organize" : "Organiser",
     "Notes" : "Noter",
     "Built-in admin" : "Indbygget administrator",

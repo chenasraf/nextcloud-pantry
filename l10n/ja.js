@@ -16,6 +16,8 @@ OC.L10N.register(
     "Scan" : "スキャン",
     "Stop scanning" : "スキャン停止",
     "Name" : "名前",
+    "Color:" : "色:",
+    "List:" : "リスト:",
     "Create" : "作成",
     "Save" : "保存する",
     "Saving …" : "保存中...",
