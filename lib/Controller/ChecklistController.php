@@ -28,6 +28,7 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryBatchResult from ResponseDefinitions
  * @psalm-import-type PantryListSuggestions from ResponseDefinitions
  * @psalm-import-type PantryListTemplates from ResponseDefinitions
+ * @psalm-import-type PantryDrawResult from ResponseDefinitions
  */
 final class ChecklistController extends ListKindOCSController {
 	use TranslatesDomainExceptions;
@@ -516,6 +517,33 @@ final class ChecklistController extends ListKindOCSController {
 	#[Permission(['canViewLists'])]
 	public function listSuggestions(int $houseId, int $listId, bool $archived = false): DataResponse {
 		return $this->doSuggestions($houseId, $listId, $archived);
+	}
+
+	/**
+	 * Draw a template item onto a checklist
+	 *
+	 * Copies the template item and leaves the template unchanged. The copy
+	 * carries every field but recurrence and delete-on-done, starts unchecked,
+	 * and fills what the template left empty from the checklist's item
+	 * defaults. Categories, labels and custom fields scoped to the template are
+	 * matched by name on the checklist, or copied onto it. When the checklist
+	 * already has an item of that name (ignoring case and spacing), that item is
+	 * unchecked and unarchived instead, keeping its own values, and `reused` is
+	 * true.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int $templateItemId Id of an item on a template in the same house.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryDrawResult, array{}>
+	 *
+	 * 200: Item drawn or reused
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/draw', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canAddItems'])]
+	public function drawItem(int $houseId, int $listId, int $templateItemId): DataResponse {
+		return $this->doDrawItem($houseId, $listId, $templateItemId);
 	}
 
 	/**

@@ -80,6 +80,7 @@ class ChecklistControllerStoreSerializationTest extends TestCase {
 			$this->createMock(IUserSession::class),
 			$this->logger,
 			$this->createMock(\OCA\Pantry\Service\TemplateAttachmentService::class),
+			$this->createMock(\OCA\Pantry\Service\TemplateCopyService::class),
 		);
 	}
 

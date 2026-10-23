@@ -7,20 +7,16 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
-use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
-use OCA\Pantry\Db\FieldDefinition;
-use OCA\Pantry\Db\FieldOption;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
-use OCA\Pantry\Db\Label;
 use OCA\Pantry\Db\LabelMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -57,6 +53,7 @@ class ChecklistService {
 		private CustomFieldReminderService $fieldReminders,
 		private IDBConnection $db,
 		private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper,
+		private ScopedTaxonomyService $taxonomy,
 	) {
 	}
 
@@ -463,19 +460,9 @@ class ChecklistService {
 	private function duplicateListCategories(int $houseId, int $sourceId, int $copyId, int $now): array {
 		$map = [];
 		foreach ($this->categoryMapper->findByHouse($houseId) as $category) {
-			if ((int)$category->getListId() !== $sourceId) {
-				continue;
+			if ((int)$category->getListId() === $sourceId) {
+				$map[(int)$category->getId()] = (int)$this->taxonomy->copyCategory($category, $copyId, $now)->getId();
 			}
-			$copy = new Category();
-			$copy->setHouseId($houseId);
-			$copy->setListId($copyId);
-			$copy->setName($category->getName());
-			$copy->setIcon($category->getIcon());
-			$copy->setColor($category->getColor());
-			$copy->setSortOrder($category->getSortOrder());
-			$copy->setCreatedAt($now);
-			$copy->setUpdatedAt($now);
-			$map[(int)$category->getId()] = (int)$this->categoryMapper->insert($copy)->getId();
 		}
 		return $map;
 	}
@@ -488,19 +475,9 @@ class ChecklistService {
 	private function duplicateListLabels(int $houseId, int $sourceId, int $copyId, int $now): array {
 		$map = [];
 		foreach ($this->labelMapper->findByHouse($houseId) as $label) {
-			if ((int)$label->getListId() !== $sourceId) {
-				continue;
+			if ((int)$label->getListId() === $sourceId) {
+				$map[(int)$label->getId()] = (int)$this->taxonomy->copyLabel($label, $copyId, $now)->getId();
 			}
-			$copy = new Label();
-			$copy->setHouseId($houseId);
-			$copy->setListId($copyId);
-			$copy->setName($label->getName());
-			$copy->setIcon($label->getIcon());
-			$copy->setColor($label->getColor());
-			$copy->setSortOrder($label->getSortOrder());
-			$copy->setCreatedAt($now);
-			$copy->setUpdatedAt($now);
-			$map[(int)$label->getId()] = (int)$this->labelMapper->insert($copy)->getId();
 		}
 		return $map;
 	}
@@ -519,44 +496,9 @@ class ChecklistService {
 			if ((int)$definition->getListId() !== $sourceId || $definition->getDeletedAt() !== null) {
 				continue;
 			}
-			$copy = new FieldDefinition();
-			$copy->setHouseId($houseId);
-			$copy->setListId($copyId);
-			$copy->setName($definition->getName());
-			$copy->setType($definition->getType());
-			$copy->setSortOrder($definition->getSortOrder());
-			$copy->setHint($definition->getHint());
-			$copy->setMultiline($definition->getMultiline());
-			$copy->setDefaultText($definition->getDefaultText());
-			$copy->setDefaultNumber($definition->getDefaultNumber());
-			$copy->setDefaultBool($definition->getDefaultBool());
-			$copy->setDateMode($definition->getDateMode());
-			$copy->setDefaultOffsetDays($definition->getDefaultOffsetDays());
-			$copy->setNotifyDefault($definition->getNotifyDefault());
-			$copy->setLeadDays($definition->getLeadDays());
-			$copy->setOverridePolicy($definition->getOverridePolicy());
-			$copy->setStopWhenDone($definition->getStopWhenDone());
-			$copy->setCreatedAt($now);
-			$copy->setUpdatedAt($now);
-			$copy = $this->fieldDefMapper->insert($copy);
-			$copyFieldId = (int)$copy->getId();
-			$fieldMap[(int)$definition->getId()] = $copyFieldId;
-
-			foreach ($this->fieldOptionMapper->findByField((int)$definition->getId()) as $option) {
-				$optionCopy = new FieldOption();
-				$optionCopy->setFieldId($copyFieldId);
-				$optionCopy->setLabel($option->getLabel());
-				$optionCopy->setSortOrder($option->getSortOrder());
-				$optionMap[(int)$option->getId()] = (int)$this->fieldOptionMapper->insert($optionCopy)->getId();
-			}
-
-			// The default option is one of the options just copied, so it can only
-			// be pointed at the new row after they exist.
-			$defaultOptionId = $definition->getDefaultOptionId();
-			if ($defaultOptionId !== null && isset($optionMap[$defaultOptionId])) {
-				$copy->setDefaultOptionId($optionMap[$defaultOptionId]);
-				$this->fieldDefMapper->update($copy);
-			}
+			[$copy, $options] = $this->taxonomy->copyField($definition, $copyId, $now);
+			$fieldMap[(int)$definition->getId()] = (int)$copy->getId();
+			$optionMap += $options;
 		}
 		return [$fieldMap, $optionMap];
 	}
@@ -708,6 +650,7 @@ class ChecklistService {
 			$item->setNextDueAt(null);
 		}
 		$item->setImageFileId($this->intOrNull($data['imageFileId'] ?? null));
+		$item->setImageUploadedBy($this->strOrNull($data['imageUploadedBy'] ?? null));
 		$item->setAddedBy($addedBy);
 		$item->setBarcode($this->strOrNull($data['barcode'] ?? null));
 		if (isset($data['sortOrder'])) {

@@ -800,7 +800,9 @@ describe('ChecklistAddForm', () => {
       await flushPromises()
       await wrapper.find('.mock-item-row').trigger('click')
       expect(wrapper.emitted('reuse-existing')).toBeFalsy()
-      expect((wrapper.emitted('pick-template-item')![0][0] as ChecklistItem).id).toBe(30)
+      const [item, targetListId] = wrapper.emitted('pick-template-item')![0]
+      expect((item as ChecklistItem).id).toBe(30)
+      expect(targetListId).toBe(10)
     })
 
     it('emits reuse-existing with the archived item when it is tapped', async () => {

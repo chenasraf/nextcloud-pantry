@@ -24,6 +24,7 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  * @psalm-import-type PantryInventorySuggestions from ResponseDefinitions
  * @psalm-import-type PantryListTemplates from ResponseDefinitions
+ * @psalm-import-type PantryInventoryDrawResult from ResponseDefinitions
  */
 final class InventoryController extends ListKindOCSController {
 	/** Checklist-only list fields: completion and the per-column recurrence default. */
@@ -450,6 +451,32 @@ final class InventoryController extends ListKindOCSController {
 	#[Permission(['canViewLists'])]
 	public function inventorySuggestions(int $houseId, int $listId, bool $archived = false): DataResponse {
 		return $this->doSuggestions($houseId, $listId, $archived);
+	}
+
+	/**
+	 * Draw a template item onto an inventory
+	 *
+	 * Copies the template item and leaves the template unchanged. The copy
+	 * carries every field an inventory item has, and fills what the template
+	 * left empty from the inventory's item defaults. Categories, labels and
+	 * custom fields scoped to the template are matched by name on the
+	 * inventory, or copied onto it. When the inventory already has an item of
+	 * that name (ignoring case and spacing), that item is only unarchived,
+	 * keeping its own values, and `reused` is true.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Inventory id.
+	 * @param int $templateItemId Id of an item on a template in the same house.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryInventoryDrawResult, array{}>
+	 *
+	 * 200: Item drawn or reused
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/inventories/{listId}/items/draw', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canAddItems'])]
+	public function drawInventoryItem(int $houseId, int $listId, int $templateItemId): DataResponse {
+		return $this->doDrawItem($houseId, $listId, $templateItemId);
 	}
 
 	/**

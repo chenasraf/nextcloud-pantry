@@ -154,6 +154,7 @@
         @add="handleAdd"
         @remember-defaults="handleRememberDefaults"
         @reuse-existing="onReuseFromSuggestion"
+        @pick-template-item="onPickTemplateItem"
       />
 
       <ChecklistFilter
@@ -981,6 +982,7 @@ const {
   setLabelsMany,
   uncheckMany,
   undoRemoveMany,
+  draw: drawFromTemplate,
   sortBy,
   viewMode,
   trashMode,
@@ -2079,6 +2081,20 @@ async function onReuseFromSuggestion(item: ChecklistItem) {
     await reuseItem(item)
   }
   addForm.value?.clearName()
+}
+
+async function onPickTemplateItem(item: ChecklistItem, targetListId: number) {
+  try {
+    const result = await drawFromTemplate(item.id, targetListId)
+    showSuccess(
+      result.reused
+        ? t('pantry', 'Reused existing item "{name}"', { name: result.item.name })
+        : t('pantry', 'Added "{name}" from a template', { name: result.item.name }),
+    )
+    addForm.value?.clearName()
+  } catch (e) {
+    showError((e as Error).message)
+  }
 }
 
 async function reuseArchivedItem(item: ChecklistItem) {

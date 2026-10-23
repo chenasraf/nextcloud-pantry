@@ -34,6 +34,7 @@ use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ShareService;
 use OCA\Pantry\Service\StoreService;
 use OCA\Pantry\Service\TemplateAttachmentService;
+use OCA\Pantry\Service\TemplateCopyService;
 use OCP\AppFramework\OCS\OCSNotFoundException;
 use OCP\IRequest;
 use OCP\IUser;
@@ -49,10 +50,13 @@ class ListKindControllerTest extends TestCase {
 	private PermissionService $permissions;
 	/** @var TemplateAttachmentService&MockObject */
 	private TemplateAttachmentService $attachments;
+	/** @var TemplateCopyService&MockObject */
+	private TemplateCopyService $templateCopy;
 
 	protected function setUp(): void {
 		$this->lists = $this->createMock(ChecklistService::class);
 		$this->attachments = $this->createMock(TemplateAttachmentService::class);
+		$this->templateCopy = $this->createMock(TemplateCopyService::class);
 		$this->permissions = $this->createMock(PermissionService::class);
 		$this->permissions->method('isAdmin')->willReturn(true);
 	}
@@ -98,6 +102,7 @@ class ListKindControllerTest extends TestCase {
 			$session,
 			$this->createMock(LoggerInterface::class),
 			$this->attachments,
+			$this->templateCopy,
 		);
 	}
 
@@ -339,6 +344,46 @@ class ListKindControllerTest extends TestCase {
 		$this->attachments->expects($this->once())->method('copyAttachments')->with($source, $copy);
 
 		$this->makeController(ChecklistController::class)->duplicateList(1, 7, 'Copy');
+	}
+
+	private function drawSetup(): ChecklistItem {
+		$source = new ChecklistItem();
+		$source->setId(30);
+		$source->setListId(9);
+		$source->setName('Bread');
+		$template = $this->makeList(Checklist::KIND_TEMPLATE);
+		$template->setId(9);
+		$this->lists->method('getItem')->with(30)->willReturn($source);
+		$this->lists->method('getList')->willReturnCallback(
+			fn (int $id): Checklist => $id === 9 ? $template : $this->makeList(Checklist::KIND_CHECKLIST),
+		);
+		$drawn = new ChecklistItem();
+		$drawn->setId(31);
+		$drawn->setListId(7);
+		$drawn->setName('Bread');
+		return $drawn;
+	}
+
+	public function testDrawReturnsTheCopyInTheListShape(): void {
+		$drawn = $this->drawSetup();
+		$this->templateCopy->expects($this->once())->method('draw')->willReturn(['item' => $drawn, 'reused' => false]);
+
+		$data = $this->makeController(ChecklistController::class)->drawItem(1, 7, 30)->getData();
+
+		$this->assertFalse($data['reused']);
+		$this->assertSame(31, $data['item']['id']);
+		$this->assertArrayHasKey('done', $data['item']);
+	}
+
+	public function testDrawRefusesATemplateTheCallerCannotAccess(): void {
+		$this->drawSetup();
+		$this->permissions = $this->createMock(PermissionService::class);
+		$this->permissions->method('isAdmin')->willReturn(false);
+		$this->permissions->method('canAccessList')->willReturnCallback(static fn (int $h, string $u, int $id): bool => $id !== 9);
+		$this->templateCopy->expects($this->never())->method('draw');
+
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$this->makeController(InventoryController::class)->drawInventoryItem(1, 7, 30);
 	}
 
 	public function testBatchUncheckSkipsItemsOfOtherKinds(): void {

@@ -212,6 +212,14 @@ export function listApi(kind: ListKind) {
       return resp.data ?? []
     },
 
+    /** Checklists and inventories only: copy a template item onto the list. */
+    async drawItem(houseId: number, listId: number, templateItemId: number): Promise<DrawResult> {
+      const resp = await ocs.post<DrawResult>(`${base(houseId)}/${listId}/items/draw`, {
+        templateItemId,
+      })
+      return resp.data
+    },
+
     /** Checklists and inventories only: what their add box suggests. */
     async listSuggestions(
       houseId: number,
@@ -410,6 +418,12 @@ export async function toggleItem(
 }
 
 // ----- Batch (group) actions -----
+
+/** A drawn template item: the copy, or the same-name item it brought back. */
+export interface DrawResult {
+  item: ChecklistItem
+  reused: boolean
+}
 
 export interface BatchResult {
   success: boolean

@@ -325,6 +325,16 @@ namespace OCA\Pantry;
  *     templates: list<PantryTemplateSuggestion>,
  * }
  *
+ * @psalm-type PantryDrawResult = array{
+ *     item: PantryListItem,
+ *     reused: bool,
+ * }
+ *
+ * @psalm-type PantryInventoryDrawResult = array{
+ *     item: PantryInventoryItem,
+ *     reused: bool,
+ * }
+ *
  * @psalm-type PantryInventorySuggestions = array{
  *     archived: list<PantryInventoryItem>,
  *     templates: list<PantryTemplateSuggestion>,

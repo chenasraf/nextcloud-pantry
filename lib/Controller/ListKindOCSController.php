@@ -31,6 +31,7 @@ use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ShareService;
 use OCA\Pantry\Service\StoreService;
 use OCA\Pantry\Service\TemplateAttachmentService;
+use OCA\Pantry\Service\TemplateCopyService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
@@ -72,6 +73,7 @@ abstract class ListKindOCSController extends OCSController {
 		protected IUserSession $userSession,
 		protected LoggerInterface $logger,
 		protected TemplateAttachmentService $attachments,
+		protected TemplateCopyService $templateCopy,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -851,6 +853,47 @@ abstract class ListKindOCSController extends OCSController {
 			$this->loadItem($houseId, $listId, $itemId);
 			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null, 'imageUploadedBy' => null]);
 			return new DataResponse($this->serializeItem($updated));
+		});
+	}
+
+	/**
+	 * Draw a template item onto this list under the template-copy rule.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{item: array<string, mixed>, reused: bool}, array{}>
+	 */
+	protected function doDrawItem(int $houseId, int $listId, int $templateItemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $templateItemId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$list = $this->loadList($houseId, $listId);
+			$source = $this->lists->getItem($templateItemId);
+			$template = $this->lists->getList($source->getListId());
+			$this->assertListInHouse($template->getHouseId(), $houseId);
+			$canAccess = $this->accessCheck($houseId, $uid);
+			if (!$canAccess($listId) || !$canAccess((int)$template->getId())) {
+				throw new ForbiddenException('No access to this list or template');
+			}
+
+			$result = $this->templateCopy->draw(
+				$source,
+				$list,
+				$uid,
+				fn (int $fileId, string $ownerUid): ?int => $this->images->duplicateItemImage($ownerUid, $fileId, $uid, $houseId),
+			);
+			$item = $result['item'];
+			if (!$result['reused']) {
+				$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
+				$this->activity->publishItemAdded(
+					$houseId,
+					$this->houses->get($houseId)->getName(),
+					$uid,
+					(int)$item->getId(),
+					$item->getName(),
+					$listId,
+					$list->getName(),
+				);
+			}
+			return new DataResponse(['item' => $this->serializeItem($item), 'reused' => $result['reused']]);
 		});
 	}
 

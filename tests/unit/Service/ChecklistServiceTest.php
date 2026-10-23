@@ -88,6 +88,12 @@ class ChecklistServiceTest extends TestCase {
 			$this->createMock(\OCA\Pantry\Service\CustomFieldReminderService::class),
 			$this->db,
 			$this->listTemplateMapper,
+			new \OCA\Pantry\Service\ScopedTaxonomyService(
+				$this->categoryMapper,
+				$this->labelMapper,
+				$this->fieldDefMapper,
+				$this->fieldOptionMapper,
+			),
 		);
 	}
 

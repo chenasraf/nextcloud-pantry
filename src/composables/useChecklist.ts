@@ -300,6 +300,23 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     return created
   }
 
+  /**
+   * Draw a template item onto the list, or revive the same-name item already
+   * on it. A revived item that was archived joins the view.
+   */
+  async function draw(templateItemId: number, targetListId?: number): Promise<api.DrawResult> {
+    const useListId = isMeta ? targetListId : listId
+    if (useListId === undefined || useListId <= 0) {
+      throw new Error('A target list is required to add an item')
+    }
+    const result = await resource.drawItem(houseId, useListId, templateItemId)
+    const shown = items.value.some((i) => i.id === result.item.id)
+    items.value = shown
+      ? items.value.map((i) => (i.id === result.item.id ? result.item : i))
+      : [...items.value, result.item]
+    return result
+  }
+
   async function update(itemId: number, patch: Partial<api.ItemInput>): Promise<void> {
     const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, patch)
     if (isMeta && patch.targetListId !== undefined && patch.targetListId !== updated.listId) {
@@ -565,6 +582,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     archiveMode,
     load,
     add,
+    draw,
     update,
     copy,
     toggle,

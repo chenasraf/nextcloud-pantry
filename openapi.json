@@ -271,6 +271,21 @@
                     "tag"
                 ]
             },
+            "DrawResult": {
+                "type": "object",
+                "required": [
+                    "item",
+                    "reused"
+                ],
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/ListItem"
+                    },
+                    "reused": {
+                        "type": "boolean"
+                    }
+                }
+            },
             "FieldDefinition": {
                 "type": "object",
                 "required": [
@@ -776,6 +791,21 @@
                         "type": "boolean"
                     },
                     "sharedOnly": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "InventoryDrawResult": {
+                "type": "object",
+                "required": [
+                    "item",
+                    "reused"
+                ],
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/InventoryItem"
+                    },
+                    "reused": {
                         "type": "boolean"
                     }
                 }
@@ -7595,6 +7625,136 @@
                                                 },
                                                 "data": {
                                                     "$ref": "#/components/schemas/ListSuggestions"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/lists/{listId}/items/draw": {
+            "post": {
+                "operationId": "checklist-draw-item",
+                "summary": "Draw a template item onto a checklist",
+                "description": "Copies the template item and leaves the template unchanged. The copy carries every field but recurrence and delete-on-done, starts unchecked, and fills what the template left empty from the checklist's item defaults. Categories, labels and custom fields scoped to the template are matched by name on the checklist, or copied onto it. When the checklist already has an item of that name (ignoring case and spacing), that item is unchecked and unarchived instead, keeping its own values, and `reused` is true.",
+                "tags": [
+                    "checklist"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "templateItemId"
+                                ],
+                                "properties": {
+                                    "templateItemId": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "description": "Id of an item on a template in the same house."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "listId",
+                        "in": "path",
+                        "description": "List id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item drawn or reused",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/DrawResult"
                                                 }
                                             }
                                         }
@@ -15663,6 +15823,136 @@
                                                 },
                                                 "data": {
                                                     "$ref": "#/components/schemas/InventorySuggestions"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/inventories/{listId}/items/draw": {
+            "post": {
+                "operationId": "inventory-draw-inventory-item",
+                "summary": "Draw a template item onto an inventory",
+                "description": "Copies the template item and leaves the template unchanged. The copy carries every field an inventory item has, and fills what the template left empty from the inventory's item defaults. Categories, labels and custom fields scoped to the template are matched by name on the inventory, or copied onto it. When the inventory already has an item of that name (ignoring case and spacing), that item is only unarchived, keeping its own values, and `reused` is true.",
+                "tags": [
+                    "inventory"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "templateItemId"
+                                ],
+                                "properties": {
+                                    "templateItemId": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "description": "Id of an item on a template in the same house."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "listId",
+                        "in": "path",
+                        "description": "Inventory id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item drawn or reused",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/InventoryDrawResult"
                                                 }
                                             }
                                         }

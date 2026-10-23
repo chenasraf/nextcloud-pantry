@@ -227,8 +227,8 @@ const emit = defineEmits<{
   /** Values for the target list's "remember last" defaults, from the item just added. */
   'remember-defaults': [patch: ItemDefaultsPatch, listId: number]
   'reuse-existing': [item: ChecklistItem]
-  /** A suggested item from one of the list's templates was picked. */
-  'pick-template-item': [item: ChecklistItem]
+  /** A suggested item from one of the target list's templates was picked. */
+  'pick-template-item': [item: ChecklistItem, targetListId: number]
   'open-defaults': []
 }>()
 
@@ -541,8 +541,9 @@ const suggestionRows = computed<SuggestionRow[]>(() => {
 })
 
 function onSuggestionPicked(row: SuggestionRow) {
+  const listId = reuseTargetListId.value
   if (row.templateNames) {
-    emit('pick-template-item', row.item)
+    if (listId != null) emit('pick-template-item', row.item, listId)
   } else {
     emit('reuse-existing', row.item)
   }

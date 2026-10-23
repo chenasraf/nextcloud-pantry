@@ -32,6 +32,7 @@ const mockApi = vi.hoisted(() => ({
   batchUncheckItems: vi.fn(),
   listAllItems: vi.fn(),
   duplicateAs: vi.fn(),
+  drawItem: vi.fn(),
 }))
 
 const apiKinds = vi.hoisted(() => [] as string[])
@@ -690,6 +691,45 @@ describe('useChecklistItems', () => {
       await c.copyMany([1], 99, 'inventory')
 
       expect(c.items.value.map((i) => i.id)).toEqual([1])
+    })
+
+    it('draw appends a new copy to the view', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1 })])
+      mockApi.drawItem.mockResolvedValue({
+        item: makeItem({ id: 9, name: 'Bread' }),
+        reused: false,
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      const result = await c.draw(30)
+
+      expect(mockApi.drawItem).toHaveBeenCalledWith(1, 10, 30)
+      expect(result.reused).toBe(false)
+      expect(c.items.value.map((i) => i.id)).toEqual([1, 9])
+    })
+
+    it('draw swaps in a reused item already in view', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1, done: true })])
+      mockApi.drawItem.mockResolvedValue({ item: makeItem({ id: 1, done: false }), reused: true })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.draw(30)
+
+      expect(c.items.value).toHaveLength(1)
+      expect(c.items.value[0].done).toBe(false)
+    })
+
+    it('draw targets the picked list in the all-lists view', async () => {
+      mockApi.listAllItems.mockResolvedValue([])
+      mockApi.drawItem.mockResolvedValue({ item: makeItem({ id: 9, listId: 12 }), reused: false })
+
+      const c = useChecklistItems(1, ALL_LISTS_ID)
+      await c.load()
+      await c.draw(30, 12)
+
+      expect(mockApi.drawItem).toHaveBeenCalledWith(1, 12, 30)
     })
 
     it('copyMany appends copies when targeting the current list', async () => {
