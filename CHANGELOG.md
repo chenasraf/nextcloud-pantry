@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.38.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.37.0...v0.38.0) (2026-10-23)
+
+
+### Features
+
+* **shopping:** shop all stores at once ([d2a5be0](https://github.com/chenasraf/nextcloud-pantry/commit/d2a5be00cfc9879a2204892e38004555362cf984)), closes [#310](https://github.com/chenasraf/nextcloud-pantry/issues/310)
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([d885698](https://github.com/chenasraf/nextcloud-pantry/commit/d885698832c250866133137eccd78a530097d97b))
+* **l10n:** Update translations from Transifex ([8dea6cc](https://github.com/chenasraf/nextcloud-pantry/commit/8dea6cc0b0f93d20d6f8983be12c10287a1ea0d1))
+* **l10n:** Update translations from Transifex ([a17cf29](https://github.com/chenasraf/nextcloud-pantry/commit/a17cf292e1350f5bc63fd8eeed9242b92178676c))
+* **l10n:** Update translations from Transifex ([00af25a](https://github.com/chenasraf/nextcloud-pantry/commit/00af25aa054f6cbbf9a921c98ef4aa8ec16c7895))
+* **l10n:** Update translations from Transifex ([b146ee9](https://github.com/chenasraf/nextcloud-pantry/commit/b146ee9cc73478fac1fab22b425ebe93e7b3faed))
+* **l10n:** Update translations from Transifex ([70070ed](https://github.com/chenasraf/nextcloud-pantry/commit/70070ed5963cdc8631dbb2afe37f8581e4716e8d))
+* **l10n:** Update translations from Transifex ([36a498c](https://github.com/chenasraf/nextcloud-pantry/commit/36a498caeb5f1e9fe4575e1591a269a653481b55))
+* **l10n:** Update translations from Transifex ([c5691be](https://github.com/chenasraf/nextcloud-pantry/commit/c5691befeee87f21a7d59449a1ed654118125a1e))
+
 ## [0.37.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.36.0...v0.37.0) (2026-10-15)
 
 
