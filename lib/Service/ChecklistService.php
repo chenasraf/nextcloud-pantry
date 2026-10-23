@@ -381,7 +381,11 @@ class ChecklistService {
 	 * the caller's business: `$duplicateImage` is handed the source file id and
 	 * its owner, and returns the new file id (or null when it could not copy it).
 	 *
+	 * `$kind` duplicates the list as another kind; the items cross by the rule in
+	 * {@see crossItemInto()}, and `$resetDone` only matters checklist to checklist.
+	 *
 	 * @param callable(int $fileId, string $ownerUid): ?int $duplicateImage
+	 * @param 'checklist'|'template'|'inventory'|null $kind The copy's kind; null keeps the source's.
 	 */
 	public function duplicateList(
 		int $listId,
@@ -389,11 +393,16 @@ class ChecklistService {
 		bool $resetDone,
 		?string $addedBy,
 		callable $duplicateImage,
+		?string $kind = null,
 	): Checklist {
 		$source = $this->getList($listId);
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('List name cannot be empty');
+		}
+		$kind ??= $source->getKind();
+		if (!in_array($kind, Checklist::KINDS, true)) {
+			throw new \InvalidArgumentException('Unknown list kind: ' . $kind);
 		}
 
 		$now = time();
@@ -402,7 +411,7 @@ class ChecklistService {
 
 		$copy = new Checklist();
 		$copy->setHouseId($houseId);
-		$copy->setKind($source->getKind());
+		$copy->setKind($kind);
 		$copy->setName($name);
 		$copy->setDescription($source->getDescription());
 		$copy->setIcon($source->getIcon());
@@ -428,14 +437,16 @@ class ChecklistService {
 		];
 
 		$sourceDefaults = ItemDefaults::decode($source->getItemDefaults());
+		if (!$copy->keepsRecurrence()) {
+			unset($sourceDefaults[ItemDefaults::KEY_RECURRENCE]);
+		}
 		if ($sourceDefaults !== []) {
 			$copy->setItemDefaults(ItemDefaults::encode(ItemDefaults::remap($sourceDefaults, $maps)));
 			$this->listMapper->update($copy);
 		}
 
-		$schedules = $copy->isChecklist();
 		foreach ($this->itemMapper->findByList($sourceId) as $item) {
-			$this->duplicateItemInto($item, $copyId, $resetDone, $addedBy, $now, $duplicateImage, $maps, $schedules);
+			$this->duplicateItemInto($item, $source, $copy, !$resetDone, $addedBy, $now, $duplicateImage, $maps);
 		}
 
 		return $copy;
@@ -556,16 +567,16 @@ class ChecklistService {
 	 */
 	private function duplicateItemInto(
 		ChecklistItem $source,
-		int $copyListId,
-		bool $resetDone,
+		Checklist $sourceList,
+		Checklist $target,
+		bool $keepDone,
 		?string $addedBy,
 		int $now,
 		callable $duplicateImage,
 		array $maps,
-		bool $schedules,
 	): void {
 		$copy = new ChecklistItem();
-		$copy->setListId($copyListId);
+		$copy->setListId((int)$target->getId());
 		$copy->setName($source->getName());
 		$copy->setDescription($source->getDescription());
 		$sourceCategoryId = $source->getCategoryId();
@@ -573,34 +584,12 @@ class ChecklistService {
 			$sourceCategoryId !== null ? ($maps['categories'][$sourceCategoryId] ?? $sourceCategoryId) : null,
 		);
 		$copy->setQuantity($source->getQuantity());
-		$copy->setRrule($source->getRrule());
-		$copy->setRepeatFromCompletion($source->getRepeatFromCompletion());
-		$copy->setDeleteOnDone($source->getDeleteOnDone());
 		$copy->setBarcode($source->getBarcode());
 		$copy->setSortOrder($source->getSortOrder());
 		$copy->setAddedBy($addedBy);
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
-
-		if ($resetDone || !$source->getDone()) {
-			$copy->setDone(false);
-			$copy->setDoneAt(null);
-			$copy->setDoneBy(null);
-			// An unchecked item on a fixed schedule gets its next occurrence now,
-			// the same way a newly added one does.
-			$copy->setNextDueAt(
-				$schedules && $source->getRrule() !== null && !$source->getRepeatFromCompletion()
-					? $this->computeNextDueAt($copy, $now)?->getTimestamp()
-					: null,
-			);
-		} else {
-			$copy->setDone(true);
-			$copy->setDoneAt($source->getDoneAt());
-			$copy->setDoneBy($source->getDoneBy());
-			// Same rule and same completion time as the source, so its scheduled
-			// reopen carries over unchanged.
-			$copy->setNextDueAt($source->getNextDueAt());
-		}
+		$this->crossItemInto($copy, $source, $sourceList, $target, $keepDone, $now);
 
 		$sourceImageFileId = $source->getImageFileId();
 		$sourceImageOwner = $source->getImageUploadedBy();
@@ -860,25 +849,41 @@ class ChecklistService {
 	}
 
 	/**
-	 * Move a batch of items to a target list. Missing items are skipped.
-	 * Target-list existence is validated once. Returns the updated items in the
-	 * same order as the input ids (skipping any that no longer exist).
+	 * Move a batch of items to a target list of any kind. Missing items are
+	 * skipped. Items crossing kinds follow {@see crossItemInto()}; within a kind
+	 * only the list changes. Returns the updated items in the same order as
+	 * the input ids (skipping any that no longer exist).
 	 *
 	 * @param list<int> $itemIds
 	 * @return ChecklistItem[]
 	 */
 	public function moveItems(array $itemIds, int $targetListId): array {
-		// Validate the destination once; per-item updates then only touch list_id.
-		$this->getList($targetListId);
-		$updated = [];
-		foreach ($itemIds as $itemId) {
-			try {
-				$updated[] = $this->updateItem((int)$itemId, ['listId' => $targetListId]);
-			} catch (NotFoundException) {
-				continue;
+		$target = $this->getList($targetListId);
+		$now = time();
+		return $this->atomic(function () use ($itemIds, $target, $targetListId, $now): array {
+			$updated = [];
+			$sourceLists = [];
+			foreach ($itemIds as $itemId) {
+				try {
+					$item = $this->getItem((int)$itemId);
+				} catch (NotFoundException) {
+					continue;
+				}
+				$wasDone = $item->getDone();
+				$sourceList = $sourceLists[$item->getListId()] ??= $this->getList($item->getListId(), includeDeleted: true);
+				if ($sourceList->getKind() !== $target->getKind()) {
+					$this->crossItemInto($item, $item, $sourceList, $target, keepDone: true, now: $now);
+				}
+				$item->setListId($targetListId);
+				$item->setUpdatedAt($now);
+				$this->itemMapper->update($item);
+				if ($wasDone && !$item->getDone()) {
+					$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
+				}
+				$updated[] = $item;
 			}
-		}
-		return $updated;
+			return $updated;
+		}, $this->db);
 	}
 
 	/**
@@ -1249,7 +1254,7 @@ class ChecklistService {
 		?string $imageUploadedBy,
 	): ChecklistItem {
 		$source = $this->getItem($itemId);
-		$target = $this->assertSameKind($source->getListId(), $targetListId);
+		$target = $this->getList($targetListId);
 
 		$now = time();
 		$copy = new ChecklistItem();
@@ -1258,23 +1263,14 @@ class ChecklistService {
 		$copy->setDescription($source->getDescription());
 		$copy->setCategoryId($source->getCategoryId());
 		$copy->setQuantity($source->getQuantity());
-		$copy->setDone(false);
-		$copy->setDoneAt(null);
-		$copy->setDoneBy(null);
-		$copy->setRrule($source->getRrule());
-		$copy->setRepeatFromCompletion($source->getRepeatFromCompletion());
-		$copy->setDeleteOnDone($source->getDeleteOnDone());
-		if ($target->isChecklist() && $source->getRrule() !== null && !$source->getRepeatFromCompletion()) {
-			$copy->setNextDueAt($this->computeNextDueAt($copy, $now)?->getTimestamp());
-		} else {
-			$copy->setNextDueAt(null);
-		}
 		$copy->setImageFileId($imageFileId);
 		$copy->setImageUploadedBy($imageUploadedBy);
 		$copy->setAddedBy($addedBy);
 		$copy->setSortOrder(0);
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
+		$sourceList = $this->getList($source->getListId(), includeDeleted: true);
+		$this->crossItemInto($copy, $source, $sourceList, $target, keepDone: false, now: $now);
 		$saved = $this->itemMapper->insert($copy);
 		$this->itemStoreMapper->setStoresForItem(
 			(int)$saved->getId(),
@@ -1296,8 +1292,56 @@ class ChecklistService {
 	}
 
 	/**
-	 * Items move and copy only between lists of the same kind, since item
-	 * shapes differ by kind.
+	 * Set the fields that differ by kind on an item landing on `$target`, from
+	 * the item it comes from. Crossing kinds keeps what fits, drops what does
+	 * not, and defaults what is new:
+	 *
+	 * - Done state survives only checklist to checklist, and only when
+	 *   `$keepDone`; anything else lands unchecked.
+	 * - Recurrence and delete-on-done carry into checklists and templates, and
+	 *   drop into inventories. Only a checklist schedules the next occurrence.
+	 *
+	 * `$item` may be `$source` itself (a move). Its created time must be set,
+	 * since a fixed schedule counts from it.
+	 */
+	private function crossItemInto(ChecklistItem $item, ChecklistItem $source, Checklist $sourceList, Checklist $target, bool $keepDone, int $now): void {
+		$done = $keepDone && $source->getDone() && $sourceList->isChecklist() && $target->isChecklist();
+
+		if ($target->keepsRecurrence()) {
+			$item->setRrule($source->getRrule());
+			$item->setRepeatFromCompletion($source->getRepeatFromCompletion());
+			$item->setDeleteOnDone($source->getDeleteOnDone());
+		} else {
+			$item->setRrule(null);
+			$item->setRepeatFromCompletion(false);
+			$item->setDeleteOnDone(false);
+		}
+
+		if ($done) {
+			// Same rule and same completion time as the source, so its scheduled
+			// reopen carries over unchanged.
+			$item->setDone(true);
+			$item->setDoneAt($source->getDoneAt());
+			$item->setDoneBy($source->getDoneBy());
+			$item->setNextDueAt($source->getNextDueAt());
+			return;
+		}
+		$item->setDone(false);
+		$item->setDoneAt(null);
+		$item->setDoneBy(null);
+		// An unchecked item on a fixed schedule gets its next occurrence now,
+		// the same way a newly added one does.
+		$item->setNextDueAt(
+			$target->isChecklist() && $item->getRrule() !== null && !$item->getRepeatFromCompletion()
+				? $this->computeNextDueAt($item, $now)?->getTimestamp()
+				: null,
+		);
+	}
+
+	/**
+	 * A single item's list changes only within its kind, since each kind's
+	 * resource only ever serves its own items. Crossing kinds goes through
+	 * {@see moveItems()}.
 	 */
 	private function assertSameKind(int $sourceListId, int $targetListId): Checklist {
 		$target = $this->getList($targetListId);

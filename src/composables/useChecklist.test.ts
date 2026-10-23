@@ -30,6 +30,8 @@ const mockApi = vi.hoisted(() => ({
   batchDeleteItems: vi.fn(),
   batchSetCategory: vi.fn(),
   batchUncheckItems: vi.fn(),
+  listAllItems: vi.fn(),
+  duplicateAs: vi.fn(),
 }))
 
 const apiKinds = vi.hoisted(() => [] as string[])
@@ -42,7 +44,7 @@ vi.mock('@/api/lists', () => ({
   },
 }))
 
-import { useChecklists, useChecklistItems } from './useChecklist'
+import { ALL_LISTS_ID, useChecklists, useChecklistItems } from './useChecklist'
 
 function makeList(overrides: Partial<Checklist> = {}): Checklist {
   return {
@@ -162,6 +164,21 @@ describe('useChecklists', () => {
       )
       expect(result).toEqual(newList)
       expect(c.lists.value).toHaveLength(1)
+    })
+  })
+
+  describe('duplicateFrom', () => {
+    it('adds the copy to the lists of its own kind', async () => {
+      const copy = makeList({ id: 9, kind: 'inventory', name: 'Shelf' })
+      mockApi.duplicateAs.mockResolvedValue(copy)
+
+      const inventories = useChecklists(houseCounter, 'inventory')
+      const created = await inventories.duplicateFrom(3, 'Shelf')
+
+      expect(mockApi.duplicateAs).toHaveBeenCalledWith(houseCounter, 3, 'Shelf', true)
+      expect(created).toEqual(copy)
+      expect(inventories.lists.value).toEqual([copy])
+      expect(useChecklists(houseCounter).lists.value).toEqual([])
     })
   })
 
@@ -643,6 +660,36 @@ describe('useChecklistItems', () => {
 
       // Item 2 was skipped (no access) so it stays put; item 1 left the view.
       expect(c.items.value.map((i) => i.id)).toEqual([2])
+    })
+
+    it('moveMany drops rows moved to another kind from the all-lists view', async () => {
+      mockApi.listAllItems.mockResolvedValue([makeItem({ id: 1 }), makeItem({ id: 2 })])
+      mockApi.batchMoveItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 1, listId: 99 })],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, ALL_LISTS_ID)
+      await c.load()
+      await c.moveMany([1], 99, 'template')
+
+      expect(c.items.value.map((i) => i.id)).toEqual([2])
+    })
+
+    it('copyMany leaves the view alone when copying into another kind', async () => {
+      mockApi.listAllItems.mockResolvedValue([makeItem({ id: 1 })])
+      mockApi.batchCopyItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 5, listId: 99 })],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, ALL_LISTS_ID)
+      await c.load()
+      await c.copyMany([1], 99, 'inventory')
+
+      expect(c.items.value.map((i) => i.id)).toEqual([1])
     })
 
     it('copyMany appends copies when targeting the current list', async () => {

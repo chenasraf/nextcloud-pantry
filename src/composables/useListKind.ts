@@ -4,6 +4,9 @@ import type { ListKind } from '@/api/types'
 
 const LIST_KIND_KEY: InjectionKey<Readonly<Ref<ListKind>>> = Symbol('pantry-list-kind')
 
+/** Every kind, in navigation order. */
+export const LIST_KINDS: readonly ListKind[] = ['checklist', 'inventory', 'template']
+
 /** Route names of each kind's index and list pages. */
 export const LIST_KIND_ROUTES: Record<ListKind, { index: string; detail: string }> = {
   checklist: { index: 'lists', detail: 'list-detail' },
@@ -60,6 +63,8 @@ function checklistStrings() {
     editTitle: t('pantry', 'Edit checklist'),
     duplicateTitle: t('pantry', 'Duplicate checklist'),
     duplicateFailed: t('pantry', 'Could not duplicate the checklist'),
+    // TRANSLATORS: Noun (singular), the kind of list whose items are checked off. Option when choosing what a copy of a list becomes.
+    name: t('pantry', 'Checklist'),
     back: t('pantry', 'Back to checklists'),
     listMenu: t('pantry', 'Checklist actions'),
     deleteDialogTitle: t('pantry', 'Remove checklist'),
@@ -92,6 +97,8 @@ function templateStrings(): ListKindStrings {
     editTitle: t('pantry', 'Edit template'),
     duplicateTitle: t('pantry', 'Duplicate template'),
     duplicateFailed: t('pantry', 'Could not duplicate the template'),
+    // TRANSLATORS: Noun (singular), a list of reusable items that other lists draw from. Option when choosing what a copy of a list becomes.
+    name: t('pantry', 'Template'),
     back: t('pantry', 'Back to templates'),
     listMenu: t('pantry', 'Template actions'),
     deleteDialogTitle: t('pantry', 'Remove template'),
@@ -124,6 +131,8 @@ function inventoryStrings(): ListKindStrings {
     editTitle: t('pantry', 'Edit inventory'),
     duplicateTitle: t('pantry', 'Duplicate inventory'),
     duplicateFailed: t('pantry', 'Could not duplicate the inventory'),
+    // TRANSLATORS: Noun (singular), a list of what the household keeps on hand. Option when choosing what a copy of a list becomes.
+    name: t('pantry', 'Inventory'),
     back: t('pantry', 'Back to inventories'),
     listMenu: t('pantry', 'Inventory actions'),
     deleteDialogTitle: t('pantry', 'Remove inventory'),

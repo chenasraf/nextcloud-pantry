@@ -556,15 +556,20 @@ function startDuplicate(list: Checklist) {
   duplicating.value = list
 }
 
-async function submitDuplicate(data: { name: string; resetDone: boolean }) {
+async function submitDuplicate(data: { name: string; resetDone: boolean; kind: ListKind }) {
   const target = duplicating.value
   if (!target) return
+  const asKind = data.kind
   duplicatingInFlight.value = true
   try {
-    const created = await duplicate(target.id, data.name, data.resetDone)
+    // The copy opens in its own kind's section.
+    const created =
+      asKind === props.kind
+        ? await duplicate(target.id, data.name, data.resetDone)
+        : await useChecklists(houseIdNum.value, asKind).duplicateFrom(target.id, data.name)
     duplicating.value = null
     await router.push({
-      name: detailRoute,
+      name: LIST_KIND_ROUTES[asKind].detail,
       params: { houseId: String(houseIdNum.value), listId: String(created.id) },
     })
   } catch {

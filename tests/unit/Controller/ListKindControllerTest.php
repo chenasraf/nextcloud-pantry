@@ -44,9 +44,13 @@ use Psr\Log\LoggerInterface;
 class ListKindControllerTest extends TestCase {
 	/** @var ChecklistService&MockObject */
 	private ChecklistService $lists;
+	/** @var PermissionService&MockObject */
+	private PermissionService $permissions;
 
 	protected function setUp(): void {
 		$this->lists = $this->createMock(ChecklistService::class);
+		$this->permissions = $this->createMock(PermissionService::class);
+		$this->permissions->method('isAdmin')->willReturn(true);
 	}
 
 	/**
@@ -84,7 +88,7 @@ class ListKindControllerTest extends TestCase {
 			$this->createMock(NotificationService::class),
 			$this->createMock(ActivityPublisher::class),
 			$this->createMock(PrefsService::class),
-			$this->createMock(PermissionService::class),
+			$this->permissions,
 			$this->createMock(ShareService::class),
 			$itemDefaults,
 			$session,
@@ -199,5 +203,97 @@ class ListKindControllerTest extends TestCase {
 
 		$this->assertSame('checklist', $data['kind']);
 		$this->assertArrayHasKey('lastCompletedAt', $data);
+	}
+
+	public function testDuplicateAsInventoryCreatesAnInventoryFromAChecklist(): void {
+		$this->lists->method('getList')->with(7)->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$copy = $this->makeList(Checklist::KIND_INVENTORY);
+		$copy->setId(8);
+		$this->lists->expects($this->once())->method('duplicateList')
+			->with(7, 'Pantry shelf', true, 'alice', $this->anything(), Checklist::KIND_INVENTORY)
+			->willReturn($copy);
+
+		$data = $this->makeController(InventoryController::class)->duplicateAsInventory(1, 7, 'Pantry shelf')->getData();
+
+		$this->assertSame('inventory', $data['kind']);
+		$this->assertArrayNotHasKey('defaultRrule', $data);
+	}
+
+	public function testDuplicateAsChecklistPassesResetDone(): void {
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->lists->expects($this->once())->method('duplicateList')
+			->with(7, 'This week', false, 'alice', $this->anything(), Checklist::KIND_CHECKLIST)
+			->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+
+		$this->makeController(ChecklistController::class)->duplicateAsChecklist(1, 7, 'This week', false);
+	}
+
+	public function testDuplicateAsTemplateRefusesAListOfAnotherHouse(): void {
+		$list = $this->makeList(Checklist::KIND_CHECKLIST);
+		$list->setHouseId(2);
+		$this->lists->method('getList')->willReturn($list);
+		$this->lists->expects($this->never())->method('duplicateList');
+
+		$this->expectException(OCSNotFoundException::class);
+		$this->makeController(TemplateController::class)->duplicateAsTemplate(1, 7, 'Staples');
+	}
+
+	public function testDuplicateWithinAKindKeepsTheSourceResourceKind(): void {
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->lists->expects($this->once())->method('duplicateList')
+			->with(7, 'Copy', true, 'alice', $this->anything(), Checklist::KIND_TEMPLATE)
+			->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+
+		$this->makeController(TemplateController::class)->duplicateTemplate(1, 7, 'Copy');
+	}
+
+	/**
+	 * Items 3 (on checklist 7) and 4 (on template 9), with list 9 the template.
+	 */
+	private function mixedSelection(): void {
+		$onChecklist = new ChecklistItem();
+		$onChecklist->setId(3);
+		$onChecklist->setListId(7);
+		$onChecklist->setName('Milk');
+		$onTemplate = new ChecklistItem();
+		$onTemplate->setId(4);
+		$onTemplate->setListId(9);
+		$onTemplate->setName('Bread');
+		$template = $this->makeList(Checklist::KIND_TEMPLATE);
+		$template->setId(9);
+		$this->lists->method('getItem')->willReturnCallback(
+			static fn (int $id): ChecklistItem => $id === 3 ? $onChecklist : $onTemplate,
+		);
+		$this->lists->method('getList')->willReturnCallback(
+			fn (int $id): Checklist => $id === 9 ? $template : $this->makeList(Checklist::KIND_CHECKLIST),
+		);
+	}
+
+	public function testBatchMoveTakesItemsOfEveryKind(): void {
+		$this->mixedSelection();
+		$this->lists->expects($this->once())->method('moveItems')->with([3], 9)->willReturn([]);
+
+		$data = $this->makeController(ChecklistController::class)->batchMoveItems(1, [3, 4], 9)->getData();
+
+		$this->assertSame([], $data['skipped'], 'the item already on the template is a no-op, not a skip');
+	}
+
+	public function testBatchCopyTakesItemsOfEveryKind(): void {
+		$this->mixedSelection();
+		$this->lists->expects($this->exactly(2))->method('copyItem')
+			->willReturnCallback(static fn (int $id): ChecklistItem => new ChecklistItem());
+
+		$data = $this->makeController(ChecklistController::class)->batchCopyItems(1, [3, 4], 7)->getData();
+
+		$this->assertSame([], $data['skipped']);
+	}
+
+	public function testBatchUncheckSkipsItemsOfOtherKinds(): void {
+		$this->mixedSelection();
+		$this->lists->expects($this->once())->method('uncheckItems')->with([3])->willReturn([]);
+
+		$data = $this->makeController(ChecklistController::class)->batchUncheckItems(1, [3, 4])->getData();
+
+		$this->assertSame([4], $data['skipped']);
 	}
 }

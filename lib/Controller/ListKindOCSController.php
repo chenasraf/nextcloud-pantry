@@ -386,33 +386,55 @@ abstract class ListKindOCSController extends OCSController {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$this->loadList($houseId, $listId);
-			if (!$this->permissions->isAdmin($houseId, $uid)
-				&& !$this->permissions->canAccessList($houseId, $uid, $listId)) {
-				throw new ForbiddenException('No access to this list');
-			}
-
-			$copy = $this->lists->duplicateList(
-				$listId,
-				$name,
-				$resetDone,
-				$uid,
-				fn (int $fileId, string $ownerUid): ?int => $this->images->duplicateItemImage(
-					$ownerUid,
-					$fileId,
-					$uid,
-					$houseId,
-				),
-			);
-
-			$this->activity->publishListCreated(
-				$houseId,
-				$this->houses->get($houseId)->getName(),
-				$uid,
-				(int)$copy->getId(),
-				$copy->getName(),
-			);
-			return new DataResponse($this->oneListJson($copy, $houseId, $uid));
+			return $this->duplicateAs($houseId, $uid, $listId, $name, $resetDone);
 		});
+	}
+
+	/**
+	 * Duplicate a list of any kind as a list of this resource's kind.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
+	 */
+	protected function doDuplicateFrom(int $houseId, int $listId, string $name, bool $resetDone): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $name, $resetDone): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$this->assertListInHouse($this->lists->getList($listId)->getHouseId(), $houseId);
+			return $this->duplicateAs($houseId, $uid, $listId, $name, $resetDone);
+		});
+	}
+
+	/**
+	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
+	 */
+	private function duplicateAs(int $houseId, string $uid, int $listId, string $name, bool $resetDone): DataResponse {
+		if (!$this->permissions->isAdmin($houseId, $uid)
+			&& !$this->permissions->canAccessList($houseId, $uid, $listId)) {
+			throw new ForbiddenException('No access to this list');
+		}
+
+		$copy = $this->lists->duplicateList(
+			$listId,
+			$name,
+			$resetDone,
+			$uid,
+			fn (int $fileId, string $ownerUid): ?int => $this->images->duplicateItemImage(
+				$ownerUid,
+				$fileId,
+				$uid,
+				$houseId,
+			),
+			$this->kind(),
+		);
+
+		$this->activity->publishListCreated(
+			$houseId,
+			$this->houses->get($houseId)->getName(),
+			$uid,
+			(int)$copy->getId(),
+			$copy->getName(),
+		);
+		return new DataResponse($this->oneListJson($copy, $houseId, $uid));
 	}
 
 	/**

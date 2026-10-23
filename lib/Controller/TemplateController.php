@@ -318,6 +318,28 @@ final class TemplateController extends ListKindOCSController {
 	}
 
 	/**
+	 * Duplicate a list of any kind as a new template
+	 *
+	 * Copies what template items have and drops the rest: items start
+	 * unchecked, and keep their recurrence and delete-on-done, which a template
+	 * stores but never runs. Otherwise copies like duplicating a template.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Id of the list to duplicate, of any kind.
+	 * @param string $name Name for the new template.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryTemplate, array{}>
+	 *
+	 * 200: Template created from the list
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/templates/from/{listId}', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canCreateLists'])]
+	public function duplicateAsTemplate(int $houseId, int $listId, string $name): DataResponse {
+		return $this->doDuplicateFrom($houseId, $listId, $name, true);
+	}
+
+	/**
 	 * Permanently delete a template, bypassing the trash
 	 *
 	 * Works on both live templates and templates already in trash. Also wipes

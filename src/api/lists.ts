@@ -178,6 +178,23 @@ export function listApi(kind: ListKind) {
       return resp.data
     },
 
+    /**
+     * Duplicate a list of any kind as a list of this kind. `resetDone` only
+     * means something checklist to checklist.
+     */
+    async duplicateAs(
+      houseId: number,
+      sourceListId: number,
+      name: string,
+      resetDone = true,
+    ): Promise<Checklist> {
+      const resp = await ocs.post<Checklist>(`${base(houseId)}/from/${sourceListId}`, {
+        name,
+        ...(kind === 'checklist' ? { resetDone } : {}),
+      })
+      return resp.data
+    },
+
     async listItems(houseId: number, listId: number, sortBy?: string): Promise<ChecklistItem[]> {
       return fetchAllItems(`${base(houseId)}/${listId}/items`, sortBy)
     },

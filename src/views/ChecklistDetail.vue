@@ -506,12 +506,15 @@
       @update:open="(v) => !v && closeMoveDialog()"
     >
       <div class="pantry-move-list">
-        <NcButton v-for="cl in otherLists" :key="cl.id" wide @click="submitMoveItem(cl.id)">
-          <template #icon>
-            <component :is="checklistIconComponent(cl.icon)" :size="20" />
-          </template>
-          {{ cl.name }}
-        </NcButton>
+        <template v-for="group in moveTargetGroups" :key="group.kind">
+          <h3 class="pantry-move-list__kind">{{ group.title }}</h3>
+          <NcButton v-for="cl in group.lists" :key="cl.id" wide @click="submitMoveItem(cl.id)">
+            <template #icon>
+              <component :is="checklistIconComponent(cl.icon)" :size="20" />
+            </template>
+            {{ cl.name }}
+          </NcButton>
+        </template>
         <NcButton wide @click="createListForMove">
           <template #icon>
             <PlusIcon :size="20" />
@@ -537,12 +540,15 @@
       @update:open="(v) => !v && closeCopyDialog()"
     >
       <div class="pantry-move-list">
-        <NcButton v-for="cl in copyTargetLists" :key="cl.id" wide @click="submitCopyItem(cl.id)">
-          <template #icon>
-            <component :is="checklistIconComponent(cl.icon)" :size="20" />
-          </template>
-          {{ cl.name }}
-        </NcButton>
+        <template v-for="group in copyTargetGroups" :key="group.kind">
+          <h3 class="pantry-move-list__kind">{{ group.title }}</h3>
+          <NcButton v-for="cl in group.lists" :key="cl.id" wide @click="submitCopyItem(cl.id)">
+            <template #icon>
+              <component :is="checklistIconComponent(cl.icon)" :size="20" />
+            </template>
+            {{ cl.name }}
+          </NcButton>
+        </template>
         <NcButton wide @click="createListForCopy">
           <template #icon>
             <PlusIcon :size="20" />
@@ -869,7 +875,12 @@ function iconWrapStyle(color: string | null) {
   if (!color) return undefined
   return { background: color, color: contrastColor(color) }
 }
-import { useChecklists, useChecklistItems, ALL_LISTS_ID } from '@/composables/useChecklist'
+import {
+  useAllKindLists,
+  useChecklists,
+  useChecklistItems,
+  ALL_LISTS_ID,
+} from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { useLabels } from '@/composables/useLabels'
 import { useStores } from '@/composables/useStores'
@@ -905,7 +916,12 @@ import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
-import { LIST_KIND_ROUTES, listKindStrings, provideListKind } from '@/composables/useListKind'
+import {
+  LIST_KIND_ROUTES,
+  LIST_KINDS,
+  listKindStrings,
+  provideListKind,
+} from '@/composables/useListKind'
 
 const props = withDefaults(defineProps<{ houseId: string; listId: string; kind?: ListKind }>(), {
   kind: 'checklist',
@@ -1165,6 +1181,16 @@ async function runUncheckAll() {
     const result = await uncheckMany(ids)
     const cleared = ids.length - result.skipped.length
     showSuccess(n('pantry', 'Unchecked %n item', 'Unchecked %n items', cleared))
+    if (result.skipped.length > 0) {
+      showError(
+        n(
+          'pantry',
+          '%n item could not be unchecked.',
+          '%n items could not be unchecked.',
+          result.skipped.length,
+        ),
+      )
+    }
   } catch (e) {
     showError((e as Error).message)
   } finally {
@@ -2140,14 +2166,19 @@ function openItemDefaults() {
 const duplicatingList = ref(false)
 const duplicatingInFlight = ref(false)
 
-async function submitDuplicateList(data: { name: string; resetDone: boolean }) {
+async function submitDuplicateList(data: { name: string; resetDone: boolean; kind: ListKind }) {
   if (!list.value) return
+  const asKind = data.kind
   duplicatingInFlight.value = true
   try {
-    const created = await duplicateList(listIdNum.value, data.name, data.resetDone)
+    // The copy opens in its own kind's section.
+    const created =
+      asKind === props.kind
+        ? await duplicateList(listIdNum.value, data.name, data.resetDone)
+        : await useChecklists(houseIdNum.value, asKind).duplicateFrom(listIdNum.value, data.name)
     duplicatingList.value = false
     await router.push({
-      name: kindRoutes.detail,
+      name: LIST_KIND_ROUTES[asKind].detail,
       params: { houseId: String(houseIdNum.value), listId: String(created.id) },
     })
   } catch (e) {
@@ -2369,16 +2400,40 @@ watch(allLists, (lists) => {
   const pruned = filterListIds.value.filter((id) => valid.has(id))
   if (pruned.length !== filterListIds.value.length) filterListIds.value = pruned
 })
+// Move and copy reach lists of every kind; the pickers group them by kind.
+const { lists: everyKindLists, load: loadEveryKindLists } = useAllKindLists(houseIdNum.value)
+
+function kindOf(list: Checklist): ListKind {
+  return list.kind ?? 'checklist'
+}
+
+function targetListFor(id: number): Checklist | undefined {
+  return everyKindLists.value.find((l) => l.id === id)
+}
+
+function groupByKind(lists: Checklist[]) {
+  return LIST_KINDS.map((k) => ({
+    kind: k,
+    title: listKindStrings(k).title,
+    lists: lists.filter((l) => kindOf(l) === k),
+  })).filter((group) => group.lists.length > 0)
+}
+
 // In meta view, exclude the item's own current list (per movingItem); in a
 // regular view, exclude the current list. For a bulk move the source varies, so
 // offer every list (meta) or every list but the current one (single-list view).
 const otherLists = computed(() => {
   if (moveIsBulk.value) {
-    return isMeta.value ? allLists.value : allLists.value.filter((l) => l.id !== listIdNum.value)
+    return isMeta.value
+      ? everyKindLists.value
+      : everyKindLists.value.filter((l) => l.id !== listIdNum.value)
   }
   const excludeId = isMeta.value ? (movingItem.value?.listId ?? null) : listIdNum.value
-  return excludeId === null ? allLists.value : allLists.value.filter((l) => l.id !== excludeId)
+  return excludeId === null
+    ? everyKindLists.value
+    : everyKindLists.value.filter((l) => l.id !== excludeId)
 })
+const moveTargetGroups = computed(() => groupByKind(otherLists.value))
 const movingItem = ref<ChecklistItem | null>(null)
 const moveIsBulk = ref(false)
 const showCreateForMove = ref(false)
@@ -2387,11 +2442,13 @@ const moveDialogOpen = computed(() => !!movingItem.value || moveIsBulk.value)
 function startMoveItem(item: ChecklistItem) {
   moveIsBulk.value = false
   movingItem.value = item
+  void loadEveryKindLists()
 }
 
 function openBulkMove() {
   if (!canBulkMove.value) return
   moveIsBulk.value = true
+  void loadEveryKindLists()
 }
 
 function closeMoveDialog() {
@@ -2406,12 +2463,19 @@ async function submitMoveItem(targetListId: number) {
   }
   if (!movingItem.value) return
   const itemName = movingItem.value.name
-  const targetList = allLists.value.find((l) => l.id === targetListId)
-  await update(movingItem.value.id, { targetListId })
-  // In a normal list view the item leaves the view after move. In the meta
-  // "All lists" view it stays — just under a different list.
-  if (!isMeta.value) {
-    items.value = items.value.filter((i) => i.id !== movingItem.value!.id)
+  const targetList = targetListFor(targetListId)
+  const targetKind = targetList ? kindOf(targetList) : props.kind
+  if (targetKind === props.kind) {
+    await update(movingItem.value.id, { targetListId })
+    // In a normal list view the item leaves the view after move. In the meta
+    // "All lists" view it stays — just under a different list.
+    if (!isMeta.value) {
+      items.value = items.value.filter((i) => i.id !== movingItem.value!.id)
+    }
+  } else {
+    // Each kind's resource only moves items within its kind; crossing kinds
+    // goes through the house-wide batch move.
+    await moveMany([movingItem.value.id], targetListId, targetKind)
   }
   movingItem.value = null
   showSuccess(
@@ -2421,12 +2485,12 @@ async function submitMoveItem(targetListId: number) {
 
 async function submitBulkMove(targetListId: number) {
   const ids = writableSelectedIds.value
-  const targetList = allLists.value.find((l) => l.id === targetListId)
+  const targetList = targetListFor(targetListId)
   const total = selectedCount.value
   closeMoveDialog()
   if (ids.length === 0) return
   try {
-    const result = await moveMany(ids, targetListId)
+    const result = await moveMany(ids, targetListId, targetList ? kindOf(targetList) : props.kind)
     showSuccess(
       n('pantry', 'Moved %n item to {list}', 'Moved %n items to {list}', result.items.length, {
         list: targetList?.name ?? '',
@@ -2463,16 +2527,18 @@ const showCreateForCopy = ref(false)
 const copyDialogOpen = computed(() => !!copyingItem.value || copyIsBulk.value)
 // Copy can target the current list (creates a duplicate in place) as well as
 // any other list — unlike move, where the current list would be a no-op.
-const copyTargetLists = computed(() => allLists.value)
+const copyTargetGroups = computed(() => groupByKind(everyKindLists.value))
 
 function startCopyItem(item: ChecklistItem) {
   copyIsBulk.value = false
   copyingItem.value = item
+  void loadEveryKindLists()
 }
 
 function openBulkCopy() {
   if (!canBulkCopy.value) return
   copyIsBulk.value = true
+  void loadEveryKindLists()
 }
 
 function closeCopyDialog() {
@@ -2487,8 +2553,15 @@ async function submitCopyItem(targetListId: number) {
   }
   if (!copyingItem.value) return
   const itemName = copyingItem.value.name
-  const targetList = allLists.value.find((l) => l.id === targetListId)
-  await copy(copyingItem.value.id, targetListId)
+  const targetList = targetListFor(targetListId)
+  const targetKind = targetList ? kindOf(targetList) : props.kind
+  if (targetKind === props.kind) {
+    await copy(copyingItem.value.id, targetListId)
+  } else {
+    // Each kind's resource only copies items within its kind; crossing kinds
+    // goes through the house-wide batch copy.
+    await copyMany([copyingItem.value.id], targetListId, targetKind)
+  }
   copyingItem.value = null
   showSuccess(
     t('pantry', '{item} copied to {list}', { item: itemName, list: targetList?.name ?? '' }),
@@ -2498,11 +2571,11 @@ async function submitCopyItem(targetListId: number) {
 async function submitBulkCopy(targetListId: number) {
   // Copy operates on the whole selection (read-only sources are allowed).
   const ids = selectedItems.value.map((i) => i.id)
-  const targetList = allLists.value.find((l) => l.id === targetListId)
+  const targetList = targetListFor(targetListId)
   closeCopyDialog()
   if (ids.length === 0) return
   try {
-    const result = await copyMany(ids, targetListId)
+    const result = await copyMany(ids, targetListId, targetList ? kindOf(targetList) : props.kind)
     showSuccess(
       n('pantry', 'Copied %n item to {list}', 'Copied %n items to {list}', result.items.length, {
         list: targetList?.name ?? '',
@@ -3264,6 +3337,17 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem 0;
+}
+
+.pantry-move-list__kind {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-maxcontrast);
+
+  &:first-child {
+    margin-top: 0;
+  }
 }
 
 .pantry-bulk-category {

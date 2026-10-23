@@ -161,6 +161,17 @@ export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
     return created
   }
 
+  /** Duplicate a list of any kind as a list of this kind. */
+  async function duplicateFrom(
+    sourceListId: number,
+    name: string,
+    resetDone = true,
+  ): Promise<Checklist> {
+    const created = await resource.duplicateAs(houseId, sourceListId, name, resetDone)
+    lists.value = [...lists.value, created]
+    return created
+  }
+
   async function reorder(items: { id: number; sortOrder: number }[]): Promise<void> {
     // Apply optimistically so there's no visual jump while the API call is in flight.
     const map = new Map(items.map((i) => [i.id, i.sortOrder]))
@@ -193,6 +204,7 @@ export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
     archive,
     unarchive,
     duplicate,
+    duplicateFrom,
     reorder,
   }
 }
@@ -412,23 +424,31 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
   // reasons) so the caller can report partial success, and reconciles the local
   // items the same way the single-item ops do.
 
-  async function moveMany(ids: number[], targetListId: number): Promise<api.BatchResult> {
+  async function moveMany(
+    ids: number[],
+    targetListId: number,
+    targetKind: ListKind = kind,
+  ): Promise<api.BatchResult> {
     const result = await api.batchMoveItems(houseId, ids, targetListId)
-    if (isMeta) {
+    if (isMeta && targetKind === kind) {
       // Items stay in the meta view under their new list — swap in the updated rows.
       const byId = new Map(result.items.map((i) => [i.id, i]))
       items.value = items.value.map((i) => byId.get(i.id) ?? i)
     } else {
-      // Moved items leave a single-list view.
+      // Moved items leave a single-list view, and any view of another kind.
       const moved = new Set(ids.filter((id) => !result.skipped.includes(id)))
       items.value = items.value.filter((i) => !moved.has(i.id))
     }
     return result
   }
 
-  async function copyMany(ids: number[], targetListId: number): Promise<api.BatchResult> {
+  async function copyMany(
+    ids: number[],
+    targetListId: number,
+    targetKind: ListKind = kind,
+  ): Promise<api.BatchResult> {
     const result = await api.batchCopyItems(houseId, ids, targetListId)
-    if (isMeta || targetListId === listId) {
+    if (targetKind === kind && (isMeta || targetListId === listId)) {
       items.value = [...items.value, ...result.items]
     }
     return result

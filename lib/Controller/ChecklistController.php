@@ -345,6 +345,30 @@ final class ChecklistController extends ListKindOCSController {
 	}
 
 	/**
+	 * Duplicate a list of any kind as a new checklist
+	 *
+	 * Copies what checklist items have and defaults the rest. Items from a
+	 * template or an inventory start unchecked, and their recurrence starts
+	 * running; `resetDone` only applies when the source is a checklist.
+	 * Otherwise copies like duplicating a checklist.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Id of the list to duplicate, of any kind.
+	 * @param string $name Name for the new checklist.
+	 * @param bool $resetDone Whether every item copied from a checklist starts unchecked.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
+	 *
+	 * 200: Checklist created from the list
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/from/{listId}', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canCreateLists'])]
+	public function duplicateAsChecklist(int $houseId, int $listId, string $name, bool $resetDone = true): DataResponse {
+		return $this->doDuplicateFrom($houseId, $listId, $name, $resetDone);
+	}
+
+	/**
 	 * Permanently delete a checklist, bypassing the trash
 	 *
 	 * Works on both live lists and lists already in trash. Also wipes every
@@ -844,8 +868,8 @@ final class ChecklistController extends ListKindOCSController {
 	/**
 	 * Move a batch of items to another list in one action
 	 *
-	 * The destination may be a list of any kind; items on a list of a different
-	 * kind are skipped.
+	 * The destination may be a list of any kind. Items crossing kinds keep the
+	 * fields the destination's items have, drop the rest, and start unchecked.
 	 *
 	 * @param int $houseId House id.
 	 * @param list<int> $itemIds Ids of the items to move.
@@ -869,7 +893,7 @@ final class ChecklistController extends ListKindOCSController {
 				throw new ForbiddenException('No access to the destination list');
 			}
 
-			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds, kind: $targetList->getKind());
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
 			// Items already on the destination are a no-op — drop them so they
 			// neither move nor emit a spurious "moved" activity.
 			$toMove = array_values(array_filter(
@@ -903,8 +927,8 @@ final class ChecklistController extends ListKindOCSController {
 	/**
 	 * Copy a batch of items to another list in one action
 	 *
-	 * The destination may be a list of any kind; items on a list of a different
-	 * kind are skipped.
+	 * The destination may be a list of any kind. Copies keep the fields the
+	 * destination's items have, drop the rest, and start unchecked.
 	 *
 	 * @param int $houseId House id.
 	 * @param list<int> $itemIds Ids of the items to copy.
@@ -928,7 +952,7 @@ final class ChecklistController extends ListKindOCSController {
 				throw new ForbiddenException('No access to the destination list');
 			}
 
-			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds, kind: $targetList->getKind());
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
 			$groups = $this->groupItemsBySourceList($collected['items']);
 			$copies = [];
 			foreach ($collected['items'] as $source) {

@@ -322,6 +322,28 @@ final class InventoryController extends ListKindOCSController {
 	}
 
 	/**
+	 * Duplicate a list of any kind as a new inventory
+	 *
+	 * Copies what inventory items have and drops the rest: done state,
+	 * recurrence and delete-on-done, along with the source's recurrence item
+	 * default. Otherwise copies like duplicating an inventory.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Id of the list to duplicate, of any kind.
+	 * @param string $name Name for the new inventory.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryInventory, array{}>
+	 *
+	 * 200: Inventory created from the list
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/inventories/from/{listId}', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canCreateLists'])]
+	public function duplicateAsInventory(int $houseId, int $listId, string $name): DataResponse {
+		return $this->doDuplicateFrom($houseId, $listId, $name, true);
+	}
+
+	/**
 	 * Permanently delete an inventory, bypassing the trash
 	 *
 	 * Works on both live inventories and inventories already in trash. Also wipes

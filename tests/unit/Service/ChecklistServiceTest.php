@@ -456,14 +456,104 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertNull($copy->getNextDueAt());
 	}
 
-	public function testCopyItemRefusesAListOfAnotherKind(): void {
-		$this->itemMapper->method('findById')->willReturn($this->makeItem(['listId' => 10]));
+	/**
+	 * Every ordered pair of kinds, so each crossing is covered.
+	 *
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public static function kindPairs(): array {
+		$pairs = [];
+		foreach (Checklist::KINDS as $from) {
+			foreach (Checklist::KINDS as $to) {
+				$pairs["$from to $to"] = [$from, $to];
+			}
+		}
+		return $pairs;
+	}
+
+	/**
+	 * A checked-off, recurring, delete-on-done item on list 10, with lists 10
+	 * and 20 of the given kinds.
+	 */
+	private function crossingItem(string $fromKind, string $toKind): ChecklistItem {
+		$item = $this->makeItem([
+			'listId' => 10,
+			'done' => true,
+			'doneAt' => 500,
+			'doneBy' => 'alice',
+			'rrule' => 'FREQ=WEEKLY',
+			'deleteOnDone' => true,
+			'nextDueAt' => 900,
+			'createdAt' => 100,
+		]);
+		$item->setId(42);
+		$this->itemMapper->method('findById')->willReturn($item);
 		$this->listMapper->method('findById')->willReturnCallback(
-			fn (int $id): Checklist => $this->makeList($id === 20 ? Checklist::KIND_TEMPLATE : Checklist::KIND_CHECKLIST),
+			fn (int $id): Checklist => $this->makeList($id === 20 ? $toKind : $fromKind),
 		);
-		$this->itemMapper->expects($this->never())->method('insert');
-		$this->expectException(\InvalidArgumentException::class);
-		$this->svc->copyItem(42, 20, 'bob', null, null);
+		return $item;
+	}
+
+	private function assertCrossedRecurrence(ChecklistItem $item, string $toKind): void {
+		if ($toKind === Checklist::KIND_INVENTORY) {
+			$this->assertNull($item->getRrule(), 'inventories drop recurrence');
+			$this->assertFalse($item->getDeleteOnDone(), 'inventories drop delete-on-done');
+		} else {
+			$this->assertSame('FREQ=WEEKLY', $item->getRrule());
+			$this->assertTrue($item->getDeleteOnDone());
+		}
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('kindPairs')]
+	public function testCopyItemAcrossKindsKeepsWhatFitsAndStartsUnchecked(string $fromKind, string $toKind): void {
+		$this->crossingItem($fromKind, $toKind);
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertSame(20, $copy->getListId());
+		$this->assertFalse($copy->getDone(), 'a copy always starts unchecked');
+		$this->assertNull($copy->getDoneAt());
+		$this->assertNull($copy->getDoneBy());
+		$this->assertCrossedRecurrence($copy, $toKind);
+		if ($toKind === Checklist::KIND_CHECKLIST) {
+			$this->assertNotNull($copy->getNextDueAt(), 'a checklist schedules the copied rule');
+		} else {
+			$this->assertNull($copy->getNextDueAt(), 'only checklists run recurrence');
+		}
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('kindPairs')]
+	public function testMoveItemsAcrossKindsKeepsWhatFits(string $fromKind, string $toKind): void {
+		$item = $this->crossingItem($fromKind, $toKind);
+
+		[$moved] = $this->svc->moveItems([42], 20);
+
+		$this->assertSame($item, $moved);
+		$this->assertSame(20, $item->getListId());
+		if ($fromKind === $toKind) {
+			$this->assertTrue($item->getDone(), 'a move within a kind only changes the list');
+			$this->assertSame(500, $item->getDoneAt());
+			$this->assertSame(900, $item->getNextDueAt());
+			return;
+		}
+		$this->assertCrossedRecurrence($item, $toKind);
+		$this->assertFalse($item->getDone(), 'done state does not leave checklists');
+		$this->assertNull($item->getDoneAt());
+		$this->assertNull($item->getDoneBy());
+		if ($toKind === Checklist::KIND_CHECKLIST) {
+			$this->assertNotNull($item->getNextDueAt(), 'a checklist schedules the moved rule');
+		} else {
+			$this->assertNull($item->getNextDueAt(), 'only checklists run recurrence');
+		}
+	}
+
+	public function testMoveItemsRunsInASingleTransaction(): void {
+		$this->crossingItem(Checklist::KIND_CHECKLIST, Checklist::KIND_TEMPLATE);
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+
+		$this->svc->moveItems([42], 20);
 	}
 
 	public function testMoveItemRefusesAListOfAnotherKind(): void {
@@ -1360,7 +1450,7 @@ class ChecklistServiceTest extends TestCase {
 	 * @return array{0: Checklist, 1: list<ChecklistItem>} The inserted list copy and
 	 *                                                     the item copies captured on their way into the mapper.
 	 */
-	private function captureDuplicate(Checklist $source, array $items, bool $resetDone): array {
+	private function captureDuplicate(Checklist $source, array $items, bool $resetDone, ?string $kind = null): array {
 		$this->listMapper->method('findById')->willReturn($source);
 		$insertedList = null;
 		$this->listMapper->method('insert')
@@ -1385,6 +1475,7 @@ class ChecklistServiceTest extends TestCase {
 			$resetDone,
 			'alice',
 			static fn (int $fileId, string $owner): ?int => null,
+			$kind,
 		);
 
 		$this->assertNotNull($insertedList);
@@ -1529,6 +1620,76 @@ class ChecklistServiceTest extends TestCase {
 			->with(77, [4, 6]);
 
 		$this->captureDuplicate($this->makeSourceList(), [], true);
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('kindPairs')]
+	public function testDuplicateListAsAKindKeepsWhatFits(string $fromKind, string $toKind): void {
+		$source = $this->makeSourceList();
+		$source->setKind($fromKind);
+		$item = $this->makeItem([
+			'listId' => 5,
+			'done' => true,
+			'doneAt' => 500,
+			'doneBy' => 'bob',
+			'rrule' => 'FREQ=WEEKLY',
+			'deleteOnDone' => true,
+			'nextDueAt' => 900,
+		]);
+		$item->setId(1);
+
+		// Asking to keep the done state shows it survives only checklist to checklist.
+		[$copy, $copies] = $this->captureDuplicate($source, [$item], false, $toKind);
+
+		$this->assertSame($toKind, $copy->getKind());
+		$this->assertSame('Before stepping off', $copy->getDescription());
+		$this->assertCrossedRecurrence($copies[0], $toKind);
+		$keptDone = $fromKind === Checklist::KIND_CHECKLIST && $toKind === Checklist::KIND_CHECKLIST;
+		$this->assertSame($keptDone, $copies[0]->getDone());
+		$this->assertSame($keptDone ? 'bob' : null, $copies[0]->getDoneBy());
+		if ($toKind !== Checklist::KIND_CHECKLIST) {
+			$this->assertNull($copies[0]->getNextDueAt(), 'only checklists run recurrence');
+		}
+	}
+
+	public function testDuplicateListKeepsTheSourceKindByDefault(): void {
+		$source = $this->makeSourceList();
+		$source->setKind(Checklist::KIND_TEMPLATE);
+
+		[$copy] = $this->captureDuplicate($source, [], true);
+
+		$this->assertSame(Checklist::KIND_TEMPLATE, $copy->getKind());
+	}
+
+	public function testDuplicateListAsAnInventoryDropsTheRecurrenceDefault(): void {
+		$source = $this->makeSourceList();
+		$source->setItemDefaults(ItemDefaults::encode([
+			'recurrence' => ['mode' => 'fixed', 'value' => ['kind' => 'recurring', 'rrule' => 'FREQ=WEEKLY', 'repeatFromCompletion' => false]],
+			'stores' => ['mode' => 'remember', 'value' => [2]],
+		]));
+
+		[$copy] = $this->captureDuplicate($source, [], true, Checklist::KIND_INVENTORY);
+
+		$defaults = ItemDefaults::decode($copy->getItemDefaults());
+		$this->assertArrayNotHasKey('recurrence', $defaults);
+		$this->assertSame(['mode' => 'remember', 'value' => [2]], $defaults['stores']);
+	}
+
+	public function testDuplicateListAsATemplateKeepsTheRecurrenceDefault(): void {
+		$recurrence = ['mode' => 'fixed', 'value' => ['kind' => 'recurring', 'rrule' => 'FREQ=WEEKLY', 'repeatFromCompletion' => false]];
+		$source = $this->makeSourceList();
+		$source->setItemDefaults(ItemDefaults::encode(['recurrence' => $recurrence]));
+
+		[$copy] = $this->captureDuplicate($source, [], true, Checklist::KIND_TEMPLATE);
+
+		$this->assertSame($recurrence, ItemDefaults::decode($copy->getItemDefaults())['recurrence']);
+	}
+
+	public function testDuplicateListRejectsAnUnknownKind(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeSourceList());
+		$this->listMapper->expects($this->never())->method('insert');
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->duplicateList(5, 'Shelf', true, 'alice', static fn (int $f, string $o): ?int => null, 'shelf');
 	}
 
 	public function testDuplicateListRejectsAnEmptyName(): void {

@@ -111,6 +111,14 @@ class Checklist extends Entity implements \JsonSerializable {
 		return $this->getKind() === self::KIND_CHECKLIST;
 	}
 
+	/**
+	 * Whether this kind's items carry recurrence and delete-on-done. Templates
+	 * keep them so a drawn item can start with them, even though they never run.
+	 */
+	public function keepsRecurrence(): bool {
+		return $this->getKind() !== self::KIND_INVENTORY;
+	}
+
 	public function jsonSerialize(): array {
 		$defaults = ItemDefaults::decode($this->itemDefaults);
 		$recurrence = ItemDefaults::legacyRecurrence($defaults);
