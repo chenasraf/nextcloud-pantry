@@ -63,6 +63,7 @@ export interface ItemInput {
 const RESOURCE: Record<ListKind, string> = {
   checklist: 'lists',
   template: 'templates',
+  inventory: 'inventories',
 }
 
 /**

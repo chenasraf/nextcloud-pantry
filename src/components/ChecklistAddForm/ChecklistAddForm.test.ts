@@ -195,7 +195,7 @@ vi.mock('@/composables/useSuggestArchivedItems', async () => {
   }
 })
 vi.mock('@/api/lists', () => ({
-  listArchivedItems: archivedMocks.listArchivedItems,
+  listApi: () => ({ listArchivedItems: archivedMocks.listArchivedItems }),
 }))
 const barcodeFillMocks = vi.hoisted(() => ({
   barcodeFill: null as unknown as { name: boolean; category: boolean; image: boolean },

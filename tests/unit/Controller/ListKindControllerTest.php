@@ -9,11 +9,13 @@ namespace OCA\Pantry\Tests\Unit\Controller;
 
 use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Controller\ChecklistController;
+use OCA\Pantry\Controller\InventoryController;
 use OCA\Pantry\Controller\ListKindOCSController;
 use OCA\Pantry\Controller\TemplateController;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\FieldValueMapper;
+use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
@@ -39,7 +41,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
-class TemplateControllerTest extends TestCase {
+class ListKindControllerTest extends TestCase {
 	/** @var ChecklistService&MockObject */
 	private ChecklistService $lists;
 
@@ -50,15 +52,20 @@ class TemplateControllerTest extends TestCase {
 	/**
 	 * @template T of ListKindOCSController
 	 * @param class-string<T> $class
+	 * @param array<string, mixed> $itemDefaultsForList
 	 * @return T
 	 */
-	private function makeController(string $class): ListKindOCSController {
+	private function makeController(string $class, array $itemDefaultsForList = []): ListKindOCSController {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn('alice');
 		$session = $this->createMock(IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 		$itemDefaults = $this->createMock(ItemDefaultsService::class);
-		$itemDefaults->method('forList')->willReturn([]);
+		$itemDefaults->method('forList')->willReturn($itemDefaultsForList);
+		$house = new House();
+		$house->setName('Home');
+		$houses = $this->createMock(HouseService::class);
+		$houses->method('get')->willReturn($house);
 		return new $class(
 			'pantry',
 			$this->createMock(IRequest::class),
@@ -72,7 +79,7 @@ class TemplateControllerTest extends TestCase {
 			$this->createMock(FieldValueMapper::class),
 			$this->createMock(FieldDefinitionService::class),
 			$this->createMock(HouseAuthService::class),
-			$this->createMock(HouseService::class),
+			$houses,
 			$this->createMock(ImageService::class),
 			$this->createMock(NotificationService::class),
 			$this->createMock(ActivityPublisher::class),
@@ -122,6 +129,59 @@ class TemplateControllerTest extends TestCase {
 		foreach (['done', 'doneAt', 'doneBy', 'nextDueAt'] as $key) {
 			$this->assertArrayNotHasKey($key, $data[0]);
 		}
+	}
+
+	public function testInventoryResponseLeavesOutRecurrence(): void {
+		$this->lists->method('getList')->with(7, true, Checklist::KIND_INVENTORY)
+			->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$data = $this->makeController(InventoryController::class, ['recurrence' => [], 'stores' => []])
+			->showInventory(1, 7)->getData();
+
+		$this->assertSame('inventory', $data['kind']);
+		foreach (['lastCompletedAt', 'deleteOnDoneDefault', 'defaultRecurrenceMode', 'defaultRrule'] as $key) {
+			$this->assertArrayNotHasKey($key, $data);
+		}
+		$this->assertSame(['stores' => []], $data['itemDefaults']);
+	}
+
+	public function testInventoryItemResponseLeavesOutTheDoneStateAndRecurrence(): void {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Flour');
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->lists->method('listItems')->willReturn([$item]);
+
+		$data = $this->makeController(InventoryController::class)->indexInventoryItems(1, 7)->getData();
+
+		$this->assertCount(1, $data);
+		foreach (['done', 'doneAt', 'doneBy', 'nextDueAt', 'rrule', 'repeatFromCompletion', 'deleteOnDone'] as $key) {
+			$this->assertArrayNotHasKey($key, $data[0]);
+		}
+	}
+
+	public function testInventoryItemsAreAddedWithoutRecurrence(): void {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Flour');
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->lists->expects($this->once())->method('addItem')
+			->with(7, $this->callback(static fn (array $data): bool => $data['rrule'] === null
+				&& $data['repeatFromCompletion'] === false
+				&& $data['deleteOnDone'] === false))
+			->willReturn($item);
+
+		$this->makeController(InventoryController::class)->addInventoryItem(1, 7, 'Flour');
+	}
+
+	public function testChecklistResourceDoesNotServeAnInventory(): void {
+		$this->lists->method('getList')->with(7, true, Checklist::KIND_CHECKLIST)
+			->willThrowException(new NotFoundException('List not found'));
+
+		$this->expectException(OCSNotFoundException::class);
+		$this->makeController(ChecklistController::class)->showList(1, 7);
 	}
 
 	public function testChecklistResourceDoesNotServeATemplate(): void {

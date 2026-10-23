@@ -411,6 +411,21 @@ class ChecklistServiceTest extends TestCase {
 		$this->svc->createList(1, 'Odd', null, kind: 'shelf');
 	}
 
+	public function testCreateListStoresTheInventoryKind(): void {
+		$this->listMapper->method('insert')->willReturnArgument(0);
+		$list = $this->svc->createList(1, 'Pantry shelf', null, kind: Checklist::KIND_INVENTORY);
+		$this->assertSame(Checklist::KIND_INVENTORY, $list->getKind());
+		$this->assertFalse($list->isChecklist());
+	}
+
+	public function testToggleItemRefusesInventoryItems(): void {
+		$this->itemMapper->method('findById')->willReturn($this->makeItem());
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->toggleItem(42, 'alice');
+	}
+
 	public function testToggleItemRefusesTemplateItems(): void {
 		$this->itemMapper->method('findById')->willReturn($this->makeItem());
 		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));

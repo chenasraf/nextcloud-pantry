@@ -40,10 +40,12 @@ use OCP\AppFramework\Db\Entity;
 class Checklist extends Entity implements \JsonSerializable {
 	public const KIND_CHECKLIST = 'checklist';
 	public const KIND_TEMPLATE = 'template';
+	public const KIND_INVENTORY = 'inventory';
 
 	public const KINDS = [
 		self::KIND_CHECKLIST,
 		self::KIND_TEMPLATE,
+		self::KIND_INVENTORY,
 	];
 
 	public const RECURRENCE_MODE_REMEMBER = 'remember';
@@ -95,10 +97,14 @@ class Checklist extends Entity implements \JsonSerializable {
 	 * The column is nullable for the schema self-heal; a row without a kind is
 	 * a checklist.
 	 *
-	 * @return 'checklist'|'template'
+	 * @return 'checklist'|'template'|'inventory'
 	 */
 	public function getKind(): string {
-		return $this->kind === self::KIND_TEMPLATE ? self::KIND_TEMPLATE : self::KIND_CHECKLIST;
+		return match ($this->kind) {
+			self::KIND_TEMPLATE => self::KIND_TEMPLATE,
+			self::KIND_INVENTORY => self::KIND_INVENTORY,
+			default => self::KIND_CHECKLIST,
+		};
 	}
 
 	public function isChecklist(): bool {

@@ -62,6 +62,36 @@
 
         <NcAppNavigationItem
           v-if="perms.canViewLists"
+          :name="strings.inventories"
+          :to="{ name: 'inventories', params: { houseId: String(currentHouseId) } }"
+          :active="route.name === 'inventories'"
+          :allow-collapse="true"
+          :open="inventoriesExpanded"
+          @update:open="inventoriesExpanded = $event"
+        >
+          <template #icon>
+            <CupboardIcon :size="20" />
+          </template>
+          <NcAppNavigationItem
+            v-for="list in inventories"
+            :key="list.id"
+            :name="list.name"
+            :to="{
+              name: 'inventory-detail',
+              params: { houseId: String(currentHouseId), listId: String(list.id) },
+            }"
+            :active="route.name === 'inventory-detail' && currentListId === list.id"
+          >
+            <template #icon>
+              <span class="pantry-nav__list-icon" :style="iconWrapStyle(list.color)">
+                <component :is="checklistIconComponent(list.icon)" :size="16" />
+              </span>
+            </template>
+          </NcAppNavigationItem>
+        </NcAppNavigationItem>
+
+        <NcAppNavigationItem
+          v-if="perms.canViewLists"
           :name="strings.templates"
           :to="{ name: 'templates', params: { houseId: String(currentHouseId) } }"
           :active="route.name === 'templates'"
@@ -259,6 +289,7 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import HomeIcon from '@icons/Home.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import ClipboardTextMultipleIcon from '@icons/ClipboardTextMultiple.vue'
+import CupboardIcon from '@icons/Cupboard.vue'
 import ViewListIcon from '@icons/ViewList.vue'
 import HistoryIcon from '@icons/History.vue'
 import ImageIcon from '@icons/Image.vue'
@@ -327,6 +358,13 @@ const checklists = computed(() => {
   return useChecklists(id).lists.value
 })
 
+const inventoriesExpanded = ref(true)
+const inventories = computed(() => {
+  const id = currentHouseId.value
+  if (id === null) return []
+  return useChecklists(id, 'inventory').lists.value
+})
+
 const templatesExpanded = ref(true)
 const templates = computed(() => {
   const id = currentHouseId.value
@@ -339,6 +377,7 @@ watch(
   (id) => {
     if (id === null) return
     void useChecklists(id).load()
+    void useChecklists(id, 'inventory').load()
     void useChecklists(id, 'template').load()
   },
   { immediate: true },
@@ -436,6 +475,7 @@ watch(currentHouseId, closeMenu)
 const strings = {
   lists: listKindStrings('checklist').title,
   allLists: t('pantry', 'All checklists'),
+  inventories: listKindStrings('inventory').title,
   templates: listKindStrings('template').title,
   pastTrips: t('pantry', 'Shopping history'),
   // TRANSLATORS: Sidebar item, noun — the pinboard/corkboard view where photos are displayed, not a plank of wood.

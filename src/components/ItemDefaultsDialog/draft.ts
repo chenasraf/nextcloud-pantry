@@ -39,13 +39,13 @@ export function draftFromDefaults(defaults: ItemDefaults | undefined): ItemDefau
   }
   return {
     modes: {
-      recurrence: defaults?.recurrence.mode ?? 'none',
+      recurrence: defaults?.recurrence?.mode ?? 'none',
       stores: defaults?.stores.mode ?? 'none',
       category: defaults?.category.mode ?? 'none',
       labels: defaults?.labels.mode ?? 'none',
       quantity: defaults?.quantity.mode ?? 'none',
     },
-    recurrence: { ...STAPLE, ...(defaults?.recurrence.value ?? {}) },
+    recurrence: { ...STAPLE, ...(defaults?.recurrence?.value ?? {}) },
     storeIds: [...(defaults?.stores.value ?? [])],
     categoryId: defaults?.category.value ?? null,
     labelIds: [...(defaults?.labels.value ?? [])],

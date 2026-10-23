@@ -75,7 +75,7 @@ abstract class ListKindOCSController extends OCSController {
 	}
 
 	/**
-	 * @return 'checklist'|'template'
+	 * @return 'checklist'|'template'|'inventory'
 	 */
 	abstract protected function kind(): string;
 

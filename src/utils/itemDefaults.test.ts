@@ -136,6 +136,11 @@ describe('rememberPatch', () => {
     )
     expect(patch).toEqual({ fields: [{ fieldId: 2, value: { offsetDays: 4 } }] })
   })
+
+  it('handles defaults without a recurrence, as on inventories', () => {
+    const { recurrence: _, ...inventory } = defaults({ category: { mode: 'remember', value: 1 } })
+    expect(rememberPatch(inventory, used, [])).toEqual({ category: { value: 5 } })
+  })
 })
 
 describe('defaultValueFor', () => {
@@ -168,5 +173,10 @@ describe('configSignature', () => {
     const before = defaults({ stores: { mode: 'fixed', value: [3] } })
     const after = defaults({ stores: { mode: 'fixed', value: [4] } })
     expect(configSignature(before)).not.toBe(configSignature(after))
+  })
+
+  it('handles defaults without a recurrence, as on inventories', () => {
+    const { recurrence: _, ...inventory } = defaults()
+    expect(() => configSignature(inventory)).not.toThrow()
   })
 })

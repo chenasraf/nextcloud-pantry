@@ -143,7 +143,9 @@ export function rememberPatch(
   ) => {
     if (entry.mode === 'remember' && !sameValue(entry.value, value)) write(value)
   }
-  remember(defaults.recurrence, used.recurrence, (value) => (patch.recurrence = { value }))
+  if (defaults.recurrence) {
+    remember(defaults.recurrence, used.recurrence, (value) => (patch.recurrence = { value }))
+  }
   remember(defaults.stores, used.storeIds, (value) => (patch.stores = { value }))
   remember(defaults.category, used.categoryId, (value) => (patch.category = { value }))
   remember(defaults.labels, used.labelIds, (value) => (patch.labels = { value }))
@@ -165,7 +167,8 @@ export function rememberPatch(
 /** The defaults once a remember write-back lands, for updating optimistically. */
 export function withRemembered(defaults: ItemDefaults, patch: ItemDefaultsPatch): ItemDefaults {
   const next: ItemDefaults = { ...defaults }
-  if (patch.recurrence) next.recurrence = { ...next.recurrence, value: patch.recurrence.value }
+  if (patch.recurrence && next.recurrence)
+    next.recurrence = { ...next.recurrence, value: patch.recurrence.value }
   if (patch.stores) next.stores = { ...next.stores, value: patch.stores.value }
   if (patch.category) next.category = { ...next.category, value: patch.category.value }
   if (patch.labels) next.labels = { ...next.labels, value: patch.labels.value }
@@ -184,8 +187,8 @@ export function withRemembered(defaults: ItemDefaults, patch: ItemDefaultsPatch)
  */
 export function configSignature(defaults: ItemDefaults | null | undefined): string {
   if (!defaults) return ''
-  const pinned = (entry: { mode: string; value?: unknown }) =>
-    entry.mode === 'fixed' ? entry : { mode: entry.mode }
+  const pinned = (entry: { mode: string; value?: unknown } | undefined) =>
+    entry?.mode === 'fixed' ? entry : { mode: entry?.mode ?? 'none' }
   return JSON.stringify({
     recurrence: pinned(defaults.recurrence),
     stores: pinned(defaults.stores),

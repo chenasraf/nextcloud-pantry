@@ -79,6 +79,14 @@ namespace OCA\Pantry;
  *     fields: list<PantryItemDefaultField>,
  * }
  *
+ * @psalm-type PantryInventoryItemDefaults = array{
+ *     stores: array{mode: PantryItemDefaultMode, value?: list<int>},
+ *     category: array{mode: PantryItemDefaultMode, value?: int|null},
+ *     labels: array{mode: PantryItemDefaultMode, value?: list<int>},
+ *     quantity: array{mode: 'none'|'fixed', value?: string},
+ *     fields: list<PantryItemDefaultField>,
+ * }
+ *
  * @psalm-type PantryHouseDetail = array{
  *     id: int,
  *     name: string,
@@ -137,9 +145,27 @@ namespace OCA\Pantry;
  *     sharedOnly: bool,
  * }
  *
+ * @psalm-type PantryInventory = array{
+ *     id: int,
+ *     houseId: int,
+ *     kind: 'inventory',
+ *     name: string,
+ *     description: string|null,
+ *     icon: PantryChecklistIcon,
+ *     color: PantryChecklistColor|null,
+ *     sortOrder: int,
+ *     itemDefaults: PantryInventoryItemDefaults,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     deletedAt: int|null,
+ *     archivedAt: int|null,
+ *     canEdit: bool,
+ *     sharedOnly: bool,
+ * }
+ *
  * @psalm-type PantryListSummary = array{
  *     id: int,
- *     kind: 'checklist'|'template',
+ *     kind: 'checklist'|'template'|'inventory',
  *     name: string,
  *     icon: PantryChecklistIcon,
  *     color: PantryChecklistColor|null,
@@ -239,6 +265,28 @@ namespace OCA\Pantry;
  *     rrule: string|null,
  *     repeatFromCompletion: bool,
  *     deleteOnDone: bool,
+ *     imageFileId: int|null,
+ *     imageUploadedBy: string|null,
+ *     addedBy: string|null,
+ *     barcode: string|null,
+ *     prices: list<PantryItemPrice>,
+ *     customFields: list<PantryFieldValue>,
+ *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     deletedAt: int|null,
+ *     archivedAt: int|null,
+ * }
+ *
+ * @psalm-type PantryInventoryItem = array{
+ *     id: int,
+ *     listId: int,
+ *     name: string,
+ *     description: string|null,
+ *     categoryId: int|null,
+ *     labelIds: list<int>,
+ *     storeIds: list<int>,
+ *     quantity: string|null,
  *     imageFileId: int|null,
  *     imageUploadedBy: string|null,
  *     addedBy: string|null,

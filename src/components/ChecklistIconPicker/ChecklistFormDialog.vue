@@ -69,7 +69,9 @@
           {{ strings.itemDefaultsButton }}
         </NcButton>
         <p class="pantry-access-hint">
-          {{ kind === 'checklist' ? strings.itemDefaultsHint : strings.templateItemDefaultsHint }}
+          {{
+            kind === 'checklist' ? strings.itemDefaultsHint : strings.noRecurrenceItemDefaultsHint
+          }}
         </p>
       </div>
       <div v-if="showAccess">
@@ -237,7 +239,7 @@ const strings = {
     'pantry',
     'Pre-fill the recurrence, stores, category, labels, quantity and custom fields of new items.',
   ),
-  templateItemDefaultsHint: t(
+  noRecurrenceItemDefaultsHint: t(
     'pantry',
     'Pre-fill the stores, category, labels, quantity and custom fields of new items.',
   ),

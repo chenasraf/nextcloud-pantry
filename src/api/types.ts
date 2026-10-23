@@ -101,7 +101,8 @@ export interface ItemDefaultField {
 }
 
 export interface ItemDefaults {
-  recurrence: ItemDefaultEntry<RecurrenceDefaultValue>
+  /** Missing on inventories, whose items have no recurrence. */
+  recurrence?: ItemDefaultEntry<RecurrenceDefaultValue>
   stores: ItemDefaultEntry<number[]>
   category: ItemDefaultEntry<number>
   labels: ItemDefaultEntry<number[]>
@@ -119,12 +120,12 @@ export type ItemDefaultsPatch = Partial<{
 }
 
 /** What a list is for; fixed at creation. */
-export type ListKind = 'checklist' | 'template'
+export type ListKind = 'checklist' | 'template' | 'inventory'
 
 /**
- * A list of any kind. Templates carry the same fields minus the checklist-only
- * ones (completion and the per-column recurrence default), which read as
- * undefined on them.
+ * A list of any kind. Templates and inventories carry the same fields minus the
+ * checklist-only ones (completion and the per-column recurrence default), which
+ * read as undefined on them.
  */
 export interface Checklist {
   id: number
@@ -296,8 +297,10 @@ export interface ItemCustomFieldValue {
 }
 
 /**
- * An item on a list of any kind. Template items are never checked off: the
- * server leaves out `done`, `doneAt`, `doneBy` and `nextDueAt`.
+ * An item on a list of any kind. Template and inventory items are never checked
+ * off: the server leaves out `done`, `doneAt`, `doneBy` and `nextDueAt`.
+ * Inventory items have no recurrence either, so `rrule`, `repeatFromCompletion`
+ * and `deleteOnDone` are left out on them too.
  */
 export interface ChecklistItem {
   id: number

@@ -115,6 +115,7 @@
       >
         <template #icon>
           <ClipboardCheckIcon v-if="isChecklist" />
+          <CupboardIcon v-else-if="kind === 'inventory'" />
           <ClipboardTextMultipleIcon v-else />
         </template>
         <template #action>
@@ -334,6 +335,7 @@ import CartIcon from '@icons/Cart.vue'
 import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import ClipboardCheckIcon from '@icons/ClipboardCheck.vue'
 import ClipboardTextMultipleIcon from '@icons/ClipboardTextMultiple.vue'
+import CupboardIcon from '@icons/Cupboard.vue'
 import PencilIcon from '@icons/Pencil.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import DeleteIcon from '@icons/Delete.vue'

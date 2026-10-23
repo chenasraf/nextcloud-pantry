@@ -204,14 +204,15 @@ export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
 export function useAllKindLists(houseId: number) {
   const checklists = useChecklists(houseId, 'checklist')
   const templates = useChecklists(houseId, 'template')
+  const inventories = useChecklists(houseId, 'inventory')
   const lists = computed(() =>
-    [...checklists.lists.value, ...templates.lists.value].sort(
+    [...checklists.lists.value, ...inventories.lists.value, ...templates.lists.value].sort(
       (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
     ),
   )
 
   async function load(): Promise<Checklist[]> {
-    await Promise.all([checklists.load(), templates.load()])
+    await Promise.all([checklists.load(), inventories.load(), templates.load()])
     return lists.value
   }
 
