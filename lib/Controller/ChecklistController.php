@@ -26,6 +26,7 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryListItem from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  * @psalm-import-type PantryBatchResult from ResponseDefinitions
+ * @psalm-import-type PantryBatchCopyResult from ResponseDefinitions
  * @psalm-import-type PantryListSuggestions from ResponseDefinitions
  * @psalm-import-type PantryListTemplates from ResponseDefinitions
  * @psalm-import-type PantryDrawResult from ResponseDefinitions
@@ -1029,11 +1030,19 @@ final class ChecklistController extends ListKindOCSController {
 	 * The destination may be a list of any kind. Copies keep the fields the
 	 * destination's items have, drop the rest, and start unchecked.
 	 *
+	 * Template items copied onto a checklist or inventory follow the
+	 * template-copy rule, exactly as drawing each one would: empty fields fill
+	 * from the destination's item defaults, template-scoped categories, labels
+	 * and custom fields are matched by name or copied, and a same-name item
+	 * already on the destination is reused (unchecked and unarchived; on an
+	 * inventory only unarchived) instead of duplicated. Its id is listed in
+	 * `reused`. Applying a template is this call with the template's items.
+	 *
 	 * @param int $houseId House id.
 	 * @param list<int> $itemIds Ids of the items to copy.
 	 * @param int $targetListId Destination list id (must belong to the same house).
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchCopyResult, array{}>
 	 *
 	 * 200: Items copied
 	 */
@@ -1052,13 +1061,41 @@ final class ChecklistController extends ListKindOCSController {
 			}
 
 			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
-			$groups = $this->groupItemsBySourceList($collected['items']);
+			$draws = $targetList->getKind() !== Checklist::KIND_TEMPLATE;
+			$sourceKinds = [];
 			$copies = [];
+			$reused = [];
+			$added = [];
 			foreach ($collected['items'] as $source) {
-				[$newImageFileId, $newImageOwner] = $this->duplicateImageFor($source, $houseId, $uid);
-				$copies[] = $this->lists->copyItem((int)$source->getId(), $targetListId, $uid, $newImageFileId, $newImageOwner);
+				$sourceListId = (int)$source->getListId();
+				$sourceKinds[$sourceListId] ??= $this->lists->getList($sourceListId)->getKind();
+				if ($draws && $sourceKinds[$sourceListId] === Checklist::KIND_TEMPLATE) {
+					$result = $this->templateCopy->draw(
+						$source,
+						$targetList,
+						$uid,
+						fn (int $fileId, string $ownerUid): ?int => $this->images->duplicateItemImage($ownerUid, $fileId, $uid, $houseId),
+					);
+					$itemId = (int)$result['item']->getId();
+					// A template holding the same name twice revives the copy this
+					// batch just made, which is neither listed again nor reused.
+					if ($result['reused']) {
+						if (!isset($copies[$itemId])) {
+							$copies[$itemId] = $result['item'];
+							$reused[] = $itemId;
+						}
+						continue;
+					}
+					$copies[$itemId] = $result['item'];
+				} else {
+					[$newImageFileId, $newImageOwner] = $this->duplicateImageFor($source, $houseId, $uid);
+					$copy = $this->lists->copyItem((int)$source->getId(), $targetListId, $uid, $newImageFileId, $newImageOwner);
+					$copies[(int)$copy->getId()] = $copy;
+				}
+				$added[] = $source;
 			}
 
+			$groups = $this->groupItemsBySourceList($added);
 			$houseName = $this->houses->get($houseId)->getName();
 			foreach ($groups as $fromListId => $group) {
 				$this->activity->publishItemsCopied(
@@ -1074,8 +1111,9 @@ final class ChecklistController extends ListKindOCSController {
 			}
 			return new DataResponse([
 				'success' => true,
-				'items' => $this->serializeItems($copies),
+				'items' => $this->serializeItems(array_values($copies)),
 				'skipped' => $collected['skipped'],
+				'reused' => $reused,
 			]);
 		});
 	}

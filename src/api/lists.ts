@@ -445,12 +445,18 @@ export async function batchMoveItems(
   return resp.data
 }
 
+/** Template items copied onto a checklist or inventory may revive a same-name item there. */
+export interface BatchCopyResult extends BatchResult {
+  // Ids among `items` that were already on the list and brought back, not added.
+  reused: number[]
+}
+
 export async function batchCopyItems(
   houseId: number,
   itemIds: number[],
   targetListId: number,
-): Promise<BatchResult> {
-  const resp = await ocs.post<BatchResult>(`/houses/${houseId}/items/batch/copy`, {
+): Promise<BatchCopyResult> {
+  const resp = await ocs.post<BatchCopyResult>(`/houses/${houseId}/items/batch/copy`, {
     itemIds,
     targetListId,
   })

@@ -182,7 +182,9 @@
               </div>
             </router-link>
             <NcActions
-              v-if="(item.list.canEdit ?? can.canEditLists) || can.canDeleteLists"
+              v-if="
+                (item.list.canEdit ?? can.canEditLists) || can.canDeleteLists || can.canCopyItems
+              "
               class="pantry-list-card__actions"
               :aria-label="strings.listMenu"
             >
@@ -201,6 +203,14 @@
               >
                 <template #icon><ContentCopyIcon :size="20" /></template>
                 {{ strings.duplicate }}
+              </NcActionButton>
+              <NcActionButton
+                v-if="can.canCopyItems"
+                close-after-click
+                @click="applying = item.list"
+              >
+                <template #icon><PlaylistPlusIcon :size="20" /></template>
+                {{ kind === 'template' ? strings.applyToList : strings.applyTemplate }}
               </NcActionButton>
               <NcActionButton
                 v-if="item.list.canEdit ?? can.canEditLists"
@@ -254,6 +264,14 @@
       :submitting="duplicatingInFlight"
       @update:open="(v) => !v && (duplicating = null)"
       @duplicate="submitDuplicate"
+    />
+
+    <ApplyTemplateDialog
+      :open="!!applying"
+      :house-id="houseIdNum"
+      :template="kind === 'template' ? applying : null"
+      :target="kind === 'template' ? null : applying"
+      @update:open="(v) => !v && (applying = null)"
     />
 
     <NcDialog
@@ -330,6 +348,8 @@ import { LabelManagerDialog } from '@/components/LabelManager'
 import { StoreManagerDialog } from '@/components/StoreManager'
 import { CustomFieldManagerDialog } from '@/components/CustomFieldManager'
 import { ChecklistDuplicateDialog } from '@/components/ChecklistDuplicateDialog'
+import { ApplyTemplateDialog } from '@/components/ApplyTemplateDialog'
+import PlaylistPlusIcon from '@icons/PlaylistPlus.vue'
 import PlusIcon from '@icons/Plus.vue'
 import CartIcon from '@icons/Cart.vue'
 import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
@@ -557,6 +577,7 @@ function onItemDefaultsSaved(updated: Checklist) {
 
 const duplicating = ref<Checklist | null>(null)
 const duplicatingInFlight = ref(false)
+const applying = ref<Checklist | null>(null)
 
 function startDuplicate(list: Checklist) {
   duplicating.value = list
@@ -764,6 +785,10 @@ const strings = {
   edit: t('pantry', 'Edit'),
   // TRANSLATORS: Verb, menu button that creates a copy of a list.
   duplicate: t('pantry', 'Duplicate'),
+  // TRANSLATORS: Menu entry on a template: copy its items into a checklist or inventory.
+  applyToList: t('pantry', 'Apply to list'),
+  // TRANSLATORS: Menu entry on a checklist or inventory: copy a template's items into it.
+  applyTemplate: t('pantry', 'Apply template'),
   // TRANSLATORS: Prefix before a relative time on a list card, e.g. "Completed · 3 days ago". The whole list was checked off then.
   completed: t('pantry', 'Completed'),
   // TRANSLATORS: Verb, menu button that moves a list to the trash.

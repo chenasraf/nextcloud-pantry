@@ -510,6 +510,13 @@ namespace OCA\Pantry;
  *     skipped: list<int>,
  * }
  *
+ * @psalm-type PantryBatchCopyResult = array{
+ *     success: true,
+ *     items: list<PantryListItem>,
+ *     skipped: list<int>,
+ *     reused: list<int>,
+ * }
+ *
  * @psalm-type PantryUserPrefs = array{
  *     lastHouseId: int|null,
  *     firstDayOfWeek: int,

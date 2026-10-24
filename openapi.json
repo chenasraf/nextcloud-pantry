@@ -54,6 +54,43 @@
                     }
                 }
             },
+            "BatchCopyResult": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "items",
+                    "skipped",
+                    "reused"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "enum": [
+                            true
+                        ]
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ListItem"
+                        }
+                    },
+                    "skipped": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    "reused": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                }
+            },
             "BatchResult": {
                 "type": "object",
                 "required": [
@@ -9495,7 +9532,7 @@
             "post": {
                 "operationId": "checklist-batch-copy-items",
                 "summary": "Copy a batch of items to another list in one action",
-                "description": "The destination may be a list of any kind. Copies keep the fields the destination's items have, drop the rest, and start unchecked.",
+                "description": "The destination may be a list of any kind. Copies keep the fields the destination's items have, drop the rest, and start unchecked.\nTemplate items copied onto a checklist or inventory follow the template-copy rule, exactly as drawing each one would: empty fields fill from the destination's item defaults, template-scoped categories, labels and custom fields are matched by name or copied, and a same-name item already on the destination is reused (unchecked and unarchived; on an inventory only unarchived) instead of duplicated. Its id is listed in `reused`. Applying a template is this call with the template's items.",
                 "tags": [
                     "checklist"
                 ],
@@ -9578,7 +9615,7 @@
                                                     "$ref": "#/components/schemas/OCSMeta"
                                                 },
                                                 "data": {
-                                                    "$ref": "#/components/schemas/BatchResult"
+                                                    "$ref": "#/components/schemas/BatchCopyResult"
                                                 }
                                             }
                                         }

@@ -54,8 +54,11 @@ class ListKindControllerTest extends TestCase {
 	private TemplateCopyService $templateCopy;
 	/** @var ShareService&MockObject */
 	private ShareService $shares;
+	/** @var ActivityPublisher&MockObject */
+	private ActivityPublisher $activity;
 
 	protected function setUp(): void {
+		$this->activity = $this->createMock(ActivityPublisher::class);
 		$this->lists = $this->createMock(ChecklistService::class);
 		$this->attachments = $this->createMock(TemplateAttachmentService::class);
 		$this->templateCopy = $this->createMock(TemplateCopyService::class);
@@ -98,7 +101,7 @@ class ListKindControllerTest extends TestCase {
 			$houses,
 			$this->createMock(ImageService::class),
 			$this->createMock(NotificationService::class),
-			$this->createMock(ActivityPublisher::class),
+			$this->activity,
 			$this->createMock(PrefsService::class),
 			$this->permissions,
 			$this->shares,
@@ -319,14 +322,83 @@ class ListKindControllerTest extends TestCase {
 		$this->assertSame([], $data['skipped'], 'the item already on the template is a no-op, not a skip');
 	}
 
+	private function copied(int $id, string $name): ChecklistItem {
+		$item = new ChecklistItem();
+		$item->setId($id);
+		$item->setListId(7);
+		$item->setName($name);
+		return $item;
+	}
+
 	public function testBatchCopyTakesItemsOfEveryKind(): void {
 		$this->mixedSelection();
-		$this->lists->expects($this->exactly(2))->method('copyItem')
-			->willReturnCallback(static fn (int $id): ChecklistItem => new ChecklistItem());
+		$this->lists->expects($this->once())->method('copyItem')->with(3, 7)->willReturn($this->copied(10, 'Milk'));
+		$this->templateCopy->expects($this->once())->method('draw')
+			->willReturn(['item' => $this->copied(11, 'Bread'), 'reused' => false]);
 
 		$data = $this->makeController(ChecklistController::class)->batchCopyItems(1, [3, 4], 7)->getData();
 
 		$this->assertSame([], $data['skipped']);
+		$this->assertSame([10, 11], array_column($data['items'], 'id'));
+		$this->assertSame([], $data['reused']);
+	}
+
+	public function testBatchCopyDrawsTemplateItemsAsDrawingEachOneWould(): void {
+		$target = $this->makeList(Checklist::KIND_INVENTORY);
+		$this->lists->method('getItem')->willReturnCallback(function (int $id): ChecklistItem {
+			$item = new ChecklistItem();
+			$item->setId($id);
+			$item->setListId(9);
+			$item->setName($id === 4 ? 'Bread' : 'Eggs');
+			return $item;
+		});
+		$template = $this->makeList(Checklist::KIND_TEMPLATE);
+		$template->setId(9);
+		$this->lists->method('getList')->willReturnCallback(static fn (int $id): Checklist => $id === 9 ? $template : $target);
+		$this->lists->expects($this->never())->method('copyItem');
+
+		$drawnWith = [];
+		$this->templateCopy->expects($this->exactly(2))->method('draw')->willReturnCallback(
+			function (ChecklistItem $source, Checklist $list, ?string $uid) use (&$drawnWith): array {
+				$drawnWith[] = [$source->getId(), $list, $uid];
+				return $source->getId() === 4
+					? ['item' => $this->copied(20, 'Bread'), 'reused' => false]
+					: ['item' => $this->copied(21, 'Eggs'), 'reused' => true];
+			},
+		);
+		$this->activity->expects($this->once())->method('publishItemsCopied')
+			->with(1, 'Home', 'alice', 9, 'Weekly staples', 7, 'Weekly staples', ['Bread']);
+
+		$data = $this->makeController(ChecklistController::class)->batchCopyItems(1, [4, 5], 7)->getData();
+
+		$this->assertSame([[4, $target, 'alice'], [5, $target, 'alice']], $drawnWith);
+		$this->assertSame([20, 21], array_column($data['items'], 'id'));
+		$this->assertSame([21], $data['reused']);
+	}
+
+	public function testATemplateNamingAnItemTwiceListsItsCopyOnce(): void {
+		$this->mixedSelection();
+		$bread = $this->copied(20, 'Bread');
+		$this->templateCopy->method('draw')->willReturnOnConsecutiveCalls(
+			['item' => $bread, 'reused' => false],
+			['item' => $bread, 'reused' => true],
+		);
+
+		$data = $this->makeController(ChecklistController::class)->batchCopyItems(1, [4, 4], 7)->getData();
+
+		$this->assertSame([20], array_column($data['items'], 'id'));
+		$this->assertSame([], $data['reused'], 'the copy this batch made is not reused');
+	}
+
+	public function testBatchCopyIntoATemplateCopiesWithoutDrawing(): void {
+		$this->mixedSelection();
+		$this->lists->expects($this->exactly(2))->method('copyItem')
+			->willReturnCallback(fn (int $id): ChecklistItem => $this->copied($id + 10, 'Copy'));
+		$this->templateCopy->expects($this->never())->method('draw');
+
+		$data = $this->makeController(ChecklistController::class)->batchCopyItems(1, [3, 4], 9)->getData();
+
+		$this->assertSame([13, 14], array_column($data['items'], 'id'));
 	}
 
 	public function testSuggestionsReturnTemplateRowsInTheTemplateItemShape(): void {

@@ -748,6 +748,23 @@ describe('useChecklistItems', () => {
       expect(c.items.value.map((i) => i.id)).toEqual([1, 5])
     })
 
+    it('copyMany swaps in reused items instead of showing them twice', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1, done: true })])
+      mockApi.batchCopyItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 1, done: false }), makeItem({ id: 5, name: 'Milk' })],
+        skipped: [],
+        reused: [1],
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.copyMany([30, 31], 10)
+
+      expect(c.items.value.map((i) => i.id)).toEqual([1, 5])
+      expect(c.items.value[0].done).toBe(false)
+    })
+
     it('copyMany does not append when targeting another list', async () => {
       mockApi.listItems.mockResolvedValue([makeItem({ id: 1 })])
       mockApi.batchCopyItems.mockResolvedValue({

@@ -310,10 +310,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
       throw new Error('A target list is required to add an item')
     }
     const result = await resource.drawItem(houseId, useListId, templateItemId)
-    const shown = items.value.some((i) => i.id === result.item.id)
-    items.value = shown
-      ? items.value.map((i) => (i.id === result.item.id ? result.item : i))
-      : [...items.value, result.item]
+    mergeItems([result.item])
     return result
   }
 
@@ -473,12 +470,20 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     ids: number[],
     targetListId: number,
     targetKind: ListKind = kind,
-  ): Promise<api.BatchResult> {
+  ): Promise<api.BatchCopyResult> {
     const result = await api.batchCopyItems(houseId, ids, targetListId)
     if (targetKind === kind && (isMeta || targetListId === listId)) {
-      items.value = [...items.value, ...result.items]
+      mergeItems(result.items)
     }
     return result
+  }
+
+  /** Show items fresh from the server, replacing the rows already shown. */
+  function mergeItems(incoming: ChecklistItem[]): void {
+    const byId = new Map(incoming.map((i) => [i.id, i]))
+    const kept = items.value.map((i) => byId.get(i.id) ?? i)
+    const shown = new Set(kept.map((i) => i.id))
+    items.value = [...kept, ...incoming.filter((i) => !shown.has(i.id))]
   }
 
   async function removeMany(ids: number[]): Promise<api.BatchResult> {
@@ -583,6 +588,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     load,
     add,
     draw,
+    mergeItems,
     update,
     copy,
     toggle,

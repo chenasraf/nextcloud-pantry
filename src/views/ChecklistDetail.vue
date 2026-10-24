@@ -461,6 +461,15 @@
       @duplicate="submitDuplicateList"
     />
 
+    <ApplyTemplateDialog
+      :open="applyingTemplate"
+      :house-id="houseIdNum"
+      :template="kind === 'template' ? list : null"
+      :target="kind === 'template' ? null : list"
+      @update:open="(v) => (applyingTemplate = v)"
+      @applied="onTemplateApplied"
+    />
+
     <CategoryManagerDialog
       :open="showCategoryManager"
       :house-id="houseIdNum"
@@ -866,6 +875,8 @@ import {
   type ChecklistFormData,
 } from '@/components/ChecklistIconPicker'
 import { ChecklistDuplicateDialog } from '@/components/ChecklistDuplicateDialog'
+import { ApplyTemplateDialog } from '@/components/ApplyTemplateDialog'
+import PlaylistPlusIcon from '@icons/PlaylistPlus.vue'
 import { entityIcon } from '@/utils/entityIcons'
 
 const CategoryEntityIcon = entityIcon.category
@@ -888,7 +899,7 @@ import { useStores } from '@/composables/useStores'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { useLongPress } from '@/composables/useLongPress'
 import { listApi } from '@/api/lists'
-import type { ItemInput } from '@/api/lists'
+import type { BatchCopyResult, ItemInput } from '@/api/lists'
 import type {
   Checklist,
   ChecklistItem,
@@ -983,6 +994,7 @@ const {
   uncheckMany,
   undoRemoveMany,
   draw: drawFromTemplate,
+  mergeItems,
   sortBy,
   viewMode,
   trashMode,
@@ -2204,6 +2216,14 @@ async function submitDuplicateList(data: { name: string; resetDone: boolean; kin
   }
 }
 
+const applyingTemplate = ref(false)
+
+function onTemplateApplied(result: BatchCopyResult, target: Checklist) {
+  if (target.id === listIdNum.value && !archiveMode.value && !trashMode.value) {
+    mergeItems(result.items)
+  }
+}
+
 /**
  * Store what the item just added used for the target list's "remember last"
  * defaults. Applied locally first so the next add already sees it.
@@ -2944,6 +2964,10 @@ const strings = {
   // TRANSLATORS: Menu entry that opens the values new items on this list start with.
   itemDefaults: t('pantry', 'Item defaults'),
   duplicateList: kindStrings.duplicateTitle,
+  // TRANSLATORS: Menu entry on a template: copy its items into a checklist or inventory.
+  applyToList: t('pantry', 'Apply to list'),
+  // TRANSLATORS: Menu entry on a checklist or inventory: copy a template's items into it.
+  applyTemplate: t('pantry', 'Apply template'),
   // TRANSLATORS: Button that opens Shopping Mode for this list.
   shop: t('pantry', 'Start shopping'),
   // TRANSLATORS: Verb. Toolbar button that exports the list as Markdown.
@@ -3071,6 +3095,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         icon: TuneVariantIcon,
         alwaysCollapsed: true,
         onClick: openItemDefaults,
+      })
+    }
+    if (list.value && can.value.canCopyItems) {
+      actions.push({
+        key: 'apply-template',
+        label: props.kind === 'template' ? strings.applyToList : strings.applyTemplate,
+        icon: PlaylistPlusIcon,
+        alwaysCollapsed: true,
+        onClick: () => (applyingTemplate.value = true),
       })
     }
     if (list.value && can.value.canCreateLists) {

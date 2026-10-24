@@ -171,6 +171,7 @@ import { checklistIconComponent } from '@/components/ChecklistIconPicker/checkli
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import { configSignature, rememberPatch, startValues, withRemembered } from '@/utils/itemDefaults'
+import { itemNameKey } from '@/utils/string'
 import type { ItemInput } from '@/api/lists'
 import type {
   Checklist,
@@ -479,10 +480,6 @@ interface SuggestionRow {
 
 const SUGGESTION_LIMIT = 6
 
-function nameKey(itemName: string): string {
-  return itemName.trim().replace(/\s+/g, ' ').toLowerCase()
-}
-
 const suggestionRows = computed<SuggestionRow[]>(() => {
   // Never in bulk mode, only while typing a name, and never while a meta tray
   // occupies the same slot.
@@ -501,8 +498,10 @@ const suggestionRows = computed<SuggestionRow[]>(() => {
     : []
   // A template item the list already has (active or archived) is never offered
   // over the list's own copy.
-  const ownNames = new Set([...active, ...archived].map((i) => nameKey(i.name)))
-  const templates = (fetched?.templates ?? []).filter((s) => !ownNames.has(nameKey(s.item.name)))
+  const ownNames = new Set([...active, ...archived].map((i) => itemNameKey(i.name)))
+  const templates = (fetched?.templates ?? []).filter(
+    (s) => !ownNames.has(itemNameKey(s.item.name)),
+  )
 
   // The list's own matches rank first — active, then archived — then template
   // matches, under one shared limit.
