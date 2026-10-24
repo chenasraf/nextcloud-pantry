@@ -141,7 +141,9 @@ vi.mock('@/api/images', () => ({
     `/preview/${houseId}/${fileId}/${owner}/${size}`,
 }))
 
+import { defineComponent, h, ref } from 'vue'
 import ChecklistItemEditDialog from './ChecklistItemEditDialog.vue'
+import { provideListKind } from '@/composables/useListKind'
 
 function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
   return {
@@ -223,6 +225,42 @@ describe('ChecklistItemEditDialog', () => {
     expect(patch.quantity).toBe('2 L')
     expect(pendingImage).toBeNull()
     expect(clearImage).toBe(false)
+  })
+
+  it('edits an inventory item through the Stock card instead of Quantity', async () => {
+    const saves: unknown[][] = []
+    const Host = defineComponent({
+      setup() {
+        provideListKind(ref('inventory'))
+        return () =>
+          h(ChecklistItemEditDialog, {
+            ...defaultProps,
+            item: makeItem({
+              name: 'Eggs',
+              quantity: '4',
+              stockMode: 'count',
+              stockLevel: 'full',
+              target: '12 eggs',
+              reorderPoint: null,
+            }),
+            onSave: (...args: unknown[]) => saves.push(args),
+          })
+      },
+    })
+    const wrapper = mount(Host)
+
+    expect(wrapper.find('.stock-card').exists()).toBe(true)
+    const levelButton = wrapper.findAll('.stock-card__mode').find((b) => b.text() === 'Level')!
+    await levelButton.trigger('click')
+    await wrapper.find('#pantry-edit-item-form').trigger('submit')
+
+    expect(saves[0][1]).toMatchObject({
+      quantity: '8 eggs',
+      stockMode: 'level',
+      stockLevel: 'low',
+      target: '12 eggs',
+      reorderPoint: '',
+    })
   })
 
   it('emits update:open false on cancel click', async () => {

@@ -335,9 +335,9 @@ export interface ItemCustomFieldValue {
  * An item on a list of any kind. Template and inventory items are never checked
  * off: the server leaves out `done`, `doneAt`, `doneBy` and `nextDueAt`.
  * Inventory items have no recurrence either, so `rrule`, `repeatFromCompletion`
- * and `deleteOnDone` are left out on them too.
+ * and `deleteOnDone` are left out on them too; only they carry the stock fields.
  */
-export interface ChecklistItem {
+export interface ChecklistItem extends Partial<ItemStock> {
   id: number
   listId: number
   name: string
@@ -364,6 +364,24 @@ export interface ChecklistItem {
   updatedAt: number
   deletedAt: number | null
   archivedAt: number | null
+}
+
+export type StockMode = 'count' | 'level'
+export type StockLevel = 'full' | 'low' | 'out'
+export type StockStatus = 'ok' | 'low' | 'out' | 'uncounted'
+
+/**
+ * Stock on an inventory item. A count item's `quantity` is its on-hand amount;
+ * a level item's is its restock amount. `stockStatus` and `shortfall` are
+ * worked out by the server.
+ */
+export interface ItemStock {
+  stockMode: StockMode
+  stockLevel: StockLevel
+  target: string | null
+  reorderPoint: string | null
+  stockStatus: StockStatus
+  shortfall: string | null
 }
 
 /** One store in a shopping session's ordered sequence. */

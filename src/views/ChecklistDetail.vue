@@ -265,6 +265,7 @@
               @restore="handleRestore"
               @archive="handleArchive"
               @unarchive="handleUnarchive"
+              @stock="handleStock"
               @preview="openPreview"
               @drag-start="onItemDragStart"
               @reorder-over="onReorderOver"
@@ -391,6 +392,7 @@
                 @restore="handleRestore"
                 @archive="handleArchive"
                 @unarchive="handleUnarchive"
+                @stock="handleStock"
                 @preview="openPreview"
                 @drag-start="onItemDragStart"
                 @reorder-over="onReorderOver"
@@ -909,6 +911,7 @@ import type {
   ItemPrice,
   ItemDefaultsPatch,
   ListKind,
+  StockLevel,
 } from '@/api/types'
 import { withRemembered } from '@/utils/itemDefaults'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
@@ -967,6 +970,7 @@ const {
   load,
   add,
   update,
+  updateStock,
   copy,
   toggle,
   undoToggle,
@@ -2307,6 +2311,17 @@ async function handleArchive(itemId: number) {
 
 async function handleUnarchive(itemId: number) {
   await unarchive(itemId)
+}
+
+async function handleStock(
+  item: ChecklistItem,
+  patch: { quantity: string } | { stockLevel: StockLevel },
+) {
+  try {
+    await updateStock(item.id, patch)
+  } catch (e) {
+    showError((e as Error).message)
+  }
 }
 
 // ----- Edit -----

@@ -102,7 +102,20 @@ vi.mock('@/utils/rrule', () => ({
   formatNextRecurrence: () => null,
 }))
 
+const { narrowRef } = vi.hoisted(() => ({ narrowRef: { value: false } }))
+vi.mock('@/composables/useNarrow', async () => {
+  const { ref } = await import('vue')
+  const narrow = ref(false)
+  Object.defineProperty(narrowRef, 'value', {
+    get: () => narrow.value,
+    set: (v: boolean) => (narrow.value = v),
+  })
+  return { useNarrow: () => narrow }
+})
+
+import { defineComponent, h, ref as vueRef } from 'vue'
 import ChecklistItemRow from './ChecklistItemRow.vue'
+import { provideListKind } from '@/composables/useListKind'
 
 function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
   return {
@@ -715,5 +728,116 @@ describe('ChecklistItemRow', () => {
       await handle.trigger('dragend')
       expect(row.classes()).not.toContain('checklist-row--dragging')
     })
+  })
+})
+
+describe('ChecklistItemRow on an inventory', () => {
+  function mountInventoryRow(item: ChecklistItem) {
+    const Host = defineComponent({
+      setup() {
+        provideListKind(vueRef('inventory'))
+        return () =>
+          h(ChecklistItemRow, {
+            item,
+            category: null,
+            houseId: 1,
+            onStock: (...args: unknown[]) => stockEvents.push(args),
+          })
+      },
+    })
+    const stockEvents: unknown[][] = []
+    return { wrapper: mount(Host), stockEvents }
+  }
+
+  const countItem = (quantity: string | null, extra: Partial<ChecklistItem> = {}) =>
+    makeItem({
+      name: 'Eggs',
+      quantity,
+      stockMode: 'count',
+      stockLevel: 'full',
+      target: '12 eggs',
+      reorderPoint: null,
+      ...extra,
+    })
+
+  it('shows the status icon, the stock chip and on hand in the target wording', () => {
+    narrowRef.value = false
+    const { wrapper } = mountInventoryRow(
+      countItem('4', { stockStatus: 'low', shortfall: '8 eggs' }),
+    )
+
+    expect(wrapper.find('.nc-checkbox').exists()).toBe(false)
+    expect(wrapper.find('.stock-status-icon--warning').attributes('aria-label')).toBe(
+      'Low · buy 8 eggs',
+    )
+    expect(wrapper.find('.checklist-row__stock-chip').text()).toBe('Low · buy 8 eggs')
+    expect(wrapper.find('.stock-control__amount').text()).toBe('4 eggs')
+    expect(wrapper.find('.checklist-row__quantity').exists()).toBe(false)
+    expect(wrapper.find('.stock-gauge').exists()).toBe(true)
+  })
+
+  it('steps on hand, keeping its own text', async () => {
+    narrowRef.value = false
+    const { wrapper, stockEvents } = mountInventoryRow(countItem('4 eggs'))
+
+    const [minus, plus] = wrapper.findAll('.stock-control__step')
+    await plus.trigger('click')
+    await minus.trigger('click')
+
+    expect(stockEvents.map((e) => e[1])).toEqual([{ quantity: '5 eggs' }, { quantity: '3 eggs' }])
+  })
+
+  it('disables − at 0, and both buttons when on hand has no number', () => {
+    narrowRef.value = false
+    const empty = mountInventoryRow(countItem('0')).wrapper.findAll('.stock-control__step')
+    expect(empty[0].attributes('disabled')).toBeDefined()
+    expect(empty[1].attributes('disabled')).toBeUndefined()
+
+    const some = mountInventoryRow(countItem('some', { stockStatus: 'uncounted' })).wrapper
+    expect(
+      some.findAll('.stock-control__step').every((b) => b.attributes('disabled') !== undefined),
+    ).toBe(true)
+    expect(some.find('.checklist-row__stock-chip').text()).toBe('Not counted')
+    expect(some.find('.stock-gauge').exists()).toBe(false)
+  })
+
+  it('moves the amount into a chip on a narrow row', () => {
+    narrowRef.value = true
+    const { wrapper } = mountInventoryRow(countItem('4'))
+
+    expect(wrapper.find('.checklist-row__stock-amount').text()).toBe('4 / 12 eggs')
+    expect(wrapper.find('.stock-control__amount').exists()).toBe(false)
+    expect(wrapper.findAll('.stock-control__step')).toHaveLength(2)
+    narrowRef.value = false
+  })
+
+  it('sets a level item from the segmented control', async () => {
+    narrowRef.value = false
+    const { wrapper, stockEvents } = mountInventoryRow(
+      makeItem({
+        name: 'Flour',
+        quantity: '1 kg bag',
+        stockMode: 'level',
+        stockLevel: 'full',
+        target: null,
+        reorderPoint: null,
+        stockStatus: 'ok',
+        shortfall: null,
+      }),
+    )
+
+    const buttons = wrapper.findAll('.stock-level-control__button')
+    expect(buttons.map((b) => b.text())).toEqual(['Full', 'Low', 'Out'])
+    await buttons[2].trigger('click')
+
+    expect(stockEvents.map((e) => e[1])).toEqual([{ stockLevel: 'out' }])
+  })
+
+  it('shows no stock on a checklist row', () => {
+    const wrapper = mount(ChecklistItemRow, {
+      props: { ...defaultProps, item: countItem('4') },
+    })
+    expect(wrapper.find('.stock-status-icon').exists()).toBe(false)
+    expect(wrapper.find('.stock-control').exists()).toBe(false)
   })
 })

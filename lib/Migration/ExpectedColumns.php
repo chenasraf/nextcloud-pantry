@@ -34,6 +34,13 @@ final class ExpectedColumns {
 			// unconditionally, so a missing column takes down the whole checklist.
 			self::col('list_items', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
+			// list_items — stock columns (Version45). Items hydrate with SELECT *,
+			// so a missing one breaks every list load.
+			self::col('list_items', 'stock_mode', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
+			self::col('list_items', 'stock_level', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
+			self::col('list_items', 'target', Types::STRING, ['notnull' => false, 'length' => 64, 'default' => null]),
+			self::col('list_items', 'reorder_point', Types::STRING, ['notnull' => false, 'length' => 64, 'default' => null]),
+
 			// lists — archived_at (Version29); the active-list query filters on it
 			// unconditionally, so a missing column breaks the whole list index.
 			self::col('lists', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),

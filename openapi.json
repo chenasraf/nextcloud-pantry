@@ -881,7 +881,13 @@
                     "createdAt",
                     "updatedAt",
                     "deletedAt",
-                    "archivedAt"
+                    "archivedAt",
+                    "stockMode",
+                    "stockLevel",
+                    "target",
+                    "reorderPoint",
+                    "stockStatus",
+                    "shortfall"
                 ],
                 "properties": {
                     "id": {
@@ -971,6 +977,42 @@
                     "archivedAt": {
                         "type": "integer",
                         "format": "int64",
+                        "nullable": true
+                    },
+                    "stockMode": {
+                        "type": "string",
+                        "enum": [
+                            "count",
+                            "level"
+                        ]
+                    },
+                    "stockLevel": {
+                        "type": "string",
+                        "enum": [
+                            "full",
+                            "low",
+                            "out"
+                        ]
+                    },
+                    "target": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "reorderPoint": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "stockStatus": {
+                        "type": "string",
+                        "enum": [
+                            "ok",
+                            "low",
+                            "out",
+                            "uncounted"
+                        ]
+                    },
+                    "shortfall": {
+                        "type": "string",
                         "nullable": true
                     }
                 }
@@ -15168,6 +15210,7 @@
             "post": {
                 "operationId": "inventory-add-inventory-item",
                 "summary": "Add an item to an inventory",
+                "description": "A count item added without an on-hand amount starts full: its quantity is filled from the target.",
                 "tags": [
                     "inventory"
                 ],
@@ -15210,7 +15253,7 @@
                                         "type": "string",
                                         "nullable": true,
                                         "default": null,
-                                        "description": "Optional quantity string."
+                                        "description": "On hand for a count item, the restock amount for a level item."
                                     },
                                     "sortOrder": {
                                         "type": "integer",
@@ -15330,6 +15373,39 @@
                                                 }
                                             }
                                         }
+                                    },
+                                    "stockMode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "enum": [
+                                            "count",
+                                            "level"
+                                        ],
+                                        "description": "How stock is tracked; count when omitted."
+                                    },
+                                    "stockLevel": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "enum": [
+                                            "full",
+                                            "low",
+                                            "out"
+                                        ],
+                                        "description": "A level item's stock level; full when omitted."
+                                    },
+                                    "target": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "A count item's target, the amount to buy back up to."
+                                    },
+                                    "reorderPoint": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "A count item's reorder point: low at or below it, instead of below the target."
                                     }
                                 }
                             }
@@ -16342,7 +16418,7 @@
                                         "type": "string",
                                         "nullable": true,
                                         "default": null,
-                                        "description": "New quantity (empty string clears)."
+                                        "description": "New on hand for a count item, or restock amount for a level item (empty string clears)."
                                     },
                                     "imageFileId": {
                                         "type": "integer",
@@ -16480,6 +16556,39 @@
                                                 }
                                             }
                                         }
+                                    },
+                                    "stockMode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "enum": [
+                                            "count",
+                                            "level"
+                                        ],
+                                        "description": "New stock mode. Switching converts the item's values: count to level takes the level from the stock status and restocks the shortfall when low, else the target; level to count makes the restock amount the target and fills on hand to match the level. Values sent alongside win over the conversion."
+                                    },
+                                    "stockLevel": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "enum": [
+                                            "full",
+                                            "low",
+                                            "out"
+                                        ],
+                                        "description": "New stock level of a level item."
+                                    },
+                                    "target": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New target of a count item (empty string clears)."
+                                    },
+                                    "reorderPoint": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New reorder point of a count item (empty string clears)."
                                     }
                                 }
                             }

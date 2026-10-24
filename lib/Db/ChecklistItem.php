@@ -52,6 +52,14 @@ use OCP\AppFramework\Db\Entity;
  * @method void setDeletedAt(?int $deletedAt)
  * @method int|null getArchivedAt()
  * @method void setArchivedAt(?int $archivedAt)
+ * @method string|null getStockMode()
+ * @method void setStockMode(?string $stockMode)
+ * @method string|null getStockLevel()
+ * @method void setStockLevel(?string $stockLevel)
+ * @method string|null getTarget()
+ * @method void setTarget(?string $target)
+ * @method string|null getReorderPoint()
+ * @method void setReorderPoint(?string $reorderPoint)
  */
 class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $listId = 0;
@@ -75,6 +83,10 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $updatedAt = 0;
 	protected ?int $deletedAt = null;
 	protected ?int $archivedAt = null;
+	protected ?string $stockMode = null;
+	protected ?string $stockLevel = null;
+	protected ?string $target = null;
+	protected ?string $reorderPoint = null;
 
 	/**
 	 * Prices resolved for this item, attached transiently by the service/controller

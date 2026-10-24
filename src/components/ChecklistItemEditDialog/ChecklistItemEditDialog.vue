@@ -31,7 +31,8 @@
         />
       </FieldCard>
 
-      <FieldCard :label="strings.quantityLabel">
+      <StockCard v-if="isInventory" v-model="editStock" v-model:blocked="stockBlocked" />
+      <FieldCard v-else :label="strings.quantityLabel">
         <QuantityInput v-model="editQuantity" />
       </FieldCard>
 
@@ -117,7 +118,7 @@
         form="pantry-edit-item-form"
         type="submit"
         variant="primary"
-        :disabled="!editName.trim() || saving"
+        :disabled="!editName.trim() || saving || (isInventory && stockBlocked)"
       >
         {{ strings.save }}
       </NcButton>
@@ -149,8 +150,11 @@ import type { ChecklistItem, ItemCustomFieldValue, ItemPrice } from '@/api/types
 import type { ItemInput } from '@/api/lists'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useListKind } from '@/composables/useListKind'
+import StockCard from '@/components/InventoryStock/StockCard.vue'
+import type { StockDraft } from '@/utils/stock'
 
-const { isChecklist } = useListKind()
+const { kind, isChecklist } = useListKind()
+const isInventory = computed(() => kind.value === 'inventory')
 
 const props = withDefaults(
   defineProps<{
@@ -180,6 +184,14 @@ const editRepeatFromCompletion = ref(false)
 const editDeleteOnDone = ref(false)
 const editPrices = ref<ItemPrice[]>([])
 const editCustomFields = ref<ItemCustomFieldValue[]>([])
+const editStock = ref<StockDraft>({
+  stockMode: 'count',
+  stockLevel: null,
+  quantity: null,
+  target: null,
+  reorderPoint: null,
+})
+const stockBlocked = ref(false)
 
 type ItemType = 'staple' | 'oneTime' | 'recurring'
 const currentType = computed<ItemType>(() => {
@@ -243,6 +255,14 @@ watch(
       editDeleteOnDone.value = props.item.deleteOnDone ?? false
       editPrices.value = (props.item.prices ?? []).map((p) => ({ ...p }))
       editCustomFields.value = (props.item.customFields ?? []).map((v) => ({ ...v }))
+      editStock.value = {
+        stockMode: props.item.stockMode ?? 'count',
+        stockLevel: props.item.stockLevel ?? 'full',
+        quantity: props.item.quantity ?? null,
+        target: props.item.target ?? null,
+        reorderPoint: props.item.reorderPoint ?? null,
+      }
+      stockBlocked.value = false
       void customFields.load()
       resetImageState()
     }
@@ -284,7 +304,15 @@ function submitEdit() {
     {
       name,
       description: editDescription.value.trim(),
-      quantity: editQuantity.value.trim(),
+      ...(isInventory.value
+        ? {
+            quantity: (editStock.value.quantity ?? '').trim(),
+            stockMode: editStock.value.stockMode,
+            stockLevel: editStock.value.stockLevel ?? 'full',
+            target: (editStock.value.target ?? '').trim(),
+            reorderPoint: (editStock.value.reorderPoint ?? '').trim(),
+          }
+        : { quantity: editQuantity.value.trim() }),
       categoryId: editCategoryId.value,
       storeIds: editStoreIds.value,
       labelIds: editLabelIds.value,

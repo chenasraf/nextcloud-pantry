@@ -45,6 +45,12 @@
           @update:model-value="$emit('toggle', item.id)"
         />
       </div>
+      <StockStatusIcon
+        v-if="stock && !suggestion && !selectionMode"
+        class="checklist-row__stock-status"
+        :status="stock.stockStatus"
+        :label="stock.statusText"
+      />
       <button
         v-if="item.imageFileId"
         type="button"
@@ -84,13 +90,32 @@
             {{ strings.archived }}
           </PantryChip>
           <PantryChip
-            v-if="item.quantity"
+            v-if="item.quantity && !stock"
             class="checklist-row__quantity"
             size="sm"
             :interactive="false"
           >
             &times; {{ item.quantity }}
           </PantryChip>
+          <template v-if="stock">
+            <PantryChip
+              v-if="narrow && stock.amountText"
+              class="checklist-row__stock-amount"
+              size="sm"
+              :interactive="false"
+            >
+              {{ stock.amountText }}
+            </PantryChip>
+            <PantryChip
+              v-if="stock.stockStatus !== 'ok'"
+              class="checklist-row__stock-chip"
+              :class="`checklist-row__stock-chip--${stock.tone}`"
+              size="sm"
+              :interactive="false"
+            >
+              {{ stock.statusText }}
+            </PantryChip>
+          </template>
           <PantryChip v-if="priceText" class="checklist-row__price" size="sm" :interactive="false">
             {{ priceText }}
           </PantryChip>
@@ -169,8 +194,22 @@
             {{ label.name }}
           </PantryChip>
         </div>
+        <StockGauge
+          v-if="stock && stock.gauge !== null && !suggestion"
+          :fill="stock.gauge"
+          :tick="stock.tick"
+          :tone="stock.tone"
+          :segments="item.stockMode === 'level'"
+        />
       </div>
     </div>
+    <StockControl
+      v-if="stock && !selectionMode && !suggestion && !compact && !trashMode && !archiveMode"
+      :item="item"
+      :narrow="narrow"
+      :disabled="!canEditItem"
+      @update="$emit('stock', item, $event)"
+    />
     <div v-if="showAddedBy && !selectionMode && !suggestion" class="checklist-row__added-by">
       <NcAvatar
         v-if="item.addedBy"
@@ -315,9 +354,23 @@ import { formatPrice, resolveItemPrice } from '@/utils/price'
 import { useHouseMembers } from '@/composables/useHouseMembers'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
-import type { ChecklistItem, Category, Checklist, Store, Label } from '@/api/types'
+import type { ChecklistItem, Category, Checklist, Store, Label, StockLevel } from '@/api/types'
 import type { RowClickAction } from '@/api/prefs'
 import { useListKind } from '@/composables/useListKind'
+import { useNarrow } from '@/composables/useNarrow'
+import StockControl from '@/components/InventoryStock/StockControl.vue'
+import StockGauge from '@/components/InventoryStock/StockGauge.vue'
+import StockStatusIcon from '@/components/InventoryStock/StockStatusIcon.vue'
+import { stockStatusText } from '@/components/InventoryStock/stockStrings'
+import {
+  evaluateStock,
+  firstNumber,
+  formatNumber,
+  gaugeFill,
+  gaugeTick,
+  stockInput,
+  stockTone,
+} from '@/utils/stock'
 
 const { can } = useCurrentHouse()
 
@@ -421,7 +474,33 @@ const props = withDefaults(
 
 // Write affordances require both the list to be writable (a view-only shared
 // list disables all of them) and the specific role capability.
-const { isChecklist } = useListKind()
+const { kind, isChecklist } = useListKind()
+const narrow = useNarrow()
+
+/** What the row shows about an inventory item's stock; null on other kinds. */
+const stock = computed(() => {
+  if (kind.value !== 'inventory') return null
+  const input = stockInput(props.item)
+  const result = props.item.stockStatus
+    ? { stockStatus: props.item.stockStatus, shortfall: props.item.shortfall ?? null }
+    : evaluateStock(input)
+  const onHand = (input.quantity ?? '').trim() === '' ? 0 : firstNumber(input.quantity)
+  const target = (input.target ?? '').trim()
+  const amountText =
+    input.stockMode !== 'level' && onHand !== null && firstNumber(target) !== null
+      ? // TRANSLATORS: Amount chip on an inventory item, on hand over target, e.g. "4 / 12 eggs".
+        t('pantry', '{onHand} / {target}', { onHand: formatNumber(onHand), target })
+      : null
+  return {
+    ...result,
+    tone: stockTone(result.stockStatus),
+    statusText: stockStatusText(result.stockStatus, result.shortfall),
+    amountText,
+    gauge: gaugeFill({ ...input, ...result }),
+    tick: gaugeTick(input),
+  }
+})
+
 const canCheck = computed(() => isChecklist.value && props.listWritable && can.value.canCheckItems)
 // Items that are never checked off open instead of toggling.
 const clickAction = computed<RowClickAction>(() =>
@@ -448,6 +527,7 @@ const emit = defineEmits<{
   preview: [item: ChecklistItem]
   select: [item: ChecklistItem]
   'toggle-select': [id: number]
+  stock: [item: ChecklistItem, patch: { quantity: string } | { stockLevel: StockLevel }]
   'drag-start': [itemId: number, groupKey?: string]
   'reorder-over': [itemId: number, event: MouseEvent, groupKey?: string]
 }>()
@@ -808,6 +888,21 @@ function storeLabel(name: string): string {
 
   &__description {
     cursor: help;
+  }
+
+  &__stock-amount {
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Saturated status colours, so the chip reads like the status icon beside it.
+  &__meta :deep(.pantry-chip.checklist-row__stock-chip--warning) {
+    --chip-border: var(--color-element-warning, var(--color-warning));
+    color: var(--color-element-warning, var(--color-warning));
+  }
+
+  &__meta :deep(.pantry-chip.checklist-row__stock-chip--error) {
+    --chip-border: var(--color-element-error, var(--color-error));
+    color: var(--color-element-error, var(--color-error));
   }
 }
 </style>

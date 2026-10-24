@@ -78,8 +78,11 @@ abstract class ListKindOCSController extends OCSController {
 		parent::__construct($appName, $request);
 	}
 
-	/** Item fields a template item does not have: the done state and the reopen schedule. */
-	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt'];
+	/** Item fields a template item does not have: the done state, the reopen schedule and stock. */
+	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', ...self::STOCK_ITEM_FIELDS];
+
+	/** Item fields only an inventory item has. */
+	protected const STOCK_ITEM_FIELDS = ['stockMode', 'stockLevel', 'target', 'reorderPoint'];
 
 	/**
 	 * @return 'checklist'|'template'|'inventory'
@@ -103,7 +106,22 @@ abstract class ListKindOCSController extends OCSController {
 	 * @return array<array-key, mixed>
 	 */
 	protected function shapeItem(array $data): array {
-		return $data;
+		return array_diff_key($data, array_flip(self::STOCK_ITEM_FIELDS));
+	}
+
+	/**
+	 * The item's serialized fields, with the stock fields that only an
+	 * inventory's shape keeps.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function itemData(ChecklistItem $item): array {
+		return $item->jsonSerialize() + [
+			'stockMode' => $item->getStockMode(),
+			'stockLevel' => $item->getStockLevel(),
+			'target' => $item->getTarget(),
+			'reorderPoint' => $item->getReorderPoint(),
+		];
 	}
 
 	/**
@@ -149,7 +167,7 @@ abstract class ListKindOCSController extends OCSController {
 			$fieldMap = [];
 		}
 		return array_values(array_map(function ($i) use ($storeMap, $priceMap, $labelMap, $fieldMap, $shape) {
-			$data = $i->jsonSerialize();
+			$data = $this->itemData($i);
 			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
 			$data['prices'] = $priceMap[(int)$i->getId()] ?? [];
 			$data['labelIds'] = $labelMap[(int)$i->getId()] ?? [];
@@ -167,7 +185,7 @@ abstract class ListKindOCSController extends OCSController {
 	 * @return array<string, mixed>
 	 */
 	protected function serializeItem(ChecklistItem $item): array {
-		$data = $item->jsonSerialize();
+		$data = $this->itemData($item);
 		try {
 			$data['storeIds'] = $this->itemStores->findStoreIdsForItem((int)$item->getId());
 		} catch (\Throwable $e) {
@@ -510,7 +528,7 @@ abstract class ListKindOCSController extends OCSController {
 	}
 
 	/**
-	 * @param array{name: string, description: string|null, categoryId: int|null, quantity: string|null, rrule: string|null, repeatFromCompletion: bool, deleteOnDone: bool, sortOrder: int|null, storeIds: list<int>, barcode: string|null, prices: list<array<string, mixed>>, labelIds: list<int>, customFields: list<array<string, mixed>>} $data
+	 * @param array{name: string, description: string|null, categoryId: int|null, quantity: string|null, rrule: string|null, repeatFromCompletion: bool, deleteOnDone: bool, sortOrder: int|null, storeIds: list<int>, barcode: string|null, prices: list<array<string, mixed>>, labelIds: list<int>, customFields: list<array<string, mixed>>, stockMode?: string|null, stockLevel?: string|null, target?: string|null, reorderPoint?: string|null} $data
 	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
 	 */
 	protected function doAddItem(int $houseId, int $listId, array $data): DataResponse {
@@ -537,6 +555,10 @@ abstract class ListKindOCSController extends OCSController {
 				'prices' => $data['prices'],
 				'labelIds' => $this->labels->assertLabelsInHouse($houseId, $data['labelIds']),
 				'customFields' => $this->fields->sanitizeValuesForItem($houseId, $listId, $data['customFields']),
+				'stockMode' => $data['stockMode'] ?? null,
+				'stockLevel' => $data['stockLevel'] ?? null,
+				'target' => $data['target'] ?? null,
+				'reorderPoint' => $data['reorderPoint'] ?? null,
 			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
@@ -557,6 +579,7 @@ abstract class ListKindOCSController extends OCSController {
 	 * @param list<array<string, mixed>>|null $prices
 	 * @param list<int>|null $labelIds
 	 * @param list<array<string, mixed>>|null $customFields
+	 * @param array{stockMode?: string, stockLevel?: string, target?: string, reorderPoint?: string} $stock Stock fields to change; an empty string clears a target or reorder point.
 	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
 	 */
 	protected function doUpdateItem(
@@ -578,8 +601,9 @@ abstract class ListKindOCSController extends OCSController {
 		?array $prices,
 		?array $labelIds,
 		?array $customFields,
+		array $stock = [],
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			[, $list] = $this->loadItem($houseId, $listId, $itemId);
@@ -619,6 +643,7 @@ abstract class ListKindOCSController extends OCSController {
 			if ($barcode !== null) {
 				$patch['barcode'] = $barcode;
 			}
+			$patch += $stock;
 			// Prices are replaced as a whole set. A null value leaves them
 			// unchanged; an empty array clears them.
 			if ($prices !== null) {
@@ -668,7 +693,7 @@ abstract class ListKindOCSController extends OCSController {
 					(int)$targetList->getId(),
 					$targetList->getName(),
 				);
-			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $prices !== null || $customFields !== null) {
+			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $prices !== null || $customFields !== null || $stock !== []) {
 				$this->activity->publishItemUpdated(
 					$houseId,
 					$houseName,

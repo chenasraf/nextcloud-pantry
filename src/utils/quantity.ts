@@ -33,19 +33,20 @@ function gridUp(value: number): number {
  * beneath it (10 → 9, not 10 → 5); a fractional value is already strictly
  * above its own floor.
  */
-function gridDown(value: number): number {
-  if (value <= MIN_QUANTITY) return value
+function gridDown(value: number, min: number): number {
+  if (value <= min) return value
   const base = Number.isInteger(value) ? value - 1 : value
   const step = stepAt(base)
-  return Math.max(MIN_QUANTITY, Math.floor(base / step) * step)
+  return Math.max(min, Math.floor(base / step) * step)
 }
 
 /**
  * Step the number inside `quantity` one grid value up (positive `direction`)
  * or down, keeping the unit and any surrounding text. A quantity with no
- * number at all gains a leading "1" when stepped up.
+ * number at all gains a leading "1" when stepped up. Steps down stop at `min`:
+ * 1 for an amount to get, 0 for what is on hand.
  */
-export function stepQuantity(quantity: string, direction: number): string {
+export function stepQuantity(quantity: string, direction: number, min = MIN_QUANTITY): string {
   const match = quantity.match(FIRST_NUMBER_RE)
   if (!match) {
     if (direction <= 0) return quantity
@@ -53,14 +54,14 @@ export function stepQuantity(quantity: string, direction: number): string {
   }
   const current = Number(match[0])
   if (!Number.isFinite(current)) return quantity
-  const stepped = direction > 0 ? gridUp(current) : gridDown(current)
+  const stepped = direction > 0 ? gridUp(current) : gridDown(current, min)
   return quantity.replace(FIRST_NUMBER_RE, String(stepped))
 }
 
 /** True when `quantity` holds a number the stepper can take down a grid value. */
-export function canStepDown(quantity: string): boolean {
+export function canStepDown(quantity: string, min = MIN_QUANTITY): boolean {
   const match = quantity.match(FIRST_NUMBER_RE)
   if (!match) return false
   const current = Number(match[0])
-  return Number.isFinite(current) && current > MIN_QUANTITY
+  return Number.isFinite(current) && current > min
 }

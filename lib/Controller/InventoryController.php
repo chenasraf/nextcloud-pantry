@@ -10,6 +10,7 @@ namespace OCA\Pantry\Controller;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
+use OCA\Pantry\Service\StockRules;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,7 +56,20 @@ final class InventoryController extends ListKindOCSController {
 	}
 
 	protected function shapeItem(array $data): array {
-		return array_diff_key($data, array_flip(self::CHECKLIST_ITEM_FIELDS));
+		$data = array_diff_key($data, array_flip(self::CHECKLIST_ITEM_FIELDS));
+		$text = static function (string $key) use ($data): ?string {
+			$value = $data[$key] ?? null;
+			return is_string($value) ? $value : null;
+		};
+		$level = $text('stockLevel');
+		$stock = [
+			'stockMode' => $text('stockMode') === StockRules::MODE_LEVEL ? StockRules::MODE_LEVEL : StockRules::MODE_COUNT,
+			'stockLevel' => $level !== null && in_array($level, StockRules::LEVELS, true) ? $level : StockRules::LEVEL_FULL,
+			'quantity' => $text('quantity'),
+			'target' => $text('target'),
+			'reorderPoint' => $text('reorderPoint'),
+		];
+		return array_merge($data, $stock, StockRules::evaluate($stock));
 	}
 
 	/**
@@ -526,18 +540,25 @@ final class InventoryController extends ListKindOCSController {
 	/**
 	 * Add an item to an inventory
 	 *
+	 * A count item added without an on-hand amount starts full: its quantity is
+	 * filled from the target.
+	 *
 	 * @param int $houseId House id.
 	 * @param int $listId Inventory id.
 	 * @param string $name Item name.
 	 * @param string|null $description Optional description.
 	 * @param int|null $categoryId Optional category id (must belong to the same house).
-	 * @param string|null $quantity Optional quantity string.
+	 * @param string|null $quantity On hand for a count item, the restock amount for a level item.
 	 * @param int|null $sortOrder Optional sort order.
 	 * @param list<int> $storeIds Optional store ids to attach (must belong to the same house).
 	 * @param string|null $barcode Optional barcode (EAN/UPC) the item was created from.
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}> $prices Optional prices. A null store id is the store-less (default) price; at most one per store and one store-less.
 	 * @param list<int> $labelIds Optional label ids to attach (must belong to the same house).
 	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}> $customFields Optional custom-field values. Each field must belong to the house and apply to this inventory; at most one value per field.
+	 * @param 'count'|'level'|null $stockMode How stock is tracked; count when omitted.
+	 * @param 'full'|'low'|'out'|null $stockLevel A level item's stock level; full when omitted.
+	 * @param string|null $target A count item's target, the amount to buy back up to.
+	 * @param string|null $reorderPoint A count item's reorder point: low at or below it, instead of below the target.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
 	 *
@@ -559,6 +580,10 @@ final class InventoryController extends ListKindOCSController {
 		array $prices = [],
 		array $labelIds = [],
 		array $customFields = [],
+		?string $stockMode = null,
+		?string $stockLevel = null,
+		?string $target = null,
+		?string $reorderPoint = null,
 	): DataResponse {
 		return $this->doAddItem($houseId, $listId, [
 			'name' => $name,
@@ -574,6 +599,10 @@ final class InventoryController extends ListKindOCSController {
 			'prices' => $prices,
 			'labelIds' => $labelIds,
 			'customFields' => $customFields,
+			'stockMode' => $stockMode,
+			'stockLevel' => $stockLevel,
+			'target' => $target,
+			'reorderPoint' => $reorderPoint,
 		]);
 	}
 
@@ -586,7 +615,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param string|null $name New name.
 	 * @param string|null $description New description (empty string clears).
 	 * @param int|null $categoryId New category id (0 or negative clears).
-	 * @param string|null $quantity New quantity (empty string clears).
+	 * @param string|null $quantity New on hand for a count item, or restock amount for a level item (empty string clears).
 	 * @param int|null $imageFileId File id of attached image (0 or negative clears).
 	 * @param int|null $sortOrder New sort order.
 	 * @param int|null $targetListId Move item to a different inventory (must belong to the same house).
@@ -595,6 +624,10 @@ final class InventoryController extends ListKindOCSController {
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}>|null $prices New full set of prices (empty array clears all; null leaves them unchanged). A null store id is the store-less price; at most one per store and one store-less.
 	 * @param list<int>|null $labelIds New set of label ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}>|null $customFields New full set of custom-field values (empty array clears all; null leaves them unchanged). Each field must belong to the house and apply to the item's inventory.
+	 * @param 'count'|'level'|null $stockMode New stock mode. Switching converts the item's values: count to level takes the level from the stock status and restocks the shortfall when low, else the target; level to count makes the restock amount the target and fills on hand to match the level. Values sent alongside win over the conversion.
+	 * @param 'full'|'low'|'out'|null $stockLevel New stock level of a level item.
+	 * @param string|null $target New target of a count item (empty string clears).
+	 * @param string|null $reorderPoint New reorder point of a count item (empty string clears).
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
 	 *
@@ -619,8 +652,18 @@ final class InventoryController extends ListKindOCSController {
 		?array $prices = null,
 		?array $labelIds = null,
 		?array $customFields = null,
+		?string $stockMode = null,
+		?string $stockLevel = null,
+		?string $target = null,
+		?string $reorderPoint = null,
 	): DataResponse {
-		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, null, null, null, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields);
+		$stock = array_filter([
+			'stockMode' => $stockMode,
+			'stockLevel' => $stockLevel,
+			'target' => $target,
+			'reorderPoint' => $reorderPoint,
+		], static fn (?string $v): bool => $v !== null);
+		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, null, null, null, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock);
 	}
 
 	/**

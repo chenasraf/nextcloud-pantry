@@ -658,6 +658,17 @@ class ChecklistService {
 		$item->setImageUploadedBy($this->strOrNull($data['imageUploadedBy'] ?? null));
 		$item->setAddedBy($addedBy);
 		$item->setBarcode($this->strOrNull($data['barcode'] ?? null));
+		if ($list->getKind() === Checklist::KIND_INVENTORY) {
+			$this->applyStock($item, [
+				'stockMode' => $data['stockMode'] ?? StockRules::MODE_COUNT,
+				'stockLevel' => $data['stockLevel'] ?? null,
+				'target' => $data['target'] ?? null,
+				'reorderPoint' => $data['reorderPoint'] ?? null,
+			]);
+			if ($item->getStockMode() === StockRules::MODE_COUNT) {
+				$item->setQuantity(StockRules::startingOnHand($item->getQuantity(), $item->getTarget()));
+			}
+		}
 		if (isset($data['sortOrder'])) {
 			$item->setSortOrder((int)$data['sortOrder']);
 		} else {
@@ -733,6 +744,10 @@ class ChecklistService {
 		if (array_key_exists('imageUploadedBy', $patch)) {
 			$v = $patch['imageUploadedBy'];
 			$item->setImageUploadedBy(is_string($v) && $v !== '' ? $v : null);
+		}
+		$stock = array_intersect_key($patch, array_flip(['stockMode', 'stockLevel', 'target', 'reorderPoint']));
+		if ($stock !== []) {
+			$this->applyStock($item, $stock, array_key_exists('quantity', $patch));
 		}
 		// If already done and rrule or mode changed, recompute next due.
 		if ($item->getDone() && $item->getRrule() !== null
@@ -1251,12 +1266,19 @@ class ChecklistService {
 	 *   `$keepDone`; anything else lands unchecked.
 	 * - Recurrence and delete-on-done carry into checklists and templates, and
 	 *   drop into inventories. Only a checklist schedules the next occurrence.
+	 * - Stock fields carry only inventory to inventory.
 	 *
 	 * `$item` may be `$source` itself (a move). Its created time must be set,
 	 * since a fixed schedule counts from it.
 	 */
 	private function crossItemInto(ChecklistItem $item, ChecklistItem $source, Checklist $sourceList, Checklist $target, bool $keepDone, int $now): void {
 		$done = $keepDone && $source->getDone() && $sourceList->isChecklist() && $target->isChecklist();
+
+		$keepsStock = $sourceList->getKind() === Checklist::KIND_INVENTORY && $target->getKind() === Checklist::KIND_INVENTORY;
+		$item->setStockMode($keepsStock ? $source->getStockMode() : null);
+		$item->setStockLevel($keepsStock ? $source->getStockLevel() : null);
+		$item->setTarget($keepsStock ? $source->getTarget() : null);
+		$item->setReorderPoint($keepsStock ? $source->getReorderPoint() : null);
 
 		if ($target->keepsRecurrence()) {
 			$item->setRrule($source->getRrule());
@@ -1403,6 +1425,60 @@ class ChecklistService {
 			} catch (NotFoundException) {
 				continue;
 			}
+		}
+	}
+
+	/**
+	 * Write the stock fields present in `$stock` onto an inventory item. On an
+	 * existing item a change of stock mode first converts its values, and the
+	 * fields sent alongside it win over the conversion; so does a quantity
+	 * sent in the same update (`$keepQuantity`).
+	 *
+	 * @param array<array-key, mixed> $stock
+	 */
+	private function applyStock(ChecklistItem $item, array $stock, bool $keepQuantity = false): void {
+		$isNew = $item->getId() === null;
+		if (array_key_exists('stockMode', $stock)) {
+			$mode = $stock['stockMode'];
+			if (!is_string($mode) || !in_array($mode, StockRules::MODES, true)) {
+				throw new \InvalidArgumentException('Stock mode must be count or level');
+			}
+			$current = $item->getStockMode() === StockRules::MODE_LEVEL ? StockRules::MODE_LEVEL : StockRules::MODE_COUNT;
+			if (!$isNew && $mode !== $current) {
+				$converted = StockRules::convert([
+					'stockMode' => $current,
+					'stockLevel' => $item->getStockLevel(),
+					'quantity' => $item->getQuantity(),
+					'target' => $item->getTarget(),
+					'reorderPoint' => $item->getReorderPoint(),
+				], $mode);
+				$item->setStockLevel($converted['stockLevel']);
+				$item->setTarget($converted['target']);
+				if (!$keepQuantity) {
+					$item->setQuantity($converted['quantity']);
+				}
+			}
+			$item->setStockMode($mode);
+		}
+		if (array_key_exists('stockLevel', $stock)) {
+			$level = $stock['stockLevel'];
+			if ($level !== null && (!is_string($level) || !in_array($level, StockRules::LEVELS, true))) {
+				throw new \InvalidArgumentException('Stock level must be full, low or out');
+			}
+			$item->setStockLevel($level);
+		}
+		foreach (['target' => 'setTarget', 'reorderPoint' => 'setReorderPoint'] as $field => $setter) {
+			if (!array_key_exists($field, $stock)) {
+				continue;
+			}
+			$value = $this->strOrNull($stock[$field]);
+			if ($value !== null && mb_strlen($value) > 64) {
+				throw new \InvalidArgumentException('Stock values cannot be longer than 64 characters');
+			}
+			$item->$setter($value);
+		}
+		if ($item->getStockMode() === StockRules::MODE_LEVEL && $item->getStockLevel() === null) {
+			$item->setStockLevel(StockRules::LEVEL_FULL);
 		}
 	}
 

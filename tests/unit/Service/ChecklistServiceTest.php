@@ -18,6 +18,7 @@ use OCA\Pantry\Migration\Version39Date20261009000000;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\ItemDefaults;
 use OCA\Pantry\Service\RecurrenceService;
+use OCA\Pantry\Service\StockRules;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -452,6 +453,117 @@ class ChecklistServiceTest extends TestCase {
 
 		$this->assertSame('FREQ=WEEKLY', $item->getRrule());
 		$this->assertNull($item->getNextDueAt(), 'recurrence never runs on a template');
+	}
+
+	public function testAnInventoryCountItemStartsFull(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Eggs', 'target' => ' 12 eggs ', 'reorderPoint' => '4']);
+
+		$this->assertSame(StockRules::MODE_COUNT, $item->getStockMode());
+		$this->assertSame('12 eggs', $item->getTarget());
+		$this->assertSame('4', $item->getReorderPoint());
+		$this->assertSame('12 eggs', $item->getQuantity());
+	}
+
+	public function testAnInventoryItemKeepsTheOnHandItWasGiven(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Eggs', 'quantity' => '3', 'target' => '12 eggs']);
+
+		$this->assertSame('3', $item->getQuantity());
+	}
+
+	public function testAnInventoryLevelItemStartsFull(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Flour', 'quantity' => '1 kg bag', 'stockMode' => 'level', 'target' => '12']);
+
+		$this->assertSame(StockRules::LEVEL_FULL, $item->getStockLevel());
+		$this->assertSame('1 kg bag', $item->getQuantity(), 'the restock amount is never filled from the target');
+	}
+
+	public function testAChecklistItemHasNoStock(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Eggs', 'stockMode' => 'level', 'target' => '12']);
+
+		$this->assertNull($item->getStockMode());
+		$this->assertNull($item->getTarget());
+		$this->assertNull($item->getQuantity());
+	}
+
+	public function testAddItemRejectsAnUnknownStockMode(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->addItem(1, ['name' => 'Eggs', 'stockMode' => 'weight']);
+	}
+
+	public function testUpdateItemRejectsAnUnknownStockLevel(): void {
+		$this->itemMapper->method('findById')->willReturn($this->withId($this->makeItem(), 9));
+		$this->itemMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateItem(9, ['stockLevel' => 'half']);
+	}
+
+	public function testSwitchingToLevelConvertsTheCount(): void {
+		$item = $this->withId($this->makeItem(['quantity' => '4']), 9);
+		$item->setStockMode(StockRules::MODE_COUNT);
+		$item->setTarget('12 eggs');
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->updateItem(9, ['stockMode' => 'level']);
+
+		$this->assertSame(StockRules::MODE_LEVEL, $item->getStockMode());
+		$this->assertSame(StockRules::LEVEL_LOW, $item->getStockLevel());
+		$this->assertSame('8 eggs', $item->getQuantity());
+		$this->assertSame('12 eggs', $item->getTarget(), 'the target stays stored');
+	}
+
+	public function testValuesSentWithAModeSwitchWinOverTheConversion(): void {
+		$item = $this->withId($this->makeItem(['quantity' => '1 kg bag']), 9);
+		$item->setStockMode(StockRules::MODE_LEVEL);
+		$item->setStockLevel(StockRules::LEVEL_LOW);
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->updateItem(9, ['stockMode' => 'count', 'quantity' => '2 kg', 'target' => '3 kg']);
+
+		$this->assertSame(StockRules::MODE_COUNT, $item->getStockMode());
+		$this->assertSame('2 kg', $item->getQuantity());
+		$this->assertSame('3 kg', $item->getTarget());
+	}
+
+	public function testUpdateItemClearsATargetWithAnEmptyString(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setTarget('12');
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->updateItem(9, ['target' => '']);
+
+		$this->assertNull($item->getTarget());
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('kindPairs')]
+	public function testCopyItemCarriesStockOnlyBetweenInventories(string $fromKind, string $toKind): void {
+		$source = $this->crossingItem($fromKind, $toKind);
+		$source->setStockMode(StockRules::MODE_LEVEL);
+		$source->setStockLevel(StockRules::LEVEL_LOW);
+		$source->setTarget('12');
+		$source->setReorderPoint('4');
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$keeps = $fromKind === Checklist::KIND_INVENTORY && $toKind === Checklist::KIND_INVENTORY;
+		$this->assertSame($keeps ? StockRules::MODE_LEVEL : null, $copy->getStockMode());
+		$this->assertSame($keeps ? StockRules::LEVEL_LOW : null, $copy->getStockLevel());
+		$this->assertSame($keeps ? '12' : null, $copy->getTarget());
+		$this->assertSame($keeps ? '4' : null, $copy->getReorderPoint());
 	}
 
 	public function testCopyItemBetweenTemplatesKeepsTheRuleWithoutASchedule(): void {

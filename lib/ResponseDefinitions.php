@@ -300,6 +300,12 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     deletedAt: int|null,
  *     archivedAt: int|null,
+ *     stockMode: 'count'|'level',
+ *     stockLevel: 'full'|'low'|'out',
+ *     target: string|null,
+ *     reorderPoint: string|null,
+ *     stockStatus: 'ok'|'low'|'out'|'uncounted',
+ *     shortfall: string|null,
  * }
  *
  * @psalm-type PantryListTemplates = array{

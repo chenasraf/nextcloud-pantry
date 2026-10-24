@@ -3,6 +3,7 @@ import * as api from '@/api/lists'
 import type { Checklist, ChecklistItem, ListKind } from '@/api/types'
 import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
 import type { ChecklistFormData } from '@/components/ChecklistIconPicker/checklistForm'
+import { evaluateStock, stockInput } from '@/utils/stock'
 
 // Per-house, per-kind state shared across all callers so sidebar and views stay in sync.
 interface HouseChecklistState {
@@ -322,6 +323,38 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
+  /** The latest stock write per item, so a slower earlier answer cannot undo a later step. */
+  const stockWrites = new Map<number, number>()
+
+  /**
+   * Change an inventory item's stock from its row. The row shows the new
+   * amount and status straight away; the server's answer replaces them, and a
+   * failed write puts the item back as it was.
+   */
+  async function updateStock(
+    itemId: number,
+    patch: Pick<api.ItemInput, 'quantity' | 'stockLevel'>,
+  ): Promise<void> {
+    const prev = items.value.find((i) => i.id === itemId)
+    if (!prev) return
+    const write = (stockWrites.get(itemId) ?? 0) + 1
+    stockWrites.set(itemId, write)
+    const next = { ...prev, ...patch }
+    const optimistic = { ...next, ...evaluateStock(stockInput(next)) }
+    items.value = items.value.map((i) => (i.id === itemId ? optimistic : i))
+    try {
+      const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, patch)
+      if (stockWrites.get(itemId) === write) {
+        items.value = items.value.map((i) => (i.id === itemId ? updated : i))
+      }
+    } catch (e) {
+      if (stockWrites.get(itemId) === write) {
+        items.value = items.value.map((i) => (i.id === itemId ? prev : i))
+      }
+      throw e
+    }
+  }
+
   async function copy(itemId: number, targetListId: number): Promise<ChecklistItem> {
     const sourceListId = listIdFor(itemId)
     const created = await resource.copyItem(houseId, sourceListId, itemId, targetListId)
@@ -590,6 +623,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     draw,
     mergeItems,
     update,
+    updateStock,
     copy,
     toggle,
     undoToggle,

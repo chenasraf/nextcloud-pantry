@@ -1,0 +1,462 @@
+{
+  "description": "Stock rules for inventory items, shared by every client. Each one reads this file in its tests: the first number in a value is the value, units and other text are ignored, and the status and shortfall follow from the stock mode.",
+  "firstNumber": [
+    { "text": "4", "value": 4 },
+    { "text": "4 eggs", "value": 4 },
+    { "text": "eggs: 4", "value": 4 },
+    { "text": "1.5 kg", "value": 1.5 },
+    { "text": "about 12.50 g", "value": 12.5 },
+    { "text": "2 x 1 L", "value": 2 },
+    { "text": "-3", "value": 3 },
+    { "text": "some", "value": null },
+    { "text": "", "value": null },
+    { "text": null, "value": null }
+  ],
+  "evaluate": [
+    {
+      "name": "below target is low, and the shortfall keeps the target's wording",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "target": "12 eggs",
+        "reorderPoint": null
+      },
+      "stockStatus": "low",
+      "shortfall": "8 eggs"
+    },
+    {
+      "name": "a missing stock mode counts",
+      "item": {
+        "stockMode": null,
+        "stockLevel": null,
+        "quantity": "4",
+        "target": "12 eggs",
+        "reorderPoint": null
+      },
+      "stockStatus": "low",
+      "shortfall": "8 eggs"
+    },
+    {
+      "name": "a unit on hand is ignored",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4 eggs",
+        "target": "12 eggs",
+        "reorderPoint": null
+      },
+      "stockStatus": "low",
+      "shortfall": "8 eggs"
+    },
+    {
+      "name": "at the target is in stock",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "12",
+        "target": "12",
+        "reorderPoint": null
+      },
+      "stockStatus": "ok",
+      "shortfall": null
+    },
+    {
+      "name": "above the target is in stock",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "20",
+        "target": "12",
+        "reorderPoint": null
+      },
+      "stockStatus": "ok",
+      "shortfall": null
+    },
+    {
+      "name": "at the reorder point is low",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "target": "12 eggs",
+        "reorderPoint": "4"
+      },
+      "stockStatus": "low",
+      "shortfall": "8 eggs"
+    },
+    {
+      "name": "above the reorder point is in stock, though below the target",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "5",
+        "target": "12 eggs",
+        "reorderPoint": "4"
+      },
+      "stockStatus": "ok",
+      "shortfall": null
+    },
+    {
+      "name": "a unit in the reorder point is ignored",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "target": "12 eggs",
+        "reorderPoint": "4 eggs"
+      },
+      "stockStatus": "low",
+      "shortfall": "8 eggs"
+    },
+    {
+      "name": "a reorder point at or above the target leaves nothing to buy",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "13",
+        "target": "12",
+        "reorderPoint": "15"
+      },
+      "stockStatus": "low",
+      "shortfall": null
+    },
+    {
+      "name": "an empty on hand is 0, which is out",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "",
+        "target": "12 eggs",
+        "reorderPoint": null
+      },
+      "stockStatus": "out",
+      "shortfall": "12 eggs"
+    },
+    {
+      "name": "no on hand at all is 0",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": null,
+        "target": "2 blocks",
+        "reorderPoint": null
+      },
+      "stockStatus": "out",
+      "shortfall": "2 blocks"
+    },
+    {
+      "name": "0 on hand is out",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "0 blocks",
+        "target": "2 blocks",
+        "reorderPoint": null
+      },
+      "stockStatus": "out",
+      "shortfall": "2 blocks"
+    },
+    {
+      "name": "on hand without a number is not counted",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "some",
+        "target": "12",
+        "reorderPoint": null
+      },
+      "stockStatus": "uncounted",
+      "shortfall": null
+    },
+    {
+      "name": "no target is not counted",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "target": null,
+        "reorderPoint": null
+      },
+      "stockStatus": "uncounted",
+      "shortfall": null
+    },
+    {
+      "name": "a target without a number is not counted",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "target": "a dozen",
+        "reorderPoint": "2"
+      },
+      "stockStatus": "uncounted",
+      "shortfall": null
+    },
+    {
+      "name": "decimals subtract without float noise",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "1.1",
+        "target": "1.2 kg",
+        "reorderPoint": null
+      },
+      "stockStatus": "low",
+      "shortfall": "0.1 kg"
+    },
+    {
+      "name": "a fractional shortfall",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4.5 L",
+        "target": "6 L",
+        "reorderPoint": null
+      },
+      "stockStatus": "low",
+      "shortfall": "1.5 L"
+    },
+    {
+      "name": "mismatched units compare by number alone",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "500 g",
+        "target": "1 kg",
+        "reorderPoint": null
+      },
+      "stockStatus": "ok",
+      "shortfall": null
+    },
+    {
+      "name": "the shortfall drops the target's surrounding space",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "target": "  12 eggs ",
+        "reorderPoint": null
+      },
+      "stockStatus": "low",
+      "shortfall": "8 eggs"
+    },
+    {
+      "name": "a full level item is in stock",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "full",
+        "quantity": "1 kg bag",
+        "target": null,
+        "reorderPoint": null
+      },
+      "stockStatus": "ok",
+      "shortfall": null
+    },
+    {
+      "name": "a level item with no level is full",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": null,
+        "quantity": "1 kg bag",
+        "target": null,
+        "reorderPoint": null
+      },
+      "stockStatus": "ok",
+      "shortfall": null
+    },
+    {
+      "name": "a low level item asks for its restock amount",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "low",
+        "quantity": "1 kg bag",
+        "target": "12",
+        "reorderPoint": "4"
+      },
+      "stockStatus": "low",
+      "shortfall": "1 kg bag"
+    },
+    {
+      "name": "an out level item without a restock amount asks for nothing in particular",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "out",
+        "quantity": "",
+        "target": null,
+        "reorderPoint": null
+      },
+      "stockStatus": "out",
+      "shortfall": null
+    }
+  ],
+  "startingOnHand": [
+    {
+      "name": "an empty on hand starts full",
+      "quantity": null,
+      "target": "12 eggs",
+      "result": "12 eggs"
+    },
+    { "name": "a blank on hand starts full", "quantity": " ", "target": "12", "result": "12" },
+    { "name": "a given on hand is kept", "quantity": "3", "target": "12", "result": "3" },
+    {
+      "name": "a target without a number fills nothing",
+      "quantity": null,
+      "target": "a dozen",
+      "result": null
+    },
+    { "name": "no target fills nothing", "quantity": null, "target": null, "result": null }
+  ],
+  "convert": [
+    {
+      "name": "count to level: low restocks the shortfall",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "target": "12 eggs",
+        "reorderPoint": null
+      },
+      "toMode": "level",
+      "result": {
+        "stockMode": "level",
+        "stockLevel": "low",
+        "quantity": "8 eggs",
+        "target": "12 eggs"
+      }
+    },
+    {
+      "name": "count to level: out restocks the shortfall",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "0",
+        "target": "2 blocks",
+        "reorderPoint": null
+      },
+      "toMode": "level",
+      "result": {
+        "stockMode": "level",
+        "stockLevel": "out",
+        "quantity": "2 blocks",
+        "target": "2 blocks"
+      }
+    },
+    {
+      "name": "count to level: in stock restocks the target",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "12",
+        "target": "12 eggs",
+        "reorderPoint": null
+      },
+      "toMode": "level",
+      "result": {
+        "stockMode": "level",
+        "stockLevel": "full",
+        "quantity": "12 eggs",
+        "target": "12 eggs"
+      }
+    },
+    {
+      "name": "count to level: not counted means some, so full",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "some",
+        "target": "1 kg",
+        "reorderPoint": null
+      },
+      "toMode": "level",
+      "result": { "stockMode": "level", "stockLevel": "full", "quantity": "1 kg", "target": "1 kg" }
+    },
+    {
+      "name": "level to count: full fills on hand to the restock amount",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "full",
+        "quantity": "1 kg bag",
+        "target": "500 g",
+        "reorderPoint": null
+      },
+      "toMode": "count",
+      "result": {
+        "stockMode": "count",
+        "stockLevel": "full",
+        "quantity": "1 kg bag",
+        "target": "1 kg bag"
+      }
+    },
+    {
+      "name": "level to count: out empties on hand, keeping the unit",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "out",
+        "quantity": "6 eggs",
+        "target": null,
+        "reorderPoint": null
+      },
+      "toMode": "count",
+      "result": {
+        "stockMode": "count",
+        "stockLevel": "out",
+        "quantity": "0 eggs",
+        "target": "6 eggs"
+      }
+    },
+    {
+      "name": "level to count: low fills on hand to the reorder point",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "low",
+        "quantity": "12 eggs",
+        "target": "12 eggs",
+        "reorderPoint": "4"
+      },
+      "toMode": "count",
+      "result": {
+        "stockMode": "count",
+        "stockLevel": "low",
+        "quantity": "4 eggs",
+        "target": "12 eggs"
+      }
+    },
+    {
+      "name": "level to count: low without a reorder point leaves on hand blank",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "low",
+        "quantity": "12 eggs",
+        "target": null,
+        "reorderPoint": null
+      },
+      "toMode": "count",
+      "result": { "stockMode": "count", "stockLevel": "low", "quantity": null, "target": "12 eggs" }
+    },
+    {
+      "name": "level to count: without a restock amount the stored target stays",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "full",
+        "quantity": "",
+        "target": "10",
+        "reorderPoint": null
+      },
+      "toMode": "count",
+      "result": { "stockMode": "count", "stockLevel": "full", "quantity": "10", "target": "10" }
+    },
+    {
+      "name": "the same mode changes nothing",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "target": "12",
+        "reorderPoint": null
+      },
+      "toMode": "count",
+      "result": { "stockMode": "count", "stockLevel": null, "quantity": "4", "target": "12" }
+    }
+  ]
+}

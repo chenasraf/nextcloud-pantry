@@ -8,6 +8,8 @@ import type {
   ItemPrice,
   ListKind,
   ListSuggestions,
+  StockLevel,
+  StockMode,
   TemplateLists,
 } from './types'
 
@@ -60,6 +62,11 @@ export interface ItemInput {
    * field id plus the typed value.
    */
   customFields?: ItemCustomFieldValue[]
+  /** Inventory items only. An empty target or reorder point clears it. */
+  stockMode?: StockMode
+  stockLevel?: StockLevel
+  target?: string
+  reorderPoint?: string
 }
 
 /** The API route each kind's lists are served from. `lists` is the checklist resource. */

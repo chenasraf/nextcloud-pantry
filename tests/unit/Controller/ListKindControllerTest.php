@@ -209,6 +209,60 @@ class ListKindControllerTest extends TestCase {
 		}
 	}
 
+	public function testInventoryItemsCarryTheirStockStatus(): void {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Eggs');
+		$item->setQuantity('4');
+		$item->setTarget('12 eggs');
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->lists->method('listItems')->willReturn([$item]);
+
+		$data = $this->makeController(InventoryController::class)->indexInventoryItems(1, 7)->getData();
+
+		$this->assertSame('count', $data[0]['stockMode']);
+		$this->assertSame('full', $data[0]['stockLevel']);
+		$this->assertSame('12 eggs', $data[0]['target']);
+		$this->assertNull($data[0]['reorderPoint']);
+		$this->assertSame('low', $data[0]['stockStatus']);
+		$this->assertSame('8 eggs', $data[0]['shortfall']);
+	}
+
+	public function testChecklistAndTemplateItemsHaveNoStock(): void {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Eggs');
+		$item->setTarget('12');
+		$this->lists->method('listItems')->willReturn([$item]);
+
+		$this->lists->method('getList')->willReturnCallback(fn (int $id, bool $deleted, string $kind): Checklist => $this->makeList($kind));
+		$lists = $this->makeController(ChecklistController::class)->indexItems(1, 7)->getData();
+		$templates = $this->makeController(TemplateController::class)->indexTemplateItems(1, 7)->getData();
+
+		foreach ([$lists[0], $templates[0]] as $data) {
+			foreach (['stockMode', 'stockLevel', 'target', 'reorderPoint', 'stockStatus', 'shortfall'] as $key) {
+				$this->assertArrayNotHasKey($key, $data);
+			}
+		}
+	}
+
+	public function testInventoryItemUpdatesPassOnlyTheStockFieldsSent(): void {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Eggs');
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->lists->method('getItem')->willReturn($item);
+		$this->lists->expects($this->once())->method('updateItem')
+			->with(3, ['stockMode' => 'level', 'target' => ''])
+			->willReturn($item);
+
+		$this->makeController(InventoryController::class)
+			->updateInventoryItem(1, 7, 3, stockMode: 'level', target: '');
+	}
+
 	public function testInventoryItemsAreAddedWithoutRecurrence(): void {
 		$item = new ChecklistItem();
 		$item->setId(3);
