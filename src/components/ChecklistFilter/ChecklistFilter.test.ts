@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import { NO_CATEGORY_ID, NO_STORE_ID } from './constants'
+import { STOCK_NEEDS_RESTOCK } from './stockFilter'
 import type { Category, ChecklistItem, Store } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
@@ -13,6 +14,9 @@ vi.mock('@icons/LabelOutline.vue', () => createIconMock('LabelOutlineIcon'))
 vi.mock('@icons/TagOutline.vue', () => createIconMock('TagOutlineIcon'))
 vi.mock('@icons/StorefrontOutline.vue', () => createIconMock('StorefrontOutlineIcon'))
 vi.mock('@icons/FormatListChecks.vue', () => createIconMock('FormatListChecksIcon'))
+vi.mock('@icons/PackageVariant.vue', () => createIconMock('PackageVariantIcon'))
+vi.mock('@icons/AlertCircleOutline.vue', () => createIconMock('AlertCircleOutlineIcon'))
+vi.mock('@icons/CheckCircleOutline.vue', () => createIconMock('CheckCircleOutlineIcon'))
 vi.mock('@icons/MenuDown.vue', () => createIconMock('MenuDownIcon'))
 vi.mock('@icons/CheckAll.vue', () => createIconMock('CheckAllIcon'))
 vi.mock('@icons/CheckboxMarked.vue', () => createIconMock('CheckboxMarkedIcon'))
@@ -213,5 +217,31 @@ describe('ChecklistFilter — store filter', () => {
     const wrapper = mountFilter({ selectedStoreIds: [supermarket.id] })
     await optionByText(wrapper, 'Supermarket')!.trigger('click')
     expect(wrapper.emitted('update:selectedStoreIds')?.[0]).toEqual([[]])
+  })
+})
+
+describe('ChecklistFilter — stock filter', () => {
+  const inventoryItems = [
+    makeItem({ id: 1, stockStatus: 'low' }),
+    makeItem({ id: 2, stockStatus: 'out' }),
+    makeItem({ id: 3, stockStatus: 'ok' }),
+    makeItem({ id: 4, stockStatus: 'uncounted' }),
+  ]
+
+  it('is offered only for inventory items', () => {
+    expect(optionByText(mountFilter(), 'Needs restock')).toBeUndefined()
+    expect(optionByText(mountFilter({ items: inventoryItems }), 'Needs restock')).toBeDefined()
+  })
+
+  it('counts what needs restocking and what is in stock', () => {
+    const wrapper = mountFilter({ items: inventoryItems })
+    expect(optionByText(wrapper, 'Needs restock')!.find('.nc-counter').text()).toBe('2')
+    expect(optionByText(wrapper, 'In stock')!.find('.nc-counter').text()).toBe('2')
+  })
+
+  it('emits the picked row', async () => {
+    const wrapper = mountFilter({ items: inventoryItems })
+    await optionByText(wrapper, 'Needs restock')!.trigger('click')
+    expect(wrapper.emitted('update:selectedStock')?.[0]).toEqual([[STOCK_NEEDS_RESTOCK]])
   })
 })

@@ -71,6 +71,14 @@ final class StockRules {
 	}
 
 	/**
+	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string} $item
+	 */
+	public static function needsRestock(array $item): bool {
+		$status = self::evaluate($item)['stockStatus'];
+		return $status === self::STATUS_LOW || $status === self::STATUS_OUT;
+	}
+
+	/**
 	 * @return array{stockStatus: 'ok'|'low'|'out'|'uncounted', shortfall: ?string}
 	 */
 	private static function evaluateLevel(?string $level, ?string $restock): array {
@@ -115,6 +123,63 @@ final class StockRules {
 			return $onHand;
 		}
 		return trim((string)$target);
+	}
+
+	/**
+	 * The stock of an item arriving on an inventory from a list that does not
+	 * count stock: a checklist (its quantity) or a template (its quantity,
+	 * plus the mode, target and reorder point it keeps). It starts full. A
+	 * count item's target is the template's target, else the quantity, and it
+	 * has exactly that on hand; a level item is full and restocks the quantity,
+	 * else the target.
+	 *
+	 * @return array{stockMode: 'count'|'level', stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string}
+	 */
+	public static function startFull(string $mode, ?string $quantity, ?string $target, ?string $reorderPoint): array {
+		$quantity = self::nullIfBlank($quantity);
+		$target = self::nullIfBlank($target);
+		if ($mode === self::MODE_LEVEL) {
+			return [
+				'stockMode' => self::MODE_LEVEL,
+				'stockLevel' => self::LEVEL_FULL,
+				'quantity' => $quantity ?? $target,
+				'target' => $target,
+				'reorderPoint' => self::nullIfBlank($reorderPoint),
+			];
+		}
+		$target ??= $quantity;
+		return [
+			'stockMode' => self::MODE_COUNT,
+			'stockLevel' => null,
+			'quantity' => $target,
+			'target' => $target,
+			'reorderPoint' => self::nullIfBlank($reorderPoint),
+		];
+	}
+
+	/**
+	 * The quantity a checklist row asks for when an inventory item lands on a
+	 * checklist: the shortfall when it needs restocking, else the full amount
+	 * ({@see fullAmount()}).
+	 *
+	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string} $item
+	 */
+	public static function checklistQuantity(array $item): ?string {
+		$result = self::evaluate($item);
+		if (($result['stockStatus'] === self::STATUS_LOW || $result['stockStatus'] === self::STATUS_OUT) && $result['shortfall'] !== null) {
+			return $result['shortfall'];
+		}
+		return self::fullAmount($item);
+	}
+
+	/**
+	 * What restocks an inventory item from empty: a count item's target, a
+	 * level item's restock amount.
+	 *
+	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string} $item
+	 */
+	public static function fullAmount(array $item): ?string {
+		return self::nullIfBlank($item['stockMode'] === self::MODE_LEVEL ? $item['quantity'] : $item['target']);
 	}
 
 	/**

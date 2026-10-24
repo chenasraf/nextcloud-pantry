@@ -33,6 +33,8 @@ use OCA\Pantry\Db\LabelMapper;
  *   starts unchecked, and fills what the template left empty from the
  *   target's item defaults, as if it had been added by hand. The target list
  *   can switch that filling off, and the member's own preference wins over it.
+ * - On an inventory the copy starts full, in the template item's stock mode
+ *   ({@see StockRules::startFull()}); on a checklist it keeps the quantity.
  * - Categories, labels and custom fields scoped to the template are matched
  *   by name on the target, or copied onto it when it has none, so later
  *   copies match those instead of piling up.
@@ -132,9 +134,24 @@ class TemplateCopyService {
 			'labelIds' => $this->targetLabels($this->itemLabelMapper->findLabelIdsForItem($sourceId), $houseId, $templateId, $targetId, $now),
 			'prices' => $this->itemPriceMapper->findForItem($sourceId),
 			'customFields' => $this->targetFieldValues($this->fieldValueMapper->findForItem($sourceId), $houseId, $templateId, $targetId, $now),
+			'stockMode' => $source->getStockMode(),
+			'target' => $source->getTarget(),
+			'reorderPoint' => $source->getReorderPoint(),
 		];
 		if ($this->fills($target, $addedBy)) {
 			$data = $this->fillFromDefaults($data, $target, $houseId);
+		}
+		if ($target->getKind() === Checklist::KIND_INVENTORY) {
+			$text = static function (string $key) use ($data): ?string {
+				$value = $data[$key] ?? null;
+				return is_string($value) ? $value : null;
+			};
+			$data = array_merge($data, StockRules::startFull(
+				$text('stockMode') ?? $this->lists->defaultStockMode($target),
+				$text('quantity'),
+				$text('target'),
+				$text('reorderPoint'),
+			));
 		}
 
 		$imageFileId = $source->getImageFileId();
@@ -359,6 +376,14 @@ class TemplateCopyService {
 		if ($data['quantity'] === null || trim((string)$data['quantity']) === '') {
 			$quantity = $prefill($defaults[ItemDefaults::KEY_QUANTITY]);
 			$data['quantity'] = is_string($quantity) && $quantity !== '' ? $quantity : null;
+		}
+		if ($target->getKind() === Checklist::KIND_INVENTORY) {
+			foreach ([ItemDefaults::KEY_TARGET, ItemDefaults::KEY_REORDER_POINT] as $key) {
+				if ($data[$key] === null || trim((string)$data[$key]) === '') {
+					$value = $prefill($defaults[$key]);
+					$data[$key] = is_string($value) && $value !== '' ? $value : null;
+				}
+			}
 		}
 
 		if ($target->keepsRecurrence()) {

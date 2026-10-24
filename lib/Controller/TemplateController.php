@@ -42,7 +42,7 @@ final class TemplateController extends ListKindOCSController {
 	}
 
 	protected function shapeList(array $data): array {
-		return array_diff_key($data, array_flip(self::CHECKLIST_LIST_FIELDS));
+		return $this->withoutStockDefaults(array_diff_key($data, array_flip(self::CHECKLIST_LIST_FIELDS)));
 	}
 
 	protected function shapeItem(array $data): array {
@@ -483,6 +483,9 @@ final class TemplateController extends ListKindOCSController {
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}> $prices Optional prices. A null store id is the store-less (default) price; at most one per store and one store-less.
 	 * @param list<int> $labelIds Optional label ids to attach (must belong to the same house).
 	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}> $customFields Optional custom-field values. Each field must belong to the house and apply to this template; at most one value per field.
+	 * @param 'count'|'level'|null $stockMode How the item is stocked when drawn into an inventory; the inventory's default when omitted.
+	 * @param string|null $target The target an inventory count item starts with.
+	 * @param string|null $reorderPoint The reorder point an inventory count item starts with.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryTemplateItem, array{}>
 	 *
@@ -507,6 +510,9 @@ final class TemplateController extends ListKindOCSController {
 		array $prices = [],
 		array $labelIds = [],
 		array $customFields = [],
+		?string $stockMode = null,
+		?string $target = null,
+		?string $reorderPoint = null,
 	): DataResponse {
 		return $this->doAddItem($houseId, $listId, [
 			'name' => $name,
@@ -522,6 +528,9 @@ final class TemplateController extends ListKindOCSController {
 			'prices' => $prices,
 			'labelIds' => $labelIds,
 			'customFields' => $customFields,
+			'stockMode' => $stockMode,
+			'target' => $target,
+			'reorderPoint' => $reorderPoint,
 		]);
 	}
 
@@ -546,6 +555,9 @@ final class TemplateController extends ListKindOCSController {
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}>|null $prices New full set of prices (empty array clears all; null leaves them unchanged). A null store id is the store-less price; at most one per store and one store-less.
 	 * @param list<int>|null $labelIds New set of label ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}>|null $customFields New full set of custom-field values (empty array clears all; null leaves them unchanged). Each field must belong to the house and apply to the item's template.
+	 * @param 'count'|'level'|''|null $stockMode New stock mode for drawing into an inventory (empty string clears, leaving it to the inventory's default).
+	 * @param string|null $target New target (empty string clears).
+	 * @param string|null $reorderPoint New reorder point (empty string clears).
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryTemplateItem, array{}>
 	 *
@@ -573,8 +585,16 @@ final class TemplateController extends ListKindOCSController {
 		?array $prices = null,
 		?array $labelIds = null,
 		?array $customFields = null,
+		?string $stockMode = null,
+		?string $target = null,
+		?string $reorderPoint = null,
 	): DataResponse {
-		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields);
+		$stock = array_filter([
+			'stockMode' => $stockMode,
+			'target' => $target,
+			'reorderPoint' => $reorderPoint,
+		], static fn (?string $v): bool => $v !== null);
+		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock);
 	}
 
 	/**

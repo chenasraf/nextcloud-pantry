@@ -23,6 +23,7 @@ use OCA\Pantry\Service\FieldDefinitionService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
+use OCA\Pantry\Service\ItemDefaults;
 use OCA\Pantry\Service\ItemDefaultsService;
 use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
@@ -78,8 +79,12 @@ abstract class ListKindOCSController extends OCSController {
 		parent::__construct($appName, $request);
 	}
 
-	/** Item fields a template item does not have: the done state, the reopen schedule and stock. */
-	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', ...self::STOCK_ITEM_FIELDS];
+	/**
+	 * Item fields a template item does not have: the done state, the reopen
+	 * schedule and the stock level. A template keeps how its items are stocked,
+	 * never how much is on hand.
+	 */
+	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'stockLevel'];
 
 	/** Item fields only an inventory item has. */
 	protected const STOCK_ITEM_FIELDS = ['stockMode', 'stockLevel', 'target', 'reorderPoint'];
@@ -96,6 +101,18 @@ abstract class ListKindOCSController extends OCSController {
 	 * @return array<array-key, mixed>
 	 */
 	protected function shapeList(array $data): array {
+		return $this->withoutStockDefaults($data);
+	}
+
+	/**
+	 * @param array<array-key, mixed> $data
+	 * @return array<array-key, mixed>
+	 */
+	protected function withoutStockDefaults(array $data): array {
+		$defaults = $data['itemDefaults'] ?? null;
+		if (is_array($defaults)) {
+			$data['itemDefaults'] = array_diff_key($defaults, array_flip(ItemDefaults::STOCK_KEYS));
+		}
 		return $data;
 	}
 
@@ -347,7 +364,7 @@ abstract class ListKindOCSController extends OCSController {
 				throw new ForbiddenException('Only list editors can change whether drawn items fill from item defaults');
 			}
 			$list = $this->lists->setItemDefaults($list, $this->itemDefaults->merge($list, $patch, $canEdit), $fillFromDefaults);
-			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $shareMap));
+			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $shareMap, $this->listExtras([$list])[(int)$list->getId()] ?? []));
 		});
 	}
 
@@ -1079,7 +1096,8 @@ abstract class ListKindOCSController extends OCSController {
 	private function listsJson(array $lists, int $houseId, string $uid): array {
 		$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
 		$shareMap = $this->shares->userShareMap($houseId, $uid);
-		return array_values(array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $lists));
+		$extras = $this->listExtras($lists);
+		return array_values(array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap, $extras[(int)$l->getId()] ?? []), $lists));
 	}
 
 	/**
@@ -1087,7 +1105,19 @@ abstract class ListKindOCSController extends OCSController {
 	 */
 	private function oneListJson(Checklist $list, int $houseId, string $uid): array {
 		$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-		return $this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid));
+		$extras = $this->listExtras([$list])[(int)$list->getId()] ?? [];
+		return $this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid), $extras);
+	}
+
+	/**
+	 * Fields this kind adds to each serialized list, computed for the whole
+	 * batch at once.
+	 *
+	 * @param Checklist[] $lists
+	 * @return array<int, array<string, mixed>> List id → its extra fields.
+	 */
+	protected function listExtras(array $lists): array {
+		return [];
 	}
 
 	/**
@@ -1099,15 +1129,16 @@ abstract class ListKindOCSController extends OCSController {
 	 *   while role-based access keeps the granular per-action capabilities.
 	 *
 	 * @param array<string, array<int, string>> $shareMap
+	 * @param array<string, mixed> $extras
 	 * @return array<string, mixed>
 	 */
-	private function listJson(Checklist $list, bool $canEditLists, int $houseId, string $uid, array $shareMap): array {
+	private function listJson(Checklist $list, bool $canEditLists, int $houseId, string $uid, array $shareMap, array $extras = []): array {
 		$roleAccess = $this->permissions->hasRoleAccessToList($houseId, $uid, (int)$list->getId());
 		return $this->shapeList(array_merge($list->jsonSerialize(), [
 			'itemDefaults' => $this->itemDefaults->forList($list),
 			'canEdit' => $this->canEditList($list, $canEditLists, $roleAccess, $shareMap),
 			'sharedOnly' => !$roleAccess,
-		]));
+		], $extras));
 	}
 
 	/**

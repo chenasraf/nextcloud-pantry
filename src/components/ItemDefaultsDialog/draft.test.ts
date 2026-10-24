@@ -27,6 +27,9 @@ describe('item defaults draft', () => {
       category: 'none',
       labels: 'none',
       quantity: 'none',
+      stockMode: 'none',
+      target: 'none',
+      reorderPoint: 'none',
     })
     expect(draft.storeIds).toEqual([2])
     expect(draft.categoryId).toBeNull()
@@ -98,6 +101,28 @@ describe('item defaults draft', () => {
         { fieldId: 7, mode: 'none' },
         { fieldId: 9, mode: 'fixed', value: { offsetDays: 3 } },
       ],
+    })
+  })
+
+  it('sends stock keys only for a list that has them', () => {
+    const draft = draftFromDefaults(defaults())
+    draft.modes.target = 'fixed'
+    draft.target = '12'
+    expect(patchFromDraft(defaults(), draft)).toEqual({})
+
+    const inventory = defaults({
+      stockMode: { mode: 'none' },
+      target: { mode: 'none' },
+      reorderPoint: { mode: 'none' },
+    })
+    const inventoryDraft = draftFromDefaults(inventory)
+    inventoryDraft.modes.stockMode = 'fixed'
+    inventoryDraft.stockMode = 'level'
+    inventoryDraft.modes.target = 'fixed'
+    inventoryDraft.target = ' 12 eggs '
+    expect(patchFromDraft(inventory, inventoryDraft)).toEqual({
+      stockMode: { mode: 'fixed', value: 'level' },
+      target: { mode: 'fixed', value: '12 eggs' },
     })
   })
 })

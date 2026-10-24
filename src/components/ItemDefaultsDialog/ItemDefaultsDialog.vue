@@ -90,6 +90,58 @@
         </template>
       </ItemFieldChips>
 
+      <section v-if="hasStock" class="item-defaults__stock" data-testid="item-defaults-stock">
+        <h3 class="item-defaults__stock-title">{{ strings.stock }}</h3>
+        <div v-for="key in STOCK_KEYS" :key="key" class="item-defaults__field">
+          <span class="item-defaults__field-name">{{ stockKeyLabel(key) }}</span>
+          <div class="item-defaults__modebar">
+            <NcCheckboxRadioSwitch
+              v-for="opt in modeOptions(key)"
+              :key="opt.value"
+              :model-value="draft.modes[key]"
+              :value="opt.value"
+              :name="`item-defaults-${key}`"
+              type="radio"
+              button-variant
+              button-variant-grouped="horizontal"
+              :disabled="!list.canEdit"
+              @update:model-value="draft.modes[key] = opt.value"
+            >
+              {{ opt.label }}
+            </NcCheckboxRadioSwitch>
+          </div>
+          <template v-if="draft.modes[key] === 'fixed'">
+            <div v-if="key === 'stockMode'" class="item-defaults__modebar">
+              <NcCheckboxRadioSwitch
+                v-for="opt in stockModeOptions"
+                :key="opt.value"
+                v-model="draft.stockMode"
+                :value="opt.value"
+                name="item-defaults-stock-mode-value"
+                type="radio"
+                button-variant
+                button-variant-grouped="horizontal"
+                :disabled="!list.canEdit"
+              >
+                {{ opt.label }}
+              </NcCheckboxRadioSwitch>
+            </div>
+            <NcTextField
+              v-else
+              v-model="draft[key]"
+              :label="stockKeyLabel(key)"
+              :placeholder="key === 'target' ? strings.targetPlaceholder : undefined"
+              :inputmode="key === 'reorderPoint' ? 'decimal' : undefined"
+              :maxlength="64"
+              :disabled="!list.canEdit"
+            />
+          </template>
+          <p v-else class="item-defaults__hint">
+            {{ stockModeHint(key, draft.modes[key]) }}
+          </p>
+        </div>
+      </section>
+
       <div v-if="drawnInto" class="item-defaults__fill">
         <NcCheckboxRadioSwitch
           v-model="fillFromDefaults"
@@ -119,6 +171,7 @@ import { showError } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 import ItemFieldChips, { type ItemFieldSection } from '@/components/ItemFieldChips'
 import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { useCustomFields } from '@/composables/useCustomFields'
@@ -130,6 +183,7 @@ import type {
   ItemCustomFieldValue,
   ItemDefaultKey,
   ItemDefaultMode,
+  StockMode,
 } from '@/api/types'
 import { draftFromDefaults, patchFromDraft, type FieldDraft, type ItemDefaultsDraft } from './draft'
 
@@ -218,14 +272,50 @@ interface ModeOption {
   label: string
 }
 
+/** Amounts are too specific to one item to be worth carrying over. */
+const FIXED_ONLY_KEYS: ItemDefaultKey[] = ['quantity', 'target', 'reorderPoint']
+
 function modeOptions(key: ItemDefaultKey): ModeOption[] {
   const options: ModeOption[] = [
     { value: 'none', label: strings.modeNone },
     { value: 'fixed', label: strings.modeFixed },
   ]
-  // A quantity is too specific to one item to be worth carrying over.
-  if (key !== 'quantity') options.push({ value: 'remember', label: strings.modeRemember })
+  if (!FIXED_ONLY_KEYS.includes(key)) {
+    options.push({ value: 'remember', label: strings.modeRemember })
+  }
   return options
+}
+
+// ----- Stock (inventories) -----
+
+const STOCK_KEYS = ['stockMode', 'target', 'reorderPoint'] as const
+type StockKey = (typeof STOCK_KEYS)[number]
+
+const hasStock = computed(() => props.list?.itemDefaults?.stockMode !== undefined)
+
+const stockModeOptions: { value: StockMode; label: string }[] = [
+  // TRANSLATORS: Option for how an inventory item's stock is tracked: by counting how many there are.
+  { value: 'count', label: t('pantry', 'Count') },
+  // TRANSLATORS: Option for how an inventory item's stock is tracked: as Full, Low or Out.
+  { value: 'level', label: t('pantry', 'Level') },
+]
+
+function stockKeyLabel(key: StockKey): string {
+  switch (key) {
+    case 'stockMode':
+      return strings.stockMode
+    case 'target':
+      return strings.target
+    default:
+      return strings.reorderPoint
+  }
+}
+
+function stockModeHint(key: StockKey, mode: ItemDefaultMode): string {
+  if (key === 'stockMode') {
+    return mode === 'remember' ? strings.rememberHint : strings.stockModeNoneHint
+  }
+  return strings.noneHint
 }
 
 function modeHint(mode: ItemDefaultMode): string {
@@ -364,6 +454,16 @@ const strings = {
   cancel: t('pantry', 'Cancel'),
   save: t('pantry', 'Save'),
   saveFailed: t('pantry', 'Could not save the item defaults'),
+  // TRANSLATORS: Heading of the item defaults for an inventory item's stock: mode, target and reorder point.
+  stock: t('pantry', 'Stock'),
+  // TRANSLATORS: Label of the item default for whether an inventory item is counted or tracked as a level.
+  stockMode: t('pantry', 'Stock mode'),
+  // TRANSLATORS: Noun, the amount an inventory item is restocked up to, e.g. "12 eggs".
+  target: t('pantry', 'Target'),
+  // TRANSLATORS: Noun, the amount at or below which an inventory item counts as low.
+  reorderPoint: t('pantry', 'Reorder point'),
+  targetPlaceholder: t('pantry', 'e.g. 12 eggs'),
+  stockModeNoneHint: t('pantry', 'New items are counted.'),
   fillLabel: t('pantry', 'Fill template items from these defaults'),
   fillHint: t(
     'pantry',
@@ -404,9 +504,22 @@ const strings = {
     color: var(--color-text-maxcontrast);
   }
 
-  &__fill {
+  &__fill,
+  &__stock {
     padding-top: 0.75rem;
     border-top: 1px solid var(--color-border);
+  }
+
+  &__stock {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__stock-title {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 600;
   }
 
   &__fields {

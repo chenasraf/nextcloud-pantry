@@ -421,6 +421,38 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * The stock columns of every live item on the given lists, grouped by list.
+	 *
+	 * @param int[] $listIds
+	 * @return array<int, list<array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string}>>
+	 */
+	public function findStockByLists(array $listIds): array {
+		$listIds = array_values(array_unique(array_map('intval', $listIds)));
+		if ($listIds === []) {
+			return [];
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('list_id', 'stock_mode', 'stock_level', 'quantity', 'target', 'reorder_point')
+			->from($this->getTableName())
+			->where($qb->expr()->in('list_id', $qb->createNamedParameter($listIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
+		$result = $qb->executeQuery();
+		$out = [];
+		while ($row = $result->fetch()) {
+			$out[(int)$row['list_id']][] = [
+				'stockMode' => $row['stock_mode'] !== null ? (string)$row['stock_mode'] : null,
+				'stockLevel' => $row['stock_level'] !== null ? (string)$row['stock_level'] : null,
+				'quantity' => $row['quantity'] !== null ? (string)$row['quantity'] : null,
+				'target' => $row['target'] !== null ? (string)$row['target'] : null,
+				'reorderPoint' => $row['reorder_point'] !== null ? (string)$row['reorder_point'] : null,
+			];
+		}
+		$result->closeCursor();
+		return $out;
+	}
+
+	/**
 	 * How many live items in the list are still unchecked. Archived and
 	 * soft-deleted items are not open — they have left the list's working set.
 	 */

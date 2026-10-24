@@ -55,6 +55,15 @@ final class InventoryController extends ListKindOCSController {
 		return $data;
 	}
 
+	protected function listExtras(array $lists): array {
+		$counts = $this->lists->countNeedsRestock(array_map(static fn (Checklist $l): int => (int)$l->getId(), $lists));
+		$extras = [];
+		foreach ($lists as $list) {
+			$extras[(int)$list->getId()] = ['needsRestock' => $counts[(int)$list->getId()] ?? 0];
+		}
+		return $extras;
+	}
+
 	protected function shapeItem(array $data): array {
 		$data = array_diff_key($data, array_flip(self::CHECKLIST_ITEM_FIELDS));
 		$text = static function (string $key) use ($data): ?string {
@@ -229,6 +238,9 @@ final class InventoryController extends ListKindOCSController {
 	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $quantity Quantity new items start with.
 	 * @param list<array{fieldId: int, mode: 'none'|'fixed'|'remember', value?: array{valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null}|null}>|null $fields Custom-field values new items start with.
 	 * @param bool|null $fillFromDefaults Whether a template item drawn here fills the fields it leaves empty from these defaults. Needs edit rights.
+	 * @param array{mode: 'none'|'fixed'|'remember', value?: 'count'|'level'|null}|null $stockMode Stock mode new items start in. Items arriving from a checklist or template start in it too.
+	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $target Target new count items start with.
+	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $reorderPoint Reorder point new count items start with.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventory, array{}>
 	 *
@@ -237,12 +249,15 @@ final class InventoryController extends ListKindOCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/inventories/{listId}/item-defaults', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canAddItems'])]
-	public function updateInventoryItemDefaults(int $houseId, int $listId, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null, ?bool $fillFromDefaults = null): DataResponse {
+	public function updateInventoryItemDefaults(int $houseId, int $listId, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null, ?bool $fillFromDefaults = null, ?array $stockMode = null, ?array $target = null, ?array $reorderPoint = null): DataResponse {
 		$patch = array_filter([
 			'stores' => $stores,
 			'category' => $category,
 			'labels' => $labels,
 			'quantity' => $quantity,
+			'stockMode' => $stockMode,
+			'target' => $target,
+			'reorderPoint' => $reorderPoint,
 			'fields' => $fields,
 		], static fn (?array $entry): bool => $entry !== null);
 		return $this->doUpdateItemDefaults($houseId, $listId, $patch, $fillFromDefaults);

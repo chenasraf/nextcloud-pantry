@@ -548,22 +548,198 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertNull($item->getTarget());
 	}
 
-	#[\PHPUnit\Framework\Attributes\DataProvider('kindPairs')]
-	public function testCopyItemCarriesStockOnlyBetweenInventories(string $fromKind, string $toKind): void {
-		$source = $this->crossingItem($fromKind, $toKind);
-		$source->setStockMode(StockRules::MODE_LEVEL);
-		$source->setStockLevel(StockRules::LEVEL_LOW);
-		$source->setTarget('12');
-		$source->setReorderPoint('4');
+	/**
+	 * Copy item 42 from a list of `$fromKind` onto list 20 of `$toKind`.
+	 */
+	private function copyAcross(string $fromKind, string $toKind, ChecklistItem $source, ?string $targetDefaults = null): ChecklistItem {
+		$source->setListId(10);
+		$source->setId(42);
+		$this->itemMapper->method('findById')->willReturn($source);
+		$this->listMapper->method('findById')->willReturnCallback(function (int $id) use ($fromKind, $toKind, $targetDefaults): Checklist {
+			$list = $this->makeList($id === 20 ? $toKind : $fromKind);
+			if ($id === 20) {
+				$list->setItemDefaults($targetDefaults);
+			}
+			return $list;
+		});
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+		return $this->svc->copyItem(42, 20, 'bob', null, null);
+	}
+
+	private function stockItem(string $mode, ?string $level, ?string $quantity, ?string $target, ?string $reorderPoint = null): ChecklistItem {
+		$item = $this->makeItem(['quantity' => $quantity]);
+		$item->setStockMode($mode);
+		$item->setStockLevel($level);
+		$item->setTarget($target);
+		$item->setReorderPoint($reorderPoint);
+		return $item;
+	}
+
+	public function testAnItemCopiedBetweenInventoriesKeepsItsStock(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_INVENTORY, $this->stockItem('level', 'low', '1 kg', '12', '4'));
+
+		$this->assertSame(StockRules::MODE_LEVEL, $copy->getStockMode());
+		$this->assertSame(StockRules::LEVEL_LOW, $copy->getStockLevel());
+		$this->assertSame('1 kg', $copy->getQuantity());
+		$this->assertSame('12', $copy->getTarget());
+		$this->assertSame('4', $copy->getReorderPoint());
+	}
+
+	public function testAChecklistItemLandsOnAnInventoryFull(): void {
+		$copy = $this->copyAcross(Checklist::KIND_CHECKLIST, Checklist::KIND_INVENTORY, $this->makeItem(['quantity' => '6 eggs']));
+
+		$this->assertSame(StockRules::MODE_COUNT, $copy->getStockMode());
+		$this->assertSame('6 eggs', $copy->getTarget());
+		$this->assertSame('6 eggs', $copy->getQuantity(), 'on hand starts at the target');
+		$this->assertNull($copy->getReorderPoint());
+	}
+
+	public function testAChecklistItemLandsInTheInventorysDefaultStockMode(): void {
+		$defaults = ItemDefaults::encode(['stockMode' => ['mode' => 'fixed', 'value' => 'level']]);
+		$copy = $this->copyAcross(Checklist::KIND_CHECKLIST, Checklist::KIND_INVENTORY, $this->makeItem(['quantity' => '1 kg bag']), $defaults);
+
+		$this->assertSame(StockRules::MODE_LEVEL, $copy->getStockMode());
+		$this->assertSame(StockRules::LEVEL_FULL, $copy->getStockLevel());
+		$this->assertSame('1 kg bag', $copy->getQuantity(), 'the quantity is the restock amount');
+	}
+
+	public function testATemplateItemLandsOnAnInventoryFullInItsOwnMode(): void {
+		$defaults = ItemDefaults::encode(['stockMode' => ['mode' => 'fixed', 'value' => 'level']]);
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_INVENTORY, $this->stockItem('count', null, '6', '12 eggs', '4'), $defaults);
+
+		$this->assertSame(StockRules::MODE_COUNT, $copy->getStockMode(), "the template's mode wins over the inventory default");
+		$this->assertSame('12 eggs', $copy->getTarget(), 'the target wins over the quantity');
+		$this->assertSame('12 eggs', $copy->getQuantity());
+		$this->assertSame('4', $copy->getReorderPoint());
+	}
+
+	public function testATemplateLevelItemRestocksItsQuantity(): void {
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_INVENTORY, $this->stockItem('level', null, '1 kg bag', '2'));
+
+		$this->assertSame(StockRules::LEVEL_FULL, $copy->getStockLevel());
+		$this->assertSame('1 kg bag', $copy->getQuantity());
+		$this->assertSame('2', $copy->getTarget(), 'the target stays stored for a switch to count');
+	}
+
+	public function testALowInventoryItemAsksAChecklistForTheShortfall(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_CHECKLIST, $this->stockItem('count', null, '4', '12 eggs'));
+
+		$this->assertSame('8 eggs', $copy->getQuantity());
+		$this->assertNull($copy->getStockMode());
+		$this->assertNull($copy->getTarget());
+	}
+
+	public function testAStockedInventoryItemAsksAChecklistForTheTarget(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_CHECKLIST, $this->stockItem('count', null, '12', '12 eggs', '4'));
+
+		$this->assertSame('12 eggs', $copy->getQuantity());
+		$this->assertNull($copy->getReorderPoint());
+	}
+
+	public function testALevelInventoryItemAsksAChecklistForTheRestockAmount(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_CHECKLIST, $this->stockItem('level', 'full', '1 kg bag', null));
+
+		$this->assertSame('1 kg bag', $copy->getQuantity());
+		$this->assertNull($copy->getStockLevel());
+	}
+
+	public function testAnInventoryItemKeepsHowItIsStockedOnATemplate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_TEMPLATE, $this->stockItem('count', null, '4', '12 eggs', '3'));
+
+		$this->assertSame(StockRules::MODE_COUNT, $copy->getStockMode());
+		$this->assertSame('12 eggs', $copy->getTarget());
+		$this->assertSame('3', $copy->getReorderPoint());
+		$this->assertSame('12 eggs', $copy->getQuantity(), 'a template holds the full amount, not what was on hand');
+		$this->assertNull($copy->getStockLevel(), 'a template never holds a level');
+	}
+
+	public function testATemplateItemKeepsItsStockOnATemplate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_TEMPLATE, $this->stockItem('level', null, '2', '12'));
+
+		$this->assertSame(StockRules::MODE_LEVEL, $copy->getStockMode());
+		$this->assertSame('12', $copy->getTarget());
+		$this->assertSame('2', $copy->getQuantity());
+	}
+
+	public function testATemplateItemLeavesItsStockOffAChecklist(): void {
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_CHECKLIST, $this->stockItem('count', null, '6', '12'));
+
+		$this->assertSame('6', $copy->getQuantity());
+		$this->assertNull($copy->getStockMode());
+		$this->assertNull($copy->getTarget());
+	}
+
+	public function testMovingALowInventoryItemToAChecklistAsksForTheShortfall(): void {
+		$item = $this->stockItem('level', 'out', '2 blocks', null);
+		$item->setListId(10);
+		$item->setId(42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturnCallback(
+			fn (int $id): Checklist => $this->makeList($id === 20 ? Checklist::KIND_CHECKLIST : Checklist::KIND_INVENTORY),
+		);
+
+		$this->svc->moveItems([42], 20);
+
+		$this->assertSame('2 blocks', $item->getQuantity());
+		$this->assertNull($item->getStockMode());
+		$this->assertNull($item->getStockLevel());
+	}
+
+	public function testATemplateItemStoresHowItIsStockedButNoLevel(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
 		$this->itemMapper->method('insert')->willReturnArgument(0);
 
-		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+		$item = $this->svc->addItem(1, ['name' => 'Eggs', 'quantity' => '6', 'stockMode' => 'count', 'stockLevel' => 'low', 'target' => '12', 'reorderPoint' => '4']);
 
-		$keeps = $fromKind === Checklist::KIND_INVENTORY && $toKind === Checklist::KIND_INVENTORY;
-		$this->assertSame($keeps ? StockRules::MODE_LEVEL : null, $copy->getStockMode());
-		$this->assertSame($keeps ? StockRules::LEVEL_LOW : null, $copy->getStockLevel());
-		$this->assertSame($keeps ? '12' : null, $copy->getTarget());
-		$this->assertSame($keeps ? '4' : null, $copy->getReorderPoint());
+		$this->assertSame(StockRules::MODE_COUNT, $item->getStockMode());
+		$this->assertNull($item->getStockLevel());
+		$this->assertSame('12', $item->getTarget());
+		$this->assertSame('4', $item->getReorderPoint());
+		$this->assertSame('6', $item->getQuantity(), 'a template item is never filled to its target');
+	}
+
+	public function testSwitchingATemplateItemsModeConvertsNothing(): void {
+		$item = $this->withId($this->makeItem(['quantity' => '6']), 9);
+		$item->setStockMode(StockRules::MODE_COUNT);
+		$item->setTarget('12');
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+
+		$this->svc->updateItem(9, ['stockMode' => 'level', 'stockLevel' => 'low']);
+
+		$this->assertSame(StockRules::MODE_LEVEL, $item->getStockMode());
+		$this->assertNull($item->getStockLevel());
+		$this->assertSame('6', $item->getQuantity());
+		$this->assertSame('12', $item->getTarget());
+	}
+
+	public function testATemplateItemsModeClearsWithAnEmptyString(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setStockMode(StockRules::MODE_LEVEL);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+
+		$this->svc->updateItem(9, ['stockMode' => '']);
+
+		$this->assertNull($item->getStockMode());
+	}
+
+	public function testCountNeedsRestockCountsLowAndOutItemsPerList(): void {
+		$item = static fn (?string $mode, ?string $level, ?string $quantity, ?string $target): array => [
+			'stockMode' => $mode, 'stockLevel' => $level, 'quantity' => $quantity, 'target' => $target, 'reorderPoint' => null,
+		];
+		$this->itemMapper->method('findStockByLists')->with([3, 4, 5])->willReturn([
+			3 => [
+				$item('count', null, '2', '12'),
+				$item('count', null, '0', '12'),
+				$item('count', null, '12', '12'),
+				$item('count', null, 'some', '12'),
+				$item('level', 'low', null, null),
+			],
+			4 => [$item('level', 'full', null, null)],
+		]);
+
+		$this->assertSame([3 => 3], $this->svc->countNeedsRestock([3, 4, 5]));
 	}
 
 	public function testCopyItemBetweenTemplatesKeepsTheRuleWithoutASchedule(): void {
@@ -1802,6 +1978,20 @@ class ChecklistServiceTest extends TestCase {
 		$defaults = ItemDefaults::decode($copy->getItemDefaults());
 		$this->assertArrayNotHasKey('recurrence', $defaults);
 		$this->assertSame(['mode' => 'remember', 'value' => [2]], $defaults['stores']);
+	}
+
+	public function testDuplicateListAsAChecklistDropsTheStockDefaults(): void {
+		$source = $this->makeSourceList();
+		$source->setKind(Checklist::KIND_INVENTORY);
+		$source->setItemDefaults(ItemDefaults::encode([
+			'stockMode' => ['mode' => 'remember', 'value' => 'level'],
+			'target' => ['mode' => 'fixed', 'value' => '12'],
+			'quantity' => ['mode' => 'fixed', 'value' => '2'],
+		]));
+
+		[$copy] = $this->captureDuplicate($source, [], true, Checklist::KIND_CHECKLIST);
+
+		$this->assertSame(['quantity' => ['mode' => 'fixed', 'value' => '2']], ItemDefaults::decode($copy->getItemDefaults()));
 	}
 
 	public function testDuplicateListAsATemplateKeepsTheRecurrenceDefault(): void {

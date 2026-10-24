@@ -164,6 +164,7 @@
         v-model:selected-store-ids="filterStoreIds"
         v-model:selected-label-ids="filterLabelIds"
         v-model:selected-list-ids="filterListIds"
+        v-model:selected-stock="filterStock"
         v-model:price-filter="filterPrice"
         :items="items"
         :categories="categories.items.value"
@@ -854,8 +855,12 @@ import {
   NO_CATEGORY_ID,
   NO_STORE_ID,
   NO_LABEL_ID,
+  matchesStockFilter,
+  stockFilterFromQuery,
+  stockFilterQuery,
   type PriceFilterValue,
 } from '@/components/ChecklistFilter'
+import { needsRestock } from '@/utils/stock'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
@@ -1401,6 +1406,30 @@ const filterStoreIds = ref<number[]>([])
 const filterLabelIds = ref<number[]>([])
 const filterPrice = ref<PriceFilterValue>({ min: null, max: null, currency: null })
 
+// The stock filter lives in the URL too, so a link (the stock summary
+// notification's) can open an inventory on what needs restocking.
+const filterStock = ref<number[]>(
+  props.kind === 'inventory' ? stockFilterFromQuery(route.query.stock) : [],
+)
+
+watch(
+  () => route.query.stock,
+  (value) => {
+    if (props.kind !== 'inventory') return
+    if (stockFilterQuery(filterStock.value) === (Array.isArray(value) ? value[0] : value)) return
+    filterStock.value = stockFilterFromQuery(value)
+  },
+)
+
+watch(filterStock, (selected) => {
+  const stock = stockFilterQuery(selected)
+  if (stock === route.query.stock) return
+  const query = { ...route.query }
+  if (stock) query.stock = stock
+  else delete query.stock
+  void router.replace({ query })
+})
+
 // ----- Last-used currency (per house) -----
 // Preselected for new/edited prices, and updated whenever an item is saved with
 // a currency so the next one defaults to it.
@@ -1515,6 +1544,10 @@ const filteredItems = computed(() => {
       if (attached.length === 0) return wantUnlabeled
       return attached.some((id) => labelIds.includes(id))
     })
+  }
+  if (filterStock.value.length > 0) {
+    const stock = filterStock.value
+    result = result.filter((i) => matchesStockFilter(i, stock))
   }
   const price = filterPrice.value
   if (price.min != null || price.max != null || price.currency != null) {
@@ -2442,6 +2475,20 @@ const {
   replace: replaceList,
   duplicate: duplicateList,
 } = useChecklists(houseIdNum.value, props.kind)
+
+// The navigation counts what needs restocking on each inventory; follow this
+// page's own stock edits rather than waiting for the next list reload.
+watch(
+  () =>
+    props.kind === 'inventory' && !isMeta.value && !loading.value
+      ? items.value.filter((i) => i.listId === listIdNum.value && needsRestock(i)).length
+      : null,
+  (count) => {
+    if (count === null) return
+    const list = allLists.value.find((l) => l.id === listIdNum.value)
+    if (list && list.needsRestock !== count) replaceList({ ...list, needsRestock: count })
+  },
+)
 
 // Drop any persisted list-filter ids that no longer correspond to an existing
 // list (e.g. a list was deleted) once the catalog has loaded.

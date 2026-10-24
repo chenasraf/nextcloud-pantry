@@ -139,7 +139,12 @@ export function convertStock(item: StockInput, toMode: StockMode): StockConversi
 }
 
 /** The fields of an inventory item the rules read. */
-export function stockInput(item: { quantity: string | null } & Partial<ItemStock>): StockInput {
+export function stockInput(
+  item: { quantity: string | null; stockMode?: StockMode | null } & Omit<
+    Partial<ItemStock>,
+    'stockMode'
+  >,
+): StockInput {
   return {
     stockMode: item.stockMode ?? null,
     stockLevel: item.stockLevel ?? null,
@@ -147,6 +152,11 @@ export function stockInput(item: { quantity: string | null } & Partial<ItemStock
     target: item.target ?? null,
     reorderPoint: item.reorderPoint ?? null,
   }
+}
+
+/** Whether an inventory item is low or out, by the status the server last sent. */
+export function needsRestock(item: { stockStatus?: StockStatus }): boolean {
+  return item.stockStatus === 'low' || item.stockStatus === 'out'
 }
 
 export type StockTone = 'success' | 'warning' | 'error' | 'muted'

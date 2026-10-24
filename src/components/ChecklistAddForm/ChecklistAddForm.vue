@@ -82,6 +82,9 @@
         v-model:image="pendingImage"
         v-model:open-section="openSection"
         v-model:type-picked="userPickedType"
+        v-model:stock-mode="stockMode"
+        v-model:target="stockTarget"
+        v-model:reorder-point="stockReorderPoint"
         :house-id="houseId"
         :list-id="effectiveListId"
         :hide-image="multiple"
@@ -185,6 +188,7 @@ import type {
   ItemDefaultsPatch,
   ListSuggestions,
   RecurrenceKind,
+  StockMode,
 } from '@/api/types'
 
 const props = withDefaults(
@@ -234,6 +238,7 @@ const emit = defineEmits<{
 }>()
 
 const { kind } = useListKind()
+const isInventory = computed(() => kind.value === 'inventory')
 
 const name = ref('')
 const multiple = ref(false)
@@ -248,6 +253,9 @@ const targetListId = ref<number | null>(null)
 const rrule = ref<string | null>(null)
 const repeatFromCompletion = ref(false)
 const deleteOnDone = ref(false)
+const stockMode = ref<StockMode>('count')
+const stockTarget = ref('')
+const stockReorderPoint = ref('')
 const openSection = ref<ItemFieldSection | null>(null)
 const barcode = ref<string | null>(null)
 const barcodeDialogOpen = ref(false)
@@ -307,6 +315,9 @@ function applyDefaults(defaults: ItemDefaults | null = activeDefaults.value) {
   rrule.value = start.recurrence.rrule
   repeatFromCompletion.value = start.recurrence.repeatFromCompletion
   customFieldValues.value = start.customFieldValues
+  stockMode.value = start.stock.stockMode
+  stockTarget.value = start.stock.target
+  stockReorderPoint.value = start.stock.reorderPoint
 }
 
 // Keyed on the configured defaults rather than the defaults object: a
@@ -596,6 +607,13 @@ function submitAdd() {
         // A barcode identifies a single product, so only the first line of a
         // bulk add carries it.
         barcode: index === 0 ? barcode.value : null,
+        ...(isInventory.value
+          ? {
+              stockMode: stockMode.value,
+              target: stockTarget.value.trim(),
+              reorderPoint: stockReorderPoint.value.trim(),
+            }
+          : {}),
       },
       index === 0 ? pendingImage.value : null,
       targetListId.value,
@@ -614,6 +632,7 @@ function submitAdd() {
         repeatFromCompletion: usedFromCompletion,
       },
       customFieldValues: customFieldValues.value,
+      stockMode: isInventory.value ? stockMode.value : undefined,
     },
     fieldDefs.value,
   )

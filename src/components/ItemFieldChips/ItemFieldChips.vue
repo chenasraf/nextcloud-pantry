@@ -82,6 +82,79 @@
           />
         </div>
 
+        <div v-else-if="openSection === 'stock'" class="item-field-chips__stock">
+          <div class="item-field-chips__stock-modes">
+            <NcCheckboxRadioSwitch
+              v-for="opt in stockModeOptions"
+              :key="opt.value"
+              v-model="stockMode"
+              :value="opt.value"
+              name="item-field-chips-stock-mode"
+              type="radio"
+              button-variant
+              button-variant-grouped="horizontal"
+            >
+              {{ opt.label }}
+            </NcCheckboxRadioSwitch>
+          </div>
+          <div v-if="stockMode === 'count'" class="item-field-chips__stock-fields">
+            <div class="item-field-chips__stock-field item-field-chips__stock-field--on-hand">
+              <span class="item-field-chips__stock-label" aria-hidden="true">{{
+                strings.onHand
+              }}</span>
+              <QuantityInput
+                v-model="quantity"
+                :label="strings.onHand"
+                :placeholder="strings.onHandPlaceholder"
+                :min="0"
+                :show-hint="false"
+              />
+            </div>
+            <div class="item-field-chips__stock-field">
+              <span class="item-field-chips__stock-label" aria-hidden="true">{{
+                strings.target
+              }}</span>
+              <NcTextField
+                v-model="target"
+                :label="strings.target"
+                label-outside
+                :placeholder="strings.targetPlaceholder"
+                :maxlength="64"
+                autocomplete="off"
+              />
+            </div>
+            <div class="item-field-chips__stock-field item-field-chips__stock-field--narrow">
+              <span class="item-field-chips__stock-label" aria-hidden="true">{{
+                strings.reorderPoint
+              }}</span>
+              <NcTextField
+                v-model="reorderPoint"
+                :label="strings.reorderPoint"
+                label-outside
+                :placeholder="strings.reorderPointPlaceholder"
+                :maxlength="64"
+                inputmode="decimal"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+          <div v-else class="item-field-chips__stock-fields">
+            <div class="item-field-chips__stock-field">
+              <span class="item-field-chips__stock-label" aria-hidden="true">{{
+                strings.restock
+              }}</span>
+              <NcTextField
+                v-model="quantity"
+                :label="strings.restock"
+                label-outside
+                :placeholder="strings.restockPlaceholder"
+                :maxlength="64"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+        </div>
+
         <div v-else-if="openSection === 'image'" class="item-field-chips__image">
           <div v-if="imageUrl" class="item-field-chips__image-row">
             <img class="item-field-chips__image-preview" :src="imageUrl" :alt="strings.imageAlt" />
@@ -121,6 +194,9 @@
 import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
 import { t, n } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
+import PackageVariantIcon from '@icons/PackageVariant.vue'
 import FormatListBulletedIcon from '@icons/FormatListBulleted.vue'
 import TextIcon from '@icons/Text.vue'
 import PinIcon from '@icons/Pin.vue'
@@ -151,8 +227,9 @@ import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { entityIcon } from '@/utils/entityIcons'
 import { DEFAULT_RRULE, formatRrule } from '@/utils/rrule'
 import { formatPrice, storelessPrice } from '@/utils/price'
+import { firstNumber, formatNumber } from '@/utils/stock'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
-import type { ItemPrice, ItemCustomFieldValue, ItemDefaultMode } from '@/api/types'
+import type { ItemPrice, ItemCustomFieldValue, ItemDefaultMode, StockMode } from '@/api/types'
 import { ITEM_ONLY_SECTIONS, type ItemFieldChipsMode, type ItemFieldSection } from './types'
 
 const props = withDefaults(
@@ -196,6 +273,9 @@ const deleteOnDone = defineModel<boolean>('deleteOnDone', { default: false })
 const rrule = defineModel<string | null>('rrule', { default: null })
 const repeatFromCompletion = defineModel<boolean>('repeatFromCompletion', { default: false })
 const image = defineModel<File | null>('image', { default: null })
+const stockMode = defineModel<StockMode>('stockMode', { default: 'count' })
+const target = defineModel<string>('target', { default: '' })
+const reorderPoint = defineModel<string>('reorderPoint', { default: '' })
 const openSection = defineModel<ItemFieldSection | null>('openSection', { default: null })
 // Whether the item type was picked by hand, so the chip can stay a neutral
 // "Recurrence" until then.
@@ -219,12 +299,18 @@ const hasCustomFields = computed(() =>
   fieldDefs.value.some((f) => f.listId == null || f.listId === props.listId),
 )
 
-const { isChecklist } = useListKind()
+const { kind, isChecklist } = useListKind()
 
 function shows(key: ItemFieldSection): boolean {
   if (props.mode === 'defaults' && ITEM_ONLY_SECTIONS.includes(key)) return false
   // Only checklist items recur.
   if (key === 'type') return isChecklist.value
+  // On an inventory item the quantity is the amount on hand (or the restock
+  // amount), so it is edited with the rest of the stock, as in the item dialog.
+  // The item defaults dialog edits stock in a block of its own.
+  const composesStock = kind.value === 'inventory' && !editsDefaults.value
+  if (key === 'stock') return composesStock
+  if (key === 'quantity') return !composesStock
   if (key === 'image') return !props.hideImage
   if (key === 'customfields') return hasCustomFields.value
   return true
@@ -306,6 +392,21 @@ function onImagePicked(e: Event) {
 }
 
 // ----- Chips -----
+
+/** The stock chip's summary, the way the row shows it; null while nothing is set. */
+const stockChipText = computed<string | null>(() => {
+  const amount = quantity.value.trim()
+  if (stockMode.value === 'level') {
+    return amount ? strings.levelChip(amount) : strings.level
+  }
+  const targetText = target.value.trim()
+  const onHand = amount === '' ? null : firstNumber(amount)
+  if (targetText && onHand !== null && firstNumber(targetText) !== null) {
+    return strings.amountChip(formatNumber(onHand), targetText)
+  }
+  if (targetText) return strings.targetChip(targetText)
+  return amount || null
+})
 
 const selectedCategory = computed(() =>
   categoryId.value != null
@@ -419,6 +520,13 @@ const chips = computed<Chip[]>(() => {
   }
 
   list.push({
+    key: 'stock',
+    text: stockChipText.value ?? strings.stock,
+    icon: PackageVariantIcon,
+    filled: stockChipText.value !== null,
+  })
+
+  list.push({
     key: 'image',
     text: image.value ? strings.imageAttached : strings.image,
     icon: ImageIcon,
@@ -438,6 +546,7 @@ function baseLabel(key: ItemFieldSection): string {
     customfields: strings.customFields,
     description: strings.description,
     type: strings.itemType,
+    stock: strings.stock,
     image: strings.image,
   }
   return labels[key]
@@ -493,9 +602,37 @@ const strings = {
   replaceImage: t('pantry', 'Replace image'),
   removeImage: t('pantry', 'Remove image'),
   imageAlt: t('pantry', 'Selected image'),
+  // TRANSLATORS: Noun, chip label for how the inventory item's stock is tracked.
+  stock: t('pantry', 'Stock'),
+  // TRANSLATORS: Stock mode, button. The item's stock is a number on hand.
+  count: t('pantry', 'Count'),
+  // TRANSLATORS: Stock mode, button. The item's stock is Full, Low or Out.
+  level: t('pantry', 'Level'),
+  // TRANSLATORS: Chip on a new inventory item tracked as Full / Low / Out. {amount} is what restocks it, e.g. "Level · 1 kg bag".
+  levelChip: (amount: string) => t('pantry', 'Level · {amount}', { amount }),
+  // TRANSLATORS: Amount chip on an inventory item, on hand over target, e.g. "4 / 12 eggs".
+  amountChip: (onHand: string, target: string) =>
+    t('pantry', '{onHand} / {target}', { onHand, target }),
+  onHand: t('pantry', 'On hand'),
+  onHandPlaceholder: t('pantry', 'Full when empty'),
+  restock: t('pantry', 'Restock amount'),
+  restockPlaceholder: t('pantry', 'e.g. 1 kg bag'),
+  // TRANSLATORS: Chip on a new inventory item. {target} is the amount to keep on hand, e.g. "Target: 12 eggs".
+  targetChip: (target: string) => t('pantry', 'Target: {target}', { target }),
+  // TRANSLATORS: Noun, the amount of an item to buy back up to.
+  target: t('pantry', 'Target'),
+  targetPlaceholder: t('pantry', 'e.g. 12 eggs'),
+  // TRANSLATORS: Noun, the amount at or below which an item counts as low.
+  reorderPoint: t('pantry', 'Reorder point'),
+  reorderPointPlaceholder: t('pantry', 'e.g. 4'),
   // TRANSLATORS: Chip label for a list default that reuses the last item's value. {field} is the field name, e.g. "Stores: last used".
   lastUsed: (field: string) => t('pantry', '{field}: last used', { field }),
 }
+
+const stockModeOptions: { value: StockMode; label: string }[] = [
+  { value: 'count', label: strings.count },
+  { value: 'level', label: strings.level },
+]
 </script>
 
 <style scoped lang="scss">
@@ -522,10 +659,44 @@ const strings = {
     background: var(--color-background-hover);
   }
 
-  &__type {
+  &__type,
+  &__stock {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  &__stock-modes {
+    display: flex;
+  }
+
+  // Mirrors the Stock card in the item dialog.
+  &__stock-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+  }
+
+  &__stock-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 10rem;
+    min-width: 0;
+
+    &--on-hand {
+      flex-basis: 14rem;
+    }
+
+    &--narrow {
+      flex: 0 1 8rem;
+    }
+  }
+
+  &__stock-label {
+    font-size: 0.85rem;
+    color: var(--color-text-maxcontrast);
   }
 
   &__image-row {

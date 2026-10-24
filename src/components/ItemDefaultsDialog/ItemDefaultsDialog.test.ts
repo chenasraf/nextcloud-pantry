@@ -54,6 +54,16 @@ vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
   },
 }))
 
+vi.mock('@nextcloud/vue/components/NcTextField', () => ({
+  default: {
+    name: 'NcTextField',
+    template:
+      '<input class="nc-text-field" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ['modelValue', 'label', 'placeholder', 'inputmode', 'maxlength', 'disabled'],
+    emits: ['update:modelValue'],
+  },
+}))
+
 import ItemDefaultsDialog from './ItemDefaultsDialog.vue'
 
 const defaults: ItemDefaults = {
@@ -144,5 +154,45 @@ describe('ItemDefaultsDialog fill switch', () => {
     const wrapper = mountDialog(makeList({ canEdit: false }))
 
     expect(fillSwitch(wrapper).attributes('disabled')).toBeDefined()
+  })
+})
+
+describe('ItemDefaultsDialog stock', () => {
+  beforeEach(() => {
+    updateItemDefaults.mockReset()
+  })
+
+  const stockDefaults: ItemDefaults = {
+    ...defaults,
+    stockMode: { mode: 'none' },
+    target: { mode: 'fixed', value: '12' },
+    reorderPoint: { mode: 'none' },
+  }
+
+  it('is offered only on an inventory', () => {
+    expect(
+      mountDialog(makeList({ itemDefaults: stockDefaults }))
+        .find('[data-testid="item-defaults-stock"]')
+        .exists(),
+    ).toBe(true)
+    expect(
+      mountDialog(makeList({ kind: 'checklist', itemDefaults: defaults }))
+        .find('[data-testid="item-defaults-stock"]')
+        .exists(),
+    ).toBe(false)
+  })
+
+  it('saves a changed target', async () => {
+    const list = makeList({ itemDefaults: stockDefaults })
+    updateItemDefaults.mockResolvedValue(list)
+    const wrapper = mountDialog(list)
+
+    await wrapper.find('.nc-text-field').setValue('24 eggs')
+    await saveButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(updateItemDefaults).toHaveBeenCalledWith(1, 7, {
+      target: { mode: 'fixed', value: '24 eggs' },
+    })
   })
 })

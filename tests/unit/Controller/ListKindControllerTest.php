@@ -26,6 +26,7 @@ use OCA\Pantry\Service\FieldDefinitionService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
+use OCA\Pantry\Service\ItemDefaults;
 use OCA\Pantry\Service\ItemDefaultsService;
 use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
@@ -229,11 +230,12 @@ class ListKindControllerTest extends TestCase {
 		$this->assertSame('8 eggs', $data[0]['shortfall']);
 	}
 
-	public function testChecklistAndTemplateItemsHaveNoStock(): void {
+	public function testChecklistItemsHaveNoStockAndTemplateItemsNoStockLevel(): void {
 		$item = new ChecklistItem();
 		$item->setId(3);
 		$item->setListId(7);
 		$item->setName('Eggs');
+		$item->setStockMode('count');
 		$item->setTarget('12');
 		$this->lists->method('listItems')->willReturn([$item]);
 
@@ -241,11 +243,43 @@ class ListKindControllerTest extends TestCase {
 		$lists = $this->makeController(ChecklistController::class)->indexItems(1, 7)->getData();
 		$templates = $this->makeController(TemplateController::class)->indexTemplateItems(1, 7)->getData();
 
-		foreach ([$lists[0], $templates[0]] as $data) {
-			foreach (['stockMode', 'stockLevel', 'target', 'reorderPoint', 'stockStatus', 'shortfall'] as $key) {
-				$this->assertArrayNotHasKey($key, $data);
-			}
+		foreach (['stockMode', 'stockLevel', 'target', 'reorderPoint', 'stockStatus', 'shortfall'] as $key) {
+			$this->assertArrayNotHasKey($key, $lists[0]);
 		}
+		$this->assertSame('count', $templates[0]['stockMode']);
+		$this->assertSame('12', $templates[0]['target']);
+		$this->assertArrayHasKey('reorderPoint', $templates[0]);
+		foreach (['stockLevel', 'stockStatus', 'shortfall'] as $key) {
+			$this->assertArrayNotHasKey($key, $templates[0]);
+		}
+	}
+
+	public function testInventoriesCountTheItemsThatNeedRestock(): void {
+		$first = $this->makeList(Checklist::KIND_INVENTORY);
+		$first->setId(7);
+		$second = $this->makeList(Checklist::KIND_INVENTORY);
+		$second->setId(8);
+		$this->lists->method('listForHouse')->willReturn([$first, $second]);
+		$this->lists->method('countNeedsRestock')->with([7, 8])->willReturn([7 => 2]);
+		$this->permissions->method('canAccessList')->willReturn(true);
+
+		$data = $this->makeController(InventoryController::class, ItemDefaults::complete([]))->indexInventories(1)->getData();
+
+		$this->assertSame(2, $data[0]['needsRestock']);
+		$this->assertSame(0, $data[1]['needsRestock']);
+		$this->assertArrayHasKey('stockMode', $data[0]['itemDefaults']);
+	}
+
+	public function testChecklistsAndTemplatesHaveNoStockDefaults(): void {
+		$list = $this->makeList(Checklist::KIND_TEMPLATE);
+		$list->setId(7);
+		$this->lists->method('listForHouse')->willReturn([$list]);
+		$this->permissions->method('canAccessList')->willReturn(true);
+
+		$data = $this->makeController(TemplateController::class, ItemDefaults::complete([]))->indexTemplates(1)->getData();
+
+		$this->assertArrayNotHasKey('stockMode', $data[0]['itemDefaults']);
+		$this->assertArrayNotHasKey('needsRestock', $data[0]);
 	}
 
 	public function testInventoryItemUpdatesPassOnlyTheStockFieldsSent(): void {

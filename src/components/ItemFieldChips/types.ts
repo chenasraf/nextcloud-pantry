@@ -7,6 +7,7 @@ export type ItemFieldSection =
   | 'customfields'
   | 'description'
   | 'type'
+  | 'stock'
   | 'image'
 
 /**

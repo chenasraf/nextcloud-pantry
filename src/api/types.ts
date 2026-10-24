@@ -107,6 +107,12 @@ export interface ItemDefaults {
   category: ItemDefaultEntry<number>
   labels: ItemDefaultEntry<number[]>
   quantity: ItemDefaultEntry<string>
+  /** Inventories only: the stock mode new items start in. */
+  stockMode?: ItemDefaultEntry<StockMode>
+  /** Inventories only: the target new count items start with. Never remembered. */
+  target?: ItemDefaultEntry<string>
+  /** Inventories only: the reorder point new count items start with. Never remembered. */
+  reorderPoint?: ItemDefaultEntry<string>
   fields: ItemDefaultField[]
 }
 
@@ -193,6 +199,8 @@ export interface Checklist {
    * grants access). When true, a viewer share bounds all writes to read-only.
    */
   sharedOnly?: boolean
+  /** Inventories only: how many items are low or out. */
+  needsRestock?: number
 }
 
 export interface Category {
@@ -335,9 +343,12 @@ export interface ItemCustomFieldValue {
  * An item on a list of any kind. Template and inventory items are never checked
  * off: the server leaves out `done`, `doneAt`, `doneBy` and `nextDueAt`.
  * Inventory items have no recurrence either, so `rrule`, `repeatFromCompletion`
- * and `deleteOnDone` are left out on them too; only they carry the stock fields.
+ * and `deleteOnDone` are left out on them too. Inventory items carry every
+ * stock field; a template item carries only `stockMode` (null leaves it to the
+ * inventory it is drawn into), `target` and `reorderPoint`.
  */
-export interface ChecklistItem extends Partial<ItemStock> {
+export interface ChecklistItem extends Omit<Partial<ItemStock>, 'stockMode'> {
+  stockMode?: StockMode | null
   id: number
   listId: number
   name: string

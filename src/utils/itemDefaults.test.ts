@@ -141,6 +141,37 @@ describe('rememberPatch', () => {
     const { recurrence: _, ...inventory } = defaults({ category: { mode: 'remember', value: 1 } })
     expect(rememberPatch(inventory, used, [])).toEqual({ category: { value: 5 } })
   })
+
+  it("remembers an inventory item's stock mode", () => {
+    const inventory = defaults({ stockMode: { mode: 'remember', value: 'count' } })
+    expect(rememberPatch(inventory, { ...used, stockMode: 'level' }, [])).toEqual({
+      stockMode: { value: 'level' },
+    })
+    expect(rememberPatch(inventory, { ...used, stockMode: 'count' }, [])).toEqual({})
+  })
+})
+
+describe('startValues stock', () => {
+  it('starts counted with no target without stock defaults', () => {
+    expect(startValues(defaults(), [], 3).stock).toEqual({
+      stockMode: 'count',
+      target: '',
+      reorderPoint: '',
+    })
+  })
+
+  it('starts from the stock mode, target and reorder point the inventory sets', () => {
+    const start = startValues(
+      defaults({
+        stockMode: { mode: 'remember', value: 'level' },
+        target: { mode: 'fixed', value: '12 eggs' },
+        reorderPoint: { mode: 'none', value: '4' },
+      }),
+      [],
+      3,
+    )
+    expect(start.stock).toEqual({ stockMode: 'level', target: '12 eggs', reorderPoint: '' })
+  })
 })
 
 describe('defaultValueFor', () => {

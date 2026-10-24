@@ -445,6 +445,11 @@ class ChecklistService {
 		if (!$copy->keepsRecurrence()) {
 			unset($sourceDefaults[ItemDefaults::KEY_RECURRENCE]);
 		}
+		if ($kind !== Checklist::KIND_INVENTORY) {
+			foreach (ItemDefaults::STOCK_KEYS as $key) {
+				unset($sourceDefaults[$key]);
+			}
+		}
 		if ($sourceDefaults !== []) {
 			$copy->setItemDefaults(ItemDefaults::encode(ItemDefaults::remap($sourceDefaults, $maps)));
 			$this->listMapper->update($copy);
@@ -610,6 +615,24 @@ class ChecklistService {
 		return $this->itemMapper->findDeletedByList($listId);
 	}
 
+	/**
+	 * How many live items on each list need restocking. Lists with none are
+	 * left out.
+	 *
+	 * @param int[] $listIds
+	 * @return array<int, int>
+	 */
+	public function countNeedsRestock(array $listIds): array {
+		$counts = [];
+		foreach ($this->itemMapper->findStockByLists($listIds) as $listId => $items) {
+			$count = count(array_filter($items, StockRules::needsRestock(...)));
+			if ($count > 0) {
+				$counts[$listId] = $count;
+			}
+		}
+		return $counts;
+	}
+
 	public function getItem(int $itemId, bool $includeDeleted = false): ChecklistItem {
 		try {
 			return $this->itemMapper->findById($itemId, $includeDeleted);
@@ -668,6 +691,8 @@ class ChecklistService {
 			if ($item->getStockMode() === StockRules::MODE_COUNT) {
 				$item->setQuantity(StockRules::startingOnHand($item->getQuantity(), $item->getTarget()));
 			}
+		} elseif ($list->getKind() === Checklist::KIND_TEMPLATE) {
+			$this->applyTemplateStock($item, array_intersect_key($data, array_flip(['stockMode', 'target', 'reorderPoint'])));
 		}
 		if (isset($data['sortOrder'])) {
 			$item->setSortOrder((int)$data['sortOrder']);
@@ -747,7 +772,12 @@ class ChecklistService {
 		}
 		$stock = array_intersect_key($patch, array_flip(['stockMode', 'stockLevel', 'target', 'reorderPoint']));
 		if ($stock !== []) {
-			$this->applyStock($item, $stock, array_key_exists('quantity', $patch));
+			if ($this->getList($item->getListId(), includeDeleted: true)->getKind() === Checklist::KIND_TEMPLATE) {
+				unset($stock['stockLevel']);
+				$this->applyTemplateStock($item, $stock);
+			} else {
+				$this->applyStock($item, $stock, array_key_exists('quantity', $patch));
+			}
 		}
 		// If already done and rrule or mode changed, recompute next due.
 		if ($item->getDone() && $item->getRrule() !== null
@@ -1266,7 +1296,7 @@ class ChecklistService {
 	 *   `$keepDone`; anything else lands unchecked.
 	 * - Recurrence and delete-on-done carry into checklists and templates, and
 	 *   drop into inventories. Only a checklist schedules the next occurrence.
-	 * - Stock fields carry only inventory to inventory.
+	 * - Stock follows {@see crossStockInto()}.
 	 *
 	 * `$item` may be `$source` itself (a move). Its created time must be set,
 	 * since a fixed schedule counts from it.
@@ -1274,11 +1304,7 @@ class ChecklistService {
 	private function crossItemInto(ChecklistItem $item, ChecklistItem $source, Checklist $sourceList, Checklist $target, bool $keepDone, int $now): void {
 		$done = $keepDone && $source->getDone() && $sourceList->isChecklist() && $target->isChecklist();
 
-		$keepsStock = $sourceList->getKind() === Checklist::KIND_INVENTORY && $target->getKind() === Checklist::KIND_INVENTORY;
-		$item->setStockMode($keepsStock ? $source->getStockMode() : null);
-		$item->setStockLevel($keepsStock ? $source->getStockLevel() : null);
-		$item->setTarget($keepsStock ? $source->getTarget() : null);
-		$item->setReorderPoint($keepsStock ? $source->getReorderPoint() : null);
+		$this->crossStockInto($item, $source, $sourceList, $target);
 
 		if ($target->keepsRecurrence()) {
 			$item->setRrule($source->getRrule());
@@ -1309,6 +1335,77 @@ class ChecklistService {
 				? $this->computeNextDueAt($item, $now)?->getTimestamp()
 				: null,
 		);
+	}
+
+	/**
+	 * Set an item's quantity and stock fields for the kind it lands on:
+	 *
+	 * - Onto an inventory from another kind, it starts full
+	 *   ({@see StockRules::startFull()}), in the template item's stock mode or
+	 *   else the inventory's default one.
+	 * - Off an inventory onto a checklist, the quantity is what the checklist
+	 *   row should ask for ({@see StockRules::checklistQuantity()}).
+	 * - Off an inventory onto a template, the quantity is the full amount, and
+	 *   the template keeps the mode, target and reorder point.
+	 * - A template keeps its stock fields onto a template; a checklist has none.
+	 *
+	 * `$item` may be `$source` itself, so the source is read before writing.
+	 */
+	private function crossStockInto(ChecklistItem $item, ChecklistItem $source, Checklist $sourceList, Checklist $target): void {
+		$from = $sourceList->getKind();
+		$to = $target->getKind();
+		$stock = [
+			'stockMode' => $source->getStockMode(),
+			'stockLevel' => $source->getStockLevel(),
+			'quantity' => $source->getQuantity(),
+			'target' => $source->getTarget(),
+			'reorderPoint' => $source->getReorderPoint(),
+		];
+		if ($from === Checklist::KIND_INVENTORY) {
+			$stock['stockMode'] = $stock['stockMode'] === StockRules::MODE_LEVEL ? StockRules::MODE_LEVEL : StockRules::MODE_COUNT;
+		}
+
+		if ($to === Checklist::KIND_INVENTORY) {
+			if ($from !== Checklist::KIND_INVENTORY) {
+				$isTemplate = $from === Checklist::KIND_TEMPLATE;
+				$stock = StockRules::startFull(
+					($isTemplate ? $stock['stockMode'] : null) ?? $this->defaultStockMode($target),
+					$stock['quantity'],
+					$isTemplate ? $stock['target'] : null,
+					$isTemplate ? $stock['reorderPoint'] : null,
+				);
+			}
+		} elseif ($to === Checklist::KIND_TEMPLATE) {
+			if ($from === Checklist::KIND_INVENTORY) {
+				$stock['quantity'] = StockRules::fullAmount($stock);
+			} elseif ($from !== Checklist::KIND_TEMPLATE) {
+				$stock['stockMode'] = $stock['target'] = $stock['reorderPoint'] = null;
+			}
+			$stock['stockLevel'] = null;
+		} else {
+			if ($from === Checklist::KIND_INVENTORY) {
+				$stock['quantity'] = StockRules::checklistQuantity($stock);
+			}
+			$stock['stockMode'] = $stock['stockLevel'] = $stock['target'] = $stock['reorderPoint'] = null;
+		}
+
+		$item->setQuantity($stock['quantity']);
+		$item->setStockMode($stock['stockMode']);
+		$item->setStockLevel($stock['stockLevel']);
+		$item->setTarget($stock['target']);
+		$item->setReorderPoint($stock['reorderPoint']);
+	}
+
+	/**
+	 * The stock mode the inventory's item defaults start new items in; count
+	 * when it has none.
+	 *
+	 * @return 'count'|'level'
+	 */
+	public function defaultStockMode(Checklist $inventory): string {
+		$entry = ItemDefaults::decode($inventory->getItemDefaults())[ItemDefaults::KEY_STOCK_MODE] ?? null;
+		$mode = $entry !== null && $entry['mode'] !== ItemDefaults::MODE_NONE ? ($entry['value'] ?? null) : null;
+		return $mode === StockRules::MODE_LEVEL ? StockRules::MODE_LEVEL : StockRules::MODE_COUNT;
 	}
 
 	/**
@@ -1467,6 +1564,34 @@ class ChecklistService {
 			}
 			$item->setStockLevel($level);
 		}
+		$this->applyStockTexts($item, $stock);
+		if ($item->getStockMode() === StockRules::MODE_LEVEL && $item->getStockLevel() === null) {
+			$item->setStockLevel(StockRules::LEVEL_FULL);
+		}
+	}
+
+	/**
+	 * A template keeps how its items are stocked, never how much is on hand, so
+	 * a mode switch converts nothing. An empty mode leaves the choice to the
+	 * inventory the item is drawn into.
+	 *
+	 * @param array<array-key, mixed> $stock
+	 */
+	private function applyTemplateStock(ChecklistItem $item, array $stock): void {
+		if (array_key_exists('stockMode', $stock)) {
+			$mode = $this->strOrNull($stock['stockMode']);
+			if ($mode !== null && !in_array($mode, StockRules::MODES, true)) {
+				throw new \InvalidArgumentException('Stock mode must be count or level');
+			}
+			$item->setStockMode($mode);
+		}
+		$this->applyStockTexts($item, $stock);
+	}
+
+	/**
+	 * @param array<array-key, mixed> $stock
+	 */
+	private function applyStockTexts(ChecklistItem $item, array $stock): void {
 		foreach (['target' => 'setTarget', 'reorderPoint' => 'setReorderPoint'] as $field => $setter) {
 			if (!array_key_exists($field, $stock)) {
 				continue;
@@ -1476,9 +1601,6 @@ class ChecklistService {
 				throw new \InvalidArgumentException('Stock values cannot be longer than 64 characters');
 			}
 			$item->$setter($value);
-		}
-		if ($item->getStockMode() === StockRules::MODE_LEVEL && $item->getStockLevel() === null) {
-			$item->setStockLevel(StockRules::LEVEL_FULL);
 		}
 	}
 

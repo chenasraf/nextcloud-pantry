@@ -87,6 +87,12 @@
                 <component :is="checklistIconComponent(list.icon)" :size="16" />
               </span>
             </template>
+            <template v-if="list.needsRestock" #counter>
+              <NcCounterBubble
+                :count="list.needsRestock"
+                :title="strings.needsRestock(list.needsRestock)"
+              />
+            </template>
           </NcAppNavigationItem>
         </NcAppNavigationItem>
 
@@ -280,9 +286,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { t } from '@nextcloud/l10n'
+import { t, n } from '@nextcloud/l10n'
 import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
 import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
+import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
@@ -476,6 +483,9 @@ const strings = {
   lists: listKindStrings('checklist').title,
   allLists: t('pantry', 'All checklists'),
   inventories: listKindStrings('inventory').title,
+  // TRANSLATORS: Tooltip of the counter on an inventory in the navigation.
+  needsRestock: (count: number) =>
+    n('pantry', '%n item needs restock', '%n items need restock', count),
   templates: listKindStrings('template').title,
   pastTrips: t('pantry', 'Shopping history'),
   // TRANSLATORS: Sidebar item, noun — the pinboard/corkboard view where photos are displayed, not a plank of wood.

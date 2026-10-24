@@ -774,7 +774,8 @@
                     "deletedAt",
                     "archivedAt",
                     "canEdit",
-                    "sharedOnly"
+                    "sharedOnly",
+                    "needsRestock"
                 ],
                 "properties": {
                     "id": {
@@ -842,6 +843,10 @@
                     },
                     "sharedOnly": {
                         "type": "boolean"
+                    },
+                    "needsRestock": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             },
@@ -1024,6 +1029,9 @@
                     "category",
                     "labels",
                     "quantity",
+                    "stockMode",
+                    "target",
+                    "reorderPoint",
                     "fields"
                 ],
                 "properties": {
@@ -1080,6 +1088,60 @@
                         }
                     },
                     "quantity": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "fixed"
+                                ]
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "stockMode": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "$ref": "#/components/schemas/ItemDefaultMode"
+                            },
+                            "value": {
+                                "type": "string",
+                                "enum": [
+                                    "count",
+                                    "level"
+                                ]
+                            }
+                        }
+                    },
+                    "target": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "fixed"
+                                ]
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "reorderPoint": {
                         "type": "object",
                         "required": [
                             "mode"
@@ -3034,7 +3096,10 @@
                     "createdAt",
                     "updatedAt",
                     "deletedAt",
-                    "archivedAt"
+                    "archivedAt",
+                    "stockMode",
+                    "target",
+                    "reorderPoint"
                 ],
                 "properties": {
                     "id": {
@@ -3134,6 +3199,22 @@
                     "archivedAt": {
                         "type": "integer",
                         "format": "int64",
+                        "nullable": true
+                    },
+                    "stockMode": {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "count",
+                            "level"
+                        ]
+                    },
+                    "target": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "reorderPoint": {
+                        "type": "string",
                         "nullable": true
                     }
                 }
@@ -14269,6 +14350,77 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Whether a template item drawn here fills the fields it leaves empty from these defaults. Needs edit rights."
+                                    },
+                                    "stockMode": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Stock mode new items start in. Items arriving from a checklist or template start in it too.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed",
+                                                    "remember"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "string",
+                                                "nullable": true,
+                                                "enum": [
+                                                    "count",
+                                                    "level"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "target": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Target new count items start with.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "string",
+                                                "nullable": true
+                                            }
+                                        }
+                                    },
+                                    "reorderPoint": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Reorder point new count items start with.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "string",
+                                                "nullable": true
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -30031,6 +30183,28 @@
                                                 }
                                             }
                                         }
+                                    },
+                                    "stockMode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "enum": [
+                                            "count",
+                                            "level"
+                                        ],
+                                        "description": "How the item is stocked when drawn into an inventory; the inventory's default when omitted."
+                                    },
+                                    "target": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "The target an inventory count item starts with."
+                                    },
+                                    "reorderPoint": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "The reorder point an inventory count item starts with."
                                     }
                                 }
                             }
@@ -30955,6 +31129,24 @@
                                                 }
                                             }
                                         }
+                                    },
+                                    "stockMode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New stock mode for drawing into an inventory (empty string clears, leaving it to the inventory's default)."
+                                    },
+                                    "target": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New target (empty string clears)."
+                                    },
+                                    "reorderPoint": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New reorder point (empty string clears)."
                                     }
                                 }
                             }

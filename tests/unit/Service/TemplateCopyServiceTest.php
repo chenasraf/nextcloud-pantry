@@ -300,6 +300,71 @@ class TemplateCopyServiceTest extends TestCase {
 		$this->assertArrayNotHasKey('deleteOnDone', $this->added);
 	}
 
+	public function testDrawingIntoAnInventoryCarriesTheStockAndStartsFull(): void {
+		$source = $this->templateItem();
+		$source->setQuantity('6');
+		$source->setStockMode('count');
+		$source->setTarget('12 eggs');
+		$source->setReorderPoint('4');
+		$this->targetHas([]);
+
+		$this->draw($source, Checklist::KIND_INVENTORY);
+
+		$this->assertSame('count', $this->added['stockMode']);
+		$this->assertSame('12 eggs', $this->added['target']);
+		$this->assertSame('12 eggs', $this->added['quantity'], 'on hand starts at the target');
+		$this->assertSame('4', $this->added['reorderPoint']);
+	}
+
+	public function testATemplateItemWithoutAModeTakesTheInventorysDefault(): void {
+		$source = $this->templateItem();
+		$source->setQuantity('1 kg bag');
+		$this->targetHas([]);
+		$this->lists->method('defaultStockMode')->willReturn('level');
+
+		$this->draw($source, Checklist::KIND_INVENTORY);
+
+		$this->assertSame('level', $this->added['stockMode']);
+		$this->assertSame('full', $this->added['stockLevel']);
+		$this->assertSame('1 kg bag', $this->added['quantity']);
+	}
+
+	public function testEmptyStockFieldsFillFromTheInventorysItemDefaults(): void {
+		$source = $this->templateItem();
+		$source->setTarget('12');
+		$this->targetHas([]);
+		$this->itemDefaults = $this->createMock(ItemDefaultsService::class);
+		$this->itemDefaults->method('forList')->willReturn(ItemDefaults::complete([
+			'target' => ['mode' => 'fixed', 'value' => '6'],
+			'reorderPoint' => ['mode' => 'fixed', 'value' => '2'],
+		]));
+		$this->rebuild();
+
+		$this->draw($source, Checklist::KIND_INVENTORY);
+
+		$this->assertSame('12', $this->added['target']);
+		$this->assertSame('2', $this->added['reorderPoint']);
+	}
+
+	public function testDrawingIntoAChecklistUsesTheQuantity(): void {
+		$source = $this->templateItem();
+		$source->setQuantity('6');
+		$source->setStockMode('count');
+		$source->setTarget('12');
+		$this->targetHas([]);
+		$this->itemDefaults = $this->createMock(ItemDefaultsService::class);
+		$this->itemDefaults->method('forList')->willReturn(ItemDefaults::complete([
+			'target' => ['mode' => 'fixed', 'value' => '6'],
+		]));
+		$this->rebuild();
+
+		$this->draw($source);
+
+		$this->assertSame('6', $this->added['quantity']);
+		$this->assertSame('12', $this->added['target'], 'a checklist ignores what it is handed for stock');
+		$this->assertArrayNotHasKey('stockLevel', $this->added);
+	}
+
 	public function testTheTemplateItemsOwnValuesWinOverDefaults(): void {
 		$source = $this->templateItem();
 		$source->setQuantity('6');

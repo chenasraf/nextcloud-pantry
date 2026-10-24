@@ -108,6 +108,41 @@ class ItemDefaultsServiceTest extends TestCase {
 		$this->svc->merge($this->list(), ['quantity' => ['mode' => 'remember', 'value' => '2']], true);
 	}
 
+	public function testAnInventoryCanRememberTheStockModeAndPinTargetAndReorderPoint(): void {
+		$merged = $this->svc->merge($this->list([], Checklist::KIND_INVENTORY), [
+			'stockMode' => ['mode' => 'remember', 'value' => 'level'],
+			'target' => ['mode' => 'fixed', 'value' => ' 12 eggs '],
+			'reorderPoint' => ['mode' => 'fixed', 'value' => '4'],
+		], true);
+
+		$this->assertSame(['mode' => 'remember', 'value' => 'level'], $merged['stockMode']);
+		$this->assertSame(['mode' => 'fixed', 'value' => '12 eggs'], $merged['target']);
+		$this->assertSame(['mode' => 'fixed', 'value' => '4'], $merged['reorderPoint']);
+	}
+
+	/**
+	 * @return array<string, array{0: string}>
+	 */
+	public static function fixedOnlyStockKeys(): array {
+		return ['target' => ['target'], 'reorder point' => ['reorderPoint']];
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('fixedOnlyStockKeys')]
+	public function testTargetAndReorderPointCannotBeRemembered(string $key): void {
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->merge($this->list([], Checklist::KIND_INVENTORY), [$key => ['mode' => 'remember', 'value' => '2']], true);
+	}
+
+	public function testAnUnknownStockModeIsRejected(): void {
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->merge($this->list([], Checklist::KIND_INVENTORY), ['stockMode' => ['mode' => 'fixed', 'value' => 'weight']], true);
+	}
+
+	public function testOnlyAnInventoryHasStockDefaults(): void {
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->merge($this->list([], Checklist::KIND_TEMPLATE), ['stockMode' => ['mode' => 'fixed', 'value' => 'count']], true);
+	}
+
 	public function testAnUnknownKeyIsRejected(): void {
 		$this->expectException(\InvalidArgumentException::class);
 		$this->svc->merge($this->list(), ['price' => ['mode' => 'fixed', 'value' => 3]], true);
@@ -272,10 +307,11 @@ class ItemDefaultsServiceTest extends TestCase {
 	/**
 	 * @param array<string, mixed> $defaults
 	 */
-	private function list(array $defaults = []): Checklist {
+	private function list(array $defaults = [], string $kind = Checklist::KIND_CHECKLIST): Checklist {
 		$list = new Checklist();
 		$list->setId(self::LIST);
 		$list->setHouseId(self::HOUSE);
+		$list->setKind($kind);
 		$list->setItemDefaults(ItemDefaults::encode($defaults));
 		return $list;
 	}

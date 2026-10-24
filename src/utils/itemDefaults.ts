@@ -7,6 +7,7 @@ import type {
   ItemDefaults,
   ItemDefaultsPatch,
   RecurrenceDefaultValue,
+  StockMode,
 } from '@/api/types'
 import { DEFAULT_RRULE } from '@/utils/rrule'
 
@@ -80,6 +81,8 @@ export interface ItemStartValues {
   quantity: string
   recurrence: RecurrenceDefaultValue
   customFieldValues: ItemCustomFieldValue[]
+  /** Read only on inventories. */
+  stock: { stockMode: StockMode; target: string; reorderPoint: string }
 }
 
 const STAPLE: RecurrenceDefaultValue = { kind: 'none', rrule: null, repeatFromCompletion: false }
@@ -118,11 +121,16 @@ export function startValues(
       rrule: recurrence.kind === 'recurring' ? (recurrence.rrule ?? DEFAULT_RRULE) : null,
     },
     customFieldValues: [...fieldValues.values()],
+    stock: {
+      stockMode: prefill(defaults?.stockMode) ?? 'count',
+      target: prefill(defaults?.target) ?? '',
+      reorderPoint: prefill(defaults?.reorderPoint) ?? '',
+    },
   }
 }
 
-/** What the item just added actually used. */
-export type ItemUsedValues = Omit<ItemStartValues, 'quantity'>
+/** What the item just added actually used. Only an inventory item has a stock mode. */
+export type ItemUsedValues = Omit<ItemStartValues, 'quantity' | 'stock'> & { stockMode?: StockMode }
 
 /**
  * The write-back for keys that follow the last item added: only those in
@@ -149,6 +157,9 @@ export function rememberPatch(
   remember(defaults.stores, used.storeIds, (value) => (patch.stores = { value }))
   remember(defaults.category, used.categoryId, (value) => (patch.category = { value }))
   remember(defaults.labels, used.labelIds, (value) => (patch.labels = { value }))
+  if (defaults.stockMode && used.stockMode) {
+    remember(defaults.stockMode, used.stockMode, (value) => (patch.stockMode = { value }))
+  }
 
   const defsById = new Map(fieldDefs.map((f) => [f.id, f]))
   const usedById = new Map(used.customFieldValues.map((v) => [v.fieldId, v]))
@@ -172,6 +183,8 @@ export function withRemembered(defaults: ItemDefaults, patch: ItemDefaultsPatch)
   if (patch.stores) next.stores = { ...next.stores, value: patch.stores.value }
   if (patch.category) next.category = { ...next.category, value: patch.category.value }
   if (patch.labels) next.labels = { ...next.labels, value: patch.labels.value }
+  if (patch.stockMode && next.stockMode)
+    next.stockMode = { ...next.stockMode, value: patch.stockMode.value }
   if (patch.fields) {
     const updates = new Map(patch.fields.map((f) => [f.fieldId, f.value]))
     next.fields = next.fields.map((f): ItemDefaultField =>
@@ -195,6 +208,9 @@ export function configSignature(defaults: ItemDefaults | null | undefined): stri
     category: pinned(defaults.category),
     labels: pinned(defaults.labels),
     quantity: pinned(defaults.quantity),
+    stockMode: pinned(defaults.stockMode),
+    target: pinned(defaults.target),
+    reorderPoint: pinned(defaults.reorderPoint),
     fields: defaults.fields.map((f) => ({ fieldId: f.fieldId, ...pinned(f) })),
   })
 }

@@ -84,6 +84,9 @@ namespace OCA\Pantry;
  *     category: array{mode: PantryItemDefaultMode, value?: int|null},
  *     labels: array{mode: PantryItemDefaultMode, value?: list<int>},
  *     quantity: array{mode: 'none'|'fixed', value?: string},
+ *     stockMode: array{mode: PantryItemDefaultMode, value?: 'count'|'level'},
+ *     target: array{mode: 'none'|'fixed', value?: string},
+ *     reorderPoint: array{mode: 'none'|'fixed', value?: string},
  *     fields: list<PantryItemDefaultField>,
  * }
  *
@@ -163,6 +166,7 @@ namespace OCA\Pantry;
  *     archivedAt: int|null,
  *     canEdit: bool,
  *     sharedOnly: bool,
+ *     needsRestock: int,
  * }
  *
  * @psalm-type PantryListSummary = array{
@@ -278,6 +282,9 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     deletedAt: int|null,
  *     archivedAt: int|null,
+ *     stockMode: 'count'|'level'|null,
+ *     target: string|null,
+ *     reorderPoint: string|null,
  * }
  *
  * @psalm-type PantryInventoryItem = array{

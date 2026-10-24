@@ -7,6 +7,7 @@ import type {
   ItemDefaults,
   ItemDefaultsPatch,
   RecurrenceDefaultValue,
+  StockMode,
 } from '@/api/types'
 
 export interface FieldDraft {
@@ -22,6 +23,9 @@ export interface ItemDefaultsDraft {
   categoryId: number | null
   labelIds: number[]
   quantity: string
+  stockMode: StockMode
+  target: string
+  reorderPoint: string
   fields: Record<number, FieldDraft>
 }
 
@@ -44,12 +48,18 @@ export function draftFromDefaults(defaults: ItemDefaults | undefined): ItemDefau
       category: defaults?.category.mode ?? 'none',
       labels: defaults?.labels.mode ?? 'none',
       quantity: defaults?.quantity.mode ?? 'none',
+      stockMode: defaults?.stockMode?.mode ?? 'none',
+      target: defaults?.target?.mode ?? 'none',
+      reorderPoint: defaults?.reorderPoint?.mode ?? 'none',
     },
     recurrence: { ...STAPLE, ...(defaults?.recurrence?.value ?? {}) },
     storeIds: [...(defaults?.stores.value ?? [])],
     categoryId: defaults?.category.value ?? null,
     labelIds: [...(defaults?.labels.value ?? [])],
     quantity: defaults?.quantity.value ?? '',
+    stockMode: defaults?.stockMode?.value ?? 'count',
+    target: defaults?.target?.value ?? '',
+    reorderPoint: defaults?.reorderPoint?.value ?? '',
     fields,
   }
 }
@@ -66,12 +76,19 @@ function draftValue(draft: ItemDefaultsDraft, key: ItemDefaultKey): unknown {
       return draft.labelIds
     case 'quantity':
       return draft.quantity.trim()
+    case 'stockMode':
+      return draft.stockMode
+    case 'target':
+      return draft.target.trim()
+    case 'reorderPoint':
+      return draft.reorderPoint.trim()
   }
 }
 
 /**
  * Only the keys the dialog actually changed. A key left on "remember" is not
  * sent, so saving never wipes what the list has learned since it was opened.
+ * Stock keys are sent only for a list that has them: an inventory.
  */
 export function patchFromDraft(
   original: ItemDefaults | undefined,
@@ -79,6 +96,7 @@ export function patchFromDraft(
 ): ItemDefaultsPatch {
   const patch: ItemDefaultsPatch = {}
   const keys: ItemDefaultKey[] = ['recurrence', 'stores', 'category', 'labels', 'quantity']
+  if (original?.stockMode) keys.push('stockMode', 'target', 'reorderPoint')
   for (const key of keys) {
     const before = original?.[key] ?? { mode: 'none' as const }
     const mode = draft.modes[key]

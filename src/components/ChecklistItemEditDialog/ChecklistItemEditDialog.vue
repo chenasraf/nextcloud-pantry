@@ -35,6 +35,7 @@
       <FieldCard v-else :label="strings.quantityLabel">
         <QuantityInput v-model="editQuantity" />
       </FieldCard>
+      <TemplateStockCard v-if="isTemplate" v-model="editTemplateStock" :quantity="editQuantity" />
 
       <FieldCard :label="strings.priceLabel">
         <ItemPricesEditor
@@ -151,10 +152,14 @@ import type { ItemInput } from '@/api/lists'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useListKind } from '@/composables/useListKind'
 import StockCard from '@/components/InventoryStock/StockCard.vue'
+import TemplateStockCard, {
+  type TemplateStockDraft,
+} from '@/components/InventoryStock/TemplateStockCard.vue'
 import type { StockDraft } from '@/utils/stock'
 
 const { kind, isChecklist } = useListKind()
 const isInventory = computed(() => kind.value === 'inventory')
+const isTemplate = computed(() => kind.value === 'template')
 
 const props = withDefaults(
   defineProps<{
@@ -192,6 +197,11 @@ const editStock = ref<StockDraft>({
   reorderPoint: null,
 })
 const stockBlocked = ref(false)
+const editTemplateStock = ref<TemplateStockDraft>({
+  stockMode: null,
+  target: null,
+  reorderPoint: null,
+})
 
 type ItemType = 'staple' | 'oneTime' | 'recurring'
 const currentType = computed<ItemType>(() => {
@@ -263,6 +273,11 @@ watch(
         reorderPoint: props.item.reorderPoint ?? null,
       }
       stockBlocked.value = false
+      editTemplateStock.value = {
+        stockMode: props.item.stockMode ?? null,
+        target: props.item.target ?? null,
+        reorderPoint: props.item.reorderPoint ?? null,
+      }
       void customFields.load()
       resetImageState()
     }
@@ -313,6 +328,13 @@ function submitEdit() {
             reorderPoint: (editStock.value.reorderPoint ?? '').trim(),
           }
         : { quantity: editQuantity.value.trim() }),
+      ...(isTemplate.value
+        ? {
+            stockMode: editTemplateStock.value.stockMode ?? '',
+            target: (editTemplateStock.value.target ?? '').trim(),
+            reorderPoint: (editTemplateStock.value.reorderPoint ?? '').trim(),
+          }
+        : {}),
       categoryId: editCategoryId.value,
       storeIds: editStoreIds.value,
       labelIds: editLabelIds.value,

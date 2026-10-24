@@ -14,6 +14,17 @@ vi.mock('@icons/Upload.vue', () => createIconMock('UploadIcon'))
 vi.mock('@nextcloud/vue/components/NcButton', () => ({
   default: { name: 'NcButton', template: '<button class="nc-button"><slot /></button>' },
 }))
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template: '<label class="nc-radio"><slot /></label>',
+    props: ['modelValue', 'value', 'name', 'type', 'buttonVariant', 'buttonVariantGrouped'],
+  },
+}))
+vi.mock('@nextcloud/vue/components/NcTextField', () => ({
+  default: { name: 'NcTextField', template: '<input class="nc-text-field" />' },
+}))
+vi.mock('@icons/PackageVariant.vue', () => createIconMock('PackageVariantIcon'))
 vi.mock('@/components/PantryChip', () => ({
   default: {
     name: 'PantryChip',
@@ -80,7 +91,20 @@ vi.mock('@/utils/rrule', () => ({
   formatRrule: (s: string) => `text(${s})`,
 }))
 
+import { computed, defineComponent, h } from 'vue'
+import { provideListKind } from '@/composables/useListKind'
 import ItemFieldChips from './ItemFieldChips.vue'
+
+/** Mount the chips inside an inventory page. */
+function mountOnInventory(props: Record<string, unknown>) {
+  const Host = defineComponent({
+    setup() {
+      provideListKind(computed(() => 'inventory' as const))
+      return () => h(ItemFieldChips, { houseId: 1, listId: 3, ...props })
+    },
+  })
+  return mount(Host)
+}
 
 function chipTexts(wrapper: ReturnType<typeof mount>): string[] {
   return wrapper.findAll('.pantry-chip').map((c) => c.text())
@@ -152,5 +176,31 @@ describe('ItemFieldChips', () => {
     })
     expect(wrapper.find('.item-field-chips__row .extra-chip').exists()).toBe(true)
     expect(wrapper.find('.header').text()).toBe('category')
+  })
+})
+
+describe('ItemFieldChips stock', () => {
+  it('folds the quantity into stock when composing an inventory item', () => {
+    const checklist = chipTexts(mount(ItemFieldChips, { props: { houseId: 1, listId: 3 } }))
+    expect(checklist).toContain('Quantity')
+    expect(checklist).not.toContain('Stock')
+
+    const inventory = chipTexts(mountOnInventory({}))
+    expect(inventory).toContain('Stock')
+    expect(inventory).not.toContain('Quantity')
+
+    const defaults = chipTexts(mountOnInventory({ mode: 'defaults' }))
+    expect(defaults).toContain('Quantity')
+    expect(defaults).not.toContain('Stock')
+  })
+
+  it('sums up the stock on its chip the way the row does', () => {
+    expect(chipTexts(mountOnInventory({ target: '12 eggs' }))).toContain('Target: 12 eggs')
+    expect(chipTexts(mountOnInventory({ quantity: '4', target: '12 eggs' }))).toContain(
+      '4 / 12 eggs',
+    )
+    expect(chipTexts(mountOnInventory({ stockMode: 'level', quantity: '1 kg bag' }))).toContain(
+      'Level · 1 kg bag',
+    )
   })
 })

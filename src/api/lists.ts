@@ -62,8 +62,12 @@ export interface ItemInput {
    * field id plus the typed value.
    */
   customFields?: ItemCustomFieldValue[]
-  /** Inventory items only. An empty target or reorder point clears it. */
-  stockMode?: StockMode
+  /**
+   * Inventory and template items. An empty target or reorder point clears it;
+   * on a template an empty mode clears it too, leaving it to the inventory the
+   * item is drawn into. Templates have no stock level.
+   */
+  stockMode?: StockMode | ''
   stockLevel?: StockLevel
   target?: string
   reorderPoint?: string
