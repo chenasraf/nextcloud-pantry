@@ -47,6 +47,19 @@
         />
       </div>
       <div class="settings__field">
+        <label class="settings__label">{{ strings.fillFromItemDefaultsLabel }}</label>
+        <p class="settings__hint">{{ strings.fillFromItemDefaultsHint }}</p>
+        <NcSelect
+          data-testid="fill-from-item-defaults-select"
+          :model-value="selectedFillFromItemDefaultsOption"
+          :options="fillFromItemDefaultsOptions"
+          :clearable="false"
+          :searchable="false"
+          input-label=""
+          @update:model-value="updateFillFromItemDefaults"
+        />
+      </div>
+      <div class="settings__field">
         <NcCheckboxRadioSwitch
           :model-value="suggestArchivedItems"
           @update:model-value="updateSuggestArchivedItems($event)"
@@ -192,7 +205,10 @@ import {
   getLanguages,
   getLanguagePref,
   setLanguagePref,
+  getHousePrefs,
+  setHousePrefs,
   type BarcodeFillPrefs,
+  type FillFromItemDefaults,
   type LanguageOption,
   type NotificationPrefs,
   type ReuseExistingItems,
@@ -409,6 +425,48 @@ async function updateSuggestArchivedItems(value: boolean) {
   }
 }
 
+// ----- Filling drawn template items from item defaults (per-house) -----
+
+const fillFromItemDefaults = ref<FillFromItemDefaults>('list')
+
+interface FillFromItemDefaultsOption {
+  value: FillFromItemDefaults
+  label: string
+}
+
+const fillFromItemDefaultsOptions = computed<FillFromItemDefaultsOption[]>(() => [
+  { value: 'list', label: strings.fillFromItemDefaultsList },
+  { value: 'always', label: strings.fillFromItemDefaultsAlways },
+  { value: 'never', label: strings.fillFromItemDefaultsNever },
+])
+
+const selectedFillFromItemDefaultsOption = computed<FillFromItemDefaultsOption>(
+  () =>
+    fillFromItemDefaultsOptions.value.find((o) => o.value === fillFromItemDefaults.value) ??
+    fillFromItemDefaultsOptions.value[0],
+)
+
+async function loadFillFromItemDefaults() {
+  if (props.houseId === null) return
+  try {
+    fillFromItemDefaults.value = (await getHousePrefs(props.houseId)).fillFromItemDefaults
+  } catch {
+    // Keep following the list.
+  }
+}
+
+async function updateFillFromItemDefaults(option: FillFromItemDefaultsOption | null) {
+  if (!option || props.houseId === null || option.value === fillFromItemDefaults.value) return
+  const previous = fillFromItemDefaults.value
+  fillFromItemDefaults.value = option.value
+  try {
+    const updated = await setHousePrefs(props.houseId, { fillFromItemDefaults: option.value })
+    fillFromItemDefaults.value = updated.fillFromItemDefaults
+  } catch {
+    fillFromItemDefaults.value = previous
+  }
+}
+
 // ----- Barcode fill (global) -----
 
 const { barcodeFill, set: setBarcodeFillPref } = useBarcodeFill()
@@ -460,6 +518,7 @@ watch(
       folderSaved.value = false
       void loadFolder()
       void loadNotifPrefs()
+      void loadFillFromItemDefaults()
       void loadLanguage()
     }
   },
@@ -494,6 +553,17 @@ const strings = {
   reuseExistingItemsAsk: t('pantry', 'Always ask'),
   reuseExistingItemsReuse: t('pantry', 'Always reuse'),
   reuseExistingItemsNever: t('pantry', 'Never reuse'),
+  fillFromItemDefaultsLabel: t('pantry', 'Fill template items from item defaults'),
+  fillFromItemDefaultsHint: t(
+    'pantry',
+    "When you add an item from a template, fill the details it leaves empty from the list's item defaults. Each list can switch this off in its item defaults.",
+  ),
+  // TRANSLATORS: Option for filling template items from item defaults: use the setting each list has.
+  fillFromItemDefaultsList: t('pantry', 'Follow each list'),
+  // TRANSLATORS: Option for filling template items from item defaults: fill even where a list has it off.
+  fillFromItemDefaultsAlways: t('pantry', 'Always fill'),
+  // TRANSLATORS: Option for filling template items from item defaults: leave empty details empty.
+  fillFromItemDefaultsNever: t('pantry', 'Never fill'),
   suggestArchivedItemsLabel: t('pantry', 'Suggest archived items'),
   suggestArchivedItemsHint: t(
     'pantry',

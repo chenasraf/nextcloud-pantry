@@ -33,6 +33,8 @@ final class TemplateController extends ListKindOCSController {
 		'defaultRrule',
 		'defaultRepeatFromCompletion',
 		'lastCompletedAt',
+		// Templates are drawn from, never into.
+		'fillFromDefaults',
 	];
 
 	protected function kind(): string {

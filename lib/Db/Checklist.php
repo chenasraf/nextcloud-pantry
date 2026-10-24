@@ -37,6 +37,7 @@ use OCP\AppFramework\Db\Entity;
  * @method void setLastCompletedAt(?int $lastCompletedAt)
  * @method void setKind(?string $kind)
  * @method void setEveryList(?bool $everyList)
+ * @method void setFillFromDefaults(?bool $fillFromDefaults)
  */
 class Checklist extends Entity implements \JsonSerializable {
 	public const KIND_CHECKLIST = 'checklist';
@@ -85,6 +86,8 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected ?string $kind = self::KIND_CHECKLIST;
 	/** A template attached to every checklist and inventory in its house. */
 	protected ?bool $everyList = false;
+	/** Whether a template item drawn here fills its empty fields from the item defaults. */
+	protected ?bool $fillFromDefaults = true;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -95,10 +98,16 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('archivedAt', 'integer');
 		$this->addType('lastCompletedAt', 'integer');
 		$this->addType('everyList', 'boolean');
+		$this->addType('fillFromDefaults', 'boolean');
 	}
 
 	public function isEveryList(): bool {
 		return $this->getKind() === self::KIND_TEMPLATE && (bool)$this->everyList;
+	}
+
+	/** A row from before the column existed fills, like a new list. */
+	public function fillsFromDefaults(): bool {
+		return $this->fillFromDefaults !== false;
 	}
 
 	/**
@@ -140,6 +149,7 @@ class Checklist extends Entity implements \JsonSerializable {
 			'color' => $this->color,
 			'sortOrder' => $this->sortOrder,
 			'itemDefaults' => ItemDefaults::complete($defaults),
+			'fillFromDefaults' => $this->fillsFromDefaults(),
 			'deleteOnDoneDefault' => $recurrence['kind'] === self::RECURRENCE_KIND_ONCE,
 			'defaultRecurrenceMode' => $recurrence['mode'],
 			'defaultRecurrenceKind' => $recurrence['kind'],

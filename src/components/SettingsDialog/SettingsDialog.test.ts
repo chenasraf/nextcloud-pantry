@@ -83,6 +83,9 @@ import {
   getLanguages,
   getLanguagePref,
   setLanguagePref,
+  getHousePrefs,
+  setHousePrefs,
+  type HousePrefs,
 } from '@/api/prefs'
 import { leaveHouse } from '@/api/houses'
 import SettingsDialog from './SettingsDialog.vue'
@@ -384,6 +387,54 @@ describe('SettingsDialog', () => {
       expect(reloadPage).not.toHaveBeenCalled()
       const selected = languageSelect(wrapper).props('modelValue') as { value: string }
       expect(selected.value).toBe('')
+    })
+  })
+
+  describe('filling template items from item defaults', () => {
+    function fillSelect(wrapper: ReturnType<typeof mountComponent>) {
+      return wrapper
+        .findAllComponents({ name: 'NcSelect' })
+        .find((c) => c.attributes('data-testid') === 'fill-from-item-defaults-select')!
+    }
+
+    it('shows the house preference', async () => {
+      vi.mocked(getHousePrefs).mockResolvedValue({
+        fillFromItemDefaults: 'never',
+      } as HousePrefs)
+
+      const wrapper = mountComponent({ open: true, houseId: 3 })
+      await flushPromises()
+
+      expect(getHousePrefs).toHaveBeenCalledWith(3)
+      const selected = fillSelect(wrapper).props('modelValue') as { value: string }
+      expect(selected.value).toBe('never')
+    })
+
+    it('saves a new choice for the house', async () => {
+      vi.mocked(getHousePrefs).mockResolvedValue({ fillFromItemDefaults: 'list' } as HousePrefs)
+      vi.mocked(setHousePrefs).mockResolvedValue({ fillFromItemDefaults: 'always' } as HousePrefs)
+      const wrapper = mountComponent({ open: true, houseId: 3 })
+      await flushPromises()
+
+      fillSelect(wrapper).vm.$emit('update:modelValue', { value: 'always', label: 'Always fill' })
+      await flushPromises()
+
+      expect(setHousePrefs).toHaveBeenCalledWith(3, { fillFromItemDefaults: 'always' })
+      const selected = fillSelect(wrapper).props('modelValue') as { value: string }
+      expect(selected.value).toBe('always')
+    })
+
+    it('goes back to the previous choice when saving fails', async () => {
+      vi.mocked(getHousePrefs).mockResolvedValue({ fillFromItemDefaults: 'list' } as HousePrefs)
+      vi.mocked(setHousePrefs).mockRejectedValue(new Error('offline'))
+      const wrapper = mountComponent({ open: true, houseId: 3 })
+      await flushPromises()
+
+      fillSelect(wrapper).vm.$emit('update:modelValue', { value: 'never', label: 'Never fill' })
+      await flushPromises()
+
+      const selected = fillSelect(wrapper).props('modelValue') as { value: string }
+      expect(selected.value).toBe('list')
     })
   })
 })

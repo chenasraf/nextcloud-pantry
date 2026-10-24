@@ -31,7 +31,8 @@ use OCA\Pantry\Db\LabelMapper;
  *   unarchived on an inventory, its own values left alone.
  * - Otherwise the copy carries every field but recurrence and delete-on-done,
  *   starts unchecked, and fills what the template left empty from the
- *   target's item defaults, as if it had been added by hand.
+ *   target's item defaults, as if it had been added by hand. The target list
+ *   can switch that filling off, and the member's own preference wins over it.
  * - Categories, labels and custom fields scoped to the template are matched
  *   by name on the target, or copied onto it when it has none, so later
  *   copies match those instead of piling up.
@@ -51,6 +52,7 @@ class TemplateCopyService {
 		private FieldValueMapper $fieldValueMapper,
 		private ItemDefaultsService $itemDefaults,
 		private ScopedTaxonomyService $taxonomy,
+		private PrefsService $prefs,
 	) {
 	}
 
@@ -131,7 +133,9 @@ class TemplateCopyService {
 			'prices' => $this->itemPriceMapper->findForItem($sourceId),
 			'customFields' => $this->targetFieldValues($this->fieldValueMapper->findForItem($sourceId), $houseId, $templateId, $targetId, $now),
 		];
-		$data = $this->fillFromDefaults($data, $target, $houseId);
+		if ($this->fills($target, $addedBy)) {
+			$data = $this->fillFromDefaults($data, $target, $houseId);
+		}
 
 		$imageFileId = $source->getImageFileId();
 		$imageOwner = $source->getImageUploadedBy();
@@ -322,6 +326,11 @@ class TemplateCopyService {
 	}
 
 	// ----- Item defaults -----
+
+	private function fills(Checklist $target, ?string $uid): bool {
+		$listFills = $target->fillsFromDefaults();
+		return $uid === null ? $listFills : $this->prefs->fillsFromItemDefaults($uid, (int)$target->getHouseId(), $listFills);
+	}
 
 	/**
 	 * Fill what the template item left empty from the target's item defaults

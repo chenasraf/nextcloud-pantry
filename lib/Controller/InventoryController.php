@@ -214,6 +214,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param array{mode: 'none'|'fixed'|'remember', value?: list<int>|null}|null $labels Labels new items start with.
 	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $quantity Quantity new items start with.
 	 * @param list<array{fieldId: int, mode: 'none'|'fixed'|'remember', value?: array{valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null}|null}>|null $fields Custom-field values new items start with.
+	 * @param bool|null $fillFromDefaults Whether a template item drawn here fills the fields it leaves empty from these defaults. Needs edit rights.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventory, array{}>
 	 *
@@ -222,7 +223,7 @@ final class InventoryController extends ListKindOCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/inventories/{listId}/item-defaults', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canAddItems'])]
-	public function updateInventoryItemDefaults(int $houseId, int $listId, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null): DataResponse {
+	public function updateInventoryItemDefaults(int $houseId, int $listId, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null, ?bool $fillFromDefaults = null): DataResponse {
 		$patch = array_filter([
 			'stores' => $stores,
 			'category' => $category,
@@ -230,7 +231,7 @@ final class InventoryController extends ListKindOCSController {
 			'quantity' => $quantity,
 			'fields' => $fields,
 		], static fn (?array $entry): bool => $entry !== null);
-		return $this->doUpdateItemDefaults($houseId, $listId, $patch);
+		return $this->doUpdateItemDefaults($houseId, $listId, $patch, $fillFromDefaults);
 	}
 
 	/**

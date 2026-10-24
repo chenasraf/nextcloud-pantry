@@ -52,6 +52,8 @@ class ListKindControllerTest extends TestCase {
 	private TemplateAttachmentService $attachments;
 	/** @var TemplateCopyService&MockObject */
 	private TemplateCopyService $templateCopy;
+	/** @var ShareService&MockObject */
+	private ShareService $shares;
 
 	protected function setUp(): void {
 		$this->lists = $this->createMock(ChecklistService::class);
@@ -59,6 +61,8 @@ class ListKindControllerTest extends TestCase {
 		$this->templateCopy = $this->createMock(TemplateCopyService::class);
 		$this->permissions = $this->createMock(PermissionService::class);
 		$this->permissions->method('isAdmin')->willReturn(true);
+		$this->shares = $this->createMock(ShareService::class);
+		$this->shares->method('userShareMap')->willReturn([]);
 	}
 
 	/**
@@ -97,7 +101,7 @@ class ListKindControllerTest extends TestCase {
 			$this->createMock(ActivityPublisher::class),
 			$this->createMock(PrefsService::class),
 			$this->permissions,
-			$this->createMock(ShareService::class),
+			$this->shares,
 			$itemDefaults,
 			$session,
 			$this->createMock(LoggerInterface::class),
@@ -122,7 +126,7 @@ class ListKindControllerTest extends TestCase {
 		$data = $this->makeController(TemplateController::class)->showTemplate(1, 7)->getData();
 
 		$this->assertSame('template', $data['kind']);
-		foreach (['lastCompletedAt', 'deleteOnDoneDefault', 'defaultRecurrenceMode', 'defaultRrule'] as $key) {
+		foreach (['lastCompletedAt', 'deleteOnDoneDefault', 'defaultRecurrenceMode', 'defaultRrule', 'fillFromDefaults'] as $key) {
 			$this->assertArrayNotHasKey($key, $data);
 		}
 	}
@@ -157,6 +161,33 @@ class ListKindControllerTest extends TestCase {
 			$this->assertArrayNotHasKey($key, $data);
 		}
 		$this->assertSame(['stores' => []], $data['itemDefaults']);
+		$this->assertTrue($data['fillFromDefaults']);
+	}
+
+	public function testAnEditorSwitchesOffFillingFromItemDefaults(): void {
+		$list = $this->makeList(Checklist::KIND_INVENTORY);
+		$this->lists->method('getList')->willReturn($list);
+		$this->shares->method('canEditFromMap')->willReturn(true);
+		$this->lists->expects($this->once())->method('setItemDefaults')
+			->with($list, $this->anything(), false)
+			->willReturnCallback(static function (Checklist $l, array $d, ?bool $fill): Checklist {
+				$l->setFillFromDefaults($fill);
+				return $l;
+			});
+
+		$data = $this->makeController(InventoryController::class)
+			->updateInventoryItemDefaults(1, 7, fillFromDefaults: false)->getData();
+
+		$this->assertFalse($data['fillFromDefaults']);
+	}
+
+	public function testOnlyAnEditorChangesTheFillSwitch(): void {
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->shares->method('canEditFromMap')->willReturn(false);
+		$this->lists->expects($this->never())->method('setItemDefaults');
+
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$this->makeController(ChecklistController::class)->updateItemDefaults(1, 7, fillFromDefaults: false);
 	}
 
 	public function testInventoryItemResponseLeavesOutTheDoneStateAndRecurrence(): void {

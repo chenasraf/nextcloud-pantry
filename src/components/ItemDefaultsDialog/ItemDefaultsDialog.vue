@@ -89,6 +89,18 @@
           </div>
         </template>
       </ItemFieldChips>
+
+      <div v-if="drawnInto" class="item-defaults__fill">
+        <NcCheckboxRadioSwitch
+          v-model="fillFromDefaults"
+          type="switch"
+          data-testid="item-defaults-fill"
+          :disabled="!list.canEdit"
+        >
+          {{ strings.fillLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="item-defaults__hint">{{ strings.fillHint }}</p>
+      </div>
     </div>
 
     <template #actions>
@@ -132,14 +144,21 @@ const emit = defineEmits<{
 }>()
 
 const draft = ref<ItemDefaultsDraft>(draftFromDefaults(undefined))
+const fillFromDefaults = ref(true)
 const openSection = ref<ItemFieldSection | null>(null)
 const saving = ref(false)
+
+/** Template items are drawn into checklists and inventories, never into a template. */
+const drawnInto = computed(
+  () => props.list?.kind !== 'template' && props.list?.fillFromDefaults !== undefined,
+)
 
 watch(
   () => props.open,
   (isOpen) => {
     if (!isOpen) return
     draft.value = draftFromDefaults(props.list?.itemDefaults)
+    fillFromDefaults.value = props.list?.fillFromDefaults ?? true
     openSection.value = null
   },
   { immediate: true },
@@ -299,6 +318,9 @@ async function save() {
   const list = props.list
   if (!list || !list.canEdit) return
   const patch = patchFromDraft(list.itemDefaults, draft.value)
+  if (drawnInto.value && fillFromDefaults.value !== list.fillFromDefaults) {
+    patch.fillFromDefaults = fillFromDefaults.value
+  }
   if (Object.keys(patch).length === 0) {
     emit('update:open', false)
     return
@@ -342,6 +364,11 @@ const strings = {
   cancel: t('pantry', 'Cancel'),
   save: t('pantry', 'Save'),
   saveFailed: t('pantry', 'Could not save the item defaults'),
+  fillLabel: t('pantry', 'Fill template items from these defaults'),
+  fillHint: t(
+    'pantry',
+    'When an item is added from a template, the details it leaves empty start with the values above. Each person can override this in their personal settings.',
+  ),
 }
 </script>
 
@@ -375,6 +402,11 @@ const strings = {
     margin: 0.35rem 0 0;
     font-size: 0.85em;
     color: var(--color-text-maxcontrast);
+  }
+
+  &__fill {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
   }
 
   &__fields {

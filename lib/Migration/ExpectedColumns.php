@@ -55,6 +55,10 @@ final class ExpectedColumns {
 			// search reads it through the suggestions endpoint.
 			self::col('lists', 'every_list', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
 
+			// lists — fill drawn items from item defaults (Version44). Same SELECT *
+			// hydration as the item defaults above.
+			self::col('lists', 'fill_from_defaults', Types::BOOLEAN, ['notnull' => false, 'default' => true]),
+
 			// categories — list scoping (Version27); category queries filter on
 			// list_id, so a missing column breaks category loading and the
 			// category-sorted item list.

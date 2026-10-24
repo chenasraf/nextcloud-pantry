@@ -211,9 +211,13 @@ class ChecklistService {
 	 * {@see ItemDefaultsService::merge()}.
 	 *
 	 * @param array<string, mixed> $defaults
+	 * @param bool|null $fillFromDefaults Whether drawn template items fill from them; null leaves it.
 	 */
-	public function setItemDefaults(Checklist $list, array $defaults): Checklist {
+	public function setItemDefaults(Checklist $list, array $defaults, ?bool $fillFromDefaults = null): Checklist {
 		$list->setItemDefaults(ItemDefaults::encode($defaults));
+		if ($fillFromDefaults !== null) {
+			$list->setFillFromDefaults($fillFromDefaults);
+		}
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
 		return $list;
@@ -417,6 +421,7 @@ class ChecklistService {
 		$copy->setIcon($source->getIcon());
 		$copy->setColor($source->getColor());
 		$copy->setSortOrder($source->getSortOrder());
+		$copy->setFillFromDefaults($source->fillsFromDefaults());
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
 		$copy = $this->listMapper->insert($copy);

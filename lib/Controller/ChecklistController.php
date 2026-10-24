@@ -235,6 +235,7 @@ final class ChecklistController extends ListKindOCSController {
 	 * @param array{mode: 'none'|'fixed'|'remember', value?: list<int>|null}|null $labels Labels new items start with.
 	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $quantity Quantity new items start with.
 	 * @param list<array{fieldId: int, mode: 'none'|'fixed'|'remember', value?: array{valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null}|null}>|null $fields Custom-field values new items start with.
+	 * @param bool|null $fillFromDefaults Whether a template item drawn here fills the fields it leaves empty from these defaults. Needs edit rights.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
 	 *
@@ -243,7 +244,7 @@ final class ChecklistController extends ListKindOCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}/item-defaults', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canAddItems'])]
-	public function updateItemDefaults(int $houseId, int $listId, ?array $recurrence = null, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null): DataResponse {
+	public function updateItemDefaults(int $houseId, int $listId, ?array $recurrence = null, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null, ?bool $fillFromDefaults = null): DataResponse {
 		$patch = array_filter([
 			'recurrence' => $recurrence,
 			'stores' => $stores,
@@ -252,7 +253,7 @@ final class ChecklistController extends ListKindOCSController {
 			'quantity' => $quantity,
 			'fields' => $fields,
 		], static fn (?array $entry): bool => $entry !== null);
-		return $this->doUpdateItemDefaults($houseId, $listId, $patch);
+		return $this->doUpdateItemDefaults($houseId, $listId, $patch, $fillFromDefaults);
 	}
 
 	/**

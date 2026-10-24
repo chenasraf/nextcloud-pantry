@@ -25,8 +25,13 @@ use OCA\Pantry\Db\LabelMapper;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\ItemDefaults;
 use OCA\Pantry\Service\ItemDefaultsService;
+use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ScopedTaxonomyService;
 use OCA\Pantry\Service\TemplateCopyService;
+use OCP\IConfig;
+use OCP\IL10N;
+use OCP\L10N\IFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -58,6 +63,9 @@ class TemplateCopyServiceTest extends TestCase {
 	/** @var ItemDefaultsService&MockObject */
 	private ItemDefaultsService $itemDefaults;
 	private TemplateCopyService $svc;
+	private PrefsService $prefs;
+	/** Bob's stored fill preference for the house; empty is unset. */
+	private string $memberFill = '';
 
 	private Checklist $template;
 	/** @var array<string, mixed>|null What addItem was handed. */
@@ -99,20 +107,15 @@ class TemplateCopyServiceTest extends TestCase {
 			$mapper->method('insert')->willReturnCallback($insert);
 		}
 
-		$this->svc = new TemplateCopyService(
-			$this->lists,
-			$this->itemMapper,
-			$this->categoryMapper,
-			$this->labelMapper,
-			$this->fieldDefMapper,
-			$this->fieldOptionMapper,
-			$this->itemStoreMapper,
-			$this->itemLabelMapper,
-			$this->itemPriceMapper,
-			$this->fieldValueMapper,
-			$this->itemDefaults,
-			new ScopedTaxonomyService($this->categoryMapper, $this->labelMapper, $this->fieldDefMapper, $this->fieldOptionMapper),
+		$config = $this->createMock(IConfig::class);
+		$config->method('getUserValue')->willReturnCallback(
+			fn (string $uid, string $app, string $key, string $default): string => $uid === 'bob' && $key === 'fill_from_item_defaults_' . self::HOUSE && $this->memberFill !== ''
+				? $this->memberFill
+				: $default,
 		);
+		$this->prefs = new PrefsService($config, $this->createMock(IL10N::class), $this->createMock(IFactory::class));
+
+		$this->rebuild();
 	}
 
 	private function makeList(int $id, string $kind): Checklist {
@@ -185,10 +188,10 @@ class TemplateCopyServiceTest extends TestCase {
 	/**
 	 * @return array{item: ChecklistItem, reused: bool}
 	 */
-	private function draw(ChecklistItem $source, string $targetKind = Checklist::KIND_CHECKLIST, ?callable $duplicateImage = null): array {
+	private function draw(ChecklistItem $source, string $targetKind = Checklist::KIND_CHECKLIST, ?callable $duplicateImage = null, ?Checklist $target = null): array {
 		return $this->svc->draw(
 			$source,
-			$this->makeList(self::TARGET, $targetKind),
+			$target ?? $this->makeList(self::TARGET, $targetKind),
 			'bob',
 			$duplicateImage ?? static fn (int $f, string $o): ?int => null,
 		);
@@ -412,6 +415,65 @@ class TemplateCopyServiceTest extends TestCase {
 		$this->assertSame('Fragile', $this->added['customFields'][0]['valueText']);
 	}
 
+	/**
+	 * @return array<string, array{bool, string, bool}>
+	 */
+	public static function fillSwitchCases(): array {
+		return [
+			'list on, follow list' => [true, '', true],
+			'list off, follow list' => [false, 'list', false],
+			'list on, member never' => [true, 'never', false],
+			'list off, member always' => [false, 'always', true],
+			'list on, member always' => [true, 'always', true],
+			'list off, member never' => [false, 'never', false],
+		];
+	}
+
+	#[DataProvider('fillSwitchCases')]
+	public function testTheMemberPreferenceWinsOverTheListFillSwitch(bool $listFills, string $memberFill, bool $fills): void {
+		$this->targetHas([]);
+		$this->itemStoreMapper->method('findStoreIdsForItem')->willReturn([]);
+		$this->itemLabelMapper->method('findLabelIdsForItem')->willReturn([]);
+		$text = $this->field(80, 'Note', null, FieldDefinition::TYPE_TEXT);
+		$text->setDefaultText('Fragile');
+		$this->fieldDefMapper->method('findByHouse')->willReturn([$text]);
+		$this->itemDefaults = $this->createMock(ItemDefaultsService::class);
+		$this->itemDefaults->method('forList')->willReturn(ItemDefaults::complete([
+			'category' => ['mode' => 'fixed', 'value' => 12],
+			'stores' => ['mode' => 'fixed', 'value' => [4]],
+			'quantity' => ['mode' => 'fixed', 'value' => '1'],
+			'recurrence' => ['mode' => 'fixed', 'value' => ['kind' => 'once', 'rrule' => null, 'repeatFromCompletion' => false]],
+		]));
+		$this->memberFill = $memberFill;
+		$this->rebuild();
+		$target = $this->makeList(self::TARGET, Checklist::KIND_CHECKLIST);
+		$target->setFillFromDefaults($listFills);
+
+		$this->draw($this->templateItem(), target: $target);
+
+		if ($fills) {
+			$this->assertSame(12, $this->added['categoryId']);
+			$this->assertSame([4], $this->added['storeIds']);
+			$this->assertSame('1', $this->added['quantity']);
+			$this->assertTrue($this->added['deleteOnDone']);
+			$this->assertCount(1, $this->added['customFields']);
+		} else {
+			$this->assertNull($this->added['categoryId']);
+			$this->assertSame([], $this->added['storeIds']);
+			$this->assertNull($this->added['quantity']);
+			$this->assertArrayNotHasKey('deleteOnDone', $this->added);
+			$this->assertSame([], $this->added['customFields'], 'field definition defaults stay off too');
+		}
+	}
+
+	public function testAListWithoutTheSwitchSetFills(): void {
+		$list = new Checklist();
+
+		$this->assertTrue($list->fillsFromDefaults());
+		$list->setFillFromDefaults(null);
+		$this->assertTrue($list->fillsFromDefaults());
+	}
+
 	public function testTheImageIsDuplicatedForTheCopy(): void {
 		$source = $this->templateItem();
 		$source->setImageFileId(111);
@@ -447,6 +509,7 @@ class TemplateCopyServiceTest extends TestCase {
 			$this->fieldValueMapper,
 			$this->itemDefaults,
 			new ScopedTaxonomyService($this->categoryMapper, $this->labelMapper, $this->fieldDefMapper, $this->fieldOptionMapper),
+			$this->prefs,
 		);
 	}
 }

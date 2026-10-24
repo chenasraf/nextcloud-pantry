@@ -311,10 +311,11 @@ abstract class ListKindOCSController extends OCSController {
 
 	/**
 	 * @param array<string, array<string, mixed>|list<array<string, mixed>>> $patch Only the keys being changed.
+	 * @param bool|null $fillFromDefaults Null leaves the list's fill switch as it is.
 	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
 	 */
-	protected function doUpdateItemDefaults(int $houseId, int $listId, array $patch): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $patch): DataResponse {
+	protected function doUpdateItemDefaults(int $houseId, int $listId, array $patch, ?bool $fillFromDefaults = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $patch, $fillFromDefaults): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$list = $this->loadList($houseId, $listId);
@@ -324,7 +325,10 @@ abstract class ListKindOCSController extends OCSController {
 			$roleAccess = $this->permissions->hasRoleAccessToList($houseId, $uid, $listId);
 			$canEdit = $this->canEditList($list, $canEditLists, $roleAccess, $shareMap);
 
-			$list = $this->lists->setItemDefaults($list, $this->itemDefaults->merge($list, $patch, $canEdit));
+			if ($fillFromDefaults !== null && !$canEdit) {
+				throw new ForbiddenException('Only list editors can change whether drawn items fill from item defaults');
+			}
+			$list = $this->lists->setItemDefaults($list, $this->itemDefaults->merge($list, $patch, $canEdit), $fillFromDefaults);
 			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $shareMap));
 		});
 	}

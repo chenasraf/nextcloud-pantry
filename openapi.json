@@ -649,6 +649,7 @@
                     "storeSort",
                     "showAddedBy",
                     "lastCurrency",
+                    "fillFromItemDefaults",
                     "notifyPhoto",
                     "notifyNoteCreate",
                     "notifyNoteEdit",
@@ -690,6 +691,14 @@
                     "lastCurrency": {
                         "type": "string"
                     },
+                    "fillFromItemDefaults": {
+                        "type": "string",
+                        "enum": [
+                            "list",
+                            "always",
+                            "never"
+                        ]
+                    },
                     "notifyPhoto": {
                         "type": "boolean"
                     },
@@ -722,6 +731,7 @@
                     "color",
                     "sortOrder",
                     "itemDefaults",
+                    "fillFromDefaults",
                     "createdAt",
                     "updatedAt",
                     "deletedAt",
@@ -768,6 +778,9 @@
                     },
                     "itemDefaults": {
                         "$ref": "#/components/schemas/InventoryItemDefaults"
+                    },
+                    "fillFromDefaults": {
+                        "type": "boolean"
                     },
                     "createdAt": {
                         "type": "integer",
@@ -1443,6 +1456,7 @@
                     "color",
                     "sortOrder",
                     "itemDefaults",
+                    "fillFromDefaults",
                     "deleteOnDoneDefault",
                     "defaultRecurrenceMode",
                     "defaultRecurrenceKind",
@@ -1495,6 +1509,9 @@
                     },
                     "itemDefaults": {
                         "$ref": "#/components/schemas/ItemDefaults"
+                    },
+                    "fillFromDefaults": {
+                        "type": "boolean"
                     },
                     "deleteOnDoneDefault": {
                         "type": "boolean"
@@ -5801,6 +5818,12 @@
                                                 }
                                             }
                                         }
+                                    },
+                                    "fillFromDefaults": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether a template item drawn here fills the fields it leaves empty from these defaults. Needs edit rights."
                                     }
                                 }
                             }
@@ -14161,6 +14184,12 @@
                                                 }
                                             }
                                         }
+                                    },
+                                    "fillFromDefaults": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether a template item drawn here fills the fields it leaves empty from these defaults. Needs edit rights."
                                     }
                                 }
                             }
@@ -21981,6 +22010,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Last-used currency code (ISO 4217) for item prices in this house."
+                                    },
+                                    "fillFromItemDefaults": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether template items you draw fill their empty fields from the list's item defaults. One of: list (follow the list's setting), always, never."
                                     },
                                     "notifyPhoto": {
                                         "type": "boolean",

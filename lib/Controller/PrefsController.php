@@ -185,6 +185,7 @@ final class PrefsController extends OCSController {
 	 * @param string|null $storeSort Store sort mode (name_asc, name_desc, custom).
 	 * @param bool|null $showAddedBy Show the avatar of the user that added each checklist item.
 	 * @param string|null $lastCurrency Last-used currency code (ISO 4217) for item prices in this house.
+	 * @param string|null $fillFromItemDefaults Whether template items you draw fill their empty fields from the list's item defaults. One of: list (follow the list's setting), always, never.
 	 * @param bool|null $notifyPhoto Photo upload notifications.
 	 * @param bool|null $notifyNoteCreate Note creation notifications.
 	 * @param bool|null $notifyNoteEdit Note edit notifications.
@@ -211,6 +212,7 @@ final class PrefsController extends OCSController {
 		?string $storeSort = null,
 		?bool $showAddedBy = null,
 		?string $lastCurrency = null,
+		?string $fillFromItemDefaults = null,
 		?bool $notifyPhoto = null,
 		?bool $notifyNoteCreate = null,
 		?bool $notifyNoteEdit = null,
@@ -218,7 +220,7 @@ final class PrefsController extends OCSController {
 		?bool $notifyItemRecur = null,
 		?bool $notifyItemDone = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $labelSort, $storeSort, $showAddedBy, $lastCurrency, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $labelSort, $storeSort, $showAddedBy, $lastCurrency, $fillFromItemDefaults, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$patch = array_filter([
@@ -233,6 +235,7 @@ final class PrefsController extends OCSController {
 				'storeSort' => $storeSort,
 				'showAddedBy' => $showAddedBy,
 				'lastCurrency' => $lastCurrency,
+				'fillFromItemDefaults' => $fillFromItemDefaults,
 				'notifyPhoto' => $notifyPhoto,
 				'notifyNoteCreate' => $notifyNoteCreate,
 				'notifyNoteEdit' => $notifyNoteEdit,

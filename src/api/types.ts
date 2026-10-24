@@ -117,6 +117,8 @@ export type ItemDefaultsPatch = Partial<{
   [K in ItemDefaultKey]: Partial<ItemDefaults[K]>
 }> & {
   fields?: (Partial<ItemDefaultField> & { fieldId: number })[]
+  /** Whether a template item drawn into the list fills what it leaves empty from these defaults. */
+  fillFromDefaults?: boolean
 }
 
 /** What a list is for; fixed at creation. */
@@ -166,6 +168,11 @@ export interface Checklist {
   sortOrder: number
   /** Values new items on this list start with. Present when the server has `list-item-defaults`. */
   itemDefaults?: ItemDefaults
+  /**
+   * Whether a template item drawn into the list fills the fields it leaves empty
+   * from the item defaults. Missing on templates.
+   */
+  fillFromDefaults?: boolean
   /** True when new items default to one-time. Derived from the recurrence default. */
   deleteOnDoneDefault: boolean
   defaultRecurrenceMode: RecurrenceMode
