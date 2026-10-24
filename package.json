@@ -31,7 +31,7 @@
     "@nextcloud/router": "^3.2.0",
     "@nextcloud/vite-config": "^2.5.4",
     "@nextcloud/vue": "^9.13.1",
-    "barcode-detector": "^3.2.2",
+    "barcode-detector": "^3.2.3",
     "date-fns": "^4.4.0",
     "fuzzball": "^2.2.6",
     "linkifyjs": "^4.3.3",
