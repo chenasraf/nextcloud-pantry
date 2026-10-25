@@ -8,9 +8,11 @@ declare(strict_types=1);
 namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Db\Checklist;
+use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
+use OCA\Pantry\Service\RestockSyncService;
 use OCA\Pantry\Service\StockRules;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -43,7 +45,7 @@ final class InventoryController extends ListKindOCSController {
 	];
 
 	/** Checklist-only item fields: the done state and the recurrence. */
-	private const CHECKLIST_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'rrule', 'repeatFromCompletion', 'deleteOnDone'];
+	private const CHECKLIST_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'rrule', 'repeatFromCompletion', 'deleteOnDone', 'quantityPinned'];
 
 	protected function kind(): string {
 		return Checklist::KIND_INVENTORY;
@@ -120,6 +122,22 @@ final class InventoryController extends ListKindOCSController {
 		return array_merge($data, $stock, StockRules::evaluate($stock), $expiry, [
 			'expiryStatus' => StockRules::expiryStatus($stock + $expiry, $this->expiryLeadDays($listId), StockRules::today()),
 		], $links);
+	}
+
+	protected function afterItemWrite(ChecklistItem $item, ?ChecklistItem $before): ChecklistItem {
+		$linked = $item->getLinkedItemId() !== null && $item->getLinkedItemId() !== $before?->getLinkedItemId();
+		return $this->withRestockEvents($item, $this->restockSync->afterWrite(
+			$item,
+			$before !== null ? RestockSyncService::snapshot($before) : null,
+			$linked,
+			$this->requireUid(),
+		));
+	}
+
+	protected function afterListUpdated(Checklist $list, Checklist $before): void {
+		if ($list->getRestockChecklistId() !== $before->getRestockChecklistId()) {
+			$this->restockSync->backfill($list);
+		}
 	}
 
 	/**
@@ -776,7 +794,9 @@ final class InventoryController extends ListKindOCSController {
 			if (!$this->editCheck($houseId, $uid)($checklist)) {
 				throw new ForbiddenException('Linking needs edit rights on the checklist');
 			}
-			return new DataResponse($this->serializeItem($this->stockLinks->link($item, $row)));
+			$before = clone $item;
+			$linked = $this->stockLinks->link($item, $row);
+			return new DataResponse($this->serializeItem($this->afterItemWrite($linked, $before)));
 		});
 	}
 

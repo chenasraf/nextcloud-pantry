@@ -405,6 +405,11 @@ class Provider implements IProvider {
 	 * @return array<string, string>
 	 */
 	private function userParam(string $uid): array {
+		// Writes nobody made, such as a restock sync after a setting changed,
+		// are the app's own.
+		if ($uid === '') {
+			return $this->highlight('pantry', 'Pantry');
+		}
 		return [
 			'type' => 'user',
 			'id' => $uid,

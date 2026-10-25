@@ -90,6 +90,21 @@ class TemplateCopyService {
 		return ['item' => $this->copy($source, $template, $target, $addedBy, $duplicateImage), 'reused' => false];
 	}
 
+	/**
+	 * Copy an inventory item onto a checklist as the item that restocks it, by
+	 * the same rule as a template item but asking for `$quantity` and without
+	 * its stock fields. Always a new item: which same-name item to reuse is the
+	 * stock link's business.
+	 *
+	 * @param callable(int $fileId, string $ownerUid): ?int $duplicateImage
+	 */
+	public function copyForRestock(ChecklistItem $source, Checklist $inventory, Checklist $checklist, ?string $addedBy, ?string $quantity, callable $duplicateImage): ChecklistItem {
+		if ($inventory->getKind() !== Checklist::KIND_INVENTORY || !$checklist->isChecklist()) {
+			throw new \InvalidArgumentException('Restock items are copied from an inventory onto a checklist');
+		}
+		return $this->copy($source, $inventory, $checklist, $addedBy, $duplicateImage, $quantity);
+	}
+
 	private function findSameName(Checklist $target, string $name): ?ChecklistItem {
 		$key = ScopedTaxonomyService::nameKey($name);
 		$targetId = (int)$target->getId();
@@ -120,30 +135,39 @@ class TemplateCopyService {
 	}
 
 	/**
+	 * `$sourceList` is the template, or the inventory of a restock copy, whose
+	 * scoped categories, labels and fields are matched on the target. A restock
+	 * copy asks for `$restockQuantity` and carries no stock fields.
+	 *
 	 * @param callable(int $fileId, string $ownerUid): ?int $duplicateImage
 	 */
-	private function copy(ChecklistItem $source, Checklist $template, Checklist $target, ?string $addedBy, callable $duplicateImage): ChecklistItem {
+	private function copy(ChecklistItem $source, Checklist $sourceList, Checklist $target, ?string $addedBy, callable $duplicateImage, ?string $restockQuantity = null): ChecklistItem {
 		$now = time();
 		$houseId = (int)$target->getHouseId();
-		$templateId = (int)$template->getId();
+		$templateId = (int)$sourceList->getId();
 		$targetId = (int)$target->getId();
 		$sourceId = (int)$source->getId();
+		$isRestock = $sourceList->getKind() === Checklist::KIND_INVENTORY;
 
 		$data = [
 			'name' => $source->getName(),
 			'description' => $source->getDescription(),
 			'categoryId' => $this->targetCategory($source->getCategoryId(), $houseId, $templateId, $targetId, $now),
-			'quantity' => $source->getQuantity(),
+			'quantity' => $isRestock ? $restockQuantity : $source->getQuantity(),
 			'barcode' => $source->getBarcode(),
 			'storeIds' => $this->itemStoreMapper->findStoreIdsForItem($sourceId),
 			'labelIds' => $this->targetLabels($this->itemLabelMapper->findLabelIdsForItem($sourceId), $houseId, $templateId, $targetId, $now),
 			'prices' => $this->itemPriceMapper->findForItem($sourceId),
 			'customFields' => $this->targetFieldValues($this->fieldValueMapper->findForItem($sourceId), $houseId, $templateId, $targetId, $now),
-			'stockMode' => $source->getStockMode(),
-			'target' => $source->getTarget(),
-			'reorderPoint' => $source->getReorderPoint(),
-			'shelfLifeDays' => $source->getShelfLifeDays(),
 		];
+		if (!$isRestock) {
+			$data += [
+				'stockMode' => $source->getStockMode(),
+				'target' => $source->getTarget(),
+				'reorderPoint' => $source->getReorderPoint(),
+				'shelfLifeDays' => $source->getShelfLifeDays(),
+			];
+		}
 		if ($this->fills($target, $addedBy)) {
 			$data = $this->fillFromDefaults($data, $target, $houseId);
 		}

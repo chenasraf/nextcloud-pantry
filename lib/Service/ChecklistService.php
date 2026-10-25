@@ -789,8 +789,11 @@ class ChecklistService {
 		if (array_key_exists('categoryId', $patch)) {
 			$item->setCategoryId($this->intOrNull($patch['categoryId']));
 		}
+		$quantityChanged = false;
 		if (array_key_exists('quantity', $patch)) {
-			$item->setQuantity($this->strOrNull($patch['quantity']));
+			$quantity = $this->strOrNull($patch['quantity']);
+			$quantityChanged = $quantity !== $item->getQuantity();
+			$item->setQuantity($quantity);
 		}
 		if (array_key_exists('rrule', $patch)) {
 			$rrule = $patch['rrule'];
@@ -853,6 +856,14 @@ class ChecklistService {
 		if (array_key_exists('autoLink', $patch) && $patch['autoLink'] !== null) {
 			$autoLinkOn = (bool)$patch['autoLink'] && !$item->autoLinks();
 			$item->setAutoLink((bool)$patch['autoLink']);
+		}
+		if ($item->getListId() === $sourceListId && $this->getList($sourceListId, includeDeleted: true)->isChecklist()) {
+			if ($quantityChanged && $this->itemMapper->findLinkedTo([(int)$item->getId()]) !== []) {
+				$item->setQuantityPinned(true);
+			}
+			if (array_key_exists('quantityPinned', $patch) && $patch['quantityPinned'] !== null) {
+				$item->setQuantityPinned((bool)$patch['quantityPinned']);
+			}
 		}
 
 		$item->setUpdatedAt(time());
@@ -1056,36 +1067,81 @@ class ChecklistService {
 			// Linking first, while the row still reads as open, so a tick that
 			// pairs an unlinked row counts as that item's purchase.
 			$this->stockLinks->onChecklistRowSaved($item, $list);
-			$item->setDone(true);
-			$item->setDoneAt($now);
-			$item->setDoneBy($uid);
-			// "Once" items are soft-deleted from the list when marked done. The
-			// row stays in the DB (deleted_at set) so it can be surfaced in a
-			// trash view, while default queries hide it.
-			if ($item->getDeleteOnDone()) {
-				$item->setDeletedAt($now);
-				$item->setUpdatedAt($now);
-				$this->itemMapper->update($item);
-				$this->fieldReminders->onItemDeleted((int)$item->getId());
-				$this->stampListCompletion((int)$item->getListId(), $now);
-				return $item;
-			}
-			if ($item->getRrule() !== null) {
-				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
-			}
-		} else {
-			$item->setDone(false);
-			$item->setDoneAt(null);
-			$item->setDoneBy(null);
-			$item->setNextDueAt(null);
+			return $this->markDone($item, $uid, $now);
+		}
+		$this->markUndone($item, $now);
+		$item->setMemberReopened(true);
+		$this->itemMapper->update($item);
+		$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
+		return $item;
+	}
+
+	/**
+	 * Mark a checklist item done because nothing linked to it needs restocking
+	 * any more. It goes through the same path as a member's tick ("Once" items
+	 * go to the trash, recurring ones schedule their reopen), but nobody is
+	 * credited with it.
+	 */
+	public function systemDone(ChecklistItem $item, ?int $now = null): ChecklistItem {
+		return $this->markDone($item, null, $now ?? time());
+	}
+
+	/**
+	 * Put a checklist item back in play for a restock sync: out of the archive
+	 * and unchecked. Unlike a member's uncheck, stock recovering can still tick
+	 * it off again.
+	 */
+	public function reviveForRestock(ChecklistItem $item, ?int $now = null): ChecklistItem {
+		$now ??= time();
+		$wasDone = $item->getDone();
+		$item->setArchivedAt(null);
+		if ($wasDone) {
+			$this->markUndone($item, $now);
 		}
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
-		$this->fieldReminders->onItemDoneChanged((int)$item->getId(), $item->getDone());
-		if ($item->getDone()) {
-			$this->stampListCompletion((int)$item->getListId(), $now);
+		if ($wasDone) {
+			$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
 		}
 		return $item;
+	}
+
+	/**
+	 * `$uid` is who ticked it, or null when nobody did. Being done ends a
+	 * quantity pinned by hand and a member's reopen.
+	 */
+	private function markDone(ChecklistItem $item, ?string $uid, int $now): ChecklistItem {
+		$item->setDone(true);
+		$item->setDoneAt($now);
+		$item->setDoneBy($uid);
+		$item->setQuantityPinned(false);
+		$item->setMemberReopened(false);
+		$item->setUpdatedAt($now);
+		// "Once" items are soft-deleted from the list when marked done. The
+		// row stays in the DB (deleted_at set) so it can be surfaced in a
+		// trash view, while default queries hide it.
+		if ($item->getDeleteOnDone()) {
+			$item->setDeletedAt($now);
+			$this->itemMapper->update($item);
+			$this->fieldReminders->onItemDeleted((int)$item->getId());
+			$this->stampListCompletion((int)$item->getListId(), $now);
+			return $item;
+		}
+		if ($item->getRrule() !== null) {
+			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
+		}
+		$this->itemMapper->update($item);
+		$this->fieldReminders->onItemDoneChanged((int)$item->getId(), true);
+		$this->stampListCompletion((int)$item->getListId(), $now);
+		return $item;
+	}
+
+	private function markUndone(ChecklistItem $item, int $now): void {
+		$item->setDone(false);
+		$item->setDoneAt(null);
+		$item->setDoneBy(null);
+		$item->setNextDueAt(null);
+		$item->setUpdatedAt($now);
 	}
 
 	/**
@@ -1134,11 +1190,8 @@ class ChecklistService {
 				if (!$item->getDone()) {
 					continue;
 				}
-				$item->setDone(false);
-				$item->setDoneAt(null);
-				$item->setDoneBy(null);
-				$item->setNextDueAt(null);
-				$item->setUpdatedAt($now);
+				$this->markUndone($item, $now);
+				$item->setMemberReopened(true);
 				$this->itemMapper->update($item);
 				$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
 				$changed[] = $item;
@@ -1267,6 +1320,7 @@ class ChecklistService {
 			$item->setDone(false);
 			$item->setDoneAt(null);
 			$item->setDoneBy(null);
+			$item->setMemberReopened(true);
 			if ($item->getRepeatFromCompletion()) {
 				// Completion-based: next interval starts when the user checks
 				// the item off again, so clear the schedule for now.

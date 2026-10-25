@@ -2415,4 +2415,161 @@ class ChecklistServiceTest extends TestCase {
 
 		$this->assertNull($copy->getRestockChecklistId());
 	}
+
+	// ----- Restock sync state -----
+
+	public function testSystemDoneTicksTheItemOffWithNobodyCredited(): void {
+		$item = $this->makeItem(['quantity' => '8 eggs']);
+		$item->setQuantityPinned(true);
+		$item->setMemberReopened(true);
+		$this->itemMapper->expects($this->once())->method('update');
+
+		$this->svc->systemDone($item, 500);
+
+		$this->assertTrue($item->getDone());
+		$this->assertSame(500, $item->getDoneAt());
+		$this->assertNull($item->getDoneBy());
+		$this->assertTrue($item->isSystemDone());
+		$this->assertFalse($item->isQuantityPinned());
+		$this->assertFalse($item->isMemberReopened());
+	}
+
+	public function testSystemDoneTrashesAOnceItem(): void {
+		$item = $this->makeItem(['deleteOnDone' => true]);
+
+		$this->svc->systemDone($item, 500);
+
+		$this->assertSame(500, $item->getDeletedAt());
+	}
+
+	public function testSystemDoneSchedulesARecurringItemsReopen(): void {
+		$item = $this->makeItem(['rrule' => 'FREQ=WEEKLY', 'repeatFromCompletion' => true]);
+
+		$this->svc->systemDone($item, 1_700_000_000);
+
+		$this->assertNotNull($item->getNextDueAt());
+	}
+
+	public function testAMembersTickEndsAPinAndAReopen(): void {
+		$item = $this->makeItem();
+		$item->setQuantityPinned(true);
+		$item->setMemberReopened(true);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->svc->toggleItem(42, 'alice', 500);
+
+		$this->assertSame('alice', $item->getDoneBy());
+		$this->assertFalse($item->isSystemDone());
+		$this->assertFalse($item->isQuantityPinned());
+		$this->assertFalse($item->isMemberReopened());
+	}
+
+	public function testAMemberUncheckingAnItemMarksItReopened(): void {
+		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->svc->toggleItem(42, 'alice', 500);
+
+		$this->assertTrue($item->isMemberReopened());
+	}
+
+	public function testUncheckAllMarksItemsReopened(): void {
+		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);
+		$item->setId(42);
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->uncheckItems([42]);
+
+		$this->assertTrue($item->isMemberReopened());
+	}
+
+	public function testARecurringReopenMarksTheItemReopened(): void {
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=DAILY',
+			'createdAt' => strtotime('2026-04-06 13:00:00 UTC'),
+			'done' => true,
+			'nextDueAt' => strtotime('2026-04-08 13:00:00 UTC'),
+		]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findDueRecurring')->willReturn([$item]);
+
+		$this->svc->reopenDueItems(strtotime('2026-04-08 09:00:00 UTC'));
+
+		$this->assertTrue($item->isMemberReopened());
+	}
+
+	public function testReviveForRestockUnarchivesAndUnchecksWithoutAReopen(): void {
+		$item = $this->makeItem(['done' => true, 'doneAt' => 5, 'doneBy' => 'alice', 'archivedAt' => 6, 'nextDueAt' => 7]);
+		$this->itemMapper->expects($this->once())->method('update');
+
+		$this->svc->reviveForRestock($item, 500);
+
+		$this->assertNull($item->getArchivedAt());
+		$this->assertFalse($item->getDone());
+		$this->assertNull($item->getDoneBy());
+		$this->assertNull($item->getNextDueAt());
+		$this->assertFalse($item->isMemberReopened());
+	}
+
+	public function testChangingTheQuantityOfALinkedRowPinsIt(): void {
+		$row = $this->makeItem(['quantity' => '8 eggs']);
+		$row->setId(9);
+		$this->itemMapper->method('findById')->willReturn($row);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findLinkedTo')->with([9])->willReturn([$this->makeItem(['listId' => 20])]);
+
+		$this->svc->updateItem(9, ['quantity' => '2 dozen']);
+
+		$this->assertTrue($row->isQuantityPinned());
+	}
+
+	public function testChangingTheQuantityOfAnUnlinkedRowPinsNothing(): void {
+		$row = $this->makeItem(['quantity' => '8 eggs']);
+		$row->setId(9);
+		$this->itemMapper->method('findById')->willReturn($row);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findLinkedTo')->willReturn([]);
+
+		$this->svc->updateItem(9, ['quantity' => '2 dozen']);
+
+		$this->assertFalse($row->isQuantityPinned());
+	}
+
+	public function testSendingTheSameQuantityPinsNothing(): void {
+		$row = $this->makeItem(['quantity' => '8 eggs']);
+		$row->setId(9);
+		$this->itemMapper->method('findById')->willReturn($row);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->expects($this->never())->method('findLinkedTo');
+
+		$this->svc->updateItem(9, ['quantity' => '8 eggs']);
+
+		$this->assertFalse($row->isQuantityPinned());
+	}
+
+	public function testAPinCanBeCleared(): void {
+		$row = $this->makeItem(['quantity' => '2 dozen']);
+		$row->setId(9);
+		$row->setQuantityPinned(true);
+		$this->itemMapper->method('findById')->willReturn($row);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->svc->updateItem(9, ['quantityPinned' => false]);
+
+		$this->assertFalse($row->isQuantityPinned());
+	}
+
+	public function testAnInventoryItemIsNeverPinned(): void {
+		$item = $this->makeItem(['quantity' => '4 eggs', 'listId' => 20]);
+		$item->setId(9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('findLinkedTo')->willReturn([$this->makeItem()]);
+
+		$this->svc->updateItem(9, ['quantity' => '5 eggs', 'quantityPinned' => true]);
+
+		$this->assertFalse($item->isQuantityPinned());
+	}
 }

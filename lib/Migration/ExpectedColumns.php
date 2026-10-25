@@ -51,6 +51,8 @@ final class ExpectedColumns {
 			self::col('list_items', 'linked_item_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 			self::col('list_items', 'linked_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 			self::col('list_items', 'auto_link', Types::BOOLEAN, ['notnull' => false, 'default' => true]),
+			self::col('list_items', 'quantity_pinned', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('list_items', 'member_reopened', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
 
 			// lists — archived_at (Version29); the active-list query filters on it
 			// unconditionally, so a missing column breaks the whole list index.

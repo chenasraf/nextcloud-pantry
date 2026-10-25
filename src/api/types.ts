@@ -386,6 +386,10 @@ export interface ChecklistItem extends Omit<Partial<ItemStock>, 'stockMode'> {
   archivedAt: number | null
   /** Checklist items only: the inventory items this row restocks, earliest linked first. */
   restocks?: StockLinkSource[]
+  /** Checklist items only: a member set the quantity, so stock leaves it until the row is next done. */
+  quantityPinned?: boolean
+  /** In the response of a write only: what restocking did to checklist items because of it. */
+  restockSync?: RestockSyncEvent[]
 }
 
 export type StockMode = 'count' | 'level'
@@ -434,6 +438,22 @@ export interface StockLinkRow {
 export interface StockLinkSource {
   itemId: number
   name: string
+  listId: number
+  listName: string
+}
+
+/**
+ * What restocking did to a checklist item: `added` a new one, `revived` a
+ * checked or archived one, `changed` an open one's quantity, left a `pinned`
+ * quantity as set by hand, or `recovered`: ticked it off as no longer needed.
+ */
+export interface RestockSyncEvent {
+  event: 'added' | 'revived' | 'changed' | 'pinned' | 'recovered'
+  /** The inventory item whose write caused it. */
+  itemId: number
+  rowId: number
+  rowName: string
+  quantity: string | null
   listId: number
   listName: string
 }

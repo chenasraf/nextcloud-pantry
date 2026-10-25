@@ -11,6 +11,13 @@ import {
   stockInput,
   todayEpoch,
 } from '@/utils/stock'
+import { announceRestockSync } from '@/components/StockLink/restockToasts'
+
+/** An item a write returned, after telling the member what restocking did because of it. */
+function received(item: ChecklistItem): ChecklistItem {
+  announceRestockSync(item.restockSync)
+  return item
+}
 
 // Per-house, per-kind state shared across all callers so sidebar and views stay in sync.
 interface HouseChecklistState {
@@ -303,7 +310,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     if (useListId === undefined || useListId <= 0) {
       throw new Error('A target list is required to add an item')
     }
-    const created = await resource.addItem(houseId, useListId, input)
+    const created = received(await resource.addItem(houseId, useListId, input))
     items.value = [...items.value, created]
     return created
   }
@@ -318,12 +325,13 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
       throw new Error('A target list is required to add an item')
     }
     const result = await resource.drawItem(houseId, useListId, templateItemId)
+    received(result.item)
     mergeItems([result.item])
     return result
   }
 
   async function update(itemId: number, patch: Partial<api.ItemInput>): Promise<void> {
-    const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, patch)
+    const updated = received(await resource.updateItem(houseId, listIdFor(itemId), itemId, patch))
     if (isMeta && patch.targetListId !== undefined && patch.targetListId !== updated.listId) {
       // Should not happen — the backend canonicalizes listId via targetListId.
     }
@@ -358,6 +366,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     items.value = items.value.map((i) => (i.id === itemId ? optimistic : i))
     try {
       const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, patch)
+      announceRestockSync(updated.restockSync)
       if (stockWrites.get(itemId) === write) {
         items.value = items.value.map((i) => (i.id === itemId ? updated : i))
       }
@@ -377,7 +386,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
   /** Inventory items: link to the checklist item that restocks this one. */
   async function link(itemId: number, targetItemId: number): Promise<ChecklistItem> {
     return replaceItem(
-      await api.linkInventoryItem(houseId, listIdFor(itemId), itemId, targetItemId),
+      received(await api.linkInventoryItem(houseId, listIdFor(itemId), itemId, targetItemId)),
     )
   }
 
@@ -388,12 +397,14 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
 
   /** Inventory items: turn auto-link on or off. Turning it on may link the item straight away. */
   async function setAutoLink(itemId: number, autoLink: boolean): Promise<ChecklistItem> {
-    return replaceItem(await resource.updateItem(houseId, listIdFor(itemId), itemId, { autoLink }))
+    return replaceItem(
+      received(await resource.updateItem(houseId, listIdFor(itemId), itemId, { autoLink })),
+    )
   }
 
   async function copy(itemId: number, targetListId: number): Promise<ChecklistItem> {
     const sourceListId = listIdFor(itemId)
-    const created = await resource.copyItem(houseId, sourceListId, itemId, targetListId)
+    const created = received(await resource.copyItem(houseId, sourceListId, itemId, targetListId))
     if (isMeta || targetListId === listId) {
       items.value = [...items.value, created]
     }

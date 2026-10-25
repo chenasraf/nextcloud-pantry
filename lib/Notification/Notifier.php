@@ -36,11 +36,12 @@ class Notifier implements INotifier {
 		$params = $notification->getSubjectParameters();
 
 		$count = (int)($params['count'] ?? 1);
-		$userParam = [
-			'type' => 'user',
-			'id' => (string)($params['userId'] ?? ''),
-			'name' => (string)($params['userDisplayName'] ?? ''),
-		];
+		$userId = (string)($params['userId'] ?? '');
+		// Writes nobody made, such as a restock sync after a setting changed,
+		// are the app's own.
+		$userParam = $userId === ''
+			? ['type' => 'highlight', 'id' => 'pantry', 'name' => 'Pantry']
+			: ['type' => 'user', 'id' => $userId, 'name' => (string)($params['userDisplayName'] ?? '')];
 		$houseParam = [
 			'type' => 'highlight',
 			'id' => (string)($params['houseId'] ?? ''),

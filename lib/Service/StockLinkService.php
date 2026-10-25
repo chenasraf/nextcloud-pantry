@@ -145,20 +145,30 @@ class StockLinkService {
 		if (!$this->canMatch($item)) {
 			return null;
 		}
-		$restock = $this->restockChecklist($inventory);
-		if ($restock === null) {
-			return null;
-		}
-		$candidates = $this->candidatesFrom(
-			$item,
-			$this->rowsByName($restock),
-			array_flip($this->itemMapper->findLinkedIdsFromList((int)$inventory->getId())),
-		);
+		$candidates = $this->candidates($item, $inventory);
 		if (count($candidates) !== 1) {
 			return null;
 		}
 		$this->link($item, $candidates[0]);
 		return $candidates[0];
+	}
+
+	/**
+	 * Rows on the inventory's restock checklist with the item's name that it
+	 * could link to, in the order a member picks from.
+	 *
+	 * @return list<ChecklistItem>
+	 */
+	public function candidates(ChecklistItem $item, Checklist $inventory): array {
+		$restock = $this->restockChecklist($inventory);
+		if ($restock === null) {
+			return [];
+		}
+		return $this->candidatesFrom(
+			$item,
+			$this->rowsByName($restock),
+			array_flip($this->itemMapper->findLinkedIdsFromList((int)$inventory->getId())),
+		);
 	}
 
 	/**

@@ -232,4 +232,19 @@ class NotifierTest extends TestCase {
 		$this->assertStringNotContainsString('{user}', $parsedSubject);
 		$this->assertStringNotContainsString('{house}', $parsedSubject);
 	}
+
+	public function testAnItemNobodyAddedIsCreditedToTheApp(): void {
+		$n = $this->makeNotification('pantry', 'item_added', [
+			'userId' => '',
+			'userDisplayName' => '',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Eggs',
+			'listName' => 'Groceries',
+		]);
+
+		$this->notifier->prepare($n, 'en');
+
+		$this->assertSame(['type' => 'highlight', 'id' => 'pantry', 'name' => 'Pantry'], $n->getRichSubjectParameters()['user']);
+	}
 }

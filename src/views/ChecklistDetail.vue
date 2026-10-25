@@ -274,6 +274,7 @@
               @link="handleLink"
               @unlink="handleUnlink"
               @auto-link="handleAutoLink"
+              @unpin="handleUnpin"
               @preview="openPreview"
               @drag-start="onItemDragStart"
               @reorder-over="onReorderOver"
@@ -404,6 +405,7 @@
                 @link="handleLink"
                 @unlink="handleUnlink"
                 @auto-link="handleAutoLink"
+                @unpin="handleUnpin"
                 @preview="openPreview"
                 @drag-start="onItemDragStart"
                 @reorder-over="onReorderOver"
@@ -2478,6 +2480,15 @@ async function handleAutoLink(item: ChecklistItem, on: boolean) {
     const updated = await setAutoLink(item.id, on)
     syncEditingLink(updated)
     if (on) announceSeveralMatches(item, updated)
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+/** Let stock set the quantity of a row a member set by hand again. */
+async function handleUnpin(item: ChecklistItem) {
+  try {
+    await update(item.id, { quantityPinned: false })
   } catch (e) {
     showError((e as Error).message)
   }

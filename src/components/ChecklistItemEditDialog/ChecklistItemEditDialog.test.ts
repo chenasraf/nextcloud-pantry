@@ -5,6 +5,7 @@ import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ChecklistItem } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
+vi.mock('@nextcloud/dialogs', () => ({ showInfo: vi.fn(), showSuccess: vi.fn() }))
 vi.mock('@icons/Upload.vue', () => createIconMock('UploadIcon'))
 vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
 

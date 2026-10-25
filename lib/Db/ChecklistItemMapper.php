@@ -617,6 +617,19 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Hold the item's row until the open transaction ends. A write that
+	 * changes nothing still takes the row lock, on every supported database,
+	 * where SELECT … FOR UPDATE is not portable.
+	 */
+	public function lock(int $id): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('updated_at', 'updated_at')
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
 	 * Unlink every inventory item linked to one of the given items. Auto-link
 	 * is left as it is, so a dropped link can be found again by name.
 	 *

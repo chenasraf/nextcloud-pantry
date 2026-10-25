@@ -69,6 +69,8 @@ use OCP\AppFramework\Db\Entity;
  * @method int|null getLinkedAt()
  * @method void setLinkedAt(?int $linkedAt)
  * @method void setAutoLink(?bool $autoLink)
+ * @method void setQuantityPinned(?bool $quantityPinned)
+ * @method void setMemberReopened(?bool $memberReopened)
  */
 class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $listId = 0;
@@ -102,6 +104,10 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?int $linkedItemId = null;
 	protected ?int $linkedAt = null;
 	protected ?bool $autoLink = true;
+	/** A member set a linked checklist item's quantity, so restock syncs leave it until it is next done. */
+	protected ?bool $quantityPinned = false;
+	/** A member reopened the checklist item, so stock recovering does not tick it off until it is next done. */
+	protected ?bool $memberReopened = false;
 
 	/**
 	 * Prices resolved for this item, attached transiently by the service/controller
@@ -130,6 +136,8 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		$this->addType('linkedItemId', 'integer');
 		$this->addType('linkedAt', 'integer');
 		$this->addType('autoLink', 'boolean');
+		$this->addType('quantityPinned', 'boolean');
+		$this->addType('memberReopened', 'boolean');
 		// Force these bool fields to be included in INSERTs. Their PHP defaults
 		// match the initial value, so the magic setter would otherwise never
 		// mark them dirty and the column would be omitted from the INSERT.
@@ -142,6 +150,19 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	/** A row from before the column existed links, like a new item. */
 	public function autoLinks(): bool {
 		return $this->autoLink !== false;
+	}
+
+	public function isQuantityPinned(): bool {
+		return $this->quantityPinned === true;
+	}
+
+	public function isMemberReopened(): bool {
+		return $this->memberReopened === true;
+	}
+
+	/** Done by stock recovering rather than by a member: "No longer needed". */
+	public function isSystemDone(): bool {
+		return $this->done && $this->doneBy === null;
 	}
 
 	/**
@@ -220,6 +241,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'updatedAt' => $this->updatedAt,
 			'deletedAt' => $this->deletedAt,
 			'archivedAt' => $this->archivedAt,
+			'quantityPinned' => $this->isQuantityPinned(),
 		];
 	}
 }

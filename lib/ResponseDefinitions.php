@@ -260,7 +260,9 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     deletedAt: int|null,
  *     archivedAt: int|null,
+ *     quantityPinned: bool,
  *     restocks?: list<PantryStockLinkSource>,
+ *     restockSync?: list<PantryRestockSyncEvent>,
  * }
  *
  * @psalm-type PantryStockLinkRow = array{
@@ -276,6 +278,21 @@ namespace OCA\Pantry;
  * @psalm-type PantryStockLinkSource = array{
  *     itemId: int,
  *     name: string,
+ *     listId: int,
+ *     listName: string,
+ * }
+ *
+ * What a restock sync did to a checklist item, in the response of the write
+ * that caused it: `added` a new item, `revived` a checked or archived one,
+ * `changed` an open one's quantity, left a `pinned` quantity as set by hand,
+ * or `recovered`: ticked it off as no longer needed.
+ *
+ * @psalm-type PantryRestockSyncEvent = array{
+ *     event: 'added'|'revived'|'changed'|'pinned'|'recovered',
+ *     itemId: int,
+ *     rowId: int,
+ *     rowName: string,
+ *     quantity: string|null,
  *     listId: int,
  *     listName: string,
  * }
@@ -341,6 +358,7 @@ namespace OCA\Pantry;
  *     autoLink: bool,
  *     stockLink: PantryStockLinkRow|null,
  *     linkCandidates: list<PantryStockLinkRow>,
+ *     restockSync?: list<PantryRestockSyncEvent>,
  * }
  *
  * @psalm-type PantryListTemplates = array{

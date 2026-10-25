@@ -99,6 +99,7 @@
                 @toggle="handleToggle"
                 @session-remove="handleSessionRemove"
                 @preview="openPreview"
+                @unpin="handleUnpin"
               />
             </template>
           </ul>
@@ -225,6 +226,8 @@ import {
   unskipSessionItem,
   listRemovedSessionItems,
 } from '@/api/shopping'
+import { updateItem } from '@/api/lists'
+import { announceRestockSync } from '@/components/StockLink/restockToasts'
 import type {
   Category,
   ChecklistItem,
@@ -440,6 +443,23 @@ async function syncDoneItems() {
 // Whole-row check records the item in the session log against the active store.
 // Checked items move into the Done drawer (kept visible so they can be
 // un-checked); un-checking moves them back. Optimistic, with a revert on failure.
+/** Let stock set the quantity of a row a member set by hand again. */
+async function handleUnpin(item: ChecklistItem) {
+  try {
+    const updated = await updateItem(houseIdNum.value, item.listId, item.id, {
+      quantityPinned: false,
+    })
+    announceRestockSync(updated.restockSync)
+    items.value = items.value.map((i) =>
+      i.id === item.id
+        ? { ...i, quantity: updated.quantity, quantityPinned: updated.quantityPinned }
+        : i,
+    )
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
 async function handleToggle(id: number) {
   if (!session.value) return
   const sessionId = session.value.id

@@ -1072,6 +1072,12 @@
                         "items": {
                             "$ref": "#/components/schemas/StockLinkRow"
                         }
+                    },
+                    "restockSync": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RestockSyncEvent"
+                        }
                     }
                 }
             },
@@ -1813,7 +1819,8 @@
                     "createdAt",
                     "updatedAt",
                     "deletedAt",
-                    "archivedAt"
+                    "archivedAt",
+                    "quantityPinned"
                 ],
                 "properties": {
                     "id": {
@@ -1932,10 +1939,19 @@
                         "format": "int64",
                         "nullable": true
                     },
+                    "quantityPinned": {
+                        "type": "boolean"
+                    },
                     "restocks": {
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/StockLinkSource"
+                        }
+                    },
+                    "restockSync": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RestockSyncEvent"
                         }
                     }
                 }
@@ -2371,6 +2387,52 @@
                                 }
                             }
                         }
+                    }
+                }
+            },
+            "RestockSyncEvent": {
+                "type": "object",
+                "required": [
+                    "event",
+                    "itemId",
+                    "rowId",
+                    "rowName",
+                    "quantity",
+                    "listId",
+                    "listName"
+                ],
+                "properties": {
+                    "event": {
+                        "type": "string",
+                        "enum": [
+                            "added",
+                            "revived",
+                            "changed",
+                            "pinned",
+                            "recovered"
+                        ]
+                    },
+                    "itemId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "rowId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "rowName": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "listId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "listName": {
+                        "type": "string"
                     }
                 }
             },
@@ -8572,6 +8634,12 @@
                                                 }
                                             }
                                         }
+                                    },
+                                    "quantityPinned": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "False lets stock set the quantity of an item that restocks inventory items again, and sets it to what they ask for. Changing such an item's quantity pins it until it is next done."
                                     }
                                 }
                             }

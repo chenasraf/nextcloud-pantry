@@ -32,6 +32,7 @@ use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
+use OCA\Pantry\Service\RestockSyncService;
 use OCA\Pantry\Service\ShareService;
 use OCA\Pantry\Service\StockLinkService;
 use OCA\Pantry\Service\StockRules;
@@ -61,10 +62,13 @@ class ListKindControllerTest extends TestCase {
 	private ActivityPublisher $activity;
 	/** @var StockLinkService&MockObject */
 	private StockLinkService $stockLinks;
+	/** @var RestockSyncService&MockObject */
+	private RestockSyncService $restockSync;
 
 	protected function setUp(): void {
 		$this->activity = $this->createMock(ActivityPublisher::class);
 		$this->stockLinks = $this->createMock(StockLinkService::class);
+		$this->restockSync = $this->createMock(RestockSyncService::class);
 		$this->lists = $this->createMock(ChecklistService::class);
 		$this->attachments = $this->createMock(TemplateAttachmentService::class);
 		$this->templateCopy = $this->createMock(TemplateCopyService::class);
@@ -117,6 +121,7 @@ class ListKindControllerTest extends TestCase {
 			$this->attachments,
 			$this->templateCopy,
 			$this->stockLinks,
+			$this->restockSync,
 		);
 	}
 
@@ -729,5 +734,126 @@ class ListKindControllerTest extends TestCase {
 		$data = $this->makeController(InventoryController::class)->showInventory(1, 7)->getData();
 
 		$this->assertNull($data['restockChecklistId']);
+	}
+
+	// ----- Restock sync -----
+
+	/** @return array<string, mixed> */
+	private function syncEvent(string $event): array {
+		return ['event' => $event, 'itemId' => 3, 'rowId' => 50, 'rowName' => 'Eggs', 'quantity' => '8 eggs', 'listId' => 10, 'listName' => 'Shopping'];
+	}
+
+	public function testAStockWriteSyncsAgainstTheStockItHadBefore(): void {
+		$item = $this->stageLink();
+		$item->setStockMode('count');
+		$item->setQuantity('12 eggs');
+		$item->setTarget('12 eggs');
+		$updated = clone $item;
+		$updated->setQuantity('4 eggs');
+		$this->lists->method('updateItem')->willReturn($updated);
+		$this->restockSync->expects($this->once())->method('afterWrite')
+			->with($updated, ['status' => 'ok', 'shortfall' => null, 'needs' => false], false, 'alice')
+			->willReturn([$this->syncEvent('added')]);
+
+		$data = $this->makeController(InventoryController::class)->updateInventoryItem(1, 7, 3, quantity: '4 eggs')->getData();
+
+		$this->assertSame([$this->syncEvent('added')], $data['restockSync']);
+	}
+
+	public function testAWriteTheSyncLeftAloneSaysNothing(): void {
+		$item = $this->stageLink();
+		$this->lists->method('updateItem')->willReturn($item);
+
+		$data = $this->makeController(InventoryController::class)->updateInventoryItem(1, 7, 3, name: 'Eggs')->getData();
+
+		$this->assertArrayNotHasKey('restockSync', $data);
+	}
+
+	public function testANewItemSyncsWithNothingBefore(): void {
+		$item = $this->stageLink();
+		$this->lists->method('addItem')->willReturn($item);
+		$this->restockSync->expects($this->once())->method('afterWrite')->with($item, null, false, 'alice');
+
+		$this->makeController(InventoryController::class)->addInventoryItem(1, 7, 'Eggs');
+	}
+
+	public function testLinkingByHandSyncsTheNewLink(): void {
+		$this->stageLink();
+		$this->shares->method('canEditFromMap')->willReturn(true);
+		$this->stockLinks->method('link')->willReturnCallback(static function (ChecklistItem $item, ChecklistItem $row): ChecklistItem {
+			$item->setLinkedItemId((int)$row->getId());
+			return $item;
+		});
+		$this->restockSync->expects($this->once())->method('afterWrite')
+			->with($this->anything(), $this->anything(), true, 'alice')
+			->willReturn([$this->syncEvent('revived')]);
+
+		$data = $this->makeController(InventoryController::class)->linkInventoryItem(1, 7, 3, 50)->getData();
+
+		$this->assertSame([$this->syncEvent('revived')], $data['restockSync']);
+	}
+
+	public function testSettingTheRestockChecklistBackFillsTheInventory(): void {
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$updated = $this->makeList(Checklist::KIND_INVENTORY);
+		$updated->setRestockChecklistId(10);
+		$this->lists->method('updateList')->willReturn($updated);
+		$this->restockSync->expects($this->once())->method('backfill')->with($updated);
+
+		$this->makeController(InventoryController::class)->updateInventory(1, 7, restockChecklistId: 10);
+	}
+
+	public function testOtherInventorySettingsBackFillNothing(): void {
+		$inventory = $this->makeList(Checklist::KIND_INVENTORY);
+		$inventory->setRestockChecklistId(10);
+		$this->lists->method('getList')->willReturn($inventory);
+		$this->lists->method('updateList')->willReturn(clone $inventory);
+		$this->restockSync->expects($this->never())->method('backfill');
+
+		$this->makeController(InventoryController::class)->updateInventory(1, 7, name: 'Pantry');
+	}
+
+	public function testLettingStockSetAPinnedQuantityResyncsTheRow(): void {
+		$row = new ChecklistItem();
+		$row->setId(50);
+		$row->setListId(7);
+		$row->setName('Eggs');
+		$row->setQuantityPinned(true);
+		$unpinned = clone $row;
+		$unpinned->setQuantityPinned(false);
+		$this->lists->method('getItem')->willReturn($row);
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->lists->expects($this->once())->method('updateItem')->with(50, ['quantityPinned' => false])->willReturn($unpinned);
+		$this->restockSync->expects($this->once())->method('resyncRow')->with($unpinned)->willReturn([$this->syncEvent('changed')]);
+
+		$data = $this->makeController(ChecklistController::class)->updateItem(1, 7, 50, quantityPinned: false)->getData();
+
+		$this->assertSame([$this->syncEvent('changed')], $data['restockSync']);
+		$this->assertTrue($data['quantityPinned']);
+	}
+
+	public function testEditingAnUnpinnedRowResyncsNothing(): void {
+		$row = new ChecklistItem();
+		$row->setId(50);
+		$row->setListId(7);
+		$row->setName('Eggs');
+		$this->lists->method('getItem')->willReturn($row);
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->lists->method('updateItem')->willReturn($row);
+		$this->restockSync->expects($this->never())->method('resyncRow');
+
+		$this->makeController(ChecklistController::class)->updateItem(1, 7, 50, quantity: '3');
+	}
+
+	public function testRestoringAChecklistBackFillsTheInventoriesRestockingIntoIt(): void {
+		$checklist = $this->makeList(Checklist::KIND_CHECKLIST);
+		$this->lists->method('getList')->willReturn($checklist);
+		$this->lists->method('restoreList')->willReturn($checklist);
+		$this->lists->method('unarchiveList')->willReturn($checklist);
+		$this->restockSync->expects($this->exactly(2))->method('backfillInto')->with($checklist);
+
+		$controller = $this->makeController(ChecklistController::class);
+		$controller->restoreList(1, 7);
+		$controller->unarchiveList(1, 7);
 	}
 }

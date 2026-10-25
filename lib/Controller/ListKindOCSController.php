@@ -29,6 +29,7 @@ use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
+use OCA\Pantry\Service\RestockSyncService;
 use OCA\Pantry\Service\ShareService;
 use OCA\Pantry\Service\StockLinkService;
 use OCA\Pantry\Service\StoreService;
@@ -77,16 +78,17 @@ abstract class ListKindOCSController extends OCSController {
 		protected TemplateAttachmentService $attachments,
 		protected TemplateCopyService $templateCopy,
 		protected StockLinkService $stockLinks,
+		protected RestockSyncService $restockSync,
 	) {
 		parent::__construct($appName, $request);
 	}
 
 	/**
 	 * Item fields a template item does not have: the done state, the reopen
-	 * schedule, the stock level and the expiry date. A template keeps how its
+	 * schedule, a pinned quantity, the stock level and the expiry date. A template keeps how its
 	 * items are stocked and how long they keep, never how much is on hand.
 	 */
-	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'stockLevel', 'expiresAt'];
+	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'stockLevel', 'expiresAt', 'quantityPinned'];
 
 	/** Item fields only an inventory item has. */
 	protected const STOCK_ITEM_FIELDS = ['stockMode', 'stockLevel', 'target', 'reorderPoint', 'expiresAt', 'shelfLifeDays'];
@@ -242,7 +244,50 @@ abstract class ListKindOCSController extends OCSController {
 			$this->logger->error('Failed to load custom fields for item; serializing without them', ['exception' => $e]);
 			$data['customFields'] = [];
 		}
-		return $this->shapeItem($data);
+		$data = $this->shapeItem($data);
+		$events = $this->restockEvents[(int)$item->getId()] ?? [];
+		if ($events !== []) {
+			$data['restockSync'] = $events;
+		}
+		return $data;
+	}
+
+	/** @var array<int, list<array<string, mixed>>> What restock syncs did, by the item whose write caused them, for its response. */
+	private array $restockEvents = [];
+
+	/**
+	 * Remember what a restock sync did, so the item's response tells the
+	 * member, and re-read the item, which the sync may have linked.
+	 *
+	 * @param list<array<string, mixed>> $events
+	 */
+	protected function withRestockEvents(ChecklistItem $item, array $events): ChecklistItem {
+		if ($events === []) {
+			return $item;
+		}
+		$this->restockEvents[(int)$item->getId()] = $events;
+		return $this->lists->getItem((int)$item->getId(), includeDeleted: true);
+	}
+
+	/**
+	 * Called after an item is added, updated, copied or drawn here, with the
+	 * item as it was before (null for a new one).
+	 */
+	protected function afterItemWrite(ChecklistItem $item, ?ChecklistItem $before): ChecklistItem {
+		return $item;
+	}
+
+	/**
+	 * Called after a list's settings are updated, with the list as it was
+	 * before.
+	 */
+	protected function afterListUpdated(Checklist $list, Checklist $before): void {
+	}
+
+	/**
+	 * Called after a list is restored from the trash or the archive.
+	 */
+	protected function afterListBackInUse(Checklist $list): void {
 	}
 
 	// ----- Lists -----
@@ -343,8 +388,9 @@ abstract class ListKindOCSController extends OCSController {
 		return $this->runAction(function () use ($houseId, $listId, $patch): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$this->loadList($houseId, $listId);
+			$before = $this->loadList($houseId, $listId);
 			$list = $this->lists->updateList($listId, $patch);
+			$this->afterListUpdated($list, $before);
 			$contentChanged = array_intersect(['name', 'description', 'icon', 'color'], array_keys($patch)) !== [];
 			if ($contentChanged) {
 				$this->activity->publishListUpdated(
@@ -413,6 +459,7 @@ abstract class ListKindOCSController extends OCSController {
 			$this->auth->requireMember($houseId, $uid);
 			$this->loadList($houseId, $listId, includeDeleted: true);
 			$restored = $this->lists->restoreList($listId);
+			$this->afterListBackInUse($restored);
 			return new DataResponse($this->oneListJson($restored, $houseId, $uid));
 		});
 	}
@@ -439,6 +486,7 @@ abstract class ListKindOCSController extends OCSController {
 			$this->auth->requireMember($houseId, $uid);
 			$this->loadList($houseId, $listId, includeDeleted: true);
 			$unarchived = $this->lists->unarchiveList($listId);
+			$this->afterListBackInUse($unarchived);
 			return new DataResponse($this->oneListJson($unarchived, $houseId, $uid));
 		});
 	}
@@ -594,6 +642,7 @@ abstract class ListKindOCSController extends OCSController {
 				'expiresAt' => $data['expiresAt'] ?? null,
 				'shelfLifeDays' => $data['shelfLifeDays'] ?? null,
 			], $uid);
+			$item = $this->afterItemWrite($item, null);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
 				$houseId,
@@ -640,7 +689,7 @@ abstract class ListKindOCSController extends OCSController {
 		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			[, $list] = $this->loadItem($houseId, $listId, $itemId);
+			[$before, $list] = $this->loadItem($houseId, $listId, $itemId);
 			$patch = [];
 			if ($name !== null) {
 				$patch['name'] = $name;
@@ -712,7 +761,7 @@ abstract class ListKindOCSController extends OCSController {
 				$targetList = $this->loadList($houseId, $targetListId);
 				$patch['listId'] = $targetListId;
 			}
-			$updated = $this->lists->updateItem($itemId, $patch);
+			$updated = $this->afterItemWrite($this->lists->updateItem($itemId, $patch), $before);
 
 			$houseName = $this->houses->get($houseId)->getName();
 			if ($targetList !== null && $targetList->getId() !== $list->getId()) {
@@ -758,6 +807,7 @@ abstract class ListKindOCSController extends OCSController {
 
 			[$newImageFileId, $newImageOwner] = $this->duplicateImageFor($source, $houseId, $uid);
 			$copy = $this->lists->copyItem($itemId, $targetListId, $uid, $newImageFileId, $newImageOwner);
+			$copy = $this->afterItemWrite($copy, null);
 
 			$this->activity->publishItemCopied(
 				$houseId,
@@ -945,6 +995,7 @@ abstract class ListKindOCSController extends OCSController {
 			);
 			$item = $result['item'];
 			if (!$result['reused']) {
+				$item = $this->afterItemWrite($item, null);
 				$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 				$this->activity->publishItemAdded(
 					$houseId,

@@ -50,6 +50,17 @@ final class ChecklistController extends ListKindOCSController {
 		return parent::shapeItem($data) + ['restocks' => is_int($id) ? ($this->restocks[$id] ?? []) : []];
 	}
 
+	protected function afterItemWrite(ChecklistItem $item, ?ChecklistItem $before): ChecklistItem {
+		if ($before === null || !$before->isQuantityPinned() || $item->isQuantityPinned()) {
+			return $item;
+		}
+		return $this->withRestockEvents($item, $this->restockSync->resyncRow($item));
+	}
+
+	protected function afterListBackInUse(Checklist $list): void {
+		$this->restockSync->backfillInto($list);
+	}
+
 	/**
 	 * List all checklists in a house
 	 *
@@ -684,6 +695,7 @@ final class ChecklistController extends ListKindOCSController {
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}>|null $prices New full set of prices (empty array clears all; null leaves them unchanged). A null store id is the store-less price; at most one per store and one store-less.
 	 * @param list<int>|null $labelIds New set of label ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}>|null $customFields New full set of custom-field values (empty array clears all; null leaves them unchanged). Each field must belong to the house and apply to the item's list.
+	 * @param bool|null $quantityPinned False lets stock set the quantity of an item that restocks inventory items again, and sets it to what they ask for. Changing such an item's quantity pins it until it is next done.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -711,8 +723,10 @@ final class ChecklistController extends ListKindOCSController {
 		?array $prices = null,
 		?array $labelIds = null,
 		?array $customFields = null,
+		?bool $quantityPinned = null,
 	): DataResponse {
-		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields);
+		$extra = $quantityPinned !== null ? ['quantityPinned' => $quantityPinned] : [];
+		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $extra);
 	}
 
 	/**

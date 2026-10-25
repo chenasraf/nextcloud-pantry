@@ -295,4 +295,21 @@ class ProviderTest extends TestCase {
 		$this->assertStringContainsString('Reminder', $captured['parsed']);
 		$this->assertStringContainsString('My House', $captured['parsed']);
 	}
+
+	public function testAWriteNobodyMadeIsCreditedToTheApp(): void {
+		[$event, $captured] = $this->makeEvent('pantry', ActivityPublisher::SUBJECT_ITEM_ADDED, [
+			'author' => '',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Eggs',
+			'listId' => 7,
+			'listName' => 'Groceries',
+		]);
+		$this->activityManager->method('getCurrentUserId')->willReturn('bob');
+
+		$this->provider->parse('en', $event);
+
+		$this->assertSame('{author} added {item} to {list} in {house}', $captured['rich']);
+		$this->assertSame(['type' => 'highlight', 'id' => 'pantry', 'name' => 'Pantry'], $captured['richParams']['author']);
+	}
 }

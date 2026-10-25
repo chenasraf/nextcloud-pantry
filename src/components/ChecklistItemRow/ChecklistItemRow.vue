@@ -74,6 +74,13 @@
           </span>
           <span class="checklist-row__name">{{ item.name }}</span>
         </span>
+        <span
+          v-if="systemDone"
+          class="checklist-row__no-longer-needed"
+          data-testid="no-longer-needed"
+        >
+          {{ strings.noLongerNeeded }}
+        </span>
         <div class="checklist-row__meta">
           <PantryChip
             v-if="suggestion && suggestionTemplates?.length"
@@ -100,7 +107,26 @@
             {{ strings.archived }}
           </PantryChip>
           <PantryChip
-            v-if="item.quantity && !stock"
+            v-if="pinned"
+            class="checklist-row__pinned"
+            variant="primary"
+            size="sm"
+            :interactive="canEditItem"
+            :title="strings.pinnedTooltip"
+            :aria-label="pinnedLabel"
+            data-testid="pinned-quantity"
+            @click.stop="canEditItem && $emit('unpin', item)"
+          >
+            <template #icon>
+              <PinIcon :size="14" />
+            </template>
+            {{ pinnedText }}
+            <template v-if="canEditItem" #trailing>
+              <CloseIcon :size="14" />
+            </template>
+          </PantryChip>
+          <PantryChip
+            v-else-if="item.quantity && !stock"
             class="checklist-row__quantity"
             size="sm"
             :interactive="false"
@@ -425,6 +451,7 @@ import ClipboardTextMultipleIcon from '@icons/ClipboardTextMultiple.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import PackageVariantClosedIcon from '@icons/PackageVariantClosed.vue'
+import PinIcon from '@icons/Pin.vue'
 import LinkVariantIcon from '@icons/LinkVariant.vue'
 import LinkOffIcon from '@icons/LinkOff.vue'
 import AlertCircleOutlineIcon from '@icons/AlertCircleOutline.vue'
@@ -633,6 +660,33 @@ const pickChipText = computed(() =>
 const restocksText = computed(() =>
   isChecklist.value && props.item.restocks?.length ? restocksTooltip(props.item.restocks) : null,
 )
+/** A quantity a member set on a row that restocks inventory items, which stock leaves alone. */
+const pinned = computed(
+  () =>
+    isChecklist.value &&
+    !props.item.done &&
+    !!props.item.quantityPinned &&
+    !!props.item.restocks?.length,
+)
+const pinnedText = computed(() =>
+  props.item.quantity
+    ? // TRANSLATORS: Chip on a checklist item whose quantity a member set by hand, e.g. "× 2 dozen · set by hand".
+      t(
+        'pantry',
+        '× {quantity} · set by hand',
+        { quantity: props.item.quantity },
+        { escape: false },
+      )
+    : // TRANSLATORS: Chip on a checklist item whose quantity a member cleared by hand, so stock leaves it empty.
+      t('pantry', 'Set by hand'),
+)
+const pinnedLabel = computed(() =>
+  canEditItem.value ? `${pinnedText.value}. ${strings.pinnedTooltip}` : pinnedText.value,
+)
+/** Ticked off because nothing it restocks needs it any more, rather than by a member. */
+const systemDone = computed(
+  () => isChecklist.value && props.item.done && !props.item.doneBy && !!props.item.restocks?.length,
+)
 
 const canCheck = computed(() => isChecklist.value && props.listWritable && can.value.canCheckItems)
 // Items that are never checked off open instead of toggling.
@@ -664,6 +718,7 @@ const emit = defineEmits<{
   link: [item: ChecklistItem, row: StockLinkRow]
   unlink: [item: ChecklistItem]
   'auto-link': [item: ChecklistItem, on: boolean]
+  unpin: [item: ChecklistItem]
   'drag-start': [itemId: number, groupKey?: string]
   'reorder-over': [itemId: number, event: MouseEvent, groupKey?: string]
 }>()
@@ -790,6 +845,9 @@ const strings = {
   unarchiveItem: t('pantry', 'Unarchive'),
   // TRANSLATORS: Chip on an inventory item that needs restock but is never added to a shopping list (unlinked, auto-link off).
   notAdded: t('pantry', 'Not added to a shopping list'),
+  pinnedTooltip: t('pantry', 'Set by hand. Tap to let stock set it.'),
+  // TRANSLATORS: Line under a checklist item that was ticked off because the inventory items it restocks are back in stock.
+  noLongerNeeded: t('pantry', 'No longer needed'),
 }
 
 function storeLabel(name: string): string {
@@ -988,6 +1046,11 @@ function storeLabel(name: string): string {
 
   &__name {
     font-weight: 500;
+  }
+
+  &__no-longer-needed {
+    font-size: 0.8rem;
+    color: var(--color-text-maxcontrast);
   }
 
   &__meta {

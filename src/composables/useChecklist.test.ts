@@ -45,6 +45,9 @@ vi.mock('@/api/lists', () => ({
   },
 }))
 
+const announceRestockSync = vi.hoisted(() => vi.fn())
+vi.mock('@/components/StockLink/restockToasts', () => ({ announceRestockSync }))
+
 import { ALL_LISTS_ID, useChecklists, useChecklistItems } from './useChecklist'
 
 function makeList(overrides: Partial<Checklist> = {}): Checklist {
@@ -889,5 +892,64 @@ describe('useChecklistItems', () => {
 
       expect(mockApi.listItems).toHaveBeenCalledWith(1, 10, 'custom')
     })
+  })
+})
+
+describe('useChecklistItems restock sync', () => {
+  const sync = [
+    {
+      event: 'added' as const,
+      itemId: 1,
+      rowId: 50,
+      rowName: 'Eggs',
+      quantity: '8 eggs',
+      listId: 3,
+      listName: 'Groceries',
+    },
+  ]
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    houseCounter++
+  })
+
+  it('tells the member what an edit did to checklist items', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem()])
+    mockApi.updateItem.mockResolvedValue(makeItem({ restockSync: sync }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await c.update(1, { name: 'Eggs' })
+
+    expect(announceRestockSync).toHaveBeenCalledWith(sync)
+  })
+
+  it('tells the member what a stock step did, even when a later step overtook it', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem({ quantity: '4' })])
+    let answerFirst: (item: ChecklistItem) => void = () => {}
+    mockApi.updateItem
+      .mockReturnValueOnce(new Promise((resolve) => (answerFirst = resolve)))
+      .mockResolvedValueOnce(makeItem({ quantity: '2' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    const first = c.updateStock(1, { quantity: '3' })
+    await c.updateStock(1, { quantity: '2' })
+    answerFirst(makeItem({ quantity: '3', restockSync: sync }))
+    await first
+
+    expect(announceRestockSync).toHaveBeenCalledWith(sync)
+    expect(c.items.value[0].quantity).toBe('2')
+  })
+
+  it('tells the member what adding an item did', async () => {
+    mockApi.listItems.mockResolvedValue([])
+    mockApi.addItem.mockResolvedValue(makeItem({ restockSync: sync }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await c.add({ name: 'Eggs' })
+
+    expect(announceRestockSync).toHaveBeenCalledWith(sync)
   })
 })

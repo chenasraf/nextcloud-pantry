@@ -130,6 +130,19 @@ class ChecklistMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * Hold the list's row until the open transaction ends. A write that
+	 * changes nothing still takes the row lock, on every supported database,
+	 * where SELECT … FOR UPDATE is not portable.
+	 */
+	public function lock(int $id): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('updated_at', 'updated_at')
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
 	public function deleteByHouse(int $houseId): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())

@@ -1066,3 +1066,62 @@ describe('ChecklistItemRow stock links', () => {
     expect(wrapper.find('[data-testid="restocks-marker"]').exists()).toBe(false)
   })
 })
+
+describe('ChecklistItemRow restock markers', () => {
+  const restocks = [{ itemId: 3, name: 'Eggs', listId: 20, listName: 'Kitchen' }]
+
+  function mountChecklistRow(item: ChecklistItem) {
+    const unpinned: unknown[][] = []
+    const Host = defineComponent({
+      setup() {
+        provideListKind(vueRef('checklist'))
+        return () =>
+          h(ChecklistItemRow, {
+            item,
+            category: null,
+            houseId: 1,
+            onUnpin: (...args: unknown[]) => unpinned.push(args),
+          })
+      },
+    })
+    return { wrapper: mount(Host), unpinned }
+  }
+
+  it('shows a quantity set by hand, and lets stock set it again', async () => {
+    const item = makeItem({ name: 'Eggs', quantity: '2 dozen', quantityPinned: true, restocks })
+    const { wrapper, unpinned } = mountChecklistRow(item)
+
+    const chip = wrapper.find('[data-testid="pinned-quantity"]')
+    expect(chip.text()).toBe('× 2 dozen · set by hand')
+    expect(chip.attributes('title')).toBe('Set by hand. Tap to let stock set it.')
+    expect(wrapper.find('.checklist-row__quantity').exists()).toBe(false)
+    await chip.trigger('click')
+
+    expect(unpinned).toEqual([[item]])
+  })
+
+  it('shows a plain quantity once nothing pins it', () => {
+    const { wrapper } = mountChecklistRow(
+      makeItem({ quantity: '2 dozen', quantityPinned: false, restocks }),
+    )
+
+    expect(wrapper.find('[data-testid="pinned-quantity"]').exists()).toBe(false)
+    expect(wrapper.find('.checklist-row__quantity').text()).toContain('2 dozen')
+  })
+
+  it('says a row ticked off by stock is no longer needed', () => {
+    const { wrapper } = mountChecklistRow(
+      makeItem({ done: true, doneAt: 5, doneBy: null, restocks }),
+    )
+
+    expect(wrapper.find('[data-testid="no-longer-needed"]').text()).toBe('No longer needed')
+  })
+
+  it('says nothing more on a row a member ticked off', () => {
+    const { wrapper } = mountChecklistRow(
+      makeItem({ done: true, doneAt: 5, doneBy: 'alice', restocks }),
+    )
+
+    expect(wrapper.find('[data-testid="no-longer-needed"]').exists()).toBe(false)
+  })
+})
