@@ -828,7 +828,7 @@ class ListKindControllerTest extends TestCase {
 		$updated->setQuantity('4 eggs');
 		$this->lists->method('updateItem')->willReturn($updated);
 		$this->restockSync->expects($this->once())->method('afterWrite')
-			->with($updated, ['status' => 'ok', 'shortfall' => null, 'needs' => false], false, 'alice')
+			->with($updated, ['status' => 'ok', 'shortfall' => null, 'expiry' => 'none', 'low' => false, 'needs' => false], false, 'alice')
 			->willReturn([$this->syncEvent('added')]);
 
 		$data = $this->makeController(InventoryController::class)->updateInventoryItem(1, 7, 3, quantity: '4 eggs')->getData();

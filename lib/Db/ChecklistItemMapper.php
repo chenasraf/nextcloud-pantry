@@ -648,6 +648,47 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Live items on live inventories whose expiry status the daily job may
+	 * see move: those with an expiry date, or with a synced status still to
+	 * clear.
+	 *
+	 * @return list<ChecklistItem>
+	 */
+	public function findExpiryTracked(): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('i.*')
+			->from($this->getTableName(), 'i')
+			->innerJoin('i', Application::tableName('lists'), 'l', $qb->expr()->eq('l.id', 'i.list_id'))
+			->where($qb->expr()->eq('l.kind', $qb->createNamedParameter(Checklist::KIND_INVENTORY)))
+			->andWhere($qb->expr()->isNull('l.deleted_at'))
+			->andWhere($qb->expr()->isNull('l.archived_at'))
+			->andWhere($qb->expr()->isNull('i.deleted_at'))
+			->andWhere($qb->expr()->isNull('i.archived_at'))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->isNotNull('i.expires_at'),
+				$qb->expr()->andX(
+					$qb->expr()->isNotNull('i.expiry_synced_status'),
+					$qb->expr()->neq('i.expiry_synced_status', $qb->createNamedParameter('none')),
+				),
+			))
+			->orderBy('i.list_id', 'ASC')
+			->addOrderBy('i.id', 'ASC');
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Record the expiry status the restock sync acted on, leaving the rest of
+	 * the item as it is.
+	 */
+	public function setExpirySyncedStatus(int $id, string $status): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('expiry_synced_status', $qb->createNamedParameter($status))
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
 	 * Items linked to any of the given items, trashed and archived ones
 	 * included, earliest linked first.
 	 *

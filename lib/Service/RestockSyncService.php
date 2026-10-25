@@ -12,6 +12,7 @@ use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\House;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\TTransactional;
 use OCP\IDBConnection;
@@ -21,8 +22,9 @@ use Psr\Log\LoggerInterface;
  * Keeps the checklist item that restocks an inventory item in step with its
  * stock, inside the request of the write that changed it.
  *
- * - An item that needs restocking puts its linked row back in play asking
- *   for what is missing: open rows are updated, checked ones unchecked,
+ * - An item that needs restocking (low, out, expiring or expired) puts its
+ *   linked row back in play asking for what is missing, or for a full
+ *   replacement when it is going off: open rows are updated, checked ones unchecked,
  *   archived ones unarchived, and a trashed one is replaced by a new row on
  *   the restock checklist. An unlinked item that auto-links finds or adds its
  *   row there first. Without a link or a restock checklist it is only marked
@@ -30,8 +32,8 @@ use Psr\Log\LoggerInterface;
  * - A row several inventories link asks for the sum of what each low one is
  *   missing, in the wording of the first to link.
  * - A quantity a member set by hand is left alone until the row is next done.
- * - When the write brings the item back in stock and nothing else linked to
- *   the row needs it, the row is ticked off with nobody credited ("No longer
+ * - When the write brings the item back in stock or in date and nothing else
+ *   linked to the row needs it, the row is ticked off with nobody credited ("No longer
  *   needed"), unless a member reopened it to buy anyway.
  * - Rows are created and revived in the name of the member whose write caused
  *   it, whatever their rights on the checklist, so it shows in Activity; with
@@ -40,7 +42,11 @@ use Psr\Log\LoggerInterface;
  * Syncs touching one row run one at a time: each holds the row, or the
  * restock checklist while it may create one, for its transaction.
  *
- * @psalm-type RestockSnapshot = array{status: string, shortfall: string|null, needs: bool}
+ * Expiry moves because a day passes rather than because of a write, so a
+ * daily job syncs the items whose expiry status moved since the sync last
+ * acted on it, once the house's recurrence time has passed.
+ *
+ * @psalm-type RestockSnapshot = array{status: string, shortfall: string|null, expiry: string, low: bool, needs: bool}
  * @psalm-type RestockSyncEvent = array{event: 'added'|'revived'|'changed'|'pinned'|'recovered', itemId: int, rowId: int, rowName: string, quantity: string|null, listId: int, listName: string}
  */
 class RestockSyncService {
@@ -54,6 +60,8 @@ class RestockSyncService {
 
 	/** @var array<int, Checklist|null> Lists by id, trashed ones included, memoized per request. */
 	private array $lists = [];
+	/** @var array<int, int> Each house's recurrence time, in minutes after midnight. */
+	private array $recurrenceTimes = [];
 
 	public function __construct(
 		private ChecklistMapper $listMapper,
@@ -71,24 +79,45 @@ class RestockSyncService {
 	}
 
 	/**
-	 * What a sync compares an item's stock by, taken before a write so the
-	 * write can tell whether it changed anything.
+	 * What a sync compares an item's stock and expiry by, taken before a
+	 * write so the write can tell whether it changed anything.
 	 *
+	 * @param int $leadDays The inventory's expiry warning.
+	 * @param int|null $today Midnight of the day to judge expiry on; today when null.
 	 * @return RestockSnapshot
 	 */
-	public static function snapshot(ChecklistItem $item): array {
-		$result = StockRules::evaluate(self::stockOf($item));
+	public static function snapshot(ChecklistItem $item, int $leadDays = Checklist::DEFAULT_EXPIRY_LEAD_DAYS, ?int $today = null): array {
+		$stock = self::stockOf($item);
+		$result = StockRules::evaluate($stock);
+		$expiry = StockRules::expiryStatus($stock + [
+			'expiresAt' => $item->getExpiresAt(),
+			'shelfLifeDays' => $item->getShelfLifeDays(),
+		], $leadDays, $today ?? StockRules::today());
+		$low = $result['stockStatus'] === StockRules::STATUS_LOW || $result['stockStatus'] === StockRules::STATUS_OUT;
 		return [
 			'status' => $result['stockStatus'],
 			'shortfall' => $result['shortfall'],
-			'needs' => $result['stockStatus'] === StockRules::STATUS_LOW || $result['stockStatus'] === StockRules::STATUS_OUT,
+			'expiry' => $expiry,
+			'low' => $low,
+			'needs' => $low || StockRules::expiryNeedsRestock($expiry),
 		];
 	}
 
 	/**
+	 * {@see snapshot()} by the expiry warning of the item's inventory.
+	 *
+	 * @return RestockSnapshot
+	 */
+	public function snapshotOf(ChecklistItem $item, ?int $today = null): array {
+		$leadDays = $this->list($item->getListId())?->expiryLeadDays() ?? Checklist::DEFAULT_EXPIRY_LEAD_DAYS;
+		return self::snapshot($item, $leadDays, $today);
+	}
+
+	/**
 	 * Sync after a write to an inventory item. It runs when the write changed
-	 * the item's stock status or shortfall, or gave it a link. Only a write
-	 * that took the item out of needing restock ticks its row off.
+	 * the item's stock or expiry, gave it a link, or found an expiry status
+	 * the sync has not acted on yet. Only a write that took the item out of
+	 * needing restock ticks its row off.
 	 *
 	 * @param RestockSnapshot|null $before The item's stock before the write; null for a new item.
 	 * @param string|null $actorUid Who made the write.
@@ -99,16 +128,51 @@ class RestockSyncService {
 		if ($inventory === null || !$this->inPlay($item, $inventory)) {
 			return [];
 		}
-		$after = self::snapshot($item);
+		$after = $this->snapshotOf($item);
 		$changed = $before === null
 			? $after['needs']
-			: $before['status'] !== $after['status'] || $before['shortfall'] !== $after['shortfall'];
-		if (!$changed && !$linked) {
+			: $before['status'] !== $after['status'] || $before['shortfall'] !== $after['shortfall'] || $before['expiry'] !== $after['expiry'];
+		if (!$changed && !$linked && self::syncedExpiry($item) === $after['expiry']) {
 			return [];
 		}
 		$mayRecover = $before !== null && $before['needs'] && !$after['needs'];
 		$event = $this->sync($item, $inventory, $mayRecover, $actorUid);
+		$this->stampExpiry($item, $after['expiry']);
 		return $event !== null ? [$event] : [];
+	}
+
+	/**
+	 * The daily job: sync every inventory item whose expiry status moved since
+	 * the sync last acted on it, in houses whose recurrence time has passed
+	 * today. Nobody's write caused it, so it is credited to the app. A row the
+	 * item linked to that a member trashed while the item already needed
+	 * restock stays in the trash.
+	 *
+	 * @return int How many items it synced.
+	 */
+	public function syncExpiry(int $now): int {
+		$today = (new \DateTimeImmutable())->setTimestamp($now)->setTime(0, 0, 0);
+		$synced = 0;
+		foreach ($this->itemMapper->findExpiryTracked() as $item) {
+			$inventory = $this->list($item->getListId());
+			if ($inventory === null || !$this->inPlay($item, $inventory)) {
+				continue;
+			}
+			$minutes = $this->recurrenceTime($inventory->getHouseId());
+			if ($now < $today->setTime(intdiv($minutes, 60), $minutes % 60)->getTimestamp()) {
+				continue;
+			}
+			$after = $this->snapshotOf($item, $today->getTimestamp());
+			$previous = self::syncedExpiry($item);
+			if ($previous === $after['expiry']) {
+				continue;
+			}
+			$neededBefore = StockRules::expiryNeedsRestock($previous);
+			$this->sync($item, $inventory, $neededBefore && !$after['needs'], null, keepTrashed: $neededBefore);
+			$this->stampExpiry($item, $after['expiry']);
+			$synced++;
+		}
+		return $synced;
 	}
 
 	/**
@@ -122,8 +186,10 @@ class RestockSyncService {
 		}
 		$this->lists[(int)$inventory->getId()] = $inventory;
 		foreach ($this->itemMapper->findByList((int)$inventory->getId()) as $item) {
-			if (self::snapshot($item)['needs']) {
+			$snapshot = $this->snapshotOf($item);
+			if ($snapshot['needs']) {
 				$this->sync($item, $inventory, false, null);
+				$this->stampExpiry($item, $snapshot['expiry']);
 			}
 		}
 	}
@@ -163,20 +229,21 @@ class RestockSyncService {
 	// ----- Sync -----
 
 	/**
+	 * @param bool $keepTrashed Leave a trashed row in the trash rather than add a new one.
 	 * @return RestockSyncEvent|null
 	 */
-	private function sync(ChecklistItem $item, Checklist $inventory, bool $mayRecover, ?string $actorUid): ?array {
+	private function sync(ChecklistItem $item, Checklist $inventory, bool $mayRecover, ?string $actorUid, bool $keepTrashed = false): ?array {
 		$rowId = $item->getLinkedItemId();
 		try {
 			$row = $rowId !== null ? $this->itemMapper->findById($rowId, true) : null;
 		} catch (DoesNotExistException) {
 			$row = null;
 		}
-		$needs = self::snapshot($item)['needs'];
+		$needs = $this->snapshotOf($item)['needs'];
 		if ($row !== null && $this->usable($row)) {
 			return $this->syncRow($item, $row, $mayRecover, $actorUid);
 		}
-		if (!$needs || ($row === null && !$item->autoLinks())) {
+		if (!$needs || ($row === null && !$item->autoLinks()) || ($row !== null && $keepTrashed)) {
 			return null;
 		}
 		return $this->findOrAdd($item, $inventory, $actorUid);
@@ -194,7 +261,7 @@ class RestockSyncService {
 			$row = $this->itemMapper->findById($rowId, true);
 			$contributors = $this->contributors($row);
 			$self = $this->find($contributors, $item) ?? $item;
-			$low = array_values(array_filter($contributors, static fn (ChecklistItem $c): bool => self::snapshot($c)['needs']));
+			$low = array_values(array_filter($contributors, fn (ChecklistItem $c): bool => $this->snapshotOf($c)['needs']));
 
 			if ($low === []) {
 				if (!$mayRecover || $row->getDone() || $row->getArchivedAt() !== null || $row->isMemberReopened()) {
@@ -292,9 +359,10 @@ class RestockSyncService {
 	// ----- Quantity -----
 
 	/**
-	 * What a row asks for: the sum of the first numbers of what each low item
-	 * linked to it is missing, in the wording of the first to link that has a
-	 * number. Null when none has one.
+	 * What a row asks for: the sum of the first numbers of what each item
+	 * linked to it that needs restocking asks for, in the wording of the first
+	 * to link that has a number. Null when none has one, so the row keeps its
+	 * quantity.
 	 *
 	 * @param list<ChecklistItem> $contributors Earliest linked first.
 	 */
@@ -302,7 +370,7 @@ class RestockSyncService {
 		$sum = 0.0;
 		$wording = null;
 		foreach ($contributors as $contributor) {
-			if (!self::snapshot($contributor)['needs']) {
+			if (!$this->snapshotOf($contributor)['needs']) {
 				continue;
 			}
 			$text = $this->contribution($contributor);
@@ -318,10 +386,19 @@ class RestockSyncService {
 
 	/**
 	 * What one item asks a row for: a count item's shortfall, a level item's
-	 * restock amount.
+	 * restock amount. Stock that is going off is replaced whole, so an
+	 * expiring or expired count item asks for its target, and one whose
+	 * amount is not counted for nothing.
 	 */
 	private function contribution(ChecklistItem $item): ?string {
-		return StockRules::evaluate(self::stockOf($item))['shortfall'];
+		$snapshot = $this->snapshotOf($item);
+		if (!StockRules::expiryNeedsRestock($snapshot['expiry'])) {
+			return $snapshot['shortfall'];
+		}
+		if ($snapshot['status'] === StockRules::STATUS_UNCOUNTED) {
+			return null;
+		}
+		return StockRules::fullAmount(self::stockOf($item));
 	}
 
 	// ----- Helpers -----
@@ -352,6 +429,30 @@ class RestockSyncService {
 			}
 		}
 		return null;
+	}
+
+	/** The expiry status the sync last acted on; an item it never acted on had none. */
+	private static function syncedExpiry(ChecklistItem $item): string {
+		return $item->getExpirySyncedStatus() ?? StockRules::EXPIRY_NONE;
+	}
+
+	private function stampExpiry(ChecklistItem $item, string $status): void {
+		if ($item->getExpirySyncedStatus() === $status) {
+			return;
+		}
+		$this->itemMapper->setExpirySyncedStatus((int)$item->getId(), $status);
+		$item->setExpirySyncedStatus($status);
+	}
+
+	private function recurrenceTime(int $houseId): int {
+		if (!array_key_exists($houseId, $this->recurrenceTimes)) {
+			try {
+				$this->recurrenceTimes[$houseId] = $this->houses->get($houseId)->getRecurrenceTime();
+			} catch (\Throwable) {
+				$this->recurrenceTimes[$houseId] = House::DEFAULT_RECURRENCE_TIME;
+			}
+		}
+		return $this->recurrenceTimes[$houseId];
 	}
 
 	private function inPlay(ChecklistItem $item, Checklist $inventory): bool {

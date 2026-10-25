@@ -100,6 +100,14 @@ class RestockSyncServiceTest extends TestCase {
 			$this->itemsWhere(static fn (ChecklistItem $i): bool => $i->getListId() === $listId && $i->getLinkedItemId() !== null),
 		))));
 		$this->itemMapper->method('update')->willReturnArgument(0);
+		$this->itemMapper->method('findExpiryTracked')->willReturnCallback(fn (): array => $this->itemsWhere(
+			fn (ChecklistItem $i): bool => ($this->lists[$i->getListId()] ?? null)?->getKind() === Checklist::KIND_INVENTORY
+				&& $i->getDeletedAt() === null && $i->getArchivedAt() === null
+				&& ($i->getExpiresAt() !== null || !in_array($i->getExpirySyncedStatus(), [null, 'none'], true)),
+		));
+		$this->itemMapper->method('setExpirySyncedStatus')->willReturnCallback(function (int $id, string $status): void {
+			$this->items[$id]->setExpirySyncedStatus($status);
+		});
 
 		$this->links = new StockLinkService($this->listMapper, $this->itemMapper);
 
@@ -190,6 +198,8 @@ class RestockSyncServiceTest extends TestCase {
 		$item->setStockLevel($state['stockLevel'] ?? null);
 		$item->setTarget($state['target'] ?? null);
 		$item->setReorderPoint($state['reorderPoint'] ?? null);
+		$item->setExpiresAt($state['expiresAt'] ?? null);
+		$item->setExpirySyncedStatus($state['synced'] ?? null);
 		if (isset($state['linkedTo'])) {
 			$item->setLinkedItemId($state['linkedTo']);
 			$item->setLinkedAt($state['linkedAt'] ?? $this->clock++);
@@ -642,5 +652,175 @@ class RestockSyncServiceTest extends TestCase {
 		$this->svc->afterWrite($eggs, $before, false, 'alice');
 
 		$this->assertCount(1, $this->rowsOn(10));
+	}
+
+	// ----- Expiry -----
+
+	/** 09:00 on Oct 21, an hour after the house's recurrence time. */
+	private const JOB_NOW = '2026-10-21 09:00:00';
+
+	/** Midnight `$offset` days from Oct 21. */
+	private static function day(int $offset): int {
+		return (new \DateTimeImmutable('2026-10-21'))->modify(sprintf('%+d days', $offset))->getTimestamp();
+	}
+
+	/** Midnight `$offset` days from today, for writes, which judge expiry on today. */
+	private static function fromToday(int $offset): int {
+		return StockRules::addDays(StockRules::today(), $offset);
+	}
+
+	private function runJob(string $at = self::JOB_NOW): int {
+		return $this->svc->syncExpiry((int)strtotime($at));
+	}
+
+	public function testAnExpiringItemAsksForAFullReplacementInTheAppsName(): void {
+		$eggs = $this->eggs(20, '12 eggs', ['expiresAt' => self::day(1)]);
+		$this->activity->expects($this->once())->method('publishItemAdded')
+			->with(1, 'Home', '', $this->anything(), 'Eggs', 10, 'Shopping');
+
+		$this->assertSame(1, $this->runJob());
+
+		$rows = $this->rowsOn(10);
+		$this->assertCount(1, $rows);
+		$this->assertSame('12 eggs', $rows[0]->getQuantity());
+		$this->assertSame('expiring', $eggs->getExpirySyncedStatus());
+		$this->assertSame('12 eggs', $eggs->getQuantity());
+	}
+
+	public function testAnExpiringItemThatIsAlsoLowAsksForItsTarget(): void {
+		$this->eggs(20, '4 eggs', ['expiresAt' => self::day(2)]);
+
+		$this->runJob();
+
+		$this->assertSame('12 eggs', $this->rowsOn(10)[0]->getQuantity());
+	}
+
+	public function testAnExpiredItemAsksForAReplacement(): void {
+		$row = $this->addItem(10, 'Eggs', ['quantity' => '2', 'done' => true, 'doneBy' => 'alice']);
+		$eggs = $this->eggs(20, '12 eggs', ['expiresAt' => self::day(-1), 'linkedTo' => $row->getId(), 'synced' => 'ok']);
+
+		$this->runJob();
+
+		$this->assertFalse($row->getDone());
+		$this->assertSame('12 eggs', $row->getQuantity());
+		$this->assertSame('expired', $eggs->getExpirySyncedStatus());
+	}
+
+	public function testAnItemInDateIsLeftAlone(): void {
+		$this->eggs(20, '12 eggs', ['expiresAt' => self::day(10)]);
+
+		$this->runJob();
+
+		$this->assertSame([], $this->rowsOn(10));
+	}
+
+	public function testRunningTheJobAgainDoesNothing(): void {
+		$this->eggs(20, '12 eggs', ['expiresAt' => self::day(1)]);
+		$this->runJob();
+		$row = $this->rowsOn(10)[0];
+		$row->setDeletedAt(5);
+
+		$this->assertSame(0, $this->runJob('2026-10-21 10:00:00'));
+		$this->assertCount(1, $this->rowsOn(10));
+	}
+
+	public function testTheJobWaitsForTheHousesRecurrenceTime(): void {
+		$this->eggs(20, '12 eggs', ['expiresAt' => self::day(1)]);
+
+		$this->assertSame(0, $this->runJob('2026-10-21 07:59:00'));
+		$this->assertSame([], $this->rowsOn(10));
+	}
+
+	public function testTheJobLeavesARowTrashedWhileTheItemAlreadyNeededIt(): void {
+		$row = $this->addItem(10, 'Eggs', ['quantity' => '12 eggs', 'deletedAt' => 5]);
+		$eggs = $this->eggs(20, '12 eggs', ['expiresAt' => self::day(-1), 'linkedTo' => $row->getId(), 'synced' => 'expiring']);
+
+		$this->runJob();
+
+		$this->assertCount(1, $this->rowsOn(10));
+		$this->assertSame($row->getId(), $eggs->getLinkedItemId());
+		$this->assertSame('expired', $eggs->getExpirySyncedStatus());
+	}
+
+	public function testTheJobReplacesARowTrashedBeforeTheItemNeededIt(): void {
+		$row = $this->addItem(10, 'Eggs', ['quantity' => '12 eggs', 'deletedAt' => 5]);
+		$eggs = $this->eggs(20, '12 eggs', ['expiresAt' => self::day(1), 'linkedTo' => $row->getId(), 'synced' => 'ok']);
+
+		$this->runJob();
+
+		$this->assertCount(2, $this->rowsOn(10));
+		$this->assertNotSame($row->getId(), $eggs->getLinkedItemId());
+	}
+
+	public function testAStockWriteWhileExpiringSyncsWithoutWaitingForTheJob(): void {
+		$eggs = $this->eggs(20, '12 eggs', ['expiresAt' => self::fromToday(1)]);
+
+		$this->write($eggs, '11 eggs');
+
+		$this->assertSame('12 eggs', $this->rowsOn(10)[0]->getQuantity());
+		$this->assertSame('expiring', $eggs->getExpirySyncedStatus());
+	}
+
+	public function testRenewingTheDateTicksTheRowOff(): void {
+		$row = $this->addItem(10, 'Eggs', ['quantity' => '12 eggs']);
+		$eggs = $this->eggs(20, '12 eggs', ['expiresAt' => self::fromToday(1), 'linkedTo' => $row->getId(), 'synced' => 'expiring']);
+		$before = RestockSyncService::snapshot($eggs);
+		$eggs->setExpiresAt(self::fromToday(14));
+
+		$events = $this->svc->afterWrite($eggs, $before, false, 'alice');
+
+		$this->assertTrue($row->isSystemDone());
+		$this->assertSame('recovered', $events[0]['event']);
+		$this->assertSame('ok', $eggs->getExpirySyncedStatus());
+	}
+
+	public function testClearingTheDateTicksTheRowOff(): void {
+		$row = $this->addItem(10, 'Eggs', ['quantity' => '12 eggs']);
+		$eggs = $this->eggs(20, '12 eggs', ['expiresAt' => self::fromToday(-1), 'linkedTo' => $row->getId(), 'synced' => 'expired']);
+		$before = RestockSyncService::snapshot($eggs);
+		$eggs->setExpiresAt(null);
+
+		$this->svc->afterWrite($eggs, $before, false, 'alice');
+
+		$this->assertTrue($row->isSystemDone());
+	}
+
+	public function testRunningOutHandsOverToLowStock(): void {
+		$row = $this->addItem(10, 'Eggs', ['quantity' => '12 eggs']);
+		$eggs = $this->eggs(20, '12 eggs', ['expiresAt' => self::fromToday(1), 'linkedTo' => $row->getId(), 'synced' => 'expiring']);
+
+		$this->write($eggs, '0 eggs');
+
+		$this->assertFalse($row->getDone());
+		$this->assertSame('12 eggs', $row->getQuantity());
+		$this->assertSame('none', $eggs->getExpirySyncedStatus());
+	}
+
+	public function testAnUncountedExpiringItemLeavesTheRowsQuantity(): void {
+		$row = $this->addItem(10, 'Eggs', ['quantity' => '3', 'done' => true, 'doneBy' => 'alice']);
+		$this->eggs(20, 'some', ['expiresAt' => self::day(1), 'linkedTo' => $row->getId()]);
+
+		$this->runJob();
+
+		$this->assertFalse($row->getDone());
+		$this->assertSame('3', $row->getQuantity());
+	}
+
+	public function testAnExpiringLevelItemAsksForItsRestockAmount(): void {
+		$this->addItem(20, 'Milk', ['stockMode' => StockRules::MODE_LEVEL, 'stockLevel' => StockRules::LEVEL_FULL, 'quantity' => '2 l', 'expiresAt' => self::day(0)]);
+
+		$this->runJob();
+
+		$this->assertSame('2 l', $this->rowsOn(10)[0]->getQuantity());
+	}
+
+	public function testASharedRowSumsAnExpiringItemsTargetWithALowItemsShortfall(): void {
+		$row = $this->addItem(10, 'Eggs', ['quantity' => '1 eggs']);
+		$this->eggs(20, '12 eggs', ['expiresAt' => self::day(1), 'linkedTo' => $row->getId()]);
+		$this->eggs(21, '10 eggs', ['linkedTo' => $row->getId(), 'reorderPoint' => '10']);
+
+		$this->runJob();
+
+		$this->assertSame('14 eggs', $row->getQuantity());
 	}
 }

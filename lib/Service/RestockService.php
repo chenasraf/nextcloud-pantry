@@ -92,7 +92,7 @@ class RestockService {
 		$events = [];
 		foreach (self::plan($contributors, StockRules::firstNumber($row->getQuantity())) as $grant) {
 			$item = $grant['item'];
-			$before = RestockSyncService::snapshot($item);
+			$before = $this->sync->snapshotOf($item);
 			if ($grant['add'] === null) {
 				$previous = $item->getStockLevel();
 				$item->setStockLevel(StockRules::LEVEL_FULL);
@@ -133,7 +133,7 @@ class RestockService {
 			if ($item->getLinkedItemId() !== (int)$row->getId()) {
 				continue;
 			}
-			$before = RestockSyncService::snapshot($item);
+			$before = $this->sync->snapshotOf($item);
 			if ($entry['previousLevel'] !== null) {
 				if ($item->getStockMode() !== StockRules::MODE_LEVEL) {
 					continue;
@@ -164,7 +164,7 @@ class RestockService {
 	public static function plan(array $contributors, ?float $bought): array {
 		$needing = array_values(array_filter(
 			$contributors,
-			static fn (ChecklistItem $c): bool => RestockSyncService::snapshot($c)['needs'],
+			static fn (ChecklistItem $c): bool => RestockSyncService::snapshot($c)['low'],
 		));
 		$grants = [];
 		if ($bought === null) {

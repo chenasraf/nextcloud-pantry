@@ -128,7 +128,7 @@ final class InventoryController extends ListKindOCSController {
 		$linked = $item->getLinkedItemId() !== null && $item->getLinkedItemId() !== $before?->getLinkedItemId();
 		return $this->withRestockEvents($item, $this->restockSync->afterWrite(
 			$item,
-			$before !== null ? RestockSyncService::snapshot($before) : null,
+			$before !== null ? RestockSyncService::snapshot($before, $this->expiryLeadDays($before->getListId())) : null,
 			$linked,
 			$this->requireUid(),
 		));

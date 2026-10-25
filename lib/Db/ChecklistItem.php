@@ -73,6 +73,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setMemberReopened(?bool $memberReopened)
  * @method string|null getRestockRecord()
  * @method void setRestockRecord(?string $restockRecord)
+ * @method string|null getExpirySyncedStatus()
+ * @method void setExpirySyncedStatus(?string $expirySyncedStatus)
  *
  * @psalm-type RestockEntry = array{itemId: int, listId: int, itemName: string, listName: string, added: string|null, previousLevel: string|null}
  */
@@ -114,6 +116,8 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?bool $memberReopened = false;
 	/** JSON list of what a member's tick put back into stock, for their uncheck to take out. */
 	protected ?string $restockRecord = null;
+	/** The expiry status the restock sync last acted on, for the daily job to compare against. */
+	protected ?string $expirySyncedStatus = null;
 
 	/**
 	 * Prices resolved for this item, attached transiently by the service/controller

@@ -73,6 +73,7 @@ class RestockServiceTest extends TestCase {
 			$this->items,
 			static fn (ChecklistItem $i): bool => $i->getLinkedItemId() === (int)$row->getId() && $i->getDeletedAt() === null,
 		)));
+		$this->sync->method('snapshotOf')->willReturnCallback(static fn (ChecklistItem $i): array => RestockSyncService::snapshot($i));
 		$this->sync->method('afterWrite')->willReturnCallback(function (ChecklistItem $item, ?array $before): array {
 			$this->synced[] = [(int)$item->getId(), $before];
 			return [];
