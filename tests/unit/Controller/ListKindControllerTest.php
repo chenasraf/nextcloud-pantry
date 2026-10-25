@@ -732,7 +732,7 @@ class ListKindControllerTest extends TestCase {
 
 	// ----- Buying restocks -----
 
-	private const RESTOCKED = ['itemId' => 3, 'listId' => 20, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null];
+	private const RESTOCKED = ['itemId' => 3, 'listId' => 20, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null, 'replaced' => false, 'previousOnHand' => null, 'previousExpiresAt' => null, 'expiresAt' => null];
 
 	private function stageRow(bool $done): ChecklistItem {
 		$row = new ChecklistItem();

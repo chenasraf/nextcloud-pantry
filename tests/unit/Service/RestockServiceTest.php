@@ -73,7 +73,7 @@ class RestockServiceTest extends TestCase {
 			$this->items,
 			static fn (ChecklistItem $i): bool => $i->getLinkedItemId() === (int)$row->getId() && $i->getDeletedAt() === null,
 		)));
-		$this->sync->method('snapshotOf')->willReturnCallback(static fn (ChecklistItem $i): array => RestockSyncService::snapshot($i));
+		$this->sync->method('snapshotOf')->willReturnCallback(static fn (ChecklistItem $i, ?int $today = null): array => RestockSyncService::snapshot($i, 2, $today));
 		$this->sync->method('afterWrite')->willReturnCallback(function (ChecklistItem $item, ?array $before): array {
 			$this->synced[] = [(int)$item->getId(), $before];
 			return [];
@@ -135,6 +135,10 @@ class RestockServiceTest extends TestCase {
 			'listName' => 'Kitchen',
 			'added' => '8',
 			'previousLevel' => null,
+			'replaced' => false,
+			'previousOnHand' => null,
+			'previousExpiresAt' => null,
+			'expiresAt' => null,
 		]], $result['restocked']);
 		$this->assertSame($result['restocked'], $this->row()->getRestock());
 	}
@@ -336,6 +340,118 @@ class RestockServiceTest extends TestCase {
 		$result = $this->svc->afterMemberUncheck($this->row(), $record, 'alice');
 
 		$this->assertSame('4', $eggs->getQuantity());
+		$this->assertCount(1, $result['undone']);
+	}
+
+	// ----- Expiring stock and the date -----
+
+	private static function inDays(int $days): int {
+		return StockRules::addDays(StockRules::today(), $days);
+	}
+
+	/** Going off tomorrow, with a shelf life of 14 days. */
+	private function expiring(ChecklistItem $item): ChecklistItem {
+		$item->setExpiresAt(self::inDays(1));
+		$item->setShelfLifeDays(14);
+		return $item;
+	}
+
+	public function testExpiringStockIsReplacedRatherThanAddedTo(): void {
+		$eggs = $this->expiring($this->counted(20, '12', '12'));
+
+		$result = $this->tick('12');
+
+		$this->assertSame('12', $eggs->getQuantity());
+		$this->assertTrue($result['restocked'][0]['replaced']);
+		$this->assertSame('12', $result['restocked'][0]['previousOnHand']);
+	}
+
+	public function testAPartialShareStillReplaces(): void {
+		$eggs = $this->expiring($this->counted(20, '12', '12'));
+
+		$this->tick('5');
+
+		$this->assertSame('5', $eggs->getQuantity());
+	}
+
+	public function testAnExpiringLevelItemIsReplacedWithFull(): void {
+		$milk = $this->expiring($this->level(20, StockRules::LEVEL_LOW, '2'));
+
+		$result = $this->tick('2');
+
+		$this->assertSame(StockRules::LEVEL_FULL, $milk->getStockLevel());
+		$this->assertTrue($result['restocked'][0]['replaced']);
+		$this->assertSame(StockRules::LEVEL_LOW, $result['restocked'][0]['previousLevel']);
+	}
+
+	public function testASharedRowReplacesOneAndFillsTheOther(): void {
+		$kitchen = $this->expiring($this->counted(20, '12', '12'));
+		$garage = $this->counted(21, '2', '6');
+
+		$this->tick('16');
+
+		$this->assertSame('12', $kitchen->getQuantity());
+		$this->assertSame('6', $garage->getQuantity());
+	}
+
+	public function testEveryRestockRenewsTheDate(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$eggs->setExpiresAt(self::inDays(5));
+		$eggs->setShelfLifeDays(7);
+
+		$result = $this->tick('8');
+
+		$this->assertSame(self::inDays(7), $eggs->getExpiresAt());
+		$this->assertSame(self::inDays(5), $result['restocked'][0]['previousExpiresAt']);
+	}
+
+	public function testARestockWithoutAShelfLifeClearsTheDate(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$eggs->setExpiresAt(self::inDays(5));
+
+		$this->tick('8');
+
+		$this->assertNull($eggs->getExpiresAt());
+	}
+
+	public function testAnUncountedItemOnlyGetsTheFreshDate(): void {
+		$some = $this->expiring($this->counted(20, 'some', '12'));
+
+		$result = $this->tick('4');
+
+		$this->assertSame('some', $some->getQuantity());
+		$this->assertSame(self::inDays(14), $some->getExpiresAt());
+		$this->assertNull($result['restocked'][0]['added']);
+	}
+
+	public function testUndoPutsReplacedStockAndItsDateBack(): void {
+		$eggs = $this->expiring($this->counted(20, '3', '12'));
+		$this->tick('12');
+
+		$this->svc->toggle(self::ROW, 'alice');
+
+		$this->assertSame('3', $eggs->getQuantity());
+		$this->assertSame(self::inDays(1), $eggs->getExpiresAt());
+	}
+
+	public function testUndoKeepsADateEditedByHandSince(): void {
+		$eggs = $this->expiring($this->counted(20, '3', '12'));
+		$this->tick('12');
+		$eggs->setExpiresAt(self::inDays(30));
+
+		$this->svc->toggle(self::ROW, 'alice');
+
+		$this->assertSame('3', $eggs->getQuantity());
+		$this->assertSame(self::inDays(30), $eggs->getExpiresAt());
+	}
+
+	public function testUndoPutsAnUncountedItemsDateBack(): void {
+		$some = $this->expiring($this->counted(20, 'some', '12'));
+		$this->tick('4');
+
+		$result = $this->svc->toggle(self::ROW, 'alice');
+
+		$this->assertSame(self::inDays(1), $some->getExpiresAt());
 		$this->assertCount(1, $result['undone']);
 	}
 }

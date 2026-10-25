@@ -728,6 +728,76 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertSame(10, $item->getShelfLifeDays());
 	}
 
+	/** An inventory count item with `$onHand` of 12, a shelf life of 7 days and a date 3 days out. */
+	private function stockedItem(?string $onHand, string $mode = StockRules::MODE_COUNT, ?string $level = null): ChecklistItem {
+		$item = $this->withId($this->makeItem(['quantity' => $onHand]), 9);
+		$item->setStockMode($mode);
+		$item->setStockLevel($level);
+		$item->setTarget('12');
+		$item->setShelfLifeDays(7);
+		$item->setExpiresAt($this->inDays(3));
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		return $item;
+	}
+
+	public function testRaisingStockFromEmptyRenewsTheDate(): void {
+		$item = $this->stockedItem('0');
+
+		$this->svc->updateItem(9, ['quantity' => '1']);
+
+		$this->assertSame($this->inDays(7), $item->getExpiresAt());
+	}
+
+	public function testRaisingStockFromBlankRenewsTheDate(): void {
+		$item = $this->stockedItem(null);
+
+		$this->svc->updateItem(9, ['quantity' => '6']);
+
+		$this->assertSame($this->inDays(7), $item->getExpiresAt());
+	}
+
+	public function testRaisingStockAlreadyOnHandLeavesTheDate(): void {
+		$item = $this->stockedItem('4');
+
+		$this->svc->updateItem(9, ['quantity' => '5']);
+
+		$this->assertSame($this->inDays(3), $item->getExpiresAt());
+	}
+
+	public function testRaisingALevelFromOutRenewsTheDate(): void {
+		$item = $this->stockedItem(null, StockRules::MODE_LEVEL, StockRules::LEVEL_OUT);
+
+		$this->svc->updateItem(9, ['stockLevel' => StockRules::LEVEL_LOW]);
+
+		$this->assertSame($this->inDays(7), $item->getExpiresAt());
+	}
+
+	public function testRaisingALevelFromLowLeavesTheDate(): void {
+		$item = $this->stockedItem(null, StockRules::MODE_LEVEL, StockRules::LEVEL_LOW);
+
+		$this->svc->updateItem(9, ['stockLevel' => StockRules::LEVEL_FULL]);
+
+		$this->assertSame($this->inDays(3), $item->getExpiresAt());
+	}
+
+	public function testRaisingFromEmptyWithoutAShelfLifeClearsTheDate(): void {
+		$item = $this->stockedItem('0');
+		$item->setShelfLifeDays(null);
+
+		$this->svc->updateItem(9, ['quantity' => '1']);
+
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	public function testADateGivenWithTheRaiseIsKept(): void {
+		$item = $this->stockedItem('0');
+
+		$this->svc->updateItem(9, ['quantity' => '1', 'expiresAt' => $this->inDays(20)]);
+
+		$this->assertSame($this->inDays(20), $item->getExpiresAt());
+	}
+
 	public function testADateOfTodayOrEarlierLeavesTheShelfLife(): void {
 		$item = $this->withId($this->makeItem(), 9);
 		$item->setShelfLifeDays(30);
@@ -2513,7 +2583,7 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertFalse($item->isMemberReopened());
 	}
 
-	private const RESTOCK_ENTRY = ['itemId' => 30, 'listId' => 20, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null];
+	private const RESTOCK_ENTRY = ['itemId' => 30, 'listId' => 20, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null, 'replaced' => false, 'previousOnHand' => null, 'previousExpiresAt' => null, 'expiresAt' => null];
 
 	public function testReviveForRestockDropsTheRestockRecord(): void {
 		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);

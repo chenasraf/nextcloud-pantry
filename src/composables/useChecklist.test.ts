@@ -52,6 +52,7 @@ const { announceRestock, announceRestockSync } = vi.hoisted(() => ({
 vi.mock('@/components/StockLink/restockToasts', () => ({ announceRestock, announceRestockSync }))
 
 import { ALL_LISTS_ID, useChecklists, useChecklistItems } from './useChecklist'
+import { addDays, todayEpoch } from '@/utils/stock'
 
 function makeList(overrides: Partial<Checklist> = {}): Checklist {
   return {
@@ -966,6 +967,10 @@ describe('useChecklistItems buying restocks', () => {
       listName: 'Kitchen',
       added: '8',
       previousLevel: null,
+      replaced: false,
+      previousOnHand: null,
+      previousExpiresAt: null,
+      expiresAt: null,
     },
   ]
 
@@ -997,5 +1002,87 @@ describe('useChecklistItems buying restocks', () => {
     await c.undoToggle(makeItem({ id: 1, done: true }))
 
     expect(announceRestock).toHaveBeenCalledWith(unchecked)
+  })
+})
+
+describe('useChecklistItems renew offer', () => {
+  const today = todayEpoch()
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    houseCounter++
+  })
+
+  function stocked(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
+    return makeItem({
+      stockMode: 'count',
+      quantity: '4',
+      target: '12',
+      shelfLifeDays: 7,
+      expiresAt: addDays(today, 2),
+      ...overrides,
+    })
+  }
+
+  it('offers to renew the date after a raise onto stock already there', async () => {
+    mockApi.listItems.mockResolvedValue([stocked()])
+    mockApi.updateItem.mockResolvedValue(stocked({ quantity: '5' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await c.updateStock(1, { quantity: '5' })
+
+    expect(c.renewOffers.value.get(1)).toBe(addDays(today, 7))
+  })
+
+  it('renews straight away after a raise from empty', async () => {
+    mockApi.listItems.mockResolvedValue([stocked({ quantity: '0' })])
+    mockApi.updateItem.mockReturnValue(new Promise(() => {}))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    void c.updateStock(1, { quantity: '1' })
+
+    expect(c.items.value[0].expiresAt).toBe(addDays(today, 7))
+    expect(c.renewOffers.value.has(1)).toBe(false)
+  })
+
+  it('renews to the offered date as a plain date edit, which ends the offer', async () => {
+    mockApi.listItems.mockResolvedValue([stocked()])
+    mockApi.updateItem.mockResolvedValue(stocked({ quantity: '5' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await c.updateStock(1, { quantity: '5' })
+    await c.renewExpiry(1)
+
+    expect(mockApi.updateItem).toHaveBeenLastCalledWith(houseCounter, 10, 1, {
+      expiresAt: addDays(today, 7),
+    })
+    expect(c.renewOffers.value.has(1)).toBe(false)
+  })
+
+  it('drops the offer on any other edit', async () => {
+    mockApi.listItems.mockResolvedValue([stocked()])
+    mockApi.updateItem.mockResolvedValue(stocked({ quantity: '5' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await c.updateStock(1, { quantity: '5' })
+    await c.update(1, { name: 'Eggs' })
+
+    expect(c.renewOffers.value.has(1)).toBe(false)
+  })
+
+  it('drops the offer on a stock step that does not raise', async () => {
+    mockApi.listItems.mockResolvedValue([stocked()])
+    mockApi.updateItem.mockResolvedValue(stocked())
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await c.updateStock(1, { quantity: '5' })
+    await c.updateStock(1, { quantity: '4' })
+
+    expect(c.renewOffers.value.has(1)).toBe(false)
   })
 })

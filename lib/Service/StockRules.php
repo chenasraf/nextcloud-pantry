@@ -137,9 +137,19 @@ final class StockRules {
 	}
 
 	/**
+	 * The expiry date of stock bought today: today + its shelf life, or none
+	 * when it has no shelf life.
+	 */
+	public static function renewedExpiry(?int $shelfLifeDays, int $today): ?int {
+		return $shelfLifeDays !== null ? self::addDays($today, $shelfLifeDays) : null;
+	}
+
+	/**
+	 * Nothing on hand: a count item at 0 (or blank), a level item that is Out.
+	 *
 	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, ...} $item
 	 */
-	private static function isEmpty(array $item): bool {
+	public static function isEmpty(array $item): bool {
 		if ($item['stockMode'] === self::MODE_LEVEL) {
 			return $item['stockLevel'] === self::LEVEL_OUT;
 		}

@@ -76,7 +76,7 @@ use OCP\AppFramework\Db\Entity;
  * @method string|null getExpirySyncedStatus()
  * @method void setExpirySyncedStatus(?string $expirySyncedStatus)
  *
- * @psalm-type RestockEntry = array{itemId: int, listId: int, itemName: string, listName: string, added: string|null, previousLevel: string|null}
+ * @psalm-type RestockEntry = array{itemId: int, listId: int, itemName: string, listName: string, added: string|null, previousLevel: string|null, replaced: bool, previousOnHand: string|null, previousExpiresAt: int|null, expiresAt: int|null}
  */
 class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $listId = 0;
@@ -171,8 +171,10 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	}
 
 	/**
-	 * What the member's tick of this checklist item put back into stock, each
-	 * inventory item's added amount or, for a level item, its level before.
+	 * What the member's tick of this checklist item put back into stock, by
+	 * inventory item: the amount added or, when it replaced stock going off,
+	 * the amount on hand before; a level item's level before; and its expiry
+	 * date before and after.
 	 *
 	 * @return list<RestockEntry>|null
 	 */
@@ -196,6 +198,10 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 				'listName' => (string)($entry['listName'] ?? ''),
 				'added' => isset($entry['added']) ? (string)$entry['added'] : null,
 				'previousLevel' => isset($entry['previousLevel']) ? (string)$entry['previousLevel'] : null,
+				'replaced' => ($entry['replaced'] ?? false) === true,
+				'previousOnHand' => isset($entry['previousOnHand']) ? (string)$entry['previousOnHand'] : null,
+				'previousExpiresAt' => isset($entry['previousExpiresAt']) ? (int)$entry['previousExpiresAt'] : null,
+				'expiresAt' => isset($entry['expiresAt']) ? (int)$entry['expiresAt'] : null,
 			];
 		}
 		return $entries !== [] ? $entries : null;

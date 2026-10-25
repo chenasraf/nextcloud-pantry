@@ -204,7 +204,8 @@ export function daysUntil(date: number, today: number): number {
   return Math.round((date - today) / 86400)
 }
 
-function isEmpty(item: ExpiryInput): boolean {
+/** Nothing on hand: a count item at 0 (or blank), a level item that is Out. */
+export function isEmpty(item: Pick<ExpiryInput, 'stockMode' | 'stockLevel' | 'quantity'>): boolean {
   if (item.stockMode === 'level') return item.stockLevel === 'out'
   const onHand = (item.quantity ?? '').trim()
   return onHand === '' || firstNumber(onHand) === 0
@@ -225,6 +226,36 @@ export function expiryStatus(item: ExpiryInput, leadDays: number, today: number)
     return 'expiring'
   }
   return 'ok'
+}
+
+/** The expiry date of stock bought today: today + its shelf life, or none without one. */
+export function renewedExpiry(shelfLifeDays: number | null, today: number): number | null {
+  return shelfLifeDays !== null ? addDays(today, shelfLifeDays) : null
+}
+
+const LEVEL_RANK: Record<StockLevel, number> = { out: 0, low: 1, full: 2 }
+
+/** Whether a stock edit raised what is on hand. */
+export function raisesStock(before: ExpiryInput, after: ExpiryInput): boolean {
+  if (after.stockMode === 'level') {
+    return LEVEL_RANK[after.stockLevel ?? 'full'] > LEVEL_RANK[before.stockLevel ?? 'full']
+  }
+  const was = (before.quantity ?? '').trim() === '' ? 0 : firstNumber(before.quantity)
+  const now = (after.quantity ?? '').trim() === '' ? 0 : firstNumber(after.quantity)
+  return was !== null && now !== null && now > was
+}
+
+/**
+ * The date a stock edit by hand offers to renew to (ADR 0018 §5). Raising
+ * from empty renews the date on its own, so the offer is for a raise onto
+ * stock already there, which may be a purchase or only a recount. Only when
+ * the item has a shelf life and the renewed date is later than its own.
+ */
+export function renewOffer(before: ExpiryInput, after: ExpiryInput, today: number): number | null {
+  if (isEmpty(before) || !raisesStock(before, after)) return null
+  const renewed = renewedExpiry(after.shelfLifeDays, today)
+  if (renewed === null || (after.expiresAt !== null && renewed <= after.expiresAt)) return null
+  return renewed
 }
 
 /** The fields of an inventory item the expiry rules read. */

@@ -130,7 +130,7 @@ class ActivityPublisher {
 	}
 
 	/**
-	 * @param list<array<string, mixed>> $restocked What the tick put back into stock, by inventory item: its `listName` and the amount `added` (null when it went to Full).
+	 * @param list<array<string, mixed>> $restocked What the tick put back into stock, by inventory item: its `listName`, the amount `added` (null for a level item, which went to Full), its `previousLevel` and whether it `replaced` stock going off.
 	 */
 	public function publishItemDone(int $houseId, string $houseName, string $authorUid, int $itemId, string $itemName, int $listId, string $listName, array $restocked = []): void {
 		// A separate curated notification ({@see NotificationService::notifyItemDone})
@@ -147,6 +147,8 @@ class ActivityPublisher {
 				'restocked' => array_map(static fn (array $e): array => [
 					'listName' => (string)($e['listName'] ?? ''),
 					'added' => isset($e['added']) ? (string)$e['added'] : null,
+					'level' => isset($e['previousLevel']),
+					'replaced' => ($e['replaced'] ?? false) === true,
 				], $restocked),
 			] : []),
 			$this->listLink($houseId, $listId),

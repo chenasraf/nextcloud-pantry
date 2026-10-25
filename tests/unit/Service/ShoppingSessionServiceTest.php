@@ -535,7 +535,7 @@ class ShoppingSessionServiceTest extends TestCase {
 
 	public function testUncheckItemTakesBackWhatTheCheckRestocked(): void {
 		$session = $this->makeSession(['id' => 5]);
-		$entry = ['itemId' => 30, 'listId' => 3, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null];
+		$entry = ['itemId' => 30, 'listId' => 3, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null, 'replaced' => false, 'previousOnHand' => null, 'previousExpiresAt' => null, 'expiresAt' => null];
 		$item = $this->makeItem(['id' => 10, 'done' => true]);
 		$item->setRestock([$entry]);
 		$this->items->method('findById')->with(10, true)->willReturn($item);

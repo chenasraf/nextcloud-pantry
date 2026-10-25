@@ -450,8 +450,9 @@ export interface StockLinkSource {
 
 /**
  * What a tick of a checklist item put back into one inventory item: the
- * amount `added` to a count item, or the `previousLevel` of a level item it
- * took to Full.
+ * amount `added` to a count item (or that replaced what was on hand), or the
+ * `previousLevel` of a level item it took to Full. With neither, it only
+ * renewed the date of an item not counted.
  */
 export interface RestockEntry {
   itemId: number
@@ -460,6 +461,13 @@ export interface RestockEntry {
   listName: string
   added: string | null
   previousLevel: StockLevel | null
+  /** It replaced stock that was going off, rather than adding to it. */
+  replaced: boolean
+  /** A replaced count item's amount on hand before. */
+  previousOnHand: string | null
+  previousExpiresAt: number | null
+  /** The fresh date the tick gave it. */
+  expiresAt: number | null
 }
 
 /** What Shopping Mode's check or uncheck did to stock. */

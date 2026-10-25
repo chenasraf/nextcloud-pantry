@@ -1133,6 +1133,10 @@ describe('ChecklistItemRow restock markers', () => {
       listName: 'Kitchen',
       added: '8',
       previousLevel: null,
+      replaced: false,
+      previousOnHand: null,
+      previousExpiresAt: null,
+      expiresAt: null,
     },
   ]
 
@@ -1150,5 +1154,49 @@ describe('ChecklistItemRow restock markers', () => {
     const { wrapper } = mountChecklistRow(makeItem({ done: false, restocks, restock }))
 
     expect(wrapper.find('[data-testid="restock-line"]').exists()).toBe(false)
+  })
+})
+
+describe('ChecklistItemRow renew offer', () => {
+  function mountWithOffer(renewOffer: number | null) {
+    const renewed: unknown[][] = []
+    const item = makeItem({
+      name: 'Eggs',
+      quantity: '5',
+      stockMode: 'count',
+      target: '12',
+      shelfLifeDays: 7,
+    })
+    const Host = defineComponent({
+      setup() {
+        provideListKind(vueRef('inventory'))
+        return () =>
+          h(ChecklistItemRow, {
+            item,
+            category: null,
+            houseId: 1,
+            renewOffer,
+            onRenew: (...args: unknown[]) => renewed.push(args),
+          })
+      },
+    })
+    return { wrapper: mount(Host), renewed, item }
+  }
+
+  it('offers to renew the expiry date, and renews on tap', async () => {
+    const date = Math.floor(new Date(2026, 9, 30).getTime() / 1000)
+    const { wrapper, renewed, item } = mountWithOffer(date)
+
+    const chip = wrapper.find('[data-testid="renew-expiry"]')
+    expect(chip.text()).toContain('Renew expiry →')
+    await chip.trigger('click')
+
+    expect(renewed).toEqual([[item]])
+  })
+
+  it('shows no offer without one', () => {
+    const { wrapper } = mountWithOffer(null)
+
+    expect(wrapper.find('[data-testid="renew-expiry"]').exists()).toBe(false)
   })
 })

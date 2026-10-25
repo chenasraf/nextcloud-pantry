@@ -164,6 +164,20 @@
               {{ stock.expiryText }}
             </PantryChip>
             <PantryChip
+              v-if="renewOffer"
+              class="checklist-row__renew"
+              variant="primary"
+              size="sm"
+              :interactive="canEditItem"
+              data-testid="renew-expiry"
+              @click.stop="canEditItem && $emit('renew', item)"
+            >
+              <template #icon>
+                <CalendarRefreshIcon :size="14" />
+              </template>
+              {{ renewText }}
+            </PantryChip>
+            <PantryChip
               v-if="stock.stockStatus === 'uncounted'"
               class="checklist-row__stock-chip"
               size="sm"
@@ -455,6 +469,7 @@ import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import PackageVariantClosedIcon from '@icons/PackageVariantClosed.vue'
 import PinIcon from '@icons/Pin.vue'
+import CalendarRefreshIcon from '@icons/CalendarRefresh.vue'
 import LinkVariantIcon from '@icons/LinkVariant.vue'
 import LinkOffIcon from '@icons/LinkOff.vue'
 import AlertCircleOutlineIcon from '@icons/AlertCircleOutline.vue'
@@ -491,6 +506,7 @@ import StockControl from '@/components/InventoryStock/StockControl.vue'
 import StockGauge from '@/components/InventoryStock/StockGauge.vue'
 import StockStatusIcon from '@/components/InventoryStock/StockStatusIcon.vue'
 import { expiryChipText, stockStatusText } from '@/components/InventoryStock/stockStrings'
+import { formatShortDate } from '@/utils/datetime'
 import {
   DEFAULT_EXPIRY_LEAD_DAYS,
   evaluateStock,
@@ -566,6 +582,8 @@ const props = withDefaults(
     suggestion?: boolean
     /** On a suggestion from the list's templates: the names of those templates. */
     suggestionTemplates?: string[]
+    /** Inventory items: the date a raise by hand offers to renew the expiry date to. */
+    renewOffer?: number | null
     /**
      * Hides the per-row actions (view / edit / move / archive / delete). Used
      * where those operations do not belong, e.g. the shopping view, while
@@ -691,18 +709,26 @@ const pinnedText = computed(() =>
 const pinnedLabel = computed(() =>
   canEditItem.value ? `${pinnedText.value}. ${strings.pinnedTooltip}` : pinnedText.value,
 )
-/** What the member's tick put back into stock, which unchecking takes back out. */
-const restockLine = computed(() =>
-  isChecklist.value && props.item.done && props.item.restock?.length
-    ? // TRANSLATORS: Line under a checked-off item that restocked inventory items. {restock} is e.g. "Restocked Eggs (Kitchen) +8".
+const renewText = computed(() =>
+  props.renewOffer
+    ? // TRANSLATORS: Chip offering to move an inventory item's expiry date to that of stock just added, e.g. "Renew expiry → Oct 30".
       t(
         'pantry',
-        '{restock} · uncheck to undo',
-        { restock: restockedText(props.item.restock) },
+        'Renew expiry → {date}',
+        { date: formatShortDate(props.renewOffer) },
         { escape: false },
       )
-    : null,
+    : '',
 )
+/** What the member's tick put back into stock, which unchecking takes back out. */
+const restockLine = computed(() => {
+  if (!isChecklist.value || !props.item.done || !props.item.restock?.length) return null
+  const restock = restockedText(props.item.restock)
+  return restock !== null
+    ? // TRANSLATORS: Line under a checked-off item that restocked inventory items. {restock} is e.g. "Restocked Eggs (Kitchen) +8".
+      t('pantry', '{restock} · uncheck to undo', { restock }, { escape: false })
+    : null
+})
 /** Ticked off because nothing it restocks needs it any more, rather than by a member. */
 const systemDone = computed(
   () => isChecklist.value && props.item.done && !props.item.doneBy && !!props.item.restocks?.length,
@@ -739,6 +765,7 @@ const emit = defineEmits<{
   unlink: [item: ChecklistItem]
   'auto-link': [item: ChecklistItem, on: boolean]
   unpin: [item: ChecklistItem]
+  renew: [item: ChecklistItem]
   'drag-start': [itemId: number, groupKey?: string]
   'reorder-over': [itemId: number, event: MouseEvent, groupKey?: string]
 }>()

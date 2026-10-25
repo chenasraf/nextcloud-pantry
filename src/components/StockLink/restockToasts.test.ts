@@ -93,6 +93,10 @@ function entry(overrides: Partial<RestockEntry> = {}): RestockEntry {
     listName: 'Kitchen',
     added: '8',
     previousLevel: null,
+    replaced: false,
+    previousOnHand: null,
+    previousExpiresAt: null,
+    expiresAt: null,
     ...overrides,
   }
 }
@@ -125,6 +129,36 @@ describe('restock feedback', () => {
 
     expect(showSuccess).toHaveBeenCalledTimes(2)
     expect(showSuccess).toHaveBeenLastCalledWith('Back on Groceries: Eggs × 8 eggs')
+  })
+
+  it('says what a tick replaced', () => {
+    const milk = entry({ itemId: 4, itemName: 'Milk', added: '2', replaced: true })
+    const cream = entry({
+      itemId: 5,
+      itemName: 'Cream',
+      added: null,
+      previousLevel: 'low',
+      replaced: true,
+    })
+
+    expect(restockedText([entry(), milk])).toBe(
+      'Restocked Eggs (Kitchen) +8, replaced Milk (Kitchen) ×2',
+    )
+    expect(restockedText([milk, cream])).toBe('Replaced Milk (Kitchen) ×2, Cream (Kitchen), Full')
+    expect(restockUndoneText([milk])).toBe('Undid: replaced Milk (Kitchen) ×2')
+  })
+
+  it('leaves out items whose date alone was renewed', () => {
+    const dateOnly = entry({ itemId: 6, itemName: 'Rice', added: null })
+
+    expect(restockedText([entry(), dateOnly])).toBe('Restocked Eggs (Kitchen) +8')
+    expect(restockedText([dateOnly])).toBeNull()
+  })
+
+  it('shows no toast for a tick that only renewed a date', () => {
+    announceRestock({ restocked: [entry({ added: null })] })
+
+    expect(showSuccess).not.toHaveBeenCalled()
   })
 
   it('says nothing when stock was left alone', () => {

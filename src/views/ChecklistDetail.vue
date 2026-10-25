@@ -270,7 +270,9 @@
               @restore="handleRestore"
               @archive="handleArchive"
               @unarchive="handleUnarchive"
+              :renew-offer="renewOffers.get(gi.item.id) ?? null"
               @stock="handleStock"
+              @renew="handleRenew"
               @link="handleLink"
               @unlink="handleUnlink"
               @auto-link="handleAutoLink"
@@ -401,7 +403,9 @@
                 @restore="handleRestore"
                 @archive="handleArchive"
                 @unarchive="handleUnarchive"
+                :renew-offer="renewOffers.get(gi.item.id) ?? null"
                 @stock="handleStock"
+                @renew="handleRenew"
                 @link="handleLink"
                 @unlink="handleUnlink"
                 @auto-link="handleAutoLink"
@@ -1010,6 +1014,8 @@ const {
   add,
   update,
   updateStock,
+  renewOffers,
+  renewExpiry,
   link: linkItem,
   unlink: unlinkItem,
   setAutoLink,
@@ -2407,6 +2413,14 @@ async function handleStock(
 ) {
   try {
     await updateStock(item.id, patch)
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function handleRenew(item: ChecklistItem) {
+  try {
+    await renewExpiry(item.id)
   } catch (e) {
     showError((e as Error).message)
   }

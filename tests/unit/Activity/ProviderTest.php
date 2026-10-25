@@ -330,4 +330,45 @@ class ProviderTest extends TestCase {
 		$this->assertSame('{author} completed {item} on {list} in {house}, restocked {restock}', $captured['rich']);
 		$this->assertSame('Kitchen +4, Garage to Full', $captured['richParams']['restock']['name']);
 	}
+
+	public function testATickThatReplacedSaysSo(): void {
+		[$event, $captured] = $this->makeEvent('pantry', ActivityPublisher::SUBJECT_ITEM_DONE, [
+			'author' => 'alice',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Eggs',
+			'listId' => 7,
+			'listName' => 'Groceries',
+			'restocked' => [
+				['listName' => 'Garage', 'added' => '1', 'level' => false, 'replaced' => false],
+				['listName' => 'Kitchen', 'added' => '2', 'level' => false, 'replaced' => true],
+				['listName' => 'Cellar', 'added' => null, 'level' => true, 'replaced' => true],
+				['listName' => 'Attic', 'added' => null, 'level' => false, 'replaced' => false],
+			],
+		]);
+		$this->activityManager->method('getCurrentUserId')->willReturn('bob');
+
+		$this->provider->parse('en', $event);
+
+		$this->assertSame('{author} completed {item} on {list} in {house}, restocked {restock}, replaced {replace}', $captured['rich']);
+		$this->assertSame('Garage +1', $captured['richParams']['restock']['name']);
+		$this->assertSame('Kitchen ×2, Cellar, Full', $captured['richParams']['replace']['name']);
+	}
+
+	public function testATickThatOnlyReplacedLeavesOutRestocked(): void {
+		[$event, $captured] = $this->makeEvent('pantry', ActivityPublisher::SUBJECT_ITEM_DONE, [
+			'author' => 'alice',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Eggs',
+			'listId' => 7,
+			'listName' => 'Groceries',
+			'restocked' => [['listName' => 'Kitchen', 'added' => '2', 'level' => false, 'replaced' => true]],
+		]);
+		$this->activityManager->method('getCurrentUserId')->willReturn('alice');
+
+		$this->provider->parse('en', $event);
+
+		$this->assertSame('You completed {item} on {list} in {house}, replaced {replace}', $captured['rich']);
+	}
 }

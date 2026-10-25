@@ -774,6 +774,7 @@ class ChecklistService {
 		$item = $this->getItem($itemId);
 		$sourceListId = $item->getListId();
 		$renamed = false;
+		$wasEmpty = StockRules::isEmpty(self::stockOf($item));
 
 		if (isset($patch['name'])) {
 			$name = trim((string)$patch['name']);
@@ -864,6 +865,16 @@ class ChecklistService {
 			if (array_key_exists('quantityPinned', $patch) && $patch['quantityPinned'] !== null) {
 				$item->setQuantityPinned((bool)$patch['quantityPinned']);
 			}
+		}
+
+		// Stock raised by hand from empty is new stock, so it gets a fresh date.
+		// A raise onto stock already there may be a recount, so the date is
+		// left for the member to renew.
+		if ($wasEmpty && $item->getListId() === $sourceListId
+			&& !array_key_exists('expiresAt', $patch) && !array_key_exists('shelfLifeDays', $patch)
+			&& $this->getList($sourceListId, includeDeleted: true)->getKind() === Checklist::KIND_INVENTORY
+			&& !StockRules::isEmpty(self::stockOf($item))) {
+			$item->setExpiresAt(StockRules::renewedExpiry($item->getShelfLifeDays(), StockRules::today()));
 		}
 
 		$item->setUpdatedAt(time());
@@ -1684,6 +1695,17 @@ class ChecklistService {
 	 *
 	 * @param array<array-key, mixed> $stock
 	 */
+	/**
+	 * @return array{stockMode: ?string, stockLevel: ?string, quantity: ?string}
+	 */
+	private static function stockOf(ChecklistItem $item): array {
+		return [
+			'stockMode' => $item->getStockMode(),
+			'stockLevel' => $item->getStockLevel(),
+			'quantity' => $item->getQuantity(),
+		];
+	}
+
 	private function applyStock(ChecklistItem $item, array $stock, bool $keepQuantity = false): void {
 		$isNew = $item->getId() === null;
 		if (array_key_exists('stockMode', $stock)) {

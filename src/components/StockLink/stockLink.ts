@@ -135,7 +135,12 @@ export function restocksTooltip(sources: StockLinkSource[]): string {
   return t('pantry', 'Restocks {items}', { items: names }, RAW)
 }
 
-/** What a tick put back into stock: "Eggs (Kitchen) +8, Milk (Kitchen) to Full". */
+/** Whether an entry changed stock, rather than only renewing the date of an item not counted. */
+function changedStock(e: RestockEntry): boolean {
+  return e.added !== null || e.previousLevel !== null
+}
+
+/** What a tick added to stock: "Eggs (Kitchen) +8, Milk (Kitchen) to Full". */
 function restockedParts(entries: RestockEntry[]): string {
   return entries
     .map((e) => {
@@ -149,16 +154,71 @@ function restockedParts(entries: RestockEntry[]): string {
     .join(', ')
 }
 
-/** "Restocked Eggs (Kitchen) +8", as the toast and the checked item's line read it. */
-export function restockedText(entries: RestockEntry[]): string {
-  // TRANSLATORS: {restock} lists what a checked-off item put back into stock, e.g. "Restocked Eggs (Kitchen) +8, Milk (Kitchen) to Full".
-  return t('pantry', 'Restocked {restock}', { restock: restockedParts(entries) }, RAW)
+/** What a tick replaced because it was going off: "Milk (Kitchen) ×2, Cream (Kitchen), Full". */
+function replacedParts(entries: RestockEntry[]): string {
+  return entries
+    .map((e) => {
+      const vars = { item: e.itemName, inventory: e.listName, amount: e.added ?? '' }
+      return e.added !== null
+        ? // TRANSLATORS: One expiring inventory item a checked-off item replaced, and the amount now on hand, e.g. "Milk (Kitchen) ×2".
+          t('pantry', '{item} ({inventory}) ×{amount}', vars, RAW)
+        : // TRANSLATORS: One expiring inventory item a checked-off item replaced, back to the Full stock level, e.g. "Cream (Kitchen), Full".
+          t('pantry', '{item} ({inventory}), Full', vars, RAW)
+    })
+    .join(', ')
 }
 
-/** "Undid: restocked Eggs (Kitchen) +8", after a member's uncheck took it back out. */
-export function restockUndoneText(entries: RestockEntry[]): string {
-  // TRANSLATORS: Toast after unchecking an item took back what its check put into stock, e.g. "Undid: restocked Eggs (Kitchen) +8".
-  return t('pantry', 'Undid: restocked {restock}', { restock: restockedParts(entries) }, RAW)
+/**
+ * The restocked and replaced lists of a tick, without the items whose date
+ * alone was renewed. Both null when it changed no stock.
+ */
+function splitEntries(entries: RestockEntry[]): { restock: string | null; replace: string | null } {
+  const changed = entries.filter(changedStock)
+  const added = changed.filter((e) => !e.replaced)
+  const replaced = changed.filter((e) => e.replaced)
+  return {
+    restock: added.length ? restockedParts(added) : null,
+    replace: replaced.length ? replacedParts(replaced) : null,
+  }
+}
+
+/**
+ * "Restocked Eggs (Kitchen) +8, replaced Milk (Kitchen) ×2", as the toast and
+ * the checked item's line read it. Null when the tick changed no stock.
+ */
+export function restockedText(entries: RestockEntry[]): string | null {
+  const { restock, replace } = splitEntries(entries)
+  if (restock !== null && replace !== null) {
+    // TRANSLATORS: {restock} lists what a checked-off item added to stock ("Eggs (Kitchen) +8"), {replace} the expiring stock it replaced ("Milk (Kitchen) ×2").
+    return t('pantry', 'Restocked {restock}, replaced {replace}', { restock, replace }, RAW)
+  }
+  if (replace !== null) {
+    // TRANSLATORS: {replace} lists the expiring stock a checked-off item replaced, e.g. "Replaced Milk (Kitchen) ×2".
+    return t('pantry', 'Replaced {replace}', { replace }, RAW)
+  }
+  if (restock !== null) {
+    // TRANSLATORS: {restock} lists what a checked-off item put back into stock, e.g. "Restocked Eggs (Kitchen) +8, Milk (Kitchen) to Full".
+    return t('pantry', 'Restocked {restock}', { restock }, RAW)
+  }
+  return null
+}
+
+/** "Undid: restocked Eggs (Kitchen) +8", after a member's uncheck took it back out. Null when it changed no stock. */
+export function restockUndoneText(entries: RestockEntry[]): string | null {
+  const { restock, replace } = splitEntries(entries)
+  if (restock !== null && replace !== null) {
+    // TRANSLATORS: Toast after unchecking an item took back what its check did to stock, e.g. "Undid: restocked Eggs (Kitchen) +8, replaced Milk (Kitchen) ×2".
+    return t('pantry', 'Undid: restocked {restock}, replaced {replace}', { restock, replace }, RAW)
+  }
+  if (replace !== null) {
+    // TRANSLATORS: Toast after unchecking an item put back the expiring stock its check replaced, e.g. "Undid: replaced Milk (Kitchen) ×2".
+    return t('pantry', 'Undid: replaced {replace}', { replace }, RAW)
+  }
+  if (restock !== null) {
+    // TRANSLATORS: Toast after unchecking an item took back what its check put into stock, e.g. "Undid: restocked Eggs (Kitchen) +8".
+    return t('pantry', 'Undid: restocked {restock}', { restock }, RAW)
+  }
+  return null
 }
 
 export const linkToasts = {

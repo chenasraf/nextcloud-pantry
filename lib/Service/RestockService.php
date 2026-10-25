@@ -23,13 +23,19 @@ use OCP\IDBConnection;
  *   ticked: untouched, what stock asked for; set by hand, what the member
  *   actually bought. With no number, everything that needs restocking goes to
  *   full. Level items go to Full.
- * - Inventory items that need restocking are filled to their target in the
- *   order they linked, until the number runs out; what is left over goes to
- *   the first of them. When none needs restocking, it all goes to the first
- *   linked. Items whose on-hand amount is not counted are skipped.
- * - The tick keeps a record of what it added, so the member's uncheck can
- *   take it back out (never below 0, levels back to what they were). Any
- *   other uncheck drops the record and leaves stock alone.
+ * - Inventory items that need restocking are filled in the order they
+ *   linked, until the number runs out; what is left over goes to the first of
+ *   them. When none needs restocking, it all goes to the first linked. Items
+ *   whose on-hand amount is not counted are skipped.
+ * - Stock that is expiring or expired is thrown out for the new: its share
+ *   replaces what is on hand rather than adding to it.
+ * - Everything restocked gets a fresh expiry date, today + its shelf life, or
+ *   none without one. Items not counted are not restocked but still get the
+ *   fresh date, so the tick settles their expiry too.
+ * - The tick keeps a record of what it changed, so the member's uncheck can
+ *   put it back (never below 0, levels and replaced amounts as they were, the
+ *   date unless it was edited since). Any other uncheck drops the record and
+ *   leaves stock alone.
  * - Stock changing runs the restock sync, so a shared item that came up short
  *   goes straight back on the list asking for the rest.
  *
@@ -87,20 +93,31 @@ class RestockService {
 		if ($contributors === []) {
 			return $this->result($row, [], [], []);
 		}
+		$today = StockRules::today();
 		$restocked = [];
 		$updated = [];
 		$events = [];
-		foreach (self::plan($contributors, StockRules::firstNumber($row->getQuantity())) as $grant) {
+		foreach ($this->plan($contributors, StockRules::firstNumber($row->getQuantity()), $today) as $grant) {
 			$item = $grant['item'];
-			$before = $this->sync->snapshotOf($item);
-			if ($grant['add'] === null) {
-				$previous = $item->getStockLevel();
+			$before = $this->sync->snapshotOf($item, $today);
+			$entry = $this->entry($item);
+			if ($grant['stock'] && self::isLevel($item)) {
+				$entry['previousLevel'] = $item->getStockLevel() ?? StockRules::LEVEL_FULL;
+				$entry['replaced'] = $grant['replace'];
 				$item->setStockLevel(StockRules::LEVEL_FULL);
-				$entry = $this->entry($item, null, $previous);
-			} else {
-				$item->setQuantity(self::onHandPlus($item, $grant['add']));
-				$entry = $this->entry($item, StockRules::formatNumber($grant['add']), null);
+			} elseif ($grant['stock']) {
+				$amount = $grant['amount'] ?? 0.0;
+				$entry['added'] = StockRules::formatNumber($amount);
+				if ($grant['replace']) {
+					$entry['replaced'] = true;
+					$entry['previousOnHand'] = $item->getQuantity();
+					$item->setQuantity(StockRules::withNumber(self::onHandText($item), $amount));
+				} else {
+					$item->setQuantity(self::onHandPlus($item, $amount));
+				}
 			}
+			$entry['expiresAt'] = StockRules::renewedExpiry($item->getShelfLifeDays(), $today);
+			$item->setExpiresAt($entry['expiresAt']);
 			$item->setUpdatedAt(time());
 			$this->itemMapper->update($item);
 			$restocked[] = $entry;
@@ -134,17 +151,27 @@ class RestockService {
 				continue;
 			}
 			$before = $this->sync->snapshotOf($item);
+			$changed = false;
 			if ($entry['previousLevel'] !== null) {
-				if ($item->getStockMode() !== StockRules::MODE_LEVEL) {
-					continue;
+				if (self::isLevel($item)) {
+					$item->setStockLevel($entry['previousLevel']);
+					$changed = true;
 				}
-				$item->setStockLevel($entry['previousLevel']);
-			} else {
-				$added = StockRules::firstNumber($entry['added']);
-				if ($added === null || $item->getStockMode() === StockRules::MODE_LEVEL || self::onHand($item) === null) {
-					continue;
+			} elseif ($entry['added'] !== null && !self::isLevel($item) && self::onHand($item) !== null) {
+				if ($entry['replaced']) {
+					$item->setQuantity($entry['previousOnHand']);
+				} else {
+					$item->setQuantity(self::onHandPlus($item, -(StockRules::firstNumber($entry['added']) ?? 0.0)));
 				}
-				$item->setQuantity(self::onHandPlus($item, -$added));
+				$changed = true;
+			}
+			// A date edited by hand since the tick is the member's, so it stays.
+			if ($item->getExpiresAt() === $entry['expiresAt'] && $entry['previousExpiresAt'] !== $entry['expiresAt']) {
+				$item->setExpiresAt($entry['previousExpiresAt']);
+				$changed = true;
+			}
+			if (!$changed) {
+				continue;
 			}
 			$item->setUpdatedAt(time());
 			$this->itemMapper->update($item);
@@ -155,51 +182,64 @@ class RestockService {
 	}
 
 	/**
-	 * Who gets what of the bought amount: an amount to add to each count
-	 * item, or null to take a level item to Full.
+	 * Who gets what of the bought amount. Each count item gets an amount, to
+	 * add to what is on hand or, when that is going off, to replace it; a level
+	 * item goes to Full. Items not counted only get the fresh date (`stock`
+	 * false), and only when it would change.
 	 *
 	 * @param list<ChecklistItem> $contributors Earliest linked first.
-	 * @return list<array{item: ChecklistItem, add: float|null}>
+	 * @return list<array{item: ChecklistItem, amount: float|null, replace: bool, stock: bool}>
 	 */
-	public static function plan(array $contributors, ?float $bought): array {
-		$needing = array_values(array_filter(
-			$contributors,
-			static fn (ChecklistItem $c): bool => RestockSyncService::snapshot($c)['low'],
-		));
-		$grants = [];
-		if ($bought === null) {
-			foreach ($needing as $item) {
-				$missing = self::missing($item);
-				if (self::isLevel($item)) {
-					$grants[] = ['item' => $item, 'add' => null];
-				} elseif ($missing > 0) {
-					$grants[] = ['item' => $item, 'add' => $missing];
-				}
+	private function plan(array $contributors, ?float $bought, int $today): array {
+		$needing = [];
+		$expiring = [];
+		foreach ($contributors as $item) {
+			$snapshot = $this->sync->snapshotOf($item, $today);
+			if ($snapshot['needs'] && !self::uncounted($item)) {
+				$needing[] = $item;
+				$expiring[(int)$item->getId()] = StockRules::expiryNeedsRestock($snapshot['expiry']);
 			}
-			return $grants;
 		}
 
+		$grants = [];
 		$left = $bought;
 		foreach ($needing as $item) {
-			if ($left <= 0) {
+			if ($left !== null && $left <= 0) {
 				break;
 			}
+			$id = (int)$item->getId();
+			$replace = $expiring[$id];
 			if (self::isLevel($item)) {
-				$grants[(int)$item->getId()] = ['item' => $item, 'add' => null];
-				$left -= min($left, StockRules::firstNumber($item->getQuantity()) ?? 0.0);
+				$grants[$id] = ['item' => $item, 'amount' => null, 'replace' => $replace, 'stock' => true];
+				if ($left !== null) {
+					$left -= min($left, StockRules::firstNumber($item->getQuantity()) ?? 0.0);
+				}
 				continue;
 			}
-			$give = min($left, self::missing($item));
+			$need = $replace ? (StockRules::firstNumber($item->getTarget()) ?? 0.0) : self::missing($item);
+			$give = $left !== null ? min($left, $need) : $need;
 			if ($give > 0) {
-				$grants[(int)$item->getId()] = ['item' => $item, 'add' => $give];
-				$left -= $give;
+				$grants[$id] = ['item' => $item, 'amount' => $give, 'replace' => $replace, 'stock' => true];
+				if ($left !== null) {
+					$left -= $give;
+				}
 			}
 		}
-		if ($left > 0) {
+		if ($left !== null && $left > 0) {
 			$recipient = self::firstCounted($needing !== [] ? $needing : $contributors);
 			if ($recipient !== null) {
 				$id = (int)$recipient->getId();
-				$grants[$id] = ['item' => $recipient, 'add' => ($grants[$id]['add'] ?? 0.0) + $left];
+				$grants[$id] = [
+					'item' => $recipient,
+					'amount' => ($grants[$id]['amount'] ?? 0.0) + $left,
+					'replace' => $grants[$id]['replace'] ?? false,
+					'stock' => true,
+				];
+			}
+		}
+		foreach ($contributors as $item) {
+			if (self::uncounted($item) && $item->getExpiresAt() !== StockRules::renewedExpiry($item->getShelfLifeDays(), $today)) {
+				$grants[(int)$item->getId()] = ['item' => $item, 'amount' => null, 'replace' => false, 'stock' => false];
 			}
 		}
 		return array_values($grants);
@@ -237,30 +277,46 @@ class RestockService {
 		return $text === '' ? 0.0 : StockRules::firstNumber($text);
 	}
 
-	/**
-	 * On-hand text after adding `$delta`, never below 0. A blank amount takes
-	 * the target's wording, as the stepper does.
-	 */
-	private static function onHandPlus(ChecklistItem $item, float $delta): string {
-		$text = trim($item->getQuantity() ?? '');
-		if ($text === '') {
-			$target = trim($item->getTarget() ?? '');
-			$text = StockRules::firstNumber($target) !== null ? StockRules::withNumber($target, 0) : '0';
-		}
-		return StockRules::withNumber($text, max(0.0, (self::onHand($item) ?? 0.0) + $delta));
+	private static function uncounted(ChecklistItem $item): bool {
+		return !self::isLevel($item) && self::onHand($item) === null;
 	}
 
 	/**
+	 * On-hand text to write a number into. A blank amount takes the target's
+	 * wording, as the stepper does.
+	 */
+	private static function onHandText(ChecklistItem $item): string {
+		$text = trim($item->getQuantity() ?? '');
+		if ($text !== '') {
+			return $text;
+		}
+		$target = trim($item->getTarget() ?? '');
+		return StockRules::firstNumber($target) !== null ? StockRules::withNumber($target, 0) : '0';
+	}
+
+	/** On-hand text after adding `$delta`, never below 0. */
+	private static function onHandPlus(ChecklistItem $item, float $delta): string {
+		return StockRules::withNumber(self::onHandText($item), max(0.0, (self::onHand($item) ?? 0.0) + $delta));
+	}
+
+	/**
+	 * A record of a tick that changes nothing yet, with the item's date as it
+	 * was.
+	 *
 	 * @return RestockEntry
 	 */
-	private function entry(ChecklistItem $item, ?string $added, ?string $previousLevel): array {
+	private function entry(ChecklistItem $item): array {
 		return [
 			'itemId' => (int)$item->getId(),
 			'listId' => $item->getListId(),
 			'itemName' => $item->getName(),
 			'listName' => $this->list($item->getListId())?->getName() ?? '',
-			'added' => $added,
-			'previousLevel' => $previousLevel,
+			'added' => null,
+			'previousLevel' => null,
+			'replaced' => false,
+			'previousOnHand' => null,
+			'previousExpiresAt' => $item->getExpiresAt(),
+			'expiresAt' => $item->getExpiresAt(),
 		];
 	}
 

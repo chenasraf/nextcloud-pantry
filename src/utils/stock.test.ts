@@ -12,6 +12,7 @@ import {
   itemTone,
   needsRestock,
   gaugeFill,
+  renewOffer,
   gaugeTick,
   startingOnHand,
   todayEpoch,
@@ -114,5 +115,50 @@ describe('gauge', () => {
   it('ticks at the reorder point', () => {
     expect(gaugeTick(count('4', '12', '3'))).toBe(0.25)
     expect(gaugeTick(count('4', '12'))).toBeNull()
+  })
+})
+
+describe('renew offer', () => {
+  const today = todayEpoch()
+  function count(quantity: string | null, overrides: Partial<ExpiryInput> = {}): ExpiryInput {
+    return {
+      stockMode: 'count',
+      stockLevel: null,
+      quantity,
+      expiresAt: addDays(today, 2),
+      shelfLifeDays: 7,
+      ...overrides,
+    }
+  }
+
+  it('offers the renewed date after a raise onto stock already there', () => {
+    expect(renewOffer(count('4'), count('5'), today)).toBe(addDays(today, 7))
+  })
+
+  it('offers nothing after a raise from empty, which renews on its own', () => {
+    expect(renewOffer(count('0'), count('5'), today)).toBeNull()
+    expect(renewOffer(count(null), count('5'), today)).toBeNull()
+  })
+
+  it('offers nothing after a step down', () => {
+    expect(renewOffer(count('5'), count('4'), today)).toBeNull()
+  })
+
+  it('offers nothing without a shelf life', () => {
+    expect(
+      renewOffer(count('4', { shelfLifeDays: null }), count('5', { shelfLifeDays: null }), today),
+    ).toBeNull()
+  })
+
+  it('offers nothing when the date is already as late', () => {
+    const late = { expiresAt: addDays(today, 7) }
+    expect(renewOffer(count('4', late), count('5', late), today)).toBeNull()
+  })
+
+  it('offers a date to a level item raised from Low', () => {
+    const level = (stockLevel: 'low' | 'full' | 'out') =>
+      count(null, { stockMode: 'level', stockLevel })
+    expect(renewOffer(level('low'), level('full'), today)).toBe(addDays(today, 7))
+    expect(renewOffer(level('out'), level('low'), today)).toBeNull()
   })
 })

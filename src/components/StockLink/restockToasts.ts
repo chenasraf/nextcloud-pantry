@@ -64,11 +64,13 @@ export function announceRestock(result: {
   restockUndone?: RestockEntry[]
   restockSync?: RestockSyncEvent[]
 }): void {
-  if (result.restocked?.length) {
-    showSuccess(restockedText(result.restocked))
+  const restocked = restockedText(result.restocked ?? [])
+  if (restocked !== null) {
+    showSuccess(restocked)
   }
-  if (result.restockUndone?.length) {
-    showInfo(restockUndoneText(result.restockUndone))
+  const undone = restockUndoneText(result.restockUndone ?? [])
+  if (undone !== null) {
+    showInfo(undone)
   }
   announceRestockSync(result.restockSync)
 }

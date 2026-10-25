@@ -8,6 +8,9 @@ import {
   evaluateStock,
   expiryInput,
   expiryStatus,
+  isEmpty,
+  renewedExpiry,
+  renewOffer,
   stockInput,
   todayEpoch,
 } from '@/utils/stock'
@@ -331,6 +334,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
   }
 
   async function update(itemId: number, patch: Partial<api.ItemInput>): Promise<void> {
+    dropRenewOffer(itemId)
     const updated = received(await resource.updateItem(houseId, listIdFor(itemId), itemId, patch))
     if (isMeta && patch.targetListId !== undefined && patch.targetListId !== updated.listId) {
       // Should not happen — the backend canonicalizes listId via targetListId.
@@ -340,6 +344,27 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
 
   /** The latest stock write per item, so a slower earlier answer cannot undo a later step. */
   const stockWrites = new Map<number, number>()
+
+  /**
+   * Inventory items whose stock a member raised by hand onto stock already
+   * there, and the date that offers to renew them to, until their next edit.
+   */
+  const renewOffers = ref(new Map<number, number>())
+
+  function dropRenewOffer(itemId: number): void {
+    if (renewOffers.value.has(itemId)) {
+      const next = new Map(renewOffers.value)
+      next.delete(itemId)
+      renewOffers.value = next
+    }
+  }
+
+  /** Inventory items: take up the offer to renew the expiry date after a raise by hand. */
+  async function renewExpiry(itemId: number): Promise<void> {
+    const date = renewOffers.value.get(itemId)
+    if (date === undefined) return
+    await update(itemId, { expiresAt: date })
+  }
 
   /**
    * Change an inventory item's stock from its row. The row shows the new
@@ -354,16 +379,26 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     if (!prev) return
     const write = (stockWrites.get(itemId) ?? 0) + 1
     stockWrites.set(itemId, write)
+    const today = todayEpoch()
     const next = { ...prev, ...patch }
+    // Stock raised from empty is new stock, so the server gives it a fresh date.
+    if (isEmpty(stockInput(prev)) && !isEmpty(stockInput(next))) {
+      next.expiresAt = renewedExpiry(next.shelfLifeDays ?? null, today)
+    }
+    const offer = renewOffer(expiryInput(prev), expiryInput(next), today)
     const leadDays =
       getState(houseId, 'inventory').lists.value.find((l) => l.id === next.listId)
         ?.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS
     const optimistic = {
       ...next,
       ...evaluateStock(stockInput(next)),
-      expiryStatus: expiryStatus(expiryInput(next), leadDays, todayEpoch()),
+      expiryStatus: expiryStatus(expiryInput(next), leadDays, today),
     }
     items.value = items.value.map((i) => (i.id === itemId ? optimistic : i))
+    dropRenewOffer(itemId)
+    if (offer !== null) {
+      renewOffers.value = new Map(renewOffers.value).set(itemId, offer)
+    }
     try {
       const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, patch)
       announceRestockSync(updated.restockSync)
@@ -373,6 +408,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     } catch (e) {
       if (stockWrites.get(itemId) === write) {
         items.value = items.value.map((i) => (i.id === itemId ? prev : i))
+        dropRenewOffer(itemId)
       }
       throw e
     }
@@ -673,6 +709,8 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     mergeItems,
     update,
     updateStock,
+    renewOffers,
+    renewExpiry,
     link,
     unlink,
     setAutoLink,
