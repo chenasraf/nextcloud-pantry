@@ -32,6 +32,7 @@ use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
+use OCA\Pantry\Service\RestockService;
 use OCA\Pantry\Service\RestockSyncService;
 use OCA\Pantry\Service\ShareService;
 use OCA\Pantry\Service\StockLinkService;
@@ -64,11 +65,14 @@ class ListKindControllerTest extends TestCase {
 	private StockLinkService $stockLinks;
 	/** @var RestockSyncService&MockObject */
 	private RestockSyncService $restockSync;
+	/** @var RestockService&MockObject */
+	private RestockService $restock;
 
 	protected function setUp(): void {
 		$this->activity = $this->createMock(ActivityPublisher::class);
 		$this->stockLinks = $this->createMock(StockLinkService::class);
 		$this->restockSync = $this->createMock(RestockSyncService::class);
+		$this->restock = $this->createMock(RestockService::class);
 		$this->lists = $this->createMock(ChecklistService::class);
 		$this->attachments = $this->createMock(TemplateAttachmentService::class);
 		$this->templateCopy = $this->createMock(TemplateCopyService::class);
@@ -122,6 +126,7 @@ class ListKindControllerTest extends TestCase {
 			$this->templateCopy,
 			$this->stockLinks,
 			$this->restockSync,
+			$this->restock,
 		);
 	}
 
@@ -723,6 +728,77 @@ class ListKindControllerTest extends TestCase {
 
 		$this->assertSame($restocks, $data[0]['restocks']);
 		$this->assertArrayNotHasKey('stockLink', $data[0]);
+	}
+
+	// ----- Buying restocks -----
+
+	private const RESTOCKED = ['itemId' => 3, 'listId' => 20, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null];
+
+	private function stageRow(bool $done): ChecklistItem {
+		$row = new ChecklistItem();
+		$row->setId(50);
+		$row->setListId(7);
+		$row->setName('Eggs');
+		$row->setDone($done);
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->lists->method('getItem')->willReturn($row);
+		return $row;
+	}
+
+	public function testATickThatRestocksTellsTheMemberAndTheActivity(): void {
+		$row = $this->stageRow(false);
+		$ticked = clone $row;
+		$ticked->setDone(true);
+		$ticked->setRestock([self::RESTOCKED]);
+		$this->restock->expects($this->once())->method('toggle')->with(50, 'alice')
+			->willReturn(['item' => $ticked, 'restocked' => [self::RESTOCKED], 'undone' => [], 'events' => []]);
+		$this->activity->expects($this->once())->method('publishItemDone')
+			->with(1, 'Home', 'alice', 50, 'Eggs', 7, 'Weekly staples', [self::RESTOCKED]);
+
+		$data = $this->makeController(ChecklistController::class)->toggleItem(1, 7, 50)->getData();
+
+		$this->assertSame([self::RESTOCKED], $data['restocked']);
+		$this->assertSame([self::RESTOCKED], $data['restock']);
+		$this->assertArrayNotHasKey('restockUndone', $data);
+	}
+
+	public function testATickThatCameStraightBackStillCountsAsATick(): void {
+		$row = $this->stageRow(false);
+		$revived = clone $row;
+		$event = ['event' => 'revived', 'itemId' => 4, 'rowId' => 50, 'rowName' => 'Eggs', 'quantity' => '4', 'listId' => 7, 'listName' => 'Weekly staples'];
+		$this->restock->method('toggle')
+			->willReturn(['item' => $revived, 'restocked' => [self::RESTOCKED], 'undone' => [], 'events' => [$event]]);
+		$this->lists->method('getItem')->willReturn($revived);
+		$this->activity->expects($this->once())->method('publishItemDone');
+		$this->activity->expects($this->never())->method('publishItemReopened');
+
+		$data = $this->makeController(ChecklistController::class)->toggleItem(1, 7, 50)->getData();
+
+		$this->assertFalse($data['done']);
+		$this->assertSame([$event], $data['restockSync']);
+	}
+
+	public function testAMembersUncheckSaysWhatItTookBack(): void {
+		$row = $this->stageRow(true);
+		$unchecked = clone $row;
+		$unchecked->setDone(false);
+		$this->restock->method('toggle')
+			->willReturn(['item' => $unchecked, 'restocked' => [], 'undone' => [self::RESTOCKED], 'events' => []]);
+		$this->activity->expects($this->once())->method('publishItemReopened');
+
+		$data = $this->makeController(ChecklistController::class)->toggleItem(1, 7, 50)->getData();
+
+		$this->assertSame([self::RESTOCKED], $data['restockUndone']);
+		$this->assertNull($data['restock']);
+	}
+
+	public function testInventoryItemsHaveNoRestockRecord(): void {
+		$item = $this->stageLink();
+		$this->lists->method('updateItem')->willReturn($item);
+
+		$data = $this->makeController(InventoryController::class)->updateInventoryItem(1, 7, 3, name: 'Eggs')->getData();
+
+		$this->assertArrayNotHasKey('restock', $data);
 	}
 
 	public function testInventoriesReportOnlyAUsableRestockChecklist(): void {

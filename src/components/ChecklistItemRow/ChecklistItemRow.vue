@@ -81,6 +81,9 @@
         >
           {{ strings.noLongerNeeded }}
         </span>
+        <span v-if="restockLine" class="checklist-row__restock-line" data-testid="restock-line">
+          {{ restockLine }}
+        </span>
         <div class="checklist-row__meta">
           <PantryChip
             v-if="suggestion && suggestionTemplates?.length"
@@ -456,7 +459,12 @@ import LinkVariantIcon from '@icons/LinkVariant.vue'
 import LinkOffIcon from '@icons/LinkOff.vue'
 import AlertCircleOutlineIcon from '@icons/AlertCircleOutline.vue'
 import StockLinkButton from '@/components/StockLink/StockLinkButton.vue'
-import { restocksTooltip, stockLinkState, stockLinkTooltip } from '@/components/StockLink/stockLink'
+import {
+  restockedText,
+  restocksTooltip,
+  stockLinkState,
+  stockLinkTooltip,
+} from '@/components/StockLink/stockLink'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
@@ -682,6 +690,18 @@ const pinnedText = computed(() =>
 )
 const pinnedLabel = computed(() =>
   canEditItem.value ? `${pinnedText.value}. ${strings.pinnedTooltip}` : pinnedText.value,
+)
+/** What the member's tick put back into stock, which unchecking takes back out. */
+const restockLine = computed(() =>
+  isChecklist.value && props.item.done && props.item.restock?.length
+    ? // TRANSLATORS: Line under a checked-off item that restocked inventory items. {restock} is e.g. "Restocked Eggs (Kitchen) +8".
+      t(
+        'pantry',
+        '{restock} · uncheck to undo',
+        { restock: restockedText(props.item.restock) },
+        { escape: false },
+      )
+    : null,
 )
 /** Ticked off because nothing it restocks needs it any more, rather than by a member. */
 const systemDone = computed(
@@ -1051,6 +1071,11 @@ function storeLabel(name: string): string {
   &__no-longer-needed {
     font-size: 0.8rem;
     color: var(--color-text-maxcontrast);
+  }
+
+  &__restock-line {
+    font-size: 0.8rem;
+    color: var(--color-success-text, var(--color-success));
   }
 
   &__meta {

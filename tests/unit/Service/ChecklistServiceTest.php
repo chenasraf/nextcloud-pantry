@@ -2513,6 +2513,55 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertFalse($item->isMemberReopened());
 	}
 
+	private const RESTOCK_ENTRY = ['itemId' => 30, 'listId' => 20, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null];
+
+	public function testReviveForRestockDropsTheRestockRecord(): void {
+		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);
+		$item->setRestock([self::RESTOCK_ENTRY]);
+
+		$this->svc->reviveForRestock($item, 500);
+
+		$this->assertNull($item->getRestock());
+	}
+
+	public function testUncheckAllDropsTheRestockRecord(): void {
+		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);
+		$item->setId(42);
+		$item->setRestock([self::RESTOCK_ENTRY]);
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->uncheckItems([42]);
+
+		$this->assertNull($item->getRestock());
+	}
+
+	public function testARecurringReopenDropsTheRestockRecord(): void {
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=DAILY',
+			'createdAt' => strtotime('2026-04-06 13:00:00 UTC'),
+			'done' => true,
+			'nextDueAt' => strtotime('2026-04-08 13:00:00 UTC'),
+		]);
+		$item->setRestock([self::RESTOCK_ENTRY]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findDueRecurring')->willReturn([$item]);
+
+		$this->svc->reopenDueItems(strtotime('2026-04-08 09:00:00 UTC'));
+
+		$this->assertNull($item->getRestock());
+	}
+
+	public function testATickReplacesAnEarlierRestockRecord(): void {
+		$item = $this->makeItem();
+		$item->setRestock([self::RESTOCK_ENTRY]);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->svc->toggleItem(42, 'alice', 500);
+
+		$this->assertNull($item->getRestock());
+	}
+
 	public function testChangingTheQuantityOfALinkedRowPinsIt(): void {
 		$row = $this->makeItem(['quantity' => '8 eggs']);
 		$row->setId(9);

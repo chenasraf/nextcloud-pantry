@@ -1,6 +1,9 @@
 import { t } from '@nextcloud/l10n'
 import { showInfo, showSuccess, type ToastHandle } from '@nextcloud/dialogs'
-import type { RestockSyncEvent } from '@/api/types'
+import type { RestockEntry, RestockSyncEvent } from '@/api/types'
+import { restockedText, restockUndoneText } from './stockLink'
+
+export { restockedText, restockUndoneText }
 
 /** Names are shown as text, never as HTML, so placeholders are not escaped. */
 const RAW = { escape: false }
@@ -50,4 +53,22 @@ export function announceRestockSync(events: RestockSyncEvent[] | undefined): voi
     const toast = e.event === 'added' || e.event === 'revived' ? showSuccess(text) : showInfo(text)
     shown.set(e.rowId, toast)
   }
+}
+
+/**
+ * Tell the member what their tick or uncheck did to stock, then what
+ * restocking did to checklist items because of it.
+ */
+export function announceRestock(result: {
+  restocked?: RestockEntry[]
+  restockUndone?: RestockEntry[]
+  restockSync?: RestockSyncEvent[]
+}): void {
+  if (result.restocked?.length) {
+    showSuccess(restockedText(result.restocked))
+  }
+  if (result.restockUndone?.length) {
+    showInfo(restockUndoneText(result.restockUndone))
+  }
+  announceRestockSync(result.restockSync)
 }

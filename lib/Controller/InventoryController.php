@@ -45,7 +45,7 @@ final class InventoryController extends ListKindOCSController {
 	];
 
 	/** Checklist-only item fields: the done state and the recurrence. */
-	private const CHECKLIST_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'rrule', 'repeatFromCompletion', 'deleteOnDone', 'quantityPinned'];
+	private const CHECKLIST_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'rrule', 'repeatFromCompletion', 'deleteOnDone', 'quantityPinned', 'restock'];
 
 	protected function kind(): string {
 		return Checklist::KIND_INVENTORY;

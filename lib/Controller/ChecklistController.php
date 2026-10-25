@@ -770,10 +770,13 @@ final class ChecklistController extends ListKindOCSController {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			[, $list] = $this->loadItem($houseId, $listId, $itemId);
-			$toggled = $this->lists->toggleItem($itemId, $uid);
+			[$before, $list] = $this->loadItem($houseId, $listId, $itemId);
+			// A tick that restocked a shared item short may come straight back
+			// unchecked, so the activity follows the tick, not the result.
+			$ticked = !$before->getDone();
+			$toggled = $this->withRestock($this->restock->toggle($itemId, $uid));
 			$houseName = $this->houses->get($houseId)->getName();
-			if ($toggled->getDone()) {
+			if ($ticked) {
 				$this->notifications->notifyItemDone($houseId, $uid, $toggled->getName(), $list->getName());
 				$this->activity->publishItemDone(
 					$houseId,
@@ -783,6 +786,7 @@ final class ChecklistController extends ListKindOCSController {
 					$toggled->getName(),
 					(int)$list->getId(),
 					$list->getName(),
+					$this->restockedBy($itemId),
 				);
 			} else {
 				$this->activity->publishItemReopened(

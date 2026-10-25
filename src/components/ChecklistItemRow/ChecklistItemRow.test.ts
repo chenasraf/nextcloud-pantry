@@ -1124,4 +1124,31 @@ describe('ChecklistItemRow restock markers', () => {
 
     expect(wrapper.find('[data-testid="no-longer-needed"]').exists()).toBe(false)
   })
+
+  const restock = [
+    {
+      itemId: 3,
+      listId: 20,
+      itemName: 'Eggs',
+      listName: 'Kitchen',
+      added: '8',
+      previousLevel: null,
+    },
+  ]
+
+  it('says what a ticked row restocked until it is unchecked', () => {
+    const { wrapper } = mountChecklistRow(
+      makeItem({ done: true, doneAt: 5, doneBy: 'alice', restocks, restock }),
+    )
+
+    expect(wrapper.find('[data-testid="restock-line"]').text()).toBe(
+      'Restocked Eggs (Kitchen) +8 · uncheck to undo',
+    )
+  })
+
+  it('has no restock line once unchecked', () => {
+    const { wrapper } = mountChecklistRow(makeItem({ done: false, restocks, restock }))
+
+    expect(wrapper.find('[data-testid="restock-line"]').exists()).toBe(false)
+  })
 })

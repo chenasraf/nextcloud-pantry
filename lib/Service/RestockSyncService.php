@@ -331,7 +331,7 @@ class RestockSyncService {
 	 *
 	 * @return list<ChecklistItem>
 	 */
-	private function contributors(ChecklistItem $row): array {
+	public function contributors(ChecklistItem $row): array {
 		$out = [];
 		foreach ($this->itemMapper->findLinkedTo([(int)$row->getId()]) as $item) {
 			$inventory = $this->list($item->getListId());

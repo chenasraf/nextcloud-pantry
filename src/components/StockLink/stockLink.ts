@@ -1,5 +1,5 @@
 import { n, t } from '@nextcloud/l10n'
-import type { ChecklistItem, StockLinkRow, StockLinkSource } from '@/api/types'
+import type { ChecklistItem, RestockEntry, StockLinkRow, StockLinkSource } from '@/api/types'
 
 /** Names are shown as text, never as HTML, so placeholders are not escaped. */
 const RAW = { escape: false }
@@ -133,6 +133,32 @@ export function restocksTooltip(sources: StockLinkSource[]): string {
     .join(', ')
   // TRANSLATORS: Tooltip on a checklist item linked to inventory items. {items} is a comma-separated list such as "Eggs (Kitchen), Soda (Garage)".
   return t('pantry', 'Restocks {items}', { items: names }, RAW)
+}
+
+/** What a tick put back into stock: "Eggs (Kitchen) +8, Milk (Kitchen) to Full". */
+function restockedParts(entries: RestockEntry[]): string {
+  return entries
+    .map((e) => {
+      const vars = { item: e.itemName, inventory: e.listName, amount: e.added ?? '' }
+      return e.added !== null
+        ? // TRANSLATORS: One inventory item a checked-off item restocked and how much it added, e.g. "Eggs (Kitchen) +8".
+          t('pantry', '{item} ({inventory}) +{amount}', vars, RAW)
+        : // TRANSLATORS: One inventory item a checked-off item took to the Full stock level, e.g. "Milk (Kitchen) to Full".
+          t('pantry', '{item} ({inventory}) to Full', vars, RAW)
+    })
+    .join(', ')
+}
+
+/** "Restocked Eggs (Kitchen) +8", as the toast and the checked item's line read it. */
+export function restockedText(entries: RestockEntry[]): string {
+  // TRANSLATORS: {restock} lists what a checked-off item put back into stock, e.g. "Restocked Eggs (Kitchen) +8, Milk (Kitchen) to Full".
+  return t('pantry', 'Restocked {restock}', { restock: restockedParts(entries) }, RAW)
+}
+
+/** "Undid: restocked Eggs (Kitchen) +8", after a member's uncheck took it back out. */
+export function restockUndoneText(entries: RestockEntry[]): string {
+  // TRANSLATORS: Toast after unchecking an item took back what its check put into stock, e.g. "Undid: restocked Eggs (Kitchen) +8".
+  return t('pantry', 'Undid: restocked {restock}', { restock: restockedParts(entries) }, RAW)
 }
 
 export const linkToasts = {

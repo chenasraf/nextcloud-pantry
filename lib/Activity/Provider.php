@@ -115,6 +115,18 @@ class Provider implements IProvider {
 			case ActivityPublisher::SUBJECT_ITEM_DONE:
 				$item = $this->highlight('item', (string)($params['itemName'] ?? ''));
 				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));
+				$restocked = $this->restockedText($params, $l);
+				if ($restocked !== null) {
+					$restock = $this->highlight('restock', $restocked);
+					return [
+						$isSelf
+							// TRANSLATORS: {restock} lists the inventories the checked-off item restocked, e.g. "Kitchen +4, Garage to Full".
+							? $l->t('You completed {item} on {list} in {house}, restocked {restock}')
+							// TRANSLATORS: {restock} lists the inventories the checked-off item restocked, e.g. "Kitchen +4, Garage to Full".
+							: $l->t('{author} completed {item} on {list} in {house}, restocked {restock}'),
+						$isSelf ? compact('item', 'list', 'house', 'restock') : compact('author', 'item', 'list', 'house', 'restock'),
+					];
+				}
 				return [
 					$isSelf
 						? $l->t('You completed {item} on {list} in {house}')
@@ -452,6 +464,28 @@ class Provider implements IProvider {
 	/** Whether an item batch renders as an inline list of names rather than a count. */
 	private function itemsAsNames(array $names, int $count): bool {
 		return $count <= 3 && !empty($names);
+	}
+
+	/**
+	 * What a tick put back into stock, by inventory: "Kitchen +4, Garage to Full".
+	 *
+	 * @param array<array-key, mixed> $params
+	 */
+	private function restockedText(array $params, IL10N $l): ?string {
+		$parts = [];
+		foreach ((array)($params['restocked'] ?? []) as $entry) {
+			if (!is_array($entry)) {
+				continue;
+			}
+			$inventory = (string)($entry['listName'] ?? '');
+			$added = $entry['added'] ?? null;
+			$parts[] = $added !== null
+				// TRANSLATORS: One inventory a checked-off item restocked and how much it added, e.g. "Kitchen +4".
+				? $l->t('%1$s +%2$s', [$inventory, (string)$added])
+				// TRANSLATORS: One inventory whose item a checked-off item restocked to the Full stock level, e.g. "Kitchen to Full".
+				: $l->t('%s to Full', [$inventory]);
+		}
+		return $parts !== [] ? implode(', ', $parts) : null;
 	}
 
 	/**

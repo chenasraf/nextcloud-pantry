@@ -1108,7 +1108,8 @@ class ChecklistService {
 
 	/**
 	 * `$uid` is who ticked it, or null when nobody did. Being done ends a
-	 * quantity pinned by hand and a member's reopen.
+	 * quantity pinned by hand and a member's reopen. A tick that restocks
+	 * records it afterwards, replacing any earlier record.
 	 */
 	private function markDone(ChecklistItem $item, ?string $uid, int $now): ChecklistItem {
 		$item->setDone(true);
@@ -1116,6 +1117,7 @@ class ChecklistService {
 		$item->setDoneBy($uid);
 		$item->setQuantityPinned(false);
 		$item->setMemberReopened(false);
+		$item->setRestock(null);
 		$item->setUpdatedAt($now);
 		// "Once" items are soft-deleted from the list when marked done. The
 		// row stays in the DB (deleted_at set) so it can be surfaced in a
@@ -1136,11 +1138,17 @@ class ChecklistService {
 		return $item;
 	}
 
+	/**
+	 * Unchecking drops what the tick restocked. Only a member's uncheck takes
+	 * it back out of stock ({@see RestockService}), and it reads the record
+	 * before calling here.
+	 */
 	private function markUndone(ChecklistItem $item, int $now): void {
 		$item->setDone(false);
 		$item->setDoneAt(null);
 		$item->setDoneBy(null);
 		$item->setNextDueAt(null);
+		$item->setRestock(null);
 		$item->setUpdatedAt($now);
 	}
 
@@ -1321,6 +1329,7 @@ class ChecklistService {
 			$item->setDoneAt(null);
 			$item->setDoneBy(null);
 			$item->setMemberReopened(true);
+			$item->setRestock(null);
 			if ($item->getRepeatFromCompletion()) {
 				// Completion-based: next interval starts when the user checks
 				// the item off again, so clear the schedule for now.

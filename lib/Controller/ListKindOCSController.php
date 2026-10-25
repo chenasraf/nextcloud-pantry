@@ -29,6 +29,7 @@ use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
+use OCA\Pantry\Service\RestockService;
 use OCA\Pantry\Service\RestockSyncService;
 use OCA\Pantry\Service\ShareService;
 use OCA\Pantry\Service\StockLinkService;
@@ -79,6 +80,7 @@ abstract class ListKindOCSController extends OCSController {
 		protected TemplateCopyService $templateCopy,
 		protected StockLinkService $stockLinks,
 		protected RestockSyncService $restockSync,
+		protected RestockService $restock,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -88,7 +90,7 @@ abstract class ListKindOCSController extends OCSController {
 	 * schedule, a pinned quantity, the stock level and the expiry date. A template keeps how its
 	 * items are stocked and how long they keep, never how much is on hand.
 	 */
-	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'stockLevel', 'expiresAt', 'quantityPinned'];
+	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'stockLevel', 'expiresAt', 'quantityPinned', 'restock'];
 
 	/** Item fields only an inventory item has. */
 	protected const STOCK_ITEM_FIELDS = ['stockMode', 'stockLevel', 'target', 'reorderPoint', 'expiresAt', 'shelfLifeDays'];
@@ -249,7 +251,43 @@ abstract class ListKindOCSController extends OCSController {
 		if ($events !== []) {
 			$data['restockSync'] = $events;
 		}
+		foreach ($this->restockFeedback[(int)$item->getId()] ?? [] as $key => $entries) {
+			if ($entries !== []) {
+				$data[$key] = $entries;
+			}
+		}
 		return $data;
+	}
+
+	/** @var array<int, array{restocked: list<array<string, mixed>>, restockUndone: list<array<string, mixed>>}> What a member's tick or uncheck did to stock, by the checklist item, for its response. */
+	private array $restockFeedback = [];
+
+	/**
+	 * Remember what a member's tick or uncheck did to stock, and what the
+	 * restock sync did after it, so the item's response tells the member.
+	 *
+	 * @param array{item: ChecklistItem, restocked: list<array<string, mixed>>, undone: list<array<string, mixed>>, events: list<array<string, mixed>>} $result
+	 */
+	protected function withRestock(array $result): ChecklistItem {
+		$item = $result['item'];
+		$this->restockFeedback[(int)$item->getId()] = [
+			'restocked' => $result['restocked'],
+			'restockUndone' => $result['undone'],
+		];
+		if ($result['events'] !== []) {
+			$this->restockEvents[(int)$item->getId()] = $result['events'];
+		}
+		return $item;
+	}
+
+	/**
+	 * What the member's tick of the checklist item put back into stock, as
+	 * remembered by {@see withRestock()}.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	protected function restockedBy(int $itemId): array {
+		return $this->restockFeedback[$itemId]['restocked'] ?? [];
 	}
 
 	/** @var array<int, list<array<string, mixed>>> What restock syncs did, by the item whose write caused them, for its response. */

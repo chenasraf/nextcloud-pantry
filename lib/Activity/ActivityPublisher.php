@@ -129,7 +129,10 @@ class ActivityPublisher {
 		);
 	}
 
-	public function publishItemDone(int $houseId, string $houseName, string $authorUid, int $itemId, string $itemName, int $listId, string $listName): void {
+	/**
+	 * @param list<array<string, mixed>> $restocked What the tick put back into stock, by inventory item: its `listName` and the amount `added` (null when it went to Full).
+	 */
+	public function publishItemDone(int $houseId, string $houseName, string $authorUid, int $itemId, string $itemName, int $listId, string $listName, array $restocked = []): void {
 		// A separate curated notification ({@see NotificationService::notifyItemDone})
 		// covers this, so suppress the per-event activity → notification bridge
 		// here to avoid a second bell entry. Stream entry is unaffected.
@@ -140,7 +143,12 @@ class ActivityPublisher {
 			self::SUBJECT_ITEM_DONE,
 			'item',
 			$itemId,
-			['itemName' => $itemName, 'listId' => $listId, 'listName' => $listName],
+			['itemName' => $itemName, 'listId' => $listId, 'listName' => $listName] + ($restocked !== [] ? [
+				'restocked' => array_map(static fn (array $e): array => [
+					'listName' => (string)($e['listName'] ?? ''),
+					'added' => isset($e['added']) ? (string)$e['added'] : null,
+				], $restocked),
+			] : []),
 			$this->listLink($houseId, $listId),
 			generateNotification: false,
 		);

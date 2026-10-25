@@ -45,8 +45,11 @@ vi.mock('@/api/lists', () => ({
   },
 }))
 
-const announceRestockSync = vi.hoisted(() => vi.fn())
-vi.mock('@/components/StockLink/restockToasts', () => ({ announceRestockSync }))
+const { announceRestock, announceRestockSync } = vi.hoisted(() => ({
+  announceRestock: vi.fn(),
+  announceRestockSync: vi.fn(),
+}))
+vi.mock('@/components/StockLink/restockToasts', () => ({ announceRestock, announceRestockSync }))
 
 import { ALL_LISTS_ID, useChecklists, useChecklistItems } from './useChecklist'
 
@@ -951,5 +954,48 @@ describe('useChecklistItems restock sync', () => {
     await c.add({ name: 'Eggs' })
 
     expect(announceRestockSync).toHaveBeenCalledWith(sync)
+  })
+})
+
+describe('useChecklistItems buying restocks', () => {
+  const restocked = [
+    {
+      itemId: 3,
+      listId: 20,
+      itemName: 'Eggs',
+      listName: 'Kitchen',
+      added: '8',
+      previousLevel: null,
+    },
+  ]
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    houseCounter++
+  })
+
+  it('tells the member what their tick restocked', async () => {
+    const toggled = makeItem({ id: 1, done: true, restock: restocked, restocked })
+    mockApi.listItems.mockResolvedValue([makeItem({ id: 1 })])
+    mockApi.toggleItem.mockResolvedValue(toggled)
+
+    const c = useChecklistItems(houseCounter, 10)
+    await c.load()
+    await c.toggle(1)
+
+    expect(announceRestock).toHaveBeenCalledWith(toggled)
+    expect(c.items.value[0].restock).toEqual(restocked)
+  })
+
+  it('tells the member what undoing a tick took back out', async () => {
+    const unchecked = makeItem({ id: 1, done: false, restockUndone: restocked })
+    mockApi.listItems.mockResolvedValue([makeItem({ id: 1, done: true })])
+    mockApi.toggleItem.mockResolvedValue(unchecked)
+
+    const c = useChecklistItems(houseCounter, 10)
+    await c.load()
+    await c.undoToggle(makeItem({ id: 1, done: true }))
+
+    expect(announceRestock).toHaveBeenCalledWith(unchecked)
   })
 })

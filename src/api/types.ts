@@ -390,6 +390,12 @@ export interface ChecklistItem extends Omit<Partial<ItemStock>, 'stockMode'> {
   quantityPinned?: boolean
   /** In the response of a write only: what restocking did to checklist items because of it. */
   restockSync?: RestockSyncEvent[]
+  /** Checked checklist items only: what the member's tick put back into stock, until it is unchecked. */
+  restock?: RestockEntry[] | null
+  /** In the response of a tick only: what it put back into stock. */
+  restocked?: RestockEntry[]
+  /** In the response of a member's uncheck only: what it took back out of stock. */
+  restockUndone?: RestockEntry[]
 }
 
 export type StockMode = 'count' | 'level'
@@ -440,6 +446,29 @@ export interface StockLinkSource {
   name: string
   listId: number
   listName: string
+}
+
+/**
+ * What a tick of a checklist item put back into one inventory item: the
+ * amount `added` to a count item, or the `previousLevel` of a level item it
+ * took to Full.
+ */
+export interface RestockEntry {
+  itemId: number
+  listId: number
+  itemName: string
+  listName: string
+  added: string | null
+  previousLevel: StockLevel | null
+}
+
+/** What Shopping Mode's check or uncheck did to stock. */
+export interface ShoppingCheckResult {
+  success: true
+  restock: RestockEntry[] | null
+  restocked: RestockEntry[]
+  restockUndone: RestockEntry[]
+  restockSync: RestockSyncEvent[]
 }
 
 /**

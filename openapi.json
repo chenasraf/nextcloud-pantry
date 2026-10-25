@@ -1820,7 +1820,8 @@
                     "updatedAt",
                     "deletedAt",
                     "archivedAt",
-                    "quantityPinned"
+                    "quantityPinned",
+                    "restock"
                 ],
                 "properties": {
                     "id": {
@@ -1942,6 +1943,13 @@
                     "quantityPinned": {
                         "type": "boolean"
                     },
+                    "restock": {
+                        "type": "array",
+                        "nullable": true,
+                        "items": {
+                            "$ref": "#/components/schemas/RestockEntry"
+                        }
+                    },
                     "restocks": {
                         "type": "array",
                         "items": {
@@ -1952,6 +1960,18 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/RestockSyncEvent"
+                        }
+                    },
+                    "restocked": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RestockEntry"
+                        }
+                    },
+                    "restockUndone": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RestockEntry"
                         }
                     }
                 }
@@ -2390,6 +2410,41 @@
                     }
                 }
             },
+            "RestockEntry": {
+                "type": "object",
+                "required": [
+                    "itemId",
+                    "listId",
+                    "itemName",
+                    "listName",
+                    "added",
+                    "previousLevel"
+                ],
+                "properties": {
+                    "itemId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "listId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "itemName": {
+                        "type": "string"
+                    },
+                    "listName": {
+                        "type": "string"
+                    },
+                    "added": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "previousLevel": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
             "RestockSyncEvent": {
                 "type": "object",
                 "required": [
@@ -2578,6 +2633,49 @@
                     "updatedAt": {
                         "type": "integer",
                         "format": "int64"
+                    }
+                }
+            },
+            "ShoppingCheckResult": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "restock",
+                    "restocked",
+                    "restockUndone",
+                    "restockSync"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "enum": [
+                            true
+                        ]
+                    },
+                    "restock": {
+                        "type": "array",
+                        "nullable": true,
+                        "items": {
+                            "$ref": "#/components/schemas/RestockEntry"
+                        }
+                    },
+                    "restocked": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RestockEntry"
+                        }
+                    },
+                    "restockUndone": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RestockEntry"
+                        }
+                    },
+                    "restockSync": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RestockSyncEvent"
+                        }
                     }
                 }
             },
@@ -26289,7 +26387,7 @@
                                                     "$ref": "#/components/schemas/OCSMeta"
                                                 },
                                                 "data": {
-                                                    "$ref": "#/components/schemas/Success"
+                                                    "$ref": "#/components/schemas/ShoppingCheckResult"
                                                 }
                                             }
                                         }
@@ -26408,7 +26506,7 @@
                                                     "$ref": "#/components/schemas/OCSMeta"
                                                 },
                                                 "data": {
-                                                    "$ref": "#/components/schemas/Success"
+                                                    "$ref": "#/components/schemas/ShoppingCheckResult"
                                                 }
                                             }
                                         }

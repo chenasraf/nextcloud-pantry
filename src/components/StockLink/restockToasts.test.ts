@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { nextcloudL10nMock } from '@/test-utils'
-import type { RestockSyncEvent } from '@/api/types'
+import type { RestockEntry, RestockSyncEvent } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 const { hide, showSuccess, showInfo } = vi.hoisted(() => {
@@ -14,7 +14,13 @@ const { hide, showSuccess, showInfo } = vi.hoisted(() => {
 })
 vi.mock('@nextcloud/dialogs', () => ({ showSuccess, showInfo }))
 
-import { announceRestockSync, restockSyncText } from './restockToasts'
+import {
+  announceRestock,
+  announceRestockSync,
+  restockedText,
+  restockSyncText,
+  restockUndoneText,
+} from './restockToasts'
 
 function event(overrides: Partial<RestockSyncEvent> = {}): RestockSyncEvent {
   return {
@@ -73,6 +79,56 @@ describe('restock toasts', () => {
   it('shows nothing for a write that synced nothing', () => {
     announceRestockSync(undefined)
     announceRestockSync([])
+
+    expect(showSuccess).not.toHaveBeenCalled()
+    expect(showInfo).not.toHaveBeenCalled()
+  })
+})
+
+function entry(overrides: Partial<RestockEntry> = {}): RestockEntry {
+  return {
+    itemId: 3,
+    listId: 20,
+    itemName: 'Eggs',
+    listName: 'Kitchen',
+    added: '8',
+    previousLevel: null,
+    ...overrides,
+  }
+}
+
+describe('restock feedback', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('says what a tick put back into stock', () => {
+    const milk = entry({ itemId: 4, itemName: 'Milk', added: null, previousLevel: 'low' })
+
+    expect(restockedText([entry(), milk])).toBe(
+      'Restocked Eggs (Kitchen) +8, Milk (Kitchen) to Full',
+    )
+  })
+
+  it('says what an uncheck took back out', () => {
+    expect(restockUndoneText([entry()])).toBe('Undid: restocked Eggs (Kitchen) +8')
+  })
+
+  it('shows a success toast for a tick and an info toast for an uncheck', () => {
+    announceRestock({ restocked: [entry()] })
+    announceRestock({ restockUndone: [entry()] })
+
+    expect(showSuccess).toHaveBeenCalledWith('Restocked Eggs (Kitchen) +8')
+    expect(showInfo).toHaveBeenCalledWith('Undid: restocked Eggs (Kitchen) +8')
+  })
+
+  it('tells what the sync did after it', () => {
+    announceRestock({ restocked: [entry()], restockSync: [event({ event: 'revived' })] })
+
+    expect(showSuccess).toHaveBeenCalledTimes(2)
+    expect(showSuccess).toHaveBeenLastCalledWith('Back on Groceries: Eggs × 8 eggs')
+  })
+
+  it('says nothing when stock was left alone', () => {
+    announceRestock({ restocked: [], restockUndone: [] })
 
     expect(showSuccess).not.toHaveBeenCalled()
     expect(showInfo).not.toHaveBeenCalled()

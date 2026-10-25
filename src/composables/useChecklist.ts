@@ -11,7 +11,7 @@ import {
   stockInput,
   todayEpoch,
 } from '@/utils/stock'
-import { announceRestockSync } from '@/components/StockLink/restockToasts'
+import { announceRestock, announceRestockSync } from '@/components/StockLink/restockToasts'
 
 /** An item a write returned, after telling the member what restocking did because of it. */
 function received(item: ChecklistItem): ChecklistItem {
@@ -426,6 +426,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     }
     try {
       const updated = await api.toggleItem(houseId, useListId, itemId)
+      announceRestock(updated)
       if (!willDelete) {
         items.value = items.value.map((i) => (i.id === itemId ? updated : i))
       }
@@ -453,6 +454,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
       await resource.restoreItem(houseId, useListId, prevItem.id)
     }
     const updated = await api.toggleItem(houseId, useListId, prevItem.id)
+    announceRestock(updated)
     if (stillPresent) {
       items.value = items.value.map((i) => (i.id === prevItem.id ? updated : i))
     } else {

@@ -261,8 +261,11 @@ namespace OCA\Pantry;
  *     deletedAt: int|null,
  *     archivedAt: int|null,
  *     quantityPinned: bool,
+ *     restock: list<PantryRestockEntry>|null,
  *     restocks?: list<PantryStockLinkSource>,
  *     restockSync?: list<PantryRestockSyncEvent>,
+ *     restocked?: list<PantryRestockEntry>,
+ *     restockUndone?: list<PantryRestockEntry>,
  * }
  *
  * @psalm-type PantryStockLinkRow = array{
@@ -280,6 +283,32 @@ namespace OCA\Pantry;
  *     name: string,
  *     listId: int,
  *     listName: string,
+ * }
+ *
+ * What a member's tick of a checklist item put back into one inventory item:
+ * the amount `added` to a count item, or the `previousLevel` of a level item
+ * it took to Full. On a checked item as `restock` until it is unchecked; in
+ * the response of the tick as `restocked`, of the member's uncheck that took
+ * it back out as `restockUndone`.
+ *
+ * @psalm-type PantryRestockEntry = array{
+ *     itemId: int,
+ *     listId: int,
+ *     itemName: string,
+ *     listName: string,
+ *     added: string|null,
+ *     previousLevel: string|null,
+ * }
+ *
+ * What Shopping Mode's check or uncheck did to stock, and what the restock
+ * sync did after it.
+ *
+ * @psalm-type PantryShoppingCheckResult = array{
+ *     success: true,
+ *     restock: list<PantryRestockEntry>|null,
+ *     restocked: list<PantryRestockEntry>,
+ *     restockUndone: list<PantryRestockEntry>,
+ *     restockSync: list<PantryRestockSyncEvent>,
  * }
  *
  * What a restock sync did to a checklist item, in the response of the write

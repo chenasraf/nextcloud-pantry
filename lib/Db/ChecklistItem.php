@@ -71,6 +71,10 @@ use OCP\AppFramework\Db\Entity;
  * @method void setAutoLink(?bool $autoLink)
  * @method void setQuantityPinned(?bool $quantityPinned)
  * @method void setMemberReopened(?bool $memberReopened)
+ * @method string|null getRestockRecord()
+ * @method void setRestockRecord(?string $restockRecord)
+ *
+ * @psalm-type RestockEntry = array{itemId: int, listId: int, itemName: string, listName: string, added: string|null, previousLevel: string|null}
  */
 class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $listId = 0;
@@ -108,6 +112,8 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?bool $quantityPinned = false;
 	/** A member reopened the checklist item, so stock recovering does not tick it off until it is next done. */
 	protected ?bool $memberReopened = false;
+	/** JSON list of what a member's tick put back into stock, for their uncheck to take out. */
+	protected ?string $restockRecord = null;
 
 	/**
 	 * Prices resolved for this item, attached transiently by the service/controller
@@ -158,6 +164,44 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 
 	public function isMemberReopened(): bool {
 		return $this->memberReopened === true;
+	}
+
+	/**
+	 * What the member's tick of this checklist item put back into stock, each
+	 * inventory item's added amount or, for a level item, its level before.
+	 *
+	 * @return list<RestockEntry>|null
+	 */
+	public function getRestock(): ?array {
+		if ($this->restockRecord === null) {
+			return null;
+		}
+		$decoded = json_decode($this->restockRecord, true);
+		if (!is_array($decoded)) {
+			return null;
+		}
+		$entries = [];
+		foreach ($decoded as $entry) {
+			if (!is_array($entry) || !is_int($entry['itemId'] ?? null)) {
+				continue;
+			}
+			$entries[] = [
+				'itemId' => $entry['itemId'],
+				'listId' => (int)($entry['listId'] ?? 0),
+				'itemName' => (string)($entry['itemName'] ?? ''),
+				'listName' => (string)($entry['listName'] ?? ''),
+				'added' => isset($entry['added']) ? (string)$entry['added'] : null,
+				'previousLevel' => isset($entry['previousLevel']) ? (string)$entry['previousLevel'] : null,
+			];
+		}
+		return $entries !== [] ? $entries : null;
+	}
+
+	/**
+	 * @param list<RestockEntry>|null $entries
+	 */
+	public function setRestock(?array $entries): void {
+		$this->setRestockRecord($entries !== null && $entries !== [] ? json_encode($entries, JSON_THROW_ON_ERROR) : null);
 	}
 
 	/** Done by stock recovering rather than by a member: "No longer needed". */
@@ -242,6 +286,7 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 			'deletedAt' => $this->deletedAt,
 			'archivedAt' => $this->archivedAt,
 			'quantityPinned' => $this->isQuantityPinned(),
+			'restock' => $this->getRestock(),
 		];
 	}
 }

@@ -36,7 +36,7 @@ class ProviderTest extends TestCase {
 		$this->activityManager = $this->createMock(IActivityManager::class);
 
 		$l = $this->createMock(IL10N::class);
-		$l->method('t')->willReturnCallback(fn (string $text) => $text);
+		$l->method('t')->willReturnCallback(fn (string $text, array $params = []) => $params === [] ? $text : vsprintf($text, $params));
 		$l->method('n')->willReturnCallback(fn (string $s, string $p, int $n) => $n === 1 ? $s : $p);
 		$this->l10nFactory->method('get')->willReturn($l);
 
@@ -311,5 +311,23 @@ class ProviderTest extends TestCase {
 
 		$this->assertSame('{author} added {item} to {list} in {house}', $captured['rich']);
 		$this->assertSame(['type' => 'highlight', 'id' => 'pantry', 'name' => 'Pantry'], $captured['richParams']['author']);
+	}
+
+	public function testATickThatRestockedSaysWhere(): void {
+		[$event, $captured] = $this->makeEvent('pantry', ActivityPublisher::SUBJECT_ITEM_DONE, [
+			'author' => 'alice',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Eggs',
+			'listId' => 7,
+			'listName' => 'Groceries',
+			'restocked' => [['listName' => 'Kitchen', 'added' => '4'], ['listName' => 'Garage', 'added' => null]],
+		]);
+		$this->activityManager->method('getCurrentUserId')->willReturn('bob');
+
+		$this->provider->parse('en', $event);
+
+		$this->assertSame('{author} completed {item} on {list} in {house}, restocked {restock}', $captured['rich']);
+		$this->assertSame('Kitchen +4, Garage to Full', $captured['richParams']['restock']['name']);
 	}
 }

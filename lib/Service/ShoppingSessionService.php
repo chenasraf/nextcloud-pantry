@@ -31,6 +31,8 @@ use OCP\AppFramework\Db\DoesNotExistException;
  * Orchestrates the shopping-session aggregate: the session row plus its scope
  * (checklists), its ordered store sequence, and the aggregated shopping list.
  * Lifecycle is timestamp-driven and enforced here.
+ *
+ * @psalm-import-type RestockToggle from RestockService
  */
 class ShoppingSessionService {
 	/**
@@ -53,6 +55,7 @@ class ShoppingSessionService {
 		private ItemPriceMapper $itemPrices,
 		private ChecklistService $checklists,
 		private StoreMapper $storeMapper,
+		private RestockService $restock,
 	) {
 	}
 
@@ -544,14 +547,14 @@ class ShoppingSessionService {
 
 	/**
 	 * Check an item off during the trip: mark it done (reusing the normal check
-	 * behavior — recurrence rescheduling, delete-on-done) and record it in the
-	 * session log against the currently active store. Idempotent.
+	 * behavior — recurrence rescheduling, delete-on-done, restocking) and record
+	 * it in the session log against the currently active store. Idempotent.
+	 *
+	 * @return RestockToggle|null What the tick restocked; null when it was already checked.
 	 */
-	public function checkItem(ShoppingSession $session, int $itemId, string $uid): void {
+	public function checkItem(ShoppingSession $session, int $itemId, string $uid): ?array {
 		$item = $this->checklists->getItem($itemId);
-		if (!$item->getDone()) {
-			$this->checklists->toggleItem($itemId, $uid);
-		}
+		$result = !$item->getDone() ? $this->restock->toggle($itemId, $uid) : null;
 
 		$sessionId = (int)$session->getId();
 		$now = time();
@@ -568,34 +571,42 @@ class ShoppingSessionService {
 			$existing->setCheckedAt($now);
 			$this->sessionItems->update($existing);
 		}
+		return $result;
 	}
 
 	/**
 	 * Undo a check: drop the log row and mark the item not-done again. A
-	 * delete-on-done item soft-deleted by the check is restored.
+	 * delete-on-done item soft-deleted by the check is restored, and what the
+	 * check restocked is taken back out of stock.
+	 *
+	 * @return RestockToggle|null What unchecking took back out; null when it was not checked.
 	 */
-	public function uncheckItem(ShoppingSession $session, int $itemId): void {
+	public function uncheckItem(ShoppingSession $session, int $itemId, string $uid): ?array {
 		$this->sessionItems->deleteBySessionAndItem((int)$session->getId(), $itemId);
 
 		try {
 			$item = $this->items->findById($itemId, includeDeleted: true);
 		} catch (DoesNotExistException) {
-			return;
+			return null;
 		}
 		if (!$item->getDone()) {
-			return;
+			return null;
 		}
 		$now = time();
+		$record = $item->getRestock() ?? [];
 		$item->setDone(false);
 		$item->setDoneAt(null);
 		$item->setDoneBy(null);
 		$item->setNextDueAt(null);
+		$item->setRestock(null);
+		$item->setMemberReopened(true);
 		// Restore an item the check soft-deleted via delete-on-done.
 		if ($item->getDeletedAt() !== null && $item->getDeleteOnDone()) {
 			$item->setDeletedAt(null);
 		}
 		$item->setUpdatedAt($now);
 		$this->items->update($item);
+		return $this->restock->afterMemberUncheck($item, $record, $uid);
 	}
 
 	/**
