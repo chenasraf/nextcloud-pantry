@@ -40,6 +40,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setFillFromDefaults(?bool $fillFromDefaults)
  * @method int|null getExpiryLeadDays()
  * @method void setExpiryLeadDays(?int $expiryLeadDays)
+ * @method int|null getRestockChecklistId()
+ * @method void setRestockChecklistId(?int $restockChecklistId)
  */
 class Checklist extends Entity implements \JsonSerializable {
 	public const KIND_CHECKLIST = 'checklist';
@@ -94,6 +96,8 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected ?bool $fillFromDefaults = true;
 	/** An inventory's expiry warning, in days before the date; empty reads as {@see DEFAULT_EXPIRY_LEAD_DAYS}. */
 	protected ?int $expiryLeadDays = null;
+	/** The checklist an inventory's low stock goes to; see {@see \OCA\Pantry\Service\StockLinkService::restockChecklist()}. */
+	protected ?int $restockChecklistId = null;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -106,6 +110,7 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('everyList', 'boolean');
 		$this->addType('fillFromDefaults', 'boolean');
 		$this->addType('expiryLeadDays', 'integer');
+		$this->addType('restockChecklistId', 'integer');
 	}
 
 	public function expiryLeadDays(): int {

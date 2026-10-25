@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\Db\Checklist;
+use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\StockRules;
@@ -26,8 +27,11 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryInventorySuggestions from ResponseDefinitions
  * @psalm-import-type PantryListTemplates from ResponseDefinitions
  * @psalm-import-type PantryInventoryDrawResult from ResponseDefinitions
+ * @psalm-import-type PantryStockLinkRow from ResponseDefinitions
  */
 final class InventoryController extends ListKindOCSController {
+	use TranslatesDomainExceptions;
+
 	/** Checklist-only list fields: completion and the per-column recurrence default. */
 	private const CHECKLIST_LIST_FIELDS = [
 		'deleteOnDoneDefault',
@@ -65,6 +69,7 @@ final class InventoryController extends ListKindOCSController {
 			$extras[(int)$list->getId()] = [
 				'needsRestock' => $counts[(int)$list->getId()] ?? 0,
 				'expiryLeadDays' => $list->expiryLeadDays(),
+				'restockChecklistId' => $this->stockLinks->restockChecklist($list)?->getId(),
 			];
 		}
 		return $extras;
@@ -79,6 +84,13 @@ final class InventoryController extends ListKindOCSController {
 			}
 		}
 		return $this->expiryLeadDays[$listId];
+	}
+
+	/** @var array<int, array{autoLink: bool, stockLink: array<string, mixed>|null, linkCandidates: list<array<string, mixed>>}> Link fields per item, loaded by {@see prepareItems()}. */
+	private array $links = [];
+
+	protected function prepareItems(array $items): void {
+		$this->links = $this->stockLinks->describe($items) + $this->links;
 	}
 
 	protected function shapeItem(array $data): array {
@@ -104,9 +116,10 @@ final class InventoryController extends ListKindOCSController {
 			'shelfLifeDays' => $int('shelfLifeDays'),
 		];
 		$listId = $int('listId') ?? 0;
+		$links = $this->links[$int('id') ?? 0] ?? ['autoLink' => true, 'stockLink' => null, 'linkCandidates' => []];
 		return array_merge($data, $stock, StockRules::evaluate($stock), $expiry, [
 			'expiryStatus' => StockRules::expiryStatus($stock + $expiry, $this->expiryLeadDays($listId), StockRules::today()),
-		]);
+		], $links);
 	}
 
 	/**
@@ -232,6 +245,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param string|null $color New accent color (hex). Pass an empty string to clear.
 	 * @param int|null $sortOrder New sort order.
 	 * @param int<0, 365>|null $expiryLeadDays Expiry warning: how many days before its expiry date an item counts as expiring. 0 warns on the date itself.
+	 * @param int|null $restockChecklistId Id of an active checklist in the same house that low stock goes to (0 clears). Setting it links the inventory's unlinked items to same-name items there.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventory, array{}>
 	 *
@@ -240,7 +254,7 @@ final class InventoryController extends ListKindOCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/inventories/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
-	public function updateInventory(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?int $expiryLeadDays = null): DataResponse {
+	public function updateInventory(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?int $expiryLeadDays = null, ?int $restockChecklistId = null): DataResponse {
 		$patch = array_filter([
 			'name' => $name,
 			'description' => $description,
@@ -248,6 +262,7 @@ final class InventoryController extends ListKindOCSController {
 			'color' => $color,
 			'sortOrder' => $sortOrder,
 			'expiryLeadDays' => $expiryLeadDays,
+			'restockChecklistId' => $restockChecklistId,
 		], static fn ($v) => $v !== null);
 		return $this->doUpdateList($houseId, $listId, $patch);
 	}
@@ -683,6 +698,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param string|null $reorderPoint New reorder point of a count item (empty string clears).
 	 * @param int|null $expiresAt New expiry date (midnight timestamp; 0 clears). Without a shelf life alongside, a date after today also sets the shelf life to match.
 	 * @param int<0, 36500>|null $shelfLifeDays New shelf life in days (0 clears). Without a date alongside, a shelf life also sets the date to today plus the shelf life.
+	 * @param bool|null $autoLink Whether an unlinked item is linked to the same-name item on the restock checklist. Turning it on links it when exactly one matches.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
 	 *
@@ -713,6 +729,7 @@ final class InventoryController extends ListKindOCSController {
 		?string $reorderPoint = null,
 		?int $expiresAt = null,
 		?int $shelfLifeDays = null,
+		?bool $autoLink = null,
 	): DataResponse {
 		$stock = array_filter([
 			'stockMode' => $stockMode,
@@ -721,8 +738,98 @@ final class InventoryController extends ListKindOCSController {
 			'reorderPoint' => $reorderPoint,
 			'expiresAt' => $expiresAt,
 			'shelfLifeDays' => $shelfLifeDays,
-		], static fn (string|int|null $v): bool => $v !== null);
+			'autoLink' => $autoLink,
+		], static fn (string|int|bool|null $v): bool => $v !== null);
 		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, null, null, null, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock);
+	}
+
+	/**
+	 * Link an inventory item to the checklist item that restocks it
+	 *
+	 * Replaces any link the item has. The checklist item can be on any active
+	 * checklist in the house the caller can edit, but not one another item on
+	 * this inventory is linked to.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Inventory id.
+	 * @param int $itemId Inventory item id.
+	 * @param int $targetItemId Id of the checklist item to link to.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
+	 *
+	 * 200: Item linked
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/inventories/{listId}/items/{itemId}/link', requirements: ['listId' => '\d+', 'itemId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function linkInventoryItem(int $houseId, int $listId, int $itemId, int $targetItemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $targetItemId): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			[$item] = $this->loadItem($houseId, $listId, $itemId);
+			$row = $this->lists->getItem($targetItemId);
+			$checklist = $this->lists->getList($row->getListId(), kind: Checklist::KIND_CHECKLIST);
+			$this->assertListInHouse($checklist->getHouseId(), $houseId);
+			if ($checklist->getArchivedAt() !== null) {
+				throw new \InvalidArgumentException('Cannot link to an item on an archived checklist');
+			}
+			if (!$this->editCheck($houseId, $uid)($checklist)) {
+				throw new ForbiddenException('Linking needs edit rights on the checklist');
+			}
+			return new DataResponse($this->serializeItem($this->stockLinks->link($item, $row)));
+		});
+	}
+
+	/**
+	 * Unlink an inventory item from its checklist item
+	 *
+	 * Also turns auto-link off, so the item is not linked by name again.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Inventory id.
+	 * @param int $itemId Inventory item id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
+	 *
+	 * 200: Item unlinked
+	 */
+	#[ApiRoute(verb: 'DELETE', url: '/api/houses/{houseId}/inventories/{listId}/items/{itemId}/link', requirements: ['listId' => '\d+', 'itemId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function unlinkInventoryItem(int $houseId, int $listId, int $itemId): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+			$this->auth->requireMember($houseId, $this->requireUid());
+			[$item] = $this->loadItem($houseId, $listId, $itemId);
+			return new DataResponse($this->serializeItem($this->stockLinks->unlink($item)));
+		});
+	}
+
+	/**
+	 * Checklist items an inventory's items can be linked to
+	 *
+	 * Live and archived items on the house's active checklists the caller can
+	 * edit, leaving out those already linked from this inventory. Sorted by
+	 * name, then checklist.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Inventory id.
+	 * @param string $search Only items whose name contains this, ignoring case and spacing.
+	 * @param int<1, 200> $limit Maximum number of items to return.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryStockLinkRow>, array{}>
+	 *
+	 * 200: Link targets returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/inventories/{listId}/link-targets', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function inventoryLinkTargets(int $houseId, int $listId, string $search = '', int $limit = 50): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $search, $limit): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$inventory = $this->loadList($houseId, $listId, includeDeleted: true);
+			return new DataResponse($this->stockLinks->linkTargets($inventory, $this->editCheck($houseId, $uid), $search, min(200, max(1, $limit))));
+		});
 	}
 
 	/**

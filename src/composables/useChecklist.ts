@@ -369,6 +369,28 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     }
   }
 
+  function replaceItem(updated: ChecklistItem): ChecklistItem {
+    items.value = items.value.map((i) => (i.id === updated.id ? updated : i))
+    return updated
+  }
+
+  /** Inventory items: link to the checklist item that restocks this one. */
+  async function link(itemId: number, targetItemId: number): Promise<ChecklistItem> {
+    return replaceItem(
+      await api.linkInventoryItem(houseId, listIdFor(itemId), itemId, targetItemId),
+    )
+  }
+
+  /** Inventory items: drop the link and turn auto-link off. */
+  async function unlink(itemId: number): Promise<ChecklistItem> {
+    return replaceItem(await api.unlinkInventoryItem(houseId, listIdFor(itemId), itemId))
+  }
+
+  /** Inventory items: turn auto-link on or off. Turning it on may link the item straight away. */
+  async function setAutoLink(itemId: number, autoLink: boolean): Promise<ChecklistItem> {
+    return replaceItem(await resource.updateItem(houseId, listIdFor(itemId), itemId, { autoLink }))
+  }
+
   async function copy(itemId: number, targetListId: number): Promise<ChecklistItem> {
     const sourceListId = listIdFor(itemId)
     const created = await resource.copyItem(houseId, sourceListId, itemId, targetListId)
@@ -638,6 +660,9 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     mergeItems,
     update,
     updateStock,
+    link,
+    unlink,
+    setAutoLink,
     copy,
     toggle,
     undoToggle,

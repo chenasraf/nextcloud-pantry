@@ -174,6 +174,10 @@
         class="pantry-detail__filter"
       />
 
+      <p v-if="showNoRestockNotice" class="pantry-detail__notice" data-testid="no-restock-notice">
+        {{ strings.noRestockChecklist }}
+      </p>
+
       <div v-if="loading" class="pantry-detail__center">
         <NcLoadingIcon :size="36" />
       </div>
@@ -267,6 +271,9 @@
               @archive="handleArchive"
               @unarchive="handleUnarchive"
               @stock="handleStock"
+              @link="handleLink"
+              @unlink="handleUnlink"
+              @auto-link="handleAutoLink"
               @preview="openPreview"
               @drag-start="onItemDragStart"
               @reorder-over="onReorderOver"
@@ -394,6 +401,9 @@
                 @archive="handleArchive"
                 @unarchive="handleUnarchive"
                 @stock="handleStock"
+                @link="handleLink"
+                @unlink="handleUnlink"
+                @auto-link="handleAutoLink"
                 @preview="openPreview"
                 @drag-start="onItemDragStart"
                 @reorder-over="onReorderOver"
@@ -413,6 +423,9 @@
       :default-currency="defaultCurrency"
       @update:open="(v) => !v && (editing = null)"
       @save="handleSaveEdit"
+      @link="handleLink"
+      @unlink="handleUnlink"
+      @auto-link="handleAutoLink"
     />
 
     <ChecklistItemViewDialog
@@ -451,6 +464,7 @@
       v-if="list && kind === 'inventory'"
       :open="editingInventorySettings"
       :list="list"
+      :checklists="houseChecklists"
       @update:open="(v) => (editingInventorySettings = v)"
       @saved="onInventorySettingsSaved"
     />
@@ -826,7 +840,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { t, n } from '@nextcloud/l10n'
-import { showUndo, showError, showSuccess } from '@nextcloud/dialogs'
+import { showUndo, showError, showInfo, showSuccess, showWarning } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
@@ -933,7 +947,9 @@ import type {
   ItemDefaultsPatch,
   ListKind,
   StockLevel,
+  StockLinkRow,
 } from '@/api/types'
+import { linkToasts } from '@/components/StockLink'
 import { withRemembered } from '@/utils/itemDefaults'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
 import {
@@ -992,6 +1008,9 @@ const {
   add,
   update,
   updateStock,
+  link: linkItem,
+  unlink: unlinkItem,
+  setAutoLink,
   copy,
   toggle,
   undoToggle,
@@ -2205,6 +2224,7 @@ async function handleAdd(
   adding.value = true
   try {
     const created = await add(input, targetListId ?? undefined)
+    announceSeveralMatches(undefined, created)
     if (pendingImage) {
       try {
         await uploadImage(created.id, pendingImage)
@@ -2390,6 +2410,79 @@ async function handleStock(
   }
 }
 
+// ----- Stock links -----
+
+const { lists: houseChecklists, load: loadHouseChecklists } = useChecklists(
+  houseIdNum.value,
+  'checklist',
+)
+if (props.kind === 'inventory') void loadHouseChecklists()
+
+const restockChecklist = computed(
+  () => houseChecklists.value.find((c) => c.id === list.value?.restockChecklistId) ?? null,
+)
+
+const showNoRestockNotice = computed(
+  () =>
+    props.kind === 'inventory' &&
+    !isMeta.value &&
+    !trashMode.value &&
+    !archiveMode.value &&
+    !!list.value &&
+    !list.value.restockChecklistId &&
+    items.value.some((i) => needsRestock(i)),
+)
+
+/** Keep an open item dialog on the item's latest link fields. */
+function syncEditingLink(updated: ChecklistItem) {
+  if (editing.value?.id !== updated.id) return
+  editing.value = {
+    ...editing.value,
+    autoLink: updated.autoLink,
+    stockLink: updated.stockLink,
+    linkCandidates: updated.linkCandidates,
+  }
+}
+
+/** Warn when an item the member just added or changed now matches several rows. */
+function announceSeveralMatches(before: ChecklistItem | undefined, after: ChecklistItem) {
+  if (props.kind !== 'inventory') return
+  const count = after.linkCandidates?.length ?? 0
+  if (count < 2 || (before?.linkCandidates?.length ?? 0) > 1) return
+  showWarning(linkToasts.severalMatches(after.name, count, restockChecklist.value?.name ?? ''))
+}
+
+async function handleLink(item: ChecklistItem, row: StockLinkRow) {
+  try {
+    const updated = await linkItem(item.id, row.itemId)
+    syncEditingLink(updated)
+    showSuccess(linkToasts.linked(updated.name, updated.stockLink ?? row))
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function handleUnlink(item: ChecklistItem) {
+  const row = item.stockLink
+  try {
+    const updated = await unlinkItem(item.id)
+    syncEditingLink(updated)
+    if (row) showInfo(linkToasts.unlinked(updated.name, row))
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function handleAutoLink(item: ChecklistItem, on: boolean) {
+  try {
+    const updated = await setAutoLink(item.id, on)
+    syncEditingLink(updated)
+    if (on) announceSeveralMatches(item, updated)
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
 // ----- Edit -----
 
 const editing = ref<ChecklistItem | null>(null)
@@ -2408,7 +2501,10 @@ async function handleSaveEdit(
   rememberCurrencyFrom(patch.prices)
   savingEdit.value = true
   try {
+    const before = items.value.find((i) => i.id === itemId)
     await update(itemId, patch)
+    const after = items.value.find((i) => i.id === itemId)
+    if (after) announceSeveralMatches(before, after)
     if (pendingImage) {
       await uploadImage(itemId, pendingImage)
     } else if (shouldClearImage) {
@@ -2996,6 +3092,10 @@ const kindStrings = listKindStrings(props.kind)
 
 const strings = {
   back: kindStrings.back,
+  noRestockChecklist: t(
+    'pantry',
+    'This inventory has no restock checklist, so these items are only marked here. Pick one in the inventory settings.',
+  ),
   allListsTitle: t('pantry', 'All checklists'),
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
@@ -3351,6 +3451,12 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   &__filter {
     margin-top: 1rem;
     margin-bottom: 1.5rem;
+  }
+
+  &__notice {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: var(--color-text-maxcontrast);
   }
 
   &__center {

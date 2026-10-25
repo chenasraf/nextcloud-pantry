@@ -30,6 +30,7 @@ use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ShareService;
+use OCA\Pantry\Service\StockLinkService;
 use OCA\Pantry\Service\StoreService;
 use OCA\Pantry\Service\TemplateAttachmentService;
 use OCA\Pantry\Service\TemplateCopyService;
@@ -75,6 +76,7 @@ abstract class ListKindOCSController extends OCSController {
 		protected LoggerInterface $logger,
 		protected TemplateAttachmentService $attachments,
 		protected TemplateCopyService $templateCopy,
+		protected StockLinkService $stockLinks,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -127,6 +129,15 @@ abstract class ListKindOCSController extends OCSController {
 	}
 
 	/**
+	 * Load, for a batch of items about to be shaped, what {@see shapeItem()}
+	 * adds from elsewhere, so it is looked up once per batch.
+	 *
+	 * @param ChecklistItem[] $items
+	 */
+	protected function prepareItems(array $items): void {
+	}
+
+	/**
 	 * The item's serialized fields, with the stock fields that only an
 	 * inventory's shape keeps.
 	 *
@@ -160,6 +171,7 @@ abstract class ListKindOCSController extends OCSController {
 	 */
 	protected function serializeItems(array $items, ?callable $shape = null): array {
 		$shape ??= $this->shapeItem(...);
+		$this->prepareItems($items);
 		$ids = array_map(static fn ($i) => (int)$i->getId(), $items);
 		try {
 			$storeMap = $this->itemStores->findStoreIdsForItems($ids);
@@ -204,6 +216,7 @@ abstract class ListKindOCSController extends OCSController {
 	 * @return array<string, mixed>
 	 */
 	protected function serializeItem(ChecklistItem $item): array {
+		$this->prepareItems([$item]);
 		$data = $this->itemData($item);
 		try {
 			$data['storeIds'] = $this->itemStores->findStoreIdsForItem((int)$item->getId());
@@ -600,7 +613,7 @@ abstract class ListKindOCSController extends OCSController {
 	 * @param list<array<string, mixed>>|null $prices
 	 * @param list<int>|null $labelIds
 	 * @param list<array<string, mixed>>|null $customFields
-	 * @param array<string, string|int> $stock Stock fields to change; an empty string clears a target or reorder point, 0 an expiry date or shelf life.
+	 * @param array<string, string|int|bool> $stock Stock fields to change; an empty string clears a target or reorder point, 0 an expiry date or shelf life.
 	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
 	 */
 	protected function doUpdateItem(
@@ -1143,6 +1156,20 @@ abstract class ListKindOCSController extends OCSController {
 			'canEdit' => $this->canEditList($list, $canEditLists, $roleAccess, $shareMap),
 			'sharedOnly' => !$roleAccess,
 		], $extras));
+	}
+
+	/**
+	 * @return callable(Checklist $list): bool Whether the caller can edit a list.
+	 */
+	protected function editCheck(int $houseId, string $uid): callable {
+		$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
+		$shareMap = $this->shares->userShareMap($houseId, $uid);
+		return fn (Checklist $list): bool => $this->canEditList(
+			$list,
+			$canEditLists,
+			$this->permissions->hasRoleAccessToList($houseId, $uid, (int)$list->getId()),
+			$shareMap,
+		);
 	}
 
 	/**

@@ -9,6 +9,7 @@ namespace OCA\Pantry\Db;
 
 use OCA\Pantry\AppInfo\Application;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\AppFramework\Db\Entity;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
@@ -564,7 +565,19 @@ class ChecklistItemMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * Every hard delete of an item goes through this mapper, so this is where
+	 * the stock links pointing at it are dropped. A link survives the trash
+	 * and the archive, but not the row itself.
+	 */
+	#[\Override]
+	public function delete(Entity $entity): Entity {
+		$this->clearLinksTo([(int)$entity->getId()]);
+		return parent::delete($entity);
+	}
+
 	public function deleteByList(int $listId): void {
+		$this->clearLinksTo($this->findIdsByList($listId, trashedOnly: false));
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
@@ -575,11 +588,92 @@ class ChecklistItemMapper extends QBMapper {
 	 * Hard-delete every soft-deleted item in the list.
 	 */
 	public function emptyTrashForList(int $listId): void {
+		$this->clearLinksTo($this->findIdsByList($listId, trashedOnly: true));
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNotNull('deleted_at'));
 		$qb->executeStatement();
+	}
+
+	/**
+	 * @return list<int>
+	 */
+	public function findIdsByList(int $listId, bool $trashedOnly): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('id')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+		if ($trashedOnly) {
+			$qb->andWhere($qb->expr()->isNotNull('deleted_at'));
+		}
+		$result = $qb->executeQuery();
+		$ids = [];
+		while (($id = $result->fetchOne()) !== false) {
+			$ids[] = (int)$id;
+		}
+		$result->closeCursor();
+		return $ids;
+	}
+
+	/**
+	 * Unlink every inventory item linked to one of the given items. Auto-link
+	 * is left as it is, so a dropped link can be found again by name.
+	 *
+	 * @param int[] $itemIds
+	 */
+	public function clearLinksTo(array $itemIds): void {
+		$itemIds = array_values(array_unique(array_map('intval', $itemIds)));
+		foreach (array_chunk($itemIds, 500) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->update($this->getTableName())
+				->set('linked_item_id', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+				->set('linked_at', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+				->where($qb->expr()->in('linked_item_id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)));
+			$qb->executeStatement();
+		}
+	}
+
+	/**
+	 * Items linked to any of the given items, trashed and archived ones
+	 * included, earliest linked first.
+	 *
+	 * @param int[] $itemIds
+	 * @return ChecklistItem[]
+	 */
+	public function findLinkedTo(array $itemIds): array {
+		$itemIds = array_values(array_unique(array_map('intval', $itemIds)));
+		if ($itemIds === []) {
+			return [];
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->in('linked_item_id', $qb->createNamedParameter($itemIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->orderBy('linked_at', 'ASC')
+			->addOrderBy('id', 'ASC');
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * The items the list's items are linked to, trashed and archived items
+	 * included.
+	 *
+	 * @return list<int>
+	 */
+	public function findLinkedIdsFromList(int $listId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('linked_item_id')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('linked_item_id'));
+		$result = $qb->executeQuery();
+		$ids = [];
+		while (($id = $result->fetchOne()) !== false) {
+			$ids[] = (int)$id;
+		}
+		$result->closeCursor();
+		return array_values(array_unique($ids));
 	}
 
 	/**

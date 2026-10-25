@@ -38,6 +38,18 @@ final class ChecklistController extends ListKindOCSController {
 		return Checklist::KIND_CHECKLIST;
 	}
 
+	/** @var array<int, list<array{itemId: int, name: string, listId: int, listName: string}>> Inventory items each row restocks, loaded by {@see prepareItems()}. */
+	private array $restocks = [];
+
+	protected function prepareItems(array $items): void {
+		$this->restocks = $this->stockLinks->restocksFor($items) + $this->restocks;
+	}
+
+	protected function shapeItem(array $data): array {
+		$id = $data['id'] ?? null;
+		return parent::shapeItem($data) + ['restocks' => is_int($id) ? ($this->restocks[$id] ?? []) : []];
+	}
+
 	/**
 	 * List all checklists in a house
 	 *

@@ -47,6 +47,15 @@
         :stored="storedExpiry"
         :shelf-life-only="isTemplate"
       />
+      <StockLinkCard
+        v-if="isInventory && item.autoLink !== undefined"
+        :item="item"
+        :house-id="houseId"
+        :restock-checklist-name="restockChecklist?.name ?? null"
+        @link="$emit('link', item, $event)"
+        @unlink="$emit('unlink', item)"
+        @auto-link="$emit('auto-link', item, $event)"
+      />
 
       <FieldCard :label="strings.priceLabel">
         <ItemPricesEditor
@@ -158,7 +167,7 @@ import ItemPricesEditor from '@/components/ItemPricesEditor'
 import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { itemImagePreviewUrl } from '@/api/images'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
-import type { ChecklistItem, ItemCustomFieldValue, ItemPrice } from '@/api/types'
+import type { ChecklistItem, ItemCustomFieldValue, ItemPrice, StockLinkRow } from '@/api/types'
 import type { ItemInput } from '@/api/lists'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useListKind } from '@/composables/useListKind'
@@ -174,6 +183,8 @@ import {
   type ExpiryDraft,
 } from '@/components/InventoryStock/expiryDraft'
 import { useChecklists } from '@/composables/useChecklist'
+import StockLinkCard from '@/components/StockLink/StockLinkCard.vue'
+import { useRestockChecklist } from '@/components/StockLink/useRestockChecklist'
 import { DEFAULT_EXPIRY_LEAD_DAYS, expiryStatus, todayEpoch, type StockDraft } from '@/utils/stock'
 
 const { kind, isChecklist } = useListKind()
@@ -195,6 +206,9 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:open': [value: boolean]
   save: [itemId: number, patch: Partial<ItemInput>, pendingImage: File | null, clearImage: boolean]
+  link: [item: ChecklistItem, row: StockLinkRow]
+  unlink: [item: ChecklistItem]
+  'auto-link': [item: ChecklistItem, on: boolean]
 }>()
 
 const editName = ref('')
@@ -222,6 +236,7 @@ const storedExpiry = computed(() => ({
 }))
 const editExpiry = ref<ExpiryDraft>(draftFromExpiry(storedExpiry.value))
 const inventories = useChecklists(props.houseId, 'inventory').lists
+const restockChecklist = useRestockChecklist(props.houseId, () => props.item.listId)
 const previewExpiryStatus = computed(() => {
   const today = todayEpoch()
   const leadDays =

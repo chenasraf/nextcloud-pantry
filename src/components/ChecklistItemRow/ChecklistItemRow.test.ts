@@ -55,6 +55,17 @@ vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
     props: ['modelValue', 'disabled'],
   },
 }))
+vi.mock('@nextcloud/vue/components/NcPopover', () => ({
+  default: {
+    name: 'NcPopover',
+    template: '<div class="nc-popover"><slot name="trigger" /></div>',
+    props: ['shown', 'popupRole'],
+  },
+}))
+vi.mock('@/api/lists', () => ({ listLinkTargets: vi.fn().mockResolvedValue([]) }))
+vi.mock('@nextcloud/vue/components/NcTextField', () => ({
+  default: { name: 'NcTextField', template: '<input class="nc-text-field" />' },
+}))
 vi.mock('@nextcloud/vue/components/NcActions', () => ({
   default: {
     name: 'NcActions',
@@ -908,5 +919,150 @@ describe('ChecklistItemRow on an inventory', () => {
     })
     expect(wrapper.find('.stock-status-icon').exists()).toBe(false)
     expect(wrapper.find('.stock-control').exists()).toBe(false)
+  })
+})
+
+describe('ChecklistItemRow stock links', () => {
+  const row = {
+    itemId: 50,
+    name: 'Eggs',
+    quantity: '8',
+    listId: 3,
+    listName: 'Groceries',
+    listColor: '#ff9800',
+    state: 'open' as const,
+  }
+
+  function linkedItem(extra: Partial<ChecklistItem> = {}) {
+    return makeItem({
+      name: 'Eggs',
+      quantity: '4',
+      stockMode: 'count',
+      stockLevel: 'full',
+      target: '12 eggs',
+      reorderPoint: null,
+      stockStatus: 'low',
+      shortfall: '8 eggs',
+      autoLink: true,
+      stockLink: null,
+      linkCandidates: [],
+      ...extra,
+    })
+  }
+
+  function mountRow(item: ChecklistItem, kind: 'inventory' | 'checklist' = 'inventory') {
+    const events: Record<string, unknown[][]> = { link: [], unlink: [], autoLink: [] }
+    const Host = defineComponent({
+      setup() {
+        provideListKind(vueRef(kind))
+        return () =>
+          h(ChecklistItemRow, {
+            item,
+            category: null,
+            houseId: 1,
+            onLink: (...args: unknown[]) => events.link.push(args),
+            onUnlink: (...args: unknown[]) => events.unlink.push(args),
+            onAutoLink: (...args: unknown[]) => events.autoLink.push(args),
+          })
+      },
+    })
+    return { wrapper: mount(Host), events }
+  }
+
+  it.each([
+    [{ stockLink: row }, 'stock-link-button__icon--linked', 'Linked to Eggs on Groceries'],
+    [
+      { linkCandidates: [row, { ...row, itemId: 51 }] },
+      'stock-link-button__icon--pick',
+      'Not linked: 2 matches, pick one',
+    ],
+    [{}, 'stock-link-button__icon--auto', 'Not linked yet: added to the shopping list when low'],
+    [
+      { autoLink: false },
+      'stock-link-button__icon--off',
+      'Not linked: never added to a shopping list',
+    ],
+  ])('shows the link state on a wide row', (extra, cls, tooltip) => {
+    narrowRef.value = false
+    const { wrapper } = mountRow(linkedItem(extra as Partial<ChecklistItem>))
+
+    const button = wrapper.find('[data-testid="stock-link-button"]')
+    expect(button.find('.stock-link-button__icon').classes()).toContain(cls)
+    expect(button.attributes('aria-label')).toBe(tooltip)
+    expect(wrapper.find('[data-testid="stock-link-chip"]').exists()).toBe(false)
+  })
+
+  it('passes on what the popover changes', async () => {
+    narrowRef.value = false
+    const item = linkedItem({ stockLink: row })
+    const { wrapper, events } = mountRow(item)
+    const button = wrapper.findComponent({ name: 'StockLinkButton' })
+
+    button.vm.$emit('link', row)
+    button.vm.$emit('unlink')
+    button.vm.$emit('auto-link', false)
+
+    expect(events.link).toEqual([[item, row]])
+    expect(events.unlink).toEqual([[item]])
+    expect(events.autoLink).toEqual([[item, false]])
+  })
+
+  it('shows a linked chip in the checklist colour on a narrow row', () => {
+    narrowRef.value = true
+    const { wrapper } = mountRow(linkedItem({ stockLink: row }))
+
+    const chip = wrapper.find('[data-testid="stock-link-chip"]')
+    expect(chip.text()).toBe('Groceries')
+    expect(chip.attributes('title')).toBe('Linked to Eggs on Groceries')
+    expect(wrapper.find('[data-testid="stock-link-button"]').exists()).toBe(false)
+    narrowRef.value = false
+  })
+
+  it('shows a warning chip on a narrow row that needs a pick', () => {
+    narrowRef.value = true
+    const { wrapper } = mountRow(linkedItem({ linkCandidates: [row, { ...row, itemId: 51 }] }))
+
+    expect(wrapper.find('[data-testid="stock-link-chip"]').text()).toBe(
+      'Not linked · 2 matches, pick one',
+    )
+    narrowRef.value = false
+  })
+
+  it('shows a link-off chip on a narrow row only while it needs restock', () => {
+    narrowRef.value = true
+    const low = mountRow(linkedItem({ autoLink: false })).wrapper
+    expect(low.find('[data-testid="stock-link-chip"]').text()).toBe('Not added to a shopping list')
+
+    const stocked = mountRow(
+      linkedItem({ autoLink: false, quantity: '12', stockStatus: 'ok', shortfall: null }),
+    ).wrapper
+    expect(stocked.find('[data-testid="stock-link-chip"]').exists()).toBe(false)
+
+    const auto = mountRow(linkedItem()).wrapper
+    expect(auto.find('[data-testid="stock-link-chip"]').exists()).toBe(false)
+    narrowRef.value = false
+  })
+
+  it('marks a checklist row with what it restocks', () => {
+    const { wrapper } = mountRow(
+      makeItem({
+        name: 'Soda',
+        restocks: [
+          { itemId: 3, name: 'Soda', listId: 20, listName: 'Kitchen' },
+          { itemId: 4, name: 'Cola', listId: 21, listName: 'Garage' },
+        ],
+      }),
+      'checklist',
+    )
+
+    expect(wrapper.find('[data-testid="restocks-marker"]').attributes('title')).toBe(
+      'Restocks Soda (Kitchen), Cola (Garage)',
+    )
+  })
+
+  it('leaves an unlinked checklist row unmarked', () => {
+    const { wrapper } = mountRow(makeItem({ restocks: [] }), 'checklist')
+
+    expect(wrapper.find('[data-testid="restocks-marker"]').exists()).toBe(false)
   })
 })

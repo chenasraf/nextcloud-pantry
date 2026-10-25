@@ -54,6 +54,7 @@ class ChecklistService {
 		private IDBConnection $db,
 		private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper,
 		private ScopedTaxonomyService $taxonomy,
+		private StockLinkService $stockLinks,
 	) {
 	}
 
@@ -194,9 +195,22 @@ class ChecklistService {
 			}
 			$list->setExpiryLeadDays($lead);
 		}
+		$restockChanged = false;
+		if (array_key_exists('restockChecklistId', $patch) && $list->getKind() === Checklist::KIND_INVENTORY) {
+			$restockId = $this->intOrNull($patch['restockChecklistId']);
+			$restockId = $restockId !== null && $restockId > 0 ? $restockId : null;
+			if ($restockId !== null) {
+				$this->stockLinks->assertRestockChecklist($list, $restockId);
+			}
+			$restockChanged = $restockId !== $list->getRestockChecklistId();
+			$list->setRestockChecklistId($restockId);
+		}
 		$this->applyRecurrenceDefault($list, $patch);
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
+		if ($restockChanged) {
+			$this->stockLinks->matchInventory($list);
+		}
 		return $list;
 	}
 
@@ -429,6 +443,9 @@ class ChecklistService {
 		$copy->setColor($source->getColor());
 		$copy->setSortOrder($source->getSortOrder());
 		$copy->setFillFromDefaults($source->fillsFromDefaults());
+		if ($kind === Checklist::KIND_INVENTORY && $source->getKind() === Checklist::KIND_INVENTORY) {
+			$copy->setRestockChecklistId($source->getRestockChecklistId());
+		}
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
 		$copy = $this->listMapper->insert($copy);
@@ -465,6 +482,7 @@ class ChecklistService {
 		foreach ($this->itemMapper->findByList($sourceId) as $item) {
 			$this->duplicateItemInto($item, $source, $copy, !$resetDone, $addedBy, $now, $duplicateImage, $maps);
 		}
+		$this->stockLinks->matchInventory($copy);
 
 		return $copy;
 	}
@@ -736,17 +754,33 @@ class ChecklistService {
 			$rearmed = $this->fieldValueMapper->setValuesForItem((int)$saved->getId(), (array)$data['customFields']);
 			$this->fieldReminders->onValuesRearmed((int)$saved->getId(), $rearmed);
 		}
+		$this->onItemSaved($saved, $list);
 		return $saved;
+	}
+
+	/**
+	 * Let the item pair with same-name items by stock link, after it is
+	 * created or renamed.
+	 */
+	private function onItemSaved(ChecklistItem $item, Checklist $list): void {
+		if ($list->getKind() === Checklist::KIND_INVENTORY) {
+			$this->stockLinks->onInventoryItemSaved($item, $list);
+		} elseif ($list->isChecklist()) {
+			$this->stockLinks->onChecklistRowSaved($item, $list);
+		}
 	}
 
 	public function updateItem(int $itemId, array $patch): ChecklistItem {
 		$item = $this->getItem($itemId);
+		$sourceListId = $item->getListId();
+		$renamed = false;
 
 		if (isset($patch['name'])) {
 			$name = trim((string)$patch['name']);
 			if ($name === '') {
 				throw new \InvalidArgumentException('Item name cannot be empty');
 			}
+			$renamed = $name !== $item->getName();
 			$item->setName($name);
 		}
 		if (array_key_exists('description', $patch)) {
@@ -815,9 +849,21 @@ class ChecklistService {
 		if (isset($patch['sortOrder'])) {
 			$item->setSortOrder((int)$patch['sortOrder']);
 		}
+		$autoLinkOn = false;
+		if (array_key_exists('autoLink', $patch) && $patch['autoLink'] !== null) {
+			$autoLinkOn = (bool)$patch['autoLink'] && !$item->autoLinks();
+			$item->setAutoLink((bool)$patch['autoLink']);
+		}
 
 		$item->setUpdatedAt(time());
 		$this->itemMapper->update($item);
+		$list = $this->getList($item->getListId(), includeDeleted: true);
+		if ($item->getListId() !== $sourceListId) {
+			$this->stockLinks->onItemMoved($item, $this->getList($sourceListId, includeDeleted: true), $list);
+		}
+		if ($renamed || $autoLinkOn) {
+			$this->onItemSaved($item, $list);
+		}
 		if (array_key_exists('storeIds', $patch)) {
 			$this->itemStoreMapper->setStoresForItem((int)$item->getId(), $this->toIntList($patch['storeIds']));
 		}
@@ -898,6 +944,9 @@ class ChecklistService {
 				$this->itemMapper->update($item);
 				if ($wasDone && !$item->getDone()) {
 					$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
+				}
+				if ($sourceList->getId() !== $target->getId()) {
+					$this->stockLinks->onItemMoved($item, $sourceList, $target);
 				}
 				$updated[] = $item;
 			}
@@ -997,12 +1046,16 @@ class ChecklistService {
 
 	public function toggleItem(int $itemId, string $uid, ?int $now = null): ChecklistItem {
 		$item = $this->getItem($itemId);
-		if (!$this->getList($item->getListId(), includeDeleted: true)->isChecklist()) {
+		$list = $this->getList($item->getListId(), includeDeleted: true);
+		if (!$list->isChecklist()) {
 			throw new \InvalidArgumentException('Only checklist items can be checked off');
 		}
 		$now ??= time();
 
 		if (!$item->getDone()) {
+			// Linking first, while the row still reads as open, so a tick that
+			// pairs an unlinked row counts as that item's purchase.
+			$this->stockLinks->onChecklistRowSaved($item, $list);
 			$item->setDone(true);
 			$item->setDoneAt($now);
 			$item->setDoneBy($uid);
@@ -1307,6 +1360,7 @@ class ChecklistService {
 			(int)$saved->getId(),
 			$this->fieldValueMapper->findForItem((int)$source->getId()),
 		);
+		$this->onItemSaved($saved, $target);
 		return $saved;
 	}
 

@@ -113,6 +113,23 @@ class ChecklistMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * Active inventories whose restock checklist is the given list.
+	 *
+	 * @return Checklist[]
+	 */
+	public function findRestockingInto(int $checklistId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('restock_checklist_id', $qb->createNamedParameter($checklistId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
+		$this->whereKind($qb, Checklist::KIND_INVENTORY);
+
+		return $this->findEntities($qb);
+	}
+
 	public function deleteByHouse(int $houseId): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())

@@ -19,6 +19,22 @@
         <p class="inventory-settings__hint">{{ strings.nameHint }}</p>
       </FieldCard>
 
+      <FieldCard :label="strings.restockLabel">
+        <NcSelect
+          v-model="restockSelection"
+          :options="restockOptions"
+          :clearable="false"
+          :input-label="''"
+          label="label"
+          :aria-label-combobox="strings.restockLabel"
+          :calculate-position="ncSelectCalculatePosition"
+          data-testid="inventory-settings-restock"
+        />
+        <p class="inventory-settings__hint">
+          {{ restockSelection.listId !== null ? strings.restockSetHint : strings.restockUnsetHint }}
+        </p>
+      </FieldCard>
+
       <FieldCard :label="strings.expiryLabel">
         <div class="inventory-settings__sentence">
           <span>{{ warnBefore }}</span>
@@ -62,17 +78,48 @@ import { t } from '@nextcloud/l10n'
 import { showError } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FieldCard from '@/components/FieldCard'
 import { listApi } from '@/api/lists'
 import type { Checklist } from '@/api/types'
 import { DEFAULT_EXPIRY_LEAD_DAYS } from '@/utils/stock'
+import { ncSelectCalculatePosition } from '@/utils/ncSelectPosition'
+
+interface RestockOption {
+  listId: number | null
+  label: string
+}
 
 const MAX_LEAD_DAYS = 365
+
+const strings = {
+  // TRANSLATORS: Title of the dialog with an inventory's settings.
+  title: t('pantry', 'Inventory settings'),
+  // TRANSLATORS: Noun, the inventory's name.
+  nameLabel: t('pantry', 'Name'),
+  nameHint: t('pantry', 'Icon, colour and sharing work as they do on checklists.'),
+  // TRANSLATORS: Caption of the inventory setting naming the checklist low stock is added to.
+  restockLabel: t('pantry', 'Restock checklist'),
+  // TRANSLATORS: Option in the restock checklist picker for having no restock checklist.
+  restockNone: t('pantry', 'None'),
+  restockSetHint: t('pantry', 'Items that run low or start expiring are added to this checklist.'),
+  restockUnsetHint: t('pantry', 'Without one, low and expiring items are only marked here.'),
+  // TRANSLATORS: Caption of the inventory setting for how early items count as expiring.
+  expiryLabel: t('pantry', 'Expiry warning'),
+  // TRANSLATORS: Accessible name of the number of days in "Warn [2] days before expiry".
+  leadDaysLabel: t('pantry', 'Days before expiry'),
+  expiryHint: t('pantry', 'Set 0 to warn on the expiry date itself.'),
+  cancel: t('pantry', 'Cancel'),
+  save: t('pantry', 'Save'),
+  saveFailed: t('pantry', 'Could not save the inventory settings'),
+}
 
 const props = defineProps<{
   open: boolean
   list: Checklist | null
+  /** The house's active checklists, any of which can be the restock checklist. */
+  checklists: Checklist[]
 }>()
 
 const emit = defineEmits<{
@@ -84,12 +131,24 @@ const name = ref('')
 const leadDays = ref('')
 const saving = ref(false)
 
+const noneOption = computed<RestockOption>(() => ({ listId: null, label: strings.restockNone }))
+const restockOptions = computed<RestockOption[]>(() => [
+  noneOption.value,
+  ...props.checklists.map((c) => ({ listId: c.id, label: c.name })),
+])
+const restockSelection = ref<RestockOption>(noneOption.value)
+
+function restockOptionFor(listId: number | null | undefined): RestockOption {
+  return restockOptions.value.find((o) => o.listId === (listId ?? null)) ?? noneOption.value
+}
+
 watch(
   () => props.open,
   (open) => {
     if (!open || !props.list) return
     name.value = props.list.name
     leadDays.value = String(props.list.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS)
+    restockSelection.value = restockOptionFor(props.list.restockChecklistId)
   },
   { immediate: true },
 )
@@ -106,8 +165,10 @@ const canSave = computed(
 async function save() {
   const list = props.list
   if (!list || !canSave.value) return
-  const patch: { name?: string; expiryLeadDays?: number } = {}
+  const patch: { name?: string; expiryLeadDays?: number; restockChecklistId?: number } = {}
   if (name.value.trim() !== list.name) patch.name = name.value.trim()
+  const restockId = restockSelection.value.listId
+  if (restockId !== (list.restockChecklistId ?? null)) patch.restockChecklistId = restockId ?? 0
   if (parsedLeadDays.value !== (list.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS)) {
     patch.expiryLeadDays = parsedLeadDays.value!
   }
@@ -131,22 +192,6 @@ async function save() {
 // TRANSLATORS: Inventory setting, read as a sentence with a number input in place of {days}, e.g. "Warn [2] days before expiry".
 const warnSentence = t('pantry', 'Warn {days} days before expiry')
 const [warnBefore, warnAfter = ''] = warnSentence.split('{days}').map((part) => part.trim())
-
-const strings = {
-  // TRANSLATORS: Title of the dialog with an inventory's settings.
-  title: t('pantry', 'Inventory settings'),
-  // TRANSLATORS: Noun, the inventory's name.
-  nameLabel: t('pantry', 'Name'),
-  nameHint: t('pantry', 'Icon, colour and sharing work as they do on checklists.'),
-  // TRANSLATORS: Caption of the inventory setting for how early items count as expiring.
-  expiryLabel: t('pantry', 'Expiry warning'),
-  // TRANSLATORS: Accessible name of the number of days in "Warn [2] days before expiry".
-  leadDaysLabel: t('pantry', 'Days before expiry'),
-  expiryHint: t('pantry', 'Set 0 to warn on the expiry date itself.'),
-  cancel: t('pantry', 'Cancel'),
-  save: t('pantry', 'Save'),
-  saveFailed: t('pantry', 'Could not save the inventory settings'),
-}
 </script>
 
 <style scoped lang="scss">

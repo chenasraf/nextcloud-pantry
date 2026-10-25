@@ -46,6 +46,12 @@ final class ExpectedColumns {
 			self::col('list_items', 'expires_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 			self::col('list_items', 'shelf_life_days', Types::INTEGER, ['notnull' => false, 'default' => null]),
 
+			// list_items — stock link columns (Version47). Same SELECT * hydration
+			// as the stock columns above.
+			self::col('list_items', 'linked_item_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('list_items', 'linked_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('list_items', 'auto_link', Types::BOOLEAN, ['notnull' => false, 'default' => true]),
+
 			// lists — archived_at (Version29); the active-list query filters on it
 			// unconditionally, so a missing column breaks the whole list index.
 			self::col('lists', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
@@ -74,6 +80,10 @@ final class ExpectedColumns {
 			// lists — inventory expiry warning (Version46). Same SELECT *
 			// hydration as the item defaults above.
 			self::col('lists', 'expiry_lead_days', Types::INTEGER, ['notnull' => false, 'default' => null]),
+
+			// lists — inventory restock checklist (Version47). Same SELECT *
+			// hydration as the item defaults above.
+			self::col('lists', 'restock_checklist_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
 			// categories — list scoping (Version27); category queries filter on
 			// list_id, so a missing column breaks category loading and the

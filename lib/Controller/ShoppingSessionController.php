@@ -19,6 +19,7 @@ use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\ShoppingSessionService;
+use OCA\Pantry\Service\StockLinkService;
 use OCA\Pantry\Service\StoreService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -56,6 +57,7 @@ final class ShoppingSessionController extends OCSController {
 		private ItemStoreMapper $itemStores,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
+		private StockLinkService $stockLinks,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -726,9 +728,16 @@ final class ShoppingSessionController extends OCSController {
 			$this->logger->error('Failed to load store ids for shopping items; serializing without stores', ['exception' => $e]);
 			$storeMap = [];
 		}
-		return array_values(array_map(static function ($i) use ($storeMap) {
+		try {
+			$restocks = $this->stockLinks->restocksFor($items);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to load stock links for shopping items; serializing without them', ['exception' => $e]);
+			$restocks = [];
+		}
+		return array_values(array_map(static function ($i) use ($storeMap, $restocks) {
 			$data = $i->jsonSerialize();
 			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
+			$data['restocks'] = $restocks[(int)$i->getId()] ?? [];
 			return $data;
 		}, $items));
 	}

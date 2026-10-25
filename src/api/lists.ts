@@ -9,6 +9,7 @@ import type {
   ListKind,
   ListSuggestions,
   StockLevel,
+  StockLinkRow,
   StockMode,
   TemplateLists,
 } from './types'
@@ -82,6 +83,8 @@ export interface ItemInput {
    * a date alongside, an inventory item then expires that many days from today.
    */
   shelfLifeDays?: number
+  /** Inventory items: whether an unlinked item is linked by name to a row on the restock checklist. */
+  autoLink?: boolean
 }
 
 /** The API route each kind's lists are served from. `lists` is the checklist resource. */
@@ -138,6 +141,8 @@ export function listApi(kind: ListKind) {
         sortOrder?: number
         /** Inventories only. */
         expiryLeadDays?: number
+        /** Inventories only: the checklist low stock goes to (0 clears). */
+        restockChecklistId?: number
       },
     ): Promise<Checklist> {
       const resp = await ocs.patch<Checklist>(`${base(houseId)}/${listId}`, patch)
@@ -424,6 +429,47 @@ export async function reorderLists(
   items: { id: number; sortOrder: number }[],
 ): Promise<void> {
   await ocs.post(`/houses/${houseId}/lists/reorder`, { items })
+}
+
+const inventoryItemUrl = (houseId: number, listId: number, itemId: number) =>
+  `/houses/${houseId}/inventories/${listId}/items/${itemId}`
+
+/** Link an inventory item to the checklist item that restocks it. */
+export async function linkInventoryItem(
+  houseId: number,
+  listId: number,
+  itemId: number,
+  targetItemId: number,
+): Promise<ChecklistItem> {
+  const resp = await ocs.post<ChecklistItem>(`${inventoryItemUrl(houseId, listId, itemId)}/link`, {
+    targetItemId,
+  })
+  return resp.data
+}
+
+/** Unlink an inventory item; this also turns its auto-link off. */
+export async function unlinkInventoryItem(
+  houseId: number,
+  listId: number,
+  itemId: number,
+): Promise<ChecklistItem> {
+  const resp = await ocs.delete<ChecklistItem>(`${inventoryItemUrl(houseId, listId, itemId)}/link`)
+  return resp.data
+}
+
+/** Checklist items the inventory's items can be linked to by hand. */
+export async function listLinkTargets(
+  houseId: number,
+  listId: number,
+  search = '',
+): Promise<StockLinkRow[]> {
+  const resp = await ocs.get<StockLinkRow[]>(
+    `/houses/${houseId}/inventories/${listId}/link-targets`,
+    {
+      params: { search, limit: 50 },
+    },
+  )
+  return resp.data ?? []
 }
 
 export async function listAllItems(houseId: number, sortBy?: string): Promise<ChecklistItem[]> {

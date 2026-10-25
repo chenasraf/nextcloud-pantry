@@ -62,6 +62,16 @@
       </button>
       <div class="checklist-row__content">
         <span class="checklist-row__label">
+          <span
+            v-if="restocksText"
+            class="checklist-row__restocks"
+            :title="restocksText"
+            :aria-label="restocksText"
+            role="img"
+            data-testid="restocks-marker"
+          >
+            <PackageVariantClosedIcon :size="16" />
+          </span>
           <span class="checklist-row__name">{{ item.name }}</span>
         </span>
         <div class="checklist-row__meta">
@@ -132,6 +142,48 @@
             >
               {{ stock.statusText }}
             </PantryChip>
+            <template v-if="narrow && !suggestion">
+              <PantryChip
+                v-if="linkState === 'linked'"
+                class="checklist-row__link-chip"
+                :color="item.stockLink?.listColor || undefined"
+                size="sm"
+                :interactive="false"
+                :title="linkTooltip"
+                :aria-label="linkTooltip"
+                data-testid="stock-link-chip"
+              >
+                <template #icon>
+                  <LinkVariantIcon :size="14" />
+                </template>
+                {{ item.stockLink?.listName }}
+              </PantryChip>
+              <PantryChip
+                v-else-if="linkState === 'pick'"
+                class="checklist-row__stock-chip checklist-row__stock-chip--warning"
+                size="sm"
+                :interactive="false"
+                data-testid="stock-link-chip"
+              >
+                <template #icon>
+                  <AlertCircleOutlineIcon :size="14" />
+                </template>
+                {{ pickChipText }}
+              </PantryChip>
+              <PantryChip
+                v-else-if="
+                  linkState === 'off' && (stock.tone === 'warning' || stock.tone === 'error')
+                "
+                size="sm"
+                :interactive="false"
+                data-testid="stock-link-chip"
+              >
+                <template #icon>
+                  <LinkOffIcon :size="14" />
+                </template>
+                {{ strings.notAdded }}
+              </PantryChip>
+            </template>
           </template>
           <PantryChip v-if="priceText" class="checklist-row__price" size="sm" :interactive="false">
             {{ priceText }}
@@ -220,6 +272,17 @@
         />
       </div>
     </div>
+    <StockLinkButton
+      v-if="
+        stock && !narrow && !selectionMode && !suggestion && !compact && !trashMode && !archiveMode
+      "
+      :item="item"
+      :house-id="houseId"
+      :disabled="!canEditItem"
+      @link="$emit('link', item, $event)"
+      @unlink="$emit('unlink', item)"
+      @auto-link="$emit('auto-link', item, $event)"
+    />
     <StockControl
       v-if="stock && !selectionMode && !suggestion && !compact && !trashMode && !archiveMode"
       :item="item"
@@ -341,7 +404,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcActions from '@nextcloud/vue/components/NcActions'
@@ -361,6 +424,12 @@ import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
 import ClipboardTextMultipleIcon from '@icons/ClipboardTextMultiple.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
+import PackageVariantClosedIcon from '@icons/PackageVariantClosed.vue'
+import LinkVariantIcon from '@icons/LinkVariant.vue'
+import LinkOffIcon from '@icons/LinkOff.vue'
+import AlertCircleOutlineIcon from '@icons/AlertCircleOutline.vue'
+import StockLinkButton from '@/components/StockLink/StockLinkButton.vue'
+import { restocksTooltip, stockLinkState, stockLinkTooltip } from '@/components/StockLink/stockLink'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
@@ -371,7 +440,15 @@ import { formatPrice, resolveItemPrice } from '@/utils/price'
 import { useHouseMembers } from '@/composables/useHouseMembers'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
-import type { ChecklistItem, Category, Checklist, Store, Label, StockLevel } from '@/api/types'
+import type {
+  ChecklistItem,
+  Category,
+  Checklist,
+  Store,
+  Label,
+  StockLevel,
+  StockLinkRow,
+} from '@/api/types'
 import type { RowClickAction } from '@/api/prefs'
 import { useListKind } from '@/composables/useListKind'
 import { useNarrow } from '@/composables/useNarrow'
@@ -543,6 +620,20 @@ const stock = computed(() => {
   }
 })
 
+const linkState = computed(() => (stock.value ? stockLinkState(props.item) : null))
+const linkTooltip = computed(() => stockLinkTooltip(props.item))
+const pickChipText = computed(() =>
+  n(
+    'pantry',
+    'Not linked · %n match, pick one',
+    'Not linked · %n matches, pick one',
+    props.item.linkCandidates?.length ?? 0,
+  ),
+)
+const restocksText = computed(() =>
+  isChecklist.value && props.item.restocks?.length ? restocksTooltip(props.item.restocks) : null,
+)
+
 const canCheck = computed(() => isChecklist.value && props.listWritable && can.value.canCheckItems)
 // Items that are never checked off open instead of toggling.
 const clickAction = computed<RowClickAction>(() =>
@@ -570,6 +661,9 @@ const emit = defineEmits<{
   select: [item: ChecklistItem]
   'toggle-select': [id: number]
   stock: [item: ChecklistItem, patch: { quantity: string } | { stockLevel: StockLevel }]
+  link: [item: ChecklistItem, row: StockLinkRow]
+  unlink: [item: ChecklistItem]
+  'auto-link': [item: ChecklistItem, on: boolean]
   'drag-start': [itemId: number, groupKey?: string]
   'reorder-over': [itemId: number, event: MouseEvent, groupKey?: string]
 }>()
@@ -694,6 +788,8 @@ const strings = {
   // TRANSLATORS: Verb. Menu action that moves this item to the archive.
   archiveItem: t('pantry', 'Archive item'),
   unarchiveItem: t('pantry', 'Unarchive'),
+  // TRANSLATORS: Chip on an inventory item that needs restock but is never added to a shopping list (unlinked, auto-link off).
+  notAdded: t('pantry', 'Not added to a shopping list'),
 }
 
 function storeLabel(name: string): string {
@@ -934,6 +1030,14 @@ function storeLabel(name: string): string {
 
   &__stock-amount {
     font-variant-numeric: tabular-nums;
+  }
+
+  &__restocks {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-primary-element);
+    flex-shrink: 0;
+    cursor: help;
   }
 
   // Saturated status colours, so the chip reads like the status icon beside it.

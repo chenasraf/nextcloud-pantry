@@ -205,6 +205,11 @@ export interface Checklist {
   needsRestock?: number
   /** Inventories only: how many days before its expiry date an item is expiring. */
   expiryLeadDays?: number
+  /**
+   * Inventories only: the checklist low stock goes to. Null when unset, or
+   * when that checklist is archived, trashed or deleted.
+   */
+  restockChecklistId?: number | null
 }
 
 export interface Category {
@@ -379,6 +384,8 @@ export interface ChecklistItem extends Omit<Partial<ItemStock>, 'stockMode'> {
   updatedAt: number
   deletedAt: number | null
   archivedAt: number | null
+  /** Checklist items only: the inventory items this row restocks, earliest linked first. */
+  restocks?: StockLinkSource[]
 }
 
 export type StockMode = 'count' | 'level'
@@ -402,6 +409,33 @@ export interface ItemStock {
   expiresAt: number | null
   shelfLifeDays: number | null
   expiryStatus: ExpiryStatus
+  /** Whether an unlinked item is linked by name to a row on the restock checklist. */
+  autoLink: boolean
+  /** The checklist item that restocks this item. */
+  stockLink: StockLinkRow | null
+  /** While unlinked and auto-linking: the rows that match by name, when there are several. */
+  linkCandidates: StockLinkRow[]
+}
+
+export type StockLinkState = 'open' | 'checked' | 'archived' | 'trashed'
+
+/** A checklist item an inventory item is, or can be, linked to. */
+export interface StockLinkRow {
+  itemId: number
+  name: string
+  quantity: string | null
+  listId: number
+  listName: string
+  listColor: string | null
+  state: StockLinkState
+}
+
+/** An inventory item a checklist item restocks. */
+export interface StockLinkSource {
+  itemId: number
+  name: string
+  listId: number
+  listName: string
 }
 
 /** One store in a shopping session's ordered sequence. */

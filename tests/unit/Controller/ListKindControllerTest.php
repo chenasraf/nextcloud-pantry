@@ -33,6 +33,7 @@ use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ShareService;
+use OCA\Pantry\Service\StockLinkService;
 use OCA\Pantry\Service\StockRules;
 use OCA\Pantry\Service\StoreService;
 use OCA\Pantry\Service\TemplateAttachmentService;
@@ -58,9 +59,12 @@ class ListKindControllerTest extends TestCase {
 	private ShareService $shares;
 	/** @var ActivityPublisher&MockObject */
 	private ActivityPublisher $activity;
+	/** @var StockLinkService&MockObject */
+	private StockLinkService $stockLinks;
 
 	protected function setUp(): void {
 		$this->activity = $this->createMock(ActivityPublisher::class);
+		$this->stockLinks = $this->createMock(StockLinkService::class);
 		$this->lists = $this->createMock(ChecklistService::class);
 		$this->attachments = $this->createMock(TemplateAttachmentService::class);
 		$this->templateCopy = $this->createMock(TemplateCopyService::class);
@@ -112,6 +116,7 @@ class ListKindControllerTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			$this->attachments,
 			$this->templateCopy,
+			$this->stockLinks,
 		);
 	}
 
@@ -610,5 +615,119 @@ class ListKindControllerTest extends TestCase {
 		$data = $this->makeController(ChecklistController::class)->batchUncheckItems(1, [3, 4])->getData();
 
 		$this->assertSame([4], $data['skipped']);
+	}
+
+	// ----- Stock links -----
+
+	/**
+	 * Inventory 7 holds item 3; checklist 10 holds item 50.
+	 */
+	private function stageLink(bool $archivedChecklist = false): ChecklistItem {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Eggs');
+		$row = new ChecklistItem();
+		$row->setId(50);
+		$row->setListId(10);
+		$row->setName('Eggs');
+		$this->lists->method('getItem')->willReturnCallback(static fn (int $id): ChecklistItem => $id === 50 ? $row : $item);
+		$this->lists->method('getList')->willReturnCallback(function (int $id) use ($archivedChecklist): Checklist {
+			$list = $this->makeList($id === 10 ? Checklist::KIND_CHECKLIST : Checklist::KIND_INVENTORY);
+			$list->setId($id);
+			if ($id === 10 && $archivedChecklist) {
+				$list->setArchivedAt(1);
+			}
+			return $list;
+		});
+		return $item;
+	}
+
+	public function testLinkingByHandNeedsEditRightsOnTheChecklist(): void {
+		$this->stageLink();
+		$this->shares->method('canEditFromMap')->willReturn(false);
+		$this->stockLinks->expects($this->never())->method('link');
+
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$this->makeController(InventoryController::class)->linkInventoryItem(1, 7, 3, 50);
+	}
+
+	public function testAnEditorLinksByHand(): void {
+		$item = $this->stageLink();
+		$this->shares->method('canEditFromMap')->willReturn(true);
+		$this->stockLinks->expects($this->once())->method('link')
+			->with($item, $this->callback(static fn (ChecklistItem $r): bool => $r->getId() === 50))
+			->willReturnArgument(0);
+
+		$this->makeController(InventoryController::class)->linkInventoryItem(1, 7, 3, 50);
+	}
+
+	public function testLinkingRefusesAnItemOnAnArchivedChecklist(): void {
+		$this->stageLink(archivedChecklist: true);
+		$this->shares->method('canEditFromMap')->willReturn(true);
+		$this->stockLinks->expects($this->never())->method('link');
+
+		$this->expectException(\OCP\AppFramework\OCS\OCSBadRequestException::class);
+		$this->makeController(InventoryController::class)->linkInventoryItem(1, 7, 3, 50);
+	}
+
+	public function testUnlinkingAnItem(): void {
+		$item = $this->stageLink();
+		$this->stockLinks->expects($this->once())->method('unlink')->with($item)->willReturnArgument(0);
+
+		$this->makeController(InventoryController::class)->unlinkInventoryItem(1, 7, 3);
+	}
+
+	public function testInventoryItemsCarryTheirLink(): void {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Eggs');
+		$link = ['itemId' => 50, 'name' => 'Eggs', 'quantity' => null, 'listId' => 10, 'listName' => 'Shopping', 'listColor' => null, 'state' => 'open'];
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->lists->method('listItems')->willReturn([$item]);
+		$this->stockLinks->method('describe')->willReturn([3 => ['autoLink' => true, 'stockLink' => $link, 'linkCandidates' => []]]);
+
+		$data = $this->makeController(InventoryController::class)->indexInventoryItems(1, 7)->getData();
+
+		$this->assertTrue($data[0]['autoLink']);
+		$this->assertSame($link, $data[0]['stockLink']);
+		$this->assertSame([], $data[0]['linkCandidates']);
+	}
+
+	public function testInventoryItemUpdatesPassTheAutoLinkSwitch(): void {
+		$item = $this->stageLink();
+		$this->lists->expects($this->once())->method('updateItem')
+			->with(3, ['autoLink' => true])
+			->willReturn($item);
+
+		$this->makeController(InventoryController::class)->updateInventoryItem(1, 7, 3, autoLink: true);
+	}
+
+	public function testChecklistItemsListWhatTheyRestock(): void {
+		$row = new ChecklistItem();
+		$row->setId(50);
+		$row->setListId(7);
+		$row->setName('Eggs');
+		$restocks = [['itemId' => 3, 'name' => 'Eggs', 'listId' => 20, 'listName' => 'Kitchen']];
+		$this->lists->method('getList')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->lists->method('listItems')->willReturn([$row]);
+		$this->stockLinks->method('restocksFor')->willReturn([50 => $restocks]);
+
+		$data = $this->makeController(ChecklistController::class)->indexItems(1, 7)->getData();
+
+		$this->assertSame($restocks, $data[0]['restocks']);
+		$this->assertArrayNotHasKey('stockLink', $data[0]);
+	}
+
+	public function testInventoriesReportOnlyAUsableRestockChecklist(): void {
+		$inventory = $this->makeList(Checklist::KIND_INVENTORY);
+		$inventory->setRestockChecklistId(10);
+		$this->lists->method('getList')->willReturn($inventory);
+		$this->stockLinks->method('restockChecklist')->willReturn(null);
+
+		$data = $this->makeController(InventoryController::class)->showInventory(1, 7)->getData();
+
+		$this->assertNull($data['restockChecklistId']);
 	}
 }

@@ -169,6 +169,7 @@ namespace OCA\Pantry;
  *     sharedOnly: bool,
  *     needsRestock: int,
  *     expiryLeadDays: int,
+ *     restockChecklistId: int|null,
  * }
  *
  * @psalm-type PantryListSummary = array{
@@ -259,6 +260,24 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     deletedAt: int|null,
  *     archivedAt: int|null,
+ *     restocks?: list<PantryStockLinkSource>,
+ * }
+ *
+ * @psalm-type PantryStockLinkRow = array{
+ *     itemId: int,
+ *     name: string,
+ *     quantity: string|null,
+ *     listId: int,
+ *     listName: string,
+ *     listColor: string|null,
+ *     state: 'open'|'checked'|'archived'|'trashed',
+ * }
+ *
+ * @psalm-type PantryStockLinkSource = array{
+ *     itemId: int,
+ *     name: string,
+ *     listId: int,
+ *     listName: string,
  * }
  *
  * @psalm-type PantryTemplateItem = array{
@@ -319,6 +338,9 @@ namespace OCA\Pantry;
  *     expiresAt: int|null,
  *     shelfLifeDays: int|null,
  *     expiryStatus: 'none'|'ok'|'expiring'|'expired',
+ *     autoLink: bool,
+ *     stockLink: PantryStockLinkRow|null,
+ *     linkCandidates: list<PantryStockLinkRow>,
  * }
  *
  * @psalm-type PantryListTemplates = array{

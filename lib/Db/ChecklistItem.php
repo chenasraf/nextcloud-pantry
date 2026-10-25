@@ -64,6 +64,11 @@ use OCP\AppFramework\Db\Entity;
  * @method void setExpiresAt(?int $expiresAt)
  * @method int|null getShelfLifeDays()
  * @method void setShelfLifeDays(?int $shelfLifeDays)
+ * @method int|null getLinkedItemId()
+ * @method void setLinkedItemId(?int $linkedItemId)
+ * @method int|null getLinkedAt()
+ * @method void setLinkedAt(?int $linkedAt)
+ * @method void setAutoLink(?bool $autoLink)
  */
 class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $listId = 0;
@@ -93,6 +98,10 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?string $reorderPoint = null;
 	protected ?int $expiresAt = null;
 	protected ?int $shelfLifeDays = null;
+	/** The checklist item that restocks this inventory item. */
+	protected ?int $linkedItemId = null;
+	protected ?int $linkedAt = null;
+	protected ?bool $autoLink = true;
 
 	/**
 	 * Prices resolved for this item, attached transiently by the service/controller
@@ -118,6 +127,9 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		$this->addType('archivedAt', 'integer');
 		$this->addType('expiresAt', 'integer');
 		$this->addType('shelfLifeDays', 'integer');
+		$this->addType('linkedItemId', 'integer');
+		$this->addType('linkedAt', 'integer');
+		$this->addType('autoLink', 'boolean');
 		// Force these bool fields to be included in INSERTs. Their PHP defaults
 		// match the initial value, so the magic setter would otherwise never
 		// mark them dirty and the column would be omitted from the INSERT.
@@ -125,6 +137,11 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		$this->markFieldUpdated('done');
 		$this->markFieldUpdated('repeatFromCompletion');
 		$this->markFieldUpdated('deleteOnDone');
+	}
+
+	/** A row from before the column existed links, like a new item. */
+	public function autoLinks(): bool {
+		return $this->autoLink !== false;
 	}
 
 	/**

@@ -81,6 +81,7 @@ class ChecklistControllerStoreSerializationTest extends TestCase {
 			$this->logger,
 			$this->createMock(\OCA\Pantry\Service\TemplateAttachmentService::class),
 			$this->createMock(\OCA\Pantry\Service\TemplateCopyService::class),
+			$this->createMock(\OCA\Pantry\Service\StockLinkService::class),
 		);
 	}
 

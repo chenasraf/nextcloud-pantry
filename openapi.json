@@ -776,7 +776,8 @@
                     "canEdit",
                     "sharedOnly",
                     "needsRestock",
-                    "expiryLeadDays"
+                    "expiryLeadDays",
+                    "restockChecklistId"
                 ],
                 "properties": {
                     "id": {
@@ -852,6 +853,11 @@
                     "expiryLeadDays": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "restockChecklistId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
                     }
                 }
             },
@@ -900,7 +906,10 @@
                     "shortfall",
                     "expiresAt",
                     "shelfLifeDays",
-                    "expiryStatus"
+                    "expiryStatus",
+                    "autoLink",
+                    "stockLink",
+                    "linkCandidates"
                 ],
                 "properties": {
                     "id": {
@@ -1046,6 +1055,23 @@
                             "expiring",
                             "expired"
                         ]
+                    },
+                    "autoLink": {
+                        "type": "boolean"
+                    },
+                    "stockLink": {
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StockLinkRow"
+                            }
+                        ]
+                    },
+                    "linkCandidates": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StockLinkRow"
+                        }
                     }
                 }
             },
@@ -1905,6 +1931,12 @@
                         "type": "integer",
                         "format": "int64",
                         "nullable": true
+                    },
+                    "restocks": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StockLinkSource"
+                        }
                     }
                 }
             },
@@ -2833,6 +2865,76 @@
                     "billedCurrency": {
                         "type": "string",
                         "nullable": true
+                    }
+                }
+            },
+            "StockLinkRow": {
+                "type": "object",
+                "required": [
+                    "itemId",
+                    "name",
+                    "quantity",
+                    "listId",
+                    "listName",
+                    "listColor",
+                    "state"
+                ],
+                "properties": {
+                    "itemId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "listId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "listName": {
+                        "type": "string"
+                    },
+                    "listColor": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "open",
+                            "checked",
+                            "archived",
+                            "trashed"
+                        ]
+                    }
+                }
+            },
+            "StockLinkSource": {
+                "type": "object",
+                "required": [
+                    "itemId",
+                    "name",
+                    "listId",
+                    "listName"
+                ],
+                "properties": {
+                    "itemId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "listId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "listName": {
+                        "type": "string"
                     }
                 }
             },
@@ -14017,6 +14119,13 @@
                                         "description": "Expiry warning: how many days before its expiry date an item counts as expiring. 0 warns on the date itself.",
                                         "minimum": 0,
                                         "maximum": 365
+                                    },
+                                    "restockChecklistId": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Id of an active checklist in the same house that low stock goes to (0 clears). Setting it links the inventory's unlinked items to same-name items there."
                                     }
                                 }
                             }
@@ -16858,6 +16967,12 @@
                                         "description": "New shelf life in days (0 clears). Without a date alongside, a shelf life also sets the date to today plus the shelf life.",
                                         "minimum": 0,
                                         "maximum": 36500
+                                    },
+                                    "autoLink": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether an unlinked item is linked to the same-name item on the restock checklist. Turning it on links it when exactly one matches."
                                     }
                                 }
                             }
@@ -17046,6 +17161,398 @@
                                                 },
                                                 "data": {
                                                     "$ref": "#/components/schemas/Success"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/inventories/{listId}/items/{itemId}/link": {
+            "post": {
+                "operationId": "inventory-link-inventory-item",
+                "summary": "Link an inventory item to the checklist item that restocks it",
+                "description": "Replaces any link the item has. The checklist item can be on any active checklist in the house the caller can edit, but not one another item on this inventory is linked to.",
+                "tags": [
+                    "inventory"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "targetItemId"
+                                ],
+                                "properties": {
+                                    "targetItemId": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "description": "Id of the checklist item to link to."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "listId",
+                        "in": "path",
+                        "description": "Inventory id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "itemId",
+                        "in": "path",
+                        "description": "Inventory item id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item linked",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/InventoryItem"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "inventory-unlink-inventory-item",
+                "summary": "Unlink an inventory item from its checklist item",
+                "description": "Also turns auto-link off, so the item is not linked by name again.",
+                "tags": [
+                    "inventory"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "listId",
+                        "in": "path",
+                        "description": "Inventory id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "itemId",
+                        "in": "path",
+                        "description": "Inventory item id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item unlinked",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/InventoryItem"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/inventories/{listId}/link-targets": {
+            "get": {
+                "operationId": "inventory-inventory-link-targets",
+                "summary": "Checklist items an inventory's items can be linked to",
+                "description": "Live and archived items on the house's active checklists the caller can edit, leaving out those already linked from this inventory. Sorted by name, then checklist.",
+                "tags": [
+                    "inventory"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "listId",
+                        "in": "path",
+                        "description": "Inventory id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Only items whose name contains this, ignoring case and spacing.",
+                        "schema": {
+                            "type": "string",
+                            "default": ""
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of items to return.",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 50,
+                            "minimum": 1,
+                            "maximum": 200
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Link targets returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/StockLinkRow"
+                                                    }
                                                 }
                                             }
                                         }

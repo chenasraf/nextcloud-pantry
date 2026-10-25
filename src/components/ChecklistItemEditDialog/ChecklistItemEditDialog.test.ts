@@ -145,6 +145,14 @@ vi.mock('@/components/LabelChipList', () => ({
     emits: ['update:modelValue'],
   },
 }))
+vi.mock('@/components/StockLink/StockLinkCard.vue', () => ({
+  default: {
+    name: 'StockLinkCard',
+    template: '<div class="stock-link-card-stub">{{ restockChecklistName }}</div>',
+    props: ['item', 'houseId', 'restockChecklistName', 'disabled'],
+    emits: ['link', 'unlink', 'auto-link'],
+  },
+}))
 vi.mock('@/api/images', () => ({
   itemImagePreviewUrl: (houseId: number, fileId: number, owner: string, size: number) =>
     `/preview/${houseId}/${fileId}/${owner}/${size}`,
@@ -392,5 +400,64 @@ describe('ChecklistItemEditDialog', () => {
     const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
     expect(patch.deleteOnDone).toBe(false)
     expect(patch.rrule).toBeNull()
+  })
+
+  describe('Shopping list card', () => {
+    const row = {
+      itemId: 50,
+      name: 'Eggs',
+      quantity: null,
+      listId: 3,
+      listName: 'Groceries',
+      listColor: null,
+      state: 'open' as const,
+    }
+
+    function mountFor(kind: 'inventory' | 'checklist', extra: Partial<ChecklistItem> = {}) {
+      const events: unknown[][] = []
+      const Host = defineComponent({
+        setup() {
+          provideListKind(ref(kind))
+          return () =>
+            h(ChecklistItemEditDialog, {
+              ...defaultProps,
+              item: makeItem({
+                stockMode: 'count',
+                stockLevel: 'full',
+                target: '12',
+                reorderPoint: null,
+                autoLink: true,
+                stockLink: null,
+                linkCandidates: [],
+                ...extra,
+              }),
+              onLink: (...args: unknown[]) => events.push(['link', ...args]),
+              onUnlink: (...args: unknown[]) => events.push(['unlink', ...args]),
+              onAutoLink: (...args: unknown[]) => events.push(['auto-link', ...args]),
+            })
+        },
+      })
+      return { wrapper: mount(Host), events }
+    }
+
+    it('shows the card on inventory items only', () => {
+      expect(mountFor('inventory').wrapper.find('.stock-link-card-stub').exists()).toBe(true)
+      expect(mountFor('checklist').wrapper.find('.stock-link-card-stub').exists()).toBe(false)
+    })
+
+    it('passes on what the card changes, with the item', () => {
+      const { wrapper, events } = mountFor('inventory', { stockLink: row })
+      const card = wrapper.findComponent({ name: 'StockLinkCard' })
+
+      card.vm.$emit('link', row)
+      card.vm.$emit('unlink')
+      card.vm.$emit('auto-link', true)
+
+      expect(events.map(([name, item, arg]) => [name, (item as ChecklistItem).id, arg])).toEqual([
+        ['link', 42, row],
+        ['unlink', 42, undefined],
+        ['auto-link', 42, true],
+      ])
+    })
   })
 })
