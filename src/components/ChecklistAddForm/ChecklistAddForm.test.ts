@@ -75,6 +75,15 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
+// NcDateTimePickerNative eagerly imports a .css asset Node's ESM loader rejects.
+vi.mock('@nextcloud/vue/components/NcDateTimePickerNative', () => ({
+  default: {
+    name: 'NcDateTimePickerNative',
+    template: '<input class="nc-date-time-picker-native" type="date" />',
+    props: ['modelValue', 'type', 'label'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/components/PantryChip', () => ({
   default: {
     name: 'PantryChip',
@@ -224,6 +233,8 @@ vi.mock('@/components/ChecklistItemRow', () => ({
   },
 }))
 
+import { computed, defineComponent, h } from 'vue'
+import { provideListKind } from '@/composables/useListKind'
 import ChecklistAddForm from './ChecklistAddForm.vue'
 
 function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
@@ -299,7 +310,7 @@ function mountForm(
   })
 }
 
-function chipForKey(wrapper: ReturnType<typeof mountForm>, label: string) {
+function chipForKey(wrapper: ReturnType<typeof mount>, label: string) {
   return wrapper.findAll('.pantry-chip').find((c) => c.text().includes(label))!
 }
 
@@ -403,6 +414,33 @@ describe('ChecklistAddForm', () => {
     await chipForKey(wrapper, 'Description').trigger('click')
     expect(wrapper.find('.mock-quantity-input').exists()).toBe(false)
     expect(wrapper.find('.nc-text-area').exists()).toBe(true)
+  })
+
+  it('starts an inventory item on the shelf life default and sends what is typed', async () => {
+    const Host = defineComponent({
+      setup() {
+        provideListKind(computed(() => 'inventory' as const))
+        return () =>
+          h(ChecklistAddForm, {
+            houseId: 1,
+            adding: false,
+            itemDefaults: makeDefaults({ shelfLifeDays: { mode: 'fixed', value: 7 } }),
+          })
+      },
+    })
+    const wrapper = mount(Host)
+    const form = wrapper.findComponent(ChecklistAddForm)
+    await wrapper.find('.nc-text-field').setValue('Milk')
+    const chip = chipForKey(wrapper, 'Keeps 7 days')
+    expect(chip.exists()).toBe(true)
+
+    await chip.trigger('click')
+    await wrapper.find('[data-testid="compose-expiry-days"]').setValue('10')
+    await wrapper.find('form').trigger('submit')
+
+    const [input] = form.emitted('add')![0] as [ItemInput, File | null]
+    expect(input.shelfLifeDays).toBe(10)
+    expect(input.expiresAt).toBeUndefined()
   })
 
   it('typed quantity is included in the emitted add input', async () => {

@@ -1,5 +1,5 @@
 {
-  "description": "Stock rules for inventory items, shared by every client. Each one reads this file in its tests: the first number in a value is the value, units and other text are ignored, and the status and shortfall follow from the stock mode.",
+  "description": "Stock rules for inventory items, shared by every client. Each one reads this file in its tests: the first number in a value is the value, units and other text are ignored, and the status and shortfall follow from the stock mode. Expiry dates and \"today\" are midnight timestamps.",
   "firstNumber": [
     { "text": "4", "value": 4 },
     { "text": "4 eggs", "value": 4 },
@@ -457,6 +457,307 @@
       },
       "toMode": "count",
       "result": { "stockMode": "count", "stockLevel": null, "quantity": "4", "target": "12" }
+    }
+  ],
+  "expiryStatus": [
+    {
+      "name": "no date reports none",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": null,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "none"
+    },
+    {
+      "name": "well before the warning is good",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1793750400,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "ok"
+    },
+    {
+      "name": "a day before the warning starts is good",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1793145600,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "ok"
+    },
+    {
+      "name": "the first day of the warning is expiring",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1793059200,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expiring"
+    },
+    {
+      "name": "tomorrow is expiring",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1792972800,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expiring"
+    },
+    {
+      "name": "good through the date itself",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1792886400,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expiring"
+    },
+    {
+      "name": "expired the day after the date",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1792800000,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expired"
+    },
+    {
+      "name": "long expired",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1790294400,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expired"
+    },
+    {
+      "name": "a warning of 0 warns on the date itself",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1792886400,
+        "shelfLifeDays": null
+      },
+      "leadDays": 0,
+      "today": 1792886400,
+      "expiryStatus": "expiring"
+    },
+    {
+      "name": "a warning of 0 leaves the day before good",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1792972800,
+        "shelfLifeDays": null
+      },
+      "leadDays": 0,
+      "today": 1792886400,
+      "expiryStatus": "ok"
+    },
+    {
+      "name": "a negative warning counts as 0",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1792972800,
+        "shelfLifeDays": null
+      },
+      "leadDays": -3,
+      "today": 1792886400,
+      "expiryStatus": "ok"
+    },
+    {
+      "name": "a shelf life no longer than the days left is not expiring",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1793059200,
+        "shelfLifeDays": 2
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "ok"
+    },
+    {
+      "name": "a shelf life longer than the days left is expiring",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1793059200,
+        "shelfLifeDays": 3
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expiring"
+    },
+    {
+      "name": "a one-day shelf life expires on its date",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1792886400,
+        "shelfLifeDays": 1
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expiring"
+    },
+    {
+      "name": "a shelf life never hides expired",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "4",
+        "expiresAt": 1792800000,
+        "shelfLifeDays": 1
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expired"
+    },
+    {
+      "name": "on hand 0 reports none",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "0",
+        "expiresAt": 1792800000,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "none"
+    },
+    {
+      "name": "on hand 0 with a unit reports none",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "0 eggs",
+        "expiresAt": 1792972800,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "none"
+    },
+    {
+      "name": "on hand empty reports none",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "",
+        "expiresAt": 1792800000,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "none"
+    },
+    {
+      "name": "on hand missing reports none",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": null,
+        "expiresAt": 1792800000,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "none"
+    },
+    {
+      "name": "not counted still reports",
+      "item": {
+        "stockMode": "count",
+        "stockLevel": null,
+        "quantity": "some",
+        "expiresAt": 1792800000,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expired"
+    },
+    {
+      "name": "a level item at Out reports none",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "out",
+        "quantity": "1 bag",
+        "expiresAt": 1792800000,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "none"
+    },
+    {
+      "name": "a level item at Low reports",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "low",
+        "quantity": "1 bag",
+        "expiresAt": 1792972800,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "expiring"
+    },
+    {
+      "name": "a level item at Full reports",
+      "item": {
+        "stockMode": "level",
+        "stockLevel": "full",
+        "quantity": null,
+        "expiresAt": 1793318400,
+        "shelfLifeDays": null
+      },
+      "leadDays": 2,
+      "today": 1792886400,
+      "expiryStatus": "ok"
     }
   ]
 }

@@ -775,7 +775,8 @@
                     "archivedAt",
                     "canEdit",
                     "sharedOnly",
-                    "needsRestock"
+                    "needsRestock",
+                    "expiryLeadDays"
                 ],
                 "properties": {
                     "id": {
@@ -847,6 +848,10 @@
                     "needsRestock": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "expiryLeadDays": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             },
@@ -892,7 +897,10 @@
                     "target",
                     "reorderPoint",
                     "stockStatus",
-                    "shortfall"
+                    "shortfall",
+                    "expiresAt",
+                    "shelfLifeDays",
+                    "expiryStatus"
                 ],
                 "properties": {
                     "id": {
@@ -1019,6 +1027,25 @@
                     "shortfall": {
                         "type": "string",
                         "nullable": true
+                    },
+                    "expiresAt": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "shelfLifeDays": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "expiryStatus": {
+                        "type": "string",
+                        "enum": [
+                            "none",
+                            "ok",
+                            "expiring",
+                            "expired"
+                        ]
                     }
                 }
             },
@@ -1032,6 +1059,7 @@
                     "stockMode",
                     "target",
                     "reorderPoint",
+                    "shelfLifeDays",
                     "fields"
                 ],
                 "properties": {
@@ -1156,6 +1184,25 @@
                             },
                             "value": {
                                 "type": "string"
+                            }
+                        }
+                    },
+                    "shelfLifeDays": {
+                        "type": "object",
+                        "required": [
+                            "mode"
+                        ],
+                        "properties": {
+                            "mode": {
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "fixed"
+                                ]
+                            },
+                            "value": {
+                                "type": "integer",
+                                "format": "int64"
                             }
                         }
                     },
@@ -3099,7 +3146,8 @@
                     "archivedAt",
                     "stockMode",
                     "target",
-                    "reorderPoint"
+                    "reorderPoint",
+                    "shelfLifeDays"
                 ],
                 "properties": {
                     "id": {
@@ -3215,6 +3263,11 @@
                     },
                     "reorderPoint": {
                         "type": "string",
+                        "nullable": true
+                    },
+                    "shelfLifeDays": {
+                        "type": "integer",
+                        "format": "int64",
                         "nullable": true
                     }
                 }
@@ -13955,6 +14008,15 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New sort order."
+                                    },
+                                    "expiryLeadDays": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Expiry warning: how many days before its expiry date an item counts as expiring. 0 warns on the date itself.",
+                                        "minimum": 0,
+                                        "maximum": 365
                                     }
                                 }
                             }
@@ -14418,6 +14480,29 @@
                                             },
                                             "value": {
                                                 "type": "string",
+                                                "nullable": true
+                                            }
+                                        }
+                                    },
+                                    "shelfLifeDays": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Shelf life new items start with; they expire that many days after they are added.",
+                                        "required": [
+                                            "mode"
+                                        ],
+                                        "properties": {
+                                            "mode": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "none",
+                                                    "fixed"
+                                                ]
+                                            },
+                                            "value": {
+                                                "type": "integer",
+                                                "format": "int64",
                                                 "nullable": true
                                             }
                                         }
@@ -15558,6 +15643,22 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "A count item's reorder point: low at or below it, instead of below the target."
+                                    },
+                                    "expiresAt": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Expiry date (midnight timestamp). A date after today also sets the shelf life to match."
+                                    },
+                                    "shelfLifeDays": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Shelf life in days. Without a date alongside, the item expires today plus the shelf life.",
+                                        "minimum": 1,
+                                        "maximum": 36500
                                     }
                                 }
                             }
@@ -16741,6 +16842,22 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New reorder point of a count item (empty string clears)."
+                                    },
+                                    "expiresAt": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New expiry date (midnight timestamp; 0 clears). Without a shelf life alongside, a date after today also sets the shelf life to match."
+                                    },
+                                    "shelfLifeDays": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New shelf life in days (0 clears). Without a date alongside, a shelf life also sets the date to today plus the shelf life.",
+                                        "minimum": 0,
+                                        "maximum": 36500
                                     }
                                 }
                             }
@@ -30205,6 +30322,15 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "The reorder point an inventory count item starts with."
+                                    },
+                                    "shelfLifeDays": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Shelf life in days; drawn into an inventory, the item expires that many days later.",
+                                        "minimum": 1,
+                                        "maximum": 36500
                                     }
                                 }
                             }
@@ -31147,6 +31273,15 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "New reorder point (empty string clears)."
+                                    },
+                                    "shelfLifeDays": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "New shelf life in days (0 clears).",
+                                        "minimum": 0,
+                                        "maximum": 36500
                                     }
                                 }
                             }

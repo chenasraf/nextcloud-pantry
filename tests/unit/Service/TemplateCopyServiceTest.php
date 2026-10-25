@@ -346,6 +346,56 @@ class TemplateCopyServiceTest extends TestCase {
 		$this->assertSame('2', $this->added['reorderPoint']);
 	}
 
+	public function testDrawingIntoAnInventoryCarriesTheShelfLife(): void {
+		$source = $this->templateItem();
+		$source->setShelfLifeDays(7);
+		$this->targetHas([]);
+
+		$this->draw($source, Checklist::KIND_INVENTORY);
+
+		$this->assertSame(7, $this->added['shelfLifeDays']);
+		$this->assertArrayNotHasKey('expiresAt', $this->added, 'the date follows from the shelf life when added');
+	}
+
+	public function testAnEmptyShelfLifeFillsFromTheInventorysItemDefaults(): void {
+		$this->targetHas([]);
+		$this->itemDefaults = $this->createMock(ItemDefaultsService::class);
+		$this->itemDefaults->method('forList')->willReturn(ItemDefaults::complete([
+			'shelfLifeDays' => ['mode' => 'fixed', 'value' => 10],
+		]));
+		$this->rebuild();
+
+		$this->draw($this->templateItem(), Checklist::KIND_INVENTORY);
+
+		$this->assertSame(10, $this->added['shelfLifeDays']);
+	}
+
+	public function testAReusedInventoryItemKeepsItsDateAndTakesAShelfLifeWhenItHasNone(): void {
+		$existing = $this->targetItem('Oat milk');
+		$existing->setExpiresAt(1792886400);
+		$this->targetHas([$existing]);
+		$this->lists->method('getItem')->willReturn($existing);
+		$this->lists->expects($this->once())->method('updateItem')
+			->with(5, ['shelfLifeDays' => 7, 'expiresAt' => 1792886400])
+			->willReturn($existing);
+		$source = $this->templateItem();
+		$source->setShelfLifeDays(7);
+
+		$this->draw($source, Checklist::KIND_INVENTORY);
+	}
+
+	public function testAReusedInventoryItemKeepsItsOwnShelfLife(): void {
+		$existing = $this->targetItem('Oat milk');
+		$existing->setShelfLifeDays(3);
+		$this->targetHas([$existing]);
+		$this->lists->method('getItem')->willReturn($existing);
+		$this->lists->expects($this->never())->method('updateItem');
+		$source = $this->templateItem();
+		$source->setShelfLifeDays(7);
+
+		$this->draw($source, Checklist::KIND_INVENTORY);
+	}
+
 	public function testDrawingIntoAChecklistUsesTheQuantity(): void {
 		$source = $this->templateItem();
 		$source->setQuantity('6');

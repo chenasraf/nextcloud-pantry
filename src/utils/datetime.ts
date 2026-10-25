@@ -28,3 +28,17 @@ export function formatDateTime(epochSeconds: number): string {
     timeStyle: 'short',
   })
 }
+
+/**
+ * Format an epoch-seconds date as a short day, "Oct 21", with the year only
+ * when it is not this year's.
+ */
+export function formatShortDate(epochSeconds: number): string {
+  const date = new Date(epochSeconds * 1000)
+  const sameYear = date.getFullYear() === new Date().getFullYear()
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+}

@@ -34,7 +34,9 @@ use OCA\Pantry\Db\LabelMapper;
  *   target's item defaults, as if it had been added by hand. The target list
  *   can switch that filling off, and the member's own preference wins over it.
  * - On an inventory the copy starts full, in the template item's stock mode
- *   ({@see StockRules::startFull()}); on a checklist it keeps the quantity.
+ *   ({@see StockRules::startFull()}), and expires its shelf life from today;
+ *   on a checklist it keeps the quantity. A reused inventory item keeps its
+ *   date, and takes the shelf life only when it has none.
  * - Categories, labels and custom fields scoped to the template are matched
  *   by name on the target, or copied onto it when it has none, so later
  *   copies match those instead of piling up.
@@ -83,7 +85,7 @@ class TemplateCopyService {
 
 		$existing = $this->findSameName($target, $source->getName());
 		if ($existing !== null) {
-			return ['item' => $this->revive($existing, $target), 'reused' => true];
+			return ['item' => $this->revive($existing, $target, $source), 'reused' => true];
 		}
 		return ['item' => $this->copy($source, $template, $target, $addedBy, $duplicateImage), 'reused' => false];
 	}
@@ -103,8 +105,11 @@ class TemplateCopyService {
 	 * Bring a same-name item back into play. An inventory item is only
 	 * unarchived: it has nothing to uncheck, and its stock is left alone.
 	 */
-	private function revive(ChecklistItem $item, Checklist $target): ChecklistItem {
+	private function revive(ChecklistItem $item, Checklist $target, ChecklistItem $source): ChecklistItem {
 		$itemId = (int)$item->getId();
+		if ($target->getKind() === Checklist::KIND_INVENTORY && $item->getShelfLifeDays() === null && $source->getShelfLifeDays() !== null) {
+			$item = $this->lists->updateItem($itemId, ['shelfLifeDays' => $source->getShelfLifeDays(), 'expiresAt' => $item->getExpiresAt()]);
+		}
 		if ($target->isChecklist() && $item->getDone()) {
 			$this->lists->uncheckItems([$itemId]);
 		}
@@ -137,6 +142,7 @@ class TemplateCopyService {
 			'stockMode' => $source->getStockMode(),
 			'target' => $source->getTarget(),
 			'reorderPoint' => $source->getReorderPoint(),
+			'shelfLifeDays' => $source->getShelfLifeDays(),
 		];
 		if ($this->fills($target, $addedBy)) {
 			$data = $this->fillFromDefaults($data, $target, $houseId);
@@ -383,6 +389,10 @@ class TemplateCopyService {
 					$value = $prefill($defaults[$key]);
 					$data[$key] = is_string($value) && $value !== '' ? $value : null;
 				}
+			}
+			if ($data[ItemDefaults::KEY_SHELF_LIFE] === null) {
+				$shelfLife = $prefill($defaults[ItemDefaults::KEY_SHELF_LIFE]);
+				$data[ItemDefaults::KEY_SHELF_LIFE] = is_int($shelfLife) ? $shelfLife : null;
 			}
 		}
 

@@ -187,6 +187,13 @@ class ChecklistService {
 		if (isset($patch['sortOrder'])) {
 			$list->setSortOrder((int)$patch['sortOrder']);
 		}
+		if (array_key_exists('expiryLeadDays', $patch) && $list->getKind() === Checklist::KIND_INVENTORY) {
+			$lead = $this->intOrNull($patch['expiryLeadDays']);
+			if ($lead !== null && ($lead < 0 || $lead > StockRules::MAX_EXPIRY_LEAD_DAYS)) {
+				throw new \InvalidArgumentException(sprintf('Expiry warning must be between 0 and %d days', StockRules::MAX_EXPIRY_LEAD_DAYS));
+			}
+			$list->setExpiryLeadDays($lead);
+		}
 		$this->applyRecurrenceDefault($list, $patch);
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
@@ -616,16 +623,23 @@ class ChecklistService {
 	}
 
 	/**
-	 * How many live items on each list need restocking. Lists with none are
-	 * left out.
+	 * How many live items on each inventory need restocking: low, out,
+	 * expiring or expired. Inventories with none are left out.
 	 *
-	 * @param int[] $listIds
+	 * @param Checklist[] $inventories
 	 * @return array<int, int>
 	 */
-	public function countNeedsRestock(array $listIds): array {
+	public function countNeedsRestock(array $inventories): array {
+		$leadDays = [];
+		foreach ($inventories as $inventory) {
+			$leadDays[(int)$inventory->getId()] = $inventory->expiryLeadDays();
+		}
+		$today = StockRules::today();
 		$counts = [];
-		foreach ($this->itemMapper->findStockByLists($listIds) as $listId => $items) {
-			$count = count(array_filter($items, StockRules::needsRestock(...)));
+		foreach ($this->itemMapper->findStockByLists(array_keys($leadDays)) as $listId => $items) {
+			$lead = $leadDays[$listId] ?? Checklist::DEFAULT_EXPIRY_LEAD_DAYS;
+			$count = count(array_filter($items, static fn (array $item): bool => StockRules::needsRestock($item)
+				|| StockRules::expiryNeedsRestock(StockRules::expiryStatus($item, $lead, $today))));
 			if ($count > 0) {
 				$counts[$listId] = $count;
 			}
@@ -691,8 +705,12 @@ class ChecklistService {
 			if ($item->getStockMode() === StockRules::MODE_COUNT) {
 				$item->setQuantity(StockRules::startingOnHand($item->getQuantity(), $item->getTarget()));
 			}
+			$this->applyExpiry($item, array_filter(
+				array_intersect_key($data, array_flip(['expiresAt', 'shelfLifeDays'])),
+				static fn (mixed $v): bool => $v !== null,
+			));
 		} elseif ($list->getKind() === Checklist::KIND_TEMPLATE) {
-			$this->applyTemplateStock($item, array_intersect_key($data, array_flip(['stockMode', 'target', 'reorderPoint'])));
+			$this->applyTemplateStock($item, array_intersect_key($data, array_flip(['stockMode', 'target', 'reorderPoint', 'shelfLifeDays'])));
 		}
 		if (isset($data['sortOrder'])) {
 			$item->setSortOrder((int)$data['sortOrder']);
@@ -770,13 +788,18 @@ class ChecklistService {
 			$v = $patch['imageUploadedBy'];
 			$item->setImageUploadedBy(is_string($v) && $v !== '' ? $v : null);
 		}
-		$stock = array_intersect_key($patch, array_flip(['stockMode', 'stockLevel', 'target', 'reorderPoint']));
+		$stock = array_intersect_key($patch, array_flip(['stockMode', 'stockLevel', 'target', 'reorderPoint', 'expiresAt', 'shelfLifeDays']));
 		if ($stock !== []) {
 			if ($this->getList($item->getListId(), includeDeleted: true)->getKind() === Checklist::KIND_TEMPLATE) {
-				unset($stock['stockLevel']);
+				unset($stock['stockLevel'], $stock['expiresAt']);
 				$this->applyTemplateStock($item, $stock);
 			} else {
-				$this->applyStock($item, $stock, array_key_exists('quantity', $patch));
+				$expiry = array_intersect_key($stock, array_flip(['expiresAt', 'shelfLifeDays']));
+				$stock = array_diff_key($stock, $expiry);
+				if ($stock !== []) {
+					$this->applyStock($item, $stock, array_key_exists('quantity', $patch));
+				}
+				$this->applyExpiry($item, $expiry);
 			}
 		}
 		// If already done and rrule or mode changed, recompute next due.
@@ -1348,12 +1371,22 @@ class ChecklistService {
 	 * - Off an inventory onto a template, the quantity is the full amount, and
 	 *   the template keeps the mode, target and reorder point.
 	 * - A template keeps its stock fields onto a template; a checklist has none.
+	 * - The shelf life carries onto templates and inventories. The date stays
+	 *   only inventory to inventory; arriving from a template, the item expires
+	 *   a shelf life from today.
 	 *
 	 * `$item` may be `$source` itself, so the source is read before writing.
 	 */
 	private function crossStockInto(ChecklistItem $item, ChecklistItem $source, Checklist $sourceList, Checklist $target): void {
 		$from = $sourceList->getKind();
 		$to = $target->getKind();
+		$shelfLife = $from !== Checklist::KIND_CHECKLIST && $to !== Checklist::KIND_CHECKLIST ? $source->getShelfLifeDays() : null;
+		$expiresAt = null;
+		if ($to === Checklist::KIND_INVENTORY) {
+			$expiresAt = $from === Checklist::KIND_INVENTORY
+				? $source->getExpiresAt()
+				: ($shelfLife !== null ? StockRules::addDays(StockRules::today(), $shelfLife) : null);
+		}
 		$stock = [
 			'stockMode' => $source->getStockMode(),
 			'stockLevel' => $source->getStockLevel(),
@@ -1394,6 +1427,8 @@ class ChecklistService {
 		$item->setStockLevel($stock['stockLevel']);
 		$item->setTarget($stock['target']);
 		$item->setReorderPoint($stock['reorderPoint']);
+		$item->setShelfLifeDays($shelfLife);
+		$item->setExpiresAt($expiresAt);
 	}
 
 	/**
@@ -1586,6 +1621,54 @@ class ChecklistService {
 			$item->setStockMode($mode);
 		}
 		$this->applyStockTexts($item, $stock);
+		if (array_key_exists('shelfLifeDays', $stock)) {
+			$item->setShelfLifeDays($this->shelfLife($stock['shelfLifeDays']));
+		}
+	}
+
+	/**
+	 * Write the expiry fields present in `$expiry` onto an inventory item.
+	 *
+	 * - A shelf life of N days sets it and the date to today + N.
+	 * - A date sets it; a date after today also sets the shelf life to match,
+	 *   so the next restock or copy reuses it.
+	 * - Sent together, each is taken as sent.
+	 * - 0 or null clears either one.
+	 *
+	 * @param array<array-key, mixed> $expiry
+	 */
+	private function applyExpiry(ChecklistItem $item, array $expiry): void {
+		$hasShelfLife = array_key_exists('shelfLifeDays', $expiry);
+		$hasDate = array_key_exists('expiresAt', $expiry);
+		$days = $hasShelfLife ? $this->shelfLife($expiry['shelfLifeDays']) : null;
+		$date = $hasDate ? $this->intOrNull($expiry['expiresAt']) : null;
+		$date = $date !== null && $date > 0 ? $date : null;
+		$today = StockRules::today();
+
+		if ($hasShelfLife) {
+			$item->setShelfLifeDays($days);
+			if (!$hasDate && $days !== null) {
+				$item->setExpiresAt(StockRules::addDays($today, $days));
+			}
+		}
+		if ($hasDate) {
+			$item->setExpiresAt($date);
+			$daysLeft = $date !== null ? StockRules::daysUntil($date, $today) : 0;
+			if (!$hasShelfLife && $daysLeft > 0) {
+				$item->setShelfLifeDays(min($daysLeft, StockRules::MAX_SHELF_LIFE_DAYS));
+			}
+		}
+	}
+
+	private function shelfLife(mixed $value): ?int {
+		$days = $this->intOrNull($value);
+		if ($days === null || $days <= 0) {
+			return null;
+		}
+		if ($days > StockRules::MAX_SHELF_LIFE_DAYS) {
+			throw new \InvalidArgumentException(sprintf('Shelf life cannot be longer than %d days', StockRules::MAX_SHELF_LIFE_DAYS));
+		}
+		return $days;
 	}
 
 	/**

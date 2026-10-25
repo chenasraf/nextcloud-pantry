@@ -698,6 +698,182 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertSame('6', $item->getQuantity(), 'a template item is never filled to its target');
 	}
 
+	private function inDays(int $days): int {
+		return StockRules::addDays(StockRules::today(), $days);
+	}
+
+	public function testKeepsNDaysSetsTheShelfLifeAndTheDate(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Milk', 'shelfLifeDays' => 7, 'expiresAt' => null]);
+
+		$this->assertSame(7, $item->getShelfLifeDays());
+		$this->assertSame($this->inDays(7), $item->getExpiresAt());
+	}
+
+	public function testATypedFutureDateSetsTheShelfLifeToMatch(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setShelfLifeDays(30);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['expiresAt' => $this->inDays(10)]);
+
+		$this->assertSame($this->inDays(10), $item->getExpiresAt());
+		$this->assertSame(10, $item->getShelfLifeDays());
+	}
+
+	public function testADateOfTodayOrEarlierLeavesTheShelfLife(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setShelfLifeDays(30);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['expiresAt' => $this->inDays(-2)]);
+
+		$this->assertSame($this->inDays(-2), $item->getExpiresAt());
+		$this->assertSame(30, $item->getShelfLifeDays());
+	}
+
+	public function testTheShelfLifeClearsOnItsOwn(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setShelfLifeDays(7);
+		$item->setExpiresAt($this->inDays(3));
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['shelfLifeDays' => 0]);
+
+		$this->assertNull($item->getShelfLifeDays());
+		$this->assertSame($this->inDays(3), $item->getExpiresAt());
+	}
+
+	public function testClearingBothRemovesTheExpiry(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setShelfLifeDays(7);
+		$item->setExpiresAt($this->inDays(3));
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['shelfLifeDays' => 0, 'expiresAt' => 0]);
+
+		$this->assertNull($item->getShelfLifeDays());
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	public function testAShelfLifeAndDateSentTogetherAreTakenAsSent(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['shelfLifeDays' => 7, 'expiresAt' => $this->inDays(2)]);
+
+		$this->assertSame(7, $item->getShelfLifeDays());
+		$this->assertSame($this->inDays(2), $item->getExpiresAt());
+	}
+
+	public function testAShelfLifeTooLongIsRejected(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->addItem(1, ['name' => 'Salt', 'shelfLifeDays' => StockRules::MAX_SHELF_LIFE_DAYS + 1]);
+	}
+
+	public function testATemplateItemKeepsAShelfLifeButNoDate(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Milk', 'shelfLifeDays' => 7, 'expiresAt' => $this->inDays(3)]);
+
+		$this->assertSame(7, $item->getShelfLifeDays());
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	public function testUpdatingATemplateItemIgnoresADate(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+
+		$this->svc->updateItem(9, ['shelfLifeDays' => 5, 'expiresAt' => $this->inDays(3)]);
+
+		$this->assertSame(5, $item->getShelfLifeDays());
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	public function testAChecklistItemHasNoExpiry(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Milk', 'shelfLifeDays' => 7]);
+
+		$this->assertNull($item->getShelfLifeDays());
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	private function expiringItem(string $mode = 'count'): ChecklistItem {
+		$item = $this->stockItem($mode, $mode === 'level' ? 'full' : null, '6', '12');
+		$item->setShelfLifeDays(7);
+		$item->setExpiresAt($this->inDays(3));
+		return $item;
+	}
+
+	public function testAnItemCopiedBetweenInventoriesKeepsItsDate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_INVENTORY, $this->expiringItem());
+
+		$this->assertSame(7, $copy->getShelfLifeDays());
+		$this->assertSame($this->inDays(3), $copy->getExpiresAt());
+	}
+
+	public function testAnInventoryItemKeepsOnlyItsShelfLifeOnATemplate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_TEMPLATE, $this->expiringItem());
+
+		$this->assertSame(7, $copy->getShelfLifeDays());
+		$this->assertNull($copy->getExpiresAt());
+	}
+
+	public function testATemplateItemExpiresItsShelfLifeFromToday(): void {
+		$source = $this->stockItem('count', null, '6', '12');
+		$source->setShelfLifeDays(7);
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_INVENTORY, $source);
+
+		$this->assertSame(7, $copy->getShelfLifeDays());
+		$this->assertSame($this->inDays(7), $copy->getExpiresAt());
+	}
+
+	public function testATemplateItemWithoutAShelfLifeLandsWithoutADate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_INVENTORY, $this->stockItem('count', null, '6', '12'));
+
+		$this->assertNull($copy->getExpiresAt());
+	}
+
+	public function testAnInventoryItemLeavesItsExpiryOffAChecklist(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_CHECKLIST, $this->expiringItem());
+
+		$this->assertNull($copy->getShelfLifeDays());
+		$this->assertNull($copy->getExpiresAt());
+	}
+
+	public function testUpdateListSetsTheExpiryWarningOfAnInventory(): void {
+		$list = $this->makeList(Checklist::KIND_INVENTORY);
+		$this->listMapper->method('findById')->willReturn($list);
+
+		$this->svc->updateList(1, ['expiryLeadDays' => 0]);
+
+		$this->assertSame(0, $list->expiryLeadDays());
+	}
+
+	public function testAnInventoryWithoutAnExpiryWarningWarnsTwoDaysAhead(): void {
+		$this->assertSame(2, $this->makeList(Checklist::KIND_INVENTORY)->expiryLeadDays());
+	}
+
+	public function testUpdateListRejectsANegativeExpiryWarning(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->listMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateList(1, ['expiryLeadDays' => -1]);
+	}
+
 	public function testSwitchingATemplateItemsModeConvertsNothing(): void {
 		$item = $this->withId($this->makeItem(['quantity' => '6']), 9);
 		$item->setStockMode(StockRules::MODE_COUNT);
@@ -724,10 +900,17 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertNull($item->getStockMode());
 	}
 
-	public function testCountNeedsRestockCountsLowAndOutItemsPerList(): void {
-		$item = static fn (?string $mode, ?string $level, ?string $quantity, ?string $target): array => [
+	public function testCountNeedsRestockCountsLowOutExpiringAndExpiredItemsPerList(): void {
+		$item = fn (?string $mode, ?string $level, ?string $quantity, ?string $target, ?int $expiresInDays = null): array => [
 			'stockMode' => $mode, 'stockLevel' => $level, 'quantity' => $quantity, 'target' => $target, 'reorderPoint' => null,
+			'expiresAt' => $expiresInDays !== null ? $this->inDays($expiresInDays) : null, 'shelfLifeDays' => null,
 		];
+		$lists = array_map(function (int $id): Checklist {
+			$list = $this->makeList(Checklist::KIND_INVENTORY);
+			$list->setId($id);
+			return $list;
+		}, [3, 4, 5]);
+		$lists[1]->setExpiryLeadDays(5);
 		$this->itemMapper->method('findStockByLists')->with([3, 4, 5])->willReturn([
 			3 => [
 				$item('count', null, '2', '12'),
@@ -735,11 +918,13 @@ class ChecklistServiceTest extends TestCase {
 				$item('count', null, '12', '12'),
 				$item('count', null, 'some', '12'),
 				$item('level', 'low', null, null),
+				$item('count', null, '12', '12', -1),
+				$item('count', null, '12', '12', 3),
 			],
-			4 => [$item('level', 'full', null, null)],
+			4 => [$item('level', 'full', null, null), $item('count', null, '12', '12', 3)],
 		]);
 
-		$this->assertSame([3 => 3], $this->svc->countNeedsRestock([3, 4, 5]));
+		$this->assertSame([3 => 4, 4 => 1], $this->svc->countNeedsRestock($lists));
 	}
 
 	public function testCopyItemBetweenTemplatesKeepsTheRuleWithoutASchedule(): void {

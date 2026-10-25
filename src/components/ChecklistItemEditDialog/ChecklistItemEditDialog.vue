@@ -31,11 +31,22 @@
         />
       </FieldCard>
 
-      <StockCard v-if="isInventory" v-model="editStock" v-model:blocked="stockBlocked" />
+      <StockCard
+        v-if="isInventory"
+        v-model="editStock"
+        v-model:blocked="stockBlocked"
+        :expiry="previewExpiryStatus"
+      />
       <FieldCard v-else :label="strings.quantityLabel">
         <QuantityInput v-model="editQuantity" />
       </FieldCard>
       <TemplateStockCard v-if="isTemplate" v-model="editTemplateStock" :quantity="editQuantity" />
+      <ExpiryCard
+        v-if="isInventory || isTemplate"
+        v-model="editExpiry"
+        :stored="storedExpiry"
+        :shelf-life-only="isTemplate"
+      />
 
       <FieldCard :label="strings.priceLabel">
         <ItemPricesEditor
@@ -155,7 +166,15 @@ import StockCard from '@/components/InventoryStock/StockCard.vue'
 import TemplateStockCard, {
   type TemplateStockDraft,
 } from '@/components/InventoryStock/TemplateStockCard.vue'
-import type { StockDraft } from '@/utils/stock'
+import ExpiryCard from '@/components/InventoryStock/ExpiryCard.vue'
+import {
+  draftFromExpiry,
+  expiryPatch,
+  previewExpiry,
+  type ExpiryDraft,
+} from '@/components/InventoryStock/expiryDraft'
+import { useChecklists } from '@/composables/useChecklist'
+import { DEFAULT_EXPIRY_LEAD_DAYS, expiryStatus, todayEpoch, type StockDraft } from '@/utils/stock'
 
 const { kind, isChecklist } = useListKind()
 const isInventory = computed(() => kind.value === 'inventory')
@@ -197,6 +216,23 @@ const editStock = ref<StockDraft>({
   reorderPoint: null,
 })
 const stockBlocked = ref(false)
+const storedExpiry = computed(() => ({
+  expiresAt: props.item.expiresAt ?? null,
+  shelfLifeDays: props.item.shelfLifeDays ?? null,
+}))
+const editExpiry = ref<ExpiryDraft>(draftFromExpiry(storedExpiry.value))
+const inventories = useChecklists(props.houseId, 'inventory').lists
+const previewExpiryStatus = computed(() => {
+  const today = todayEpoch()
+  const leadDays =
+    inventories.value.find((l) => l.id === props.item.listId)?.expiryLeadDays ??
+    DEFAULT_EXPIRY_LEAD_DAYS
+  return expiryStatus(
+    { ...editStock.value, ...previewExpiry(editExpiry.value, storedExpiry.value, today) },
+    leadDays,
+    today,
+  )
+})
 const editTemplateStock = ref<TemplateStockDraft>({
   stockMode: null,
   target: null,
@@ -273,6 +309,7 @@ watch(
         reorderPoint: props.item.reorderPoint ?? null,
       }
       stockBlocked.value = false
+      editExpiry.value = draftFromExpiry(storedExpiry.value)
       editTemplateStock.value = {
         stockMode: props.item.stockMode ?? null,
         target: props.item.target ?? null,
@@ -326,6 +363,7 @@ function submitEdit() {
             stockLevel: editStock.value.stockLevel ?? 'full',
             target: (editStock.value.target ?? '').trim(),
             reorderPoint: (editStock.value.reorderPoint ?? '').trim(),
+            ...expiryPatch(editExpiry.value, storedExpiry.value),
           }
         : { quantity: editQuantity.value.trim() }),
       ...(isTemplate.value
@@ -333,6 +371,7 @@ function submitEdit() {
             stockMode: editTemplateStock.value.stockMode ?? '',
             target: (editTemplateStock.value.target ?? '').trim(),
             reorderPoint: (editTemplateStock.value.reorderPoint ?? '').trim(),
+            ...expiryPatch(editExpiry.value, storedExpiry.value),
           }
         : {}),
       categoryId: editCategoryId.value,

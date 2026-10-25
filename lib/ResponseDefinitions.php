@@ -87,6 +87,7 @@ namespace OCA\Pantry;
  *     stockMode: array{mode: PantryItemDefaultMode, value?: 'count'|'level'},
  *     target: array{mode: 'none'|'fixed', value?: string},
  *     reorderPoint: array{mode: 'none'|'fixed', value?: string},
+ *     shelfLifeDays: array{mode: 'none'|'fixed', value?: int},
  *     fields: list<PantryItemDefaultField>,
  * }
  *
@@ -167,6 +168,7 @@ namespace OCA\Pantry;
  *     canEdit: bool,
  *     sharedOnly: bool,
  *     needsRestock: int,
+ *     expiryLeadDays: int,
  * }
  *
  * @psalm-type PantryListSummary = array{
@@ -285,6 +287,7 @@ namespace OCA\Pantry;
  *     stockMode: 'count'|'level'|null,
  *     target: string|null,
  *     reorderPoint: string|null,
+ *     shelfLifeDays: int|null,
  * }
  *
  * @psalm-type PantryInventoryItem = array{
@@ -313,6 +316,9 @@ namespace OCA\Pantry;
  *     reorderPoint: string|null,
  *     stockStatus: 'ok'|'low'|'out'|'uncounted',
  *     shortfall: string|null,
+ *     expiresAt: int|null,
+ *     shelfLifeDays: int|null,
+ *     expiryStatus: 'none'|'ok'|'expiring'|'expired',
  * }
  *
  * @psalm-type PantryListTemplates = array{

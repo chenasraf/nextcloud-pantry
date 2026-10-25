@@ -81,13 +81,13 @@ abstract class ListKindOCSController extends OCSController {
 
 	/**
 	 * Item fields a template item does not have: the done state, the reopen
-	 * schedule and the stock level. A template keeps how its items are stocked,
-	 * never how much is on hand.
+	 * schedule, the stock level and the expiry date. A template keeps how its
+	 * items are stocked and how long they keep, never how much is on hand.
 	 */
-	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'stockLevel'];
+	protected const TEMPLATE_DROPPED_ITEM_FIELDS = ['done', 'doneAt', 'doneBy', 'nextDueAt', 'stockLevel', 'expiresAt'];
 
 	/** Item fields only an inventory item has. */
-	protected const STOCK_ITEM_FIELDS = ['stockMode', 'stockLevel', 'target', 'reorderPoint'];
+	protected const STOCK_ITEM_FIELDS = ['stockMode', 'stockLevel', 'target', 'reorderPoint', 'expiresAt', 'shelfLifeDays'];
 
 	/**
 	 * @return 'checklist'|'template'|'inventory'
@@ -138,6 +138,8 @@ abstract class ListKindOCSController extends OCSController {
 			'stockLevel' => $item->getStockLevel(),
 			'target' => $item->getTarget(),
 			'reorderPoint' => $item->getReorderPoint(),
+			'expiresAt' => $item->getExpiresAt(),
+			'shelfLifeDays' => $item->getShelfLifeDays(),
 		];
 	}
 
@@ -545,7 +547,7 @@ abstract class ListKindOCSController extends OCSController {
 	}
 
 	/**
-	 * @param array{name: string, description: string|null, categoryId: int|null, quantity: string|null, rrule: string|null, repeatFromCompletion: bool, deleteOnDone: bool, sortOrder: int|null, storeIds: list<int>, barcode: string|null, prices: list<array<string, mixed>>, labelIds: list<int>, customFields: list<array<string, mixed>>, stockMode?: string|null, stockLevel?: string|null, target?: string|null, reorderPoint?: string|null} $data
+	 * @param array{name: string, description: string|null, categoryId: int|null, quantity: string|null, rrule: string|null, repeatFromCompletion: bool, deleteOnDone: bool, sortOrder: int|null, storeIds: list<int>, barcode: string|null, prices: list<array<string, mixed>>, labelIds: list<int>, customFields: list<array<string, mixed>>, stockMode?: string|null, stockLevel?: string|null, target?: string|null, reorderPoint?: string|null, expiresAt?: int|null, shelfLifeDays?: int|null} $data
 	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
 	 */
 	protected function doAddItem(int $houseId, int $listId, array $data): DataResponse {
@@ -576,6 +578,8 @@ abstract class ListKindOCSController extends OCSController {
 				'stockLevel' => $data['stockLevel'] ?? null,
 				'target' => $data['target'] ?? null,
 				'reorderPoint' => $data['reorderPoint'] ?? null,
+				'expiresAt' => $data['expiresAt'] ?? null,
+				'shelfLifeDays' => $data['shelfLifeDays'] ?? null,
 			], $uid);
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
@@ -596,7 +600,7 @@ abstract class ListKindOCSController extends OCSController {
 	 * @param list<array<string, mixed>>|null $prices
 	 * @param list<int>|null $labelIds
 	 * @param list<array<string, mixed>>|null $customFields
-	 * @param array{stockMode?: string, stockLevel?: string, target?: string, reorderPoint?: string} $stock Stock fields to change; an empty string clears a target or reorder point.
+	 * @param array<string, string|int> $stock Stock fields to change; an empty string clears a target or reorder point, 0 an expiry date or shelf life.
 	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
 	 */
 	protected function doUpdateItem(

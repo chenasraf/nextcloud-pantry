@@ -16,12 +16,12 @@ import CheckCircleOutlineIcon from '@icons/CheckCircleOutline.vue'
 import AlertCircleOutlineIcon from '@icons/AlertCircleOutline.vue'
 import InformationOutlineIcon from '@icons/InformationOutline.vue'
 import HelpCircleOutlineIcon from '@icons/HelpCircleOutline.vue'
-import type { StockStatus } from '@/api/types'
-import { stockTone } from '@/utils/stock'
+import type { StockTone } from '@/utils/stock'
 
 const props = withDefaults(
   defineProps<{
-    status: StockStatus
+    /** Red for out or expired, amber for low or expiring. */
+    tone: StockTone
     /** Spells out the status chips, for the tooltip and screen readers. */
     label: string
     size?: number
@@ -29,10 +29,8 @@ const props = withDefaults(
   { size: 24 },
 )
 
-const tone = computed(() => stockTone(props.status))
-
 const icon = computed(() => {
-  switch (tone.value) {
+  switch (props.tone) {
     case 'error':
       return InformationOutlineIcon
     case 'warning':

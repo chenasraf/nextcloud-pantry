@@ -116,6 +116,7 @@ vi.mock('@/composables/useNarrow', async () => {
 import { defineComponent, h, ref as vueRef } from 'vue'
 import ChecklistItemRow from './ChecklistItemRow.vue'
 import { provideListKind } from '@/composables/useListKind'
+import { addDays, todayEpoch } from '@/utils/stock'
 
 function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
   return {
@@ -831,6 +832,74 @@ describe('ChecklistItemRow on an inventory', () => {
     await buttons[2].trigger('click')
 
     expect(stockEvents.map((e) => e[1])).toEqual([{ stockLevel: 'out' }])
+  })
+
+  describe('expiry', () => {
+    const today = todayEpoch()
+
+    it('says when an expiring item goes off and asks for the full replacement', () => {
+      narrowRef.value = false
+      const { wrapper } = mountInventoryRow(
+        countItem('4', {
+          stockStatus: 'low',
+          shortfall: '8 eggs',
+          expiresAt: addDays(today, 1),
+          expiryStatus: 'expiring',
+        }),
+      )
+
+      const chips = wrapper.findAll('.checklist-row__stock-chip').map((c) => c.text())
+      expect(chips).toEqual(['Low', 'Expires tomorrow · buy 12 eggs'])
+      expect(wrapper.find('.stock-status-icon--warning').attributes('aria-label')).toBe(
+        'Low, Expires tomorrow · buy 12 eggs',
+      )
+    })
+
+    it('counts the days left and says today on the date', () => {
+      const inThree = mountInventoryRow(
+        countItem('12', { expiresAt: addDays(today, 3), expiryStatus: 'expiring' }),
+      ).wrapper
+      expect(inThree.find('.checklist-row__expiry-chip').text()).toBe(
+        'Expires in 3 days · buy 12 eggs',
+      )
+      const onTheDay = mountInventoryRow(
+        countItem('12', { expiresAt: today, expiryStatus: 'expiring' }),
+      ).wrapper
+      expect(onTheDay.find('.checklist-row__expiry-chip').text()).toBe(
+        'Expires today · buy 12 eggs',
+      )
+    })
+
+    it('turns the row red once expired, over a low stock', () => {
+      const { wrapper } = mountInventoryRow(
+        countItem('4', {
+          stockStatus: 'low',
+          shortfall: '8 eggs',
+          expiresAt: addDays(today, -2),
+          expiryStatus: 'expired',
+        }),
+      )
+
+      expect(wrapper.find('.stock-status-icon--error').exists()).toBe(true)
+      expect(wrapper.find('.checklist-row__expiry-chip').text()).toMatch(
+        /^Expired .+ · buy 12 eggs$/,
+      )
+    })
+
+    it('shows a neutral good-until chip when not expiring yet', () => {
+      const { wrapper } = mountInventoryRow(
+        countItem('12', { stockStatus: 'ok', expiresAt: addDays(today, 20), expiryStatus: 'ok' }),
+      )
+
+      expect(wrapper.find('.checklist-row__expiry-chip').text()).toMatch(/^Good until /)
+      expect(wrapper.find('.stock-status-icon--success').exists()).toBe(true)
+    })
+
+    it('shows no expiry chip without a date', () => {
+      const { wrapper } = mountInventoryRow(countItem('12', { expiryStatus: 'none' }))
+
+      expect(wrapper.find('.checklist-row__expiry-chip').exists()).toBe(false)
+    })
   })
 
   it('shows no stock on a checklist row', () => {

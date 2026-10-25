@@ -157,6 +157,7 @@ describe('startValues stock', () => {
       stockMode: 'count',
       target: '',
       reorderPoint: '',
+      shelfLifeDays: null,
     })
   })
 
@@ -166,11 +167,17 @@ describe('startValues stock', () => {
         stockMode: { mode: 'remember', value: 'level' },
         target: { mode: 'fixed', value: '12 eggs' },
         reorderPoint: { mode: 'none', value: '4' },
+        shelfLifeDays: { mode: 'fixed', value: 7 },
       }),
       [],
       3,
     )
-    expect(start.stock).toEqual({ stockMode: 'level', target: '12 eggs', reorderPoint: '' })
+    expect(start.stock).toEqual({
+      stockMode: 'level',
+      target: '12 eggs',
+      reorderPoint: '',
+      shelfLifeDays: 7,
+    })
   })
 })
 

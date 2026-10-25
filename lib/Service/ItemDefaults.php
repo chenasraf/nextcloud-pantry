@@ -20,7 +20,7 @@ use OCA\Pantry\Db\Checklist;
  *
  * @psalm-type ItemDefaultsEntry = array{mode: string, value?: mixed}
  * @psalm-type ItemDefaultsField = array{fieldId: int, mode: string, value?: array<array-key, mixed>|null}
- * @psalm-type ItemDefaultsData = array{recurrence?: ItemDefaultsEntry, stores?: ItemDefaultsEntry, category?: ItemDefaultsEntry, labels?: ItemDefaultsEntry, quantity?: ItemDefaultsEntry, stockMode?: ItemDefaultsEntry, target?: ItemDefaultsEntry, reorderPoint?: ItemDefaultsEntry, fields?: list<ItemDefaultsField>}
+ * @psalm-type ItemDefaultsData = array{recurrence?: ItemDefaultsEntry, stores?: ItemDefaultsEntry, category?: ItemDefaultsEntry, labels?: ItemDefaultsEntry, quantity?: ItemDefaultsEntry, stockMode?: ItemDefaultsEntry, target?: ItemDefaultsEntry, reorderPoint?: ItemDefaultsEntry, shelfLifeDays?: ItemDefaultsEntry, fields?: list<ItemDefaultsField>}
  * @psalm-type ItemDefaultsRecurrence = array{kind: string, rrule: string|null, repeatFromCompletion: bool}
  */
 final class ItemDefaults {
@@ -38,10 +38,11 @@ final class ItemDefaults {
 	public const KEY_STOCK_MODE = 'stockMode';
 	public const KEY_TARGET = 'target';
 	public const KEY_REORDER_POINT = 'reorderPoint';
+	public const KEY_SHELF_LIFE = 'shelfLifeDays';
 	public const KEY_FIELDS = 'fields';
 
 	/** Keys only an inventory's items have. */
-	public const STOCK_KEYS = [self::KEY_STOCK_MODE, self::KEY_TARGET, self::KEY_REORDER_POINT];
+	public const STOCK_KEYS = [self::KEY_STOCK_MODE, self::KEY_TARGET, self::KEY_REORDER_POINT, self::KEY_SHELF_LIFE];
 
 	/** Keys holding a single `{mode, value}` entry, in the order they serialize. */
 	public const ENTRY_KEYS = [
@@ -53,6 +54,7 @@ final class ItemDefaults {
 		self::KEY_STOCK_MODE,
 		self::KEY_TARGET,
 		self::KEY_REORDER_POINT,
+		self::KEY_SHELF_LIFE,
 	];
 
 	public const DEFAULT_RRULE = 'FREQ=WEEKLY;INTERVAL=1';
@@ -119,7 +121,7 @@ final class ItemDefaults {
 	 * Fill in every key so clients always receive the same shape.
 	 *
 	 * @param ItemDefaultsData $defaults
-	 * @return array{recurrence: ItemDefaultsEntry, stores: ItemDefaultsEntry, category: ItemDefaultsEntry, labels: ItemDefaultsEntry, quantity: ItemDefaultsEntry, stockMode: ItemDefaultsEntry, target: ItemDefaultsEntry, reorderPoint: ItemDefaultsEntry, fields: list<ItemDefaultsField>}
+	 * @return array{recurrence: ItemDefaultsEntry, stores: ItemDefaultsEntry, category: ItemDefaultsEntry, labels: ItemDefaultsEntry, quantity: ItemDefaultsEntry, stockMode: ItemDefaultsEntry, target: ItemDefaultsEntry, reorderPoint: ItemDefaultsEntry, shelfLifeDays: ItemDefaultsEntry, fields: list<ItemDefaultsField>}
 	 */
 	public static function complete(array $defaults): array {
 		$none = ['mode' => self::MODE_NONE];
@@ -132,6 +134,7 @@ final class ItemDefaults {
 			self::KEY_STOCK_MODE => $defaults[self::KEY_STOCK_MODE] ?? $none,
 			self::KEY_TARGET => $defaults[self::KEY_TARGET] ?? $none,
 			self::KEY_REORDER_POINT => $defaults[self::KEY_REORDER_POINT] ?? $none,
+			self::KEY_SHELF_LIFE => $defaults[self::KEY_SHELF_LIFE] ?? $none,
 			self::KEY_FIELDS => $defaults[self::KEY_FIELDS] ?? [],
 		];
 	}

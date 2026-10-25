@@ -38,6 +38,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setKind(?string $kind)
  * @method void setEveryList(?bool $everyList)
  * @method void setFillFromDefaults(?bool $fillFromDefaults)
+ * @method int|null getExpiryLeadDays()
+ * @method void setExpiryLeadDays(?int $expiryLeadDays)
  */
 class Checklist extends Entity implements \JsonSerializable {
 	public const KIND_CHECKLIST = 'checklist';
@@ -49,6 +51,8 @@ class Checklist extends Entity implements \JsonSerializable {
 		self::KIND_TEMPLATE,
 		self::KIND_INVENTORY,
 	];
+
+	public const DEFAULT_EXPIRY_LEAD_DAYS = 2;
 
 	public const RECURRENCE_MODE_REMEMBER = 'remember';
 	public const RECURRENCE_KIND_NONE = 'none';
@@ -88,6 +92,8 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected ?bool $everyList = false;
 	/** Whether a template item drawn here fills its empty fields from the item defaults. */
 	protected ?bool $fillFromDefaults = true;
+	/** An inventory's expiry warning, in days before the date; empty reads as {@see DEFAULT_EXPIRY_LEAD_DAYS}. */
+	protected ?int $expiryLeadDays = null;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -99,6 +105,11 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('lastCompletedAt', 'integer');
 		$this->addType('everyList', 'boolean');
 		$this->addType('fillFromDefaults', 'boolean');
+		$this->addType('expiryLeadDays', 'integer');
+	}
+
+	public function expiryLeadDays(): int {
+		return $this->expiryLeadDays ?? self::DEFAULT_EXPIRY_LEAD_DAYS;
 	}
 
 	public function isEveryList(): bool {

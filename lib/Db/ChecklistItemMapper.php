@@ -424,7 +424,7 @@ class ChecklistItemMapper extends QBMapper {
 	 * The stock columns of every live item on the given lists, grouped by list.
 	 *
 	 * @param int[] $listIds
-	 * @return array<int, list<array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string}>>
+	 * @return array<int, list<array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string, expiresAt: ?int, shelfLifeDays: ?int}>>
 	 */
 	public function findStockByLists(array $listIds): array {
 		$listIds = array_values(array_unique(array_map('intval', $listIds)));
@@ -432,7 +432,7 @@ class ChecklistItemMapper extends QBMapper {
 			return [];
 		}
 		$qb = $this->db->getQueryBuilder();
-		$qb->select('list_id', 'stock_mode', 'stock_level', 'quantity', 'target', 'reorder_point')
+		$qb->select('list_id', 'stock_mode', 'stock_level', 'quantity', 'target', 'reorder_point', 'expires_at', 'shelf_life_days')
 			->from($this->getTableName())
 			->where($qb->expr()->in('list_id', $qb->createNamedParameter($listIds, IQueryBuilder::PARAM_INT_ARRAY)))
 			->andWhere($qb->expr()->isNull('deleted_at'))
@@ -446,6 +446,8 @@ class ChecklistItemMapper extends QBMapper {
 				'quantity' => $row['quantity'] !== null ? (string)$row['quantity'] : null,
 				'target' => $row['target'] !== null ? (string)$row['target'] : null,
 				'reorderPoint' => $row['reorder_point'] !== null ? (string)$row['reorder_point'] : null,
+				'expiresAt' => $row['expires_at'] !== null ? (int)$row['expires_at'] : null,
+				'shelfLifeDays' => $row['shelf_life_days'] !== null ? (int)$row['shelf_life_days'] : null,
 			];
 		}
 		$result->closeCursor();

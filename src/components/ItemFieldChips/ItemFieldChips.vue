@@ -155,6 +155,46 @@
           </div>
         </div>
 
+        <div v-else-if="openSection === 'expiry'" class="item-field-chips__stock">
+          <div class="item-field-chips__stock-modes">
+            <NcCheckboxRadioSwitch
+              v-for="opt in expiryModeOptions"
+              :key="opt.value"
+              v-model="expiryMode"
+              :value="opt.value"
+              name="item-field-chips-expiry-mode"
+              type="radio"
+              button-variant
+              button-variant-grouped="horizontal"
+            >
+              {{ opt.label }}
+            </NcCheckboxRadioSwitch>
+          </div>
+          <NcDateTimePickerNative
+            v-if="expiry.mode === 'date'"
+            type="date"
+            :model-value="expiryDate"
+            :label="strings.expiryDate"
+            data-testid="compose-expiry-date"
+            @update:model-value="expiry = { ...expiry, expiresAt: dateToEpoch($event) }"
+          />
+          <div v-else-if="expiry.mode === 'days'" class="item-field-chips__expiry-days">
+            <NcTextField
+              :model-value="expiry.shelfLifeDays != null ? String(expiry.shelfLifeDays) : ''"
+              :label="strings.shelfLife"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              :max="MAX_SHELF_LIFE_DAYS"
+              autocomplete="off"
+              data-testid="compose-expiry-days"
+              @update:model-value="
+                expiry = { ...expiry, shelfLifeDays: parseShelfLife(String($event)) }
+              "
+            />
+          </div>
+        </div>
+
         <div v-else-if="openSection === 'image'" class="item-field-chips__image">
           <div v-if="imageUrl" class="item-field-chips__image-row">
             <img class="item-field-chips__image-preview" :src="imageUrl" :alt="strings.imageAlt" />
@@ -195,8 +235,10 @@ import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
 import { t, n } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcDateTimePickerNative from '@nextcloud/vue/components/NcDateTimePickerNative'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PackageVariantIcon from '@icons/PackageVariant.vue'
+import CalendarClockIcon from '@icons/CalendarClock.vue'
 import FormatListBulletedIcon from '@icons/FormatListBulleted.vue'
 import TextIcon from '@icons/Text.vue'
 import PinIcon from '@icons/Pin.vue'
@@ -227,7 +269,15 @@ import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
 import { entityIcon } from '@/utils/entityIcons'
 import { DEFAULT_RRULE, formatRrule } from '@/utils/rrule'
 import { formatPrice, storelessPrice } from '@/utils/price'
-import { firstNumber, formatNumber } from '@/utils/stock'
+import { daysUntil, firstNumber, formatNumber, todayEpoch } from '@/utils/stock'
+import { formatShortDate } from '@/utils/datetime'
+import {
+  MAX_SHELF_LIFE_DAYS,
+  dateToEpoch,
+  parseShelfLife,
+  type ExpiryDraft,
+  type ExpiryMode,
+} from '@/components/InventoryStock/expiryDraft'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ItemPrice, ItemCustomFieldValue, ItemDefaultMode, StockMode } from '@/api/types'
 import { ITEM_ONLY_SECTIONS, type ItemFieldChipsMode, type ItemFieldSection } from './types'
@@ -276,6 +326,9 @@ const image = defineModel<File | null>('image', { default: null })
 const stockMode = defineModel<StockMode>('stockMode', { default: 'count' })
 const target = defineModel<string>('target', { default: '' })
 const reorderPoint = defineModel<string>('reorderPoint', { default: '' })
+const expiry = defineModel<ExpiryDraft>('expiry', {
+  default: () => ({ mode: 'none', expiresAt: null, shelfLifeDays: null }),
+})
 const openSection = defineModel<ItemFieldSection | null>('openSection', { default: null })
 // Whether the item type was picked by hand, so the chip can stay a neutral
 // "Recurrence" until then.
@@ -311,6 +364,8 @@ function shows(key: ItemFieldSection): boolean {
   const composesStock = kind.value === 'inventory' && !editsDefaults.value
   if (key === 'stock') return composesStock
   if (key === 'quantity') return !composesStock
+  // Templates keep a shelf life for the items they draw into inventories.
+  if (key === 'expiry') return composesStock || (kind.value === 'template' && !editsDefaults.value)
   if (key === 'image') return !props.hideImage
   if (key === 'customfields') return hasCustomFields.value
   return true
@@ -406,6 +461,38 @@ const stockChipText = computed<string | null>(() => {
   }
   if (targetText) return strings.targetChip(targetText)
   return amount || null
+})
+
+const expiryMode = computed<ExpiryMode>({
+  get: () => expiry.value.mode,
+  set: (mode) => (expiry.value = { ...expiry.value, mode }),
+})
+
+const expiryDate = computed(() =>
+  expiry.value.expiresAt !== null ? new Date(expiry.value.expiresAt * 1000) : null,
+)
+
+const expiryModeOptions = computed(() =>
+  [
+    { value: 'none' as const, label: strings.expiryNone },
+    { value: 'date' as const, label: strings.expiryDateMode },
+    { value: 'days' as const, label: strings.expiryDays },
+  ].filter((opt) => kind.value !== 'template' || opt.value !== 'date'),
+)
+
+/** The expiry chip's summary; null while the item has none. */
+const expiryChipText = computed<string | null>(() => {
+  const { mode, expiresAt, shelfLifeDays } = expiry.value
+  if (mode === 'days' && shelfLifeDays) {
+    return n('pantry', 'Keeps %n day', 'Keeps %n days', shelfLifeDays)
+  }
+  if (mode === 'date' && expiresAt !== null && kind.value !== 'template') {
+    const date = formatShortDate(expiresAt)
+    return daysUntil(expiresAt, todayEpoch()) < 0
+      ? strings.expiredChip(date)
+      : strings.expiresChip(date)
+  }
+  return null
 })
 
 const selectedCategory = computed(() =>
@@ -527,6 +614,13 @@ const chips = computed<Chip[]>(() => {
   })
 
   list.push({
+    key: 'expiry',
+    text: expiryChipText.value ?? strings.expiry,
+    icon: CalendarClockIcon,
+    filled: expiryChipText.value !== null,
+  })
+
+  list.push({
     key: 'image',
     text: image.value ? strings.imageAttached : strings.image,
     icon: ImageIcon,
@@ -547,6 +641,7 @@ function baseLabel(key: ItemFieldSection): string {
     description: strings.description,
     type: strings.itemType,
     stock: strings.stock,
+    expiry: strings.expiry,
     image: strings.image,
   }
   return labels[key]
@@ -625,6 +720,22 @@ const strings = {
   // TRANSLATORS: Noun, the amount at or below which an item counts as low.
   reorderPoint: t('pantry', 'Reorder point'),
   reorderPointPlaceholder: t('pantry', 'e.g. 4'),
+  // TRANSLATORS: Noun, chip label for when the new item goes off.
+  expiry: t('pantry', 'Expiry'),
+  // TRANSLATORS: Expiry option, button: the item has no expiry.
+  expiryNone: t('pantry', 'None'),
+  // TRANSLATORS: Expiry option, button: the item expires on a picked date.
+  expiryDateMode: t('pantry', 'Date'),
+  // TRANSLATORS: Expiry option, button: the item keeps a number of days, then expires.
+  expiryDays: t('pantry', 'Keeps N days'),
+  // TRANSLATORS: Label of the expiry date picker.
+  expiryDate: t('pantry', 'Expiry date'),
+  // TRANSLATORS: Label of the number of days an item keeps before it expires.
+  shelfLife: t('pantry', 'Days it keeps'),
+  // TRANSLATORS: Chip on a new inventory item. {date} is its expiry date, e.g. "Expires Nov 2".
+  expiresChip: (date: string) => t('pantry', 'Expires {date}', { date }),
+  // TRANSLATORS: Chip on a new inventory item whose expiry date has passed. {date} is the date, e.g. "Expired Oct 21".
+  expiredChip: (date: string) => t('pantry', 'Expired {date}', { date }),
   // TRANSLATORS: Chip label for a list default that reuses the last item's value. {field} is the field name, e.g. "Stores: last used".
   lastUsed: (field: string) => t('pantry', '{field}: last used', { field }),
 }
@@ -692,6 +803,10 @@ const stockModeOptions: { value: StockMode; label: string }[] = [
     &--narrow {
       flex: 0 1 8rem;
     }
+  }
+
+  &__expiry-days {
+    max-width: 12rem;
   }
 
   &__stock-label {

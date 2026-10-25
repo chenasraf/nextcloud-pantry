@@ -30,6 +30,7 @@ describe('item defaults draft', () => {
       stockMode: 'none',
       target: 'none',
       reorderPoint: 'none',
+      shelfLifeDays: 'none',
     })
     expect(draft.storeIds).toEqual([2])
     expect(draft.categoryId).toBeNull()
@@ -124,5 +125,13 @@ describe('item defaults draft', () => {
       stockMode: { mode: 'fixed', value: 'level' },
       target: { mode: 'fixed', value: '12 eggs' },
     })
+  })
+
+  it('sends a fixed shelf life as a whole number of days', () => {
+    const inventory = defaults({ stockMode: { mode: 'none' }, shelfLifeDays: { mode: 'none' } })
+    const draft = draftFromDefaults(inventory)
+    draft.modes.shelfLifeDays = 'fixed'
+    draft.shelfLifeDays = '7'
+    expect(patchFromDraft(inventory, draft)).toEqual({ shelfLifeDays: { mode: 'fixed', value: 7 } })
   })
 })

@@ -91,7 +91,7 @@ class ItemDefaultsService {
 	 * pointing at a deleted or out-of-scope store, category, label, field or
 	 * option dropped.
 	 *
-	 * @return array{recurrence: ItemDefaultsEntry, stores: ItemDefaultsEntry, category: ItemDefaultsEntry, labels: ItemDefaultsEntry, quantity: ItemDefaultsEntry, stockMode: ItemDefaultsEntry, target: ItemDefaultsEntry, reorderPoint: ItemDefaultsEntry, fields: list<ItemDefaultsField>}
+	 * @return array{recurrence: ItemDefaultsEntry, stores: ItemDefaultsEntry, category: ItemDefaultsEntry, labels: ItemDefaultsEntry, quantity: ItemDefaultsEntry, stockMode: ItemDefaultsEntry, target: ItemDefaultsEntry, reorderPoint: ItemDefaultsEntry, shelfLifeDays: ItemDefaultsEntry, fields: list<ItemDefaultsField>}
 	 */
 	public function forList(Checklist $list): array {
 		$refs = $this->refs($list->getHouseId());
@@ -196,7 +196,8 @@ class ItemDefaultsService {
 	 * @return array<string, mixed>|null Null when the key falls back to the composer's empty state.
 	 */
 	private function normalizeEntry(int $houseId, int $listId, string $key, array $entry): ?array {
-		$fixedOnly = [ItemDefaults::KEY_QUANTITY, ItemDefaults::KEY_TARGET, ItemDefaults::KEY_REORDER_POINT];
+		// A remembered shelf life would carry one product's onto unrelated items.
+		$fixedOnly = [ItemDefaults::KEY_QUANTITY, ItemDefaults::KEY_TARGET, ItemDefaults::KEY_REORDER_POINT, ItemDefaults::KEY_SHELF_LIFE];
 		$mode = $this->mode($entry, in_array($key, $fixedOnly, true)
 			? [ItemDefaults::MODE_NONE, ItemDefaults::MODE_FIXED]
 			: ItemDefaults::MODES);
@@ -254,6 +255,15 @@ class ItemDefaultsService {
 			case ItemDefaults::KEY_STOCK_MODE:
 				if (!in_array($value, StockRules::MODES, true)) {
 					throw new \InvalidArgumentException('Stock mode must be count or level');
+				}
+				break;
+			case ItemDefaults::KEY_SHELF_LIFE:
+				$value = is_numeric($value) ? (int)$value : 0;
+				if ($value <= 0) {
+					return null;
+				}
+				if ($value > StockRules::MAX_SHELF_LIFE_DAYS) {
+					throw new \InvalidArgumentException(sprintf('Shelf life cannot be longer than %d days', StockRules::MAX_SHELF_LIFE_DAYS));
 				}
 				break;
 		}

@@ -3,7 +3,14 @@ import * as api from '@/api/lists'
 import type { Checklist, ChecklistItem, ListKind } from '@/api/types'
 import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
 import type { ChecklistFormData } from '@/components/ChecklistIconPicker/checklistForm'
-import { evaluateStock, stockInput } from '@/utils/stock'
+import {
+  DEFAULT_EXPIRY_LEAD_DAYS,
+  evaluateStock,
+  expiryInput,
+  expiryStatus,
+  stockInput,
+  todayEpoch,
+} from '@/utils/stock'
 
 // Per-house, per-kind state shared across all callers so sidebar and views stay in sync.
 interface HouseChecklistState {
@@ -340,7 +347,14 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     const write = (stockWrites.get(itemId) ?? 0) + 1
     stockWrites.set(itemId, write)
     const next = { ...prev, ...patch }
-    const optimistic = { ...next, ...evaluateStock(stockInput(next)) }
+    const leadDays =
+      getState(houseId, 'inventory').lists.value.find((l) => l.id === next.listId)
+        ?.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS
+    const optimistic = {
+      ...next,
+      ...evaluateStock(stockInput(next)),
+      expiryStatus: expiryStatus(expiryInput(next), leadDays, todayEpoch()),
+    }
     items.value = items.value.map((i) => (i.id === itemId ? optimistic : i))
     try {
       const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, patch)

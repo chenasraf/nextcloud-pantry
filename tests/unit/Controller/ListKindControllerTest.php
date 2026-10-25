@@ -33,6 +33,7 @@ use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\PrefsService;
 use OCA\Pantry\Service\ShareService;
+use OCA\Pantry\Service\StockRules;
 use OCA\Pantry\Service\StoreService;
 use OCA\Pantry\Service\TemplateAttachmentService;
 use OCA\Pantry\Service\TemplateCopyService;
@@ -228,6 +229,27 @@ class ListKindControllerTest extends TestCase {
 		$this->assertNull($data[0]['reorderPoint']);
 		$this->assertSame('low', $data[0]['stockStatus']);
 		$this->assertSame('8 eggs', $data[0]['shortfall']);
+		$this->assertSame('none', $data[0]['expiryStatus']);
+	}
+
+	public function testInventoryItemsReportExpiryAgainstTheirInventorysWarning(): void {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Milk');
+		$item->setQuantity('1');
+		$item->setTarget('1');
+		$item->setExpiresAt(StockRules::addDays(StockRules::today(), 3));
+		$item->setShelfLifeDays(7);
+		$inventory = $this->makeList(Checklist::KIND_INVENTORY);
+		$inventory->setExpiryLeadDays(3);
+		$this->lists->method('getList')->willReturn($inventory);
+		$this->lists->method('listItems')->willReturn([$item]);
+
+		$data = $this->makeController(InventoryController::class)->indexInventoryItems(1, 7)->getData();
+
+		$this->assertSame('expiring', $data[0]['expiryStatus']);
+		$this->assertSame(7, $data[0]['shelfLifeDays']);
 	}
 
 	public function testChecklistItemsHaveNoStockAndTemplateItemsNoStockLevel(): void {
@@ -243,15 +265,16 @@ class ListKindControllerTest extends TestCase {
 		$lists = $this->makeController(ChecklistController::class)->indexItems(1, 7)->getData();
 		$templates = $this->makeController(TemplateController::class)->indexTemplateItems(1, 7)->getData();
 
-		foreach (['stockMode', 'stockLevel', 'target', 'reorderPoint', 'stockStatus', 'shortfall'] as $key) {
+		foreach (['stockMode', 'stockLevel', 'target', 'reorderPoint', 'stockStatus', 'shortfall', 'expiresAt', 'shelfLifeDays', 'expiryStatus'] as $key) {
 			$this->assertArrayNotHasKey($key, $lists[0]);
 		}
 		$this->assertSame('count', $templates[0]['stockMode']);
 		$this->assertSame('12', $templates[0]['target']);
 		$this->assertArrayHasKey('reorderPoint', $templates[0]);
-		foreach (['stockLevel', 'stockStatus', 'shortfall'] as $key) {
+		foreach (['stockLevel', 'stockStatus', 'shortfall', 'expiresAt', 'expiryStatus'] as $key) {
 			$this->assertArrayNotHasKey($key, $templates[0]);
 		}
+		$this->assertArrayHasKey('shelfLifeDays', $templates[0]);
 	}
 
 	public function testInventoriesCountTheItemsThatNeedRestock(): void {
@@ -260,13 +283,16 @@ class ListKindControllerTest extends TestCase {
 		$second = $this->makeList(Checklist::KIND_INVENTORY);
 		$second->setId(8);
 		$this->lists->method('listForHouse')->willReturn([$first, $second]);
-		$this->lists->method('countNeedsRestock')->with([7, 8])->willReturn([7 => 2]);
+		$second->setExpiryLeadDays(0);
+		$this->lists->method('countNeedsRestock')->with([$first, $second])->willReturn([7 => 2]);
 		$this->permissions->method('canAccessList')->willReturn(true);
 
 		$data = $this->makeController(InventoryController::class, ItemDefaults::complete([]))->indexInventories(1)->getData();
 
 		$this->assertSame(2, $data[0]['needsRestock']);
 		$this->assertSame(0, $data[1]['needsRestock']);
+		$this->assertSame(2, $data[0]['expiryLeadDays']);
+		$this->assertSame(0, $data[1]['expiryLeadDays']);
 		$this->assertArrayHasKey('stockMode', $data[0]['itemDefaults']);
 	}
 

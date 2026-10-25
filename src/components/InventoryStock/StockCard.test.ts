@@ -61,9 +61,7 @@ describe('StockCard', () => {
 
     await wrapper.find('.mock-on-hand').setValue('4')
 
-    expect(wrapper.find('.stock-card__status').text()).toBe(
-      'Needs restock: the shopping list asks for 8 eggs.',
-    )
+    expect(wrapper.find('.stock-card__status').text()).toBe('Low: buy 8 eggs.')
     expect(wrapper.find('.stock-card__status--warning').exists()).toBe(true)
   })
 

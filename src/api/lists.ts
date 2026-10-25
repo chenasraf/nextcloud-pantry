@@ -71,6 +71,17 @@ export interface ItemInput {
   stockLevel?: StockLevel
   target?: string
   reorderPoint?: string
+  /**
+   * Inventory items: the expiry date, a midnight timestamp in seconds (0
+   * clears). Without a shelf life alongside, a date after today also sets the
+   * shelf life to match.
+   */
+  expiresAt?: number
+  /**
+   * Inventory and template items: the shelf life in days (0 clears). Without
+   * a date alongside, an inventory item then expires that many days from today.
+   */
+  shelfLifeDays?: number
 }
 
 /** The API route each kind's lists are served from. `lists` is the checklist resource. */
@@ -125,6 +136,8 @@ export function listApi(kind: ListKind) {
         icon?: string
         color?: string | null
         sortOrder?: number
+        /** Inventories only. */
+        expiryLeadDays?: number
       },
     ): Promise<Checklist> {
       const resp = await ocs.patch<Checklist>(`${base(houseId)}/${listId}`, patch)

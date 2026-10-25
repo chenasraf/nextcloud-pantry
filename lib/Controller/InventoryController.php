@@ -55,13 +55,30 @@ final class InventoryController extends ListKindOCSController {
 		return $data;
 	}
 
+	/** @var array<int, int> Expiry warning per inventory, memoized while shaping its items. */
+	private array $expiryLeadDays = [];
+
 	protected function listExtras(array $lists): array {
-		$counts = $this->lists->countNeedsRestock(array_map(static fn (Checklist $l): int => (int)$l->getId(), $lists));
+		$counts = $this->lists->countNeedsRestock($lists);
 		$extras = [];
 		foreach ($lists as $list) {
-			$extras[(int)$list->getId()] = ['needsRestock' => $counts[(int)$list->getId()] ?? 0];
+			$extras[(int)$list->getId()] = [
+				'needsRestock' => $counts[(int)$list->getId()] ?? 0,
+				'expiryLeadDays' => $list->expiryLeadDays(),
+			];
 		}
 		return $extras;
+	}
+
+	private function expiryLeadDays(int $listId): int {
+		if (!isset($this->expiryLeadDays[$listId])) {
+			try {
+				$this->expiryLeadDays[$listId] = $this->lists->getList($listId, includeDeleted: true)->expiryLeadDays();
+			} catch (\Throwable) {
+				$this->expiryLeadDays[$listId] = Checklist::DEFAULT_EXPIRY_LEAD_DAYS;
+			}
+		}
+		return $this->expiryLeadDays[$listId];
 	}
 
 	protected function shapeItem(array $data): array {
@@ -78,7 +95,18 @@ final class InventoryController extends ListKindOCSController {
 			'target' => $text('target'),
 			'reorderPoint' => $text('reorderPoint'),
 		];
-		return array_merge($data, $stock, StockRules::evaluate($stock));
+		$int = static function (string $key) use ($data): ?int {
+			$value = $data[$key] ?? null;
+			return is_int($value) ? $value : null;
+		};
+		$expiry = [
+			'expiresAt' => $int('expiresAt'),
+			'shelfLifeDays' => $int('shelfLifeDays'),
+		];
+		$listId = $int('listId') ?? 0;
+		return array_merge($data, $stock, StockRules::evaluate($stock), $expiry, [
+			'expiryStatus' => StockRules::expiryStatus($stock + $expiry, $this->expiryLeadDays($listId), StockRules::today()),
+		]);
 	}
 
 	/**
@@ -203,6 +231,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param string|null $icon New icon key.
 	 * @param string|null $color New accent color (hex). Pass an empty string to clear.
 	 * @param int|null $sortOrder New sort order.
+	 * @param int<0, 365>|null $expiryLeadDays Expiry warning: how many days before its expiry date an item counts as expiring. 0 warns on the date itself.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventory, array{}>
 	 *
@@ -211,13 +240,14 @@ final class InventoryController extends ListKindOCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/inventories/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
-	public function updateInventory(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null): DataResponse {
+	public function updateInventory(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?int $expiryLeadDays = null): DataResponse {
 		$patch = array_filter([
 			'name' => $name,
 			'description' => $description,
 			'icon' => $icon,
 			'color' => $color,
 			'sortOrder' => $sortOrder,
+			'expiryLeadDays' => $expiryLeadDays,
 		], static fn ($v) => $v !== null);
 		return $this->doUpdateList($houseId, $listId, $patch);
 	}
@@ -241,6 +271,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param array{mode: 'none'|'fixed'|'remember', value?: 'count'|'level'|null}|null $stockMode Stock mode new items start in. Items arriving from a checklist or template start in it too.
 	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $target Target new count items start with.
 	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $reorderPoint Reorder point new count items start with.
+	 * @param array{mode: 'none'|'fixed', value?: int|null}|null $shelfLifeDays Shelf life new items start with; they expire that many days after they are added.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventory, array{}>
 	 *
@@ -249,7 +280,7 @@ final class InventoryController extends ListKindOCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/inventories/{listId}/item-defaults', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canAddItems'])]
-	public function updateInventoryItemDefaults(int $houseId, int $listId, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null, ?bool $fillFromDefaults = null, ?array $stockMode = null, ?array $target = null, ?array $reorderPoint = null): DataResponse {
+	public function updateInventoryItemDefaults(int $houseId, int $listId, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null, ?bool $fillFromDefaults = null, ?array $stockMode = null, ?array $target = null, ?array $reorderPoint = null, ?array $shelfLifeDays = null): DataResponse {
 		$patch = array_filter([
 			'stores' => $stores,
 			'category' => $category,
@@ -258,6 +289,7 @@ final class InventoryController extends ListKindOCSController {
 			'stockMode' => $stockMode,
 			'target' => $target,
 			'reorderPoint' => $reorderPoint,
+			'shelfLifeDays' => $shelfLifeDays,
 			'fields' => $fields,
 		], static fn (?array $entry): bool => $entry !== null);
 		return $this->doUpdateItemDefaults($houseId, $listId, $patch, $fillFromDefaults);
@@ -574,6 +606,8 @@ final class InventoryController extends ListKindOCSController {
 	 * @param 'full'|'low'|'out'|null $stockLevel A level item's stock level; full when omitted.
 	 * @param string|null $target A count item's target, the amount to buy back up to.
 	 * @param string|null $reorderPoint A count item's reorder point: low at or below it, instead of below the target.
+	 * @param int|null $expiresAt Expiry date (midnight timestamp). A date after today also sets the shelf life to match.
+	 * @param int<1, 36500>|null $shelfLifeDays Shelf life in days. Without a date alongside, the item expires today plus the shelf life.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
 	 *
@@ -599,6 +633,8 @@ final class InventoryController extends ListKindOCSController {
 		?string $stockLevel = null,
 		?string $target = null,
 		?string $reorderPoint = null,
+		?int $expiresAt = null,
+		?int $shelfLifeDays = null,
 	): DataResponse {
 		return $this->doAddItem($houseId, $listId, [
 			'name' => $name,
@@ -618,6 +654,8 @@ final class InventoryController extends ListKindOCSController {
 			'stockLevel' => $stockLevel,
 			'target' => $target,
 			'reorderPoint' => $reorderPoint,
+			'expiresAt' => $expiresAt,
+			'shelfLifeDays' => $shelfLifeDays,
 		]);
 	}
 
@@ -643,6 +681,8 @@ final class InventoryController extends ListKindOCSController {
 	 * @param 'full'|'low'|'out'|null $stockLevel New stock level of a level item.
 	 * @param string|null $target New target of a count item (empty string clears).
 	 * @param string|null $reorderPoint New reorder point of a count item (empty string clears).
+	 * @param int|null $expiresAt New expiry date (midnight timestamp; 0 clears). Without a shelf life alongside, a date after today also sets the shelf life to match.
+	 * @param int<0, 36500>|null $shelfLifeDays New shelf life in days (0 clears). Without a date alongside, a shelf life also sets the date to today plus the shelf life.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
 	 *
@@ -671,13 +711,17 @@ final class InventoryController extends ListKindOCSController {
 		?string $stockLevel = null,
 		?string $target = null,
 		?string $reorderPoint = null,
+		?int $expiresAt = null,
+		?int $shelfLifeDays = null,
 	): DataResponse {
 		$stock = array_filter([
 			'stockMode' => $stockMode,
 			'stockLevel' => $stockLevel,
 			'target' => $target,
 			'reorderPoint' => $reorderPoint,
-		], static fn (?string $v): bool => $v !== null);
+			'expiresAt' => $expiresAt,
+			'shelfLifeDays' => $shelfLifeDays,
+		], static fn (string|int|null $v): bool => $v !== null);
 		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, null, null, null, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock);
 	}
 

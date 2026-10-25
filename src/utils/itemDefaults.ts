@@ -82,7 +82,12 @@ export interface ItemStartValues {
   recurrence: RecurrenceDefaultValue
   customFieldValues: ItemCustomFieldValue[]
   /** Read only on inventories. */
-  stock: { stockMode: StockMode; target: string; reorderPoint: string }
+  stock: {
+    stockMode: StockMode
+    target: string
+    reorderPoint: string
+    shelfLifeDays: number | null
+  }
 }
 
 const STAPLE: RecurrenceDefaultValue = { kind: 'none', rrule: null, repeatFromCompletion: false }
@@ -125,6 +130,7 @@ export function startValues(
       stockMode: prefill(defaults?.stockMode) ?? 'count',
       target: prefill(defaults?.target) ?? '',
       reorderPoint: prefill(defaults?.reorderPoint) ?? '',
+      shelfLifeDays: prefill(defaults?.shelfLifeDays),
     },
   }
 }
@@ -211,6 +217,7 @@ export function configSignature(defaults: ItemDefaults | null | undefined): stri
     stockMode: pinned(defaults.stockMode),
     target: pinned(defaults.target),
     reorderPoint: pinned(defaults.reorderPoint),
+    shelfLifeDays: pinned(defaults.shelfLifeDays),
     fields: defaults.fields.map((f) => ({ fieldId: f.fieldId, ...pinned(f) })),
   })
 }

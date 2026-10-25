@@ -30,6 +30,14 @@ final class StockRules {
 	public const STATUS_OUT = 'out';
 	public const STATUS_UNCOUNTED = 'uncounted';
 
+	public const EXPIRY_NONE = 'none';
+	public const EXPIRY_OK = 'ok';
+	public const EXPIRY_EXPIRING = 'expiring';
+	public const EXPIRY_EXPIRED = 'expired';
+
+	public const MAX_SHELF_LIFE_DAYS = 36500;
+	public const MAX_EXPIRY_LEAD_DAYS = 365;
+
 	private const FIRST_NUMBER = '/\d+(?:\.\d+)?/';
 
 	public static function firstNumber(?string $text): ?float {
@@ -60,7 +68,7 @@ final class StockRules {
 	}
 
 	/**
-	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string} $item
+	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string, ...} $item
 	 * @return array{stockStatus: 'ok'|'low'|'out'|'uncounted', shortfall: ?string}
 	 */
 	public static function evaluate(array $item): array {
@@ -71,11 +79,72 @@ final class StockRules {
 	}
 
 	/**
-	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string} $item
+	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string, ...} $item
 	 */
 	public static function needsRestock(array $item): bool {
 		$status = self::evaluate($item)['stockStatus'];
 		return $status === self::STATUS_LOW || $status === self::STATUS_OUT;
+	}
+
+	/**
+	 * Where an item stands against its expiry date. It is good through the
+	 * date and expired from the day after. It is expiring from `$leadDays`
+	 * before the date, but only while fewer days are left than its shelf life,
+	 * so a short-lived item that was just restocked is not flagged at once. An
+	 * item with none left reports none: there is nothing to go off. One not
+	 * counted still has some, so it reports.
+	 *
+	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, expiresAt: ?int, shelfLifeDays: ?int, ...} $item
+	 * @param int $today Midnight of the current day.
+	 * @return 'none'|'ok'|'expiring'|'expired'
+	 */
+	public static function expiryStatus(array $item, int $leadDays, int $today): string {
+		if ($item['expiresAt'] === null || self::isEmpty($item)) {
+			return self::EXPIRY_NONE;
+		}
+		$daysLeft = self::daysUntil($item['expiresAt'], $today);
+		if ($daysLeft < 0) {
+			return self::EXPIRY_EXPIRED;
+		}
+		$shelfLife = $item['shelfLifeDays'];
+		if ($daysLeft <= max(0, $leadDays) && ($shelfLife === null || $daysLeft < $shelfLife)) {
+			return self::EXPIRY_EXPIRING;
+		}
+		return self::EXPIRY_OK;
+	}
+
+	public static function expiryNeedsRestock(string $expiryStatus): bool {
+		return $expiryStatus === self::EXPIRY_EXPIRING || $expiryStatus === self::EXPIRY_EXPIRED;
+	}
+
+	/**
+	 * Whole days from one midnight to another. Rounded, so a daylight-saving
+	 * shift, or a date picked at midnight in another timezone, still lands on
+	 * its day.
+	 */
+	public static function daysUntil(int $date, int $today): int {
+		return (int)round(($date - $today) / 86400);
+	}
+
+	/** Midnight of the current day, the way date fields resolve "today". */
+	public static function today(): int {
+		return (new \DateTimeImmutable('today'))->getTimestamp();
+	}
+
+	/** Midnight `$days` days after the midnight `$day`. */
+	public static function addDays(int $day, int $days): int {
+		return (new \DateTimeImmutable())->setTimestamp($day)->modify(sprintf('%+d days', $days))->getTimestamp();
+	}
+
+	/**
+	 * @param array{stockMode: ?string, stockLevel: ?string, quantity: ?string, ...} $item
+	 */
+	private static function isEmpty(array $item): bool {
+		if ($item['stockMode'] === self::MODE_LEVEL) {
+			return $item['stockLevel'] === self::LEVEL_OUT;
+		}
+		$onHand = trim($item['quantity'] ?? '');
+		return $onHand === '' || self::firstNumber($onHand) === 0.0;
 	}
 
 	/**

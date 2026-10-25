@@ -486,6 +486,7 @@ final class TemplateController extends ListKindOCSController {
 	 * @param 'count'|'level'|null $stockMode How the item is stocked when drawn into an inventory; the inventory's default when omitted.
 	 * @param string|null $target The target an inventory count item starts with.
 	 * @param string|null $reorderPoint The reorder point an inventory count item starts with.
+	 * @param int<1, 36500>|null $shelfLifeDays Shelf life in days; drawn into an inventory, the item expires that many days later.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryTemplateItem, array{}>
 	 *
@@ -513,6 +514,7 @@ final class TemplateController extends ListKindOCSController {
 		?string $stockMode = null,
 		?string $target = null,
 		?string $reorderPoint = null,
+		?int $shelfLifeDays = null,
 	): DataResponse {
 		return $this->doAddItem($houseId, $listId, [
 			'name' => $name,
@@ -531,6 +533,7 @@ final class TemplateController extends ListKindOCSController {
 			'stockMode' => $stockMode,
 			'target' => $target,
 			'reorderPoint' => $reorderPoint,
+			'shelfLifeDays' => $shelfLifeDays,
 		]);
 	}
 
@@ -558,6 +561,7 @@ final class TemplateController extends ListKindOCSController {
 	 * @param 'count'|'level'|''|null $stockMode New stock mode for drawing into an inventory (empty string clears, leaving it to the inventory's default).
 	 * @param string|null $target New target (empty string clears).
 	 * @param string|null $reorderPoint New reorder point (empty string clears).
+	 * @param int<0, 36500>|null $shelfLifeDays New shelf life in days (0 clears).
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryTemplateItem, array{}>
 	 *
@@ -588,12 +592,14 @@ final class TemplateController extends ListKindOCSController {
 		?string $stockMode = null,
 		?string $target = null,
 		?string $reorderPoint = null,
+		?int $shelfLifeDays = null,
 	): DataResponse {
 		$stock = array_filter([
 			'stockMode' => $stockMode,
 			'target' => $target,
 			'reorderPoint' => $reorderPoint,
-		], static fn (?string $v): bool => $v !== null);
+			'shelfLifeDays' => $shelfLifeDays,
+		], static fn (string|int|null $v): bool => $v !== null);
 		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock);
 	}
 

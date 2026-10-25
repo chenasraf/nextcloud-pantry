@@ -29,8 +29,18 @@ export const nextcloudL10nMock = {
     }
     return text
   },
-  n: (_app: string, singular: string, plural: string, count: number) => {
-    return count === 1 ? singular : plural
+  n: (
+    _app: string,
+    singular: string,
+    plural: string,
+    count: number,
+    vars?: Record<string, unknown>,
+  ) => {
+    const text = (count === 1 ? singular : plural).replace('%n', String(count))
+    return Object.entries(vars ?? {}).reduce(
+      (acc, [key, value]) => acc.replace(`{${key}}`, String(value)),
+      text,
+    )
   },
   getFirstDay: () => 1, // Monday
   getDayNamesShort: () => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],

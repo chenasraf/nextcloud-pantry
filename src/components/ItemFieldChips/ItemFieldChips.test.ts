@@ -24,6 +24,15 @@ vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({
   default: { name: 'NcTextField', template: '<input class="nc-text-field" />' },
 }))
+// NcDateTimePickerNative eagerly imports a .css asset Node's ESM loader rejects.
+vi.mock('@nextcloud/vue/components/NcDateTimePickerNative', () => ({
+  default: {
+    name: 'NcDateTimePickerNative',
+    template: '<input class="nc-date-time-picker-native" type="date" />',
+    props: ['modelValue', 'type', 'label'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@icons/PackageVariant.vue', () => createIconMock('PackageVariantIcon'))
 vi.mock('@/components/PantryChip', () => ({
   default: {
@@ -93,18 +102,21 @@ vi.mock('@/utils/rrule', () => ({
 
 import { computed, defineComponent, h } from 'vue'
 import { provideListKind } from '@/composables/useListKind'
+import { addDays, todayEpoch } from '@/utils/stock'
 import ItemFieldChips from './ItemFieldChips.vue'
 
-/** Mount the chips inside an inventory page. */
-function mountOnInventory(props: Record<string, unknown>) {
+/** Mount the chips inside a page of the given list kind. */
+function mountOnKind(kind: 'inventory' | 'template', props: Record<string, unknown>) {
   const Host = defineComponent({
     setup() {
-      provideListKind(computed(() => 'inventory' as const))
+      provideListKind(computed(() => kind))
       return () => h(ItemFieldChips, { houseId: 1, listId: 3, ...props })
     },
   })
   return mount(Host)
 }
+
+const mountOnInventory = (props: Record<string, unknown>) => mountOnKind('inventory', props)
 
 function chipTexts(wrapper: ReturnType<typeof mount>): string[] {
   return wrapper.findAll('.pantry-chip').map((c) => c.text())
@@ -202,5 +214,41 @@ describe('ItemFieldChips stock', () => {
     expect(chipTexts(mountOnInventory({ stockMode: 'level', quantity: '1 kg bag' }))).toContain(
       'Level · 1 kg bag',
     )
+  })
+})
+
+describe('ItemFieldChips expiry', () => {
+  const none = { mode: 'none', expiresAt: null, shelfLifeDays: null }
+  const radioLabels = (w: ReturnType<typeof mount>) => w.findAll('.nc-radio').map((r) => r.text())
+
+  it('offers expiry on inventory and template items only', () => {
+    expect(chipTexts(mount(ItemFieldChips, { props: { houseId: 1, listId: 3 } }))).not.toContain(
+      'Expiry',
+    )
+    expect(chipTexts(mountOnInventory({}))).toContain('Expiry')
+    expect(chipTexts(mountOnKind('template', {}))).toContain('Expiry')
+    expect(chipTexts(mountOnInventory({ mode: 'defaults' }))).not.toContain('Expiry')
+  })
+
+  it('sums up a shelf life or a date on its chip', () => {
+    expect(
+      chipTexts(mountOnInventory({ expiry: { ...none, mode: 'days', shelfLifeDays: 7 } })),
+    ).toContain('Keeps 7 days')
+    const date = mountOnInventory({
+      expiry: { ...none, mode: 'date', expiresAt: addDays(todayEpoch(), 3) },
+    })
+    expect(chipTexts(date).some((text) => text.startsWith('Expires '))).toBe(true)
+  })
+
+  it('opens on the date and shelf life choices, without a date on a template', () => {
+    expect(radioLabels(mountOnInventory({ openSection: 'expiry', expiry: none }))).toEqual([
+      'None',
+      'Date',
+      'Keeps N days',
+    ])
+    expect(radioLabels(mountOnKind('template', { openSection: 'expiry', expiry: none }))).toEqual([
+      'None',
+      'Keeps N days',
+    ])
   })
 })

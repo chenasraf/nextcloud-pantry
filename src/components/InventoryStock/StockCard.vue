@@ -91,10 +91,25 @@ import { t } from '@nextcloud/l10n'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import FieldCard from '@/components/FieldCard'
 import QuantityInput from '@/components/QuantityInput'
-import type { StockMode } from '@/api/types'
-import { convertStock, evaluateStock, firstNumber, stockTone, type StockDraft } from '@/utils/stock'
+import type { ExpiryStatus, StockMode } from '@/api/types'
+import {
+  convertStock,
+  evaluateStock,
+  firstNumber,
+  fullAmount,
+  itemTone,
+  type StockDraft,
+} from '@/utils/stock'
 import StockLevelControl from './StockLevelControl.vue'
 import { stockLevelLabel } from './stockStrings'
+
+const props = withDefaults(
+  defineProps<{
+    /** Where the item stands against its expiry date, as the Expiry card leaves it. */
+    expiry?: ExpiryStatus
+  }>(),
+  { expiry: 'none' },
+)
 
 const draft = defineModel<StockDraft>({ required: true })
 /** True while saving would lose something the member has to fill in first. */
@@ -152,15 +167,35 @@ function conversionNote(c: ReturnType<typeof convertStock>): string {
 }
 
 const result = computed(() => evaluateStock(draft.value))
-const tone = computed(() => stockTone(result.value.stockStatus))
+const tone = computed(() => itemTone(result.value.stockStatus, props.expiry))
 
 const statusLine = computed(() => {
   const { stockStatus, shortfall } = result.value
-  if (stockStatus === 'low' || stockStatus === 'out') {
+  // An expiring item asks for its full replacement, which covers any shortfall.
+  if (props.expiry === 'expiring' || props.expiry === 'expired') {
+    const amount = fullAmount(draft.value)
+    if (props.expiry === 'expired') {
+      return amount
+        ? // TRANSLATORS: Status of an inventory item past its expiry date. {amount} is what to buy, e.g. "2 cartons".
+          t('pantry', 'Expired: buy {amount}.', { amount })
+        : t('pantry', 'Expired.')
+    }
+    return amount
+      ? // TRANSLATORS: Status of an inventory item close to its expiry date. {amount} is what to buy, e.g. "2 cartons".
+        t('pantry', 'Expiring soon: buy {amount}.', { amount })
+      : t('pantry', 'Expiring soon.')
+  }
+  if (stockStatus === 'low') {
     return shortfall
-      ? // TRANSLATORS: {amount} is what the item's restock adds to the shopping list, e.g. "8 eggs".
-        t('pantry', 'Needs restock: the shopping list asks for {amount}.', { amount: shortfall })
-      : t('pantry', 'Needs restock.')
+      ? // TRANSLATORS: Status of an inventory item that is running low. {amount} is what to buy, e.g. "8 eggs".
+        t('pantry', 'Low: buy {amount}.', { amount: shortfall })
+      : t('pantry', 'Low.')
+  }
+  if (stockStatus === 'out') {
+    return shortfall
+      ? // TRANSLATORS: Status of an inventory item with none left. {amount} is what to buy, e.g. "2 blocks".
+        t('pantry', 'Out: buy {amount}.', { amount: shortfall })
+      : t('pantry', 'Out.')
   }
   if (stockStatus === 'uncounted') {
     return firstNumber(draft.value.target) === null

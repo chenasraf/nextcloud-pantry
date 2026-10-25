@@ -85,6 +85,7 @@
         v-model:stock-mode="stockMode"
         v-model:target="stockTarget"
         v-model:reorder-point="stockReorderPoint"
+        v-model:expiry="expiry"
         :house-id="houseId"
         :list-id="effectiveListId"
         :hide-image="multiple"
@@ -157,6 +158,7 @@ import BarcodeScanIcon from '@icons/BarcodeScan.vue'
 import TuneVariantIcon from '@icons/TuneVariant.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import ItemFieldChips, { type ItemFieldSection } from '@/components/ItemFieldChips'
+import { newItemExpiry, type ExpiryDraft } from '@/components/InventoryStock/expiryDraft'
 import PantryChip from '@/components/PantryChip'
 import FieldCard from '@/components/FieldCard'
 import BarcodeLookupDialog from '@/components/BarcodeLookupDialog'
@@ -256,6 +258,7 @@ const deleteOnDone = ref(false)
 const stockMode = ref<StockMode>('count')
 const stockTarget = ref('')
 const stockReorderPoint = ref('')
+const expiry = ref<ExpiryDraft>({ mode: 'none', expiresAt: null, shelfLifeDays: null })
 const openSection = ref<ItemFieldSection | null>(null)
 const barcode = ref<string | null>(null)
 const barcodeDialogOpen = ref(false)
@@ -318,6 +321,8 @@ function applyDefaults(defaults: ItemDefaults | null = activeDefaults.value) {
   stockMode.value = start.stock.stockMode
   stockTarget.value = start.stock.target
   stockReorderPoint.value = start.stock.reorderPoint
+  const shelfLifeDays = start.stock.shelfLifeDays
+  expiry.value = { mode: shelfLifeDays ? 'days' : 'none', expiresAt: null, shelfLifeDays }
 }
 
 // Keyed on the configured defaults rather than the defaults object: a
@@ -613,6 +618,9 @@ function submitAdd() {
               target: stockTarget.value.trim(),
               reorderPoint: stockReorderPoint.value.trim(),
             }
+          : {}),
+        ...(isInventory.value || kind.value === 'template'
+          ? newItemExpiry(expiry.value, kind.value === 'template')
           : {}),
       },
       index === 0 ? pendingImage.value : null,

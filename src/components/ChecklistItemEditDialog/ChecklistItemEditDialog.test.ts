@@ -32,6 +32,15 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
+// NcDateTimePickerNative eagerly imports a .css asset Node's ESM loader rejects.
+vi.mock('@nextcloud/vue/components/NcDateTimePickerNative', () => ({
+  default: {
+    name: 'NcDateTimePickerNative',
+    template: '<input class="nc-date-time-picker-native" type="date" />',
+    props: ['modelValue', 'type', 'label'],
+    emits: ['update:modelValue'],
+  },
+}))
 // MarkdownEditor (rendered for the description) imports NcCheckboxRadioSwitch;
 // mock it so the real component's CSS import isn't pulled into the test env.
 vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
@@ -261,6 +270,42 @@ describe('ChecklistItemEditDialog', () => {
       target: '12 eggs',
       reorderPoint: '',
     })
+  })
+
+  it('sets Keeps N days through the Expiry card, and only what changed', async () => {
+    const saves: unknown[][] = []
+    const Host = defineComponent({
+      setup() {
+        provideListKind(ref('inventory'))
+        return () =>
+          h(ChecklistItemEditDialog, {
+            ...defaultProps,
+            item: makeItem({
+              name: 'Milk',
+              quantity: '1',
+              stockMode: 'count',
+              stockLevel: 'full',
+              target: '1',
+              reorderPoint: null,
+              expiresAt: null,
+              shelfLifeDays: null,
+            }),
+            onSave: (...args: unknown[]) => saves.push(args),
+          })
+      },
+    })
+    const wrapper = mount(Host)
+
+    expect(wrapper.find('.expiry-card').exists()).toBe(true)
+    await wrapper.find('[data-testid="expiry-mode-days"]').trigger('click')
+    await wrapper.find('[data-testid="expiry-days"]').setValue('7')
+    expect(wrapper.find('[data-testid="expiry-summary"]').text()).toMatch(
+      /^Good until .+\. Each restock renews it to 7 days from that day\.$/,
+    )
+    await wrapper.find('#pantry-edit-item-form').trigger('submit')
+
+    expect(saves[0][1]).toMatchObject({ shelfLifeDays: 7 })
+    expect(saves[0][1]).not.toHaveProperty('expiresAt')
   })
 
   it('emits update:open false on cancel click', async () => {

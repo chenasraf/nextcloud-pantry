@@ -3,12 +3,19 @@ import { describe, expect, it } from 'vitest'
 import vectors from '../../tests/stock-vectors.json'
 import { canStepDown, stepQuantity } from './quantity'
 import {
+  addDays,
   convertStock,
+  daysUntil,
   evaluateStock,
+  expiryStatus,
   firstNumber,
+  itemTone,
+  needsRestock,
   gaugeFill,
   gaugeTick,
   startingOnHand,
+  todayEpoch,
+  type ExpiryInput,
   type StockInput,
 } from './stock'
 
@@ -27,6 +34,35 @@ describe('shared stock vectors', () => {
 
   it.each(vectors.convert)('convert: $name', ({ item, toMode, result }) => {
     expect(convertStock(item as StockInput, toMode as 'count' | 'level')).toEqual(result)
+  })
+
+  it.each(vectors.expiryStatus)('expiryStatus: $name', ({ item, leadDays, today, ...want }) => {
+    expect(expiryStatus(item as ExpiryInput, leadDays, today)).toBe(want.expiryStatus)
+  })
+})
+
+describe('expiry days', () => {
+  it('adds days from midnight to midnight', () => {
+    const today = todayEpoch()
+    expect(daysUntil(addDays(today, 7), today)).toBe(7)
+    expect(new Date(addDays(today, 200) * 1000).getHours()).toBe(0)
+  })
+})
+
+describe('needing restock', () => {
+  it('counts low, out, expiring and expired items', () => {
+    expect(needsRestock({ stockStatus: 'low', expiryStatus: 'none' })).toBe(true)
+    expect(needsRestock({ stockStatus: 'ok', expiryStatus: 'expiring' })).toBe(true)
+    expect(needsRestock({ stockStatus: 'ok', expiryStatus: 'expired' })).toBe(true)
+    expect(needsRestock({ stockStatus: 'uncounted', expiryStatus: 'ok' })).toBe(false)
+  })
+
+  it('colours red over amber', () => {
+    expect(itemTone('low', 'expired')).toBe('error')
+    expect(itemTone('out', 'expiring')).toBe('error')
+    expect(itemTone('ok', 'expiring')).toBe('warning')
+    expect(itemTone('uncounted', 'none')).toBe('muted')
+    expect(itemTone('uncounted', 'expired')).toBe('error')
   })
 })
 

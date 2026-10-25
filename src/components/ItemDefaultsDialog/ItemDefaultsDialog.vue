@@ -131,7 +131,9 @@
               v-model="draft[key]"
               :label="stockKeyLabel(key)"
               :placeholder="key === 'target' ? strings.targetPlaceholder : undefined"
-              :inputmode="key === 'reorderPoint' ? 'decimal' : undefined"
+              :inputmode="
+                key === 'reorderPoint' ? 'decimal' : key === 'shelfLifeDays' ? 'numeric' : undefined
+              "
               :maxlength="64"
               :disabled="!list.canEdit"
             />
@@ -273,7 +275,7 @@ interface ModeOption {
 }
 
 /** Amounts are too specific to one item to be worth carrying over. */
-const FIXED_ONLY_KEYS: ItemDefaultKey[] = ['quantity', 'target', 'reorderPoint']
+const FIXED_ONLY_KEYS: ItemDefaultKey[] = ['quantity', 'target', 'reorderPoint', 'shelfLifeDays']
 
 function modeOptions(key: ItemDefaultKey): ModeOption[] {
   const options: ModeOption[] = [
@@ -288,7 +290,7 @@ function modeOptions(key: ItemDefaultKey): ModeOption[] {
 
 // ----- Stock (inventories) -----
 
-const STOCK_KEYS = ['stockMode', 'target', 'reorderPoint'] as const
+const STOCK_KEYS = ['stockMode', 'target', 'reorderPoint', 'shelfLifeDays'] as const
 type StockKey = (typeof STOCK_KEYS)[number]
 
 const hasStock = computed(() => props.list?.itemDefaults?.stockMode !== undefined)
@@ -306,6 +308,8 @@ function stockKeyLabel(key: StockKey): string {
       return strings.stockMode
     case 'target':
       return strings.target
+    case 'shelfLifeDays':
+      return strings.shelfLife
     default:
       return strings.reorderPoint
   }
@@ -462,6 +466,8 @@ const strings = {
   target: t('pantry', 'Target'),
   // TRANSLATORS: Noun, the amount at or below which an inventory item counts as low.
   reorderPoint: t('pantry', 'Reorder point'),
+  // TRANSLATORS: Label of an item default: how many days a new inventory item keeps before it expires.
+  shelfLife: t('pantry', 'Shelf life in days'),
   targetPlaceholder: t('pantry', 'e.g. 12 eggs'),
   stockModeNoneHint: t('pantry', 'New items are counted.'),
   fillLabel: t('pantry', 'Fill template items from these defaults'),

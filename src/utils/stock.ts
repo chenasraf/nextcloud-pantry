@@ -1,10 +1,10 @@
-import type { ItemStock, StockLevel, StockMode, StockStatus } from '@/api/types'
+import type { ExpiryStatus, ItemStock, StockLevel, StockMode, StockStatus } from '@/api/types'
 
 /**
  * The stock rules the server applies to inventory items, for updating a row
- * before the server answers. The server's `stockStatus` and `shortfall` win
- * once it does. Both sides are pinned by the shared vectors in
- * tests/stock-vectors.json.
+ * before the server answers. The server's `stockStatus`, `shortfall` and
+ * `expiryStatus` win once it does. Both sides are pinned by the shared vectors
+ * in tests/stock-vectors.json.
  */
 const FIRST_NUMBER_RE = /\d+(?:\.\d+)?/
 
@@ -154,12 +154,112 @@ export function stockInput(
   }
 }
 
-/** Whether an inventory item is low or out, by the status the server last sent. */
-export function needsRestock(item: { stockStatus?: StockStatus }): boolean {
-  return item.stockStatus === 'low' || item.stockStatus === 'out'
+/**
+ * Whether an inventory item is low, out, expiring or expired, by the statuses
+ * the server last sent.
+ */
+export function needsRestock(item: {
+  stockStatus?: StockStatus
+  expiryStatus?: ExpiryStatus
+}): boolean {
+  return (
+    item.stockStatus === 'low' ||
+    item.stockStatus === 'out' ||
+    item.expiryStatus === 'expiring' ||
+    item.expiryStatus === 'expired'
+  )
+}
+
+export const DEFAULT_EXPIRY_LEAD_DAYS = 2
+
+/** The stored fields the expiry rules read. Dates are midnight timestamps in seconds. */
+export interface ExpiryInput {
+  stockMode: StockMode | null
+  stockLevel: StockLevel | null
+  quantity: string | null
+  expiresAt: number | null
+  shelfLifeDays: number | null
+}
+
+/** Midnight of today, in seconds, the way date fields resolve "today". */
+export function todayEpoch(): number {
+  const day = new Date()
+  day.setHours(0, 0, 0, 0)
+  return Math.floor(day.getTime() / 1000)
+}
+
+/** The midnight `days` days after the midnight `day`. */
+export function addDays(day: number, days: number): number {
+  const date = new Date(day * 1000)
+  date.setDate(date.getDate() + days)
+  return Math.floor(date.getTime() / 1000)
+}
+
+/**
+ * Whole days from one midnight to another. Rounded, so a daylight-saving
+ * shift, or a date picked at midnight in another timezone, still lands on its
+ * day.
+ */
+export function daysUntil(date: number, today: number): number {
+  return Math.round((date - today) / 86400)
+}
+
+function isEmpty(item: ExpiryInput): boolean {
+  if (item.stockMode === 'level') return item.stockLevel === 'out'
+  const onHand = (item.quantity ?? '').trim()
+  return onHand === '' || firstNumber(onHand) === 0
+}
+
+/**
+ * Where an item stands against its expiry date: good through the date,
+ * expired from the day after, and expiring from `leadDays` before it while
+ * fewer days are left than its shelf life. An item with none left reports
+ * none; one not counted still reports.
+ */
+export function expiryStatus(item: ExpiryInput, leadDays: number, today: number): ExpiryStatus {
+  if (item.expiresAt === null || isEmpty(item)) return 'none'
+  const daysLeft = daysUntil(item.expiresAt, today)
+  if (daysLeft < 0) return 'expired'
+  const shelfLife = item.shelfLifeDays
+  if (daysLeft <= Math.max(0, leadDays) && (shelfLife === null || daysLeft < shelfLife)) {
+    return 'expiring'
+  }
+  return 'ok'
+}
+
+/** The fields of an inventory item the expiry rules read. */
+export function expiryInput(
+  item: { quantity: string | null; stockMode?: StockMode | null } & Omit<
+    Partial<ItemStock>,
+    'stockMode'
+  >,
+): ExpiryInput {
+  return {
+    stockMode: item.stockMode ?? null,
+    stockLevel: item.stockLevel ?? null,
+    quantity: item.quantity,
+    expiresAt: item.expiresAt ?? null,
+    shelfLifeDays: item.shelfLifeDays ?? null,
+  }
+}
+
+/**
+ * What replaces an expiring item: a count item's target, a level item's
+ * restock amount.
+ */
+export function fullAmount(item: StockInput): string | null {
+  return blankToNull(item.stockMode === 'level' ? item.quantity : item.target)
 }
 
 export type StockTone = 'success' | 'warning' | 'error' | 'muted'
+
+/** The row's tone: red for out or expired over amber for low or expiring. */
+export function itemTone(stockStatus: StockStatus, expiry: ExpiryStatus): StockTone {
+  const stock = stockTone(stockStatus)
+  if (stock === 'error' || expiry === 'expired') return 'error'
+  if (stock === 'warning' || expiry === 'expiring') return 'warning'
+  return stock
+}
 
 export function stockTone(status: StockStatus): StockTone {
   switch (status) {

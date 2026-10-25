@@ -45,6 +45,10 @@ class StockRulesTest extends TestCase {
 		return self::cases('convert');
 	}
 
+	public static function expiryStatusCases(): iterable {
+		return self::cases('expiryStatus');
+	}
+
 	#[DataProvider('firstNumberCases')]
 	public function testFirstNumber(array $case): void {
 		$expected = $case['value'] === null ? null : (float)$case['value'];
@@ -62,6 +66,17 @@ class StockRulesTest extends TestCase {
 	#[DataProvider('startingOnHandCases')]
 	public function testStartingOnHand(array $case): void {
 		$this->assertSame($case['result'], StockRules::startingOnHand($case['quantity'], $case['target']));
+	}
+
+	#[DataProvider('expiryStatusCases')]
+	public function testExpiryStatus(array $case): void {
+		$this->assertSame($case['expiryStatus'], StockRules::expiryStatus($case['item'], $case['leadDays'], $case['today']));
+	}
+
+	public function testAddDaysLandsOnMidnight(): void {
+		$today = StockRules::today();
+		$this->assertSame(7, StockRules::daysUntil(StockRules::addDays($today, 7), $today));
+		$this->assertSame('00:00', date('H:i', StockRules::addDays($today, 200)));
 	}
 
 	#[DataProvider('convertCases')]

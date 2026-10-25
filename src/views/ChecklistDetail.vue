@@ -447,6 +447,14 @@
       @open-item-defaults="openItemDefaults"
     />
 
+    <InventorySettingsDialog
+      v-if="list && kind === 'inventory'"
+      :open="editingInventorySettings"
+      :list="list"
+      @update:open="(v) => (editingInventorySettings = v)"
+      @saved="onInventorySettingsSaved"
+    />
+
     <ItemDefaultsDialog
       v-if="list"
       :open="editingItemDefaults"
@@ -829,6 +837,7 @@ import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import CartIcon from '@icons/Cart.vue'
+import CogOutlineIcon from '@icons/CogOutline.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PlusIcon from '@icons/Plus.vue'
@@ -850,6 +859,7 @@ import FileImportIcon from '@icons/FileImport.vue'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
 import ItemDefaultsDialog from '@/components/ItemDefaultsDialog'
+import InventorySettingsDialog from '@/components/InventorySettingsDialog'
 import {
   ChecklistFilter,
   NO_CATEGORY_ID,
@@ -860,7 +870,13 @@ import {
   stockFilterQuery,
   type PriceFilterValue,
 } from '@/components/ChecklistFilter'
-import { needsRestock } from '@/utils/stock'
+import {
+  DEFAULT_EXPIRY_LEAD_DAYS,
+  expiryInput,
+  expiryStatus,
+  needsRestock,
+  todayEpoch,
+} from '@/utils/stock'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
@@ -2219,6 +2235,7 @@ async function submitEditList(data: ChecklistFormData) {
 }
 
 const editingItemDefaults = ref(false)
+const editingInventorySettings = ref(false)
 const canEditItemDefaults = computed(
   () => !!list.value?.itemDefaults && (list.value.canEdit ?? can.value.canEditLists),
 )
@@ -2259,6 +2276,22 @@ function onTemplateApplied(result: BatchCopyResult, target: Checklist) {
   if (target.id === listIdNum.value && !archiveMode.value && !trashMode.value) {
     mergeItems(result.items)
   }
+}
+
+/**
+ * A new expiry warning moves where items start expiring; re-rate them here
+ * rather than refetch the inventory.
+ */
+function onInventorySettingsSaved(updated: Checklist) {
+  list.value = updated
+  replaceList(updated)
+  const leadDays = updated.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS
+  const today = todayEpoch()
+  items.value = items.value.map((i) =>
+    i.listId === updated.id
+      ? { ...i, expiryStatus: expiryStatus(expiryInput(i), leadDays, today) }
+      : i,
+  )
 }
 
 /**
@@ -3025,6 +3058,7 @@ const strings = {
   editList: kindStrings.editTitle,
   // TRANSLATORS: Menu entry that opens the values new items on this list start with.
   itemDefaults: t('pantry', 'Item defaults'),
+  inventorySettings: t('pantry', 'Inventory settings'),
   duplicateList: kindStrings.duplicateTitle,
   // TRANSLATORS: Menu entry on a template: copy its items into a checklist or inventory.
   applyToList: t('pantry', 'Apply to list'),
@@ -3149,6 +3183,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         priority: 4,
         onClick: () => (editingList.value = true),
       })
+      if (props.kind === 'inventory') {
+        actions.push({
+          key: 'inventory-settings',
+          label: strings.inventorySettings,
+          icon: CogOutlineIcon,
+          priority: 3,
+          onClick: () => (editingInventorySettings.value = true),
+        })
+      }
     }
     if (canEditItemDefaults.value) {
       actions.push({

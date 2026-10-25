@@ -60,6 +60,10 @@ use OCP\AppFramework\Db\Entity;
  * @method void setTarget(?string $target)
  * @method string|null getReorderPoint()
  * @method void setReorderPoint(?string $reorderPoint)
+ * @method int|null getExpiresAt()
+ * @method void setExpiresAt(?int $expiresAt)
+ * @method int|null getShelfLifeDays()
+ * @method void setShelfLifeDays(?int $shelfLifeDays)
  */
 class ChecklistItem extends Entity implements \JsonSerializable {
 	protected int $listId = 0;
@@ -87,6 +91,8 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?string $stockLevel = null;
 	protected ?string $target = null;
 	protected ?string $reorderPoint = null;
+	protected ?int $expiresAt = null;
+	protected ?int $shelfLifeDays = null;
 
 	/**
 	 * Prices resolved for this item, attached transiently by the service/controller
@@ -110,6 +116,8 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 		$this->addType('updatedAt', 'integer');
 		$this->addType('deletedAt', 'integer');
 		$this->addType('archivedAt', 'integer');
+		$this->addType('expiresAt', 'integer');
+		$this->addType('shelfLifeDays', 'integer');
 		// Force these bool fields to be included in INSERTs. Their PHP defaults
 		// match the initial value, so the magic setter would otherwise never
 		// mark them dirty and the column would be omitted from the INSERT.

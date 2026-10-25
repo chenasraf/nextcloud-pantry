@@ -48,8 +48,8 @@
       <StockStatusIcon
         v-if="stock && !suggestion && !selectionMode"
         class="checklist-row__stock-status"
-        :status="stock.stockStatus"
-        :label="stock.statusText"
+        :tone="stock.tone"
+        :label="stock.iconLabel"
       />
       <button
         v-if="item.imageFileId"
@@ -107,9 +107,26 @@
               {{ stock.amountText }}
             </PantryChip>
             <PantryChip
-              v-if="stock.stockStatus !== 'ok'"
+              v-if="stock.stockStatus === 'low' || stock.stockStatus === 'out'"
               class="checklist-row__stock-chip"
-              :class="`checklist-row__stock-chip--${stock.tone}`"
+              :class="`checklist-row__stock-chip--${stock.stockTone}`"
+              size="sm"
+              :interactive="false"
+            >
+              {{ stock.statusText }}
+            </PantryChip>
+            <PantryChip
+              v-if="stock.expiryText"
+              class="checklist-row__stock-chip checklist-row__expiry-chip"
+              :class="`checklist-row__stock-chip--${stock.expiryTone}`"
+              size="sm"
+              :interactive="false"
+            >
+              {{ stock.expiryText }}
+            </PantryChip>
+            <PantryChip
+              v-if="stock.stockStatus === 'uncounted'"
+              class="checklist-row__stock-chip"
               size="sm"
               :interactive="false"
             >
@@ -361,15 +378,21 @@ import { useNarrow } from '@/composables/useNarrow'
 import StockControl from '@/components/InventoryStock/StockControl.vue'
 import StockGauge from '@/components/InventoryStock/StockGauge.vue'
 import StockStatusIcon from '@/components/InventoryStock/StockStatusIcon.vue'
-import { stockStatusText } from '@/components/InventoryStock/stockStrings'
+import { expiryChipText, stockStatusText } from '@/components/InventoryStock/stockStrings'
 import {
+  DEFAULT_EXPIRY_LEAD_DAYS,
   evaluateStock,
+  expiryInput,
+  expiryStatus,
   firstNumber,
   formatNumber,
+  fullAmount,
   gaugeFill,
   gaugeTick,
+  itemTone,
   stockInput,
   stockTone,
+  todayEpoch,
 } from '@/utils/stock'
 
 const { can } = useCurrentHouse()
@@ -484,6 +507,20 @@ const stock = computed(() => {
   const result = props.item.stockStatus
     ? { stockStatus: props.item.stockStatus, shortfall: props.item.shortfall ?? null }
     : evaluateStock(input)
+  const today = todayEpoch()
+  const expiry =
+    props.item.expiryStatus ??
+    expiryStatus(expiryInput(props.item), DEFAULT_EXPIRY_LEAD_DAYS, today)
+  // While expiry asks for the row, it asks for the full replacement, so the
+  // stock chip no longer names an amount.
+  const expiryAsks = expiry === 'expiring' || expiry === 'expired'
+  const statusText = stockStatusText(result.stockStatus, expiryAsks ? null : result.shortfall)
+  const expiryText = expiryChipText(
+    expiry,
+    props.item.expiresAt ?? null,
+    today,
+    expiryAsks ? fullAmount(input) : null,
+  )
   const onHand = (input.quantity ?? '').trim() === '' ? 0 : firstNumber(input.quantity)
   const target = (input.target ?? '').trim()
   const amountText =
@@ -491,10 +528,15 @@ const stock = computed(() => {
       ? // TRANSLATORS: Amount chip on an inventory item, on hand over target, e.g. "4 / 12 eggs".
         t('pantry', '{onHand} / {target}', { onHand: formatNumber(onHand), target })
       : null
+  const chips = [result.stockStatus === 'ok' ? null : statusText, expiryText].filter(Boolean)
   return {
     ...result,
-    tone: stockTone(result.stockStatus),
-    statusText: stockStatusText(result.stockStatus, result.shortfall),
+    tone: itemTone(result.stockStatus, expiry),
+    stockTone: stockTone(result.stockStatus),
+    expiryTone: expiry === 'expired' ? 'error' : expiry === 'expiring' ? 'warning' : 'muted',
+    statusText,
+    expiryText,
+    iconLabel: chips.length > 0 ? chips.join(', ') : statusText,
     amountText,
     gauge: gaugeFill({ ...input, ...result }),
     tick: gaugeTick(input),

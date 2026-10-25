@@ -26,6 +26,8 @@ export interface ItemDefaultsDraft {
   stockMode: StockMode
   target: string
   reorderPoint: string
+  /** Days, as typed. */
+  shelfLifeDays: string
   fields: Record<number, FieldDraft>
 }
 
@@ -51,6 +53,7 @@ export function draftFromDefaults(defaults: ItemDefaults | undefined): ItemDefau
       stockMode: defaults?.stockMode?.mode ?? 'none',
       target: defaults?.target?.mode ?? 'none',
       reorderPoint: defaults?.reorderPoint?.mode ?? 'none',
+      shelfLifeDays: defaults?.shelfLifeDays?.mode ?? 'none',
     },
     recurrence: { ...STAPLE, ...(defaults?.recurrence?.value ?? {}) },
     storeIds: [...(defaults?.stores.value ?? [])],
@@ -60,6 +63,8 @@ export function draftFromDefaults(defaults: ItemDefaults | undefined): ItemDefau
     stockMode: defaults?.stockMode?.value ?? 'count',
     target: defaults?.target?.value ?? '',
     reorderPoint: defaults?.reorderPoint?.value ?? '',
+    shelfLifeDays:
+      defaults?.shelfLifeDays?.value != null ? String(defaults.shelfLifeDays.value) : '',
     fields,
   }
 }
@@ -82,6 +87,10 @@ function draftValue(draft: ItemDefaultsDraft, key: ItemDefaultKey): unknown {
       return draft.target.trim()
     case 'reorderPoint':
       return draft.reorderPoint.trim()
+    case 'shelfLifeDays': {
+      const days = Number.parseInt(draft.shelfLifeDays, 10)
+      return Number.isFinite(days) && days > 0 ? days : null
+    }
   }
 }
 
@@ -96,7 +105,7 @@ export function patchFromDraft(
 ): ItemDefaultsPatch {
   const patch: ItemDefaultsPatch = {}
   const keys: ItemDefaultKey[] = ['recurrence', 'stores', 'category', 'labels', 'quantity']
-  if (original?.stockMode) keys.push('stockMode', 'target', 'reorderPoint')
+  if (original?.stockMode) keys.push('stockMode', 'target', 'reorderPoint', 'shelfLifeDays')
   for (const key of keys) {
     const before = original?.[key] ?? { mode: 'none' as const }
     const mode = draft.modes[key]

@@ -113,6 +113,8 @@ export interface ItemDefaults {
   target?: ItemDefaultEntry<string>
   /** Inventories only: the reorder point new count items start with. Never remembered. */
   reorderPoint?: ItemDefaultEntry<string>
+  /** Inventories only: the shelf life new items start with, in days. Never remembered. */
+  shelfLifeDays?: ItemDefaultEntry<number>
   fields: ItemDefaultField[]
 }
 
@@ -199,8 +201,10 @@ export interface Checklist {
    * grants access). When true, a viewer share bounds all writes to read-only.
    */
   sharedOnly?: boolean
-  /** Inventories only: how many items are low or out. */
+  /** Inventories only: how many items are low, out, expiring or expired. */
   needsRestock?: number
+  /** Inventories only: how many days before its expiry date an item is expiring. */
+  expiryLeadDays?: number
 }
 
 export interface Category {
@@ -345,7 +349,7 @@ export interface ItemCustomFieldValue {
  * Inventory items have no recurrence either, so `rrule`, `repeatFromCompletion`
  * and `deleteOnDone` are left out on them too. Inventory items carry every
  * stock field; a template item carries only `stockMode` (null leaves it to the
- * inventory it is drawn into), `target` and `reorderPoint`.
+ * inventory it is drawn into), `target`, `reorderPoint` and `shelfLifeDays`.
  */
 export interface ChecklistItem extends Omit<Partial<ItemStock>, 'stockMode'> {
   stockMode?: StockMode | null
@@ -380,11 +384,13 @@ export interface ChecklistItem extends Omit<Partial<ItemStock>, 'stockMode'> {
 export type StockMode = 'count' | 'level'
 export type StockLevel = 'full' | 'low' | 'out'
 export type StockStatus = 'ok' | 'low' | 'out' | 'uncounted'
+export type ExpiryStatus = 'none' | 'ok' | 'expiring' | 'expired'
 
 /**
  * Stock on an inventory item. A count item's `quantity` is its on-hand amount;
- * a level item's is its restock amount. `stockStatus` and `shortfall` are
- * worked out by the server.
+ * a level item's is its restock amount. `stockStatus`, `shortfall` and
+ * `expiryStatus` are worked out by the server. `expiresAt` is a midnight
+ * timestamp in seconds, as a date field's value.
  */
 export interface ItemStock {
   stockMode: StockMode
@@ -393,6 +399,9 @@ export interface ItemStock {
   reorderPoint: string | null
   stockStatus: StockStatus
   shortfall: string | null
+  expiresAt: number | null
+  shelfLifeDays: number | null
+  expiryStatus: ExpiryStatus
 }
 
 /** One store in a shopping session's ordered sequence. */
