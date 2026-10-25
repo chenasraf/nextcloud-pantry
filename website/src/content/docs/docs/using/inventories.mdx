@@ -1,0 +1,193 @@
+---
+title: Inventories
+description: Track what you have at home, see what runs low or goes off, and let your shopping list follow along.
+sidebar:
+  order: 3
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
+
+An inventory tracks what you have at home — the pantry shelf, the fridge, the cleaning cupboard —
+and how much of each thing is left. When something runs low or starts to go off, Pantry puts it on
+your shopping list. When you tick it off there, the inventory is restocked.
+
+![The Pantry inventory, grouped under Bakery, Dairy and Dry goods: Bread at Full, Butter out, Eggs in stock with a date, Milk expiring tomorrow, Flour low, Jam in stock and Rice not counted.](/docs/inventories.png)
+
+## Create an inventory
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		<Steps>
+
+		1. Open **Pantry** in Nextcloud and look at **Inventories** in the left sidebar.
+
+		2. Select **New inventory**.
+
+		3. Give it a name, and optionally an icon, color and description.
+
+		</Steps>
+	</TabItem>
+</Tabs>
+
+Add items with the same composer as a checklist, with two extra chips: **Stock** and **Expiry**.
+Items are organized, edited, archived and trashed just as on a [checklist](/docs/using/checklists).
+Inventories have no checkboxes: you change how much is left instead.
+
+## Counting stock
+
+Each item is tracked one of two ways, picked under **Stock** in the item dialog:
+
+- **Count** — for things you can count. **On hand** is how many you have, **Target** how many you
+  want ("12 eggs"), and **Reorder point** the amount at which it counts as low. Without a reorder
+  point, anything below the target is low. At 0 it is out.
+- **Level** — for things you'd rather not count, like flour or spices: **Full**, **Low** or **Out**,
+  plus a **Restock amount** — what you buy when it runs low ("1 kg bag").
+
+Stock amounts are free text like any quantity, so units come along: "4 eggs", "2 L". A new count
+item starts full, with its target on hand, unless you give it an amount. When on hand has no number
+("some"), the item is **Not counted**: it is shown but never runs low.
+
+Switching an item between Count and Level converts its values, and the dialog shows what it
+converted them to before you save.
+
+![The Stock and Expiry cards of the item dialog for Eggs: Count, with 4 eggs on hand, a target of 12 eggs and a reorder point of 3, and an expiry that keeps 21 days.](/docs/inventories-stock-expiry.png)
+
+### Reading a row
+
+- The **status icon** in front of each item is green when it is in stock, amber when it is low or
+  expiring, red when it is out or expired, and a grey question mark when it is not counted.
+- **Chips** under the name say what needs doing: **Low · buy 8 eggs**, **Out · buy 4 blocks**,
+  **Expires tomorrow · buy 2 L**, **Expired Oct 21 · buy 1 carton**. The amount is what goes on the
+  shopping list. An item in date shows **Good until** its date.
+- A **gauge** under the chips fills with what is on hand, with a tick at the reorder point. A level
+  item shows three segments for Full, Low and Out.
+- **− and +** on a count item step the number and keep the words around it ("4 eggs" → "5 eggs").
+  A level item has a **Full / Low / Out** control instead.
+
+Items that need restocking stay under their category: a status is only ever a filter.
+
+### Finding what needs restocking
+
+- In the sidebar, each inventory shows how many of its items need restocking.
+- The **Stock** filter above the list shows **All items**, only those that **Need restock** (low,
+  out, expiring or expired), or those **In stock**.
+
+## Expiry dates
+
+Under **Expiry** in the item dialog, choose how an item expires:
+
+- **None** — it does not expire.
+- **Date** — the date it is good through. A date after today also sets how long it keeps.
+- **Keeps N days** — how long it keeps once stocked. The date becomes today plus that many days,
+  and every restock renews it.
+
+An item is **expiring** from a few days before its date, and **expired** from the day after.
+**Expiry warning**, in the inventory's settings, sets how many days ahead to warn — 2 by default, or
+0 to warn on the date itself. An item that keeps only a short time is not flagged straight after it
+is restocked. An item with nothing left on hand is never flagged as expiring: there is nothing to
+go off.
+
+Expiry never changes your stock: throwing food away is your call. An expiring item asks the shopping
+list for a full replacement — its target, or its restock amount.
+
+## From the inventory to the shopping list
+
+### The restock checklist
+
+Pick a **Restock checklist** in **Inventory settings**. Items that run low or start expiring are
+added to it, or put back on it when they are already there. Without one, they are only marked on the
+inventory, and the inventory says so above the list.
+
+![The Inventory settings dialog for Pantry, with Groceries as the restock checklist, an expiry warning of 2 days and the daily stock summary turned on.](/docs/inventories-settings.png)
+
+### Linked items
+
+Each inventory item is linked to the one checklist item that restocks it:
+
+- **Automatically** — the first time it is needed, Pantry looks on the restock checklist for an
+  item with the same name (ignoring capitals and extra spaces), and adds one when there is none.
+  When several items match, nothing is linked until you pick one.
+- **By hand** — link it to any item on any checklist you can edit, for example to keep a separate
+  row per inventory.
+
+A linked item keeps its link even when either side is renamed. Several inventories can share one
+checklist item: Pantry and Fridge milk both restock **Milk** on Groceries, which then asks for what
+they both need.
+
+On a wide screen, the link button on each row shows the link and opens it. The item dialog's
+**Shopping list** card does the same at every width.
+
+![The Shopping list card of the item dialog for Butter: linked to Butter on Groceries, which asks for 4 blocks, with Unlink and Link to a different item buttons.](/docs/inventories-shopping-list.png)
+
+![The link popover on the Butter row: Butter on Groceries with an Unlink button, and a Link by hand search listing checklist items.](/docs/inventories-link.png)
+
+**Unlink** turns off **Add to shopping list when low**, so the item is only marked on the inventory.
+Turn the switch back on to have it linked again when it is next needed.
+
+### What the shopping list asks for
+
+- A low **count** item asks for what it is missing to reach its target.
+- A low **level** item asks for its restock amount.
+- An **expiring** or **expired** item asks for a full replacement.
+- A checked-off or archived item is put back on the list; one in the trash is replaced by a new one
+  on the restock checklist.
+- A message tells you whenever your change added, brought back or updated an item on the list.
+
+### Amounts set by hand
+
+Change the quantity of a linked item on the shopping list and stock leaves it alone: it reads
+**set by hand** until the item is next checked off. Tap the **✕** on the chip to let stock set it
+again.
+
+![A Milk item on the Groceries checklist, with the restocks marker before its name and a "× 4 L · set by hand" chip.](/docs/inventories-pinned.png)
+
+### No longer needed
+
+When stock recovers before anyone shops — someone stepped it back up, or renewed the date — the
+item on the shopping list is checked off for you and reads **No longer needed**. An item someone
+reopened by hand stays on the list until it is checked off.
+
+## Buying restocks the inventory
+
+Checking off a linked item — on the checklist or in [Shopping Mode](/docs/using/shopping-mode) —
+puts what you bought back into stock:
+
+- The **first number** in the item's quantity is what you bought. Left as stock asked, that is
+  exactly what was missing; set by hand, it is what you actually bought. Without a number,
+  everything it restocks goes back to full.
+- A **level** item goes back to **Full**.
+- Items **expiring or expired** are replaced rather than added to: the new stock takes the old
+  stock's place.
+- Every item it restocks gets a **fresh date** — today plus how long it keeps, or no date when it
+  has no shelf life.
+- An item shared by several inventories fills them in the order they were linked; anything left over
+  goes to the first. One that came up short goes straight back on the list for the rest.
+
+The checked-off item says what it did until it is unchecked:
+
+![The checked-off Butter item on Groceries, reading "Restocked Butter (Pantry) +4 · uncheck to undo".](/docs/inventories-restocked.png)
+
+<Aside type="tip">
+	Ticked the wrong thing? **Uncheck it** to take the stock back out and put the old date back. A
+	date someone changed by hand since stays as it is. **Uncheck all** and a repeat schedule
+	reopening an item leave stock alone.
+</Aside>
+
+### Raising stock by hand
+
+Stepping an item up from empty — or moving a level item up from **Out** — counts as new stock and
+renews its date. Stepping up stock that is already there may only be a recount, so the date stays,
+and the row offers **Renew expiry →** the renewed date instead. Tap it if you did buy more; any other change
+to the item, or leaving the page, puts the offer away.
+
+## Daily stock summary
+
+Once a day, at the house's **Recurring items reopen time** (set in
+[Manage house](/docs/administration/manage-house)), Pantry sends one notification per inventory
+about what newly ran low or out, or started expiring or expired since the last one — for example
+"Pantry: 1 low, 1 out, 1 expiring". Opening it shows the inventory's items that need restocking.
+Nothing new, no notification.
+
+Everyone who can see the inventory gets it. Turn it off for the whole inventory with **Daily stock
+summary** in **Inventory settings**, or just for yourself under **Personal settings** →
+**Notifications**.
