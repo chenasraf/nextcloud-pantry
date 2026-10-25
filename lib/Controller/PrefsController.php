@@ -192,6 +192,7 @@ final class PrefsController extends OCSController {
 	 * @param bool|null $notifyItemAdd Checklist item added notifications.
 	 * @param bool|null $notifyItemRecur Recurring item reappeared notifications.
 	 * @param bool|null $notifyItemDone Item completed notifications.
+	 * @param bool|null $notifyStockSummary Daily stock summary notifications.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryHousePrefs, array{}>
 	 *
@@ -219,8 +220,9 @@ final class PrefsController extends OCSController {
 		?bool $notifyItemAdd = null,
 		?bool $notifyItemRecur = null,
 		?bool $notifyItemDone = null,
+		?bool $notifyStockSummary = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $labelSort, $storeSort, $showAddedBy, $lastCurrency, $fillFromItemDefaults, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $labelSort, $storeSort, $showAddedBy, $lastCurrency, $fillFromItemDefaults, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone, $notifyStockSummary): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$patch = array_filter([
@@ -242,6 +244,7 @@ final class PrefsController extends OCSController {
 				'notifyItemAdd' => $notifyItemAdd,
 				'notifyItemRecur' => $notifyItemRecur,
 				'notifyItemDone' => $notifyItemDone,
+				'notifyStockSummary' => $notifyStockSummary,
 			], fn ($v) => $v !== null);
 			$this->prefs->setHousePrefs($uid, $houseId, $patch);
 			return new DataResponse($this->prefs->getAllHousePrefs($uid, $houseId));

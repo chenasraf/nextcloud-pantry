@@ -199,6 +199,7 @@ export interface NotificationPrefs {
   notifyItemAdd: boolean
   notifyItemRecur: boolean
   notifyItemDone: boolean
+  notifyStockSummary: boolean
 }
 
 export interface HousePrefs extends NotificationPrefs {
@@ -237,6 +238,7 @@ const housePrefsDefaults: HousePrefs = {
   notifyItemAdd: true,
   notifyItemRecur: true,
   notifyItemDone: true,
+  notifyStockSummary: true,
 }
 
 // Deduplicate concurrent getHousePrefs calls for the same house.
@@ -393,6 +395,7 @@ export async function getNotificationPrefs(houseId: number): Promise<Notificatio
     notifyItemAdd: p.notifyItemAdd,
     notifyItemRecur: p.notifyItemRecur,
     notifyItemDone: p.notifyItemDone,
+    notifyStockSummary: p.notifyStockSummary,
   }
 }
 
@@ -408,5 +411,6 @@ export async function setNotificationPrefs(
     notifyItemAdd: p.notifyItemAdd,
     notifyItemRecur: p.notifyItemRecur,
     notifyItemDone: p.notifyItemDone,
+    notifyStockSummary: p.notifyStockSummary,
   }
 }

@@ -205,6 +205,8 @@ export interface Checklist {
   needsRestock?: number
   /** Inventories only: how many days before its expiry date an item is expiring. */
   expiryLeadDays?: number
+  /** Inventories only: whether members get a daily summary of what newly needs restocking. */
+  stockSummary?: boolean
   /**
    * Inventories only: the checklist low stock goes to. Null when unset, or
    * when that checklist is archived, trashed or deleted.

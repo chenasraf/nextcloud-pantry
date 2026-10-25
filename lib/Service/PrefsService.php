@@ -642,6 +642,7 @@ class PrefsService {
 			'notifyItemAdd' => $this->getNotificationPref($uid, $houseId, 'notify_item_add'),
 			'notifyItemRecur' => $this->getNotificationPref($uid, $houseId, 'notify_item_recur'),
 			'notifyItemDone' => $this->getNotificationPref($uid, $houseId, 'notify_item_done'),
+			'notifyStockSummary' => $this->getNotificationPref($uid, $houseId, 'notify_stock_summary'),
 		];
 	}
 
@@ -716,6 +717,7 @@ class PrefsService {
 			'notifyItemAdd' => 'notify_item_add',
 			'notifyItemRecur' => 'notify_item_recur',
 			'notifyItemDone' => 'notify_item_done',
+			'notifyStockSummary' => 'notify_stock_summary',
 		];
 		foreach ($notifKeys as $camel => $dbKey) {
 			if (array_key_exists($camel, $patch) && is_bool($patch[$camel])) {

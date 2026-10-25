@@ -71,6 +71,7 @@ final class InventoryController extends ListKindOCSController {
 			$extras[(int)$list->getId()] = [
 				'needsRestock' => $counts[(int)$list->getId()] ?? 0,
 				'expiryLeadDays' => $list->expiryLeadDays(),
+				'stockSummary' => $list->sendsStockSummary(),
 				'restockChecklistId' => $this->stockLinks->restockChecklist($list)?->getId(),
 			];
 		}
@@ -264,6 +265,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param int|null $sortOrder New sort order.
 	 * @param int<0, 365>|null $expiryLeadDays Expiry warning: how many days before its expiry date an item counts as expiring. 0 warns on the date itself.
 	 * @param int|null $restockChecklistId Id of an active checklist in the same house that low stock goes to (0 clears). Setting it links the inventory's unlinked items to same-name items there.
+	 * @param bool|null $stockSummary Whether members get a daily summary of what newly ran low or started expiring here.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventory, array{}>
 	 *
@@ -272,7 +274,7 @@ final class InventoryController extends ListKindOCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/inventories/{listId}', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
-	public function updateInventory(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?int $expiryLeadDays = null, ?int $restockChecklistId = null): DataResponse {
+	public function updateInventory(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?int $expiryLeadDays = null, ?int $restockChecklistId = null, ?bool $stockSummary = null): DataResponse {
 		$patch = array_filter([
 			'name' => $name,
 			'description' => $description,
@@ -281,6 +283,7 @@ final class InventoryController extends ListKindOCSController {
 			'sortOrder' => $sortOrder,
 			'expiryLeadDays' => $expiryLeadDays,
 			'restockChecklistId' => $restockChecklistId,
+			'stockSummary' => $stockSummary,
 		], static fn ($v) => $v !== null);
 		return $this->doUpdateList($houseId, $listId, $patch);
 	}

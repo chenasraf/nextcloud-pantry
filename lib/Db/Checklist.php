@@ -40,6 +40,9 @@ use OCP\AppFramework\Db\Entity;
  * @method void setFillFromDefaults(?bool $fillFromDefaults)
  * @method int|null getExpiryLeadDays()
  * @method void setExpiryLeadDays(?int $expiryLeadDays)
+ * @method void setStockSummary(?bool $stockSummary)
+ * @method int|null getSummarizedOn()
+ * @method void setSummarizedOn(?int $summarizedOn)
  * @method int|null getRestockChecklistId()
  * @method void setRestockChecklistId(?int $restockChecklistId)
  */
@@ -98,6 +101,10 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected ?int $expiryLeadDays = null;
 	/** The checklist an inventory's low stock goes to; see {@see \OCA\Pantry\Service\StockLinkService::restockChecklist()}. */
 	protected ?int $restockChecklistId = null;
+	/** Whether an inventory sends members a daily summary of what newly needs restocking. */
+	protected ?bool $stockSummary = true;
+	/** Midnight of the day the inventory was last summarised. */
+	protected ?int $summarizedOn = null;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -111,10 +118,17 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('fillFromDefaults', 'boolean');
 		$this->addType('expiryLeadDays', 'integer');
 		$this->addType('restockChecklistId', 'integer');
+		$this->addType('stockSummary', 'boolean');
+		$this->addType('summarizedOn', 'integer');
 	}
 
 	public function expiryLeadDays(): int {
 		return $this->expiryLeadDays ?? self::DEFAULT_EXPIRY_LEAD_DAYS;
+	}
+
+	/** A row from before the column existed sends the summary, like a new inventory. */
+	public function sendsStockSummary(): bool {
+		return $this->stockSummary !== false;
 	}
 
 	public function isEveryList(): bool {

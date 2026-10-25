@@ -692,7 +692,8 @@
                     "notifyNoteEdit",
                     "notifyItemAdd",
                     "notifyItemRecur",
-                    "notifyItemDone"
+                    "notifyItemDone",
+                    "notifyStockSummary"
                 ],
                 "properties": {
                     "imageFolder": {
@@ -753,6 +754,9 @@
                     },
                     "notifyItemDone": {
                         "type": "boolean"
+                    },
+                    "notifyStockSummary": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -777,6 +781,7 @@
                     "sharedOnly",
                     "needsRestock",
                     "expiryLeadDays",
+                    "stockSummary",
                     "restockChecklistId"
                 ],
                 "properties": {
@@ -853,6 +858,9 @@
                     "expiryLeadDays": {
                         "type": "integer",
                         "format": "int64"
+                    },
+                    "stockSummary": {
+                        "type": "boolean"
                     },
                     "restockChecklistId": {
                         "type": "integer",
@@ -14292,6 +14300,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Id of an active checklist in the same house that low stock goes to (0 clears). Setting it links the inventory's unlinked items to same-name items there."
+                                    },
+                                    "stockSummary": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether members get a daily summary of what newly ran low or started expiring here."
                                     }
                                 }
                             }
@@ -23140,6 +23154,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Item completed notifications."
+                                    },
+                                    "notifyStockSummary": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Daily stock summary notifications."
                                     }
                                 }
                             }

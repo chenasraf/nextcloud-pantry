@@ -249,6 +249,41 @@ class Notifier implements INotifier {
 				);
 				break;
 
+			case 'stock_summary':
+				$parts = [];
+				foreach ([
+					// TRANSLATORS: Part of the daily stock summary: how many items newly ran low, e.g. "2 low".
+					'low' => fn (int $n): string => $l->n('%n low', '%n low', $n),
+					// TRANSLATORS: Part of the daily stock summary: how many items newly ran out, e.g. "1 out".
+					'out' => fn (int $n): string => $l->n('%n out', '%n out', $n),
+					// TRANSLATORS: Part of the daily stock summary: how many items started expiring, e.g. "3 expiring".
+					'expiring' => fn (int $n): string => $l->n('%n expiring', '%n expiring', $n),
+					// TRANSLATORS: Part of the daily stock summary: how many items expired, e.g. "1 expired".
+					'expired' => fn (int $n): string => $l->n('%n expired', '%n expired', $n),
+				] as $key => $text) {
+					$n = (int)($params[$key] ?? 0);
+					if ($n > 0) {
+						$parts[] = $text($n);
+					}
+				}
+				// TRANSLATORS: Daily stock summary of an inventory. {summary} is e.g. "2 low, 3 expiring, 1 expired".
+				$notification->setRichSubject(
+					$l->t('{list}: {summary}'),
+					[
+						'list' => [
+							'type' => 'highlight',
+							'id' => (string)($params['listId'] ?? ''),
+							'name' => (string)($params['listName'] ?? ''),
+						],
+						'summary' => [
+							'type' => 'highlight',
+							'id' => 'summary',
+							'name' => implode(', ', $parts),
+						],
+					]
+				);
+				break;
+
 			case 'field_reminder':
 				$ts = (int)($params['date'] ?? 0);
 				$dateStr = (string)$l->l('date', new \DateTime('@' . $ts));

@@ -169,6 +169,7 @@ namespace OCA\Pantry;
  *     sharedOnly: bool,
  *     needsRestock: int,
  *     expiryLeadDays: int,
+ *     stockSummary: bool,
  *     restockChecklistId: int|null,
  * }
  *
@@ -647,6 +648,7 @@ namespace OCA\Pantry;
  *     notifyItemAdd: bool,
  *     notifyItemRecur: bool,
  *     notifyItemDone: bool,
+ *     notifyStockSummary: bool,
  * }
  *
  * @psalm-type PantryListPrefs = array{

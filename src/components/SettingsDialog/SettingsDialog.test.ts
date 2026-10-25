@@ -147,6 +147,7 @@ describe('SettingsDialog', () => {
       notifyItemAdd: true,
       notifyItemRecur: true,
       notifyItemDone: true,
+      notifyStockSummary: true,
     })
     vi.mocked(setNotificationPrefs).mockResolvedValue({
       notifyPhoto: true,
@@ -155,6 +156,7 @@ describe('SettingsDialog', () => {
       notifyItemAdd: true,
       notifyItemRecur: true,
       notifyItemDone: true,
+      notifyStockSummary: true,
     })
     vi.mocked(getLanguages).mockResolvedValue([
       { code: 'de', name: 'Deutsch' },
@@ -291,13 +293,14 @@ describe('SettingsDialog', () => {
       expect(getNotificationPrefs).toHaveBeenCalledWith(7)
     })
 
-    it('renders six notification checkboxes', async () => {
+    it('renders a checkbox for every notification, the daily stock summary last', async () => {
       const wrapper = mountComponent({ open: true, houseId: 1 })
       await flushPromises()
 
       const notifSection = wrapper.find('#pantry-notifications')
       const checkboxes = notifSection.findAll('.nc-checkbox')
-      expect(checkboxes).toHaveLength(6)
+      expect(checkboxes).toHaveLength(7)
+      expect(checkboxes[6]!.text()).toContain('Daily stock summary')
     })
 
     it('calls setNotificationPrefs when a checkbox is toggled', async () => {
@@ -308,6 +311,7 @@ describe('SettingsDialog', () => {
         notifyItemAdd: true,
         notifyItemRecur: true,
         notifyItemDone: true,
+        notifyStockSummary: true,
       })
 
       const wrapper = mountComponent({ open: true, houseId: 3 })

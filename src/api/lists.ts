@@ -145,6 +145,8 @@ export function listApi(kind: ListKind) {
         expiryLeadDays?: number
         /** Inventories only: the checklist low stock goes to (0 clears). */
         restockChecklistId?: number
+        /** Inventories only: whether members get a daily stock summary. */
+        stockSummary?: boolean
       },
     ): Promise<Checklist> {
       const resp = await ocs.patch<Checklist>(`${base(houseId)}/${listId}`, patch)

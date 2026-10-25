@@ -75,6 +75,10 @@ use OCP\AppFramework\Db\Entity;
  * @method void setRestockRecord(?string $restockRecord)
  * @method string|null getExpirySyncedStatus()
  * @method void setExpirySyncedStatus(?string $expirySyncedStatus)
+ * @method string|null getSummarizedStockStatus()
+ * @method void setSummarizedStockStatus(?string $summarizedStockStatus)
+ * @method string|null getSummarizedExpiryStatus()
+ * @method void setSummarizedExpiryStatus(?string $summarizedExpiryStatus)
  *
  * @psalm-type RestockEntry = array{itemId: int, listId: int, itemName: string, listName: string, added: string|null, previousLevel: string|null, replaced: bool, previousOnHand: string|null, previousExpiresAt: int|null, expiresAt: int|null}
  */
@@ -118,6 +122,9 @@ class ChecklistItem extends Entity implements \JsonSerializable {
 	protected ?string $restockRecord = null;
 	/** The expiry status the restock sync last acted on, for the daily job to compare against. */
 	protected ?string $expirySyncedStatus = null;
+	/** The stock and expiry status the last daily stock summary saw, so the next tells only what is new. */
+	protected ?string $summarizedStockStatus = null;
+	protected ?string $summarizedExpiryStatus = null;
 
 	/**
 	 * Prices resolved for this item, attached transiently by the service/controller

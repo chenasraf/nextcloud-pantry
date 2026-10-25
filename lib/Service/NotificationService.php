@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\Pantry\Service;
 
 use OCA\Pantry\AppInfo\Application;
+use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\HouseMemberMapper;
 use OCP\IConfig;
 use OCP\IURLGenerator;
@@ -22,6 +23,7 @@ class NotificationService {
 	public const PREF_NOTIFY_ITEM_ADD = 'notify_item_add';
 	public const PREF_NOTIFY_ITEM_RECUR = 'notify_item_recur';
 	public const PREF_NOTIFY_ITEM_DONE = 'notify_item_done';
+	public const PREF_NOTIFY_STOCK_SUMMARY = 'notify_stock_summary';
 
 	/**
 	 * If two events of the same kind happen within this window, they are
@@ -319,6 +321,62 @@ class NotificationService {
 			} catch (\Throwable $e) {
 				$this->logger->error('Pantry notify: failed to send {subject} to {uid}: {msg}', [
 					'subject' => $subject,
+					'uid' => $uid,
+					'msg' => $e->getMessage(),
+					'exception' => $e,
+				]);
+			}
+		}
+	}
+
+	/**
+	 * Tell members what newly needs restocking on an inventory. Opening it
+	 * shows the inventory's items that need restocking. Replaces the
+	 * inventory's previous summary.
+	 *
+	 * @param array{low: int, out: int, expiring: int, expired: int} $counts
+	 * @param list<string> $recipients Members who can view the inventory.
+	 */
+	public function notifyStockSummary(Checklist $inventory, array $counts, array $recipients): void {
+		$houseId = $inventory->getHouseId();
+		$recipients = array_values(array_filter(
+			$recipients,
+			fn (string $uid): bool => $this->isNotificationEnabled($uid, $houseId, self::PREF_NOTIFY_STOCK_SUMMARY),
+		));
+		if ($recipients === []) {
+			return;
+		}
+		$listId = (int)$inventory->getId();
+		$params = [
+			'houseId' => $houseId,
+			'houseName' => $this->houseService->get($houseId)->getName(),
+			'listId' => $listId,
+			'listName' => $inventory->getName(),
+		] + $counts;
+		$link = $this->urlGenerator->linkToRouteAbsolute('pantry.page.index')
+			. sprintf('houses/%d/inventories/%d?stock=restock', $houseId, $listId);
+		$iconUrl = $this->urlGenerator->getAbsoluteURL(
+			$this->urlGenerator->imagePath(Application::APP_ID, 'app-dark.svg')
+		);
+		foreach ($recipients as $uid) {
+			try {
+				$stale = $this->notificationManager->createNotification();
+				$stale->setApp(Application::APP_ID)
+					->setUser($uid)
+					->setObject('inventory', (string)$listId);
+				$this->notificationManager->markProcessed($stale);
+
+				$notification = $this->notificationManager->createNotification();
+				$notification->setApp(Application::APP_ID)
+					->setUser($uid)
+					->setDateTime(new \DateTime())
+					->setObject('inventory', (string)$listId)
+					->setSubject('stock_summary', $params)
+					->setLink($link)
+					->setIcon($iconUrl);
+				$this->notificationManager->notify($notification);
+			} catch (\Throwable $e) {
+				$this->logger->error('Pantry notify: failed to send stock_summary to {uid}: {msg}', [
 					'uid' => $uid,
 					'msg' => $e->getMessage(),
 					'exception' => $e,

@@ -46,6 +46,16 @@ vi.mock('@nextcloud/vue/components/NcSelect', () => ({
   },
 }))
 
+vi.mock('@nextcloud/vue/components/NcCheckboxRadioSwitch', () => ({
+  default: {
+    name: 'NcCheckboxRadioSwitch',
+    template:
+      '<label class="nc-switch"><input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><slot /></label>',
+    props: ['modelValue', 'type'],
+    emits: ['update:modelValue'],
+  },
+}))
+
 import InventorySettingsDialog from './InventorySettingsDialog.vue'
 
 function inventory(overrides: Partial<Checklist> = {}): Checklist {
@@ -141,6 +151,25 @@ describe('InventorySettingsDialog', () => {
     await flushPromises()
 
     expect(updateList).toHaveBeenCalledWith(1, 7, { restockChecklistId: 10 })
+  })
+
+  it('opens on the daily stock summary switch as the inventory has it', () => {
+    const wrapper = mountDialog(inventory({ stockSummary: false }))
+
+    const toggle = wrapper.find('[data-testid="inventory-settings-stock-summary"] input')
+    expect((toggle.element as HTMLInputElement).checked).toBe(false)
+    expect(wrapper.text()).toContain('Daily stock summary')
+  })
+
+  it('saves the daily stock summary switch', async () => {
+    updateList.mockResolvedValue(inventory({ stockSummary: false }))
+    const wrapper = mountDialog(inventory({ stockSummary: true }))
+
+    await wrapper.find('[data-testid="inventory-settings-stock-summary"] input').setValue(false)
+    await wrapper.find('[data-testid="inventory-settings-save"]').trigger('click')
+    await flushPromises()
+
+    expect(updateList).toHaveBeenCalledWith(1, 7, { stockSummary: false })
   })
 
   it('clears the restock checklist by picking None', async () => {

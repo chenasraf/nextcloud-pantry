@@ -88,6 +88,9 @@ class PrefsServiceTest extends TestCase {
 				if ($key === 'notify_item_done_1') {
 					return '1';
 				}
+				if ($key === 'notify_stock_summary_1') {
+					return '0';
+				}
 				return $default;
 			}
 		);
@@ -100,6 +103,7 @@ class PrefsServiceTest extends TestCase {
 			'notifyItemAdd' => true,
 			'notifyItemRecur' => false,
 			'notifyItemDone' => true,
+			'notifyStockSummary' => false,
 		], $result);
 	}
 

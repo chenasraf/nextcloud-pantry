@@ -195,6 +195,9 @@ class ChecklistService {
 			}
 			$list->setExpiryLeadDays($lead);
 		}
+		if (array_key_exists('stockSummary', $patch) && $patch['stockSummary'] !== null && $list->getKind() === Checklist::KIND_INVENTORY) {
+			$list->setStockSummary((bool)$patch['stockSummary']);
+		}
 		$restockChanged = false;
 		if (array_key_exists('restockChecklistId', $patch) && $list->getKind() === Checklist::KIND_INVENTORY) {
 			$restockId = $this->intOrNull($patch['restockChecklistId']);

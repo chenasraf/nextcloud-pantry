@@ -114,6 +114,28 @@ class ChecklistMapper extends QBMapper {
 	}
 
 	/**
+	 * Live inventories not yet summarised on the day starting at `$today`.
+	 *
+	 * @return list<Checklist>
+	 */
+	public function findInventoriesToSummarize(int $today): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->isNull('summarized_on'),
+				$qb->expr()->lt('summarized_on', $qb->createNamedParameter($today, IQueryBuilder::PARAM_INT)),
+			))
+			->orderBy('house_id', 'ASC')
+			->addOrderBy('id', 'ASC');
+		$this->whereKind($qb, Checklist::KIND_INVENTORY);
+
+		return $this->findEntities($qb);
+	}
+
+	/**
 	 * Active inventories whose restock checklist is the given list.
 	 *
 	 * @return Checklist[]

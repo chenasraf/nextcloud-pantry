@@ -56,6 +56,17 @@
         </div>
         <p class="inventory-settings__hint">{{ strings.expiryHint }}</p>
       </FieldCard>
+
+      <FieldCard :label="strings.notificationsLabel">
+        <NcCheckboxRadioSwitch
+          v-model="stockSummary"
+          type="switch"
+          data-testid="inventory-settings-stock-summary"
+        >
+          {{ strings.stockSummaryLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="inventory-settings__hint">{{ strings.stockSummaryHint }}</p>
+      </FieldCard>
     </form>
 
     <template #actions>
@@ -77,6 +88,7 @@ import { computed, ref, watch } from 'vue'
 import { t } from '@nextcloud/l10n'
 import { showError } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
@@ -110,6 +122,13 @@ const strings = {
   // TRANSLATORS: Accessible name of the number of days in "Warn [2] days before expiry".
   leadDaysLabel: t('pantry', 'Days before expiry'),
   expiryHint: t('pantry', 'Set 0 to warn on the expiry date itself.'),
+  // TRANSLATORS: Caption of the inventory's notification settings.
+  notificationsLabel: t('pantry', 'Notifications'),
+  stockSummaryLabel: t('pantry', 'Daily stock summary'),
+  stockSummaryHint: t(
+    'pantry',
+    'Once a day, tell members what newly ran low or started expiring here. Each member can also turn it off in their personal settings.',
+  ),
   cancel: t('pantry', 'Cancel'),
   save: t('pantry', 'Save'),
   saveFailed: t('pantry', 'Could not save the inventory settings'),
@@ -129,6 +148,7 @@ const emit = defineEmits<{
 
 const name = ref('')
 const leadDays = ref('')
+const stockSummary = ref(true)
 const saving = ref(false)
 
 const noneOption = computed<RestockOption>(() => ({ listId: null, label: strings.restockNone }))
@@ -149,6 +169,7 @@ watch(
     name.value = props.list.name
     leadDays.value = String(props.list.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS)
     restockSelection.value = restockOptionFor(props.list.restockChecklistId)
+    stockSummary.value = props.list.stockSummary ?? true
   },
   { immediate: true },
 )
@@ -165,13 +186,19 @@ const canSave = computed(
 async function save() {
   const list = props.list
   if (!list || !canSave.value) return
-  const patch: { name?: string; expiryLeadDays?: number; restockChecklistId?: number } = {}
+  const patch: {
+    name?: string
+    expiryLeadDays?: number
+    restockChecklistId?: number
+    stockSummary?: boolean
+  } = {}
   if (name.value.trim() !== list.name) patch.name = name.value.trim()
   const restockId = restockSelection.value.listId
   if (restockId !== (list.restockChecklistId ?? null)) patch.restockChecklistId = restockId ?? 0
   if (parsedLeadDays.value !== (list.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS)) {
     patch.expiryLeadDays = parsedLeadDays.value!
   }
+  if (stockSummary.value !== (list.stockSummary ?? true)) patch.stockSummary = stockSummary.value
   if (Object.keys(patch).length === 0) {
     emit('update:open', false)
     return
