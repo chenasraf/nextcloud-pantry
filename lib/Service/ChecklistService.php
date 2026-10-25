@@ -1565,13 +1565,12 @@ class ChecklistService {
 	 * resource only ever serves its own items. Crossing kinds goes through
 	 * {@see moveItems()}.
 	 */
-	private function assertSameKind(int $sourceListId, int $targetListId): Checklist {
+	private function assertSameKind(int $sourceListId, int $targetListId): void {
 		$target = $this->getList($targetListId);
 		$source = $this->getList($sourceListId, includeDeleted: true);
 		if ($source->getKind() !== $target->getKind()) {
 			throw new \InvalidArgumentException('Items can only move or copy to a list of the same kind');
 		}
-		return $target;
 	}
 
 	public function deleteItem(int $itemId): void {
