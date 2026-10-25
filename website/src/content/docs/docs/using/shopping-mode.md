@@ -4,7 +4,7 @@ description:
   Start a trip from your lists, walk your stores, shop it together with the house, and finish with a
   priced review.
 sidebar:
-  order: 5
+  order: 6
 ---
 
 ## What it does
