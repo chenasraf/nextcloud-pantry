@@ -16,6 +16,9 @@ import {
 } from '@/utils/stock'
 import { announceRestock, announceRestockSync } from '@/components/StockLink/restockToasts'
 
+/** How long stock steps on an item wait for the next one before being saved. */
+export const STOCK_WRITE_DELAY = 800
+
 /** An item a write returned, after telling the member what restocking did because of it. */
 function received(item: ChecklistItem): ChecklistItem {
   announceRestockSync(item.restockSync)
@@ -334,6 +337,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
   }
 
   async function update(itemId: number, patch: Partial<api.ItemInput>): Promise<void> {
+    await flushStock(itemId)
     dropRenewOffer(itemId)
     const updated = received(await resource.updateItem(houseId, listIdFor(itemId), itemId, patch))
     if (isMeta && patch.targetListId !== undefined && patch.targetListId !== updated.listId) {
@@ -368,8 +372,10 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
 
   /**
    * Change an inventory item's stock from its row. The row shows the new
-   * amount and status straight away; the server's answer replaces them, and a
-   * failed write puts the item back as it was.
+   * amount and status straight away. Steps in quick succession are saved as
+   * one write; the server's answer replaces the row, and a failed write puts
+   * the item back as it was before the steps. Settles once the write it ended
+   * up in does, or straight away when a later step takes it over.
    */
   async function updateStock(
     itemId: number,
@@ -399,18 +405,57 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     if (offer !== null) {
       renewOffers.value = new Map(renewOffers.value).set(itemId, offer)
     }
+
+    const pending = pendingStock.get(itemId)
+    if (pending) {
+      clearTimeout(pending.timer)
+      pending.done.resolve()
+    }
+    return new Promise<void>((resolve, reject) => {
+      pendingStock.set(itemId, {
+        patch: { ...pending?.patch, ...patch },
+        before: pending?.before ?? prev,
+        done: { resolve, reject },
+        timer: setTimeout(() => void sendStock(itemId, write), STOCK_WRITE_DELAY),
+      })
+    })
+  }
+
+  /** A burst of stock steps on one item, held back so the server sees only where it ends. */
+  interface PendingStock {
+    patch: Pick<api.ItemInput, 'quantity' | 'stockLevel'>
+    before: ChecklistItem
+    done: { resolve: () => void; reject: (e: unknown) => void }
+    timer: ReturnType<typeof setTimeout>
+  }
+  // Each step would otherwise sync the shopping list, toast and log activity on its own.
+  const pendingStock = new Map<number, PendingStock>()
+
+  /** Save held-back stock steps now, so they cannot land after a later edit and undo it. */
+  async function flushStock(itemId: number): Promise<void> {
+    const pending = pendingStock.get(itemId)
+    if (!pending) return
+    clearTimeout(pending.timer)
+    await sendStock(itemId, stockWrites.get(itemId) ?? 0)
+  }
+
+  async function sendStock(itemId: number, write: number): Promise<void> {
+    const pending = pendingStock.get(itemId)
+    if (!pending) return
+    pendingStock.delete(itemId)
     try {
-      const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, patch)
+      const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, pending.patch)
       announceRestockSync(updated.restockSync)
       if (stockWrites.get(itemId) === write) {
         items.value = items.value.map((i) => (i.id === itemId ? updated : i))
       }
+      pending.done.resolve()
     } catch (e) {
       if (stockWrites.get(itemId) === write) {
-        items.value = items.value.map((i) => (i.id === itemId ? prev : i))
+        items.value = items.value.map((i) => (i.id === itemId ? pending.before : i))
         dropRenewOffer(itemId)
       }
-      throw e
+      pending.done.reject(e)
     }
   }
 

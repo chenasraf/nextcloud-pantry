@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
 import type { Checklist, ChecklistItem } from '@/api/types'
 
 const mockApi = vi.hoisted(() => ({
@@ -51,8 +51,19 @@ const { announceRestock, announceRestockSync } = vi.hoisted(() => ({
 }))
 vi.mock('@/components/StockLink/restockToasts', () => ({ announceRestock, announceRestockSync }))
 
-import { ALL_LISTS_ID, useChecklists, useChecklistItems } from './useChecklist'
+import { ALL_LISTS_ID, STOCK_WRITE_DELAY, useChecklists, useChecklistItems } from './useChecklist'
 import { addDays, todayEpoch } from '@/utils/stock'
+
+/** A stock step, waited out until its held-back write is saved. */
+async function step(
+  c: ReturnType<typeof useChecklistItems>,
+  itemId: number,
+  patch: Parameters<ReturnType<typeof useChecklistItems>['updateStock']>[1],
+): Promise<void> {
+  const saved = c.updateStock(itemId, patch)
+  await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY)
+  await saved
+}
 
 function makeList(overrides: Partial<Checklist> = {}): Checklist {
   return {
@@ -915,6 +926,11 @@ describe('useChecklistItems restock sync', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     houseCounter++
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('tells the member what an edit did to checklist items', async () => {
@@ -938,12 +954,69 @@ describe('useChecklistItems restock sync', () => {
     const c = useChecklistItems(houseCounter, 10, 'inventory')
     await c.load()
     const first = c.updateStock(1, { quantity: '3' })
-    await c.updateStock(1, { quantity: '2' })
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY)
+    await step(c, 1, { quantity: '2' })
     answerFirst(makeItem({ quantity: '3', restockSync: sync }))
     await first
 
     expect(announceRestockSync).toHaveBeenCalledWith(sync)
     expect(c.items.value[0].quantity).toBe('2')
+  })
+
+  it('saves a burst of stock steps as one write', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem({ quantity: '4' })])
+    mockApi.updateItem.mockResolvedValue(makeItem({ quantity: '7', restockSync: sync }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    const steps = [c.updateStock(1, { quantity: '5' }), c.updateStock(1, { quantity: '6' })]
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY - 1)
+    steps.push(c.updateStock(1, { quantity: '7' }))
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY - 1)
+
+    expect(mockApi.updateItem).not.toHaveBeenCalled()
+    expect(c.items.value[0].quantity).toBe('7')
+
+    await vi.advanceTimersByTimeAsync(1)
+    await Promise.all(steps)
+
+    expect(mockApi.updateItem).toHaveBeenCalledOnce()
+    expect(mockApi.updateItem).toHaveBeenCalledWith(houseCounter, 10, 1, { quantity: '7' })
+    expect(announceRestockSync).toHaveBeenCalledOnce()
+  })
+
+  it('puts the item back as it was before the burst when the write fails', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem({ quantity: '4' })])
+    mockApi.updateItem.mockRejectedValue(new Error('offline'))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    const first = c.updateStock(1, { quantity: '5' })
+    const last = c.updateStock(1, { quantity: '6' })
+    const failed = expect(last).rejects.toThrow('offline')
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY)
+
+    await expect(first).resolves.toBeUndefined()
+    await failed
+    expect(c.items.value[0].quantity).toBe('4')
+  })
+
+  it('saves held-back stock steps before another edit', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem({ quantity: '4' })])
+    mockApi.updateItem.mockResolvedValue(makeItem({ quantity: '5' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    const stepped = c.updateStock(1, { quantity: '5' })
+    await c.update(1, { name: 'Eggs' })
+    await stepped
+
+    expect(mockApi.updateItem.mock.calls.map((call) => call[3])).toEqual([
+      { quantity: '5' },
+      { name: 'Eggs' },
+    ])
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY)
+    expect(mockApi.updateItem).toHaveBeenCalledTimes(2)
   })
 
   it('tells the member what adding an item did', async () => {
@@ -1011,6 +1084,11 @@ describe('useChecklistItems renew offer', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     houseCounter++
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   function stocked(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
@@ -1030,7 +1108,7 @@ describe('useChecklistItems renew offer', () => {
 
     const c = useChecklistItems(houseCounter, 10, 'inventory')
     await c.load()
-    await c.updateStock(1, { quantity: '5' })
+    await step(c, 1, { quantity: '5' })
 
     expect(c.renewOffers.value.get(1)).toBe(addDays(today, 7))
   })
@@ -1053,7 +1131,7 @@ describe('useChecklistItems renew offer', () => {
 
     const c = useChecklistItems(houseCounter, 10, 'inventory')
     await c.load()
-    await c.updateStock(1, { quantity: '5' })
+    await step(c, 1, { quantity: '5' })
     await c.renewExpiry(1)
 
     expect(mockApi.updateItem).toHaveBeenLastCalledWith(houseCounter, 10, 1, {
@@ -1068,7 +1146,7 @@ describe('useChecklistItems renew offer', () => {
 
     const c = useChecklistItems(houseCounter, 10, 'inventory')
     await c.load()
-    await c.updateStock(1, { quantity: '5' })
+    await step(c, 1, { quantity: '5' })
     await c.update(1, { name: 'Eggs' })
 
     expect(c.renewOffers.value.has(1)).toBe(false)
@@ -1080,8 +1158,8 @@ describe('useChecklistItems renew offer', () => {
 
     const c = useChecklistItems(houseCounter, 10, 'inventory')
     await c.load()
-    await c.updateStock(1, { quantity: '5' })
-    await c.updateStock(1, { quantity: '4' })
+    await step(c, 1, { quantity: '5' })
+    await step(c, 1, { quantity: '4' })
 
     expect(c.renewOffers.value.has(1)).toBe(false)
   })
