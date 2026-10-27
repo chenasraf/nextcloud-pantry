@@ -2,6 +2,7 @@ OC.L10N.register(
     "pantry",
     {
     "Text" : "Texti",
+    "Number" : "Tala",
     "Checkbox" : "Gátreitur",
     "Date" : "Dagsetning",
     "Select" : "Velja",
@@ -44,6 +45,7 @@ OC.L10N.register(
     "Options" : "Valkostir",
     "Option" : "Valkostur",
     "Add option" : "Bæta við valkosti",
+    "Default value" : "Sjálfgefið gildi",
     "Name cannot be empty" : "Heiti má ekki vera tómt",
     "Member" : "Meðlimur",
     "Members" : "Meðlimir",
@@ -137,6 +139,7 @@ OC.L10N.register(
     "Completed" : "Lokið",
     "No lists yet" : "Engir listar ennþá",
     "General" : "Almennt",
+    "Automation" : "Sjálfvirkni",
     "Shopping" : "Versla",
     "Danger zone" : "Hættusvæði",
     "Note restored" : "Minnispunktur endurheimtur",

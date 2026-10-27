@@ -50,6 +50,7 @@ OC.L10N.register(
     "Options" : "Opzioni",
     "Option" : "Opzione",
     "Add option" : "Aggiungi opzione",
+    "Default value" : "Valore predefinito",
     "Name cannot be empty" : "Il nome non può essere vuoto",
     "Member" : "Membro",
     "Members" : "Partecipanti",

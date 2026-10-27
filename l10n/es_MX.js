@@ -2,6 +2,7 @@ OC.L10N.register(
     "pantry",
     {
     "Text" : "Texto",
+    "Number" : "Número",
     "Checkbox" : "Casilla de verificación",
     "Date" : "Fecha",
     "Select" : "Seleccionar",
@@ -36,6 +37,7 @@ OC.L10N.register(
     "Options" : "Opciones",
     "Option" : "Opción",
     "Add option" : "Añade una opción",
+    "Default value" : "Valor predeterminado",
     "Name cannot be empty" : "El nombre no puede estar en blanco",
     "Member" : "Miembro",
     "Members" : "Miembros",

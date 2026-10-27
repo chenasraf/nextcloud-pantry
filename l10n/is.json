@@ -1,5 +1,6 @@
 { "translations": {
     "Text" : "Texti",
+    "Number" : "Tala",
     "Checkbox" : "Gátreitur",
     "Date" : "Dagsetning",
     "Select" : "Velja",
@@ -42,6 +43,7 @@
     "Options" : "Valkostir",
     "Option" : "Valkostur",
     "Add option" : "Bæta við valkosti",
+    "Default value" : "Sjálfgefið gildi",
     "Name cannot be empty" : "Heiti má ekki vera tómt",
     "Member" : "Meðlimur",
     "Members" : "Meðlimir",
@@ -135,6 +137,7 @@
     "Completed" : "Lokið",
     "No lists yet" : "Engir listar ennþá",
     "General" : "Almennt",
+    "Automation" : "Sjálfvirkni",
     "Shopping" : "Versla",
     "Danger zone" : "Hættusvæði",
     "Note restored" : "Minnispunktur endurheimtur",

@@ -1,5 +1,6 @@
 { "translations": {
     "Text" : "Texto",
+    "Number" : "Número",
     "Checkbox" : "Casilla de verificación",
     "Date" : "Fecha",
     "Select" : "Seleccionar",
@@ -34,6 +35,7 @@
     "Options" : "Opciones",
     "Option" : "Opción",
     "Add option" : "Añade una opción",
+    "Default value" : "Valor predeterminado",
     "Name cannot be empty" : "El nombre no puede estar en blanco",
     "Member" : "Miembro",
     "Members" : "Miembros",

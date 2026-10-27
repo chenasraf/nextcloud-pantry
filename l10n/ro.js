@@ -24,6 +24,7 @@ OC.L10N.register(
     "Categories" : "Categori",
     "Min" : "Min",
     "Max" : "Max",
+    "Currency" : "Monedă",
     "Clear" : "Șterge ",
     "Everyone" : "Toți",
     "Description" : "Descriere",

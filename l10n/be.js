@@ -94,6 +94,7 @@ OC.L10N.register(
     "Apply" : "Прымяніць",
     "No lists yet" : "Пакуль няма спісаў",
     "General" : "Агульныя",
+    "Automation" : "Аўтаматызацыя",
     "Danger zone" : "Небяспечная зона",
     "No notes yet" : "Пакуль няма нататак",
     "New folder" : "Новая папка",

@@ -1,5 +1,6 @@
 { "translations": {
     "Text" : "Texto",
+    "Number" : "Número",
     "Checkbox" : "Casilla de verificación",
     "Date" : "Fecha",
     "Select" : "Seleccionar",
@@ -13,6 +14,7 @@
     "Add" : "Agregar",
     "Categories" : "Categoría",
     "Labels" : "Etiquetas",
+    "Currency" : "Moneda",
     "Clear" : "Borrar",
     "Everyone" : "Todos",
     "Description" : "Descripción",
@@ -28,6 +30,8 @@
     "Type" : "Escribir",
     "Scope" : "Alcance",
     "Options" : "Opciones",
+    "Option" : "Opción",
+    "Default value" : "Valor predeterminado",
     "Member" : "Miembro",
     "Members" : "Miembros",
     "Account" : "Cuenta",
