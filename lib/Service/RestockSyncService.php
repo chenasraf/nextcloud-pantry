@@ -62,6 +62,12 @@ class RestockSyncService {
 	private array $lists = [];
 	/** @var array<int, int> Each house's recurrence time, in minutes after midnight. */
 	private array $recurrenceTimes = [];
+	/**
+	 * The day the daily job judges expiry on, while it runs. Everything the job
+	 * syncs judges by the same day, so the row it adds asks for what the job's
+	 * own check saw, even when the job runs for a day other than today.
+	 */
+	private ?int $judgeDay = null;
 
 	public function __construct(
 		private ChecklistMapper $listMapper,
@@ -110,7 +116,7 @@ class RestockSyncService {
 	 */
 	public function snapshotOf(ChecklistItem $item, ?int $today = null): array {
 		$leadDays = $this->list($item->getListId())?->expiryLeadDays() ?? Checklist::DEFAULT_EXPIRY_LEAD_DAYS;
-		return self::snapshot($item, $leadDays, $today);
+		return self::snapshot($item, $leadDays, $today ?? $this->judgeDay);
 	}
 
 	/**
@@ -152,25 +158,30 @@ class RestockSyncService {
 	 */
 	public function syncExpiry(int $now): int {
 		$today = (new \DateTimeImmutable())->setTimestamp($now)->setTime(0, 0, 0);
+		$this->judgeDay = $today->getTimestamp();
 		$synced = 0;
-		foreach ($this->itemMapper->findExpiryTracked() as $item) {
-			$inventory = $this->list($item->getListId());
-			if ($inventory === null || !$this->inPlay($item, $inventory)) {
-				continue;
+		try {
+			foreach ($this->itemMapper->findExpiryTracked() as $item) {
+				$inventory = $this->list($item->getListId());
+				if ($inventory === null || !$this->inPlay($item, $inventory)) {
+					continue;
+				}
+				$minutes = $this->recurrenceTime($inventory->getHouseId());
+				if ($now < $today->setTime(intdiv($minutes, 60), $minutes % 60)->getTimestamp()) {
+					continue;
+				}
+				$after = $this->snapshotOf($item);
+				$previous = self::syncedExpiry($item);
+				if ($previous === $after['expiry']) {
+					continue;
+				}
+				$neededBefore = StockRules::expiryNeedsRestock($previous);
+				$this->sync($item, $inventory, $neededBefore && !$after['needs'], null, keepTrashed: $neededBefore);
+				$this->stampExpiry($item, $after['expiry']);
+				$synced++;
 			}
-			$minutes = $this->recurrenceTime($inventory->getHouseId());
-			if ($now < $today->setTime(intdiv($minutes, 60), $minutes % 60)->getTimestamp()) {
-				continue;
-			}
-			$after = $this->snapshotOf($item, $today->getTimestamp());
-			$previous = self::syncedExpiry($item);
-			if ($previous === $after['expiry']) {
-				continue;
-			}
-			$neededBefore = StockRules::expiryNeedsRestock($previous);
-			$this->sync($item, $inventory, $neededBefore && !$after['needs'], null, keepTrashed: $neededBefore);
-			$this->stampExpiry($item, $after['expiry']);
-			$synced++;
+		} finally {
+			$this->judgeDay = null;
 		}
 		return $synced;
 	}
