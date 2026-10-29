@@ -28,7 +28,23 @@ a name, added one at a time, or applied all at once.
 
 		</Steps>
 	</TabItem>
+	<TabItem label="Mobile & desktop">
+		<Steps>
+
+		1. Open the **Checklists** tab and tap the list name at the top to open the list switcher.
+
+		2. Pick **Templates** at the top of the switcher, then **New template**.
+
+		3. Give it a name, a color and an icon, and tap **Create list**.
+
+		</Steps>
+
+		On a wide window, templates also have their own heading in the side rail.
+	</TabItem>
 </Tabs>
+
+Templates stay on the web and the mobile and desktop app; the watch shows only checklists and
+inventories.
 
 A template page works like a checklist without checkboxes. Add items with the same composer, and
 edit, move, copy, archive and trash them the same way. Templates have their own archive and trash.
@@ -56,6 +72,18 @@ Attach from either side:
   inventories it suggests items on, or turn on **Every list** to cover every checklist and inventory
   in the house, including ones made later.
 
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		Both fields are in the list's edit dialog: **Edit checklist**, **Edit inventory** or **Edit
+		template**.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		In the list switcher, open the list's **⋮** menu and tap **Edit checklist**, **Edit inventory**
+		or **Edit template**. **Templates:**
+		and **Suggest in:** need a connection, so they are left out of the form while you are offline.
+	</TabItem>
+</Tabs>
+
 ![The Suggest in field of Edit template, with the Every list switch off and Fridge and Groceries picked.](/docs/templates-suggest-in.png)
 
 A list can have any number of templates, and a template can suggest on any number of lists. An
@@ -72,6 +100,16 @@ chip naming the template it comes from.
 Pick a template suggestion to add it to the list. A template item the list already has by name is
 never suggested over the list's own copy. Suggestions stay out of the way while you add several
 items at once with **Multiple**, or while a detail tray is open.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		The panel opens under the **Item name** field.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		The panel opens just above the add bar at the bottom, or below it when the add bar is set to the
+		top. Template suggestions need a connection: offline, only the list's own items are suggested.
+	</TabItem>
+</Tabs>
 
 ## Adding an item from a template
 
@@ -97,8 +135,9 @@ recurrence. Two switches decide whether they do:
 
 - **Per list** — **Fill template items from these defaults** at the bottom of the list's **Item
   defaults** dialog. On by default.
-- **Per person** — **Fill template items from item defaults** in **Personal settings**: **Follow each
-  list**, **Always fill** or **Never fill**. Your choice here wins over the list's switch.
+- **Per person** — **Fill template items from item defaults**: **Follow each list**, **Always fill**
+  or **Never fill**. Your choice here wins over the list's switch. On the web it is in **Personal
+  settings**; in the mobile and desktop app, under **Settings** → **Interface** → **Adding items**.
 
 ![The Item defaults dialog of a checklist, with the Fill template items from these defaults switch turned on below the defaults.](/docs/templates-fill-defaults.png)
 
@@ -121,6 +160,20 @@ To bring in many items at once — the whole weekly shop, the full packing list 
 
 		</Steps>
 	</TabItem>
+	<TabItem label="Mobile & desktop">
+		<Steps>
+
+		1. Open the list's **⋮** menu and tap **Apply template**. On a template, tap **Apply to list**
+		   instead. Both are also in each list's menu in the list switcher.
+
+		2. Pick a template under **Attached to this list** or **Other templates**, or, from a template,
+		   a list under **Checklists** or **Inventories**.
+
+		3. Untick anything you don't need this time, then tap **Apply** — the button counts the ticked
+		   items. **Back** returns to the choice.
+
+		</Steps>
+	</TabItem>
 </Tabs>
 
 ![The Apply template dialog copying from Weekly staples into Groceries, with Eggs, Bananas, Tomatoes and Croissants ticked, and Bread, Milk, Butter and Yoghurt unticked and marked Already on list.](/docs/templates-apply.png)
@@ -132,8 +185,9 @@ back.
 
 ## Duplicate as another kind
 
-**Duplicate checklist**, **Duplicate template** and **Duplicate inventory**, in a list's **⋯** menu,
-ask what to **Duplicate as:** — **Checklist**, **Inventory** or **Template** — so one list can
+**Duplicate checklist**, **Duplicate template** and **Duplicate inventory**, in a list's menu (and,
+in the mobile and desktop app, **Duplicate** in each list's menu in the list switcher), ask what to
+**Duplicate as:** — **Checklist**, **Inventory** or **Template** — so one list can
 become the start of another kind:
 
 - Duplicate a template as a checklist for each trip or project, and work through the copy while the
