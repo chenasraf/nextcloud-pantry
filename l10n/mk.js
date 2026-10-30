@@ -54,6 +54,7 @@ OC.L10N.register(
     "Move" : "Премести",
     "Photos" : "Фотографии",
     "Upload" : "Прикачи",
+    "Notes" : "Белешки",
     "Customize" : "Прилагоди",
     "Remind me" : "Потсети ме",
     "Join" : "Приклучи се",

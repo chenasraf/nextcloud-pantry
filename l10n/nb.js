@@ -59,6 +59,7 @@ OC.L10N.register(
     "Role" : "Rolle",
     "Joined" : "Ble med",
     "New" : "Ny",
+    "Remove member" : "Fjern medlem",
     "Add a member" : "Legg til en medlem",
     "Save changes" : "Lagre endringer",
     "Checklists" : "Sjekklister",
