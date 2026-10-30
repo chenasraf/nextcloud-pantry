@@ -66,6 +66,9 @@ notes on the go and keep everything in sync with your Nextcloud instance.
 - [Android (F-Droid)](https://f-droid.org/en/packages/dev.casraf.pantry/)
 - [iOS/macOS (App Store)](https://apps.apple.com/us/app/pantry-for-nextcloud/id6762161619)
 
+The apps collect no analytics and keep your data on your Nextcloud server — see the
+[privacy policy](https://pantry.casraf.dev/privacy).
+
 The repository for the companion apps is [here](https://github.com/chenasraf/pantry-flutter). If you
 have issues that are specific to the apps and not the core Nextcloud app, please open an issue
 there.
