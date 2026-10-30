@@ -51,7 +51,12 @@ const { announceRestock, announceRestockSync } = vi.hoisted(() => ({
 }))
 vi.mock('@/components/StockLink/restockToasts', () => ({ announceRestock, announceRestockSync }))
 
+const mockCategoriesApi = vi.hoisted(() => ({ listCategories: vi.fn() }))
+vi.mock('@/api/categories', () => mockCategoriesApi)
+vi.mock('@/api/prefs', () => ({ getCategorySort: async () => ({ sort: 'name_asc' }) }))
+
 import { ALL_LISTS_ID, STOCK_WRITE_DELAY, useChecklists, useChecklistItems } from './useChecklist'
+import { useCategories } from './useCategories'
 import { addDays, todayEpoch } from '@/utils/stock'
 
 /** A stock step, waited out until its held-back write is saved. */
@@ -198,6 +203,20 @@ describe('useChecklists', () => {
       expect(created).toEqual(copy)
       expect(inventories.lists.value).toEqual([copy])
       expect(useChecklists(houseCounter).lists.value).toEqual([])
+    })
+
+    it('refetches loaded categories so the copy finds its scoped ones', async () => {
+      mockCategoriesApi.listCategories.mockResolvedValueOnce([])
+      const categories = useCategories(houseCounter)
+      await categories.load()
+
+      const scoped = { id: 40, houseId: houseCounter, listId: 9, name: 'Tools' }
+      mockCategoriesApi.listCategories.mockResolvedValueOnce([scoped])
+      mockApi.duplicateAs.mockResolvedValue(makeList({ id: 9, kind: 'inventory' }))
+
+      await useChecklists(houseCounter, 'inventory').duplicateFrom(3, 'Shelf')
+
+      expect(categories.findById(40)).toEqual(scoped)
     })
   })
 

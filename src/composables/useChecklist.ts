@@ -15,6 +15,9 @@ import {
   todayEpoch,
 } from '@/utils/stock'
 import { announceRestock, announceRestockSync } from '@/components/StockLink/restockToasts'
+import { useCategories } from '@/composables/useCategories'
+import { useCustomFields } from '@/composables/useCustomFields'
+import { useLabels } from '@/composables/useLabels'
 
 /** How long stock steps on an item wait for the next one before being saved. */
 export const STOCK_WRITE_DELAY = 800
@@ -186,9 +189,21 @@ export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
     lists.value = [...lists.value, restored]
   }
 
+  // The server gives the copy its own copies of the source's list-scoped
+  // categories, labels and custom fields; without a refetch the copy's items
+  // point at ids the house caches have never seen.
+  async function reloadScopedTaxonomy(): Promise<void> {
+    await Promise.all(
+      [useCategories(houseId), useLabels(houseId), useCustomFields(houseId)]
+        .filter((cache) => cache.loaded.value)
+        .map((cache) => cache.load(true)),
+    )
+  }
+
   async function duplicate(listId: number, name: string, resetDone: boolean): Promise<Checklist> {
     const created = await resource.duplicateList(houseId, listId, name, resetDone)
     lists.value = [...lists.value, created]
+    await reloadScopedTaxonomy()
     return created
   }
 
@@ -200,6 +215,7 @@ export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
   ): Promise<Checklist> {
     const created = await resource.duplicateAs(houseId, sourceListId, name, resetDone)
     lists.value = [...lists.value, created]
+    await reloadScopedTaxonomy()
     return created
   }
 
