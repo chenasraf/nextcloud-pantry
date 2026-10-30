@@ -127,30 +127,31 @@ interface CapGroup {
 }
 const capGroups = computed<CapGroup[]>(() => [
   {
-    label: t('pantry', 'Checklists'),
+    // TRANSLATORS: Noun (plural), heading of the permissions that cover every kind of list (checklists, templates).
+    label: t('pantry', 'Lists'),
     caps: [
-      // TRANSLATORS: Verb, permission checkbox for viewing checklists.
+      // TRANSLATORS: Verb, permission checkbox for viewing lists.
       { key: 'canViewLists', label: t('pantry', 'View') },
-      // TRANSLATORS: Verb, permission checkbox for creating checklists.
+      // TRANSLATORS: Verb, permission checkbox for creating lists.
       { key: 'canCreateLists', label: t('pantry', 'Create') },
-      // TRANSLATORS: Verb, permission checkbox for editing checklists.
+      // TRANSLATORS: Verb, permission checkbox for editing lists.
       { key: 'canEditLists', label: t('pantry', 'Edit') },
-      // TRANSLATORS: Verb, permission checkbox for deleting checklists.
+      // TRANSLATORS: Verb, permission checkbox for deleting lists.
       { key: 'canDeleteLists', label: t('pantry', 'Delete') },
     ],
   },
   {
-    label: t('pantry', 'Checklist items'),
+    label: t('pantry', 'List items'),
     caps: [
-      // TRANSLATORS: Verb, permission checkbox for adding checklist items.
+      // TRANSLATORS: Verb, permission checkbox for adding list items.
       { key: 'canAddItems', label: t('pantry', 'Add') },
       // TRANSLATORS: Verb, permission checkbox for marking checklist items as done.
       { key: 'canCheckItems', label: t('pantry', 'Check off') },
-      // TRANSLATORS: Verb, permission checkbox for copying checklist items.
+      // TRANSLATORS: Verb, permission checkbox for copying list items.
       { key: 'canCopyItems', label: t('pantry', 'Copy') },
-      // TRANSLATORS: Verb, permission checkbox for moving checklist items.
+      // TRANSLATORS: Verb, permission checkbox for moving list items.
       { key: 'canMoveItems', label: t('pantry', 'Move') },
-      // TRANSLATORS: Verb, permission checkbox for deleting checklist items.
+      // TRANSLATORS: Verb, permission checkbox for deleting list items.
       { key: 'canDeleteItems', label: t('pantry', 'Delete') },
       // TRANSLATORS: Verb, permission checkbox for managing custom-field definitions.
       { key: 'canEditFields', label: t('pantry', 'Manage custom fields') },

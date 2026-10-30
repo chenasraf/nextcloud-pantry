@@ -11,6 +11,7 @@ use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
+use OCA\Pantry\Db\ListTemplateMapper;
 use OCA\Pantry\Db\NoteMapper;
 use OCA\Pantry\Db\Photo;
 use OCA\Pantry\Db\PhotoMapper;
@@ -32,6 +33,7 @@ class TrashCleanupService {
 		private PhotoMapper $photoMapper,
 		private ImageService $images,
 		private LoggerInterface $logger,
+		private ListTemplateMapper $listTemplateMapper,
 	) {
 	}
 
@@ -81,6 +83,7 @@ class TrashCleanupService {
 		$lists = $this->listMapper->findExpiredTrashByHouse($houseId, $cutoff);
 		foreach ($lists as $list) {
 			$this->itemMapper->deleteByList((int)$list->getId());
+			$this->listTemplateMapper->deleteByList((int)$list->getId());
 			$this->listMapper->delete($list);
 		}
 

@@ -75,6 +75,15 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     emits: ['update:modelValue'],
   },
 }))
+// NcDateTimePickerNative eagerly imports a .css asset Node's ESM loader rejects.
+vi.mock('@nextcloud/vue/components/NcDateTimePickerNative', () => ({
+  default: {
+    name: 'NcDateTimePickerNative',
+    template: '<input class="nc-date-time-picker-native" type="date" />',
+    props: ['modelValue', 'type', 'label'],
+    emits: ['update:modelValue'],
+  },
+}))
 vi.mock('@/components/PantryChip', () => ({
   default: {
     name: 'PantryChip',
@@ -182,7 +191,7 @@ vi.mock('@/composables/useLabels', () => ({
 }))
 const archivedMocks = vi.hoisted(() => ({
   suggestArchivedItems: null as unknown as { value: boolean },
-  listArchivedItems: vi.fn().mockResolvedValue([]),
+  listSuggestions: vi.fn().mockResolvedValue({ archived: [], templates: [] }),
 }))
 vi.mock('@/composables/useSuggestArchivedItems', async () => {
   const { ref } = await import('vue')
@@ -195,7 +204,7 @@ vi.mock('@/composables/useSuggestArchivedItems', async () => {
   }
 })
 vi.mock('@/api/lists', () => ({
-  listArchivedItems: archivedMocks.listArchivedItems,
+  listApi: () => ({ listSuggestions: archivedMocks.listSuggestions }),
 }))
 const barcodeFillMocks = vi.hoisted(() => ({
   barcodeFill: null as unknown as { name: boolean; category: boolean; image: boolean },
@@ -217,12 +226,15 @@ vi.mock('@/utils/rrule', () => ({
 vi.mock('@/components/ChecklistItemRow', () => ({
   ChecklistItemRow: {
     name: 'ChecklistItemRow',
-    template: '<li class="mock-item-row" @click="$emit(\'select\', item)">{{ item.name }}</li>',
-    props: ['item', 'category', 'stores', 'houseId', 'suggestion'],
+    template:
+      '<li class="mock-item-row" :data-templates="suggestionTemplates?.join(\',\')" @click="$emit(\'select\', item)">{{ item.name }}</li>',
+    props: ['item', 'category', 'stores', 'houseId', 'suggestion', 'suggestionTemplates'],
     emits: ['select'],
   },
 }))
 
+import { computed, defineComponent, h } from 'vue'
+import { provideListKind } from '@/composables/useListKind'
 import ChecklistAddForm from './ChecklistAddForm.vue'
 
 function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
@@ -298,7 +310,7 @@ function mountForm(
   })
 }
 
-function chipForKey(wrapper: ReturnType<typeof mountForm>, label: string) {
+function chipForKey(wrapper: ReturnType<typeof mount>, label: string) {
   return wrapper.findAll('.pantry-chip').find((c) => c.text().includes(label))!
 }
 
@@ -402,6 +414,33 @@ describe('ChecklistAddForm', () => {
     await chipForKey(wrapper, 'Description').trigger('click')
     expect(wrapper.find('.mock-quantity-input').exists()).toBe(false)
     expect(wrapper.find('.nc-text-area').exists()).toBe(true)
+  })
+
+  it('starts an inventory item on the shelf life default and sends what is typed', async () => {
+    const Host = defineComponent({
+      setup() {
+        provideListKind(computed(() => 'inventory' as const))
+        return () =>
+          h(ChecklistAddForm, {
+            houseId: 1,
+            adding: false,
+            itemDefaults: makeDefaults({ shelfLifeDays: { mode: 'fixed', value: 7 } }),
+          })
+      },
+    })
+    const wrapper = mount(Host)
+    const form = wrapper.findComponent(ChecklistAddForm)
+    await wrapper.find('.nc-text-field').setValue('Milk')
+    const chip = chipForKey(wrapper, 'Keeps 7 days')
+    expect(chip.exists()).toBe(true)
+
+    await chip.trigger('click')
+    await wrapper.find('[data-testid="compose-expiry-days"]').setValue('10')
+    await wrapper.find('form').trigger('submit')
+
+    const [input] = form.emitted('add')![0] as [ItemInput, File | null]
+    expect(input.shelfLifeDays).toBe(10)
+    expect(input.expiresAt).toBeUndefined()
   })
 
   it('typed quantity is included in the emitted add input', async () => {
@@ -701,55 +740,112 @@ describe('ChecklistAddForm', () => {
     })
   })
 
-  describe('archived reuse suggestions', () => {
+  describe('archived and template suggestions', () => {
     const candidates = [makeItem({ id: 1, name: 'Milk', listId: 10 })]
+
+    function suggestionsWith(
+      archived: ChecklistItem[],
+      templates: { item: ChecklistItem; templates: { id: number; name: string }[] }[] = [],
+    ) {
+      archivedMocks.listSuggestions.mockResolvedValue({ archived, templates })
+    }
+
+    function fromTemplate(item: Partial<ChecklistItem>, name = 'Weekly') {
+      return { item: makeItem({ listId: 50, ...item }), templates: [{ id: 50, name }] }
+    }
 
     afterEach(() => {
       archivedMocks.suggestArchivedItems.value = false
-      archivedMocks.listArchivedItems.mockReset()
-      archivedMocks.listArchivedItems.mockResolvedValue([])
+      archivedMocks.listSuggestions.mockReset()
+      archivedMocks.listSuggestions.mockResolvedValue({ archived: [], templates: [] })
     })
 
-    it('does not fetch or fold in archived items when the pref is off', async () => {
-      archivedMocks.listArchivedItems.mockResolvedValue([
-        makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 }),
-      ])
+    it('asks for archived items only when the pref is on', async () => {
       const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
       await wrapper.find('.nc-text-field').setValue('milk')
       await flushPromises()
-      expect(archivedMocks.listArchivedItems).not.toHaveBeenCalled()
+      expect(archivedMocks.listSuggestions).toHaveBeenCalledWith(1, 10, false)
       expect(wrapper.findAll('.mock-item-row')).toHaveLength(1)
     })
 
     it('lazily fetches archived items for the target list and folds them into the matches', async () => {
       archivedMocks.suggestArchivedItems.value = true
-      archivedMocks.listArchivedItems.mockResolvedValue([
-        makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 }),
-      ])
+      suggestionsWith([makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 })])
       const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
       await wrapper.find('.nc-text-field').setValue('milk')
       await flushPromises()
-      expect(archivedMocks.listArchivedItems).toHaveBeenCalledWith(1, 10)
+      expect(archivedMocks.listSuggestions).toHaveBeenCalledWith(1, 10, true)
       const names = wrapper.findAll('.mock-item-row').map((r) => r.text())
-      expect(names).toContain('Milk')
-      expect(names).toContain('Milk Powder')
+      expect(names).toEqual(['Milk', 'Milk Powder'])
     })
 
-    it('fetches the archive only once across repeated searches on the same list', async () => {
+    it('fetches only once across repeated searches on the same list', async () => {
       archivedMocks.suggestArchivedItems.value = true
       const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
       await wrapper.find('.nc-text-field').setValue('mil')
       await flushPromises()
       await wrapper.find('.nc-text-field').setValue('milk')
       await flushPromises()
-      expect(archivedMocks.listArchivedItems).toHaveBeenCalledTimes(1)
+      expect(archivedMocks.listSuggestions).toHaveBeenCalledTimes(1)
+    })
+
+    it('fetches again when the archived-suggestions pref changes', async () => {
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      await flushPromises()
+      archivedMocks.suggestArchivedItems.value = true
+      await flushPromises()
+      expect(archivedMocks.listSuggestions).toHaveBeenLastCalledWith(1, 10, true)
+    })
+
+    it('ranks template matches after the list’s own, badged with their template', async () => {
+      archivedMocks.suggestArchivedItems.value = true
+      suggestionsWith(
+        [makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 })],
+        [
+          fromTemplate({ id: 30, name: 'Milk' }),
+          fromTemplate({ id: 31, name: 'Oat milk' }, 'Party'),
+        ],
+      )
+      const wrapper = mountForm({ reuseCandidates: candidates, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      await flushPromises()
+      const rows = wrapper.findAll('.mock-item-row')
+      // The template's "Milk" is hidden: the list already has one.
+      expect(rows.map((r) => r.text())).toEqual(['Milk', 'Milk Powder', 'Oat milk'])
+      expect(rows[2].attributes('data-templates')).toBe('Party')
+      expect(rows[0].attributes('data-templates')).toBeUndefined()
+    })
+
+    it('shares one limit of six between the list and its templates', async () => {
+      suggestionsWith(
+        [],
+        [1, 2, 3, 4].map((n) => fromTemplate({ id: 30 + n, name: `Milk ${n}` })),
+      )
+      const own = [1, 2, 3, 4].map((n) => makeItem({ id: n, name: `Milk own ${n}`, listId: 10 }))
+      const wrapper = mountForm({ reuseCandidates: own, currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('milk')
+      await flushPromises()
+      const rows = wrapper.findAll('.mock-item-row')
+      expect(rows).toHaveLength(6)
+      expect(rows.filter((r) => r.attributes('data-templates'))).toHaveLength(2)
+    })
+
+    it('emits pick-template-item when a template row is tapped', async () => {
+      suggestionsWith([], [fromTemplate({ id: 30, name: 'Bread' })])
+      const wrapper = mountForm({ reuseCandidates: [], currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('bread')
+      await flushPromises()
+      await wrapper.find('.mock-item-row').trigger('click')
+      expect(wrapper.emitted('reuse-existing')).toBeFalsy()
+      const [item, targetListId] = wrapper.emitted('pick-template-item')![0]
+      expect((item as ChecklistItem).id).toBe(30)
+      expect(targetListId).toBe(10)
     })
 
     it('emits reuse-existing with the archived item when it is tapped', async () => {
       archivedMocks.suggestArchivedItems.value = true
-      archivedMocks.listArchivedItems.mockResolvedValue([
-        makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 }),
-      ])
+      suggestionsWith([makeItem({ id: 20, name: 'Milk Powder', listId: 10, archivedAt: 123 })])
       const wrapper = mountForm({ reuseCandidates: [], currentListId: 10 })
       await wrapper.find('.nc-text-field').setValue('milk powder')
       await flushPromises()

@@ -9,6 +9,7 @@ namespace OCA\Pantry\Tests\Unit\Controller;
 
 use OCA\Pantry\Controller\HouseController;
 use OCA\Pantry\Db\HouseMemberRoleMapper;
+use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\PermissionService;
@@ -40,6 +41,7 @@ class HouseControllerAutocompleteTest extends TestCase {
 			$this->createMock(HouseMemberRoleMapper::class),
 			$session,
 			$this->userManager,
+			$this->createMock(ChecklistService::class),
 		);
 	}
 

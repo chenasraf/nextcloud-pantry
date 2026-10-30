@@ -185,12 +185,14 @@ final class PrefsController extends OCSController {
 	 * @param string|null $storeSort Store sort mode (name_asc, name_desc, custom).
 	 * @param bool|null $showAddedBy Show the avatar of the user that added each checklist item.
 	 * @param string|null $lastCurrency Last-used currency code (ISO 4217) for item prices in this house.
+	 * @param string|null $fillFromItemDefaults Whether template items you draw fill their empty fields from the list's item defaults. One of: list (follow the list's setting), always, never.
 	 * @param bool|null $notifyPhoto Photo upload notifications.
 	 * @param bool|null $notifyNoteCreate Note creation notifications.
 	 * @param bool|null $notifyNoteEdit Note edit notifications.
 	 * @param bool|null $notifyItemAdd Checklist item added notifications.
 	 * @param bool|null $notifyItemRecur Recurring item reappeared notifications.
 	 * @param bool|null $notifyItemDone Item completed notifications.
+	 * @param bool|null $notifyStockSummary Daily stock summary notifications.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryHousePrefs, array{}>
 	 *
@@ -211,14 +213,16 @@ final class PrefsController extends OCSController {
 		?string $storeSort = null,
 		?bool $showAddedBy = null,
 		?string $lastCurrency = null,
+		?string $fillFromItemDefaults = null,
 		?bool $notifyPhoto = null,
 		?bool $notifyNoteCreate = null,
 		?bool $notifyNoteEdit = null,
 		?bool $notifyItemAdd = null,
 		?bool $notifyItemRecur = null,
 		?bool $notifyItemDone = null,
+		?bool $notifyStockSummary = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $labelSort, $storeSort, $showAddedBy, $lastCurrency, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone): DataResponse {
+		return $this->runAction(function () use ($houseId, $imageFolder, $photoSort, $photoFoldersFirst, $noteSort, $checklistItemSort, $checklistSort, $categorySort, $labelSort, $storeSort, $showAddedBy, $lastCurrency, $fillFromItemDefaults, $notifyPhoto, $notifyNoteCreate, $notifyNoteEdit, $notifyItemAdd, $notifyItemRecur, $notifyItemDone, $notifyStockSummary): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$patch = array_filter([
@@ -233,12 +237,14 @@ final class PrefsController extends OCSController {
 				'storeSort' => $storeSort,
 				'showAddedBy' => $showAddedBy,
 				'lastCurrency' => $lastCurrency,
+				'fillFromItemDefaults' => $fillFromItemDefaults,
 				'notifyPhoto' => $notifyPhoto,
 				'notifyNoteCreate' => $notifyNoteCreate,
 				'notifyNoteEdit' => $notifyNoteEdit,
 				'notifyItemAdd' => $notifyItemAdd,
 				'notifyItemRecur' => $notifyItemRecur,
 				'notifyItemDone' => $notifyItemDone,
+				'notifyStockSummary' => $notifyStockSummary,
 			], fn ($v) => $v !== null);
 			$this->prefs->setHousePrefs($uid, $houseId, $patch);
 			return new DataResponse($this->prefs->getAllHousePrefs($uid, $houseId));

@@ -18,6 +18,7 @@ use OCA\Pantry\Migration\Version39Date20261009000000;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\ItemDefaults;
 use OCA\Pantry\Service\RecurrenceService;
+use OCA\Pantry\Service\StockRules;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -47,6 +48,10 @@ class ChecklistServiceTest extends TestCase {
 	private \OCA\Pantry\Db\FieldOptionMapper $fieldOptionMapper;
 	/** @var \OCA\Pantry\Db\FieldValueMapper&MockObject */
 	private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper;
+	/** @var \OCA\Pantry\Db\ListTemplateMapper&MockObject */
+	private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper;
+	/** @var \OCA\Pantry\Service\StockLinkService&MockObject */
+	private \OCA\Pantry\Service\StockLinkService $stockLinks;
 	private ChecklistService $svc;
 
 	protected function setUp(): void {
@@ -61,6 +66,8 @@ class ChecklistServiceTest extends TestCase {
 		$this->fieldDefMapper = $this->createMock(\OCA\Pantry\Db\FieldDefinitionMapper::class);
 		$this->fieldOptionMapper = $this->createMock(\OCA\Pantry\Db\FieldOptionMapper::class);
 		$this->fieldValueMapper = $this->createMock(\OCA\Pantry\Db\FieldValueMapper::class);
+		$this->listTemplateMapper = $this->createMock(\OCA\Pantry\Db\ListTemplateMapper::class);
+		$this->stockLinks = $this->createMock(\OCA\Pantry\Service\StockLinkService::class);
 		// Houses reopen recurring items at 08:00 (the default) by which
 		// computeNextDueAt snaps the time of day of every non-sub-daily occurrence.
 		$house = new House();
@@ -84,6 +91,14 @@ class ChecklistServiceTest extends TestCase {
 			$this->fieldValueMapper,
 			$this->createMock(\OCA\Pantry\Service\CustomFieldReminderService::class),
 			$this->db,
+			$this->listTemplateMapper,
+			new \OCA\Pantry\Service\ScopedTaxonomyService(
+				$this->categoryMapper,
+				$this->labelMapper,
+				$this->fieldDefMapper,
+				$this->fieldOptionMapper,
+			),
+			$this->stockLinks,
 		);
 	}
 
@@ -146,6 +161,7 @@ class ChecklistServiceTest extends TestCase {
 	public function testToggleItemOnNonRecurringDoesNotSetNextDue(): void {
 		$item = $this->makeItem();
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', 1_000_000_000);
@@ -163,6 +179,7 @@ class ChecklistServiceTest extends TestCase {
 			'createdAt' => $now - 86400 * 30, // irrelevant in this mode
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
@@ -184,6 +201,7 @@ class ChecklistServiceTest extends TestCase {
 			'createdAt' => $anchor,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
@@ -199,6 +217,7 @@ class ChecklistServiceTest extends TestCase {
 			'repeatFromCompletion' => true,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
@@ -219,6 +238,7 @@ class ChecklistServiceTest extends TestCase {
 			'createdAt' => $anchor,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', $now);
@@ -323,6 +343,7 @@ class ChecklistServiceTest extends TestCase {
 			'nextDueAt' => 456,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 
 		$toggled = $this->svc->toggleItem(42, 'alice', 999);
@@ -350,6 +371,7 @@ class ChecklistServiceTest extends TestCase {
 			'deleteOnDone' => true,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		// Once items are soft-deleted (deleted_at set) rather than removed.
 		$this->itemMapper->expects($this->never())->method('delete');
 		$this->itemMapper->expects($this->once())
@@ -364,6 +386,741 @@ class ChecklistServiceTest extends TestCase {
 		$this->assertSame($now, $toggled->getDoneAt());
 		$this->assertSame('alice', $toggled->getDoneBy());
 		$this->assertSame($now, $toggled->getDeletedAt());
+	}
+
+	private function makeList(string $kind, int $houseId = 1): Checklist {
+		$list = new Checklist();
+		$list->setHouseId($houseId);
+		$list->setKind($kind);
+		return $list;
+	}
+
+	public function testListWithoutAKindReadsAsAChecklist(): void {
+		$list = new Checklist();
+		$list->setKind(null);
+		$this->assertSame(Checklist::KIND_CHECKLIST, $list->getKind());
+		$this->assertTrue($list->isChecklist());
+	}
+
+	public function testGetListOfAnotherKindIsNotFound(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->expectException(\OCA\Pantry\Exception\NotFoundException::class);
+		$this->svc->getList(7, kind: Checklist::KIND_CHECKLIST);
+	}
+
+	public function testGetListOfTheSameKindIsReturned(): void {
+		$template = $this->makeList(Checklist::KIND_TEMPLATE);
+		$this->listMapper->method('findById')->willReturn($template);
+		$this->assertSame($template, $this->svc->getList(7, kind: Checklist::KIND_TEMPLATE));
+	}
+
+	public function testCreateListStoresItsKind(): void {
+		$this->listMapper->method('insert')->willReturnArgument(0);
+		$list = $this->svc->createList(1, 'Weekly staples', null, kind: Checklist::KIND_TEMPLATE);
+		$this->assertSame(Checklist::KIND_TEMPLATE, $list->getKind());
+	}
+
+	public function testCreateListRejectsAnUnknownKind(): void {
+		$this->listMapper->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->createList(1, 'Odd', null, kind: 'shelf');
+	}
+
+	public function testCreateListStoresTheInventoryKind(): void {
+		$this->listMapper->method('insert')->willReturnArgument(0);
+		$list = $this->svc->createList(1, 'Pantry shelf', null, kind: Checklist::KIND_INVENTORY);
+		$this->assertSame(Checklist::KIND_INVENTORY, $list->getKind());
+		$this->assertFalse($list->isChecklist());
+	}
+
+	public function testToggleItemRefusesInventoryItems(): void {
+		$this->itemMapper->method('findById')->willReturn($this->makeItem());
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->toggleItem(42, 'alice');
+	}
+
+	public function testToggleItemRefusesTemplateItems(): void {
+		$this->itemMapper->method('findById')->willReturn($this->makeItem());
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->toggleItem(42, 'alice');
+	}
+
+	public function testAddItemToATemplateKeepsTheRuleWithoutASchedule(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Bread', 'rrule' => 'FREQ=WEEKLY']);
+
+		$this->assertSame('FREQ=WEEKLY', $item->getRrule());
+		$this->assertNull($item->getNextDueAt(), 'recurrence never runs on a template');
+	}
+
+	public function testAnInventoryCountItemStartsFull(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Eggs', 'target' => ' 12 eggs ', 'reorderPoint' => '4']);
+
+		$this->assertSame(StockRules::MODE_COUNT, $item->getStockMode());
+		$this->assertSame('12 eggs', $item->getTarget());
+		$this->assertSame('4', $item->getReorderPoint());
+		$this->assertSame('12 eggs', $item->getQuantity());
+	}
+
+	public function testAnInventoryItemKeepsTheOnHandItWasGiven(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Eggs', 'quantity' => '3', 'target' => '12 eggs']);
+
+		$this->assertSame('3', $item->getQuantity());
+	}
+
+	public function testAnInventoryLevelItemStartsFull(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Flour', 'quantity' => '1 kg bag', 'stockMode' => 'level', 'target' => '12']);
+
+		$this->assertSame(StockRules::LEVEL_FULL, $item->getStockLevel());
+		$this->assertSame('1 kg bag', $item->getQuantity(), 'the restock amount is never filled from the target');
+	}
+
+	public function testAChecklistItemHasNoStock(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Eggs', 'stockMode' => 'level', 'target' => '12']);
+
+		$this->assertNull($item->getStockMode());
+		$this->assertNull($item->getTarget());
+		$this->assertNull($item->getQuantity());
+	}
+
+	public function testAddItemRejectsAnUnknownStockMode(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->addItem(1, ['name' => 'Eggs', 'stockMode' => 'weight']);
+	}
+
+	public function testUpdateItemRejectsAnUnknownStockLevel(): void {
+		$this->itemMapper->method('findById')->willReturn($this->withId($this->makeItem(), 9));
+		$this->itemMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateItem(9, ['stockLevel' => 'half']);
+	}
+
+	public function testSwitchingToLevelConvertsTheCount(): void {
+		$item = $this->withId($this->makeItem(['quantity' => '4']), 9);
+		$item->setStockMode(StockRules::MODE_COUNT);
+		$item->setTarget('12 eggs');
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->updateItem(9, ['stockMode' => 'level']);
+
+		$this->assertSame(StockRules::MODE_LEVEL, $item->getStockMode());
+		$this->assertSame(StockRules::LEVEL_LOW, $item->getStockLevel());
+		$this->assertSame('8 eggs', $item->getQuantity());
+		$this->assertSame('12 eggs', $item->getTarget(), 'the target stays stored');
+	}
+
+	public function testValuesSentWithAModeSwitchWinOverTheConversion(): void {
+		$item = $this->withId($this->makeItem(['quantity' => '1 kg bag']), 9);
+		$item->setStockMode(StockRules::MODE_LEVEL);
+		$item->setStockLevel(StockRules::LEVEL_LOW);
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->updateItem(9, ['stockMode' => 'count', 'quantity' => '2 kg', 'target' => '3 kg']);
+
+		$this->assertSame(StockRules::MODE_COUNT, $item->getStockMode());
+		$this->assertSame('2 kg', $item->getQuantity());
+		$this->assertSame('3 kg', $item->getTarget());
+	}
+
+	public function testUpdateItemClearsATargetWithAnEmptyString(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setTarget('12');
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->updateItem(9, ['target' => '']);
+
+		$this->assertNull($item->getTarget());
+	}
+
+	/**
+	 * Copy item 42 from a list of `$fromKind` onto list 20 of `$toKind`.
+	 */
+	private function copyAcross(string $fromKind, string $toKind, ChecklistItem $source, ?string $targetDefaults = null): ChecklistItem {
+		$source->setListId(10);
+		$source->setId(42);
+		$this->itemMapper->method('findById')->willReturn($source);
+		$this->listMapper->method('findById')->willReturnCallback(function (int $id) use ($fromKind, $toKind, $targetDefaults): Checklist {
+			$list = $this->makeList($id === 20 ? $toKind : $fromKind);
+			if ($id === 20) {
+				$list->setItemDefaults($targetDefaults);
+			}
+			return $list;
+		});
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+		return $this->svc->copyItem(42, 20, 'bob', null, null);
+	}
+
+	private function stockItem(string $mode, ?string $level, ?string $quantity, ?string $target, ?string $reorderPoint = null): ChecklistItem {
+		$item = $this->makeItem(['quantity' => $quantity]);
+		$item->setStockMode($mode);
+		$item->setStockLevel($level);
+		$item->setTarget($target);
+		$item->setReorderPoint($reorderPoint);
+		return $item;
+	}
+
+	public function testAnItemCopiedBetweenInventoriesKeepsItsStock(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_INVENTORY, $this->stockItem('level', 'low', '1 kg', '12', '4'));
+
+		$this->assertSame(StockRules::MODE_LEVEL, $copy->getStockMode());
+		$this->assertSame(StockRules::LEVEL_LOW, $copy->getStockLevel());
+		$this->assertSame('1 kg', $copy->getQuantity());
+		$this->assertSame('12', $copy->getTarget());
+		$this->assertSame('4', $copy->getReorderPoint());
+	}
+
+	public function testAChecklistItemLandsOnAnInventoryFull(): void {
+		$copy = $this->copyAcross(Checklist::KIND_CHECKLIST, Checklist::KIND_INVENTORY, $this->makeItem(['quantity' => '6 eggs']));
+
+		$this->assertSame(StockRules::MODE_COUNT, $copy->getStockMode());
+		$this->assertSame('6 eggs', $copy->getTarget());
+		$this->assertSame('6 eggs', $copy->getQuantity(), 'on hand starts at the target');
+		$this->assertNull($copy->getReorderPoint());
+	}
+
+	public function testAChecklistItemLandsInTheInventorysDefaultStockMode(): void {
+		$defaults = ItemDefaults::encode(['stockMode' => ['mode' => 'fixed', 'value' => 'level']]);
+		$copy = $this->copyAcross(Checklist::KIND_CHECKLIST, Checklist::KIND_INVENTORY, $this->makeItem(['quantity' => '1 kg bag']), $defaults);
+
+		$this->assertSame(StockRules::MODE_LEVEL, $copy->getStockMode());
+		$this->assertSame(StockRules::LEVEL_FULL, $copy->getStockLevel());
+		$this->assertSame('1 kg bag', $copy->getQuantity(), 'the quantity is the restock amount');
+	}
+
+	public function testATemplateItemLandsOnAnInventoryFullInItsOwnMode(): void {
+		$defaults = ItemDefaults::encode(['stockMode' => ['mode' => 'fixed', 'value' => 'level']]);
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_INVENTORY, $this->stockItem('count', null, '6', '12 eggs', '4'), $defaults);
+
+		$this->assertSame(StockRules::MODE_COUNT, $copy->getStockMode(), "the template's mode wins over the inventory default");
+		$this->assertSame('12 eggs', $copy->getTarget(), 'the target wins over the quantity');
+		$this->assertSame('12 eggs', $copy->getQuantity());
+		$this->assertSame('4', $copy->getReorderPoint());
+	}
+
+	public function testATemplateLevelItemRestocksItsQuantity(): void {
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_INVENTORY, $this->stockItem('level', null, '1 kg bag', '2'));
+
+		$this->assertSame(StockRules::LEVEL_FULL, $copy->getStockLevel());
+		$this->assertSame('1 kg bag', $copy->getQuantity());
+		$this->assertSame('2', $copy->getTarget(), 'the target stays stored for a switch to count');
+	}
+
+	public function testALowInventoryItemAsksAChecklistForTheShortfall(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_CHECKLIST, $this->stockItem('count', null, '4', '12 eggs'));
+
+		$this->assertSame('8 eggs', $copy->getQuantity());
+		$this->assertNull($copy->getStockMode());
+		$this->assertNull($copy->getTarget());
+	}
+
+	public function testAStockedInventoryItemAsksAChecklistForTheTarget(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_CHECKLIST, $this->stockItem('count', null, '12', '12 eggs', '4'));
+
+		$this->assertSame('12 eggs', $copy->getQuantity());
+		$this->assertNull($copy->getReorderPoint());
+	}
+
+	public function testALevelInventoryItemAsksAChecklistForTheRestockAmount(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_CHECKLIST, $this->stockItem('level', 'full', '1 kg bag', null));
+
+		$this->assertSame('1 kg bag', $copy->getQuantity());
+		$this->assertNull($copy->getStockLevel());
+	}
+
+	public function testAnInventoryItemKeepsHowItIsStockedOnATemplate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_TEMPLATE, $this->stockItem('count', null, '4', '12 eggs', '3'));
+
+		$this->assertSame(StockRules::MODE_COUNT, $copy->getStockMode());
+		$this->assertSame('12 eggs', $copy->getTarget());
+		$this->assertSame('3', $copy->getReorderPoint());
+		$this->assertSame('12 eggs', $copy->getQuantity(), 'a template holds the full amount, not what was on hand');
+		$this->assertNull($copy->getStockLevel(), 'a template never holds a level');
+	}
+
+	public function testATemplateItemKeepsItsStockOnATemplate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_TEMPLATE, $this->stockItem('level', null, '2', '12'));
+
+		$this->assertSame(StockRules::MODE_LEVEL, $copy->getStockMode());
+		$this->assertSame('12', $copy->getTarget());
+		$this->assertSame('2', $copy->getQuantity());
+	}
+
+	public function testATemplateItemLeavesItsStockOffAChecklist(): void {
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_CHECKLIST, $this->stockItem('count', null, '6', '12'));
+
+		$this->assertSame('6', $copy->getQuantity());
+		$this->assertNull($copy->getStockMode());
+		$this->assertNull($copy->getTarget());
+	}
+
+	public function testMovingALowInventoryItemToAChecklistAsksForTheShortfall(): void {
+		$item = $this->stockItem('level', 'out', '2 blocks', null);
+		$item->setListId(10);
+		$item->setId(42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturnCallback(
+			fn (int $id): Checklist => $this->makeList($id === 20 ? Checklist::KIND_CHECKLIST : Checklist::KIND_INVENTORY),
+		);
+
+		$this->svc->moveItems([42], 20);
+
+		$this->assertSame('2 blocks', $item->getQuantity());
+		$this->assertNull($item->getStockMode());
+		$this->assertNull($item->getStockLevel());
+	}
+
+	public function testATemplateItemStoresHowItIsStockedButNoLevel(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Eggs', 'quantity' => '6', 'stockMode' => 'count', 'stockLevel' => 'low', 'target' => '12', 'reorderPoint' => '4']);
+
+		$this->assertSame(StockRules::MODE_COUNT, $item->getStockMode());
+		$this->assertNull($item->getStockLevel());
+		$this->assertSame('12', $item->getTarget());
+		$this->assertSame('4', $item->getReorderPoint());
+		$this->assertSame('6', $item->getQuantity(), 'a template item is never filled to its target');
+	}
+
+	private function inDays(int $days): int {
+		return StockRules::addDays(StockRules::today(), $days);
+	}
+
+	public function testKeepsNDaysSetsTheShelfLifeAndTheDate(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Milk', 'shelfLifeDays' => 7, 'expiresAt' => null]);
+
+		$this->assertSame(7, $item->getShelfLifeDays());
+		$this->assertSame($this->inDays(7), $item->getExpiresAt());
+	}
+
+	public function testATypedFutureDateSetsTheShelfLifeToMatch(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setShelfLifeDays(30);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['expiresAt' => $this->inDays(10)]);
+
+		$this->assertSame($this->inDays(10), $item->getExpiresAt());
+		$this->assertSame(10, $item->getShelfLifeDays());
+	}
+
+	/** An inventory count item with `$onHand` of 12, a shelf life of 7 days and a date 3 days out. */
+	private function stockedItem(?string $onHand, string $mode = StockRules::MODE_COUNT, ?string $level = null): ChecklistItem {
+		$item = $this->withId($this->makeItem(['quantity' => $onHand]), 9);
+		$item->setStockMode($mode);
+		$item->setStockLevel($level);
+		$item->setTarget('12');
+		$item->setShelfLifeDays(7);
+		$item->setExpiresAt($this->inDays(3));
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		return $item;
+	}
+
+	public function testRaisingStockFromEmptyRenewsTheDate(): void {
+		$item = $this->stockedItem('0');
+
+		$this->svc->updateItem(9, ['quantity' => '1']);
+
+		$this->assertSame($this->inDays(7), $item->getExpiresAt());
+	}
+
+	public function testRaisingStockFromBlankRenewsTheDate(): void {
+		$item = $this->stockedItem(null);
+
+		$this->svc->updateItem(9, ['quantity' => '6']);
+
+		$this->assertSame($this->inDays(7), $item->getExpiresAt());
+	}
+
+	public function testRaisingStockAlreadyOnHandLeavesTheDate(): void {
+		$item = $this->stockedItem('4');
+
+		$this->svc->updateItem(9, ['quantity' => '5']);
+
+		$this->assertSame($this->inDays(3), $item->getExpiresAt());
+	}
+
+	public function testRaisingALevelFromOutRenewsTheDate(): void {
+		$item = $this->stockedItem(null, StockRules::MODE_LEVEL, StockRules::LEVEL_OUT);
+
+		$this->svc->updateItem(9, ['stockLevel' => StockRules::LEVEL_LOW]);
+
+		$this->assertSame($this->inDays(7), $item->getExpiresAt());
+	}
+
+	public function testRaisingALevelFromLowLeavesTheDate(): void {
+		$item = $this->stockedItem(null, StockRules::MODE_LEVEL, StockRules::LEVEL_LOW);
+
+		$this->svc->updateItem(9, ['stockLevel' => StockRules::LEVEL_FULL]);
+
+		$this->assertSame($this->inDays(3), $item->getExpiresAt());
+	}
+
+	public function testRaisingFromEmptyWithoutAShelfLifeClearsTheDate(): void {
+		$item = $this->stockedItem('0');
+		$item->setShelfLifeDays(null);
+
+		$this->svc->updateItem(9, ['quantity' => '1']);
+
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	public function testADateGivenWithTheRaiseIsKept(): void {
+		$item = $this->stockedItem('0');
+
+		$this->svc->updateItem(9, ['quantity' => '1', 'expiresAt' => $this->inDays(20)]);
+
+		$this->assertSame($this->inDays(20), $item->getExpiresAt());
+	}
+
+	public function testADateOfTodayOrEarlierLeavesTheShelfLife(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setShelfLifeDays(30);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['expiresAt' => $this->inDays(-2)]);
+
+		$this->assertSame($this->inDays(-2), $item->getExpiresAt());
+		$this->assertSame(30, $item->getShelfLifeDays());
+	}
+
+	public function testTheShelfLifeClearsOnItsOwn(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setShelfLifeDays(7);
+		$item->setExpiresAt($this->inDays(3));
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['shelfLifeDays' => 0]);
+
+		$this->assertNull($item->getShelfLifeDays());
+		$this->assertSame($this->inDays(3), $item->getExpiresAt());
+	}
+
+	public function testClearingBothRemovesTheExpiry(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setShelfLifeDays(7);
+		$item->setExpiresAt($this->inDays(3));
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['shelfLifeDays' => 0, 'expiresAt' => 0]);
+
+		$this->assertNull($item->getShelfLifeDays());
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	public function testAShelfLifeAndDateSentTogetherAreTakenAsSent(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+
+		$this->svc->updateItem(9, ['shelfLifeDays' => 7, 'expiresAt' => $this->inDays(2)]);
+
+		$this->assertSame(7, $item->getShelfLifeDays());
+		$this->assertSame($this->inDays(2), $item->getExpiresAt());
+	}
+
+	public function testAShelfLifeTooLongIsRejected(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->addItem(1, ['name' => 'Salt', 'shelfLifeDays' => StockRules::MAX_SHELF_LIFE_DAYS + 1]);
+	}
+
+	public function testATemplateItemKeepsAShelfLifeButNoDate(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Milk', 'shelfLifeDays' => 7, 'expiresAt' => $this->inDays(3)]);
+
+		$this->assertSame(7, $item->getShelfLifeDays());
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	public function testUpdatingATemplateItemIgnoresADate(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+
+		$this->svc->updateItem(9, ['shelfLifeDays' => 5, 'expiresAt' => $this->inDays(3)]);
+
+		$this->assertSame(5, $item->getShelfLifeDays());
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	public function testAChecklistItemHasNoExpiry(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$item = $this->svc->addItem(1, ['name' => 'Milk', 'shelfLifeDays' => 7]);
+
+		$this->assertNull($item->getShelfLifeDays());
+		$this->assertNull($item->getExpiresAt());
+	}
+
+	private function expiringItem(string $mode = 'count'): ChecklistItem {
+		$item = $this->stockItem($mode, $mode === 'level' ? 'full' : null, '6', '12');
+		$item->setShelfLifeDays(7);
+		$item->setExpiresAt($this->inDays(3));
+		return $item;
+	}
+
+	public function testAnItemCopiedBetweenInventoriesKeepsItsDate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_INVENTORY, $this->expiringItem());
+
+		$this->assertSame(7, $copy->getShelfLifeDays());
+		$this->assertSame($this->inDays(3), $copy->getExpiresAt());
+	}
+
+	public function testAnInventoryItemKeepsOnlyItsShelfLifeOnATemplate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_TEMPLATE, $this->expiringItem());
+
+		$this->assertSame(7, $copy->getShelfLifeDays());
+		$this->assertNull($copy->getExpiresAt());
+	}
+
+	public function testATemplateItemExpiresItsShelfLifeFromToday(): void {
+		$source = $this->stockItem('count', null, '6', '12');
+		$source->setShelfLifeDays(7);
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_INVENTORY, $source);
+
+		$this->assertSame(7, $copy->getShelfLifeDays());
+		$this->assertSame($this->inDays(7), $copy->getExpiresAt());
+	}
+
+	public function testATemplateItemWithoutAShelfLifeLandsWithoutADate(): void {
+		$copy = $this->copyAcross(Checklist::KIND_TEMPLATE, Checklist::KIND_INVENTORY, $this->stockItem('count', null, '6', '12'));
+
+		$this->assertNull($copy->getExpiresAt());
+	}
+
+	public function testAnInventoryItemLeavesItsExpiryOffAChecklist(): void {
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_CHECKLIST, $this->expiringItem());
+
+		$this->assertNull($copy->getShelfLifeDays());
+		$this->assertNull($copy->getExpiresAt());
+	}
+
+	public function testUpdateListSetsTheExpiryWarningOfAnInventory(): void {
+		$list = $this->makeList(Checklist::KIND_INVENTORY);
+		$this->listMapper->method('findById')->willReturn($list);
+
+		$this->svc->updateList(1, ['expiryLeadDays' => 0]);
+
+		$this->assertSame(0, $list->expiryLeadDays());
+	}
+
+	public function testAnInventoryWithoutAnExpiryWarningWarnsTwoDaysAhead(): void {
+		$this->assertSame(2, $this->makeList(Checklist::KIND_INVENTORY)->expiryLeadDays());
+	}
+
+	public function testUpdateListRejectsANegativeExpiryWarning(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->listMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateList(1, ['expiryLeadDays' => -1]);
+	}
+
+	public function testSwitchingATemplateItemsModeConvertsNothing(): void {
+		$item = $this->withId($this->makeItem(['quantity' => '6']), 9);
+		$item->setStockMode(StockRules::MODE_COUNT);
+		$item->setTarget('12');
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+
+		$this->svc->updateItem(9, ['stockMode' => 'level', 'stockLevel' => 'low']);
+
+		$this->assertSame(StockRules::MODE_LEVEL, $item->getStockMode());
+		$this->assertNull($item->getStockLevel());
+		$this->assertSame('6', $item->getQuantity());
+		$this->assertSame('12', $item->getTarget());
+	}
+
+	public function testATemplateItemsModeClearsWithAnEmptyString(): void {
+		$item = $this->withId($this->makeItem(), 9);
+		$item->setStockMode(StockRules::MODE_LEVEL);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+
+		$this->svc->updateItem(9, ['stockMode' => '']);
+
+		$this->assertNull($item->getStockMode());
+	}
+
+	public function testCountNeedsRestockCountsLowOutExpiringAndExpiredItemsPerList(): void {
+		$item = fn (?string $mode, ?string $level, ?string $quantity, ?string $target, ?int $expiresInDays = null): array => [
+			'stockMode' => $mode, 'stockLevel' => $level, 'quantity' => $quantity, 'target' => $target, 'reorderPoint' => null,
+			'expiresAt' => $expiresInDays !== null ? $this->inDays($expiresInDays) : null, 'shelfLifeDays' => null,
+		];
+		$lists = array_map(function (int $id): Checklist {
+			$list = $this->makeList(Checklist::KIND_INVENTORY);
+			$list->setId($id);
+			return $list;
+		}, [3, 4, 5]);
+		$lists[1]->setExpiryLeadDays(5);
+		$this->itemMapper->method('findStockByLists')->with([3, 4, 5])->willReturn([
+			3 => [
+				$item('count', null, '2', '12'),
+				$item('count', null, '0', '12'),
+				$item('count', null, '12', '12'),
+				$item('count', null, 'some', '12'),
+				$item('level', 'low', null, null),
+				$item('count', null, '12', '12', -1),
+				$item('count', null, '12', '12', 3),
+			],
+			4 => [$item('level', 'full', null, null), $item('count', null, '12', '12', 3)],
+		]);
+
+		$this->assertSame([3 => 4, 4 => 1], $this->svc->countNeedsRestock($lists));
+	}
+
+	public function testCopyItemBetweenTemplatesKeepsTheRuleWithoutASchedule(): void {
+		$source = $this->makeItem(['listId' => 10, 'rrule' => 'FREQ=WEEKLY']);
+		$this->itemMapper->method('findById')->willReturn($source);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertSame('FREQ=WEEKLY', $copy->getRrule());
+		$this->assertNull($copy->getNextDueAt());
+	}
+
+	/**
+	 * Every ordered pair of kinds, so each crossing is covered.
+	 *
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public static function kindPairs(): array {
+		$pairs = [];
+		foreach (Checklist::KINDS as $from) {
+			foreach (Checklist::KINDS as $to) {
+				$pairs["$from to $to"] = [$from, $to];
+			}
+		}
+		return $pairs;
+	}
+
+	/**
+	 * A checked-off, recurring, delete-on-done item on list 10, with lists 10
+	 * and 20 of the given kinds.
+	 */
+	private function crossingItem(string $fromKind, string $toKind): ChecklistItem {
+		$item = $this->makeItem([
+			'listId' => 10,
+			'done' => true,
+			'doneAt' => 500,
+			'doneBy' => 'alice',
+			'rrule' => 'FREQ=WEEKLY',
+			'deleteOnDone' => true,
+			'nextDueAt' => 900,
+			'createdAt' => 100,
+		]);
+		$item->setId(42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturnCallback(
+			fn (int $id): Checklist => $this->makeList($id === 20 ? $toKind : $fromKind),
+		);
+		return $item;
+	}
+
+	private function assertCrossedRecurrence(ChecklistItem $item, string $toKind): void {
+		if ($toKind === Checklist::KIND_INVENTORY) {
+			$this->assertNull($item->getRrule(), 'inventories drop recurrence');
+			$this->assertFalse($item->getDeleteOnDone(), 'inventories drop delete-on-done');
+		} else {
+			$this->assertSame('FREQ=WEEKLY', $item->getRrule());
+			$this->assertTrue($item->getDeleteOnDone());
+		}
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('kindPairs')]
+	public function testCopyItemAcrossKindsKeepsWhatFitsAndStartsUnchecked(string $fromKind, string $toKind): void {
+		$this->crossingItem($fromKind, $toKind);
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertSame(20, $copy->getListId());
+		$this->assertFalse($copy->getDone(), 'a copy always starts unchecked');
+		$this->assertNull($copy->getDoneAt());
+		$this->assertNull($copy->getDoneBy());
+		$this->assertCrossedRecurrence($copy, $toKind);
+		if ($toKind === Checklist::KIND_CHECKLIST) {
+			$this->assertNotNull($copy->getNextDueAt(), 'a checklist schedules the copied rule');
+		} else {
+			$this->assertNull($copy->getNextDueAt(), 'only checklists run recurrence');
+		}
+	}
+
+	#[\PHPUnit\Framework\Attributes\DataProvider('kindPairs')]
+	public function testMoveItemsAcrossKindsKeepsWhatFits(string $fromKind, string $toKind): void {
+		$item = $this->crossingItem($fromKind, $toKind);
+
+		[$moved] = $this->svc->moveItems([42], 20);
+
+		$this->assertSame($item, $moved);
+		$this->assertSame(20, $item->getListId());
+		if ($fromKind === $toKind) {
+			$this->assertTrue($item->getDone(), 'a move within a kind only changes the list');
+			$this->assertSame(500, $item->getDoneAt());
+			$this->assertSame(900, $item->getNextDueAt());
+			return;
+		}
+		$this->assertCrossedRecurrence($item, $toKind);
+		$this->assertFalse($item->getDone(), 'done state does not leave checklists');
+		$this->assertNull($item->getDoneAt());
+		$this->assertNull($item->getDoneBy());
+		if ($toKind === Checklist::KIND_CHECKLIST) {
+			$this->assertNotNull($item->getNextDueAt(), 'a checklist schedules the moved rule');
+		} else {
+			$this->assertNull($item->getNextDueAt(), 'only checklists run recurrence');
+		}
+	}
+
+	public function testMoveItemsRunsInASingleTransaction(): void {
+		$this->crossingItem(Checklist::KIND_CHECKLIST, Checklist::KIND_TEMPLATE);
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+
+		$this->svc->moveItems([42], 20);
+	}
+
+	public function testMoveItemRefusesAListOfAnotherKind(): void {
+		$this->itemMapper->method('findById')->willReturn($this->makeItem(['listId' => 10]));
+		$this->listMapper->method('findById')->willReturnCallback(
+			fn (int $id): Checklist => $this->makeList($id === 20 ? Checklist::KIND_TEMPLATE : Checklist::KIND_CHECKLIST),
+		);
+		$this->itemMapper->expects($this->never())->method('update');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateItem(42, ['listId' => 20]);
 	}
 
 	public function testCopyItemClonesFieldsAndStartsUndone(): void {
@@ -498,6 +1255,7 @@ class ChecklistServiceTest extends TestCase {
 			'deleteOnDone' => true,
 		]);
 		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
 		$this->itemMapper->expects($this->once())->method('update')->willReturn($item);
 		$this->itemMapper->expects($this->never())->method('delete');
 
@@ -882,6 +1640,7 @@ class ChecklistServiceTest extends TestCase {
 		$ref->setValue($list, 99);
 		$this->listMapper->method('findById')->willReturn($list);
 		$this->itemMapper->expects($this->once())->method('deleteByList')->with(99);
+		$this->listTemplateMapper->expects($this->once())->method('deleteByList')->with(99);
 		$this->listMapper->expects($this->once())->method('delete')->with($list);
 
 		$this->svc->permanentlyDeleteList(99);
@@ -907,8 +1666,15 @@ class ChecklistServiceTest extends TestCase {
 				$deletedListIds[] = $id;
 			});
 
+		$detachedListIds = [];
+		$this->listTemplateMapper->method('deleteByList')
+			->willReturnCallback(function (int $id) use (&$detachedListIds) {
+				$detachedListIds[] = $id;
+			});
+
 		$this->svc->emptyListsTrash(7);
 		$this->assertSame([1, 2], $deletedListIds);
+		$this->assertSame([1, 2], $detachedListIds, 'purged lists lose their template attachments');
 	}
 
 	// ----- Batch (group) actions -----
@@ -1249,7 +2015,7 @@ class ChecklistServiceTest extends TestCase {
 	 * @return array{0: Checklist, 1: list<ChecklistItem>} The inserted list copy and
 	 *                                                     the item copies captured on their way into the mapper.
 	 */
-	private function captureDuplicate(Checklist $source, array $items, bool $resetDone): array {
+	private function captureDuplicate(Checklist $source, array $items, bool $resetDone, ?string $kind = null): array {
 		$this->listMapper->method('findById')->willReturn($source);
 		$insertedList = null;
 		$this->listMapper->method('insert')
@@ -1274,6 +2040,7 @@ class ChecklistServiceTest extends TestCase {
 			$resetDone,
 			'alice',
 			static fn (int $fileId, string $owner): ?int => null,
+			$kind,
 		);
 
 		$this->assertNotNull($insertedList);
@@ -1420,10 +2187,508 @@ class ChecklistServiceTest extends TestCase {
 		$this->captureDuplicate($this->makeSourceList(), [], true);
 	}
 
+	#[\PHPUnit\Framework\Attributes\DataProvider('kindPairs')]
+	public function testDuplicateListAsAKindKeepsWhatFits(string $fromKind, string $toKind): void {
+		$source = $this->makeSourceList();
+		$source->setKind($fromKind);
+		$item = $this->makeItem([
+			'listId' => 5,
+			'done' => true,
+			'doneAt' => 500,
+			'doneBy' => 'bob',
+			'rrule' => 'FREQ=WEEKLY',
+			'deleteOnDone' => true,
+			'nextDueAt' => 900,
+		]);
+		$item->setId(1);
+
+		// Asking to keep the done state shows it survives only checklist to checklist.
+		[$copy, $copies] = $this->captureDuplicate($source, [$item], false, $toKind);
+
+		$this->assertSame($toKind, $copy->getKind());
+		$this->assertSame('Before stepping off', $copy->getDescription());
+		$this->assertCrossedRecurrence($copies[0], $toKind);
+		$keptDone = $fromKind === Checklist::KIND_CHECKLIST && $toKind === Checklist::KIND_CHECKLIST;
+		$this->assertSame($keptDone, $copies[0]->getDone());
+		$this->assertSame($keptDone ? 'bob' : null, $copies[0]->getDoneBy());
+		if ($toKind !== Checklist::KIND_CHECKLIST) {
+			$this->assertNull($copies[0]->getNextDueAt(), 'only checklists run recurrence');
+		}
+	}
+
+	public function testDuplicateListKeepsTheSourceKindByDefault(): void {
+		$source = $this->makeSourceList();
+		$source->setKind(Checklist::KIND_TEMPLATE);
+
+		[$copy] = $this->captureDuplicate($source, [], true);
+
+		$this->assertSame(Checklist::KIND_TEMPLATE, $copy->getKind());
+	}
+
+	public function testDuplicateListAsAnInventoryDropsTheRecurrenceDefault(): void {
+		$source = $this->makeSourceList();
+		$source->setItemDefaults(ItemDefaults::encode([
+			'recurrence' => ['mode' => 'fixed', 'value' => ['kind' => 'recurring', 'rrule' => 'FREQ=WEEKLY', 'repeatFromCompletion' => false]],
+			'stores' => ['mode' => 'remember', 'value' => [2]],
+		]));
+
+		[$copy] = $this->captureDuplicate($source, [], true, Checklist::KIND_INVENTORY);
+
+		$defaults = ItemDefaults::decode($copy->getItemDefaults());
+		$this->assertArrayNotHasKey('recurrence', $defaults);
+		$this->assertSame(['mode' => 'remember', 'value' => [2]], $defaults['stores']);
+	}
+
+	public function testDuplicateListAsAChecklistDropsTheStockDefaults(): void {
+		$source = $this->makeSourceList();
+		$source->setKind(Checklist::KIND_INVENTORY);
+		$source->setItemDefaults(ItemDefaults::encode([
+			'stockMode' => ['mode' => 'remember', 'value' => 'level'],
+			'target' => ['mode' => 'fixed', 'value' => '12'],
+			'quantity' => ['mode' => 'fixed', 'value' => '2'],
+		]));
+
+		[$copy] = $this->captureDuplicate($source, [], true, Checklist::KIND_CHECKLIST);
+
+		$this->assertSame(['quantity' => ['mode' => 'fixed', 'value' => '2']], ItemDefaults::decode($copy->getItemDefaults()));
+	}
+
+	public function testDuplicateListAsATemplateKeepsTheRecurrenceDefault(): void {
+		$recurrence = ['mode' => 'fixed', 'value' => ['kind' => 'recurring', 'rrule' => 'FREQ=WEEKLY', 'repeatFromCompletion' => false]];
+		$source = $this->makeSourceList();
+		$source->setItemDefaults(ItemDefaults::encode(['recurrence' => $recurrence]));
+
+		[$copy] = $this->captureDuplicate($source, [], true, Checklist::KIND_TEMPLATE);
+
+		$this->assertSame($recurrence, ItemDefaults::decode($copy->getItemDefaults())['recurrence']);
+	}
+
+	public function testDuplicateListRejectsAnUnknownKind(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeSourceList());
+		$this->listMapper->expects($this->never())->method('insert');
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->duplicateList(5, 'Shelf', true, 'alice', static fn (int $f, string $o): ?int => null, 'shelf');
+	}
+
 	public function testDuplicateListRejectsAnEmptyName(): void {
 		$this->listMapper->method('findById')->willReturn($this->makeSourceList());
 
 		$this->expectException(\InvalidArgumentException::class);
 		$this->svc->duplicateList(5, '   ', true, 'alice', static fn (int $f, string $o): ?int => null);
+	}
+
+	// ----- Stock links -----
+
+	public function testAddingAnInventoryItemLetsItMatchByName(): void {
+		$inventory = $this->makeList(Checklist::KIND_INVENTORY);
+		$this->listMapper->method('findById')->willReturn($inventory);
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+		$this->stockLinks->expects($this->once())->method('onInventoryItemSaved')
+			->with($this->isInstanceOf(ChecklistItem::class), $inventory);
+		$this->stockLinks->expects($this->never())->method('onChecklistRowSaved');
+
+		$this->svc->addItem(1, ['name' => 'Eggs']);
+	}
+
+	public function testAddingAChecklistItemLetsInventoriesMatchIt(): void {
+		$checklist = $this->makeList(Checklist::KIND_CHECKLIST);
+		$this->listMapper->method('findById')->willReturn($checklist);
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+		$this->stockLinks->expects($this->once())->method('onChecklistRowSaved')
+			->with($this->isInstanceOf(ChecklistItem::class), $checklist);
+
+		$this->svc->addItem(1, ['name' => 'Eggs']);
+	}
+
+	public function testAddingATemplateItemMatchesNothing(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_TEMPLATE));
+		$this->itemMapper->method('insert')->willReturnArgument(0);
+		$this->stockLinks->expects($this->never())->method('onInventoryItemSaved');
+		$this->stockLinks->expects($this->never())->method('onChecklistRowSaved');
+
+		$this->svc->addItem(1, ['name' => 'Eggs']);
+	}
+
+	public function testRenamingAnItemLetsItMatchAgain(): void {
+		$item = $this->withId($this->makeItem(['name' => 'Milk']), 42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->stockLinks->expects($this->once())->method('onChecklistRowSaved')->with($item);
+
+		$this->svc->updateItem(42, ['name' => 'Whole milk']);
+	}
+
+	public function testEditingWithoutRenamingMatchesNothing(): void {
+		$item = $this->withId($this->makeItem(['name' => 'Milk']), 42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->stockLinks->expects($this->never())->method('onInventoryItemSaved');
+
+		$this->svc->updateItem(42, ['name' => 'Milk', 'quantity' => '2']);
+	}
+
+	public function testTurningAutoLinkOnLetsTheItemMatch(): void {
+		$item = $this->withId($this->makeItem(), 42);
+		$item->setAutoLink(false);
+		$inventory = $this->makeList(Checklist::KIND_INVENTORY);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($inventory);
+		$this->stockLinks->expects($this->once())->method('onInventoryItemSaved')->with($item, $inventory);
+
+		$this->svc->updateItem(42, ['autoLink' => true]);
+
+		$this->assertTrue($item->autoLinks());
+	}
+
+	public function testTurningAutoLinkOffMatchesNothing(): void {
+		$item = $this->withId($this->makeItem(), 42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->stockLinks->expects($this->never())->method('onInventoryItemSaved');
+
+		$this->svc->updateItem(42, ['autoLink' => false]);
+
+		$this->assertFalse($item->autoLinks());
+	}
+
+	public function testMovingAnItemWithinItsKindReportsTheMove(): void {
+		$item = $this->withId($this->makeItem(['listId' => 10]), 42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$lists = [10 => $this->makeList(Checklist::KIND_INVENTORY), 20 => $this->makeList(Checklist::KIND_INVENTORY)];
+		$this->listMapper->method('findById')->willReturnCallback(static fn (int $id): Checklist => $lists[$id]);
+		$this->stockLinks->expects($this->once())->method('onItemMoved')->with($item, $lists[10], $lists[20]);
+
+		$this->svc->updateItem(42, ['listId' => 20]);
+
+		$this->assertSame(20, $item->getListId());
+	}
+
+	public function testMovingItemsAcrossKindsReportsEachMove(): void {
+		$item = $this->withId($this->makeItem(['listId' => 10]), 42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$lists = [10 => $this->makeList(Checklist::KIND_INVENTORY), 20 => $this->makeList(Checklist::KIND_CHECKLIST)];
+		$lists[10]->setId(10);
+		$lists[20]->setId(20);
+		$this->listMapper->method('findById')->willReturnCallback(static fn (int $id): Checklist => $lists[$id]);
+		$this->db->method('beginTransaction');
+		$this->stockLinks->expects($this->once())->method('onItemMoved')->with($item, $lists[10], $lists[20]);
+
+		$this->svc->moveItems([42], 20);
+	}
+
+	public function testTickingARowLinksBeforeItIsMarkedDone(): void {
+		$item = $this->withId($this->makeItem(['deleteOnDone' => true]), 42);
+		$checklist = $this->makeList(Checklist::KIND_CHECKLIST);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($checklist);
+		$this->stockLinks->expects($this->once())->method('onChecklistRowSaved')
+			->willReturnCallback(function (ChecklistItem $row, Checklist $list) use ($checklist): void {
+				$this->assertSame($checklist, $list);
+				$this->assertFalse($row->getDone(), 'the row still reads as open');
+				$this->assertNull($row->getDeletedAt(), 'a once item is not in the trash yet');
+			});
+
+		$this->assertTrue($this->svc->toggleItem(42, 'alice')->getDone());
+	}
+
+	public function testUncheckingARowMatchesNothing(): void {
+		$this->itemMapper->method('findById')->willReturn($this->withId($this->makeItem(['done' => true]), 42));
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_CHECKLIST));
+		$this->stockLinks->expects($this->never())->method('onChecklistRowSaved');
+
+		$this->svc->toggleItem(42, 'alice');
+	}
+
+	public function testCopyingAnItemLetsTheCopyMatch(): void {
+		$this->stockLinks->expects($this->once())->method('onInventoryItemSaved');
+
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_INVENTORY, $this->makeItem());
+
+		$this->assertNull($copy->getLinkedItemId());
+	}
+
+	public function testACopyNeverCarriesTheLink(): void {
+		$source = $this->makeItem();
+		$source->setLinkedItemId(9);
+		$source->setAutoLink(false);
+
+		$copy = $this->copyAcross(Checklist::KIND_INVENTORY, Checklist::KIND_INVENTORY, $source);
+
+		$this->assertNull($copy->getLinkedItemId());
+		$this->assertTrue($copy->autoLinks());
+	}
+
+	public function testSettingTheRestockChecklistMatchesTheInventory(): void {
+		$inventory = $this->makeList(Checklist::KIND_INVENTORY);
+		$this->listMapper->method('findById')->willReturn($inventory);
+		$this->stockLinks->expects($this->once())->method('assertRestockChecklist')->with($inventory, 10);
+		$this->stockLinks->expects($this->once())->method('matchInventory')->with($inventory);
+
+		$this->svc->updateList(1, ['restockChecklistId' => 10]);
+
+		$this->assertSame(10, $inventory->getRestockChecklistId());
+	}
+
+	public function testClearingTheRestockChecklistMatchesNothing(): void {
+		$inventory = $this->makeList(Checklist::KIND_INVENTORY);
+		$inventory->setRestockChecklistId(10);
+		$this->listMapper->method('findById')->willReturn($inventory);
+		$this->stockLinks->expects($this->never())->method('assertRestockChecklist');
+		$this->stockLinks->expects($this->once())->method('matchInventory');
+
+		$this->svc->updateList(1, ['restockChecklistId' => 0]);
+
+		$this->assertNull($inventory->getRestockChecklistId());
+	}
+
+	public function testAnInvalidRestockChecklistIsNotStored(): void {
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->stockLinks->method('assertRestockChecklist')->willThrowException(new \InvalidArgumentException('nope'));
+		$this->listMapper->expects($this->never())->method('update');
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->updateList(1, ['restockChecklistId' => 10]);
+	}
+
+	public function testOnlyAnInventoryHasARestockChecklist(): void {
+		$checklist = $this->makeList(Checklist::KIND_CHECKLIST);
+		$this->listMapper->method('findById')->willReturn($checklist);
+		$this->stockLinks->expects($this->never())->method('matchInventory');
+
+		$this->svc->updateList(1, ['restockChecklistId' => 10]);
+
+		$this->assertNull($checklist->getRestockChecklistId());
+	}
+
+	public function testDuplicatingAnInventoryKeepsItsRestockChecklistAndMatchesTheCopy(): void {
+		$source = $this->makeSourceList();
+		$source->setKind(Checklist::KIND_INVENTORY);
+		$source->setRestockChecklistId(10);
+		$linked = $this->makeItem();
+		$linked->setLinkedItemId(9);
+		$this->stockLinks->expects($this->once())->method('matchInventory')
+			->with($this->callback(static fn (Checklist $l): bool => $l->getId() === 77));
+
+		[$copy, [$item]] = $this->captureDuplicate($source, [$linked], true);
+
+		$this->assertSame(10, $copy->getRestockChecklistId());
+		$this->assertNull($item->getLinkedItemId());
+	}
+
+	public function testDuplicatingAnInventoryAsAChecklistHasNoRestockChecklist(): void {
+		$source = $this->makeSourceList();
+		$source->setKind(Checklist::KIND_INVENTORY);
+		$source->setRestockChecklistId(10);
+
+		[$copy] = $this->captureDuplicate($source, [], true, Checklist::KIND_CHECKLIST);
+
+		$this->assertNull($copy->getRestockChecklistId());
+	}
+
+	// ----- Restock sync state -----
+
+	public function testSystemDoneTicksTheItemOffWithNobodyCredited(): void {
+		$item = $this->makeItem(['quantity' => '8 eggs']);
+		$item->setQuantityPinned(true);
+		$item->setMemberReopened(true);
+		$this->itemMapper->expects($this->once())->method('update');
+
+		$this->svc->systemDone($item, 500);
+
+		$this->assertTrue($item->getDone());
+		$this->assertSame(500, $item->getDoneAt());
+		$this->assertNull($item->getDoneBy());
+		$this->assertTrue($item->isSystemDone());
+		$this->assertFalse($item->isQuantityPinned());
+		$this->assertFalse($item->isMemberReopened());
+	}
+
+	public function testSystemDoneTrashesAOnceItem(): void {
+		$item = $this->makeItem(['deleteOnDone' => true]);
+
+		$this->svc->systemDone($item, 500);
+
+		$this->assertSame(500, $item->getDeletedAt());
+	}
+
+	public function testSystemDoneSchedulesARecurringItemsReopen(): void {
+		$item = $this->makeItem(['rrule' => 'FREQ=WEEKLY', 'repeatFromCompletion' => true]);
+
+		$this->svc->systemDone($item, 1_700_000_000);
+
+		$this->assertNotNull($item->getNextDueAt());
+	}
+
+	public function testAMembersTickEndsAPinAndAReopen(): void {
+		$item = $this->makeItem();
+		$item->setQuantityPinned(true);
+		$item->setMemberReopened(true);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->svc->toggleItem(42, 'alice', 500);
+
+		$this->assertSame('alice', $item->getDoneBy());
+		$this->assertFalse($item->isSystemDone());
+		$this->assertFalse($item->isQuantityPinned());
+		$this->assertFalse($item->isMemberReopened());
+	}
+
+	public function testAMemberUncheckingAnItemMarksItReopened(): void {
+		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->svc->toggleItem(42, 'alice', 500);
+
+		$this->assertTrue($item->isMemberReopened());
+	}
+
+	public function testUncheckAllMarksItemsReopened(): void {
+		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);
+		$item->setId(42);
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->uncheckItems([42]);
+
+		$this->assertTrue($item->isMemberReopened());
+	}
+
+	public function testARecurringReopenMarksTheItemReopened(): void {
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=DAILY',
+			'createdAt' => strtotime('2026-04-06 13:00:00 UTC'),
+			'done' => true,
+			'nextDueAt' => strtotime('2026-04-08 13:00:00 UTC'),
+		]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findDueRecurring')->willReturn([$item]);
+
+		$this->svc->reopenDueItems(strtotime('2026-04-08 09:00:00 UTC'));
+
+		$this->assertTrue($item->isMemberReopened());
+	}
+
+	public function testReviveForRestockUnarchivesAndUnchecksWithoutAReopen(): void {
+		$item = $this->makeItem(['done' => true, 'doneAt' => 5, 'doneBy' => 'alice', 'archivedAt' => 6, 'nextDueAt' => 7]);
+		$this->itemMapper->expects($this->once())->method('update');
+
+		$this->svc->reviveForRestock($item, 500);
+
+		$this->assertNull($item->getArchivedAt());
+		$this->assertFalse($item->getDone());
+		$this->assertNull($item->getDoneBy());
+		$this->assertNull($item->getNextDueAt());
+		$this->assertFalse($item->isMemberReopened());
+	}
+
+	private const RESTOCK_ENTRY = ['itemId' => 30, 'listId' => 20, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null, 'replaced' => false, 'previousOnHand' => null, 'previousExpiresAt' => null, 'expiresAt' => null];
+
+	public function testReviveForRestockDropsTheRestockRecord(): void {
+		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);
+		$item->setRestock([self::RESTOCK_ENTRY]);
+
+		$this->svc->reviveForRestock($item, 500);
+
+		$this->assertNull($item->getRestock());
+	}
+
+	public function testUncheckAllDropsTheRestockRecord(): void {
+		$item = $this->makeItem(['done' => true, 'doneBy' => 'alice']);
+		$item->setId(42);
+		$item->setRestock([self::RESTOCK_ENTRY]);
+		$this->itemMapper->method('findById')->willReturn($item);
+
+		$this->svc->uncheckItems([42]);
+
+		$this->assertNull($item->getRestock());
+	}
+
+	public function testARecurringReopenDropsTheRestockRecord(): void {
+		$item = $this->makeItem([
+			'rrule' => 'FREQ=DAILY',
+			'createdAt' => strtotime('2026-04-06 13:00:00 UTC'),
+			'done' => true,
+			'nextDueAt' => strtotime('2026-04-08 13:00:00 UTC'),
+		]);
+		$item->setRestock([self::RESTOCK_ENTRY]);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findDueRecurring')->willReturn([$item]);
+
+		$this->svc->reopenDueItems(strtotime('2026-04-08 09:00:00 UTC'));
+
+		$this->assertNull($item->getRestock());
+	}
+
+	public function testATickReplacesAnEarlierRestockRecord(): void {
+		$item = $this->makeItem();
+		$item->setRestock([self::RESTOCK_ENTRY]);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->svc->toggleItem(42, 'alice', 500);
+
+		$this->assertNull($item->getRestock());
+	}
+
+	public function testChangingTheQuantityOfALinkedRowPinsIt(): void {
+		$row = $this->makeItem(['quantity' => '8 eggs']);
+		$row->setId(9);
+		$this->itemMapper->method('findById')->willReturn($row);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findLinkedTo')->with([9])->willReturn([$this->makeItem(['listId' => 20])]);
+
+		$this->svc->updateItem(9, ['quantity' => '2 dozen']);
+
+		$this->assertTrue($row->isQuantityPinned());
+	}
+
+	public function testChangingTheQuantityOfAnUnlinkedRowPinsNothing(): void {
+		$row = $this->makeItem(['quantity' => '8 eggs']);
+		$row->setId(9);
+		$this->itemMapper->method('findById')->willReturn($row);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->method('findLinkedTo')->willReturn([]);
+
+		$this->svc->updateItem(9, ['quantity' => '2 dozen']);
+
+		$this->assertFalse($row->isQuantityPinned());
+	}
+
+	public function testSendingTheSameQuantityPinsNothing(): void {
+		$row = $this->makeItem(['quantity' => '8 eggs']);
+		$row->setId(9);
+		$this->itemMapper->method('findById')->willReturn($row);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+		$this->itemMapper->expects($this->never())->method('findLinkedTo');
+
+		$this->svc->updateItem(9, ['quantity' => '8 eggs']);
+
+		$this->assertFalse($row->isQuantityPinned());
+	}
+
+	public function testAPinCanBeCleared(): void {
+		$row = $this->makeItem(['quantity' => '2 dozen']);
+		$row->setId(9);
+		$row->setQuantityPinned(true);
+		$this->itemMapper->method('findById')->willReturn($row);
+		$this->listMapper->method('findById')->willReturn(new Checklist());
+
+		$this->svc->updateItem(9, ['quantityPinned' => false]);
+
+		$this->assertFalse($row->isQuantityPinned());
+	}
+
+	public function testAnInventoryItemIsNeverPinned(): void {
+		$item = $this->makeItem(['quantity' => '4 eggs', 'listId' => 20]);
+		$item->setId(9);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->listMapper->method('findById')->willReturn($this->makeList(Checklist::KIND_INVENTORY));
+		$this->itemMapper->method('findLinkedTo')->willReturn([$this->makeItem()]);
+
+		$this->svc->updateItem(9, ['quantity' => '5 eggs', 'quantityPinned' => true]);
+
+		$this->assertFalse($item->isQuantityPinned());
 	}
 }

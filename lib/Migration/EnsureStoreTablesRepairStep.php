@@ -48,6 +48,7 @@ class EnsureStoreTablesRepairStep implements IRepairStep {
 				Application::tableName('field_values'),
 				Application::tableName('shopsess_members'),
 				Application::tableName('store_cat_order'),
+				Application::tableName('list_templates'),
 			],
 			fn (string $table): bool => !$this->db->tableExists($table),
 		);

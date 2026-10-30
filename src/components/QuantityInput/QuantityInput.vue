@@ -15,7 +15,10 @@
       <NcTextField
         v-model="text"
         class="quantity-input__field"
-        :placeholder="strings.placeholder"
+        :placeholder="placeholder ?? strings.placeholder"
+        :label="label"
+        :label-outside="!!label"
+        :error="error"
         :show-trailing-button="text.length > 0"
         trailing-button-icon="close"
         :trailing-button-label="strings.clear"
@@ -33,7 +36,7 @@
         </template>
       </NcButton>
     </div>
-    <p class="quantity-input__hint">{{ strings.hint }}</p>
+    <p v-if="showHint" class="quantity-input__hint">{{ strings.hint }}</p>
   </div>
 </template>
 
@@ -46,9 +49,18 @@ import PlusIcon from '@icons/Plus.vue'
 import MinusIcon from '@icons/Minus.vue'
 import { canStepDown, stepQuantity } from '@/utils/quantity'
 
-const props = defineProps<{
-  modelValue: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue: string
+    /** The lowest number − steps down to: 1 for an amount to get, 0 for what is on hand. */
+    min?: number
+    label?: string
+    placeholder?: string
+    showHint?: boolean
+    error?: boolean
+  }>(),
+  { min: 1, label: undefined, placeholder: undefined, showHint: true, error: false },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -59,15 +71,15 @@ const text = computed({
   set: (v: string) => emit('update:modelValue', v),
 })
 
-const canDecrement = computed(() => canStepDown(text.value))
+const canDecrement = computed(() => canStepDown(text.value, props.min))
 
 function increment() {
-  text.value = stepQuantity(text.value, 1)
+  text.value = stepQuantity(text.value, 1, props.min)
 }
 
 function decrement() {
   if (!canDecrement.value) return
-  text.value = stepQuantity(text.value, -1)
+  text.value = stepQuantity(text.value, -1, props.min)
 }
 
 const strings = {

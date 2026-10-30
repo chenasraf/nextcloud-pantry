@@ -2,7 +2,7 @@
 title: Sharing
 description: How houses, roles and per-item shares decide who in your household sees and edits each list, note and photo.
 sidebar:
-  order: 6
+  order: 8
 ---
 
 import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
@@ -14,7 +14,7 @@ to.
 ## Houses and members
 
 A **house** is the shared space for everyone you live with. Being a member of a house is what lets
-you see and work on its checklists, Photo Board and Notes Wall. Adding and removing members is done
+you see and work on its lists, Photo Board and Notes Wall. Adding and removing members is done
 by a house administrator.
 
 <Aside type="note">
@@ -30,14 +30,15 @@ specific roles**, so only members holding one of those roles (and administrators
 useful for a list only some of the house should see. Restricting a list to roles is an
 administrator action.
 
-For a checklist, both controls live in its **Edit list** dialog: **Access** restricts the list to
-roles, and **Shared with** shares it with specific people.
+Both controls live in the list's edit dialog (**Edit checklist**, **Edit template** or **Edit
+inventory**): **Access** restricts the list to roles, and **Shared with** shares it with specific
+people.
 
 ![The Edit checklist dialog showing the Access control that restricts a list to roles and the Shared with field that shares it with specific people.](/docs/sharing-access.png)
 
 ## Sharing a single item with people
 
-Independently of house membership, an individual **checklist, note, photo or photo folder** can be
+Independently of house membership, an individual **list, note, photo or photo folder** can be
 shared with specific people at one of two levels:
 
 - **View** — read-only access.
@@ -48,7 +49,7 @@ shared with specific people at one of two levels:
 	<TabItem label="Web">
 		<Steps>
 
-		1. Open the item — for a checklist, open **Edit list**; for a note or photo, open its actions.
+		1. Open the item — for a list, open its edit dialog; for a note or photo, open its actions.
 
 		2. Under **Shared with**, add a person.
 
@@ -59,7 +60,7 @@ shared with specific people at one of two levels:
 	<TabItem label="Mobile & desktop">
 		<Steps>
 
-		1. Open the checklist, note or photo you want to share.
+		1. Open the list, note or photo you want to share.
 
 		2. Choose **Share** from its actions.
 

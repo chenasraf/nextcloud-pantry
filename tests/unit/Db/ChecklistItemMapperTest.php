@@ -9,6 +9,8 @@ namespace OCA\Pantry\Tests\Unit\Db;
 
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
+use OCP\DB\QueryBuilder\IExpressionBuilder;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 use PHPUnit\Framework\TestCase;
 
@@ -58,5 +60,53 @@ class ChecklistItemMapperTest extends TestCase {
 
 		$this->assertSame(202, $item->getId());
 		$this->assertSame('Wine', $item->getName());
+	}
+
+	/**
+	 * A mapper whose own queries run against a stub connection, with the link
+	 * clearing and id lookup recorded.
+	 *
+	 * @return ChecklistItemMapper&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function purgingMapper(): ChecklistItemMapper {
+		$qb = $this->createMock(IQueryBuilder::class);
+		foreach (['delete', 'where', 'andWhere'] as $method) {
+			$qb->method($method)->willReturnSelf();
+		}
+		$qb->method('expr')->willReturn($this->createMock(IExpressionBuilder::class));
+		$qb->method('createNamedParameter')->willReturn(':param');
+		$db = $this->createMock(IDBConnection::class);
+		$db->method('getQueryBuilder')->willReturn($qb);
+		$mapper = $this->getMockBuilder(ChecklistItemMapper::class)
+			->setConstructorArgs([$db])
+			->onlyMethods(['clearLinksTo', 'findIdsByList'])
+			->getMock();
+		$mapper->method('findIdsByList')->willReturnCallback(
+			static fn (int $listId, bool $trashedOnly): array => $trashedOnly ? [31] : [30, 31],
+		);
+		return $mapper;
+	}
+
+	public function testDeletingAnItemForGoodClearsLinksToIt(): void {
+		$mapper = $this->purgingMapper();
+		$mapper->expects($this->once())->method('clearLinksTo')->with([42]);
+		$item = new ChecklistItem();
+		$item->setId(42);
+
+		$mapper->delete($item);
+	}
+
+	public function testDeletingAListsItemsClearsLinksToEveryOne(): void {
+		$mapper = $this->purgingMapper();
+		$mapper->expects($this->once())->method('clearLinksTo')->with([30, 31]);
+
+		$mapper->deleteByList(7);
+	}
+
+	public function testEmptyingAListsTrashClearsLinksToTheTrashedItems(): void {
+		$mapper = $this->purgingMapper();
+		$mapper->expects($this->once())->method('clearLinksTo')->with([31]);
+
+		$mapper->emptyTrashForList(7);
 	}
 }

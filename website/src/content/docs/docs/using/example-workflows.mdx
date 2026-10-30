@@ -1,6 +1,6 @@
 ---
 title: Example workflows
-description: Ways to set up lists for groceries, one-off errands, shared chores and repeatable projects — and how they carry over from one week to the next.
+description: Ways to set up lists for groceries, one-off errands, shared chores, repeatable projects, home stock and food that expires — and how they carry over from one week to the next.
 sidebar:
   order: 0
 ---
@@ -88,30 +88,149 @@ Everyone sees the list update as items are checked off, so nobody does the same 
 
 ## A repeatable project checklist
 
-**A template list you copy each time.** Some checklists are the same every time but each run needs
+**A template you start each run from.** Some checklists are the same every time but each run needs
 its own record — a packing list for every trip, the steps for setting up each new project, the
 checks for each move-out.
 
 <Steps>
 
-1. **Build the template** once, as a list with every step, organized with categories and labels.
+1. **Build a [template](/docs/using/templates)** once with every step, organized with categories
+   and labels. A template is never checked off, so it stays a clean master copy.
 
-2. **Duplicate it for each run.** Choose **Duplicate list** from the list's menu, give the copy a
-   name — for example, the trip or project it's for — and keep **Set all items to undone** on so
-   the copy starts fresh. The copy brings along every item, category and setting.
+2. **Start each run from it**, whichever way fits:
+   - **Take everything.** Choose **Duplicate template** from the template's menu, name the copy
+     after the trip or project it's for, and pick **Checklist** under **Duplicate as:**. The copy
+     brings along every item, category and setting, all unchecked.
+   - **Pick what applies.** Create the run's checklist, then **Apply template** and untick the steps
+     that don't apply this time — no pet food on a trip without the dog.
 
-   ![The Duplicate list dialog, with a name for the copy and the Set all items to undone checkbox.](/docs/duplicate-list.png)
+   ![The Duplicate template dialog, with a name for the copy and Checklist picked under Duplicate as.](/docs/duplicate-list.png)
 
-3. **Work through the copy.** The template stays untouched, ready for next time.
+3. **Attach the template to the run.** With the template under **Templates:** in **Edit
+   checklist**, any step you left out is suggested again as soon as you start typing it.
 
-4. **Archive the copy** when the run is over, so it's out of the way but still there to look back
-   on.
+4. **Work through the run.** When you notice a step the template is missing, add it to the template
+   too, so the next run has it.
+
+5. **Archive the run** when it's over, so it's out of the way but still there to look back on.
 
 </Steps>
 
 <Aside type="note">
 	Use this when each run needs its own history. For things you simply do again and again — like
 	the weekly shop — one reused list with recurring items is simpler.
+</Aside>
+
+## Staples suggested everywhere
+
+**Type a few letters, get the item with all its details.** The things you buy over and over —
+bread, milk, eggs, dish soap — live once on a template, and every list suggests them as you type.
+
+<Steps>
+
+1. **Create a "Weekly staples" [template](/docs/using/templates)** and add each staple the way you
+   want it to arrive: quantity, usual store, category, price.
+
+2. **Open Edit template and turn on Every list** under **Suggest in:**, so every checklist and
+   inventory in the house suggests its items — including lists made later.
+
+3. **Add items as usual.** Typing "cro" on Groceries suggests **Croissants** with the template's
+   name on a chip; picking it adds the item with its quantity, store and price already filled in.
+
+4. **Before a big shop, apply the whole template.** **Apply template** on Groceries ticks every
+   staple the list does not have open yet; untick what you still have and apply the rest in one go.
+
+</Steps>
+
+<Aside type="tip">
+	Keep a few small templates rather than one big one — "Weekly staples", "Cleaning", "Baby" — and
+	attach each only to the lists it belongs on, so suggestions stay relevant.
+</Aside>
+
+## A pantry that restocks itself
+
+**Count what you have; let the shopping list follow.** Instead of remembering to add things to the
+list, keep an [inventory](/docs/using/inventories) of the cupboard and let Pantry add whatever runs
+low.
+
+<Steps>
+
+1. **Create a "Pantry" inventory** and add what you keep there. Give countable things a **Count**
+   with a **Target** ("12 eggs") and, if you like a buffer, a **Reorder point**. Give flour, spices
+   and oil a **Level** with a **Restock amount** ("1 kg bag").
+
+2. **Pick a restock checklist.** In **Inventory settings**, set **Restock checklist** to your
+   Groceries list.
+
+3. **Step stock down as you use things.** Tap **−** when you open the last carton, or set a level to
+   **Low**. Once an item is low, the inventory shows **Low · buy 8 eggs** and Eggs appears on
+   Groceries asking for those 8 eggs.
+
+4. **Shop as usual.** Checking the item off on Groceries, or in Shopping Mode, puts what you bought
+   back into the Pantry inventory.
+
+</Steps>
+
+Nothing to reset: the inventory is back to full, and the Groceries item waits, checked off, until
+stock runs low again.
+
+<Aside type="tip">
+	Keep a **Fridge** inventory next to the Pantry one with the same restock checklist. Items with the
+	same name share one shopping-list row, which asks for what both need — and buying it fills them in
+	turn.
+</Aside>
+
+## Food that expires
+
+**Dates you don't have to check.** For the fridge and freezer, it is not running out that matters
+but what is about to expire.
+
+<Steps>
+
+1. **Give perishables an expiry.** In the item's **Expiry** card, pick **Keeps N days** — 7 for
+   milk, 21 for eggs. The date becomes today plus that many days, and every restock renews it.
+
+2. **Set how much warning you want.** **Expiry warning** in **Inventory settings** decides how many
+   days ahead an item turns amber. Two days suits most fridges.
+
+3. **Turn on the Daily stock summary** in **Inventory settings**. Once a day, everyone who can see the
+   inventory gets one notification with what newly ran low, ran out, started expiring or expired.
+   Opening it shows just those items.
+
+4. **Replace, don't add.** An expiring item asks the restock checklist for a full replacement, and
+   buying it replaces the old stock with a fresh date.
+
+</Steps>
+
+<Aside type="note">
+	Pantry never throws anything away for you: expired stock stays on hand until you step it down. Use
+	**−** when you bin it.
+</Aside>
+
+## Stocking a new cupboard from a template
+
+**Set up a place once, then fill it in seconds.** A holiday home, a new flat, the camping box — when
+you know what a place should hold, write it down once and start every inventory from it.
+
+<Steps>
+
+1. **Build a template** of everything the place should hold, with a stock mode, target and how long
+   each item keeps.
+
+2. **Duplicate it as an inventory.** Choose **Duplicate template** and pick **Inventory** under
+   **Duplicate as:**. Every item arrives full, with its expiry counted from today.
+
+3. **Count down to reality.** Walk the cupboard and step down what is short; the low items land on
+   the restock checklist, ready for one shopping trip.
+
+</Steps>
+
+For a place that already has an inventory, **Apply template** to it instead: items it already has
+start unticked, so only the missing ones are added.
+
+<Aside type="tip" title="Tip: Counting at the cupboard">
+	On the watch, open the inventory, tap a row and press **−** or **+** while you look at the shelf.
+	The row saves one change when you move on, with a moment to undo it.
 </Aside>
 
 <Aside type="tip" title="Tip: Naming your lists">

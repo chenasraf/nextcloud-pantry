@@ -25,6 +25,16 @@
         @update:model-value="$emit('update:selectedListIds', $event)"
       />
       <FilterChip
+        v-if="stockOptions.length > 0"
+        :label="strings.stock"
+        :all-label="strings.allItems"
+        :icon="StockIcon"
+        :model-value="selectedStockLocal"
+        :options="stockOptions"
+        :total-count="totalCount"
+        @update:model-value="$emit('update:selectedStock', $event)"
+      />
+      <FilterChip
         v-if="categoryOptions.length > 0"
         :label="strings.categories"
         :all-label="strings.allCategories"
@@ -69,6 +79,9 @@ import { t } from '@nextcloud/l10n'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import MagnifyIcon from '@icons/Magnify.vue'
 import FormatListChecksIcon from '@icons/FormatListChecks.vue'
+import PackageVariantIcon from '@icons/PackageVariant.vue'
+import AlertCircleOutlineIcon from '@icons/AlertCircleOutline.vue'
+import CheckCircleOutlineIcon from '@icons/CheckCircleOutline.vue'
 import { entityIcon, entityNoneIcon } from '@/utils/entityIcons'
 import { categoryIconComponent } from '@/components/CategoryPicker/categoryIcons'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
@@ -77,6 +90,8 @@ import { checklistIconComponent } from '@/components/ChecklistIconPicker'
 import FilterChip, { type FilterOption } from './FilterChip.vue'
 import PriceFilter, { type PriceFilterValue } from './PriceFilter.vue'
 import { NO_CATEGORY_ID, NO_STORE_ID, NO_LABEL_ID } from './constants'
+import { STOCK_IN_STOCK, STOCK_NEEDS_RESTOCK } from './stockFilter'
+import { needsRestock } from '@/utils/stock'
 import { hasPrice } from '@/utils/price'
 import type { Category, Checklist, ChecklistItem, Store, Label } from '@/api/types'
 
@@ -86,6 +101,8 @@ const props = defineProps<{
   selectedStoreIds?: number[]
   selectedLabelIds?: number[]
   selectedListIds?: number[]
+  /** Inventories only: {@link STOCK_NEEDS_RESTOCK} and/or {@link STOCK_IN_STOCK}. */
+  selectedStock?: number[]
   priceFilter?: PriceFilterValue
   items: ChecklistItem[]
   categories: Category[]
@@ -100,6 +117,7 @@ const emit = defineEmits<{
   (e: 'update:selectedStoreIds', v: number[]): void
   (e: 'update:selectedLabelIds', v: number[]): void
   (e: 'update:selectedListIds', v: number[]): void
+  (e: 'update:selectedStock', v: number[]): void
   (e: 'update:priceFilter', v: PriceFilterValue): void
 }>()
 
@@ -108,6 +126,7 @@ const ListIcon = FormatListChecksIcon
 const CategoryIcon = entityIcon.category
 const LabelIcon = entityIcon.label
 const StoreIcon = entityIcon.store
+const StockIcon = PackageVariantIcon
 
 const emptyPriceFilter: PriceFilterValue = { min: null, max: null, currency: null }
 const priceFilterLocal = computed(() => props.priceFilter ?? emptyPriceFilter)
@@ -119,6 +138,31 @@ const localQuery = computed({
 })
 
 const totalCount = computed(() => props.items.length)
+
+// ----- Stock (inventories only) -----
+
+const selectedStockLocal = computed(() => props.selectedStock ?? [])
+
+const stockOptions = computed<FilterOption[]>(() => {
+  if (!props.items.some((i) => i.stockStatus !== undefined)) return []
+  const restock = props.items.filter(needsRestock).length
+  return [
+    {
+      id: STOCK_NEEDS_RESTOCK,
+      label: strings.needsRestock,
+      count: restock,
+      icon: AlertCircleOutlineIcon,
+      color: 'var(--color-element-warning, var(--color-warning))',
+    },
+    {
+      id: STOCK_IN_STOCK,
+      label: strings.inStock,
+      count: props.items.length - restock,
+      icon: CheckCircleOutlineIcon,
+      color: 'var(--color-element-success, var(--color-success))',
+    },
+  ]
+})
 
 // ----- Categories -----
 
@@ -247,12 +291,20 @@ const listOptions = computed<FilterOption[]>(() => {
 
 const strings = {
   placeholder: t('pantry', 'Type to filter …'),
+  // TRANSLATORS: Noun. Label of the inventory filter dropdown for how much of each item is on hand.
+  stock: t('pantry', 'Stock'),
+  // TRANSLATORS: First row of the inventory stock filter, showing every item.
+  allItems: t('pantry', 'All items'),
+  // TRANSLATORS: Inventory stock filter row: items that are low or out.
+  needsRestock: t('pantry', 'Needs restock'),
+  // TRANSLATORS: Inventory stock filter row: items that are not low or out.
+  inStock: t('pantry', 'In stock'),
   // TRANSLATORS: First row of the category filter that clears it to show every category.
   allCategories: t('pantry', 'All categories'),
   noCategory: t('pantry', 'No category'),
-  // TRANSLATORS: Noun (plural). Label of the list filter dropdown.
-  lists: t('pantry', 'Lists'),
-  allLists: t('pantry', 'All lists'),
+  // TRANSLATORS: Noun (plural). Label of the checklist filter dropdown.
+  lists: t('pantry', 'Checklists'),
+  allLists: t('pantry', 'All checklists'),
   // TRANSLATORS: Noun (plural). Label of the category filter dropdown.
   categories: t('pantry', 'Categories'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Label of the store filter dropdown.

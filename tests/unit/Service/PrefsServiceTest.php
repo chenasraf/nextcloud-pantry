@@ -88,6 +88,9 @@ class PrefsServiceTest extends TestCase {
 				if ($key === 'notify_item_done_1') {
 					return '1';
 				}
+				if ($key === 'notify_stock_summary_1') {
+					return '0';
+				}
 				return $default;
 			}
 		);
@@ -100,6 +103,7 @@ class PrefsServiceTest extends TestCase {
 			'notifyItemAdd' => true,
 			'notifyItemRecur' => false,
 			'notifyItemDone' => true,
+			'notifyStockSummary' => false,
 		], $result);
 	}
 
@@ -855,6 +859,47 @@ class PrefsServiceTest extends TestCase {
 			->with('alice', Application::APP_ID, 'language');
 
 		$this->svc->setUserPrefs('alice', ['language' => '']);
+	}
+
+	// ----- Filling drawn template items from item defaults -----
+
+	public function testFillFromItemDefaultsFollowsTheListWhenUnset(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'fill_from_item_defaults_1', 'list')
+			->willReturn('list');
+
+		$this->assertSame('list', $this->svc->getFillFromItemDefaults('alice', 1));
+		$this->assertTrue($this->svc->fillsFromItemDefaults('alice', 1, true));
+		$this->assertFalse($this->svc->fillsFromItemDefaults('alice', 1, false));
+	}
+
+	public function testFillFromItemDefaultsAlwaysAndNeverWinOverTheList(): void {
+		$this->config->method('getUserValue')->willReturnOnConsecutiveCalls('always', 'never');
+
+		$this->assertTrue($this->svc->fillsFromItemDefaults('alice', 1, false));
+		$this->assertFalse($this->svc->fillsFromItemDefaults('alice', 1, true));
+	}
+
+	public function testFillFromItemDefaultsIgnoresAnUnknownStoredValue(): void {
+		$this->config->method('getUserValue')->willReturn('sometimes');
+
+		$this->assertSame('list', $this->svc->getFillFromItemDefaults('alice', 1));
+	}
+
+	public function testSetHousePrefsStoresFillFromItemDefaults(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'fill_from_item_defaults_1', 'never');
+
+		$this->svc->setHousePrefs('alice', 1, ['fillFromItemDefaults' => 'never']);
+	}
+
+	public function testSetFillFromItemDefaultsFallsBackToFollowingTheList(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'fill_from_item_defaults_1', 'list');
+
+		$this->assertSame('list', $this->svc->setFillFromItemDefaults('alice', 1, 'sometimes'));
 	}
 
 	/**

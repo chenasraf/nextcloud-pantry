@@ -181,6 +181,12 @@ export type LabelSort = 'name_asc' | 'name_desc' | 'custom'
 export type StoreSort = 'name_asc' | 'name_desc' | 'custom'
 export type ChecklistSort = 'name_asc' | 'name_desc' | 'custom'
 
+/**
+ * Whether template items you draw fill their empty fields from the list's item
+ * defaults: follow the list's own setting, or always or never regardless of it.
+ */
+export type FillFromItemDefaults = 'list' | 'always' | 'never'
+
 export interface PhotoSortPrefs {
   sort: PhotoSort
   foldersFirst: boolean
@@ -193,6 +199,7 @@ export interface NotificationPrefs {
   notifyItemAdd: boolean
   notifyItemRecur: boolean
   notifyItemDone: boolean
+  notifyStockSummary: boolean
 }
 
 export interface HousePrefs extends NotificationPrefs {
@@ -209,6 +216,7 @@ export interface HousePrefs extends NotificationPrefs {
   showAddedBy: boolean
   /** Last-used currency code (ISO 4217) for item prices in this house. */
   lastCurrency: string
+  fillFromItemDefaults: FillFromItemDefaults
 }
 
 const housePrefsDefaults: HousePrefs = {
@@ -223,12 +231,14 @@ const housePrefsDefaults: HousePrefs = {
   storeSort: 'name_asc',
   showAddedBy: false,
   lastCurrency: 'USD',
+  fillFromItemDefaults: 'list',
   notifyPhoto: true,
   notifyNoteCreate: true,
   notifyNoteEdit: true,
   notifyItemAdd: true,
   notifyItemRecur: true,
   notifyItemDone: true,
+  notifyStockSummary: true,
 }
 
 // Deduplicate concurrent getHousePrefs calls for the same house.
@@ -385,6 +395,7 @@ export async function getNotificationPrefs(houseId: number): Promise<Notificatio
     notifyItemAdd: p.notifyItemAdd,
     notifyItemRecur: p.notifyItemRecur,
     notifyItemDone: p.notifyItemDone,
+    notifyStockSummary: p.notifyStockSummary,
   }
 }
 
@@ -400,5 +411,6 @@ export async function setNotificationPrefs(
     notifyItemAdd: p.notifyItemAdd,
     notifyItemRecur: p.notifyItemRecur,
     notifyItemDone: p.notifyItemDone,
+    notifyStockSummary: p.notifyStockSummary,
   }
 }

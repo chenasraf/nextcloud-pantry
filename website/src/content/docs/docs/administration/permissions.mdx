@@ -32,10 +32,10 @@ editing the Member role or introducing custom roles.
 
 | Capability        | Governs                                                                                           |
 | ----------------- | ------------------------------------------------------------------------------------------------- |
-| `canViewLists`    | Viewing checklists and their items (incl. trash & archive views)                                  |
-| `canCreateLists`  | Creating new checklists                                                                           |
+| `canViewLists`    | Viewing lists and their items (incl. trash & archive views)                                       |
+| `canCreateLists`  | Creating new lists                                                                                |
 | `canEditLists`    | Editing list settings **and** editing/reordering/archiving items, categories, stores, item images |
-| `canDeleteLists`  | Trashing, restoring, and permanently deleting checklists                                          |
+| `canDeleteLists`  | Trashing, restoring, and permanently deleting lists                                               |
 | `canAddItems`     | Adding items to a list                                                                            |
 | `canCheckItems`   | Toggling an item done/undone                                                                      |
 | `canCopyItems`    | Copying items to another list                                                                     |
@@ -79,10 +79,10 @@ Every write endpoint declares the capabilities it needs. A request is checked in
 
 ### Per-list access and sharing
 
-A checklist can be **restricted to specific roles**. If a list has no role restriction it is open to
+A list can be **restricted to specific roles**. If a list has no role restriction it is open to
 every member; otherwise only members holding one of the allowed roles (or an admin) can reach it.
 
-Independently, an individual entity (checklist, note, photo, or photo folder) can be **shared with
+Independently, an individual entity (list, note, photo, or photo folder) can be **shared with
 specific users** at **view** or **edit** level. A share can grant access to someone who would
 otherwise have none, but it is bounded:
 
@@ -96,10 +96,10 @@ Roles are edited in the **Roles** dialog, opened from **Manage roles** on the
 [Manage house](/docs/administration/manage-house) page. It is **admin-only**. Each role is a card
 showing its **name** and a type chip — **Built-in admin**, **Built-in member**, or **Custom**.
 
-![The Roles dialog, with the locked Admin role and the Member role's Customize section expanded to show its permissions grouped into Checklists, Checklist items, Photos and Notes.](/docs/permissions-roles.png)
+![The Roles dialog, with the locked Admin role and the Member role's Customize section expanded to show its permissions grouped into Lists, List items, Photos and Notes.](/docs/permissions-roles.png)
 
 - **Edit what a role can do** — expand **Customize** on the Member role or a custom role to reveal
-  its capability switches, grouped into **Checklists**, **Checklist items**, **Photos** and
+  its capability switches, grouped into **Lists**, **List items**, **Photos** and
   **Notes**. Each group's **View** switch gates the rest of the group: turn View off and the other
   switches in that group turn off and grey out. The **Admin** role is locked to every permission and
   has no switches.
@@ -126,7 +126,7 @@ Each row is an action; each column is a capability. ✅ marks the capability tha
 Admins can perform every action regardless of these matrices. "Trash" means soft-delete
 (recoverable); "permanent delete" erases the row.
 
-### Checklists
+### Lists
 
 Columns: **View** = `canViewLists`, **Create** = `canCreateLists`, **Edit** = `canEditLists`,
 **Delete** = `canDeleteLists`.
@@ -145,7 +145,7 @@ Columns: **View** = `canViewLists`, **Create** = `canCreateLists`, **Edit** = `c
 
 <Aside type="note">Restricting a list to specific roles is admin-only.</Aside>
 
-### Checklist items
+### List items
 
 Columns: **View** = `canViewLists`, **Add** = `canAddItems`, **Check** = `canCheckItems`, **Edit** =
 `canEditLists`, **Copy** = `canCopyItems`, **Move** = `canMoveItems`, **Delete** = `canDeleteItems`.

@@ -24,7 +24,7 @@ class NotifierTest extends TestCase {
 		$l = $this->createMock(IL10N::class);
 		// Pass-through translation
 		$l->method('t')->willReturnCallback(fn (string $text) => $text);
-		$l->method('n')->willReturnCallback(fn (string $s, string $p, int $n) => $n === 1 ? $s : $p);
+		$l->method('n')->willReturnCallback(fn (string $s, string $p, int $n) => str_replace('%n', (string)$n, $n === 1 ? $s : $p));
 		$this->l10nFactory->method('get')->willReturn($l);
 
 		$this->notifier = new Notifier($this->l10nFactory);
@@ -191,6 +191,24 @@ class NotifierTest extends TestCase {
 		$this->assertSame($n, $result);
 	}
 
+	public function testStockSummarySaysWhatIsNewByInventory(): void {
+		$n = $this->makeNotification('pantry', 'stock_summary', [
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'listId' => 20,
+			'listName' => 'Kitchen',
+			'low' => 2,
+			'out' => 0,
+			'expiring' => 3,
+			'expired' => 1,
+		]);
+		$n->expects($this->once())->method('setRichSubject')
+			->with('{list}: {summary}', $this->callback(static fn (array $p): bool => $p['list']['name'] === 'Kitchen'
+				&& $p['summary']['name'] === '2 low, 3 expiring, 1 expired'));
+
+		$this->notifier->prepare($n, 'en');
+	}
+
 	public function testFieldReminderSetsRichSubject(): void {
 		$n = $this->makeNotification('pantry', 'field_reminder', [
 			'itemId' => 7,
@@ -231,5 +249,20 @@ class NotifierTest extends TestCase {
 		$this->assertStringContainsString('My House', $parsedSubject);
 		$this->assertStringNotContainsString('{user}', $parsedSubject);
 		$this->assertStringNotContainsString('{house}', $parsedSubject);
+	}
+
+	public function testAnItemNobodyAddedIsCreditedToTheApp(): void {
+		$n = $this->makeNotification('pantry', 'item_added', [
+			'userId' => '',
+			'userDisplayName' => '',
+			'houseId' => 1,
+			'houseName' => 'My House',
+			'itemName' => 'Eggs',
+			'listName' => 'Groceries',
+		]);
+
+		$this->notifier->prepare($n, 'en');
+
+		$this->assertSame(['type' => 'highlight', 'id' => 'pantry', 'name' => 'Pantry'], $n->getRichSubjectParameters()['user']);
 	}
 }

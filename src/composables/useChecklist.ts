@@ -1,9 +1,31 @@
 import { computed, ref, type Ref } from 'vue'
 import * as api from '@/api/lists'
-import type { Checklist, ChecklistItem } from '@/api/types'
+import type { Checklist, ChecklistItem, ListKind } from '@/api/types'
 import type { ChecklistItemSort, ChecklistSort } from '@/api/prefs'
+import type { ChecklistFormData } from '@/components/ChecklistIconPicker/checklistForm'
+import {
+  DEFAULT_EXPIRY_LEAD_DAYS,
+  evaluateStock,
+  expiryInput,
+  expiryStatus,
+  isEmpty,
+  renewedExpiry,
+  renewOffer,
+  stockInput,
+  todayEpoch,
+} from '@/utils/stock'
+import { announceRestock, announceRestockSync } from '@/components/StockLink/restockToasts'
 
-// Per-house state shared across all callers so sidebar and views stay in sync.
+/** How long stock steps on an item wait for the next one before being saved. */
+export const STOCK_WRITE_DELAY = 800
+
+/** An item a write returned, after telling the member what restocking did because of it. */
+function received(item: ChecklistItem): ChecklistItem {
+  announceRestockSync(item.restockSync)
+  return item
+}
+
+// Per-house, per-kind state shared across all callers so sidebar and views stay in sync.
 interface HouseChecklistState {
   lists: Ref<Checklist[]>
   deletedLists: Ref<Checklist[]>
@@ -14,10 +36,11 @@ interface HouseChecklistState {
   viewMode: Ref<'active' | 'trash' | 'archive'>
   inflight: Promise<Checklist[]> | null
 }
-const houseStates = new Map<number, HouseChecklistState>()
+const houseStates = new Map<string, HouseChecklistState>()
 
-function getState(houseId: number): HouseChecklistState {
-  let s = houseStates.get(houseId)
+function getState(houseId: number, kind: ListKind): HouseChecklistState {
+  const key = `${kind}:${houseId}`
+  let s = houseStates.get(key)
   if (!s) {
     s = {
       lists: ref<Checklist[]>([]),
@@ -29,13 +52,14 @@ function getState(houseId: number): HouseChecklistState {
       viewMode: ref<'active' | 'trash' | 'archive'>('active'),
       inflight: null,
     }
-    houseStates.set(houseId, s)
+    houseStates.set(key, s)
   }
   return s
 }
 
-export function useChecklists(houseId: number) {
-  const state = getState(houseId)
+export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
+  const state = getState(houseId, kind)
+  const resource = api.listApi(kind)
   const { lists, deletedLists, archivedLists, loading, error, sortBy, viewMode } = state
   const trashMode = computed(() => viewMode.value === 'trash')
   const archiveMode = computed(() => viewMode.value === 'archive')
@@ -46,7 +70,7 @@ export function useChecklists(houseId: number) {
     if (state.inflight && !force) return state.inflight
     loading.value = true
     error.value = null
-    state.inflight = api
+    state.inflight = resource
       .listLists(houseId, sort)
       .then((result) => {
         lists.value = result
@@ -67,7 +91,7 @@ export function useChecklists(houseId: number) {
     loading.value = true
     error.value = null
     try {
-      deletedLists.value = await api.listDeletedLists(houseId)
+      deletedLists.value = await resource.listDeletedLists(houseId)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -79,7 +103,7 @@ export function useChecklists(houseId: number) {
     loading.value = true
     error.value = null
     try {
-      archivedLists.value = await api.listArchivedLists(houseId)
+      archivedLists.value = await resource.listArchivedLists(houseId)
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -92,9 +116,18 @@ export function useChecklists(houseId: number) {
     description?: string | null,
     icon?: string | null,
     color?: string | null,
+    attachments?: ChecklistFormData['attachments'],
   ): Promise<Checklist> {
-    const created = await api.createList(houseId, name, description, icon, color)
+    const created = await resource.createList(houseId, name, description, icon, color)
     lists.value = [...lists.value, created]
+    if (attachments && 'templateLists' in attachments) {
+      const { everyList, listIds } = attachments.templateLists
+      if (everyList || listIds.length > 0) {
+        await resource.setTemplateLists(houseId, created.id, attachments.templateLists)
+      }
+    } else if (attachments && attachments.templateIds.length > 0) {
+      await resource.setAttachedTemplates(houseId, created.id, attachments.templateIds)
+    }
     return created
   }
 
@@ -112,49 +145,60 @@ export function useChecklists(houseId: number) {
       color?: string | null
     },
   ): Promise<void> {
-    const updated = await api.updateList(houseId, listId, patch)
+    const updated = await resource.updateList(houseId, listId, patch)
     lists.value = lists.value.map((l) => (l.id === listId ? updated : l))
   }
 
   async function remove(listId: number): Promise<void> {
-    await api.deleteList(houseId, listId)
+    await resource.deleteList(houseId, listId)
     lists.value = lists.value.filter((l) => l.id !== listId)
   }
 
   async function restore(listId: number): Promise<void> {
-    const restored = await api.restoreList(houseId, listId)
+    const restored = await resource.restoreList(houseId, listId)
     deletedLists.value = deletedLists.value.filter((l) => l.id !== listId)
     // Append so it shows up immediately if the user toggles back to the active view.
     lists.value = [...lists.value, restored]
   }
 
   async function removePermanently(listId: number): Promise<void> {
-    await api.permanentlyDeleteList(houseId, listId)
+    await resource.permanentlyDeleteList(houseId, listId)
     deletedLists.value = deletedLists.value.filter((l) => l.id !== listId)
     lists.value = lists.value.filter((l) => l.id !== listId)
   }
 
   async function emptyTrash(): Promise<void> {
-    await api.emptyListsTrash(houseId)
+    await resource.emptyListsTrash(houseId)
     deletedLists.value = []
   }
 
   async function archive(listId: number): Promise<void> {
-    const archived = await api.archiveList(houseId, listId)
+    const archived = await resource.archiveList(houseId, listId)
     lists.value = lists.value.filter((l) => l.id !== listId)
     // Prepend so it leads the archive view (most recently archived first).
     archivedLists.value = [archived, ...archivedLists.value]
   }
 
   async function unarchive(listId: number): Promise<void> {
-    const restored = await api.unarchiveList(houseId, listId)
+    const restored = await resource.unarchiveList(houseId, listId)
     archivedLists.value = archivedLists.value.filter((l) => l.id !== listId)
     // Append so it shows up immediately if the user toggles back to the active view.
     lists.value = [...lists.value, restored]
   }
 
   async function duplicate(listId: number, name: string, resetDone: boolean): Promise<Checklist> {
-    const created = await api.duplicateList(houseId, listId, name, resetDone)
+    const created = await resource.duplicateList(houseId, listId, name, resetDone)
+    lists.value = [...lists.value, created]
+    return created
+  }
+
+  /** Duplicate a list of any kind as a list of this kind. */
+  async function duplicateFrom(
+    sourceListId: number,
+    name: string,
+    resetDone = true,
+  ): Promise<Checklist> {
+    const created = await resource.duplicateAs(houseId, sourceListId, name, resetDone)
     lists.value = [...lists.value, created]
     return created
   }
@@ -191,15 +235,39 @@ export function useChecklists(houseId: number) {
     archive,
     unarchive,
     duplicate,
+    duplicateFrom,
     reorder,
   }
+}
+
+/**
+ * Active lists of every kind, in their shared sort order. For pickers where any
+ * kind can appear, such as category, label and custom-field scoping.
+ */
+export function useAllKindLists(houseId: number) {
+  const checklists = useChecklists(houseId, 'checklist')
+  const templates = useChecklists(houseId, 'template')
+  const inventories = useChecklists(houseId, 'inventory')
+  const lists = computed(() =>
+    [...checklists.lists.value, ...inventories.lists.value, ...templates.lists.value].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
+    ),
+  )
+
+  async function load(): Promise<Checklist[]> {
+    await Promise.all([checklists.load(), inventories.load(), templates.load()])
+    return lists.value
+  }
+
+  return { lists, load }
 }
 
 // Sentinel for the "All lists" meta view. Items are aggregated from every
 // list in the house; per-item operations resolve to the item's real listId.
 export const ALL_LISTS_ID = 0
 
-export function useChecklistItems(houseId: number, listId: number) {
+export function useChecklistItems(houseId: number, listId: number, kind: ListKind = 'checklist') {
+  const resource = api.listApi(kind)
   const items = ref<ChecklistItem[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -230,11 +298,11 @@ export function useChecklistItems(houseId: number, listId: number) {
       if (isMeta) {
         items.value = await api.listAllItems(houseId, s)
       } else if (archiveMode.value) {
-        items.value = await api.listArchivedItems(houseId, listId)
+        items.value = await resource.listArchivedItems(houseId, listId)
       } else if (trashMode.value) {
-        items.value = await api.listDeletedItems(houseId, listId)
+        items.value = await resource.listDeletedItems(houseId, listId)
       } else {
-        items.value = await api.listItems(houseId, listId, s)
+        items.value = await resource.listItems(houseId, listId, s)
       }
     } catch (e) {
       if (!silent) error.value = (e as Error).message
@@ -248,22 +316,176 @@ export function useChecklistItems(houseId: number, listId: number) {
     if (useListId === undefined || useListId <= 0) {
       throw new Error('A target list is required to add an item')
     }
-    const created = await api.addItem(houseId, useListId, input)
+    const created = received(await resource.addItem(houseId, useListId, input))
     items.value = [...items.value, created]
     return created
   }
 
+  /**
+   * Draw a template item onto the list, or revive the same-name item already
+   * on it. A revived item that was archived joins the view.
+   */
+  async function draw(templateItemId: number, targetListId?: number): Promise<api.DrawResult> {
+    const useListId = isMeta ? targetListId : listId
+    if (useListId === undefined || useListId <= 0) {
+      throw new Error('A target list is required to add an item')
+    }
+    const result = await resource.drawItem(houseId, useListId, templateItemId)
+    received(result.item)
+    mergeItems([result.item])
+    return result
+  }
+
   async function update(itemId: number, patch: Partial<api.ItemInput>): Promise<void> {
-    const updated = await api.updateItem(houseId, listIdFor(itemId), itemId, patch)
+    await flushStock(itemId)
+    dropRenewOffer(itemId)
+    const updated = received(await resource.updateItem(houseId, listIdFor(itemId), itemId, patch))
     if (isMeta && patch.targetListId !== undefined && patch.targetListId !== updated.listId) {
       // Should not happen — the backend canonicalizes listId via targetListId.
     }
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
+  /** The latest stock write per item, so a slower earlier answer cannot undo a later step. */
+  const stockWrites = new Map<number, number>()
+
+  /**
+   * Inventory items whose stock a member raised by hand onto stock already
+   * there, and the date that offers to renew them to, until their next edit.
+   */
+  const renewOffers = ref(new Map<number, number>())
+
+  function dropRenewOffer(itemId: number): void {
+    if (renewOffers.value.has(itemId)) {
+      const next = new Map(renewOffers.value)
+      next.delete(itemId)
+      renewOffers.value = next
+    }
+  }
+
+  /** Inventory items: take up the offer to renew the expiry date after a raise by hand. */
+  async function renewExpiry(itemId: number): Promise<void> {
+    const date = renewOffers.value.get(itemId)
+    if (date === undefined) return
+    await update(itemId, { expiresAt: date })
+  }
+
+  /**
+   * Change an inventory item's stock from its row. The row shows the new
+   * amount and status straight away. Steps in quick succession are saved as
+   * one write; the server's answer replaces the row, and a failed write puts
+   * the item back as it was before the steps. Settles once the write it ended
+   * up in does, or straight away when a later step takes it over.
+   */
+  async function updateStock(
+    itemId: number,
+    patch: Pick<api.ItemInput, 'quantity' | 'stockLevel'>,
+  ): Promise<void> {
+    const prev = items.value.find((i) => i.id === itemId)
+    if (!prev) return
+    const write = (stockWrites.get(itemId) ?? 0) + 1
+    stockWrites.set(itemId, write)
+    const today = todayEpoch()
+    const next = { ...prev, ...patch }
+    // Stock raised from empty is new stock, so the server gives it a fresh date.
+    if (isEmpty(stockInput(prev)) && !isEmpty(stockInput(next))) {
+      next.expiresAt = renewedExpiry(next.shelfLifeDays ?? null, today)
+    }
+    const offer = renewOffer(expiryInput(prev), expiryInput(next), today)
+    const leadDays =
+      getState(houseId, 'inventory').lists.value.find((l) => l.id === next.listId)
+        ?.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS
+    const optimistic = {
+      ...next,
+      ...evaluateStock(stockInput(next)),
+      expiryStatus: expiryStatus(expiryInput(next), leadDays, today),
+    }
+    items.value = items.value.map((i) => (i.id === itemId ? optimistic : i))
+    dropRenewOffer(itemId)
+    if (offer !== null) {
+      renewOffers.value = new Map(renewOffers.value).set(itemId, offer)
+    }
+
+    const pending = pendingStock.get(itemId)
+    if (pending) {
+      clearTimeout(pending.timer)
+      pending.done.resolve()
+    }
+    return new Promise<void>((resolve, reject) => {
+      pendingStock.set(itemId, {
+        patch: { ...pending?.patch, ...patch },
+        before: pending?.before ?? prev,
+        done: { resolve, reject },
+        timer: setTimeout(() => void sendStock(itemId, write), STOCK_WRITE_DELAY),
+      })
+    })
+  }
+
+  /** A burst of stock steps on one item, held back so the server sees only where it ends. */
+  interface PendingStock {
+    patch: Pick<api.ItemInput, 'quantity' | 'stockLevel'>
+    before: ChecklistItem
+    done: { resolve: () => void; reject: (e: unknown) => void }
+    timer: ReturnType<typeof setTimeout>
+  }
+  // Each step would otherwise sync the shopping list, toast and log activity on its own.
+  const pendingStock = new Map<number, PendingStock>()
+
+  /** Save held-back stock steps now, so they cannot land after a later edit and undo it. */
+  async function flushStock(itemId: number): Promise<void> {
+    const pending = pendingStock.get(itemId)
+    if (!pending) return
+    clearTimeout(pending.timer)
+    await sendStock(itemId, stockWrites.get(itemId) ?? 0)
+  }
+
+  async function sendStock(itemId: number, write: number): Promise<void> {
+    const pending = pendingStock.get(itemId)
+    if (!pending) return
+    pendingStock.delete(itemId)
+    try {
+      const updated = await resource.updateItem(houseId, listIdFor(itemId), itemId, pending.patch)
+      announceRestockSync(updated.restockSync)
+      if (stockWrites.get(itemId) === write) {
+        items.value = items.value.map((i) => (i.id === itemId ? updated : i))
+      }
+      pending.done.resolve()
+    } catch (e) {
+      if (stockWrites.get(itemId) === write) {
+        items.value = items.value.map((i) => (i.id === itemId ? pending.before : i))
+        dropRenewOffer(itemId)
+      }
+      pending.done.reject(e)
+    }
+  }
+
+  function replaceItem(updated: ChecklistItem): ChecklistItem {
+    items.value = items.value.map((i) => (i.id === updated.id ? updated : i))
+    return updated
+  }
+
+  /** Inventory items: link to the checklist item that restocks this one. */
+  async function link(itemId: number, targetItemId: number): Promise<ChecklistItem> {
+    return replaceItem(
+      received(await api.linkInventoryItem(houseId, listIdFor(itemId), itemId, targetItemId)),
+    )
+  }
+
+  /** Inventory items: drop the link and turn auto-link off. */
+  async function unlink(itemId: number): Promise<ChecklistItem> {
+    return replaceItem(await api.unlinkInventoryItem(houseId, listIdFor(itemId), itemId))
+  }
+
+  /** Inventory items: turn auto-link on or off. Turning it on may link the item straight away. */
+  async function setAutoLink(itemId: number, autoLink: boolean): Promise<ChecklistItem> {
+    return replaceItem(
+      received(await resource.updateItem(houseId, listIdFor(itemId), itemId, { autoLink })),
+    )
+  }
+
   async function copy(itemId: number, targetListId: number): Promise<ChecklistItem> {
     const sourceListId = listIdFor(itemId)
-    const created = await api.copyItem(houseId, sourceListId, itemId, targetListId)
+    const created = received(await resource.copyItem(houseId, sourceListId, itemId, targetListId))
     if (isMeta || targetListId === listId) {
       items.value = [...items.value, created]
     }
@@ -285,6 +507,7 @@ export function useChecklistItems(houseId: number, listId: number) {
     }
     try {
       const updated = await api.toggleItem(houseId, useListId, itemId)
+      announceRestock(updated)
       if (!willDelete) {
         items.value = items.value.map((i) => (i.id === itemId ? updated : i))
       }
@@ -309,9 +532,10 @@ export function useChecklistItems(houseId: number, listId: number) {
     const useListId = isMeta ? prevItem.listId : listId
     const stillPresent = items.value.some((i) => i.id === prevItem.id)
     if (!stillPresent) {
-      await api.restoreItem(houseId, useListId, prevItem.id)
+      await resource.restoreItem(houseId, useListId, prevItem.id)
     }
     const updated = await api.toggleItem(houseId, useListId, prevItem.id)
+    announceRestock(updated)
     if (stillPresent) {
       items.value = items.value.map((i) => (i.id === prevItem.id ? updated : i))
     } else {
@@ -327,28 +551,28 @@ export function useChecklistItems(houseId: number, listId: number) {
     items.value = items.value
       .map((i) => (map.has(i.id) ? { ...i, sortOrder: map.get(i.id)! } : i))
       .sort((a, b) => a.sortOrder - b.sortOrder)
-    await api.reorderItems(houseId, listId, reorderEntries)
+    await resource.reorderItems(houseId, listId, reorderEntries)
   }
 
   async function remove(itemId: number): Promise<void> {
-    await api.deleteItem(houseId, listIdFor(itemId), itemId)
+    await resource.deleteItem(houseId, listIdFor(itemId), itemId)
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function undoRemove(prevItem: ChecklistItem): Promise<void> {
     // Restores a soft-deleted item without changing its done state.
     const useListId = isMeta ? prevItem.listId : listId
-    const restored = await api.restoreItem(houseId, useListId, prevItem.id)
+    const restored = await resource.restoreItem(houseId, useListId, prevItem.id)
     items.value = [...items.value, restored]
   }
 
   async function removePermanently(itemId: number): Promise<void> {
-    await api.permanentlyDeleteItem(houseId, listIdFor(itemId), itemId)
+    await resource.permanentlyDeleteItem(houseId, listIdFor(itemId), itemId)
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function restore(itemId: number): Promise<void> {
-    await api.restoreItem(houseId, listIdFor(itemId), itemId)
+    await resource.restoreItem(houseId, listIdFor(itemId), itemId)
     // The item leaves the current view: in trash mode it returns to the active
     // list (and stays hidden here); in active mode it was never visible.
     items.value = items.value.filter((i) => i.id !== itemId)
@@ -356,20 +580,20 @@ export function useChecklistItems(houseId: number, listId: number) {
 
   async function emptyTrash(): Promise<void> {
     if (isMeta) return
-    await api.emptyTrash(houseId, listId)
+    await resource.emptyTrash(houseId, listId)
     if (trashMode.value) {
       items.value = []
     }
   }
 
   async function archive(itemId: number): Promise<void> {
-    await api.archiveItem(houseId, listIdFor(itemId), itemId)
+    await resource.archiveItem(houseId, listIdFor(itemId), itemId)
     // The item leaves the active view for the archive.
     items.value = items.value.filter((i) => i.id !== itemId)
   }
 
   async function unarchive(itemId: number): Promise<void> {
-    await api.unarchiveItem(houseId, listIdFor(itemId), itemId)
+    await resource.unarchiveItem(houseId, listIdFor(itemId), itemId)
     // The item leaves the archive view; it returns to the active list.
     items.value = items.value.filter((i) => i.id !== itemId)
   }
@@ -377,7 +601,7 @@ export function useChecklistItems(houseId: number, listId: number) {
   async function undoArchive(prevItem: ChecklistItem): Promise<void> {
     // Reverses a just-archived item without changing its state.
     const useListId = isMeta ? prevItem.listId : listId
-    const restored = await api.unarchiveItem(houseId, useListId, prevItem.id)
+    const restored = await resource.unarchiveItem(houseId, useListId, prevItem.id)
     items.value = [...items.value, restored]
   }
 
@@ -387,26 +611,42 @@ export function useChecklistItems(houseId: number, listId: number) {
   // reasons) so the caller can report partial success, and reconciles the local
   // items the same way the single-item ops do.
 
-  async function moveMany(ids: number[], targetListId: number): Promise<api.BatchResult> {
+  async function moveMany(
+    ids: number[],
+    targetListId: number,
+    targetKind: ListKind = kind,
+  ): Promise<api.BatchResult> {
     const result = await api.batchMoveItems(houseId, ids, targetListId)
-    if (isMeta) {
+    if (isMeta && targetKind === kind) {
       // Items stay in the meta view under their new list — swap in the updated rows.
       const byId = new Map(result.items.map((i) => [i.id, i]))
       items.value = items.value.map((i) => byId.get(i.id) ?? i)
     } else {
-      // Moved items leave a single-list view.
+      // Moved items leave a single-list view, and any view of another kind.
       const moved = new Set(ids.filter((id) => !result.skipped.includes(id)))
       items.value = items.value.filter((i) => !moved.has(i.id))
     }
     return result
   }
 
-  async function copyMany(ids: number[], targetListId: number): Promise<api.BatchResult> {
+  async function copyMany(
+    ids: number[],
+    targetListId: number,
+    targetKind: ListKind = kind,
+  ): Promise<api.BatchCopyResult> {
     const result = await api.batchCopyItems(houseId, ids, targetListId)
-    if (isMeta || targetListId === listId) {
-      items.value = [...items.value, ...result.items]
+    if (targetKind === kind && (isMeta || targetListId === listId)) {
+      mergeItems(result.items)
     }
     return result
+  }
+
+  /** Show items fresh from the server, replacing the rows already shown. */
+  function mergeItems(incoming: ChecklistItem[]): void {
+    const byId = new Map(incoming.map((i) => [i.id, i]))
+    const kept = items.value.map((i) => byId.get(i.id) ?? i)
+    const shown = new Set(kept.map((i) => i.id))
+    items.value = [...kept, ...incoming.filter((i) => !shown.has(i.id))]
   }
 
   async function removeMany(ids: number[]): Promise<api.BatchResult> {
@@ -485,18 +725,18 @@ export function useChecklistItems(houseId: number, listId: number) {
     const restored: ChecklistItem[] = []
     for (const prev of prevItems) {
       const useListId = isMeta ? prev.listId : listId
-      restored.push(await api.restoreItem(houseId, useListId, prev.id))
+      restored.push(await resource.restoreItem(houseId, useListId, prev.id))
     }
     items.value = [...items.value, ...restored]
   }
 
   async function uploadImage(itemId: number, file: File): Promise<void> {
-    const updated = await api.uploadItemImage(houseId, listIdFor(itemId), itemId, file)
+    const updated = await resource.uploadItemImage(houseId, listIdFor(itemId), itemId, file)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
   async function clearImage(itemId: number): Promise<void> {
-    const updated = await api.clearItemImage(houseId, listIdFor(itemId), itemId)
+    const updated = await resource.clearItemImage(houseId, listIdFor(itemId), itemId)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 
@@ -510,7 +750,15 @@ export function useChecklistItems(houseId: number, listId: number) {
     archiveMode,
     load,
     add,
+    draw,
+    mergeItems,
     update,
+    updateStock,
+    renewOffers,
+    renewExpiry,
+    link,
+    unlink,
+    setAutoLink,
     copy,
     toggle,
     undoToggle,

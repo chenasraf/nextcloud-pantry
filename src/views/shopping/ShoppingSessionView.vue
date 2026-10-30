@@ -99,6 +99,7 @@
                 @toggle="handleToggle"
                 @session-remove="handleSessionRemove"
                 @preview="openPreview"
+                @unpin="handleUnpin"
               />
             </template>
           </ul>
@@ -225,9 +226,13 @@ import {
   unskipSessionItem,
   listRemovedSessionItems,
 } from '@/api/shopping'
+import { updateItem } from '@/api/lists'
+import { announceRestock, announceRestockSync } from '@/components/StockLink/restockToasts'
 import type {
   Category,
   ChecklistItem,
+  RestockEntry,
+  ShoppingReview,
   Label,
   ShoppingPresenceEntry,
   ShoppingSession,
@@ -425,13 +430,21 @@ async function loadItems() {
 // briefly undo the optimistic move the user just saw.
 let togglesInFlight = 0
 
+/**
+ * The trip's checked items still checked off. One restocking inventory items
+ * comes straight back when it fell short, so it is to buy again.
+ */
+function checkedOff(review: ShoppingReview): ChecklistItem[] {
+  return review.stores.flatMap((s) => s.items).filter((i) => i.done)
+}
+
 // Pull the shared check log back into the Done drawer, so items a housemate
 // checked off show up here rather than silently vanishing from the buy list.
 async function syncDoneItems() {
   if (!session.value || togglesInFlight > 0) return
   try {
     const review = await getReview(houseIdNum.value, session.value.id)
-    doneItems.value = review.stores.flatMap((s) => s.items)
+    doneItems.value = checkedOff(review)
   } catch {
     /* keep the last-known drawer */
   }
@@ -440,6 +453,38 @@ async function syncDoneItems() {
 // Whole-row check records the item in the session log against the active store.
 // Checked items move into the Done drawer (kept visible so they can be
 // un-checked); un-checking moves them back. Optimistic, with a revert on failure.
+/** Let stock set the quantity of a row a member set by hand again. */
+async function handleUnpin(item: ChecklistItem) {
+  try {
+    const updated = await updateItem(houseIdNum.value, item.listId, item.id, {
+      quantityPinned: false,
+    })
+    announceRestockSync(updated.restockSync)
+    items.value = items.value.map((i) =>
+      i.id === item.id
+        ? { ...i, quantity: updated.quantity, quantityPinned: updated.quantityPinned }
+        : i,
+    )
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+/**
+ * Show what a check put back into stock on the checked item. A shared item
+ * that came up short is already back on the list, so it goes back to shop.
+ */
+function afterRestock(id: number, restock: RestockEntry[] | null) {
+  const item = doneItems.value.find((i) => i.id === id)
+  if (!item) return
+  if (restock) {
+    item.restock = restock
+    return
+  }
+  doneItems.value = doneItems.value.filter((i) => i.id !== id)
+  void loadItems()
+}
+
 async function handleToggle(id: number) {
   if (!session.value) return
   const sessionId = session.value.id
@@ -450,7 +495,11 @@ async function handleToggle(id: number) {
     doneItems.value = [item, ...doneItems.value]
     togglesInFlight++
     try {
-      await checkSessionItem(houseIdNum.value, sessionId, item.id)
+      const result = await checkSessionItem(houseIdNum.value, sessionId, item.id)
+      announceRestock(result)
+      if (result.restocked.length) {
+        afterRestock(item.id, result.restock)
+      }
     } catch (e) {
       doneItems.value = doneItems.value.filter((i) => i.id !== id)
       item.done = false
@@ -468,7 +517,9 @@ async function handleToggle(id: number) {
     items.value = [...items.value, item]
     togglesInFlight++
     try {
-      await uncheckSessionItem(houseIdNum.value, sessionId, item.id)
+      const result = await uncheckSessionItem(houseIdNum.value, sessionId, item.id)
+      announceRestock(result)
+      item.restock = null
     } catch (e) {
       items.value = items.value.filter((i) => i.id !== id)
       item.done = true
@@ -643,7 +694,7 @@ onMounted(async () => {
     // reloads. Then load the still-to-buy items (excluding anything already done).
     try {
       const review = await getReview(houseIdNum.value, current.id)
-      doneItems.value = review.stores.flatMap((s) => s.items)
+      doneItems.value = checkedOff(review)
     } catch {
       // Non-critical; the drawer just starts from this view's checks.
     }

@@ -79,15 +79,45 @@ namespace OCA\Pantry;
  *     fields: list<PantryItemDefaultField>,
  * }
  *
+ * @psalm-type PantryInventoryItemDefaults = array{
+ *     stores: array{mode: PantryItemDefaultMode, value?: list<int>},
+ *     category: array{mode: PantryItemDefaultMode, value?: int|null},
+ *     labels: array{mode: PantryItemDefaultMode, value?: list<int>},
+ *     quantity: array{mode: 'none'|'fixed', value?: string},
+ *     stockMode: array{mode: PantryItemDefaultMode, value?: 'count'|'level'},
+ *     target: array{mode: 'none'|'fixed', value?: string},
+ *     reorderPoint: array{mode: 'none'|'fixed', value?: string},
+ *     shelfLifeDays: array{mode: 'none'|'fixed', value?: int},
+ *     fields: list<PantryItemDefaultField>,
+ * }
+ *
+ * @psalm-type PantryHouseDetail = array{
+ *     id: int,
+ *     name: string,
+ *     description: string|null,
+ *     ownerUid: string,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     trashRetentionDays: int,
+ *     recurrenceTime: int,
+ *     fieldReminderTime: int,
+ *     role: string,
+ *     isAdmin: bool,
+ *     permissions: array<string, bool>,
+ *     lists: list<PantryListSummary>,
+ * }
+ *
  * @psalm-type PantryList = array{
  *     id: int,
  *     houseId: int,
+ *     kind: 'checklist',
  *     name: string,
  *     description: string|null,
  *     icon: PantryChecklistIcon,
  *     color: PantryChecklistColor|null,
  *     sortOrder: int,
  *     itemDefaults: PantryItemDefaults,
+ *     fillFromDefaults: bool,
  *     deleteOnDoneDefault: bool,
  *     defaultRecurrenceMode: 'remember'|'none'|'once'|'recurring',
  *     defaultRecurrenceKind: 'none'|'once'|'recurring',
@@ -100,6 +130,56 @@ namespace OCA\Pantry;
  *     lastCompletedAt: int|null,
  *     canEdit: bool,
  *     sharedOnly: bool,
+ * }
+ *
+ * @psalm-type PantryTemplate = array{
+ *     id: int,
+ *     houseId: int,
+ *     kind: 'template',
+ *     name: string,
+ *     description: string|null,
+ *     icon: PantryChecklistIcon,
+ *     color: PantryChecklistColor|null,
+ *     sortOrder: int,
+ *     itemDefaults: PantryItemDefaults,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     deletedAt: int|null,
+ *     archivedAt: int|null,
+ *     canEdit: bool,
+ *     sharedOnly: bool,
+ * }
+ *
+ * @psalm-type PantryInventory = array{
+ *     id: int,
+ *     houseId: int,
+ *     kind: 'inventory',
+ *     name: string,
+ *     description: string|null,
+ *     icon: PantryChecklistIcon,
+ *     color: PantryChecklistColor|null,
+ *     sortOrder: int,
+ *     itemDefaults: PantryInventoryItemDefaults,
+ *     fillFromDefaults: bool,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     deletedAt: int|null,
+ *     archivedAt: int|null,
+ *     canEdit: bool,
+ *     sharedOnly: bool,
+ *     needsRestock: int,
+ *     expiryLeadDays: int,
+ *     stockSummary: bool,
+ *     restockChecklistId: int|null,
+ * }
+ *
+ * @psalm-type PantryListSummary = array{
+ *     id: int,
+ *     kind: 'checklist'|'template'|'inventory',
+ *     name: string,
+ *     icon: PantryChecklistIcon,
+ *     color: PantryChecklistColor|null,
+ *     sortOrder: int,
  * }
  *
  * @psalm-type PantryItemPrice = array{
@@ -181,6 +261,174 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  *     deletedAt: int|null,
  *     archivedAt: int|null,
+ *     quantityPinned: bool,
+ *     restock: list<PantryRestockEntry>|null,
+ *     restocks?: list<PantryStockLinkSource>,
+ *     restockSync?: list<PantryRestockSyncEvent>,
+ *     restocked?: list<PantryRestockEntry>,
+ *     restockUndone?: list<PantryRestockEntry>,
+ * }
+ *
+ * @psalm-type PantryStockLinkRow = array{
+ *     itemId: int,
+ *     name: string,
+ *     quantity: string|null,
+ *     listId: int,
+ *     listName: string,
+ *     listColor: string|null,
+ *     state: 'open'|'checked'|'archived'|'trashed',
+ * }
+ *
+ * @psalm-type PantryStockLinkSource = array{
+ *     itemId: int,
+ *     name: string,
+ *     listId: int,
+ *     listName: string,
+ * }
+ *
+ * What a member's tick of a checklist item put back into one inventory item:
+ * the amount `added` to a count item, or the `previousLevel` of a level item
+ * it took to Full. On a checked item as `restock` until it is unchecked; in
+ * the response of the tick as `restocked`, of the member's uncheck that took
+ * it back out as `restockUndone`.
+ *
+ * @psalm-type PantryRestockEntry = array{
+ *     itemId: int,
+ *     listId: int,
+ *     itemName: string,
+ *     listName: string,
+ *     added: string|null,
+ *     previousLevel: string|null,
+ * }
+ *
+ * What Shopping Mode's check or uncheck did to stock, and what the restock
+ * sync did after it.
+ *
+ * @psalm-type PantryShoppingCheckResult = array{
+ *     success: true,
+ *     restock: list<PantryRestockEntry>|null,
+ *     restocked: list<PantryRestockEntry>,
+ *     restockUndone: list<PantryRestockEntry>,
+ *     restockSync: list<PantryRestockSyncEvent>,
+ * }
+ *
+ * What a restock sync did to a checklist item, in the response of the write
+ * that caused it: `added` a new item, `revived` a checked or archived one,
+ * `changed` an open one's quantity, left a `pinned` quantity as set by hand,
+ * or `recovered`: ticked it off as no longer needed.
+ *
+ * @psalm-type PantryRestockSyncEvent = array{
+ *     event: 'added'|'revived'|'changed'|'pinned'|'recovered',
+ *     itemId: int,
+ *     rowId: int,
+ *     rowName: string,
+ *     quantity: string|null,
+ *     listId: int,
+ *     listName: string,
+ * }
+ *
+ * @psalm-type PantryTemplateItem = array{
+ *     id: int,
+ *     listId: int,
+ *     name: string,
+ *     description: string|null,
+ *     categoryId: int|null,
+ *     labelIds: list<int>,
+ *     storeIds: list<int>,
+ *     quantity: string|null,
+ *     rrule: string|null,
+ *     repeatFromCompletion: bool,
+ *     deleteOnDone: bool,
+ *     imageFileId: int|null,
+ *     imageUploadedBy: string|null,
+ *     addedBy: string|null,
+ *     barcode: string|null,
+ *     prices: list<PantryItemPrice>,
+ *     customFields: list<PantryFieldValue>,
+ *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     deletedAt: int|null,
+ *     archivedAt: int|null,
+ *     stockMode: 'count'|'level'|null,
+ *     target: string|null,
+ *     reorderPoint: string|null,
+ *     shelfLifeDays: int|null,
+ * }
+ *
+ * @psalm-type PantryInventoryItem = array{
+ *     id: int,
+ *     listId: int,
+ *     name: string,
+ *     description: string|null,
+ *     categoryId: int|null,
+ *     labelIds: list<int>,
+ *     storeIds: list<int>,
+ *     quantity: string|null,
+ *     imageFileId: int|null,
+ *     imageUploadedBy: string|null,
+ *     addedBy: string|null,
+ *     barcode: string|null,
+ *     prices: list<PantryItemPrice>,
+ *     customFields: list<PantryFieldValue>,
+ *     sortOrder: int,
+ *     createdAt: int,
+ *     updatedAt: int,
+ *     deletedAt: int|null,
+ *     archivedAt: int|null,
+ *     stockMode: 'count'|'level',
+ *     stockLevel: 'full'|'low'|'out',
+ *     target: string|null,
+ *     reorderPoint: string|null,
+ *     stockStatus: 'ok'|'low'|'out'|'uncounted',
+ *     shortfall: string|null,
+ *     expiresAt: int|null,
+ *     shelfLifeDays: int|null,
+ *     expiryStatus: 'none'|'ok'|'expiring'|'expired',
+ *     autoLink: bool,
+ *     stockLink: PantryStockLinkRow|null,
+ *     linkCandidates: list<PantryStockLinkRow>,
+ *     restockSync?: list<PantryRestockSyncEvent>,
+ * }
+ *
+ * @psalm-type PantryListTemplates = array{
+ *     templateIds: list<int>,
+ *     everyListTemplateIds: list<int>,
+ * }
+ *
+ * @psalm-type PantryTemplateLists = array{
+ *     everyList: bool,
+ *     listIds: list<int>,
+ * }
+ *
+ * @psalm-type PantryTemplateSource = array{
+ *     id: int,
+ *     name: string,
+ * }
+ *
+ * @psalm-type PantryTemplateSuggestion = array{
+ *     item: PantryTemplateItem,
+ *     templates: list<PantryTemplateSource>,
+ * }
+ *
+ * @psalm-type PantryListSuggestions = array{
+ *     archived: list<PantryListItem>,
+ *     templates: list<PantryTemplateSuggestion>,
+ * }
+ *
+ * @psalm-type PantryDrawResult = array{
+ *     item: PantryListItem,
+ *     reused: bool,
+ * }
+ *
+ * @psalm-type PantryInventoryDrawResult = array{
+ *     item: PantryInventoryItem,
+ *     reused: bool,
+ * }
+ *
+ * @psalm-type PantryInventorySuggestions = array{
+ *     archived: list<PantryInventoryItem>,
+ *     templates: list<PantryTemplateSuggestion>,
  * }
  *
  * @psalm-type PantryCategoryIcon = 'tag'|'food'|'fruit'|'vegetable'|'bakery'|'dairy'|'meat'|'fish'|'snacks'|'cookie'|'drinks'|'coffee'|'frozen'|'household'|'pets'|'baby'|'home'|'leaf'|'pizza'|'clipboard-check'|'clipboard-list'|'format-list-checks'|'cart'|'basket'|'star'|'heart'|'calendar'|'bell'|'flag'|'bookmark'|'pin'|'map-marker'|'briefcase'|'wrench'|'silverware'|'gift'|'book'|'school'|'palette'|'camera'|'music'|'gamepad'|'run'|'dumbbell'|'pill'|'paw'|'flower'|'tree'|'broom'|'lightbulb'|'package'|'car'|'bike'|'beach'
@@ -351,6 +599,13 @@ namespace OCA\Pantry;
  *     skipped: list<int>,
  * }
  *
+ * @psalm-type PantryBatchCopyResult = array{
+ *     success: true,
+ *     items: list<PantryListItem>,
+ *     skipped: list<int>,
+ *     reused: list<int>,
+ * }
+ *
  * @psalm-type PantryUserPrefs = array{
  *     lastHouseId: int|null,
  *     firstDayOfWeek: int,
@@ -386,12 +641,14 @@ namespace OCA\Pantry;
  *     storeSort: string,
  *     showAddedBy: bool,
  *     lastCurrency: string,
+ *     fillFromItemDefaults: 'list'|'always'|'never',
  *     notifyPhoto: bool,
  *     notifyNoteCreate: bool,
  *     notifyNoteEdit: bool,
  *     notifyItemAdd: bool,
  *     notifyItemRecur: bool,
  *     notifyItemDone: bool,
+ *     notifyStockSummary: bool,
  * }
  *
  * @psalm-type PantryListPrefs = array{

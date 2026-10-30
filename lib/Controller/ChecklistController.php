@@ -7,159 +7,58 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Controller;
 
-use OCA\Pantry\Activity\ActivityPublisher;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
-use OCA\Pantry\Db\FieldValueMapper;
-use OCA\Pantry\Db\ItemLabelMapper;
-use OCA\Pantry\Db\ItemPriceMapper;
-use OCA\Pantry\Db\ItemStoreMapper;
-use OCA\Pantry\Db\Share;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
-use OCA\Pantry\Service\CategoryService;
-use OCA\Pantry\Service\ChecklistService;
-use OCA\Pantry\Service\FieldDefinitionService;
-use OCA\Pantry\Service\HouseAuthService;
-use OCA\Pantry\Service\HouseService;
-use OCA\Pantry\Service\ImageService;
-use OCA\Pantry\Service\ItemDefaultsService;
-use OCA\Pantry\Service\LabelService;
-use OCA\Pantry\Service\NotificationService;
-use OCA\Pantry\Service\PermissionService;
-use OCA\Pantry\Service\PrefsService;
-use OCA\Pantry\Service\ShareService;
-use OCA\Pantry\Service\StoreService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
-use OCP\AppFramework\OCSController;
-use OCP\IRequest;
-use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
 
 /**
+ * The checklist resource. `/lists` only ever serves checklists: clients that
+ * predate list kinds treat everything it returns as one.
+ *
  * @psalm-import-type PantryList from ResponseDefinitions
  * @psalm-import-type PantryListItem from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  * @psalm-import-type PantryBatchResult from ResponseDefinitions
+ * @psalm-import-type PantryBatchCopyResult from ResponseDefinitions
+ * @psalm-import-type PantryListSuggestions from ResponseDefinitions
+ * @psalm-import-type PantryListTemplates from ResponseDefinitions
+ * @psalm-import-type PantryDrawResult from ResponseDefinitions
  */
-final class ChecklistController extends OCSController {
+final class ChecklistController extends ListKindOCSController {
 	use TranslatesDomainExceptions;
 
-	public function __construct(
-		string $appName,
-		IRequest $request,
-		private ChecklistService $lists,
-		private CategoryService $categories,
-		private LabelService $labels,
-		private StoreService $stores,
-		private ItemStoreMapper $itemStores,
-		private ItemLabelMapper $itemLabels,
-		private ItemPriceMapper $itemPrices,
-		private FieldValueMapper $fieldValues,
-		private FieldDefinitionService $fields,
-		private HouseAuthService $auth,
-		private HouseService $houses,
-		private ImageService $images,
-		private NotificationService $notifications,
-		private ActivityPublisher $activity,
-		private PrefsService $prefs,
-		private PermissionService $permissions,
-		private ShareService $shares,
-		private ItemDefaultsService $itemDefaults,
-		private IUserSession $userSession,
-		private LoggerInterface $logger,
-	) {
-		parent::__construct($appName, $request);
+	protected function kind(): string {
+		return Checklist::KIND_CHECKLIST;
 	}
 
-	/**
-	 * Serialize a batch of items, embedding each item's attached store ids.
-	 * The store-id lookup is batched into a single query to avoid N+1.
-	 *
-	 * Stores are an optional feature layered on top of items. If the lookup
-	 * fails (e.g. the item-stores table is missing because its migration did
-	 * not apply), we must not let that sink the whole item list — items render
-	 * with no attached stores rather than the endpoint returning a 500.
-	 *
-	 * @param ChecklistItem[] $items
-	 * @return list<array<string, mixed>>
-	 */
-	private function serializeItems(array $items): array {
-		$ids = array_map(static fn ($i) => (int)$i->getId(), $items);
-		try {
-			$storeMap = $this->itemStores->findStoreIdsForItems($ids);
-		} catch (\Throwable $e) {
-			$this->logger->error('Failed to load store ids for items; serializing without stores', ['exception' => $e]);
-			$storeMap = [];
-		}
-		try {
-			$priceMap = $this->itemPrices->findForItems($ids);
-		} catch (\Throwable $e) {
-			$this->logger->error('Failed to load prices for items; serializing without prices', ['exception' => $e]);
-			$priceMap = [];
-		}
-		try {
-			$labelMap = $this->itemLabels->findLabelIdsForItems($ids);
-		} catch (\Throwable $e) {
-			$this->logger->error('Failed to load label ids for items; serializing without labels', ['exception' => $e]);
-			$labelMap = [];
-		}
-		try {
-			$fieldMap = $this->fieldValues->findForItems($ids);
-		} catch (\Throwable $e) {
-			$this->logger->error('Failed to load custom fields for items; serializing without them', ['exception' => $e]);
-			$fieldMap = [];
-		}
-		return array_values(array_map(static function ($i) use ($storeMap, $priceMap, $labelMap, $fieldMap) {
-			$data = $i->jsonSerialize();
-			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
-			$data['prices'] = $priceMap[(int)$i->getId()] ?? [];
-			$data['labelIds'] = $labelMap[(int)$i->getId()] ?? [];
-			$data['customFields'] = $fieldMap[(int)$i->getId()] ?? [];
-			return $data;
-		}, $items));
+	/** @var array<int, list<array{itemId: int, name: string, listId: int, listName: string}>> Inventory items each row restocks, loaded by {@see prepareItems()}. */
+	private array $restocks = [];
+
+	protected function prepareItems(array $items): void {
+		$this->restocks = $this->stockLinks->restocksFor($items) + $this->restocks;
 	}
 
-	/**
-	 * Serialize a single item, embedding its attached store ids.
-	 *
-	 * As with {@see serializeItems()}, a store-lookup failure degrades to an
-	 * empty store list rather than failing the request.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function serializeItem(ChecklistItem $item): array {
-		$data = $item->jsonSerialize();
-		try {
-			$data['storeIds'] = $this->itemStores->findStoreIdsForItem((int)$item->getId());
-		} catch (\Throwable $e) {
-			$this->logger->error('Failed to load store ids for item; serializing without stores', ['exception' => $e]);
-			$data['storeIds'] = [];
+	protected function shapeItem(array $data): array {
+		$id = $data['id'] ?? null;
+		return parent::shapeItem($data) + ['restocks' => is_int($id) ? ($this->restocks[$id] ?? []) : []];
+	}
+
+	protected function afterItemWrite(ChecklistItem $item, ?ChecklistItem $before): ChecklistItem {
+		if ($before === null || !$before->isQuantityPinned() || $item->isQuantityPinned()) {
+			return $item;
 		}
-		try {
-			$data['prices'] = $this->itemPrices->findForItem((int)$item->getId());
-		} catch (\Throwable $e) {
-			$this->logger->error('Failed to load prices for item; serializing without prices', ['exception' => $e]);
-			$data['prices'] = [];
-		}
-		try {
-			$data['labelIds'] = $this->itemLabels->findLabelIdsForItem((int)$item->getId());
-		} catch (\Throwable $e) {
-			$this->logger->error('Failed to load label ids for item; serializing without labels', ['exception' => $e]);
-			$data['labelIds'] = [];
-		}
-		try {
-			$data['customFields'] = $this->fieldValues->findForItem((int)$item->getId());
-		} catch (\Throwable $e) {
-			$this->logger->error('Failed to load custom fields for item; serializing without them', ['exception' => $e]);
-			$data['customFields'] = [];
-		}
-		return $data;
+		return $this->withRestockEvents($item, $this->restockSync->resyncRow($item));
+	}
+
+	protected function afterListBackInUse(Checklist $list): void {
+		$this->restockSync->backfillInto($list);
 	}
 
 	/**
@@ -178,24 +77,13 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function indexLists(int $houseId, string $sortBy = 'custom', int $limit = 100, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$all = $this->lists->listForHouse($houseId, $sortBy);
-			$all = array_values(array_filter(
-				$all,
-				fn ($l) => $this->permissions->canAccessList($houseId, $uid, (int)$l->getId()),
-			));
-			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			$shareMap = $this->shares->userShareMap($houseId, $uid);
-			$out = array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $sliced);
-			return new DataResponse($out);
-		});
+		return $this->doIndexLists($houseId, $sortBy, $limit, $offset);
 	}
 
 	/**
-	 * Batch reorder checklists in a house
+	 * Batch reorder lists in a house
+	 *
+	 * Lists of every kind share one sort order, so ids of any kind are accepted.
 	 *
 	 * @param int $houseId House id.
 	 * @param list<array{id: int, sortOrder: int}> $items Reorder entries.
@@ -235,30 +123,12 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canCreateLists'])]
 	public function createList(int $houseId, string $name, ?string $description = null, ?string $icon = null, ?string $color = null, ?string $defaultRecurrenceMode = null, ?string $defaultRrule = null, ?bool $defaultRepeatFromCompletion = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $name, $description, $icon, $color, $defaultRecurrenceMode, $defaultRrule, $defaultRepeatFromCompletion): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$recurrenceDefault = [];
-			if ($defaultRecurrenceMode !== null) {
-				$recurrenceDefault['defaultRecurrenceMode'] = $defaultRecurrenceMode;
-			}
-			if ($defaultRrule !== null) {
-				$recurrenceDefault['defaultRrule'] = $defaultRrule;
-			}
-			if ($defaultRepeatFromCompletion !== null) {
-				$recurrenceDefault['defaultRepeatFromCompletion'] = $defaultRepeatFromCompletion;
-			}
-			$list = $this->lists->createList($houseId, $name, $description, $icon, $color, $recurrenceDefault);
-			$this->activity->publishListCreated(
-				$houseId,
-				$this->houses->get($houseId)->getName(),
-				$uid,
-				(int)$list->getId(),
-				$list->getName(),
-			);
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
-		});
+		$recurrenceDefault = array_filter([
+			'defaultRecurrenceMode' => $defaultRecurrenceMode,
+			'defaultRrule' => $defaultRrule,
+			'defaultRepeatFromCompletion' => $defaultRepeatFromCompletion,
+		], static fn ($v) => $v !== null);
+		return $this->doCreateList($houseId, $name, $description, $icon, $color, $recurrenceDefault);
 	}
 
 	/**
@@ -278,15 +148,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function indexDeletedLists(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$all = $this->lists->listDeletedForHouse($houseId);
-			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			$shareMap = $this->shares->userShareMap($houseId, $uid);
-			return new DataResponse(array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $sliced));
-		});
+		return $this->doIndexDeletedLists($houseId, $limit, $offset);
 	}
 
 	/**
@@ -306,15 +168,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function indexArchivedLists(int $houseId, int $limit = 200, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $limit, $offset): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$all = $this->lists->listArchivedForHouse($houseId);
-			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			$shareMap = $this->shares->userShareMap($houseId, $uid);
-			return new DataResponse(array_map(fn ($l) => $this->listJson($l, $canEditLists, $houseId, $uid, $shareMap), $sliced));
-		});
+		return $this->doIndexArchivedLists($houseId, $limit, $offset);
 	}
 
 	/**
@@ -330,11 +184,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canDeleteLists'])]
 	public function emptyListsTrash(int $houseId): DataResponse {
-		return $this->runAction(function () use ($houseId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$this->lists->emptyListsTrash($houseId);
-			return new DataResponse(['success' => true]);
-		});
+		return $this->doEmptyListsTrash($houseId);
 	}
 
 	/**
@@ -351,16 +201,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function showList(int $houseId, int $listId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			// Trashed and archived lists open into the normal list view, so fetch
-			// them regardless of their soft-delete state.
-			$list = $this->lists->getList($listId, includeDeleted: true);
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
-		});
+		return $this->doShowList($houseId, $listId);
 	}
 
 	/**
@@ -387,56 +228,19 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function updateList(int $houseId, int $listId, ?string $name = null, ?string $description = null, ?string $icon = null, ?string $color = null, ?int $sortOrder = null, ?bool $deleteOnDoneDefault = null, ?string $defaultRecurrenceMode = null, ?string $defaultRecurrenceKind = null, ?string $defaultRrule = null, ?bool $defaultRepeatFromCompletion = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $icon, $color, $sortOrder, $deleteOnDoneDefault, $defaultRecurrenceMode, $defaultRecurrenceKind, $defaultRrule, $defaultRepeatFromCompletion): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$existing = $this->lists->getList($listId);
-			$this->assertListInHouse($existing->getHouseId(), $houseId);
-			$patch = [];
-			if ($name !== null) {
-				$patch['name'] = $name;
-			}
-			if ($description !== null) {
-				$patch['description'] = $description;
-			}
-			if ($icon !== null) {
-				$patch['icon'] = $icon;
-			}
-			if ($color !== null) {
-				$patch['color'] = $color;
-			}
-			if ($sortOrder !== null) {
-				$patch['sortOrder'] = $sortOrder;
-			}
-			if ($deleteOnDoneDefault !== null) {
-				$patch['deleteOnDoneDefault'] = $deleteOnDoneDefault;
-			}
-			if ($defaultRecurrenceMode !== null) {
-				$patch['defaultRecurrenceMode'] = $defaultRecurrenceMode;
-			}
-			if ($defaultRecurrenceKind !== null) {
-				$patch['defaultRecurrenceKind'] = $defaultRecurrenceKind;
-			}
-			if ($defaultRrule !== null) {
-				$patch['defaultRrule'] = $defaultRrule;
-			}
-			if ($defaultRepeatFromCompletion !== null) {
-				$patch['defaultRepeatFromCompletion'] = $defaultRepeatFromCompletion;
-			}
-			$list = $this->lists->updateList($listId, $patch);
-			$contentChanged = $name !== null || $description !== null || $icon !== null || $color !== null;
-			if ($contentChanged) {
-				$this->activity->publishListUpdated(
-					$houseId,
-					$this->houses->get($houseId)->getName(),
-					$uid,
-					$listId,
-					$list->getName(),
-				);
-			}
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
-		});
+		$patch = array_filter([
+			'name' => $name,
+			'description' => $description,
+			'icon' => $icon,
+			'color' => $color,
+			'sortOrder' => $sortOrder,
+			'deleteOnDoneDefault' => $deleteOnDoneDefault,
+			'defaultRecurrenceMode' => $defaultRecurrenceMode,
+			'defaultRecurrenceKind' => $defaultRecurrenceKind,
+			'defaultRrule' => $defaultRrule,
+			'defaultRepeatFromCompletion' => $defaultRepeatFromCompletion,
+		], static fn ($v) => $v !== null);
+		return $this->doUpdateList($houseId, $listId, $patch);
 	}
 
 	/**
@@ -455,6 +259,7 @@ final class ChecklistController extends OCSController {
 	 * @param array{mode: 'none'|'fixed'|'remember', value?: list<int>|null}|null $labels Labels new items start with.
 	 * @param array{mode: 'none'|'fixed', value?: string|null}|null $quantity Quantity new items start with.
 	 * @param list<array{fieldId: int, mode: 'none'|'fixed'|'remember', value?: array{valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null}|null}>|null $fields Custom-field values new items start with.
+	 * @param bool|null $fillFromDefaults Whether a template item drawn here fills the fields it leaves empty from these defaults. Needs edit rights.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
 	 *
@@ -463,29 +268,16 @@ final class ChecklistController extends OCSController {
 	#[ApiRoute(verb: 'PATCH', url: '/api/houses/{houseId}/lists/{listId}/item-defaults', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canAddItems'])]
-	public function updateItemDefaults(int $houseId, int $listId, ?array $recurrence = null, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $recurrence, $stores, $category, $labels, $quantity, $fields): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$list = $this->lists->getList($listId);
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$patch = array_filter([
-				'recurrence' => $recurrence,
-				'stores' => $stores,
-				'category' => $category,
-				'labels' => $labels,
-				'quantity' => $quantity,
-				'fields' => $fields,
-			], static fn (?array $entry): bool => $entry !== null);
-
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			$shareMap = $this->shares->userShareMap($houseId, $uid);
-			$roleAccess = $this->permissions->hasRoleAccessToList($houseId, $uid, $listId);
-			$canEdit = $this->canEditList($list, $canEditLists, $roleAccess, $shareMap);
-
-			$list = $this->lists->setItemDefaults($list, $this->itemDefaults->merge($list, $patch, $canEdit));
-			return new DataResponse($this->listJson($list, $canEditLists, $houseId, $uid, $shareMap));
-		});
+	public function updateItemDefaults(int $houseId, int $listId, ?array $recurrence = null, ?array $stores = null, ?array $category = null, ?array $labels = null, ?array $quantity = null, ?array $fields = null, ?bool $fillFromDefaults = null): DataResponse {
+		$patch = array_filter([
+			'recurrence' => $recurrence,
+			'stores' => $stores,
+			'category' => $category,
+			'labels' => $labels,
+			'quantity' => $quantity,
+			'fields' => $fields,
+		], static fn (?array $entry): bool => $entry !== null);
+		return $this->doUpdateItemDefaults($houseId, $listId, $patch, $fillFromDefaults);
 	}
 
 	/**
@@ -502,22 +294,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canDeleteLists'])]
 	public function deleteList(int $houseId, int $listId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$existing = $this->lists->getList($listId);
-			$this->assertListInHouse($existing->getHouseId(), $houseId);
-			$listName = $existing->getName();
-			$this->lists->deleteList($listId);
-			$this->activity->publishListDeleted(
-				$houseId,
-				$this->houses->get($houseId)->getName(),
-				$uid,
-				$listId,
-				$listName,
-			);
-			return new DataResponse(['success' => true]);
-		});
+		return $this->doDeleteList($houseId, $listId);
 	}
 
 	/**
@@ -534,15 +311,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canDeleteLists'])]
 	public function restoreList(int $houseId, int $listId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$existing = $this->lists->getList($listId, includeDeleted: true);
-			$this->assertListInHouse($existing->getHouseId(), $houseId);
-			$restored = $this->lists->restoreList($listId);
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			return new DataResponse($this->listJson($restored, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
-		});
+		return $this->doRestoreList($houseId, $listId);
 	}
 
 	/**
@@ -559,15 +328,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function archiveList(int $houseId, int $listId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$existing = $this->lists->getList($listId);
-			$this->assertListInHouse($existing->getHouseId(), $houseId);
-			$archived = $this->lists->archiveList($listId);
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			return new DataResponse($this->listJson($archived, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
-		});
+		return $this->doArchiveList($houseId, $listId);
 	}
 
 	/**
@@ -584,15 +345,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function unarchiveList(int $houseId, int $listId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$existing = $this->lists->getList($listId, includeDeleted: true);
-			$this->assertListInHouse($existing->getHouseId(), $houseId);
-			$unarchived = $this->lists->unarchiveList($listId);
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			return new DataResponse($this->listJson($unarchived, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
-		});
+		return $this->doUnarchiveList($houseId, $listId);
 	}
 
 	/**
@@ -616,39 +369,31 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canCreateLists'])]
 	public function duplicateList(int $houseId, int $listId, string $name, bool $resetDone = true): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $resetDone): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$source = $this->lists->getList($listId);
-			$this->assertListInHouse($source->getHouseId(), $houseId);
-			if (!$this->permissions->isAdmin($houseId, $uid)
-				&& !$this->permissions->canAccessList($houseId, $uid, $listId)) {
-				throw new ForbiddenException('No access to this list');
-			}
+		return $this->doDuplicateList($houseId, $listId, $name, $resetDone);
+	}
 
-			$copy = $this->lists->duplicateList(
-				$listId,
-				$name,
-				$resetDone,
-				$uid,
-				fn (int $fileId, string $ownerUid): ?int => $this->images->duplicateItemImage(
-					$ownerUid,
-					$fileId,
-					$uid,
-					$houseId,
-				),
-			);
-
-			$this->activity->publishListCreated(
-				$houseId,
-				$this->houses->get($houseId)->getName(),
-				$uid,
-				(int)$copy->getId(),
-				$copy->getName(),
-			);
-			$canEditLists = $this->permissions->can($houseId, $uid, 'canEditLists');
-			return new DataResponse($this->listJson($copy, $canEditLists, $houseId, $uid, $this->shares->userShareMap($houseId, $uid)));
-		});
+	/**
+	 * Duplicate a list of any kind as a new checklist
+	 *
+	 * Copies what checklist items have and defaults the rest. Items from a
+	 * template or an inventory start unchecked, and their recurrence starts
+	 * running; `resetDone` only applies when the source is a checklist.
+	 * Otherwise copies like duplicating a checklist.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Id of the list to duplicate, of any kind.
+	 * @param string $name Name for the new checklist.
+	 * @param bool $resetDone Whether every item copied from a checklist starts unchecked.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryList, array{}>
+	 *
+	 * 200: Checklist created from the list
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/from/{listId}', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canCreateLists'])]
+	public function duplicateAsChecklist(int $houseId, int $listId, string $name, bool $resetDone = true): DataResponse {
+		return $this->doDuplicateFrom($houseId, $listId, $name, $resetDone);
 	}
 
 	/**
@@ -668,17 +413,11 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canDeleteLists'])]
 	public function permanentlyDeleteList(int $houseId, int $listId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$existing = $this->lists->getList($listId, includeDeleted: true);
-			$this->assertListInHouse($existing->getHouseId(), $houseId);
-			$this->lists->permanentlyDeleteList($listId);
-			return new DataResponse(['success' => true]);
-		});
+		return $this->doPermanentlyDeleteList($houseId, $listId);
 	}
 
 	/**
-	 * List items across every list in a house (meta "All lists" view)
+	 * List items across every checklist in a house (meta "All checklists" view)
 	 *
 	 * Sort modes: newest, oldest, name_asc, name_desc, category. "custom" is
 	 * not supported because sort_order is per-list.
@@ -712,8 +451,7 @@ final class ChecklistController extends OCSController {
 				return $listAccess[$listId];
 			}));
 			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = $this->serializeItems($sliced);
-			return new DataResponse($items);
+			return new DataResponse($this->serializeItems($sliced));
 		});
 	}
 
@@ -736,18 +474,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function indexItems(int $houseId, int $listId, string $sortBy = 'custom', int $limit = 200, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $sortBy, $limit, $offset): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			// A trashed or archived list still opens into the normal item view.
-			$list = $this->lists->getList($listId, includeDeleted: true);
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
-			$all = $this->lists->listItems($listId, $sortBy, $categorySort);
-			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = $this->serializeItems($sliced);
-			return new DataResponse($items);
-		});
+		return $this->doIndexItems($houseId, $listId, $sortBy, $limit, $offset);
 	}
 
 	/**
@@ -768,15 +495,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function indexDeletedItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$list = $this->lists->getList($listId);
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$all = $this->lists->listDeletedItems($listId);
-			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = $this->serializeItems($sliced);
-			return new DataResponse($items);
-		});
+		return $this->doIndexDeletedItems($houseId, $listId, $limit, $offset);
 	}
 
 	/**
@@ -797,15 +516,102 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function indexArchivedItems(int $houseId, int $listId, int $limit = 200, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $limit, $offset): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$list = $this->lists->getList($listId);
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$all = $this->lists->listArchivedItems($listId);
-			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			$items = $this->serializeItems($sliced);
-			return new DataResponse($items);
-		});
+		return $this->doIndexArchivedItems($houseId, $listId, $limit, $offset);
+	}
+
+	/**
+	 * Suggestion candidates for a checklist's add box
+	 *
+	 * The checklist's archived items, when asked for, and the items of the
+	 * templates attached to it — explicitly or as every-list templates — that
+	 * the caller can access. Archived and trashed templates are left out.
+	 * Template items with the same name (ignoring case and spacing) collapse
+	 * into one row naming every template it is in, taken from the most
+	 * recently edited copy. Matching what was typed is up to the client.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param bool $archived Whether to include the checklist's archived items.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListSuggestions, array{}>
+	 *
+	 * 200: Suggestions returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/suggestions', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function listSuggestions(int $houseId, int $listId, bool $archived = false): DataResponse {
+		return $this->doSuggestions($houseId, $listId, $archived);
+	}
+
+	/**
+	 * Draw a template item onto a checklist
+	 *
+	 * Copies the template item and leaves the template unchanged. The copy
+	 * carries every field but recurrence and delete-on-done, starts unchecked,
+	 * and fills what the template left empty from the checklist's item
+	 * defaults. Categories, labels and custom fields scoped to the template are
+	 * matched by name on the checklist, or copied onto it. When the checklist
+	 * already has an item of that name (ignoring case and spacing), that item is
+	 * unchecked and unarchived instead, keeping its own values, and `reused` is
+	 * true.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param int $templateItemId Id of an item on a template in the same house.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryDrawResult, array{}>
+	 *
+	 * 200: Item drawn or reused
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/draw', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canAddItems'])]
+	public function drawItem(int $houseId, int $listId, int $templateItemId): DataResponse {
+		return $this->doDrawItem($houseId, $listId, $templateItemId);
+	}
+
+	/**
+	 * Templates attached to a checklist
+	 *
+	 * `templateIds` are the templates attached to this checklist;
+	 * `everyListTemplateIds` are the templates attached to every list, this one
+	 * included. Only active templates are named.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListTemplates, array{}>
+	 *
+	 * 200: Attached templates returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/lists/{listId}/templates', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function listTemplates(int $houseId, int $listId): DataResponse {
+		return $this->doListTemplates($houseId, $listId);
+	}
+
+	/**
+	 * Set the templates attached to a checklist
+	 *
+	 * Replaces the checklist's own attachments. Every-list templates stay
+	 * attached regardless, and attachments to templates the caller cannot
+	 * access, or that are archived or trashed, are kept.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId List id.
+	 * @param list<int> $templateIds Ids of templates in the same house.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryListTemplates, array{}>
+	 *
+	 * 200: Attached templates updated
+	 */
+	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/lists/{listId}/templates', requirements: ['listId' => '\d+'])]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function setListTemplates(int $houseId, int $listId, array $templateIds = []): DataResponse {
+		return $this->doSetListTemplates($houseId, $listId, $templateIds);
 	}
 
 	/**
@@ -851,45 +657,21 @@ final class ChecklistController extends OCSController {
 		array $labelIds = [],
 		array $customFields = [],
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $sortOrder, $storeIds, $barcode, $prices, $labelIds, $customFields): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$list = $this->lists->getList($listId);
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($categoryId !== null) {
-				$this->categories->assertInHouse($categoryId, $houseId);
-			}
-			$storeIds = array_map('intval', $storeIds);
-			$this->stores->assertStoresInHouse($houseId, $storeIds);
-			$labelIds = $this->labels->assertLabelsInHouse($houseId, $labelIds);
-			$customFields = $this->fields->sanitizeValuesForItem($houseId, $listId, $customFields);
-			$item = $this->lists->addItem($listId, [
-				'name' => $name,
-				'description' => $description,
-				'categoryId' => $categoryId,
-				'quantity' => $quantity,
-				'rrule' => $rrule,
-				'repeatFromCompletion' => $repeatFromCompletion,
-				'deleteOnDone' => $deleteOnDone,
-				'sortOrder' => $sortOrder ?? 0,
-				'storeIds' => $storeIds,
-				'barcode' => $barcode,
-				'prices' => $prices,
-				'labelIds' => $labelIds,
-				'customFields' => $customFields,
-			], $uid);
-			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
-			$this->activity->publishItemAdded(
-				$houseId,
-				$this->houses->get($houseId)->getName(),
-				$uid,
-				(int)$item->getId(),
-				$item->getName(),
-				$listId,
-				$list->getName(),
-			);
-			return new DataResponse($this->serializeItem($item));
-		});
+		return $this->doAddItem($houseId, $listId, [
+			'name' => $name,
+			'description' => $description,
+			'categoryId' => $categoryId,
+			'quantity' => $quantity,
+			'rrule' => $rrule,
+			'repeatFromCompletion' => $repeatFromCompletion,
+			'deleteOnDone' => $deleteOnDone,
+			'sortOrder' => $sortOrder,
+			'storeIds' => $storeIds,
+			'barcode' => $barcode,
+			'prices' => $prices,
+			'labelIds' => $labelIds,
+			'customFields' => $customFields,
+		]);
 	}
 
 	/**
@@ -907,12 +689,13 @@ final class ChecklistController extends OCSController {
 	 * @param bool|null $deleteOnDone If true, the item is deleted when marked done.
 	 * @param int|null $imageFileId File id of attached image (0 or negative clears).
 	 * @param int|null $sortOrder New sort order.
-	 * @param int|null $targetListId Move item to a different list (must belong to the same house).
+	 * @param int|null $targetListId Move item to a different checklist (must belong to the same house).
 	 * @param list<int>|null $storeIds New set of store ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 * @param string|null $barcode New barcode (EAN/UPC); empty string clears.
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}>|null $prices New full set of prices (empty array clears all; null leaves them unchanged). A null store id is the store-less price; at most one per store and one store-less.
 	 * @param list<int>|null $labelIds New set of label ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}>|null $customFields New full set of custom-field values (empty array clears all; null leaves them unchanged). Each field must belong to the house and apply to the item's list.
+	 * @param bool|null $quantityPinned False lets stock set the quantity of an item that restocks inventory items again, and sets it to what they ask for. Changing such an item's quantity pins it until it is next done.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -940,115 +723,10 @@ final class ChecklistController extends OCSController {
 		?array $prices = null,
 		?array $labelIds = null,
 		?array $customFields = null,
+		?bool $quantityPinned = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$item = $this->lists->getItem($itemId);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$patch = [];
-			if ($name !== null) {
-				$patch['name'] = $name;
-			}
-			if ($description !== null) {
-				$patch['description'] = $description;
-			}
-			if ($categoryId !== null) {
-				if ($categoryId > 0) {
-					$this->categories->assertInHouse($categoryId, $houseId);
-					$patch['categoryId'] = $categoryId;
-				} else {
-					$patch['categoryId'] = null;
-				}
-			}
-			if ($quantity !== null) {
-				$patch['quantity'] = $quantity;
-			}
-			if ($rrule !== null) {
-				$patch['rrule'] = $rrule;
-			}
-			if ($repeatFromCompletion !== null) {
-				$patch['repeatFromCompletion'] = $repeatFromCompletion;
-			}
-			if ($deleteOnDone !== null) {
-				$patch['deleteOnDone'] = $deleteOnDone;
-			}
-			if ($imageFileId !== null) {
-				$patch['imageFileId'] = $imageFileId > 0 ? $imageFileId : null;
-			}
-			if ($sortOrder !== null) {
-				$patch['sortOrder'] = $sortOrder;
-			}
-			if ($barcode !== null) {
-				$patch['barcode'] = $barcode;
-			}
-			// Prices are replaced as a whole set. A null value leaves them
-			// unchanged; an empty array clears them.
-			if ($prices !== null) {
-				$patch['prices'] = $prices;
-			}
-			if ($storeIds !== null) {
-				$ids = array_map('intval', $storeIds);
-				$this->stores->assertStoresInHouse($houseId, $ids);
-				$patch['storeIds'] = $ids;
-			}
-			if ($labelIds !== null) {
-				$patch['labelIds'] = $this->labels->assertLabelsInHouse($houseId, $labelIds);
-			}
-			// Values are validated against the destination list when the item is
-			// being moved, otherwise its current list.
-			if ($customFields !== null) {
-				$effectiveListId = ($targetListId !== null && $targetListId !== $listId) ? $targetListId : $listId;
-				$patch['customFields'] = $this->fields->sanitizeValuesForItem($houseId, $effectiveListId, $customFields);
-			}
-			$targetList = null;
-			if ($targetListId !== null && $targetListId !== $listId) {
-				// Moving an item to another list needs the move capability and
-				// access to the destination list (admins bypass both).
-				if (!$this->permissions->isAdmin($houseId, $uid)) {
-					if (!$this->permissions->can($houseId, $uid, 'canMoveItems')) {
-						throw new ForbiddenException('Missing permission: canMoveItems');
-					}
-					if (!$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
-						throw new ForbiddenException('No access to the destination list');
-					}
-				}
-				$targetList = $this->lists->getList($targetListId);
-				$this->assertListInHouse($targetList->getHouseId(), $houseId);
-				$patch['listId'] = $targetListId;
-			}
-			$updated = $this->lists->updateItem($itemId, $patch);
-
-			$houseName = $this->houses->get($houseId)->getName();
-			if ($targetList !== null && $targetList->getId() !== $list->getId()) {
-				$this->activity->publishItemMoved(
-					$houseId,
-					$houseName,
-					$uid,
-					$itemId,
-					$updated->getName(),
-					(int)$list->getId(),
-					$list->getName(),
-					(int)$targetList->getId(),
-					$targetList->getName(),
-				);
-			} elseif ($name !== null || $description !== null || $categoryId !== null || $quantity !== null || $rrule !== null || $repeatFromCompletion !== null || $deleteOnDone !== null || $imageFileId !== null || $storeIds !== null || $labelIds !== null || $prices !== null || $customFields !== null) {
-				$this->activity->publishItemUpdated(
-					$houseId,
-					$houseName,
-					$uid,
-					$itemId,
-					$updated->getName(),
-					(int)$list->getId(),
-					$list->getName(),
-				);
-			}
-			return new DataResponse($this->serializeItem($updated));
-		});
+		$extra = $quantityPinned !== null ? ['quantityPinned' => $quantityPinned] : [];
+		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $extra);
 	}
 
 	/**
@@ -1061,7 +739,7 @@ final class ChecklistController extends OCSController {
 	 * @param int $houseId House id.
 	 * @param int $listId List id the source item lives on.
 	 * @param int $itemId Source item id.
-	 * @param int $targetListId Destination list id (must belong to the same house).
+	 * @param int $targetListId Destination checklist id (must belong to the same house).
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -1071,54 +749,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canCopyItems'])]
 	public function copyItem(int $houseId, int $listId, int $itemId, int $targetListId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $targetListId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$source = $this->lists->getItem($itemId);
-			$sourceList = $this->lists->getList($source->getListId());
-			$this->assertListInHouse($sourceList->getHouseId(), $houseId);
-			if ($source->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$targetList = $this->lists->getList($targetListId);
-			$this->assertListInHouse($targetList->getHouseId(), $houseId);
-			if (!$this->permissions->isAdmin($houseId, $uid)
-				&& !$this->permissions->canAccessList($houseId, $uid, $targetListId)) {
-				throw new ForbiddenException('No access to the destination list');
-			}
-
-			$newImageFileId = null;
-			$newImageOwner = null;
-			$sourceImageFileId = $source->getImageFileId();
-			$sourceImageOwner = $source->getImageUploadedBy();
-			if ($sourceImageFileId !== null && $sourceImageOwner !== null) {
-				$newImageFileId = $this->images->duplicateItemImage(
-					$sourceImageOwner,
-					$sourceImageFileId,
-					$uid,
-					$houseId,
-				);
-				if ($newImageFileId !== null) {
-					$newImageOwner = $uid;
-				}
-			}
-
-			$copy = $this->lists->copyItem($itemId, $targetListId, $uid, $newImageFileId, $newImageOwner);
-
-			$houseName = $this->houses->get($houseId)->getName();
-			$this->activity->publishItemCopied(
-				$houseId,
-				$houseName,
-				$uid,
-				(int)$copy->getId(),
-				$copy->getName(),
-				(int)$sourceList->getId(),
-				$sourceList->getName(),
-				(int)$targetList->getId(),
-				$targetList->getName(),
-			);
-			return new DataResponse($this->serializeItem($copy));
-		});
+		return $this->doCopyItem($houseId, $listId, $itemId, $targetListId);
 	}
 
 	/**
@@ -1139,15 +770,13 @@ final class ChecklistController extends OCSController {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-			$item = $this->lists->getItem($itemId);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$toggled = $this->lists->toggleItem($itemId, $uid);
+			[$before, $list] = $this->loadItem($houseId, $listId, $itemId);
+			// A tick that restocked a shared item short may come straight back
+			// unchecked, so the activity follows the tick, not the result.
+			$ticked = !$before->getDone();
+			$toggled = $this->withRestock($this->restock->toggle($itemId, $uid));
 			$houseName = $this->houses->get($houseId)->getName();
-			if ($toggled->getDone()) {
+			if ($ticked) {
 				$this->notifications->notifyItemDone($houseId, $uid, $toggled->getName(), $list->getName());
 				$this->activity->publishItemDone(
 					$houseId,
@@ -1157,6 +786,7 @@ final class ChecklistController extends OCSController {
 					$toggled->getName(),
 					(int)$list->getId(),
 					$list->getName(),
+					$this->restockedBy($itemId),
 				);
 			} else {
 				$this->activity->publishItemReopened(
@@ -1187,13 +817,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canDeleteItems'])]
 	public function emptyTrash(int $houseId, int $listId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$list = $this->lists->getList($listId);
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$this->lists->emptyTrash($listId);
-			return new DataResponse(['success' => true]);
-		});
+		return $this->doEmptyTrash($houseId, $listId);
 	}
 
 	/**
@@ -1211,28 +835,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canDeleteItems'])]
 	public function deleteItem(int $houseId, int $listId, int $itemId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$item = $this->lists->getItem($itemId);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$itemName = $item->getName();
-			$this->lists->deleteItem($itemId);
-			$this->activity->publishItemDeleted(
-				$houseId,
-				$this->houses->get($houseId)->getName(),
-				$uid,
-				$itemId,
-				$itemName,
-				(int)$list->getId(),
-				$list->getName(),
-			);
-			return new DataResponse(['success' => true]);
-		});
+		return $this->doDeleteItem($houseId, $listId, $itemId);
 	}
 
 	/**
@@ -1250,27 +853,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canDeleteItems'])]
 	public function restoreItem(int $houseId, int $listId, int $itemId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$item = $this->lists->getItem($itemId, includeDeleted: true);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$restored = $this->lists->restoreItem($itemId);
-			$this->activity->publishItemRestored(
-				$houseId,
-				$this->houses->get($houseId)->getName(),
-				$uid,
-				$itemId,
-				$restored->getName(),
-				(int)$list->getId(),
-				$list->getName(),
-			);
-			return new DataResponse($this->serializeItem($restored));
-		});
+		return $this->doRestoreItem($houseId, $listId, $itemId);
 	}
 
 	/**
@@ -1290,17 +873,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canDeleteItems'])]
 	public function permanentlyDeleteItem(int $houseId, int $listId, int $itemId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$item = $this->lists->getItem($itemId, includeDeleted: true);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$this->lists->permanentlyDeleteItem($itemId);
-			return new DataResponse(['success' => true]);
-		});
+		return $this->doPermanentlyDeleteItem($houseId, $listId, $itemId);
 	}
 
 	/**
@@ -1321,17 +894,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function archiveItem(int $houseId, int $listId, int $itemId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$item = $this->lists->getItem($itemId);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$archived = $this->lists->archiveItem($itemId);
-			return new DataResponse($this->serializeItem($archived));
-		});
+		return $this->doArchiveItem($houseId, $listId, $itemId);
 	}
 
 	/**
@@ -1349,17 +912,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function unarchiveItem(int $houseId, int $listId, int $itemId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$item = $this->lists->getItem($itemId);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$unarchived = $this->lists->unarchiveItem($itemId);
-			return new DataResponse($this->serializeItem($unarchived));
-		});
+		return $this->doUnarchiveItem($houseId, $listId, $itemId);
 	}
 
 	/**
@@ -1377,26 +930,20 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function reorderItems(int $houseId, int $listId, array $items = []): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $items): DataResponse {
-			$this->auth->requireMember($houseId, $this->requireUid());
-			$list = $this->lists->getList($listId);
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			$this->lists->reorderItems($listId, $items);
-			return new DataResponse(['success' => true]);
-		});
+		return $this->doReorderItems($houseId, $listId, $items);
 	}
 
 	/**
 	 * Validate a batch of item ids for the given house/user.
 	 *
 	 * Keeps only items that exist, belong to the house, and whose source list
-	 * the caller can access; every other id is reported as skipped. Preserves
-	 * input order.
+	 * the caller can access (and, when `$kind` is given, is of that kind); every
+	 * other id is reported as skipped. Preserves input order.
 	 *
 	 * @param list<int> $itemIds
 	 * @return array{items: list<ChecklistItem>, skipped: list<int>}
 	 */
-	private function collectAccessibleItems(int $houseId, string $uid, array $itemIds, bool $includeDeleted = false): array {
+	private function collectAccessibleItems(int $houseId, string $uid, array $itemIds, bool $includeDeleted = false, ?string $kind = null): array {
 		$valid = [];
 		$skipped = [];
 		$listAccess = [];
@@ -1410,7 +957,7 @@ final class ChecklistController extends OCSController {
 				$skipped[] = $itemId;
 				continue;
 			}
-			if ($list->getHouseId() !== $houseId) {
+			if ($list->getHouseId() !== $houseId || ($kind !== null && $list->getKind() !== $kind)) {
 				$skipped[] = $itemId;
 				continue;
 			}
@@ -1450,6 +997,9 @@ final class ChecklistController extends OCSController {
 
 	/**
 	 * Move a batch of items to another list in one action
+	 *
+	 * The destination may be a list of any kind. Items crossing kinds keep the
+	 * fields the destination's items have, drop the rest, and start unchecked.
 	 *
 	 * @param int $houseId House id.
 	 * @param list<int> $itemIds Ids of the items to move.
@@ -1507,11 +1057,22 @@ final class ChecklistController extends OCSController {
 	/**
 	 * Copy a batch of items to another list in one action
 	 *
+	 * The destination may be a list of any kind. Copies keep the fields the
+	 * destination's items have, drop the rest, and start unchecked.
+	 *
+	 * Template items copied onto a checklist or inventory follow the
+	 * template-copy rule, exactly as drawing each one would: empty fields fill
+	 * from the destination's item defaults, template-scoped categories, labels
+	 * and custom fields are matched by name or copied, and a same-name item
+	 * already on the destination is reused (unchecked and unarchived; on an
+	 * inventory only unarchived) instead of duplicated. Its id is listed in
+	 * `reused`. Applying a template is this call with the template's items.
+	 *
 	 * @param int $houseId House id.
 	 * @param list<int> $itemIds Ids of the items to copy.
 	 * @param int $targetListId Destination list id (must belong to the same house).
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryBatchResult, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryBatchCopyResult, array{}>
 	 *
 	 * 200: Items copied
 	 */
@@ -1530,29 +1091,41 @@ final class ChecklistController extends OCSController {
 			}
 
 			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
-			$groups = $this->groupItemsBySourceList($collected['items']);
-			// Copy one item at a time — each may need its image file duplicated so
-			// the copy and source do not share a file (mirrors copyItem()).
+			$draws = $targetList->getKind() !== Checklist::KIND_TEMPLATE;
+			$sourceKinds = [];
 			$copies = [];
+			$reused = [];
+			$added = [];
 			foreach ($collected['items'] as $source) {
-				$newImageFileId = null;
-				$newImageOwner = null;
-				$sourceImageFileId = $source->getImageFileId();
-				$sourceImageOwner = $source->getImageUploadedBy();
-				if ($sourceImageFileId !== null && $sourceImageOwner !== null) {
-					$newImageFileId = $this->images->duplicateItemImage(
-						$sourceImageOwner,
-						$sourceImageFileId,
+				$sourceListId = (int)$source->getListId();
+				$sourceKinds[$sourceListId] ??= $this->lists->getList($sourceListId)->getKind();
+				if ($draws && $sourceKinds[$sourceListId] === Checklist::KIND_TEMPLATE) {
+					$result = $this->templateCopy->draw(
+						$source,
+						$targetList,
 						$uid,
-						$houseId,
+						fn (int $fileId, string $ownerUid): ?int => $this->images->duplicateItemImage($ownerUid, $fileId, $uid, $houseId),
 					);
-					if ($newImageFileId !== null) {
-						$newImageOwner = $uid;
+					$itemId = (int)$result['item']->getId();
+					// A template holding the same name twice revives the copy this
+					// batch just made, which is neither listed again nor reused.
+					if ($result['reused']) {
+						if (!isset($copies[$itemId])) {
+							$copies[$itemId] = $result['item'];
+							$reused[] = $itemId;
+						}
+						continue;
 					}
+					$copies[$itemId] = $result['item'];
+				} else {
+					[$newImageFileId, $newImageOwner] = $this->duplicateImageFor($source, $houseId, $uid);
+					$copy = $this->lists->copyItem((int)$source->getId(), $targetListId, $uid, $newImageFileId, $newImageOwner);
+					$copies[(int)$copy->getId()] = $copy;
 				}
-				$copies[] = $this->lists->copyItem((int)$source->getId(), $targetListId, $uid, $newImageFileId, $newImageOwner);
+				$added[] = $source;
 			}
 
+			$groups = $this->groupItemsBySourceList($added);
 			$houseName = $this->houses->get($houseId)->getName();
 			foreach ($groups as $fromListId => $group) {
 				$this->activity->publishItemsCopied(
@@ -1568,8 +1141,9 @@ final class ChecklistController extends OCSController {
 			}
 			return new DataResponse([
 				'success' => true,
-				'items' => $this->serializeItems($copies),
+				'items' => $this->serializeItems(array_values($copies)),
 				'skipped' => $collected['skipped'],
+				'reused' => $reused,
 			]);
 		});
 	}
@@ -1714,6 +1288,8 @@ final class ChecklistController extends OCSController {
 	 *
 	 * Unchecks every targeted item that is currently done, in a single request
 	 * (clearing done_at / done_by). Items already unchecked are left as-is.
+	 * Only checklist items are ever checked off, so items of other list kinds
+	 * are skipped.
 	 *
 	 * @param int $houseId House id.
 	 * @param list<int> $itemIds Ids of the items to uncheck.
@@ -1730,7 +1306,7 @@ final class ChecklistController extends OCSController {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 
-			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds);
+			$collected = $this->collectAccessibleItems($houseId, $uid, $itemIds, kind: Checklist::KIND_CHECKLIST);
 			$updated = $this->lists->uncheckItems(
 				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
 			);
@@ -1774,22 +1350,7 @@ final class ChecklistController extends OCSController {
 
 			// Attaching stores reuses the generic "item updated" activity rather
 			// than a dedicated subject.
-			$houseName = $this->houses->get($houseId)->getName();
-			$listNames = [];
-			foreach ($groups as $listId => $group) {
-				$listNames[$listId] = $group['listName'];
-			}
-			foreach ($updated as $item) {
-				$this->activity->publishItemUpdated(
-					$houseId,
-					$houseName,
-					$uid,
-					(int)$item->getId(),
-					$item->getName(),
-					(int)$item->getListId(),
-					$listNames[(int)$item->getListId()] ?? '',
-				);
-			}
+			$this->publishItemsUpdated($houseId, $uid, $updated, $groups);
 			return new DataResponse([
 				'success' => true,
 				'items' => $this->serializeItems($updated),
@@ -1829,28 +1390,32 @@ final class ChecklistController extends OCSController {
 
 			// Attaching labels reuses the generic "item updated" activity rather
 			// than a dedicated subject.
-			$houseName = $this->houses->get($houseId)->getName();
-			$listNames = [];
-			foreach ($groups as $listId => $group) {
-				$listNames[$listId] = $group['listName'];
-			}
-			foreach ($updated as $item) {
-				$this->activity->publishItemUpdated(
-					$houseId,
-					$houseName,
-					$uid,
-					(int)$item->getId(),
-					$item->getName(),
-					(int)$item->getListId(),
-					$listNames[(int)$item->getListId()] ?? '',
-				);
-			}
+			$this->publishItemsUpdated($houseId, $uid, $updated, $groups);
 			return new DataResponse([
 				'success' => true,
 				'items' => $this->serializeItems($updated),
 				'skipped' => $collected['skipped'],
 			]);
 		});
+	}
+
+	/**
+	 * @param ChecklistItem[] $updated
+	 * @param array<int, array{listName: string, itemNames: list<string>}> $groups
+	 */
+	private function publishItemsUpdated(int $houseId, string $uid, array $updated, array $groups): void {
+		$houseName = $this->houses->get($houseId)->getName();
+		foreach ($updated as $item) {
+			$this->activity->publishItemUpdated(
+				$houseId,
+				$houseName,
+				$uid,
+				(int)$item->getId(),
+				$item->getName(),
+				(int)$item->getListId(),
+				$groups[(int)$item->getListId()]['listName'] ?? '',
+			);
+		}
 	}
 
 	/**
@@ -1871,34 +1436,7 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function uploadItemImage(int $houseId, int $listId, int $itemId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$item = $this->lists->getItem($itemId);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-
-			$data = $this->request->getUploadedFile('image');
-			if ($data === null || !is_array($data) || ($data['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-				throw new \InvalidArgumentException('No image uploaded');
-			}
-			$tmp = (string)($data['tmp_name'] ?? '');
-			if ($tmp === '' || !is_uploaded_file($tmp)) {
-				throw new \InvalidArgumentException('Invalid upload');
-			}
-			$bytes = file_get_contents($tmp);
-			if ($bytes === false) {
-				throw new \RuntimeException('Could not read uploaded file');
-			}
-			$original = (string)($data['name'] ?? 'image.jpg');
-			$fileId = $this->images->uploadForUser($uid, $houseId, $original, $bytes);
-
-			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $fileId, 'imageUploadedBy' => $uid]);
-			return new DataResponse($this->serializeItem($updated));
-		});
+		return $this->doUploadItemImage($houseId, $listId, $itemId);
 	}
 
 	/**
@@ -1916,57 +1454,6 @@ final class ChecklistController extends OCSController {
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
 	public function clearItemImage(int $houseId, int $listId, int $itemId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$item = $this->lists->getItem($itemId);
-			$list = $this->lists->getList($item->getListId());
-			$this->assertListInHouse($list->getHouseId(), $houseId);
-			if ($item->getListId() !== $listId) {
-				throw new NotFoundException('Item does not belong to this list');
-			}
-			$updated = $this->lists->updateItem($itemId, ['imageFileId' => null, 'imageUploadedBy' => null]);
-			return new DataResponse($this->serializeItem($updated));
-		});
-	}
-
-	/**
-	 * Serialize a checklist with the current user's effective sharing flags:
-	 * - `canEdit`: an editor share, or role access to the list plus the
-	 *   edit-lists capability.
-	 * - `sharedOnly`: the user reaches this list only through a per-user share
-	 *   (no role grants access). A viewer share then bounds writes to read-only,
-	 *   while role-based access keeps the granular per-action capabilities.
-	 *
-	 * @param array<string, array<int, string>> $shareMap
-	 */
-	private function listJson(Checklist $list, bool $canEditLists, int $houseId, string $uid, array $shareMap): array {
-		$roleAccess = $this->permissions->hasRoleAccessToList($houseId, $uid, (int)$list->getId());
-		return array_merge($list->jsonSerialize(), [
-			'itemDefaults' => $this->itemDefaults->forList($list),
-			'canEdit' => $this->canEditList($list, $canEditLists, $roleAccess, $shareMap),
-			'sharedOnly' => !$roleAccess,
-		]);
-	}
-
-	/**
-	 * @param array<string, array<int, string>> $shareMap
-	 */
-	private function canEditList(Checklist $list, bool $canEditLists, bool $roleAccess, array $shareMap): bool {
-		return $this->shares->canEditFromMap(Share::TYPE_CHECKLIST, (int)$list->getId(), $canEditLists && $roleAccess, $shareMap);
-	}
-
-	private function requireUid(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new ForbiddenException('Not authenticated');
-		}
-		return $user->getUID();
-	}
-
-	private function assertListInHouse(int $listHouseId, int $routeHouseId): void {
-		if ($listHouseId !== $routeHouseId) {
-			throw new NotFoundException('List does not belong to this house');
-		}
+		return $this->doClearItemImage($houseId, $listId, $itemId);
 	}
 }

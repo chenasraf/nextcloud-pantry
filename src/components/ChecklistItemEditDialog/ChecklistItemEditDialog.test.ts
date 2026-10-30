@@ -5,6 +5,7 @@ import { createIconMock, nextcloudL10nMock } from '@/test-utils'
 import type { ChecklistItem } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
+vi.mock('@nextcloud/dialogs', () => ({ showInfo: vi.fn(), showSuccess: vi.fn() }))
 vi.mock('@icons/Upload.vue', () => createIconMock('UploadIcon'))
 vi.mock('@icons/Delete.vue', () => createIconMock('DeleteIcon'))
 
@@ -29,6 +30,15 @@ vi.mock('@nextcloud/vue/components/NcTextField', () => ({
     template:
       '<input class="nc-text-field" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
     props: ['modelValue', 'label', 'placeholder', 'autocomplete'],
+    emits: ['update:modelValue'],
+  },
+}))
+// NcDateTimePickerNative eagerly imports a .css asset Node's ESM loader rejects.
+vi.mock('@nextcloud/vue/components/NcDateTimePickerNative', () => ({
+  default: {
+    name: 'NcDateTimePickerNative',
+    template: '<input class="nc-date-time-picker-native" type="date" />',
+    props: ['modelValue', 'type', 'label'],
     emits: ['update:modelValue'],
   },
 }))
@@ -136,12 +146,22 @@ vi.mock('@/components/LabelChipList', () => ({
     emits: ['update:modelValue'],
   },
 }))
+vi.mock('@/components/StockLink/StockLinkCard.vue', () => ({
+  default: {
+    name: 'StockLinkCard',
+    template: '<div class="stock-link-card-stub">{{ restockChecklistName }}</div>',
+    props: ['item', 'houseId', 'restockChecklistName', 'disabled'],
+    emits: ['link', 'unlink', 'auto-link'],
+  },
+}))
 vi.mock('@/api/images', () => ({
   itemImagePreviewUrl: (houseId: number, fileId: number, owner: string, size: number) =>
     `/preview/${houseId}/${fileId}/${owner}/${size}`,
 }))
 
+import { defineComponent, h, ref } from 'vue'
 import ChecklistItemEditDialog from './ChecklistItemEditDialog.vue'
+import { provideListKind } from '@/composables/useListKind'
 
 function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
   return {
@@ -223,6 +243,78 @@ describe('ChecklistItemEditDialog', () => {
     expect(patch.quantity).toBe('2 L')
     expect(pendingImage).toBeNull()
     expect(clearImage).toBe(false)
+  })
+
+  it('edits an inventory item through the Stock card instead of Quantity', async () => {
+    const saves: unknown[][] = []
+    const Host = defineComponent({
+      setup() {
+        provideListKind(ref('inventory'))
+        return () =>
+          h(ChecklistItemEditDialog, {
+            ...defaultProps,
+            item: makeItem({
+              name: 'Eggs',
+              quantity: '4',
+              stockMode: 'count',
+              stockLevel: 'full',
+              target: '12 eggs',
+              reorderPoint: null,
+            }),
+            onSave: (...args: unknown[]) => saves.push(args),
+          })
+      },
+    })
+    const wrapper = mount(Host)
+
+    expect(wrapper.find('.stock-card').exists()).toBe(true)
+    const levelButton = wrapper.findAll('.stock-card__mode').find((b) => b.text() === 'Level')!
+    await levelButton.trigger('click')
+    await wrapper.find('#pantry-edit-item-form').trigger('submit')
+
+    expect(saves[0][1]).toMatchObject({
+      quantity: '8 eggs',
+      stockMode: 'level',
+      stockLevel: 'low',
+      target: '12 eggs',
+      reorderPoint: '',
+    })
+  })
+
+  it('sets Keeps N days through the Expiry card, and only what changed', async () => {
+    const saves: unknown[][] = []
+    const Host = defineComponent({
+      setup() {
+        provideListKind(ref('inventory'))
+        return () =>
+          h(ChecklistItemEditDialog, {
+            ...defaultProps,
+            item: makeItem({
+              name: 'Milk',
+              quantity: '1',
+              stockMode: 'count',
+              stockLevel: 'full',
+              target: '1',
+              reorderPoint: null,
+              expiresAt: null,
+              shelfLifeDays: null,
+            }),
+            onSave: (...args: unknown[]) => saves.push(args),
+          })
+      },
+    })
+    const wrapper = mount(Host)
+
+    expect(wrapper.find('.expiry-card').exists()).toBe(true)
+    await wrapper.find('[data-testid="expiry-mode-days"]').trigger('click')
+    await wrapper.find('[data-testid="expiry-days"]').setValue('7')
+    expect(wrapper.find('[data-testid="expiry-summary"]').text()).toMatch(
+      /^Good until .+\. Each restock renews it to 7 days from that day\.$/,
+    )
+    await wrapper.find('#pantry-edit-item-form').trigger('submit')
+
+    expect(saves[0][1]).toMatchObject({ shelfLifeDays: 7 })
+    expect(saves[0][1]).not.toHaveProperty('expiresAt')
   })
 
   it('emits update:open false on cancel click', async () => {
@@ -309,5 +401,64 @@ describe('ChecklistItemEditDialog', () => {
     const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
     expect(patch.deleteOnDone).toBe(false)
     expect(patch.rrule).toBeNull()
+  })
+
+  describe('Shopping list card', () => {
+    const row = {
+      itemId: 50,
+      name: 'Eggs',
+      quantity: null,
+      listId: 3,
+      listName: 'Groceries',
+      listColor: null,
+      state: 'open' as const,
+    }
+
+    function mountFor(kind: 'inventory' | 'checklist', extra: Partial<ChecklistItem> = {}) {
+      const events: unknown[][] = []
+      const Host = defineComponent({
+        setup() {
+          provideListKind(ref(kind))
+          return () =>
+            h(ChecklistItemEditDialog, {
+              ...defaultProps,
+              item: makeItem({
+                stockMode: 'count',
+                stockLevel: 'full',
+                target: '12',
+                reorderPoint: null,
+                autoLink: true,
+                stockLink: null,
+                linkCandidates: [],
+                ...extra,
+              }),
+              onLink: (...args: unknown[]) => events.push(['link', ...args]),
+              onUnlink: (...args: unknown[]) => events.push(['unlink', ...args]),
+              onAutoLink: (...args: unknown[]) => events.push(['auto-link', ...args]),
+            })
+        },
+      })
+      return { wrapper: mount(Host), events }
+    }
+
+    it('shows the card on inventory items only', () => {
+      expect(mountFor('inventory').wrapper.find('.stock-link-card-stub').exists()).toBe(true)
+      expect(mountFor('checklist').wrapper.find('.stock-link-card-stub').exists()).toBe(false)
+    })
+
+    it('passes on what the card changes, with the item', () => {
+      const { wrapper, events } = mountFor('inventory', { stockLink: row })
+      const card = wrapper.findComponent({ name: 'StockLinkCard' })
+
+      card.vm.$emit('link', row)
+      card.vm.$emit('unlink')
+      card.vm.$emit('auto-link', true)
+
+      expect(events.map(([name, item, arg]) => [name, (item as ChecklistItem).id, arg])).toEqual([
+        ['link', 42, row],
+        ['unlink', 42, undefined],
+        ['auto-link', 42, true],
+      ])
+    })
   })
 })

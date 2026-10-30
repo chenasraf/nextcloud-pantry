@@ -46,6 +46,14 @@ export function capitalize(str: string | null | undefined): string {
 }
 
 /**
+ * The key two item names share when they name the same item: case and
+ * spacing are ignored, matching the server's own comparison.
+ */
+export function itemNameKey(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+/**
  * Formats a number as a human-readable file size.
  *
  * @param bytes - The number of bytes

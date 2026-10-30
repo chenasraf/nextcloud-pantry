@@ -9,6 +9,7 @@ namespace OCA\Pantry\Db;
 
 use OCA\Pantry\AppInfo\Application;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\AppFramework\Db\Entity;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
@@ -154,8 +155,8 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
-	 * Find non-deleted items across every non-deleted list in the house. The
-	 * "custom" sort mode is not supported here because sort_order is scoped
+	 * Find non-deleted items across every non-deleted checklist in the house.
+	 * The "custom" sort mode is not supported here because sort_order is scoped
 	 * to a single list — callers should fall back to a deterministic sort.
 	 *
 	 * @return ChecklistItem[]
@@ -164,6 +165,10 @@ class ChecklistItemMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$items = $this->getTableName();
 		$lists = Application::tableName('lists');
+		$isChecklist = $qb->expr()->orX(
+			$qb->expr()->eq('l.kind', $qb->createNamedParameter(Checklist::KIND_CHECKLIST)),
+			$qb->expr()->isNull('l.kind'),
+		);
 
 		if ($sortBy === 'category') {
 			$categories = Application::tableName('categories');
@@ -172,6 +177,7 @@ class ChecklistItemMapper extends QBMapper {
 				->innerJoin('i', $lists, 'l', $qb->expr()->andX(
 					$qb->expr()->eq('i.list_id', 'l.id'),
 					$qb->expr()->isNull('l.deleted_at'),
+					$isChecklist,
 				))
 				->leftJoin(
 					'i',
@@ -208,6 +214,7 @@ class ChecklistItemMapper extends QBMapper {
 			->innerJoin('i', $lists, 'l', $qb->expr()->andX(
 				$qb->expr()->eq('i.list_id', 'l.id'),
 				$qb->expr()->isNull('l.deleted_at'),
+				$isChecklist,
 			))
 			->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNull('i.deleted_at'))
@@ -415,6 +422,40 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * The stock columns of every live item on the given lists, grouped by list.
+	 *
+	 * @param int[] $listIds
+	 * @return array<int, list<array{stockMode: ?string, stockLevel: ?string, quantity: ?string, target: ?string, reorderPoint: ?string, expiresAt: ?int, shelfLifeDays: ?int}>>
+	 */
+	public function findStockByLists(array $listIds): array {
+		$listIds = array_values(array_unique(array_map('intval', $listIds)));
+		if ($listIds === []) {
+			return [];
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('list_id', 'stock_mode', 'stock_level', 'quantity', 'target', 'reorder_point', 'expires_at', 'shelf_life_days')
+			->from($this->getTableName())
+			->where($qb->expr()->in('list_id', $qb->createNamedParameter($listIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->andWhere($qb->expr()->isNull('deleted_at'))
+			->andWhere($qb->expr()->isNull('archived_at'));
+		$result = $qb->executeQuery();
+		$out = [];
+		while ($row = $result->fetch()) {
+			$out[(int)$row['list_id']][] = [
+				'stockMode' => $row['stock_mode'] !== null ? (string)$row['stock_mode'] : null,
+				'stockLevel' => $row['stock_level'] !== null ? (string)$row['stock_level'] : null,
+				'quantity' => $row['quantity'] !== null ? (string)$row['quantity'] : null,
+				'target' => $row['target'] !== null ? (string)$row['target'] : null,
+				'reorderPoint' => $row['reorder_point'] !== null ? (string)$row['reorder_point'] : null,
+				'expiresAt' => $row['expires_at'] !== null ? (int)$row['expires_at'] : null,
+				'shelfLifeDays' => $row['shelf_life_days'] !== null ? (int)$row['shelf_life_days'] : null,
+			];
+		}
+		$result->closeCursor();
+		return $out;
+	}
+
+	/**
 	 * How many live items in the list are still unchecked. Archived and
 	 * soft-deleted items are not open — they have left the list's working set.
 	 */
@@ -524,7 +565,19 @@ class ChecklistItemMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * Every hard delete of an item goes through this mapper, so this is where
+	 * the stock links pointing at it are dropped. A link survives the trash
+	 * and the archive, but not the row itself.
+	 */
+	#[\Override]
+	public function delete(Entity $entity): Entity {
+		$this->clearLinksTo([(int)$entity->getId()]);
+		return parent::delete($entity);
+	}
+
 	public function deleteByList(int $listId): void {
+		$this->clearLinksTo($this->findIdsByList($listId, trashedOnly: false));
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
@@ -535,11 +588,146 @@ class ChecklistItemMapper extends QBMapper {
 	 * Hard-delete every soft-deleted item in the list.
 	 */
 	public function emptyTrashForList(int $listId): void {
+		$this->clearLinksTo($this->findIdsByList($listId, trashedOnly: true));
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNotNull('deleted_at'));
 		$qb->executeStatement();
+	}
+
+	/**
+	 * @return list<int>
+	 */
+	public function findIdsByList(int $listId, bool $trashedOnly): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('id')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+		if ($trashedOnly) {
+			$qb->andWhere($qb->expr()->isNotNull('deleted_at'));
+		}
+		$result = $qb->executeQuery();
+		$ids = [];
+		while (($id = $result->fetchOne()) !== false) {
+			$ids[] = (int)$id;
+		}
+		$result->closeCursor();
+		return $ids;
+	}
+
+	/**
+	 * Hold the item's row until the open transaction ends. A write that
+	 * changes nothing still takes the row lock, on every supported database,
+	 * where SELECT … FOR UPDATE is not portable.
+	 */
+	public function lock(int $id): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('updated_at', 'updated_at')
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * Unlink every inventory item linked to one of the given items. Auto-link
+	 * is left as it is, so a dropped link can be found again by name.
+	 *
+	 * @param int[] $itemIds
+	 */
+	public function clearLinksTo(array $itemIds): void {
+		$itemIds = array_values(array_unique(array_map('intval', $itemIds)));
+		foreach (array_chunk($itemIds, 500) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->update($this->getTableName())
+				->set('linked_item_id', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+				->set('linked_at', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+				->where($qb->expr()->in('linked_item_id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)));
+			$qb->executeStatement();
+		}
+	}
+
+	/**
+	 * Live items on live inventories whose expiry status the daily job may
+	 * see move: those with an expiry date, or with a synced status still to
+	 * clear.
+	 *
+	 * @return list<ChecklistItem>
+	 */
+	public function findExpiryTracked(): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('i.*')
+			->from($this->getTableName(), 'i')
+			->innerJoin('i', Application::tableName('lists'), 'l', $qb->expr()->eq('l.id', 'i.list_id'))
+			->where($qb->expr()->eq('l.kind', $qb->createNamedParameter(Checklist::KIND_INVENTORY)))
+			->andWhere($qb->expr()->isNull('l.deleted_at'))
+			->andWhere($qb->expr()->isNull('l.archived_at'))
+			->andWhere($qb->expr()->isNull('i.deleted_at'))
+			->andWhere($qb->expr()->isNull('i.archived_at'))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->isNotNull('i.expires_at'),
+				$qb->expr()->andX(
+					$qb->expr()->isNotNull('i.expiry_synced_status'),
+					$qb->expr()->neq('i.expiry_synced_status', $qb->createNamedParameter('none')),
+				),
+			))
+			->orderBy('i.list_id', 'ASC')
+			->addOrderBy('i.id', 'ASC');
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Record the expiry status the restock sync acted on, leaving the rest of
+	 * the item as it is.
+	 */
+	public function setExpirySyncedStatus(int $id, string $status): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('expiry_synced_status', $qb->createNamedParameter($status))
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * Items linked to any of the given items, trashed and archived ones
+	 * included, earliest linked first.
+	 *
+	 * @param int[] $itemIds
+	 * @return ChecklistItem[]
+	 */
+	public function findLinkedTo(array $itemIds): array {
+		$itemIds = array_values(array_unique(array_map('intval', $itemIds)));
+		if ($itemIds === []) {
+			return [];
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->in('linked_item_id', $qb->createNamedParameter($itemIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->orderBy('linked_at', 'ASC')
+			->addOrderBy('id', 'ASC');
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * The items the list's items are linked to, trashed and archived items
+	 * included.
+	 *
+	 * @return list<int>
+	 */
+	public function findLinkedIdsFromList(int $listId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('linked_item_id')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNotNull('linked_item_id'));
+		$result = $qb->executeQuery();
+		$ids = [];
+		while (($id = $result->fetchOne()) !== false) {
+			$ids[] = (int)$id;
+		}
+		$result->closeCursor();
+		return array_values(array_unique($ids));
 	}
 
 	/**

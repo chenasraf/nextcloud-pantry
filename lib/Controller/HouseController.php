@@ -7,12 +7,14 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Controller;
 
+use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMember;
 use OCA\Pantry\Db\HouseMemberRoleMapper;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Permission\Permission;
 use OCA\Pantry\ResponseDefinitions;
+use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\PermissionService;
@@ -26,6 +28,7 @@ use OCP\IUserSession;
 
 /**
  * @psalm-import-type PantryHouse from ResponseDefinitions
+ * @psalm-import-type PantryHouseDetail from ResponseDefinitions
  * @psalm-import-type PantryMember from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  */
@@ -41,6 +44,7 @@ final class HouseController extends OCSController {
 		private HouseMemberRoleMapper $memberRoleMapper,
 		private IUserSession $userSession,
 		private \OCP\IUserManager $userManager,
+		private ChecklistService $lists,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -96,11 +100,13 @@ final class HouseController extends OCSController {
 	/**
 	 * Fetch a single house
 	 *
-	 * The caller must be a member.
+	 * The caller must be a member. `lists` names every active list the caller
+	 * can reach, of every kind, in their shared sort order, for navigation;
+	 * each kind's own resource serves the list itself.
 	 *
 	 * @param int $houseId House id.
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantryHouse, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryHouseDetail, array{}>
 	 *
 	 * 200: House returned
 	 */
@@ -111,7 +117,21 @@ final class HouseController extends OCSController {
 			$uid = $this->requireUid();
 			$member = $this->auth->requireMember($houseId, $uid);
 			$house = $this->houseService->get($houseId);
-			return new DataResponse($this->serializeHouseWithRole($house, $member->getRole(), $uid));
+			$lists = array_values(array_filter(
+				$this->lists->listAllKindsForHouse($houseId),
+				fn (Checklist $l) => $this->permissions->canAccessList($houseId, $uid, (int)$l->getId()),
+			));
+			return new DataResponse(array_merge(
+				$this->serializeHouseWithRole($house, $member->getRole(), $uid),
+				['lists' => array_map(static fn (Checklist $l): array => [
+					'id' => (int)$l->getId(),
+					'kind' => $l->getKind(),
+					'name' => $l->getName(),
+					'icon' => $l->getIcon(),
+					'color' => $l->getColor(),
+					'sortOrder' => $l->getSortOrder(),
+				], $lists)],
+			));
 		});
 	}
 

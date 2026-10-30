@@ -7,6 +7,7 @@ import type {
   ItemDefaults,
   ItemDefaultsPatch,
   RecurrenceDefaultValue,
+  StockMode,
 } from '@/api/types'
 import { DEFAULT_RRULE } from '@/utils/rrule'
 
@@ -80,6 +81,13 @@ export interface ItemStartValues {
   quantity: string
   recurrence: RecurrenceDefaultValue
   customFieldValues: ItemCustomFieldValue[]
+  /** Read only on inventories. */
+  stock: {
+    stockMode: StockMode
+    target: string
+    reorderPoint: string
+    shelfLifeDays: number | null
+  }
 }
 
 const STAPLE: RecurrenceDefaultValue = { kind: 'none', rrule: null, repeatFromCompletion: false }
@@ -118,11 +126,17 @@ export function startValues(
       rrule: recurrence.kind === 'recurring' ? (recurrence.rrule ?? DEFAULT_RRULE) : null,
     },
     customFieldValues: [...fieldValues.values()],
+    stock: {
+      stockMode: prefill(defaults?.stockMode) ?? 'count',
+      target: prefill(defaults?.target) ?? '',
+      reorderPoint: prefill(defaults?.reorderPoint) ?? '',
+      shelfLifeDays: prefill(defaults?.shelfLifeDays),
+    },
   }
 }
 
-/** What the item just added actually used. */
-export type ItemUsedValues = Omit<ItemStartValues, 'quantity'>
+/** What the item just added actually used. Only an inventory item has a stock mode. */
+export type ItemUsedValues = Omit<ItemStartValues, 'quantity' | 'stock'> & { stockMode?: StockMode }
 
 /**
  * The write-back for keys that follow the last item added: only those in
@@ -143,10 +157,15 @@ export function rememberPatch(
   ) => {
     if (entry.mode === 'remember' && !sameValue(entry.value, value)) write(value)
   }
-  remember(defaults.recurrence, used.recurrence, (value) => (patch.recurrence = { value }))
+  if (defaults.recurrence) {
+    remember(defaults.recurrence, used.recurrence, (value) => (patch.recurrence = { value }))
+  }
   remember(defaults.stores, used.storeIds, (value) => (patch.stores = { value }))
   remember(defaults.category, used.categoryId, (value) => (patch.category = { value }))
   remember(defaults.labels, used.labelIds, (value) => (patch.labels = { value }))
+  if (defaults.stockMode && used.stockMode) {
+    remember(defaults.stockMode, used.stockMode, (value) => (patch.stockMode = { value }))
+  }
 
   const defsById = new Map(fieldDefs.map((f) => [f.id, f]))
   const usedById = new Map(used.customFieldValues.map((v) => [v.fieldId, v]))
@@ -165,10 +184,13 @@ export function rememberPatch(
 /** The defaults once a remember write-back lands, for updating optimistically. */
 export function withRemembered(defaults: ItemDefaults, patch: ItemDefaultsPatch): ItemDefaults {
   const next: ItemDefaults = { ...defaults }
-  if (patch.recurrence) next.recurrence = { ...next.recurrence, value: patch.recurrence.value }
+  if (patch.recurrence && next.recurrence)
+    next.recurrence = { ...next.recurrence, value: patch.recurrence.value }
   if (patch.stores) next.stores = { ...next.stores, value: patch.stores.value }
   if (patch.category) next.category = { ...next.category, value: patch.category.value }
   if (patch.labels) next.labels = { ...next.labels, value: patch.labels.value }
+  if (patch.stockMode && next.stockMode)
+    next.stockMode = { ...next.stockMode, value: patch.stockMode.value }
   if (patch.fields) {
     const updates = new Map(patch.fields.map((f) => [f.fieldId, f.value]))
     next.fields = next.fields.map((f): ItemDefaultField =>
@@ -184,14 +206,18 @@ export function withRemembered(defaults: ItemDefaults, patch: ItemDefaultsPatch)
  */
 export function configSignature(defaults: ItemDefaults | null | undefined): string {
   if (!defaults) return ''
-  const pinned = (entry: { mode: string; value?: unknown }) =>
-    entry.mode === 'fixed' ? entry : { mode: entry.mode }
+  const pinned = (entry: { mode: string; value?: unknown } | undefined) =>
+    entry?.mode === 'fixed' ? entry : { mode: entry?.mode ?? 'none' }
   return JSON.stringify({
     recurrence: pinned(defaults.recurrence),
     stores: pinned(defaults.stores),
     category: pinned(defaults.category),
     labels: pinned(defaults.labels),
     quantity: pinned(defaults.quantity),
+    stockMode: pinned(defaults.stockMode),
+    target: pinned(defaults.target),
+    reorderPoint: pinned(defaults.reorderPoint),
+    shelfLifeDays: pinned(defaults.shelfLifeDays),
     fields: defaults.fields.map((f) => ({ fieldId: f.fieldId, ...pinned(f) })),
   })
 }

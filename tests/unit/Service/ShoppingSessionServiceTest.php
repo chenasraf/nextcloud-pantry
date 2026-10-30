@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Tests\Unit\Service;
 
+use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
@@ -27,12 +28,15 @@ use OCA\Pantry\Db\StoreMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Exception\ShoppingSessionConflictException;
 use OCA\Pantry\Service\ChecklistService;
+use OCA\Pantry\Service\RestockService;
 use OCA\Pantry\Service\ShoppingSessionService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class ShoppingSessionServiceTest extends TestCase {
+	private const TEMPLATE_LIST_ID = 99;
+
 	/** @var ShoppingSessionMapper&MockObject */
 	private ShoppingSessionMapper $sessions;
 	/** @var ShoppingSessionListMapper&MockObject */
@@ -55,6 +59,8 @@ class ShoppingSessionServiceTest extends TestCase {
 	private ChecklistService $checklists;
 	/** @var StoreMapper&MockObject */
 	private StoreMapper $storeMapper;
+	/** @var RestockService&MockObject */
+	private RestockService $restock;
 	private ShoppingSessionService $svc;
 
 	/**
@@ -83,7 +89,14 @@ class ShoppingSessionServiceTest extends TestCase {
 			),
 		);
 		$this->checklists = $this->createMock(ChecklistService::class);
+		$this->checklists->method('getList')->willReturnCallback(function (int $id): Checklist {
+			$list = new Checklist();
+			$list->setHouseId(1);
+			$list->setKind($id === self::TEMPLATE_LIST_ID ? Checklist::KIND_TEMPLATE : Checklist::KIND_CHECKLIST);
+			return $list;
+		});
 		$this->storeMapper = $this->createMock(StoreMapper::class);
+		$this->restock = $this->createMock(RestockService::class);
 		$this->svc = new ShoppingSessionService(
 			$this->sessions,
 			$this->sessionLists,
@@ -96,6 +109,7 @@ class ShoppingSessionServiceTest extends TestCase {
 			$this->itemPrices,
 			$this->checklists,
 			$this->storeMapper,
+			$this->restock,
 		);
 	}
 
@@ -210,6 +224,27 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->sessions->method('findLiveByUser')->willReturn(null);
 		$this->expectException(\InvalidArgumentException::class);
 		$this->svc->create(1, 'alice', [], [2], true);
+	}
+
+	public function testCreateLeavesTemplatesOutOfTheScope(): void {
+		$this->sessions->method('findLiveByUser')->willReturn(null);
+		$this->sessions->method('insert')->willReturnCallback(function (ShoppingSession $s) {
+			$ref = new \ReflectionProperty($s, 'id');
+			$ref->setValue($s, 42);
+			return $s;
+		});
+		$this->sessionLists->expects($this->once())
+			->method('setListsForSession')
+			->with(42, [10]);
+
+		$this->svc->create(1, 'alice', [10, self::TEMPLATE_LIST_ID], [], true);
+	}
+
+	public function testCreateRejectsAScopeOfOnlyTemplates(): void {
+		$this->sessions->method('findLiveByUser')->willReturn(null);
+		$this->sessions->expects($this->never())->method('insert');
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->create(1, 'alice', [self::TEMPLATE_LIST_ID], [], true);
 	}
 
 	public function testCreateInsertsSessionWithFirstStoreActive(): void {
@@ -459,7 +494,7 @@ class ShoppingSessionServiceTest extends TestCase {
 	public function testCheckItemMarksDoneAndLogsAgainstActiveStore(): void {
 		$session = $this->makeSession(['id' => 5, 'activeStoreId' => 3]);
 		$this->checklists->method('getItem')->with(10)->willReturn($this->makeItem(['id' => 10, 'done' => false]));
-		$this->checklists->expects($this->once())->method('toggleItem')->with(10, 'alice');
+		$this->restock->expects($this->once())->method('toggle')->with(10, 'alice');
 		$this->sessionItems->method('findBySessionAndItem')->with(5, 10)->willReturn(null);
 		$this->sessionItems->expects($this->once())
 			->method('insert')
@@ -476,7 +511,7 @@ class ShoppingSessionServiceTest extends TestCase {
 	public function testCheckItemSkipsToggleWhenAlreadyDoneAndUpdatesLog(): void {
 		$session = $this->makeSession(['id' => 5, 'activeStoreId' => 3]);
 		$this->checklists->method('getItem')->with(10)->willReturn($this->makeItem(['id' => 10, 'done' => true]));
-		$this->checklists->expects($this->never())->method('toggleItem');
+		$this->restock->expects($this->never())->method('toggle');
 		$this->sessionItems->method('findBySessionAndItem')->with(5, 10)->willReturn($this->makeLog(10, null));
 		$this->sessionItems->expects($this->once())->method('update');
 		$this->sessionItems->expects($this->never())->method('insert');
@@ -495,7 +530,26 @@ class ShoppingSessionServiceTest extends TestCase {
 				return $i;
 			});
 
-		$this->svc->uncheckItem($session, 10);
+		$this->svc->uncheckItem($session, 10, 'alice');
+	}
+
+	public function testUncheckItemTakesBackWhatTheCheckRestocked(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$entry = ['itemId' => 30, 'listId' => 3, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null, 'replaced' => false, 'previousOnHand' => null, 'previousExpiresAt' => null, 'expiresAt' => null];
+		$item = $this->makeItem(['id' => 10, 'done' => true]);
+		$item->setRestock([$entry]);
+		$this->items->method('findById')->with(10, true)->willReturn($item);
+		$this->items->expects($this->once())->method('update')->willReturnCallback(function (ChecklistItem $i) {
+			$this->assertNull($i->getRestock());
+			$this->assertTrue($i->isMemberReopened());
+			return $i;
+		});
+		$this->restock->expects($this->once())->method('afterMemberUncheck')
+			->with($item, [$entry], 'alice')
+			->willReturn(['item' => $item, 'restocked' => [], 'undone' => [$entry], 'events' => []]);
+
+		$result = $this->svc->uncheckItem($session, 10, 'alice');
+		$this->assertSame([$entry], $result['undone'] ?? null);
 	}
 
 	public function testItemsForSessionDropsSkippedItems(): void {

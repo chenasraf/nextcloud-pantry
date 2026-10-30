@@ -5,7 +5,7 @@
         <NcButton
           variant="tertiary"
           :aria-label="strings.back"
-          @click="$router.push({ name: 'lists', params: { houseId } })"
+          @click="$router.push({ name: kindRoutes.index, params: { houseId } })"
         >
           <template #icon>
             <ArrowLeftIcon :size="20" />
@@ -154,6 +154,7 @@
         @add="handleAdd"
         @remember-defaults="handleRememberDefaults"
         @reuse-existing="onReuseFromSuggestion"
+        @pick-template-item="onPickTemplateItem"
       />
 
       <ChecklistFilter
@@ -163,6 +164,7 @@
         v-model:selected-store-ids="filterStoreIds"
         v-model:selected-label-ids="filterLabelIds"
         v-model:selected-list-ids="filterListIds"
+        v-model:selected-stock="filterStock"
         v-model:price-filter="filterPrice"
         :items="items"
         :categories="categories.items.value"
@@ -171,6 +173,10 @@
         :lists="isMeta ? allLists : undefined"
         class="pantry-detail__filter"
       />
+
+      <p v-if="showNoRestockNotice" class="pantry-detail__notice" data-testid="no-restock-notice">
+        {{ strings.noRestockChecklist }}
+      </p>
 
       <div v-if="loading" class="pantry-detail__center">
         <NcLoadingIcon :size="36" />
@@ -264,6 +270,13 @@
               @restore="handleRestore"
               @archive="handleArchive"
               @unarchive="handleUnarchive"
+              :renew-offer="renewOffers.get(gi.item.id) ?? null"
+              @stock="handleStock"
+              @renew="handleRenew"
+              @link="handleLink"
+              @unlink="handleUnlink"
+              @auto-link="handleAutoLink"
+              @unpin="handleUnpin"
               @preview="openPreview"
               @drag-start="onItemDragStart"
               @reorder-over="onReorderOver"
@@ -390,6 +403,13 @@
                 @restore="handleRestore"
                 @archive="handleArchive"
                 @unarchive="handleUnarchive"
+                :renew-offer="renewOffers.get(gi.item.id) ?? null"
+                @stock="handleStock"
+                @renew="handleRenew"
+                @link="handleLink"
+                @unlink="handleUnlink"
+                @auto-link="handleAutoLink"
+                @unpin="handleUnpin"
                 @preview="openPreview"
                 @drag-start="onItemDragStart"
                 @reorder-over="onReorderOver"
@@ -409,6 +429,9 @@
       :default-currency="defaultCurrency"
       @update:open="(v) => !v && (editing = null)"
       @save="handleSaveEdit"
+      @link="handleLink"
+      @unlink="handleUnlink"
+      @auto-link="handleAutoLink"
     />
 
     <ChecklistItemViewDialog
@@ -443,6 +466,15 @@
       @open-item-defaults="openItemDefaults"
     />
 
+    <InventorySettingsDialog
+      v-if="list && kind === 'inventory'"
+      :open="editingInventorySettings"
+      :list="list"
+      :checklists="houseChecklists"
+      @update:open="(v) => (editingInventorySettings = v)"
+      @saved="onInventorySettingsSaved"
+    />
+
     <ItemDefaultsDialog
       v-if="list"
       :open="editingItemDefaults"
@@ -454,9 +486,19 @@
     <ChecklistDuplicateDialog
       :open="duplicatingList"
       :list="list"
+      :kind="kind"
       :submitting="duplicatingInFlight"
       @update:open="(v) => (duplicatingList = v)"
       @duplicate="submitDuplicateList"
+    />
+
+    <ApplyTemplateDialog
+      :open="applyingTemplate"
+      :house-id="houseIdNum"
+      :template="kind === 'template' ? list : null"
+      :target="kind === 'template' ? null : list"
+      @update:open="(v) => (applyingTemplate = v)"
+      @applied="onTemplateApplied"
     />
 
     <CategoryManagerDialog
@@ -505,12 +547,15 @@
       @update:open="(v) => !v && closeMoveDialog()"
     >
       <div class="pantry-move-list">
-        <NcButton v-for="cl in otherLists" :key="cl.id" wide @click="submitMoveItem(cl.id)">
-          <template #icon>
-            <component :is="checklistIconComponent(cl.icon)" :size="20" />
-          </template>
-          {{ cl.name }}
-        </NcButton>
+        <template v-for="group in moveTargetGroups" :key="group.kind">
+          <h3 class="pantry-move-list__kind">{{ group.title }}</h3>
+          <NcButton v-for="cl in group.lists" :key="cl.id" wide @click="submitMoveItem(cl.id)">
+            <template #icon>
+              <component :is="checklistIconComponent(cl.icon)" :size="20" />
+            </template>
+            {{ cl.name }}
+          </NcButton>
+        </template>
         <NcButton wide @click="createListForMove">
           <template #icon>
             <PlusIcon :size="20" />
@@ -522,6 +567,7 @@
 
     <ChecklistFormDialog
       :open="showCreateForMove"
+      :kind="kind"
       @update:open="showCreateForMove = $event"
       @save="submitCreateListAndMove"
     />
@@ -535,12 +581,15 @@
       @update:open="(v) => !v && closeCopyDialog()"
     >
       <div class="pantry-move-list">
-        <NcButton v-for="cl in copyTargetLists" :key="cl.id" wide @click="submitCopyItem(cl.id)">
-          <template #icon>
-            <component :is="checklistIconComponent(cl.icon)" :size="20" />
-          </template>
-          {{ cl.name }}
-        </NcButton>
+        <template v-for="group in copyTargetGroups" :key="group.kind">
+          <h3 class="pantry-move-list__kind">{{ group.title }}</h3>
+          <NcButton v-for="cl in group.lists" :key="cl.id" wide @click="submitCopyItem(cl.id)">
+            <template #icon>
+              <component :is="checklistIconComponent(cl.icon)" :size="20" />
+            </template>
+            {{ cl.name }}
+          </NcButton>
+        </template>
         <NcButton wide @click="createListForCopy">
           <template #icon>
             <PlusIcon :size="20" />
@@ -552,6 +601,7 @@
 
     <ChecklistFormDialog
       :open="showCreateForCopy"
+      :kind="kind"
       @update:open="showCreateForCopy = $event"
       @save="submitCreateListAndCopy"
     />
@@ -796,7 +846,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { t, n } from '@nextcloud/l10n'
-import { showUndo, showError, showSuccess } from '@nextcloud/dialogs'
+import { showUndo, showError, showInfo, showSuccess, showWarning } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
@@ -807,6 +857,7 @@ import ArrowLeftIcon from '@icons/ArrowLeft.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import CartIcon from '@icons/Cart.vue'
+import CogOutlineIcon from '@icons/CogOutline.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
 import DeleteIcon from '@icons/Delete.vue'
 import PlusIcon from '@icons/Plus.vue'
@@ -828,13 +879,24 @@ import FileImportIcon from '@icons/FileImport.vue'
 import PageToolbar, { type ToolbarAction } from '@/components/PageToolbar'
 import { ChecklistAddForm } from '@/components/ChecklistAddForm'
 import ItemDefaultsDialog from '@/components/ItemDefaultsDialog'
+import InventorySettingsDialog from '@/components/InventorySettingsDialog'
 import {
   ChecklistFilter,
   NO_CATEGORY_ID,
   NO_STORE_ID,
   NO_LABEL_ID,
+  matchesStockFilter,
+  stockFilterFromQuery,
+  stockFilterQuery,
   type PriceFilterValue,
 } from '@/components/ChecklistFilter'
+import {
+  DEFAULT_EXPIRY_LEAD_DAYS,
+  expiryInput,
+  expiryStatus,
+  needsRestock,
+  todayEpoch,
+} from '@/utils/stock'
 import { ChecklistItemRow } from '@/components/ChecklistItemRow'
 import { ChecklistItemEditDialog } from '@/components/ChecklistItemEditDialog'
 import { ChecklistItemViewDialog } from '@/components/ChecklistItemViewDialog'
@@ -856,6 +918,8 @@ import {
   type ChecklistFormData,
 } from '@/components/ChecklistIconPicker'
 import { ChecklistDuplicateDialog } from '@/components/ChecklistDuplicateDialog'
+import { ApplyTemplateDialog } from '@/components/ApplyTemplateDialog'
+import PlaylistPlusIcon from '@icons/PlaylistPlus.vue'
 import { entityIcon } from '@/utils/entityIcons'
 
 const CategoryEntityIcon = entityIcon.category
@@ -866,14 +930,19 @@ function iconWrapStyle(color: string | null) {
   if (!color) return undefined
   return { background: color, color: contrastColor(color) }
 }
-import { useChecklists, useChecklistItems, ALL_LISTS_ID } from '@/composables/useChecklist'
+import {
+  useAllKindLists,
+  useChecklists,
+  useChecklistItems,
+  ALL_LISTS_ID,
+} from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
 import { useLabels } from '@/composables/useLabels'
 import { useStores } from '@/composables/useStores'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import { useLongPress } from '@/composables/useLongPress'
-import { getList, updateItemDefaults, updateList as apiUpdateList } from '@/api/lists'
-import type { ItemInput } from '@/api/lists'
+import { listApi } from '@/api/lists'
+import type { BatchCopyResult, ItemInput } from '@/api/lists'
 import type {
   Checklist,
   ChecklistItem,
@@ -882,7 +951,11 @@ import type {
   Label,
   ItemPrice,
   ItemDefaultsPatch,
+  ListKind,
+  StockLevel,
+  StockLinkRow,
 } from '@/api/types'
+import { linkToasts } from '@/components/StockLink'
 import { withRemembered } from '@/utils/itemDefaults'
 import type { ChecklistItemSort, ReuseExistingItems } from '@/api/prefs'
 import {
@@ -901,10 +974,24 @@ import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
+import {
+  LIST_KIND_ROUTES,
+  LIST_KINDS,
+  listKindStrings,
+  provideListKind,
+} from '@/composables/useListKind'
 
-const props = defineProps<{ houseId: string; listId: string }>()
+const props = withDefaults(defineProps<{ houseId: string; listId: string; kind?: ListKind }>(), {
+  kind: 'checklist',
+})
 const router = useRouter()
 const route = useRoute()
+
+const kindRef = computed(() => props.kind)
+provideListKind(kindRef)
+const isChecklist = computed(() => props.kind === 'checklist')
+const kindRoutes = LIST_KIND_ROUTES[props.kind]
+const resource = listApi(props.kind)
 
 function startShopping() {
   void router.push({
@@ -926,6 +1013,12 @@ const {
   load,
   add,
   update,
+  updateStock,
+  renewOffers,
+  renewExpiry,
+  link: linkItem,
+  unlink: unlinkItem,
+  setAutoLink,
   copy,
   toggle,
   undoToggle,
@@ -952,11 +1045,13 @@ const {
   setLabelsMany,
   uncheckMany,
   undoRemoveMany,
+  draw: drawFromTemplate,
+  mergeItems,
   sortBy,
   viewMode,
   trashMode,
   archiveMode,
-} = useChecklistItems(houseIdNum.value, listIdNum.value)
+} = useChecklistItems(houseIdNum.value, listIdNum.value, props.kind)
 
 async function toggleTrash() {
   exitSelection()
@@ -1132,7 +1227,11 @@ async function runReseed(basis: ReseedBasis | null) {
 // lists or accounts without the check-items permission.
 const canUncheckAll = computed(
   () =>
-    !isMeta.value && viewMode.value === 'active' && writableHere.value && can.value.canCheckItems,
+    isChecklist.value &&
+    !isMeta.value &&
+    viewMode.value === 'active' &&
+    writableHere.value &&
+    can.value.canCheckItems,
 )
 const confirmingUncheckAll = ref(false)
 const unchecking = ref(false)
@@ -1148,6 +1247,16 @@ async function runUncheckAll() {
     const result = await uncheckMany(ids)
     const cleared = ids.length - result.skipped.length
     showSuccess(n('pantry', 'Unchecked %n item', 'Unchecked %n items', cleared))
+    if (result.skipped.length > 0) {
+      showError(
+        n(
+          'pantry',
+          '%n item could not be unchecked.',
+          '%n items could not be unchecked.',
+          result.skipped.length,
+        ),
+      )
+    }
   } catch (e) {
     showError((e as Error).message)
   } finally {
@@ -1234,7 +1343,7 @@ async function loadList() {
     list.value = null
     return
   }
-  list.value = await getList(houseIdNum.value, listIdNum.value)
+  list.value = await resource.getList(houseIdNum.value, listIdNum.value)
 }
 
 const { rowClickAction } = useRowClickAction()
@@ -1339,6 +1448,30 @@ const filterCategoryIds = ref<number[]>([])
 const filterStoreIds = ref<number[]>([])
 const filterLabelIds = ref<number[]>([])
 const filterPrice = ref<PriceFilterValue>({ min: null, max: null, currency: null })
+
+// The stock filter lives in the URL too, so a link (the stock summary
+// notification's) can open an inventory on what needs restocking.
+const filterStock = ref<number[]>(
+  props.kind === 'inventory' ? stockFilterFromQuery(route.query.stock) : [],
+)
+
+watch(
+  () => route.query.stock,
+  (value) => {
+    if (props.kind !== 'inventory') return
+    if (stockFilterQuery(filterStock.value) === (Array.isArray(value) ? value[0] : value)) return
+    filterStock.value = stockFilterFromQuery(value)
+  },
+)
+
+watch(filterStock, (selected) => {
+  const stock = stockFilterQuery(selected)
+  if (stock === route.query.stock) return
+  const query = { ...route.query }
+  if (stock) query.stock = stock
+  else delete query.stock
+  void router.replace({ query })
+})
 
 // ----- Last-used currency (per house) -----
 // Preselected for new/edited prices, and updated whenever an item is saved with
@@ -1454,6 +1587,10 @@ const filteredItems = computed(() => {
       if (attached.length === 0) return wantUnlabeled
       return attached.some((id) => labelIds.includes(id))
     })
+  }
+  if (filterStock.value.length > 0) {
+    const stock = filterStock.value
+    result = result.filter((i) => matchesStockFilter(i, stock))
   }
   const price = filterPrice.value
   if (price.min != null || price.max != null || price.currency != null) {
@@ -2038,6 +2175,20 @@ async function onReuseFromSuggestion(item: ChecklistItem) {
   addForm.value?.clearName()
 }
 
+async function onPickTemplateItem(item: ChecklistItem, targetListId: number) {
+  try {
+    const result = await drawFromTemplate(item.id, targetListId)
+    showSuccess(
+      result.reused
+        ? t('pantry', 'Reused existing item "{name}"', { name: result.item.name })
+        : t('pantry', 'Added "{name}" from a template', { name: result.item.name }),
+    )
+    addForm.value?.clearName()
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
 async function reuseArchivedItem(item: ChecklistItem) {
   // Bring the archived item back onto the active list, then surface it as an
   // active (unchecked) item — the same end state a plain reuse produces.
@@ -2081,6 +2232,7 @@ async function handleAdd(
   adding.value = true
   try {
     const created = await add(input, targetListId ?? undefined)
+    announceSeveralMatches(undefined, created)
     if (pendingImage) {
       try {
         await uploadImage(created.id, pendingImage)
@@ -2098,7 +2250,7 @@ const editingList = ref(false)
 async function submitEditList(data: ChecklistFormData) {
   if (!list.value) return
   try {
-    list.value = await apiUpdateList(houseIdNum.value, listIdNum.value, {
+    list.value = await resource.updateList(houseIdNum.value, listIdNum.value, {
       name: data.name,
       description: data.description,
       icon: data.icon,
@@ -2111,6 +2263,7 @@ async function submitEditList(data: ChecklistFormData) {
 }
 
 const editingItemDefaults = ref(false)
+const editingInventorySettings = ref(false)
 const canEditItemDefaults = computed(
   () => !!list.value?.itemDefaults && (list.value.canEdit ?? can.value.canEditLists),
 )
@@ -2123,14 +2276,19 @@ function openItemDefaults() {
 const duplicatingList = ref(false)
 const duplicatingInFlight = ref(false)
 
-async function submitDuplicateList(data: { name: string; resetDone: boolean }) {
+async function submitDuplicateList(data: { name: string; resetDone: boolean; kind: ListKind }) {
   if (!list.value) return
+  const asKind = data.kind
   duplicatingInFlight.value = true
   try {
-    const created = await duplicateList(listIdNum.value, data.name, data.resetDone)
+    // The copy opens in its own kind's section.
+    const created =
+      asKind === props.kind
+        ? await duplicateList(listIdNum.value, data.name, data.resetDone)
+        : await useChecklists(houseIdNum.value, asKind).duplicateFrom(listIdNum.value, data.name)
     duplicatingList.value = false
     await router.push({
-      name: 'list-detail',
+      name: LIST_KIND_ROUTES[asKind].detail,
       params: { houseId: String(houseIdNum.value), listId: String(created.id) },
     })
   } catch (e) {
@@ -2138,6 +2296,30 @@ async function submitDuplicateList(data: { name: string; resetDone: boolean }) {
   } finally {
     duplicatingInFlight.value = false
   }
+}
+
+const applyingTemplate = ref(false)
+
+function onTemplateApplied(result: BatchCopyResult, target: Checklist) {
+  if (target.id === listIdNum.value && !archiveMode.value && !trashMode.value) {
+    mergeItems(result.items)
+  }
+}
+
+/**
+ * A new expiry warning moves where items start expiring; re-rate them here
+ * rather than refetch the inventory.
+ */
+function onInventorySettingsSaved(updated: Checklist) {
+  list.value = updated
+  replaceList(updated)
+  const leadDays = updated.expiryLeadDays ?? DEFAULT_EXPIRY_LEAD_DAYS
+  const today = todayEpoch()
+  items.value = items.value.map((i) =>
+    i.listId === updated.id
+      ? { ...i, expiryStatus: expiryStatus(expiryInput(i), leadDays, today) }
+      : i,
+  )
 }
 
 /**
@@ -2154,7 +2336,7 @@ async function handleRememberDefaults(patch: ItemDefaultsPatch, targetListId: nu
   }
   setTarget({ ...target, itemDefaults: withRemembered(target.itemDefaults, patch) })
   try {
-    setTarget(await updateItemDefaults(houseIdNum.value, targetListId, patch))
+    setTarget(await resource.updateItemDefaults(houseIdNum.value, targetListId, patch))
   } catch (e) {
     setTarget(target)
     showError((e as Error).message)
@@ -2225,6 +2407,107 @@ async function handleUnarchive(itemId: number) {
   await unarchive(itemId)
 }
 
+async function handleStock(
+  item: ChecklistItem,
+  patch: { quantity: string } | { stockLevel: StockLevel },
+) {
+  try {
+    await updateStock(item.id, patch)
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function handleRenew(item: ChecklistItem) {
+  try {
+    await renewExpiry(item.id)
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+// ----- Stock links -----
+
+const { lists: houseChecklists, load: loadHouseChecklists } = useChecklists(
+  houseIdNum.value,
+  'checklist',
+)
+if (props.kind === 'inventory') void loadHouseChecklists()
+
+const restockChecklist = computed(
+  () => houseChecklists.value.find((c) => c.id === list.value?.restockChecklistId) ?? null,
+)
+
+const showNoRestockNotice = computed(
+  () =>
+    props.kind === 'inventory' &&
+    !isMeta.value &&
+    !trashMode.value &&
+    !archiveMode.value &&
+    !!list.value &&
+    !list.value.restockChecklistId &&
+    items.value.some((i) => needsRestock(i)),
+)
+
+/** Keep an open item dialog on the item's latest link fields. */
+function syncEditingLink(updated: ChecklistItem) {
+  if (editing.value?.id !== updated.id) return
+  editing.value = {
+    ...editing.value,
+    autoLink: updated.autoLink,
+    stockLink: updated.stockLink,
+    linkCandidates: updated.linkCandidates,
+  }
+}
+
+/** Warn when an item the member just added or changed now matches several rows. */
+function announceSeveralMatches(before: ChecklistItem | undefined, after: ChecklistItem) {
+  if (props.kind !== 'inventory') return
+  const count = after.linkCandidates?.length ?? 0
+  if (count < 2 || (before?.linkCandidates?.length ?? 0) > 1) return
+  showWarning(linkToasts.severalMatches(after.name, count, restockChecklist.value?.name ?? ''))
+}
+
+async function handleLink(item: ChecklistItem, row: StockLinkRow) {
+  try {
+    const updated = await linkItem(item.id, row.itemId)
+    syncEditingLink(updated)
+    showSuccess(linkToasts.linked(updated.name, updated.stockLink ?? row))
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function handleUnlink(item: ChecklistItem) {
+  const row = item.stockLink
+  try {
+    const updated = await unlinkItem(item.id)
+    syncEditingLink(updated)
+    if (row) showInfo(linkToasts.unlinked(updated.name, row))
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+async function handleAutoLink(item: ChecklistItem, on: boolean) {
+  try {
+    const updated = await setAutoLink(item.id, on)
+    syncEditingLink(updated)
+    if (on) announceSeveralMatches(item, updated)
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
+/** Let stock set the quantity of a row a member set by hand again. */
+async function handleUnpin(item: ChecklistItem) {
+  try {
+    await update(item.id, { quantityPinned: false })
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
 // ----- Edit -----
 
 const editing = ref<ChecklistItem | null>(null)
@@ -2243,7 +2526,10 @@ async function handleSaveEdit(
   rememberCurrencyFrom(patch.prices)
   savingEdit.value = true
   try {
+    const before = items.value.find((i) => i.id === itemId)
     await update(itemId, patch)
+    const after = items.value.find((i) => i.id === itemId)
+    if (after) announceSeveralMatches(before, after)
     if (pendingImage) {
       await uploadImage(itemId, pendingImage)
     } else if (shouldClearImage) {
@@ -2342,7 +2628,21 @@ const {
   load: loadLists,
   replace: replaceList,
   duplicate: duplicateList,
-} = useChecklists(houseIdNum.value)
+} = useChecklists(houseIdNum.value, props.kind)
+
+// The navigation counts what needs restocking on each inventory; follow this
+// page's own stock edits rather than waiting for the next list reload.
+watch(
+  () =>
+    props.kind === 'inventory' && !isMeta.value && !loading.value
+      ? items.value.filter((i) => i.listId === listIdNum.value && needsRestock(i)).length
+      : null,
+  (count) => {
+    if (count === null) return
+    const list = allLists.value.find((l) => l.id === listIdNum.value)
+    if (list && list.needsRestock !== count) replaceList({ ...list, needsRestock: count })
+  },
+)
 
 // Drop any persisted list-filter ids that no longer correspond to an existing
 // list (e.g. a list was deleted) once the catalog has loaded.
@@ -2352,16 +2652,40 @@ watch(allLists, (lists) => {
   const pruned = filterListIds.value.filter((id) => valid.has(id))
   if (pruned.length !== filterListIds.value.length) filterListIds.value = pruned
 })
+// Move and copy reach lists of every kind; the pickers group them by kind.
+const { lists: everyKindLists, load: loadEveryKindLists } = useAllKindLists(houseIdNum.value)
+
+function kindOf(list: Checklist): ListKind {
+  return list.kind ?? 'checklist'
+}
+
+function targetListFor(id: number): Checklist | undefined {
+  return everyKindLists.value.find((l) => l.id === id)
+}
+
+function groupByKind(lists: Checklist[]) {
+  return LIST_KINDS.map((k) => ({
+    kind: k,
+    title: listKindStrings(k).title,
+    lists: lists.filter((l) => kindOf(l) === k),
+  })).filter((group) => group.lists.length > 0)
+}
+
 // In meta view, exclude the item's own current list (per movingItem); in a
 // regular view, exclude the current list. For a bulk move the source varies, so
 // offer every list (meta) or every list but the current one (single-list view).
 const otherLists = computed(() => {
   if (moveIsBulk.value) {
-    return isMeta.value ? allLists.value : allLists.value.filter((l) => l.id !== listIdNum.value)
+    return isMeta.value
+      ? everyKindLists.value
+      : everyKindLists.value.filter((l) => l.id !== listIdNum.value)
   }
   const excludeId = isMeta.value ? (movingItem.value?.listId ?? null) : listIdNum.value
-  return excludeId === null ? allLists.value : allLists.value.filter((l) => l.id !== excludeId)
+  return excludeId === null
+    ? everyKindLists.value
+    : everyKindLists.value.filter((l) => l.id !== excludeId)
 })
+const moveTargetGroups = computed(() => groupByKind(otherLists.value))
 const movingItem = ref<ChecklistItem | null>(null)
 const moveIsBulk = ref(false)
 const showCreateForMove = ref(false)
@@ -2370,11 +2694,13 @@ const moveDialogOpen = computed(() => !!movingItem.value || moveIsBulk.value)
 function startMoveItem(item: ChecklistItem) {
   moveIsBulk.value = false
   movingItem.value = item
+  void loadEveryKindLists()
 }
 
 function openBulkMove() {
   if (!canBulkMove.value) return
   moveIsBulk.value = true
+  void loadEveryKindLists()
 }
 
 function closeMoveDialog() {
@@ -2389,12 +2715,19 @@ async function submitMoveItem(targetListId: number) {
   }
   if (!movingItem.value) return
   const itemName = movingItem.value.name
-  const targetList = allLists.value.find((l) => l.id === targetListId)
-  await update(movingItem.value.id, { targetListId })
-  // In a normal list view the item leaves the view after move. In the meta
-  // "All lists" view it stays — just under a different list.
-  if (!isMeta.value) {
-    items.value = items.value.filter((i) => i.id !== movingItem.value!.id)
+  const targetList = targetListFor(targetListId)
+  const targetKind = targetList ? kindOf(targetList) : props.kind
+  if (targetKind === props.kind) {
+    await update(movingItem.value.id, { targetListId })
+    // In a normal list view the item leaves the view after move. In the meta
+    // "All lists" view it stays — just under a different list.
+    if (!isMeta.value) {
+      items.value = items.value.filter((i) => i.id !== movingItem.value!.id)
+    }
+  } else {
+    // Each kind's resource only moves items within its kind; crossing kinds
+    // goes through the house-wide batch move.
+    await moveMany([movingItem.value.id], targetListId, targetKind)
   }
   movingItem.value = null
   showSuccess(
@@ -2404,12 +2737,12 @@ async function submitMoveItem(targetListId: number) {
 
 async function submitBulkMove(targetListId: number) {
   const ids = writableSelectedIds.value
-  const targetList = allLists.value.find((l) => l.id === targetListId)
+  const targetList = targetListFor(targetListId)
   const total = selectedCount.value
   closeMoveDialog()
   if (ids.length === 0) return
   try {
-    const result = await moveMany(ids, targetListId)
+    const result = await moveMany(ids, targetListId, targetList ? kindOf(targetList) : props.kind)
     showSuccess(
       n('pantry', 'Moved %n item to {list}', 'Moved %n items to {list}', result.items.length, {
         list: targetList?.name ?? '',
@@ -2433,6 +2766,7 @@ async function submitCreateListAndMove(data: ChecklistFormData) {
     data.description || null,
     data.icon || null,
     data.color || null,
+    data.attachments,
   )
   showCreateForMove.value = false
   await submitMoveItem(newList.id)
@@ -2446,16 +2780,18 @@ const showCreateForCopy = ref(false)
 const copyDialogOpen = computed(() => !!copyingItem.value || copyIsBulk.value)
 // Copy can target the current list (creates a duplicate in place) as well as
 // any other list — unlike move, where the current list would be a no-op.
-const copyTargetLists = computed(() => allLists.value)
+const copyTargetGroups = computed(() => groupByKind(everyKindLists.value))
 
 function startCopyItem(item: ChecklistItem) {
   copyIsBulk.value = false
   copyingItem.value = item
+  void loadEveryKindLists()
 }
 
 function openBulkCopy() {
   if (!canBulkCopy.value) return
   copyIsBulk.value = true
+  void loadEveryKindLists()
 }
 
 function closeCopyDialog() {
@@ -2470,8 +2806,15 @@ async function submitCopyItem(targetListId: number) {
   }
   if (!copyingItem.value) return
   const itemName = copyingItem.value.name
-  const targetList = allLists.value.find((l) => l.id === targetListId)
-  await copy(copyingItem.value.id, targetListId)
+  const targetList = targetListFor(targetListId)
+  const targetKind = targetList ? kindOf(targetList) : props.kind
+  if (targetKind === props.kind) {
+    await copy(copyingItem.value.id, targetListId)
+  } else {
+    // Each kind's resource only copies items within its kind; crossing kinds
+    // goes through the house-wide batch copy.
+    await copyMany([copyingItem.value.id], targetListId, targetKind)
+  }
   copyingItem.value = null
   showSuccess(
     t('pantry', '{item} copied to {list}', { item: itemName, list: targetList?.name ?? '' }),
@@ -2481,11 +2824,11 @@ async function submitCopyItem(targetListId: number) {
 async function submitBulkCopy(targetListId: number) {
   // Copy operates on the whole selection (read-only sources are allowed).
   const ids = selectedItems.value.map((i) => i.id)
-  const targetList = allLists.value.find((l) => l.id === targetListId)
+  const targetList = targetListFor(targetListId)
   closeCopyDialog()
   if (ids.length === 0) return
   try {
-    const result = await copyMany(ids, targetListId)
+    const result = await copyMany(ids, targetListId, targetList ? kindOf(targetList) : props.kind)
     showSuccess(
       n('pantry', 'Copied %n item to {list}', 'Copied %n items to {list}', result.items.length, {
         list: targetList?.name ?? '',
@@ -2509,6 +2852,7 @@ async function submitCreateListAndCopy(data: ChecklistFormData) {
     data.description || null,
     data.icon || null,
     data.color || null,
+    data.attachments,
   )
   showCreateForCopy.value = false
   await submitCopyItem(newList.id)
@@ -2769,9 +3113,15 @@ async function bulkUnarchive() {
   }
 }
 
+const kindStrings = listKindStrings(props.kind)
+
 const strings = {
-  back: t('pantry', 'Back to lists'),
-  allListsTitle: t('pantry', 'All lists'),
+  back: kindStrings.back,
+  noRestockChecklist: t(
+    'pantry',
+    'This inventory has no restock checklist, so these items are only marked here. Pick one in the inventory settings.',
+  ),
+  allListsTitle: t('pantry', 'All checklists'),
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
@@ -2830,11 +3180,15 @@ const strings = {
   manageLabels: t('pantry', 'Manage labels'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Toolbar action opening the store manager.
   manageStores: t('pantry', 'Manage stores'),
-  editList: t('pantry', 'Edit list'),
+  editList: kindStrings.editTitle,
   // TRANSLATORS: Menu entry that opens the values new items on this list start with.
   itemDefaults: t('pantry', 'Item defaults'),
-  // TRANSLATORS: Verb, toolbar action that creates a copy of this list.
-  duplicateList: t('pantry', 'Duplicate list'),
+  inventorySettings: t('pantry', 'Inventory settings'),
+  duplicateList: kindStrings.duplicateTitle,
+  // TRANSLATORS: Menu entry on a template: copy its items into a checklist or inventory.
+  applyToList: t('pantry', 'Apply to list'),
+  // TRANSLATORS: Menu entry on a checklist or inventory: copy a template's items into it.
+  applyTemplate: t('pantry', 'Apply template'),
   // TRANSLATORS: Button that opens Shopping Mode for this list.
   shop: t('pantry', 'Start shopping'),
   // TRANSLATORS: Verb. Toolbar button that exports the list as Markdown.
@@ -2843,7 +3197,7 @@ const strings = {
   importMarkdown: t('pantry', 'Import'),
   moveToList: t('pantry', 'Move to list'),
   copyToList: t('pantry', 'Copy to list'),
-  newList: t('pantry', 'New list'),
+  newList: kindStrings.newList,
   emptyTrashAction: t('pantry', 'Empty trash'),
   emptyTrashTitle: t('pantry', 'Empty trash?'),
   emptyTrashConfirm: t(
@@ -2897,30 +3251,31 @@ const strings = {
 }
 
 const toolbarActions = computed<ToolbarAction[]>(() => {
-  const actions: ToolbarAction[] = [
-    {
+  const actions: ToolbarAction[] = []
+  if (isChecklist.value) {
+    actions.push({
       key: 'shop',
       label: strings.shop,
       icon: CartIcon,
       variant: 'primary',
       priority: 7,
       onClick: startShopping,
-    },
-    {
-      key: 'sort',
-      type: 'menu',
-      label: sortMenuName.value,
-      caption: strings.sortLabel,
-      icon: SortIcon,
-      priority: 5,
-      options: itemSortOptions.value.map((opt) => ({
-        key: opt.value,
-        label: opt.label,
-        active: currentSort.value === opt.value,
-        onClick: () => changeSort(opt.value),
-      })),
-    },
-  ]
+    })
+  }
+  actions.push({
+    key: 'sort',
+    type: 'menu',
+    label: sortMenuName.value,
+    caption: strings.sortLabel,
+    icon: SortIcon,
+    priority: 5,
+    options: itemSortOptions.value.map((opt) => ({
+      key: opt.value,
+      label: opt.label,
+      active: currentSort.value === opt.value,
+      onClick: () => changeSort(opt.value),
+    })),
+  })
 
   if (canResetOrder.value) {
     const reseedOption = (key: ReseedBasis, label: string) => ({
@@ -2953,6 +3308,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         priority: 4,
         onClick: () => (editingList.value = true),
       })
+      if (props.kind === 'inventory') {
+        actions.push({
+          key: 'inventory-settings',
+          label: strings.inventorySettings,
+          icon: CogOutlineIcon,
+          priority: 3,
+          onClick: () => (editingInventorySettings.value = true),
+        })
+      }
     }
     if (canEditItemDefaults.value) {
       actions.push({
@@ -2961,6 +3325,15 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
         icon: TuneVariantIcon,
         alwaysCollapsed: true,
         onClick: openItemDefaults,
+      })
+    }
+    if (list.value && can.value.canCopyItems) {
+      actions.push({
+        key: 'apply-template',
+        label: props.kind === 'template' ? strings.applyToList : strings.applyTemplate,
+        icon: PlaylistPlusIcon,
+        alwaysCollapsed: true,
+        onClick: () => (applyingTemplate.value = true),
       })
     }
     if (list.value && can.value.canCreateLists) {
@@ -3105,6 +3478,12 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
     margin-bottom: 1.5rem;
   }
 
+  &__notice {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: var(--color-text-maxcontrast);
+  }
+
   &__center {
     display: flex;
     justify-content: center;
@@ -3245,6 +3624,17 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem 0;
+}
+
+.pantry-move-list__kind {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-maxcontrast);
+
+  &:first-child {
+    margin-top: 0;
+  }
 }
 
 .pantry-bulk-category {

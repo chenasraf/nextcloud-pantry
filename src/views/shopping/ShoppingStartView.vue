@@ -582,12 +582,12 @@ function goToSession(session: ShoppingSession) {
 const strings = {
   title: t('pantry', 'Start shopping'),
   pastTrips: t('pantry', 'Shopping history'),
-  listsTitle: t('pantry', 'Lists to shop'),
+  listsTitle: t('pantry', 'Checklists to shop'),
   // TRANSLATORS: Button that selects every checklist in the list-picker.
   selectAll: t('pantry', 'Select all'),
   // TRANSLATORS: Button that clears the checklist selection.
   selectNone: t('pantry', 'Select none'),
-  noLists: t('pantry', 'No lists to shop'),
+  noLists: t('pantry', 'No checklists to shop'),
   storesTitle: t('pantry', 'Stores'),
   storesHint: t('pantry', 'Turn the stores you will visit on or off, and drag to set the order.'),
   storesHintAll: t('pantry', 'Turn the stores you are shopping for on or off.'),

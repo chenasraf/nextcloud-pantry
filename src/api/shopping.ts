@@ -4,6 +4,7 @@ import type {
   ShoppingHistoryRow,
   ShoppingPresenceEntry,
   ShoppingReview,
+  ShoppingCheckResult,
   ShoppingSession,
 } from './types'
 
@@ -121,16 +122,22 @@ export async function checkSessionItem(
   houseId: number,
   sessionId: number,
   itemId: number,
-): Promise<void> {
-  await ocs.post(`/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/check`)
+): Promise<ShoppingCheckResult> {
+  const resp = await ocs.post<ShoppingCheckResult>(
+    `/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/check`,
+  )
+  return resp.data
 }
 
 export async function uncheckSessionItem(
   houseId: number,
   sessionId: number,
   itemId: number,
-): Promise<void> {
-  await ocs.post(`/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/uncheck`)
+): Promise<ShoppingCheckResult> {
+  const resp = await ocs.post<ShoppingCheckResult>(
+    `/houses/${houseId}/shopping/sessions/${sessionId}/items/${itemId}/uncheck`,
+  )
+  return resp.data
 }
 
 /** Hide an item from this trip only (kept on the list, not marked done). */

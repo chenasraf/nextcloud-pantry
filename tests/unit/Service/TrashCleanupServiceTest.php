@@ -36,6 +36,8 @@ class TrashCleanupServiceTest extends TestCase {
 	private PhotoMapper $photoMapper;
 	/** @var ImageService&MockObject */
 	private ImageService $images;
+	/** @var \OCA\Pantry\Db\ListTemplateMapper&MockObject */
+	private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper;
 	private TrashCleanupService $svc;
 
 	protected function setUp(): void {
@@ -45,6 +47,7 @@ class TrashCleanupServiceTest extends TestCase {
 		$this->noteMapper = $this->createMock(NoteMapper::class);
 		$this->photoMapper = $this->createMock(PhotoMapper::class);
 		$this->images = $this->createMock(ImageService::class);
+		$this->listTemplateMapper = $this->createMock(\OCA\Pantry\Db\ListTemplateMapper::class);
 		$this->svc = new TrashCleanupService(
 			$this->houseMapper,
 			$this->listMapper,
@@ -53,6 +56,7 @@ class TrashCleanupServiceTest extends TestCase {
 			$this->photoMapper,
 			$this->images,
 			new NullLogger(),
+			$this->listTemplateMapper,
 		);
 	}
 
@@ -130,6 +134,7 @@ class TrashCleanupServiceTest extends TestCase {
 
 		$this->itemMapper->expects($this->once())->method('delete')->with($item);
 		$this->itemMapper->expects($this->once())->method('deleteByList')->with(22);
+		$this->listTemplateMapper->expects($this->once())->method('deleteByList')->with(22);
 		$this->listMapper->expects($this->once())->method('delete')->with($list);
 		$this->noteMapper->expects($this->once())->method('delete')->with($note);
 		$this->images->expects($this->once())

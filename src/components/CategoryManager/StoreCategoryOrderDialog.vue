@@ -363,7 +363,7 @@ const strings = {
   storeLabel: t('pantry', 'Store:'),
   pickStore: t('pantry', 'Pick a store'),
   noStores: t('pantry', 'No stores yet. Add a store to give it an order of its own.'),
-  noCategories: t('pantry', 'No categories yet. Categories help organize checklist items.'),
+  noCategories: t('pantry', 'No categories yet. Categories help organize list items.'),
   dragHandle: t('pantry', 'Drag to reorder'),
   // TRANSLATORS: Button that drops this store's own order and returns it to the shared one
   reset: t('pantry', 'Use the shared order'),

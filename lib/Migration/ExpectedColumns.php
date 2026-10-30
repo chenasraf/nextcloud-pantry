@@ -34,6 +34,30 @@ final class ExpectedColumns {
 			// unconditionally, so a missing column takes down the whole checklist.
 			self::col('list_items', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
+			// list_items — stock columns (Version45). Items hydrate with SELECT *,
+			// so a missing one breaks every list load.
+			self::col('list_items', 'stock_mode', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
+			self::col('list_items', 'stock_level', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
+			self::col('list_items', 'target', Types::STRING, ['notnull' => false, 'length' => 64, 'default' => null]),
+			self::col('list_items', 'reorder_point', Types::STRING, ['notnull' => false, 'length' => 64, 'default' => null]),
+
+			// list_items — expiry columns (Version46). Same SELECT * hydration as
+			// the stock columns above.
+			self::col('list_items', 'expires_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('list_items', 'shelf_life_days', Types::INTEGER, ['notnull' => false, 'default' => null]),
+
+			// list_items — stock link columns (Version47). Same SELECT * hydration
+			// as the stock columns above.
+			self::col('list_items', 'linked_item_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('list_items', 'linked_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			self::col('list_items', 'auto_link', Types::BOOLEAN, ['notnull' => false, 'default' => true]),
+			self::col('list_items', 'quantity_pinned', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('list_items', 'member_reopened', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+			self::col('list_items', 'restock_record', Types::TEXT, ['notnull' => false, 'default' => null]),
+			self::col('list_items', 'expiry_synced_status', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
+			self::col('list_items', 'summarized_stock_status', Types::STRING, ['notnull' => false, 'length' => 10, 'default' => null]),
+			self::col('list_items', 'summarized_expiry_status', Types::STRING, ['notnull' => false, 'length' => 10, 'default' => null]),
+
 			// lists — archived_at (Version29); the active-list query filters on it
 			// unconditionally, so a missing column breaks the whole list index.
 			self::col('lists', 'archived_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
@@ -46,6 +70,28 @@ final class ExpectedColumns {
 			// lists — list completion stamp (Version38). Same SELECT * hydration as
 			// the item defaults above, so a missing column breaks the index.
 			self::col('lists', 'last_completed_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+
+			// lists — list kind (Version42). Every list query filters on it, so a
+			// missing column breaks the list index for every kind.
+			self::col('lists', 'kind', Types::STRING, ['notnull' => false, 'length' => 16, 'default' => 'checklist']),
+
+			// lists — template attached to every list (Version43). Every add-item
+			// search reads it through the suggestions endpoint.
+			self::col('lists', 'every_list', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+
+			// lists — fill drawn items from item defaults (Version44). Same SELECT *
+			// hydration as the item defaults above.
+			self::col('lists', 'fill_from_defaults', Types::BOOLEAN, ['notnull' => false, 'default' => true]),
+
+			// lists — inventory expiry warning (Version46). Same SELECT *
+			// hydration as the item defaults above.
+			self::col('lists', 'expiry_lead_days', Types::INTEGER, ['notnull' => false, 'default' => null]),
+			self::col('lists', 'stock_summary', Types::BOOLEAN, ['notnull' => false, 'default' => true]),
+			self::col('lists', 'summarized_on', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+
+			// lists — inventory restock checklist (Version47). Same SELECT *
+			// hydration as the item defaults above.
+			self::col('lists', 'restock_checklist_id', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
 			// categories — list scoping (Version27); category queries filter on
 			// list_id, so a missing column breaks category loading and the

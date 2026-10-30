@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
 import type { Checklist, ChecklistItem } from '@/api/types'
 
 const mockApi = vi.hoisted(() => ({
@@ -30,11 +30,40 @@ const mockApi = vi.hoisted(() => ({
   batchDeleteItems: vi.fn(),
   batchSetCategory: vi.fn(),
   batchUncheckItems: vi.fn(),
+  listAllItems: vi.fn(),
+  duplicateAs: vi.fn(),
+  drawItem: vi.fn(),
 }))
 
-vi.mock('@/api/lists', () => mockApi)
+const apiKinds = vi.hoisted(() => [] as string[])
 
-import { useChecklists, useChecklistItems } from './useChecklist'
+vi.mock('@/api/lists', () => ({
+  ...mockApi,
+  listApi: (kind: string) => {
+    apiKinds.push(kind)
+    return mockApi
+  },
+}))
+
+const { announceRestock, announceRestockSync } = vi.hoisted(() => ({
+  announceRestock: vi.fn(),
+  announceRestockSync: vi.fn(),
+}))
+vi.mock('@/components/StockLink/restockToasts', () => ({ announceRestock, announceRestockSync }))
+
+import { ALL_LISTS_ID, STOCK_WRITE_DELAY, useChecklists, useChecklistItems } from './useChecklist'
+import { addDays, todayEpoch } from '@/utils/stock'
+
+/** A stock step, waited out until its held-back write is saved. */
+async function step(
+  c: ReturnType<typeof useChecklistItems>,
+  itemId: number,
+  patch: Parameters<ReturnType<typeof useChecklistItems>['updateStock']>[1],
+): Promise<void> {
+  const saved = c.updateStock(itemId, patch)
+  await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY)
+  await saved
+}
 
 function makeList(overrides: Partial<Checklist> = {}): Checklist {
   return {
@@ -157,6 +186,21 @@ describe('useChecklists', () => {
     })
   })
 
+  describe('duplicateFrom', () => {
+    it('adds the copy to the lists of its own kind', async () => {
+      const copy = makeList({ id: 9, kind: 'inventory', name: 'Shelf' })
+      mockApi.duplicateAs.mockResolvedValue(copy)
+
+      const inventories = useChecklists(houseCounter, 'inventory')
+      const created = await inventories.duplicateFrom(3, 'Shelf')
+
+      expect(mockApi.duplicateAs).toHaveBeenCalledWith(houseCounter, 3, 'Shelf', true)
+      expect(created).toEqual(copy)
+      expect(inventories.lists.value).toEqual([copy])
+      expect(useChecklists(houseCounter).lists.value).toEqual([])
+    })
+  })
+
   describe('update', () => {
     it('replaces the updated list in state', async () => {
       const original = makeList({ id: 1, name: 'Old' })
@@ -274,6 +318,21 @@ describe('useChecklists', () => {
 
       expect(a.lists.value).not.toEqual(b.lists.value)
       expect(a.lists.value[0].id).not.toBe(b.lists.value[0].id)
+    })
+
+    it('keeps each kind of list apart within a house', async () => {
+      const templates = [makeList({ id: 5, kind: 'template' })]
+      mockApi.listLists.mockResolvedValue(templates)
+      apiKinds.length = 0
+
+      const checklists = useChecklists(houseCounter)
+      const templateLists = useChecklists(houseCounter, 'template')
+      await templateLists.load()
+
+      expect(apiKinds).toEqual(['checklist', 'template'])
+      expect(templateLists.lists.value).toEqual(templates)
+      expect(checklists.lists.value).toEqual([])
+      expect(checklists.lists).not.toBe(templateLists.lists)
     })
   })
 
@@ -622,6 +681,75 @@ describe('useChecklistItems', () => {
       expect(c.items.value.map((i) => i.id)).toEqual([2])
     })
 
+    it('moveMany drops rows moved to another kind from the all-lists view', async () => {
+      mockApi.listAllItems.mockResolvedValue([makeItem({ id: 1 }), makeItem({ id: 2 })])
+      mockApi.batchMoveItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 1, listId: 99 })],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, ALL_LISTS_ID)
+      await c.load()
+      await c.moveMany([1], 99, 'template')
+
+      expect(c.items.value.map((i) => i.id)).toEqual([2])
+    })
+
+    it('copyMany leaves the view alone when copying into another kind', async () => {
+      mockApi.listAllItems.mockResolvedValue([makeItem({ id: 1 })])
+      mockApi.batchCopyItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 5, listId: 99 })],
+        skipped: [],
+      })
+
+      const c = useChecklistItems(1, ALL_LISTS_ID)
+      await c.load()
+      await c.copyMany([1], 99, 'inventory')
+
+      expect(c.items.value.map((i) => i.id)).toEqual([1])
+    })
+
+    it('draw appends a new copy to the view', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1 })])
+      mockApi.drawItem.mockResolvedValue({
+        item: makeItem({ id: 9, name: 'Bread' }),
+        reused: false,
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      const result = await c.draw(30)
+
+      expect(mockApi.drawItem).toHaveBeenCalledWith(1, 10, 30)
+      expect(result.reused).toBe(false)
+      expect(c.items.value.map((i) => i.id)).toEqual([1, 9])
+    })
+
+    it('draw swaps in a reused item already in view', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1, done: true })])
+      mockApi.drawItem.mockResolvedValue({ item: makeItem({ id: 1, done: false }), reused: true })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.draw(30)
+
+      expect(c.items.value).toHaveLength(1)
+      expect(c.items.value[0].done).toBe(false)
+    })
+
+    it('draw targets the picked list in the all-lists view', async () => {
+      mockApi.listAllItems.mockResolvedValue([])
+      mockApi.drawItem.mockResolvedValue({ item: makeItem({ id: 9, listId: 12 }), reused: false })
+
+      const c = useChecklistItems(1, ALL_LISTS_ID)
+      await c.load()
+      await c.draw(30, 12)
+
+      expect(mockApi.drawItem).toHaveBeenCalledWith(1, 12, 30)
+    })
+
     it('copyMany appends copies when targeting the current list', async () => {
       mockApi.listItems.mockResolvedValue([makeItem({ id: 1 })])
       mockApi.batchCopyItems.mockResolvedValue({
@@ -636,6 +764,23 @@ describe('useChecklistItems', () => {
 
       expect(mockApi.batchCopyItems).toHaveBeenCalledWith(1, [1], 10)
       expect(c.items.value.map((i) => i.id)).toEqual([1, 5])
+    })
+
+    it('copyMany swaps in reused items instead of showing them twice', async () => {
+      mockApi.listItems.mockResolvedValue([makeItem({ id: 1, done: true })])
+      mockApi.batchCopyItems.mockResolvedValue({
+        success: true,
+        items: [makeItem({ id: 1, done: false }), makeItem({ id: 5, name: 'Milk' })],
+        skipped: [],
+        reused: [1],
+      })
+
+      const c = useChecklistItems(1, 10)
+      await c.load()
+      await c.copyMany([30, 31], 10)
+
+      expect(c.items.value.map((i) => i.id)).toEqual([1, 5])
+      expect(c.items.value[0].done).toBe(false)
     })
 
     it('copyMany does not append when targeting another list', async () => {
@@ -762,5 +907,260 @@ describe('useChecklistItems', () => {
 
       expect(mockApi.listItems).toHaveBeenCalledWith(1, 10, 'custom')
     })
+  })
+})
+
+describe('useChecklistItems restock sync', () => {
+  const sync = [
+    {
+      event: 'added' as const,
+      itemId: 1,
+      rowId: 50,
+      rowName: 'Eggs',
+      quantity: '8 eggs',
+      listId: 3,
+      listName: 'Groceries',
+    },
+  ]
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    houseCounter++
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('tells the member what an edit did to checklist items', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem()])
+    mockApi.updateItem.mockResolvedValue(makeItem({ restockSync: sync }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await c.update(1, { name: 'Eggs' })
+
+    expect(announceRestockSync).toHaveBeenCalledWith(sync)
+  })
+
+  it('tells the member what a stock step did, even when a later step overtook it', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem({ quantity: '4' })])
+    let answerFirst: (item: ChecklistItem) => void = () => {}
+    mockApi.updateItem
+      .mockReturnValueOnce(new Promise((resolve) => (answerFirst = resolve)))
+      .mockResolvedValueOnce(makeItem({ quantity: '2' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    const first = c.updateStock(1, { quantity: '3' })
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY)
+    await step(c, 1, { quantity: '2' })
+    answerFirst(makeItem({ quantity: '3', restockSync: sync }))
+    await first
+
+    expect(announceRestockSync).toHaveBeenCalledWith(sync)
+    expect(c.items.value[0].quantity).toBe('2')
+  })
+
+  it('saves a burst of stock steps as one write', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem({ quantity: '4' })])
+    mockApi.updateItem.mockResolvedValue(makeItem({ quantity: '7', restockSync: sync }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    const steps = [c.updateStock(1, { quantity: '5' }), c.updateStock(1, { quantity: '6' })]
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY - 1)
+    steps.push(c.updateStock(1, { quantity: '7' }))
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY - 1)
+
+    expect(mockApi.updateItem).not.toHaveBeenCalled()
+    expect(c.items.value[0].quantity).toBe('7')
+
+    await vi.advanceTimersByTimeAsync(1)
+    await Promise.all(steps)
+
+    expect(mockApi.updateItem).toHaveBeenCalledOnce()
+    expect(mockApi.updateItem).toHaveBeenCalledWith(houseCounter, 10, 1, { quantity: '7' })
+    expect(announceRestockSync).toHaveBeenCalledOnce()
+  })
+
+  it('puts the item back as it was before the burst when the write fails', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem({ quantity: '4' })])
+    mockApi.updateItem.mockRejectedValue(new Error('offline'))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    const first = c.updateStock(1, { quantity: '5' })
+    const last = c.updateStock(1, { quantity: '6' })
+    const failed = expect(last).rejects.toThrow('offline')
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY)
+
+    await expect(first).resolves.toBeUndefined()
+    await failed
+    expect(c.items.value[0].quantity).toBe('4')
+  })
+
+  it('saves held-back stock steps before another edit', async () => {
+    mockApi.listItems.mockResolvedValue([makeItem({ quantity: '4' })])
+    mockApi.updateItem.mockResolvedValue(makeItem({ quantity: '5' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    const stepped = c.updateStock(1, { quantity: '5' })
+    await c.update(1, { name: 'Eggs' })
+    await stepped
+
+    expect(mockApi.updateItem.mock.calls.map((call) => call[3])).toEqual([
+      { quantity: '5' },
+      { name: 'Eggs' },
+    ])
+    await vi.advanceTimersByTimeAsync(STOCK_WRITE_DELAY)
+    expect(mockApi.updateItem).toHaveBeenCalledTimes(2)
+  })
+
+  it('tells the member what adding an item did', async () => {
+    mockApi.listItems.mockResolvedValue([])
+    mockApi.addItem.mockResolvedValue(makeItem({ restockSync: sync }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await c.add({ name: 'Eggs' })
+
+    expect(announceRestockSync).toHaveBeenCalledWith(sync)
+  })
+})
+
+describe('useChecklistItems buying restocks', () => {
+  const restocked = [
+    {
+      itemId: 3,
+      listId: 20,
+      itemName: 'Eggs',
+      listName: 'Kitchen',
+      added: '8',
+      previousLevel: null,
+      replaced: false,
+      previousOnHand: null,
+      previousExpiresAt: null,
+      expiresAt: null,
+    },
+  ]
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    houseCounter++
+  })
+
+  it('tells the member what their tick restocked', async () => {
+    const toggled = makeItem({ id: 1, done: true, restock: restocked, restocked })
+    mockApi.listItems.mockResolvedValue([makeItem({ id: 1 })])
+    mockApi.toggleItem.mockResolvedValue(toggled)
+
+    const c = useChecklistItems(houseCounter, 10)
+    await c.load()
+    await c.toggle(1)
+
+    expect(announceRestock).toHaveBeenCalledWith(toggled)
+    expect(c.items.value[0].restock).toEqual(restocked)
+  })
+
+  it('tells the member what undoing a tick took back out', async () => {
+    const unchecked = makeItem({ id: 1, done: false, restockUndone: restocked })
+    mockApi.listItems.mockResolvedValue([makeItem({ id: 1, done: true })])
+    mockApi.toggleItem.mockResolvedValue(unchecked)
+
+    const c = useChecklistItems(houseCounter, 10)
+    await c.load()
+    await c.undoToggle(makeItem({ id: 1, done: true }))
+
+    expect(announceRestock).toHaveBeenCalledWith(unchecked)
+  })
+})
+
+describe('useChecklistItems renew offer', () => {
+  const today = todayEpoch()
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    houseCounter++
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  function stocked(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
+    return makeItem({
+      stockMode: 'count',
+      quantity: '4',
+      target: '12',
+      shelfLifeDays: 7,
+      expiresAt: addDays(today, 2),
+      ...overrides,
+    })
+  }
+
+  it('offers to renew the date after a raise onto stock already there', async () => {
+    mockApi.listItems.mockResolvedValue([stocked()])
+    mockApi.updateItem.mockResolvedValue(stocked({ quantity: '5' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await step(c, 1, { quantity: '5' })
+
+    expect(c.renewOffers.value.get(1)).toBe(addDays(today, 7))
+  })
+
+  it('renews straight away after a raise from empty', async () => {
+    mockApi.listItems.mockResolvedValue([stocked({ quantity: '0' })])
+    mockApi.updateItem.mockReturnValue(new Promise(() => {}))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    void c.updateStock(1, { quantity: '1' })
+
+    expect(c.items.value[0].expiresAt).toBe(addDays(today, 7))
+    expect(c.renewOffers.value.has(1)).toBe(false)
+  })
+
+  it('renews to the offered date as a plain date edit, which ends the offer', async () => {
+    mockApi.listItems.mockResolvedValue([stocked()])
+    mockApi.updateItem.mockResolvedValue(stocked({ quantity: '5' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await step(c, 1, { quantity: '5' })
+    await c.renewExpiry(1)
+
+    expect(mockApi.updateItem).toHaveBeenLastCalledWith(houseCounter, 10, 1, {
+      expiresAt: addDays(today, 7),
+    })
+    expect(c.renewOffers.value.has(1)).toBe(false)
+  })
+
+  it('drops the offer on any other edit', async () => {
+    mockApi.listItems.mockResolvedValue([stocked()])
+    mockApi.updateItem.mockResolvedValue(stocked({ quantity: '5' }))
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await step(c, 1, { quantity: '5' })
+    await c.update(1, { name: 'Eggs' })
+
+    expect(c.renewOffers.value.has(1)).toBe(false)
+  })
+
+  it('drops the offer on a stock step that does not raise', async () => {
+    mockApi.listItems.mockResolvedValue([stocked()])
+    mockApi.updateItem.mockResolvedValue(stocked())
+
+    const c = useChecklistItems(houseCounter, 10, 'inventory')
+    await c.load()
+    await step(c, 1, { quantity: '5' })
+    await step(c, 1, { quantity: '4' })
+
+    expect(c.renewOffers.value.has(1)).toBe(false)
   })
 })

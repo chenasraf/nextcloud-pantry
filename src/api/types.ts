@@ -101,11 +101,20 @@ export interface ItemDefaultField {
 }
 
 export interface ItemDefaults {
-  recurrence: ItemDefaultEntry<RecurrenceDefaultValue>
+  /** Missing on inventories, whose items have no recurrence. */
+  recurrence?: ItemDefaultEntry<RecurrenceDefaultValue>
   stores: ItemDefaultEntry<number[]>
   category: ItemDefaultEntry<number>
   labels: ItemDefaultEntry<number[]>
   quantity: ItemDefaultEntry<string>
+  /** Inventories only: the stock mode new items start in. */
+  stockMode?: ItemDefaultEntry<StockMode>
+  /** Inventories only: the target new count items start with. Never remembered. */
+  target?: ItemDefaultEntry<string>
+  /** Inventories only: the reorder point new count items start with. Never remembered. */
+  reorderPoint?: ItemDefaultEntry<string>
+  /** Inventories only: the shelf life new items start with, in days. Never remembered. */
+  shelfLifeDays?: ItemDefaultEntry<number>
   fields: ItemDefaultField[]
 }
 
@@ -116,11 +125,50 @@ export type ItemDefaultsPatch = Partial<{
   [K in ItemDefaultKey]: Partial<ItemDefaults[K]>
 }> & {
   fields?: (Partial<ItemDefaultField> & { fieldId: number })[]
+  /** Whether a template item drawn into the list fills what it leaves empty from these defaults. */
+  fillFromDefaults?: boolean
 }
 
+/** What a list is for; fixed at creation. */
+export type ListKind = 'checklist' | 'template' | 'inventory'
+
+/** The templates a checklist or inventory draws suggestions from. */
+export interface AttachedTemplates {
+  /** Templates attached to this list by name. */
+  templateIds: number[]
+  /** Templates attached to every list, this one included. */
+  everyListTemplateIds: number[]
+}
+
+/** The lists a template feeds suggestions to. */
+export interface TemplateLists {
+  /** Attached to every checklist and inventory in the house, including later ones. */
+  everyList: boolean
+  listIds: number[]
+}
+
+/** A template item offered in an add box, once per name. */
+export interface TemplateSuggestion {
+  item: ChecklistItem
+  /** Every attached template the name is in. */
+  templates: { id: number; name: string }[]
+}
+
+export interface ListSuggestions {
+  /** The list's archived items; empty unless asked for. */
+  archived: ChecklistItem[]
+  templates: TemplateSuggestion[]
+}
+
+/**
+ * A list of any kind. Templates and inventories carry the same fields minus the
+ * checklist-only ones (completion and the per-column recurrence default), which
+ * read as undefined on them.
+ */
 export interface Checklist {
   id: number
   houseId: number
+  kind?: ListKind
   name: string
   description: string | null
   icon: string
@@ -128,6 +176,11 @@ export interface Checklist {
   sortOrder: number
   /** Values new items on this list start with. Present when the server has `list-item-defaults`. */
   itemDefaults?: ItemDefaults
+  /**
+   * Whether a template item drawn into the list fills the fields it leaves empty
+   * from the item defaults. Missing on templates.
+   */
+  fillFromDefaults?: boolean
   /** True when new items default to one-time. Derived from the recurrence default. */
   deleteOnDoneDefault: boolean
   defaultRecurrenceMode: RecurrenceMode
@@ -148,6 +201,17 @@ export interface Checklist {
    * grants access). When true, a viewer share bounds all writes to read-only.
    */
   sharedOnly?: boolean
+  /** Inventories only: how many items are low, out, expiring or expired. */
+  needsRestock?: number
+  /** Inventories only: how many days before its expiry date an item is expiring. */
+  expiryLeadDays?: number
+  /** Inventories only: whether members get a daily summary of what newly needs restocking. */
+  stockSummary?: boolean
+  /**
+   * Inventories only: the checklist low stock goes to. Null when unset, or
+   * when that checklist is archived, trashed or deleted.
+   */
+  restockChecklistId?: number | null
 }
 
 export interface Category {
@@ -286,7 +350,16 @@ export interface ItemCustomFieldValue {
   notifyLeadDays: number | null
 }
 
-export interface ChecklistItem {
+/**
+ * An item on a list of any kind. Template and inventory items are never checked
+ * off: the server leaves out `done`, `doneAt`, `doneBy` and `nextDueAt`.
+ * Inventory items have no recurrence either, so `rrule`, `repeatFromCompletion`
+ * and `deleteOnDone` are left out on them too. Inventory items carry every
+ * stock field; a template item carries only `stockMode` (null leaves it to the
+ * inventory it is drawn into), `target`, `reorderPoint` and `shelfLifeDays`.
+ */
+export interface ChecklistItem extends Omit<Partial<ItemStock>, 'stockMode'> {
+  stockMode?: StockMode | null
   id: number
   listId: number
   name: string
@@ -313,6 +386,115 @@ export interface ChecklistItem {
   updatedAt: number
   deletedAt: number | null
   archivedAt: number | null
+  /** Checklist items only: the inventory items this row restocks, earliest linked first. */
+  restocks?: StockLinkSource[]
+  /** Checklist items only: a member set the quantity, so stock leaves it until the row is next done. */
+  quantityPinned?: boolean
+  /** In the response of a write only: what restocking did to checklist items because of it. */
+  restockSync?: RestockSyncEvent[]
+  /** Checked checklist items only: what the member's tick put back into stock, until it is unchecked. */
+  restock?: RestockEntry[] | null
+  /** In the response of a tick only: what it put back into stock. */
+  restocked?: RestockEntry[]
+  /** In the response of a member's uncheck only: what it took back out of stock. */
+  restockUndone?: RestockEntry[]
+}
+
+export type StockMode = 'count' | 'level'
+export type StockLevel = 'full' | 'low' | 'out'
+export type StockStatus = 'ok' | 'low' | 'out' | 'uncounted'
+export type ExpiryStatus = 'none' | 'ok' | 'expiring' | 'expired'
+
+/**
+ * Stock on an inventory item. A count item's `quantity` is its on-hand amount;
+ * a level item's is its restock amount. `stockStatus`, `shortfall` and
+ * `expiryStatus` are worked out by the server. `expiresAt` is a midnight
+ * timestamp in seconds, as a date field's value.
+ */
+export interface ItemStock {
+  stockMode: StockMode
+  stockLevel: StockLevel
+  target: string | null
+  reorderPoint: string | null
+  stockStatus: StockStatus
+  shortfall: string | null
+  expiresAt: number | null
+  shelfLifeDays: number | null
+  expiryStatus: ExpiryStatus
+  /** Whether an unlinked item is linked by name to a row on the restock checklist. */
+  autoLink: boolean
+  /** The checklist item that restocks this item. */
+  stockLink: StockLinkRow | null
+  /** While unlinked and auto-linking: the rows that match by name, when there are several. */
+  linkCandidates: StockLinkRow[]
+}
+
+export type StockLinkState = 'open' | 'checked' | 'archived' | 'trashed'
+
+/** A checklist item an inventory item is, or can be, linked to. */
+export interface StockLinkRow {
+  itemId: number
+  name: string
+  quantity: string | null
+  listId: number
+  listName: string
+  listColor: string | null
+  state: StockLinkState
+}
+
+/** An inventory item a checklist item restocks. */
+export interface StockLinkSource {
+  itemId: number
+  name: string
+  listId: number
+  listName: string
+}
+
+/**
+ * What a tick of a checklist item put back into one inventory item: the
+ * amount `added` to a count item (or that replaced what was on hand), or the
+ * `previousLevel` of a level item it took to Full. With neither, it only
+ * renewed the date of an item not counted.
+ */
+export interface RestockEntry {
+  itemId: number
+  listId: number
+  itemName: string
+  listName: string
+  added: string | null
+  previousLevel: StockLevel | null
+  /** It replaced stock that was going off, rather than adding to it. */
+  replaced: boolean
+  /** A replaced count item's amount on hand before. */
+  previousOnHand: string | null
+  previousExpiresAt: number | null
+  /** The fresh date the tick gave it. */
+  expiresAt: number | null
+}
+
+/** What Shopping Mode's check or uncheck did to stock. */
+export interface ShoppingCheckResult {
+  success: true
+  restock: RestockEntry[] | null
+  restocked: RestockEntry[]
+  restockUndone: RestockEntry[]
+  restockSync: RestockSyncEvent[]
+}
+
+/**
+ * What restocking did to a checklist item: `added` a new one, `revived` a
+ * checked or archived one, `changed` an open one's quantity, left a `pinned`
+ * quantity as set by hand, or `recovered`: ticked it off as no longer needed.
+ */
+export interface RestockSyncEvent {
+  event: 'added' | 'revived' | 'changed' | 'pinned' | 'recovered'
+  /** The inventory item whose write caused it. */
+  itemId: number
+  rowId: number
+  rowName: string
+  quantity: string | null
+  listId: number
+  listName: string
 }
 
 /** One store in a shopping session's ordered sequence. */

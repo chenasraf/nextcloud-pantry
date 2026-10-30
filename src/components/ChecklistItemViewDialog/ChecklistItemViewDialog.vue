@@ -50,7 +50,7 @@
         <FieldCard v-if="item.quantity" :label="strings.quantity" class="item-view__tile">
           <span class="item-view__tile-value">{{ item.quantity }}</span>
         </FieldCard>
-        <FieldCard :label="strings.type" class="item-view__tile">
+        <FieldCard v-if="isChecklist" :label="strings.type" class="item-view__tile">
           <span class="item-view__tile-value item-view__tile-value--type">
             <component :is="typeIcon" :size="20" />
             {{ typeLabel }}
@@ -174,6 +174,7 @@ import { linkifySegments, type TextSegment } from '@/utils/linkify'
 import { getCurrentUserId } from '@/utils/currentUser'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useHouseMembers } from '@/composables/useHouseMembers'
+import { useListKind } from '@/composables/useListKind'
 import type {
   ChecklistItem,
   Category,
@@ -281,6 +282,8 @@ const chips = computed<Chip[]>(() => {
 })
 
 // ----- Item type tile -----
+
+const { isChecklist } = useListKind()
 
 const isOneTime = computed(() => props.item.deleteOnDone)
 const isRecurring = computed(() => !props.item.deleteOnDone && !!props.item.rrule)
@@ -405,11 +408,13 @@ const addedLabel = computed(() =>
     : strings.added,
 )
 
-const doneLabel = computed(() =>
-  props.showAddedBy && props.item.doneBy
+const doneLabel = computed(() => {
+  // Nobody ticked it off: the inventory items it restocks are back in stock.
+  if (!props.item.doneBy && props.item.restocks?.length) return strings.noLongerNeeded
+  return props.showAddedBy && props.item.doneBy
     ? t('pantry', 'Done by {user}', { user: actorName(props.item.doneBy) })
-    : strings.doneOn,
-)
+    : strings.doneOn
+})
 
 const strings = {
   viewImage: t('pantry', 'View image'),
@@ -430,6 +435,8 @@ const strings = {
   added: t('pantry', 'Added'),
   // TRANSLATORS: Prefix before a relative time, e.g. "Done · 3 days ago". The item was completed.
   doneOn: t('pantry', 'Done'),
+  // TRANSLATORS: Shown instead of who checked an item off, when it was ticked off because the inventory items it restocks are back in stock.
+  noLongerNeeded: t('pantry', 'No longer needed'),
   // TRANSLATORS: Stands in for the current user's own name, e.g. "Added by you".
   you: t('pantry', 'you'),
   // TRANSLATORS: Value of a checkbox custom field that is ticked.

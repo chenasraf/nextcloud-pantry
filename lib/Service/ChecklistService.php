@@ -7,20 +7,16 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
-use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
-use OCA\Pantry\Db\FieldDefinition;
-use OCA\Pantry\Db\FieldOption;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
 use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
-use OCA\Pantry\Db\Label;
 use OCA\Pantry\Db\LabelMapper;
 use OCA\Pantry\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -56,6 +52,9 @@ class ChecklistService {
 		private \OCA\Pantry\Db\FieldValueMapper $fieldValueMapper,
 		private CustomFieldReminderService $fieldReminders,
 		private IDBConnection $db,
+		private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper,
+		private ScopedTaxonomyService $taxonomy,
+		private StockLinkService $stockLinks,
 	) {
 	}
 
@@ -64,8 +63,17 @@ class ChecklistService {
 	/**
 	 * @return Checklist[]
 	 */
-	public function listForHouse(int $houseId, string $sortBy = 'custom'): array {
-		return $this->listMapper->findByHouse($houseId, $sortBy);
+	public function listForHouse(int $houseId, string $sortBy = 'custom', string $kind = Checklist::KIND_CHECKLIST): array {
+		return $this->listMapper->findByHouse($houseId, $sortBy, $kind);
+	}
+
+	/**
+	 * Active lists of every kind, in their shared sort order.
+	 *
+	 * @return Checklist[]
+	 */
+	public function listAllKindsForHouse(int $houseId): array {
+		return $this->listMapper->findByHouse($houseId);
 	}
 
 	/**
@@ -96,33 +104,46 @@ class ChecklistService {
 	}
 
 	/**
-	 * List soft-deleted checklists in a house. Most recently deleted first.
+	 * List soft-deleted lists of a kind in a house. Most recently deleted first.
 	 *
 	 * @return Checklist[]
 	 */
-	public function listDeletedForHouse(int $houseId): array {
-		return $this->listMapper->findDeletedByHouse($houseId);
+	public function listDeletedForHouse(int $houseId, string $kind = Checklist::KIND_CHECKLIST): array {
+		return $this->listMapper->findDeletedByHouse($houseId, $kind);
 	}
 
-	public function getList(int $listId, bool $includeDeleted = false): Checklist {
+	/**
+	 * Load a list, optionally only when it is of `$kind`. A list of another
+	 * kind is reported as missing, so each kind's resource only ever sees its
+	 * own lists.
+	 */
+	public function getList(int $listId, bool $includeDeleted = false, ?string $kind = null): Checklist {
 		try {
-			return $this->listMapper->findById($listId, $includeDeleted);
+			$list = $this->listMapper->findById($listId, $includeDeleted);
 		} catch (DoesNotExistException) {
 			throw new NotFoundException('List not found');
 		}
+		if ($kind !== null && $list->getKind() !== $kind) {
+			throw new NotFoundException('List not found');
+		}
+		return $list;
 	}
 
 	/**
 	 * @param array<string, mixed> $recurrenceDefault Recurrence keys accepted by {@see self::applyRecurrenceDefault()}.
 	 */
-	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null, ?string $color = null, array $recurrenceDefault = []): Checklist {
+	public function createList(int $houseId, string $name, ?string $description, ?string $icon = null, ?string $color = null, array $recurrenceDefault = [], string $kind = Checklist::KIND_CHECKLIST): Checklist {
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('List name cannot be empty');
 		}
+		if (!in_array($kind, Checklist::KINDS, true)) {
+			throw new \InvalidArgumentException('Unknown list kind: ' . $kind);
+		}
 		$now = time();
 		$list = new Checklist();
 		$list->setHouseId($houseId);
+		$list->setKind($kind);
 		$list->setName($name);
 		$list->setDescription($description !== null && $description !== '' ? $description : null);
 		if ($icon !== null && $icon !== '') {
@@ -167,9 +188,32 @@ class ChecklistService {
 		if (isset($patch['sortOrder'])) {
 			$list->setSortOrder((int)$patch['sortOrder']);
 		}
+		if (array_key_exists('expiryLeadDays', $patch) && $list->getKind() === Checklist::KIND_INVENTORY) {
+			$lead = $this->intOrNull($patch['expiryLeadDays']);
+			if ($lead !== null && ($lead < 0 || $lead > StockRules::MAX_EXPIRY_LEAD_DAYS)) {
+				throw new \InvalidArgumentException(sprintf('Expiry warning must be between 0 and %d days', StockRules::MAX_EXPIRY_LEAD_DAYS));
+			}
+			$list->setExpiryLeadDays($lead);
+		}
+		if (array_key_exists('stockSummary', $patch) && $patch['stockSummary'] !== null && $list->getKind() === Checklist::KIND_INVENTORY) {
+			$list->setStockSummary((bool)$patch['stockSummary']);
+		}
+		$restockChanged = false;
+		if (array_key_exists('restockChecklistId', $patch) && $list->getKind() === Checklist::KIND_INVENTORY) {
+			$restockId = $this->intOrNull($patch['restockChecklistId']);
+			$restockId = $restockId !== null && $restockId > 0 ? $restockId : null;
+			if ($restockId !== null) {
+				$this->stockLinks->assertRestockChecklist($list, $restockId);
+			}
+			$restockChanged = $restockId !== $list->getRestockChecklistId();
+			$list->setRestockChecklistId($restockId);
+		}
 		$this->applyRecurrenceDefault($list, $patch);
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
+		if ($restockChanged) {
+			$this->stockLinks->matchInventory($list);
+		}
 		return $list;
 	}
 
@@ -191,9 +235,13 @@ class ChecklistService {
 	 * {@see ItemDefaultsService::merge()}.
 	 *
 	 * @param array<string, mixed> $defaults
+	 * @param bool|null $fillFromDefaults Whether drawn template items fill from them; null leaves it.
 	 */
-	public function setItemDefaults(Checklist $list, array $defaults): Checklist {
+	public function setItemDefaults(Checklist $list, array $defaults, ?bool $fillFromDefaults = null): Checklist {
 		$list->setItemDefaults(ItemDefaults::encode($defaults));
+		if ($fillFromDefaults !== null) {
+			$list->setFillFromDefaults($fillFromDefaults);
+		}
 		$list->setUpdatedAt(time());
 		$this->listMapper->update($list);
 		return $list;
@@ -286,6 +334,7 @@ class ChecklistService {
 		$list = $this->getList($listId, includeDeleted: true);
 		$this->itemMapper->deleteByList((int)$list->getId());
 		$this->listRoleMapper->deleteByList((int)$list->getId());
+		$this->listTemplateMapper->deleteByList((int)$list->getId());
 		$this->categoryMapper->deleteByList((int)$list->getId());
 		$this->labelMapper->deleteByList((int)$list->getId());
 		$this->fieldOptionMapper->deleteByList((int)$list->getId());
@@ -294,13 +343,14 @@ class ChecklistService {
 	}
 
 	/**
-	 * Hard-delete every soft-deleted checklist in the house, along with any
-	 * items those lists contained.
+	 * Hard-delete every soft-deleted list of a kind in the house, along with
+	 * any items those lists contained.
 	 */
-	public function emptyListsTrash(int $houseId): void {
-		$removed = $this->listMapper->emptyTrashForHouse($houseId);
+	public function emptyListsTrash(int $houseId, string $kind = Checklist::KIND_CHECKLIST): void {
+		$removed = $this->listMapper->emptyTrashForHouse($houseId, $kind);
 		foreach ($removed as $list) {
 			$this->itemMapper->deleteByList((int)$list->getId());
+			$this->listTemplateMapper->deleteByList((int)$list->getId());
 			$this->categoryMapper->deleteByList((int)$list->getId());
 			$this->labelMapper->deleteByList((int)$list->getId());
 			$this->fieldOptionMapper->deleteByList((int)$list->getId());
@@ -309,12 +359,12 @@ class ChecklistService {
 	}
 
 	/**
-	 * List archived checklists in a house. Most recently archived first.
+	 * List archived lists of a kind in a house. Most recently archived first.
 	 *
 	 * @return Checklist[]
 	 */
-	public function listArchivedForHouse(int $houseId): array {
-		return $this->listMapper->findArchivedByHouse($houseId);
+	public function listArchivedForHouse(int $houseId, string $kind = Checklist::KIND_CHECKLIST): array {
+		return $this->listMapper->findArchivedByHouse($houseId, $kind);
 	}
 
 	/**
@@ -359,7 +409,11 @@ class ChecklistService {
 	 * the caller's business: `$duplicateImage` is handed the source file id and
 	 * its owner, and returns the new file id (or null when it could not copy it).
 	 *
+	 * `$kind` duplicates the list as another kind; the items cross by the rule in
+	 * {@see crossItemInto()}, and `$resetDone` only matters checklist to checklist.
+	 *
 	 * @param callable(int $fileId, string $ownerUid): ?int $duplicateImage
+	 * @param 'checklist'|'template'|'inventory'|null $kind The copy's kind; null keeps the source's.
 	 */
 	public function duplicateList(
 		int $listId,
@@ -367,11 +421,16 @@ class ChecklistService {
 		bool $resetDone,
 		?string $addedBy,
 		callable $duplicateImage,
+		?string $kind = null,
 	): Checklist {
 		$source = $this->getList($listId);
 		$name = trim($name);
 		if ($name === '') {
 			throw new \InvalidArgumentException('List name cannot be empty');
+		}
+		$kind ??= $source->getKind();
+		if (!in_array($kind, Checklist::KINDS, true)) {
+			throw new \InvalidArgumentException('Unknown list kind: ' . $kind);
 		}
 
 		$now = time();
@@ -380,11 +439,16 @@ class ChecklistService {
 
 		$copy = new Checklist();
 		$copy->setHouseId($houseId);
+		$copy->setKind($kind);
 		$copy->setName($name);
 		$copy->setDescription($source->getDescription());
 		$copy->setIcon($source->getIcon());
 		$copy->setColor($source->getColor());
 		$copy->setSortOrder($source->getSortOrder());
+		$copy->setFillFromDefaults($source->fillsFromDefaults());
+		if ($kind === Checklist::KIND_INVENTORY && $source->getKind() === Checklist::KIND_INVENTORY) {
+			$copy->setRestockChecklistId($source->getRestockChecklistId());
+		}
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
 		$copy = $this->listMapper->insert($copy);
@@ -405,14 +469,23 @@ class ChecklistService {
 		];
 
 		$sourceDefaults = ItemDefaults::decode($source->getItemDefaults());
+		if (!$copy->keepsRecurrence()) {
+			unset($sourceDefaults[ItemDefaults::KEY_RECURRENCE]);
+		}
+		if ($kind !== Checklist::KIND_INVENTORY) {
+			foreach (ItemDefaults::STOCK_KEYS as $key) {
+				unset($sourceDefaults[$key]);
+			}
+		}
 		if ($sourceDefaults !== []) {
 			$copy->setItemDefaults(ItemDefaults::encode(ItemDefaults::remap($sourceDefaults, $maps)));
 			$this->listMapper->update($copy);
 		}
 
 		foreach ($this->itemMapper->findByList($sourceId) as $item) {
-			$this->duplicateItemInto($item, $copyId, $resetDone, $addedBy, $now, $duplicateImage, $maps);
+			$this->duplicateItemInto($item, $source, $copy, !$resetDone, $addedBy, $now, $duplicateImage, $maps);
 		}
+		$this->stockLinks->matchInventory($copy);
 
 		return $copy;
 	}
@@ -425,19 +498,9 @@ class ChecklistService {
 	private function duplicateListCategories(int $houseId, int $sourceId, int $copyId, int $now): array {
 		$map = [];
 		foreach ($this->categoryMapper->findByHouse($houseId) as $category) {
-			if ((int)$category->getListId() !== $sourceId) {
-				continue;
+			if ((int)$category->getListId() === $sourceId) {
+				$map[(int)$category->getId()] = (int)$this->taxonomy->copyCategory($category, $copyId, $now)->getId();
 			}
-			$copy = new Category();
-			$copy->setHouseId($houseId);
-			$copy->setListId($copyId);
-			$copy->setName($category->getName());
-			$copy->setIcon($category->getIcon());
-			$copy->setColor($category->getColor());
-			$copy->setSortOrder($category->getSortOrder());
-			$copy->setCreatedAt($now);
-			$copy->setUpdatedAt($now);
-			$map[(int)$category->getId()] = (int)$this->categoryMapper->insert($copy)->getId();
 		}
 		return $map;
 	}
@@ -450,19 +513,9 @@ class ChecklistService {
 	private function duplicateListLabels(int $houseId, int $sourceId, int $copyId, int $now): array {
 		$map = [];
 		foreach ($this->labelMapper->findByHouse($houseId) as $label) {
-			if ((int)$label->getListId() !== $sourceId) {
-				continue;
+			if ((int)$label->getListId() === $sourceId) {
+				$map[(int)$label->getId()] = (int)$this->taxonomy->copyLabel($label, $copyId, $now)->getId();
 			}
-			$copy = new Label();
-			$copy->setHouseId($houseId);
-			$copy->setListId($copyId);
-			$copy->setName($label->getName());
-			$copy->setIcon($label->getIcon());
-			$copy->setColor($label->getColor());
-			$copy->setSortOrder($label->getSortOrder());
-			$copy->setCreatedAt($now);
-			$copy->setUpdatedAt($now);
-			$map[(int)$label->getId()] = (int)$this->labelMapper->insert($copy)->getId();
 		}
 		return $map;
 	}
@@ -481,44 +534,9 @@ class ChecklistService {
 			if ((int)$definition->getListId() !== $sourceId || $definition->getDeletedAt() !== null) {
 				continue;
 			}
-			$copy = new FieldDefinition();
-			$copy->setHouseId($houseId);
-			$copy->setListId($copyId);
-			$copy->setName($definition->getName());
-			$copy->setType($definition->getType());
-			$copy->setSortOrder($definition->getSortOrder());
-			$copy->setHint($definition->getHint());
-			$copy->setMultiline($definition->getMultiline());
-			$copy->setDefaultText($definition->getDefaultText());
-			$copy->setDefaultNumber($definition->getDefaultNumber());
-			$copy->setDefaultBool($definition->getDefaultBool());
-			$copy->setDateMode($definition->getDateMode());
-			$copy->setDefaultOffsetDays($definition->getDefaultOffsetDays());
-			$copy->setNotifyDefault($definition->getNotifyDefault());
-			$copy->setLeadDays($definition->getLeadDays());
-			$copy->setOverridePolicy($definition->getOverridePolicy());
-			$copy->setStopWhenDone($definition->getStopWhenDone());
-			$copy->setCreatedAt($now);
-			$copy->setUpdatedAt($now);
-			$copy = $this->fieldDefMapper->insert($copy);
-			$copyFieldId = (int)$copy->getId();
-			$fieldMap[(int)$definition->getId()] = $copyFieldId;
-
-			foreach ($this->fieldOptionMapper->findByField((int)$definition->getId()) as $option) {
-				$optionCopy = new FieldOption();
-				$optionCopy->setFieldId($copyFieldId);
-				$optionCopy->setLabel($option->getLabel());
-				$optionCopy->setSortOrder($option->getSortOrder());
-				$optionMap[(int)$option->getId()] = (int)$this->fieldOptionMapper->insert($optionCopy)->getId();
-			}
-
-			// The default option is one of the options just copied, so it can only
-			// be pointed at the new row after they exist.
-			$defaultOptionId = $definition->getDefaultOptionId();
-			if ($defaultOptionId !== null && isset($optionMap[$defaultOptionId])) {
-				$copy->setDefaultOptionId($optionMap[$defaultOptionId]);
-				$this->fieldDefMapper->update($copy);
-			}
+			[$copy, $options] = $this->taxonomy->copyField($definition, $copyId, $now);
+			$fieldMap[(int)$definition->getId()] = (int)$copy->getId();
+			$optionMap += $options;
 		}
 		return [$fieldMap, $optionMap];
 	}
@@ -532,15 +550,16 @@ class ChecklistService {
 	 */
 	private function duplicateItemInto(
 		ChecklistItem $source,
-		int $copyListId,
-		bool $resetDone,
+		Checklist $sourceList,
+		Checklist $target,
+		bool $keepDone,
 		?string $addedBy,
 		int $now,
 		callable $duplicateImage,
 		array $maps,
 	): void {
 		$copy = new ChecklistItem();
-		$copy->setListId($copyListId);
+		$copy->setListId((int)$target->getId());
 		$copy->setName($source->getName());
 		$copy->setDescription($source->getDescription());
 		$sourceCategoryId = $source->getCategoryId();
@@ -548,34 +567,12 @@ class ChecklistService {
 			$sourceCategoryId !== null ? ($maps['categories'][$sourceCategoryId] ?? $sourceCategoryId) : null,
 		);
 		$copy->setQuantity($source->getQuantity());
-		$copy->setRrule($source->getRrule());
-		$copy->setRepeatFromCompletion($source->getRepeatFromCompletion());
-		$copy->setDeleteOnDone($source->getDeleteOnDone());
 		$copy->setBarcode($source->getBarcode());
 		$copy->setSortOrder($source->getSortOrder());
 		$copy->setAddedBy($addedBy);
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
-
-		if ($resetDone || !$source->getDone()) {
-			$copy->setDone(false);
-			$copy->setDoneAt(null);
-			$copy->setDoneBy(null);
-			// An unchecked item on a fixed schedule gets its next occurrence now,
-			// the same way a newly added one does.
-			$copy->setNextDueAt(
-				$source->getRrule() !== null && !$source->getRepeatFromCompletion()
-					? $this->computeNextDueAt($copy, $now)?->getTimestamp()
-					: null,
-			);
-		} else {
-			$copy->setDone(true);
-			$copy->setDoneAt($source->getDoneAt());
-			$copy->setDoneBy($source->getDoneBy());
-			// Same rule and same completion time as the source, so its scheduled
-			// reopen carries over unchanged.
-			$copy->setNextDueAt($source->getNextDueAt());
-		}
+		$this->crossItemInto($copy, $source, $sourceList, $target, $keepDone, $now);
 
 		$sourceImageFileId = $source->getImageFileId();
 		$sourceImageOwner = $source->getImageUploadedBy();
@@ -646,6 +643,31 @@ class ChecklistService {
 		return $this->itemMapper->findDeletedByList($listId);
 	}
 
+	/**
+	 * How many live items on each inventory need restocking: low, out,
+	 * expiring or expired. Inventories with none are left out.
+	 *
+	 * @param Checklist[] $inventories
+	 * @return array<int, int>
+	 */
+	public function countNeedsRestock(array $inventories): array {
+		$leadDays = [];
+		foreach ($inventories as $inventory) {
+			$leadDays[(int)$inventory->getId()] = $inventory->expiryLeadDays();
+		}
+		$today = StockRules::today();
+		$counts = [];
+		foreach ($this->itemMapper->findStockByLists(array_keys($leadDays)) as $listId => $items) {
+			$lead = $leadDays[$listId] ?? Checklist::DEFAULT_EXPIRY_LEAD_DAYS;
+			$count = count(array_filter($items, static fn (array $item): bool => StockRules::needsRestock($item)
+				|| StockRules::expiryNeedsRestock(StockRules::expiryStatus($item, $lead, $today))));
+			if ($count > 0) {
+				$counts[$listId] = $count;
+			}
+		}
+		return $counts;
+	}
+
 	public function getItem(int $itemId, bool $includeDeleted = false): ChecklistItem {
 		try {
 			return $this->itemMapper->findById($itemId, $includeDeleted);
@@ -655,8 +677,7 @@ class ChecklistService {
 	}
 
 	public function addItem(int $listId, array $data, ?string $addedBy = null): ChecklistItem {
-		// Ensure the list exists.
-		$this->getList($listId);
+		$list = $this->getList($listId);
 
 		$name = trim((string)($data['name'] ?? ''));
 		if ($name === '') {
@@ -684,15 +705,34 @@ class ChecklistService {
 		$repeatFromCompletion = !empty($data['repeatFromCompletion']);
 		$item->setRepeatFromCompletion($repeatFromCompletion);
 		$item->setDeleteOnDone(!empty($data['deleteOnDone']));
-		// For fixed-schedule items, compute the first due time immediately.
-		if ($rrule !== null && !$repeatFromCompletion) {
+		// For fixed-schedule items, compute the first due time immediately. Only
+		// checklists run recurrence; other kinds keep the rule without a schedule.
+		if ($list->isChecklist() && $rrule !== null && !$repeatFromCompletion) {
 			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
 		} else {
 			$item->setNextDueAt(null);
 		}
 		$item->setImageFileId($this->intOrNull($data['imageFileId'] ?? null));
+		$item->setImageUploadedBy($this->strOrNull($data['imageUploadedBy'] ?? null));
 		$item->setAddedBy($addedBy);
 		$item->setBarcode($this->strOrNull($data['barcode'] ?? null));
+		if ($list->getKind() === Checklist::KIND_INVENTORY) {
+			$this->applyStock($item, [
+				'stockMode' => $data['stockMode'] ?? StockRules::MODE_COUNT,
+				'stockLevel' => $data['stockLevel'] ?? null,
+				'target' => $data['target'] ?? null,
+				'reorderPoint' => $data['reorderPoint'] ?? null,
+			]);
+			if ($item->getStockMode() === StockRules::MODE_COUNT) {
+				$item->setQuantity(StockRules::startingOnHand($item->getQuantity(), $item->getTarget()));
+			}
+			$this->applyExpiry($item, array_filter(
+				array_intersect_key($data, array_flip(['expiresAt', 'shelfLifeDays'])),
+				static fn (mixed $v): bool => $v !== null,
+			));
+		} elseif ($list->getKind() === Checklist::KIND_TEMPLATE) {
+			$this->applyTemplateStock($item, array_intersect_key($data, array_flip(['stockMode', 'target', 'reorderPoint', 'shelfLifeDays'])));
+		}
 		if (isset($data['sortOrder'])) {
 			$item->setSortOrder((int)$data['sortOrder']);
 		} else {
@@ -717,17 +757,34 @@ class ChecklistService {
 			$rearmed = $this->fieldValueMapper->setValuesForItem((int)$saved->getId(), (array)$data['customFields']);
 			$this->fieldReminders->onValuesRearmed((int)$saved->getId(), $rearmed);
 		}
+		$this->onItemSaved($saved, $list);
 		return $saved;
+	}
+
+	/**
+	 * Let the item pair with same-name items by stock link, after it is
+	 * created or renamed.
+	 */
+	private function onItemSaved(ChecklistItem $item, Checklist $list): void {
+		if ($list->getKind() === Checklist::KIND_INVENTORY) {
+			$this->stockLinks->onInventoryItemSaved($item, $list);
+		} elseif ($list->isChecklist()) {
+			$this->stockLinks->onChecklistRowSaved($item, $list);
+		}
 	}
 
 	public function updateItem(int $itemId, array $patch): ChecklistItem {
 		$item = $this->getItem($itemId);
+		$sourceListId = $item->getListId();
+		$renamed = false;
+		$wasEmpty = StockRules::isEmpty(self::stockOf($item));
 
 		if (isset($patch['name'])) {
 			$name = trim((string)$patch['name']);
 			if ($name === '') {
 				throw new \InvalidArgumentException('Item name cannot be empty');
 			}
+			$renamed = $name !== $item->getName();
 			$item->setName($name);
 		}
 		if (array_key_exists('description', $patch)) {
@@ -736,8 +793,11 @@ class ChecklistService {
 		if (array_key_exists('categoryId', $patch)) {
 			$item->setCategoryId($this->intOrNull($patch['categoryId']));
 		}
+		$quantityChanged = false;
 		if (array_key_exists('quantity', $patch)) {
-			$item->setQuantity($this->strOrNull($patch['quantity']));
+			$quantity = $this->strOrNull($patch['quantity']);
+			$quantityChanged = $quantity !== $item->getQuantity();
+			$item->setQuantity($quantity);
 		}
 		if (array_key_exists('rrule', $patch)) {
 			$rrule = $patch['rrule'];
@@ -769,6 +829,20 @@ class ChecklistService {
 			$v = $patch['imageUploadedBy'];
 			$item->setImageUploadedBy(is_string($v) && $v !== '' ? $v : null);
 		}
+		$stock = array_intersect_key($patch, array_flip(['stockMode', 'stockLevel', 'target', 'reorderPoint', 'expiresAt', 'shelfLifeDays']));
+		if ($stock !== []) {
+			if ($this->getList($item->getListId(), includeDeleted: true)->getKind() === Checklist::KIND_TEMPLATE) {
+				unset($stock['stockLevel'], $stock['expiresAt']);
+				$this->applyTemplateStock($item, $stock);
+			} else {
+				$expiry = array_intersect_key($stock, array_flip(['expiresAt', 'shelfLifeDays']));
+				$stock = array_diff_key($stock, $expiry);
+				if ($stock !== []) {
+					$this->applyStock($item, $stock, array_key_exists('quantity', $patch));
+				}
+				$this->applyExpiry($item, $expiry);
+			}
+		}
 		// If already done and rrule or mode changed, recompute next due.
 		if ($item->getDone() && $item->getRrule() !== null
 			&& (array_key_exists('rrule', $patch) || array_key_exists('repeatFromCompletion', $patch))) {
@@ -776,16 +850,45 @@ class ChecklistService {
 		}
 		if (isset($patch['listId'])) {
 			$targetListId = (int)$patch['listId'];
-			// Ensure the target list exists.
-			$this->getList($targetListId);
+			$this->assertSameKind($item->getListId(), $targetListId);
 			$item->setListId($targetListId);
 		}
 		if (isset($patch['sortOrder'])) {
 			$item->setSortOrder((int)$patch['sortOrder']);
 		}
+		$autoLinkOn = false;
+		if (array_key_exists('autoLink', $patch) && $patch['autoLink'] !== null) {
+			$autoLinkOn = (bool)$patch['autoLink'] && !$item->autoLinks();
+			$item->setAutoLink((bool)$patch['autoLink']);
+		}
+		if ($item->getListId() === $sourceListId && $this->getList($sourceListId, includeDeleted: true)->isChecklist()) {
+			if ($quantityChanged && $this->itemMapper->findLinkedTo([(int)$item->getId()]) !== []) {
+				$item->setQuantityPinned(true);
+			}
+			if (array_key_exists('quantityPinned', $patch) && $patch['quantityPinned'] !== null) {
+				$item->setQuantityPinned((bool)$patch['quantityPinned']);
+			}
+		}
+
+		// Stock raised by hand from empty is new stock, so it gets a fresh date.
+		// A raise onto stock already there may be a recount, so the date is
+		// left for the member to renew.
+		if ($wasEmpty && $item->getListId() === $sourceListId
+			&& !array_key_exists('expiresAt', $patch) && !array_key_exists('shelfLifeDays', $patch)
+			&& $this->getList($sourceListId, includeDeleted: true)->getKind() === Checklist::KIND_INVENTORY
+			&& !StockRules::isEmpty(self::stockOf($item))) {
+			$item->setExpiresAt(StockRules::renewedExpiry($item->getShelfLifeDays(), StockRules::today()));
+		}
 
 		$item->setUpdatedAt(time());
 		$this->itemMapper->update($item);
+		$list = $this->getList($item->getListId(), includeDeleted: true);
+		if ($item->getListId() !== $sourceListId) {
+			$this->stockLinks->onItemMoved($item, $this->getList($sourceListId, includeDeleted: true), $list);
+		}
+		if ($renamed || $autoLinkOn) {
+			$this->onItemSaved($item, $list);
+		}
 		if (array_key_exists('storeIds', $patch)) {
 			$this->itemStoreMapper->setStoresForItem((int)$item->getId(), $this->toIntList($patch['storeIds']));
 		}
@@ -836,25 +939,44 @@ class ChecklistService {
 	}
 
 	/**
-	 * Move a batch of items to a target list. Missing items are skipped.
-	 * Target-list existence is validated once. Returns the updated items in the
-	 * same order as the input ids (skipping any that no longer exist).
+	 * Move a batch of items to a target list of any kind. Missing items are
+	 * skipped. Items crossing kinds follow {@see crossItemInto()}; within a kind
+	 * only the list changes. Returns the updated items in the same order as
+	 * the input ids (skipping any that no longer exist).
 	 *
 	 * @param list<int> $itemIds
 	 * @return ChecklistItem[]
 	 */
 	public function moveItems(array $itemIds, int $targetListId): array {
-		// Validate the destination once; per-item updates then only touch list_id.
-		$this->getList($targetListId);
-		$updated = [];
-		foreach ($itemIds as $itemId) {
-			try {
-				$updated[] = $this->updateItem((int)$itemId, ['listId' => $targetListId]);
-			} catch (NotFoundException) {
-				continue;
+		$target = $this->getList($targetListId);
+		$now = time();
+		return $this->atomic(function () use ($itemIds, $target, $targetListId, $now): array {
+			$updated = [];
+			$sourceLists = [];
+			foreach ($itemIds as $itemId) {
+				try {
+					$item = $this->getItem((int)$itemId);
+				} catch (NotFoundException) {
+					continue;
+				}
+				$wasDone = $item->getDone();
+				$sourceList = $sourceLists[$item->getListId()] ??= $this->getList($item->getListId(), includeDeleted: true);
+				if ($sourceList->getKind() !== $target->getKind()) {
+					$this->crossItemInto($item, $item, $sourceList, $target, keepDone: true, now: $now);
+				}
+				$item->setListId($targetListId);
+				$item->setUpdatedAt($now);
+				$this->itemMapper->update($item);
+				if ($wasDone && !$item->getDone()) {
+					$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
+				}
+				if ($sourceList->getId() !== $target->getId()) {
+					$this->stockLinks->onItemMoved($item, $sourceList, $target);
+				}
+				$updated[] = $item;
 			}
-		}
-		return $updated;
+			return $updated;
+		}, $this->db);
 	}
 
 	/**
@@ -949,39 +1071,99 @@ class ChecklistService {
 
 	public function toggleItem(int $itemId, string $uid, ?int $now = null): ChecklistItem {
 		$item = $this->getItem($itemId);
+		$list = $this->getList($item->getListId(), includeDeleted: true);
+		if (!$list->isChecklist()) {
+			throw new \InvalidArgumentException('Only checklist items can be checked off');
+		}
 		$now ??= time();
 
 		if (!$item->getDone()) {
-			$item->setDone(true);
-			$item->setDoneAt($now);
-			$item->setDoneBy($uid);
-			// "Once" items are soft-deleted from the list when marked done. The
-			// row stays in the DB (deleted_at set) so it can be surfaced in a
-			// trash view, while default queries hide it.
-			if ($item->getDeleteOnDone()) {
-				$item->setDeletedAt($now);
-				$item->setUpdatedAt($now);
-				$this->itemMapper->update($item);
-				$this->fieldReminders->onItemDeleted((int)$item->getId());
-				$this->stampListCompletion((int)$item->getListId(), $now);
-				return $item;
-			}
-			if ($item->getRrule() !== null) {
-				$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
-			}
-		} else {
-			$item->setDone(false);
-			$item->setDoneAt(null);
-			$item->setDoneBy(null);
-			$item->setNextDueAt(null);
+			// Linking first, while the row still reads as open, so a tick that
+			// pairs an unlinked row counts as that item's purchase.
+			$this->stockLinks->onChecklistRowSaved($item, $list);
+			return $this->markDone($item, $uid, $now);
+		}
+		$this->markUndone($item, $now);
+		$item->setMemberReopened(true);
+		$this->itemMapper->update($item);
+		$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
+		return $item;
+	}
+
+	/**
+	 * Mark a checklist item done because nothing linked to it needs restocking
+	 * any more. It goes through the same path as a member's tick ("Once" items
+	 * go to the trash, recurring ones schedule their reopen), but nobody is
+	 * credited with it.
+	 */
+	public function systemDone(ChecklistItem $item, ?int $now = null): ChecklistItem {
+		return $this->markDone($item, null, $now ?? time());
+	}
+
+	/**
+	 * Put a checklist item back in play for a restock sync: out of the archive
+	 * and unchecked. Unlike a member's uncheck, stock recovering can still tick
+	 * it off again.
+	 */
+	public function reviveForRestock(ChecklistItem $item, ?int $now = null): ChecklistItem {
+		$now ??= time();
+		$wasDone = $item->getDone();
+		$item->setArchivedAt(null);
+		if ($wasDone) {
+			$this->markUndone($item, $now);
 		}
 		$item->setUpdatedAt($now);
 		$this->itemMapper->update($item);
-		$this->fieldReminders->onItemDoneChanged((int)$item->getId(), $item->getDone());
-		if ($item->getDone()) {
-			$this->stampListCompletion((int)$item->getListId(), $now);
+		if ($wasDone) {
+			$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
 		}
 		return $item;
+	}
+
+	/**
+	 * `$uid` is who ticked it, or null when nobody did. Being done ends a
+	 * quantity pinned by hand and a member's reopen. A tick that restocks
+	 * records it afterwards, replacing any earlier record.
+	 */
+	private function markDone(ChecklistItem $item, ?string $uid, int $now): ChecklistItem {
+		$item->setDone(true);
+		$item->setDoneAt($now);
+		$item->setDoneBy($uid);
+		$item->setQuantityPinned(false);
+		$item->setMemberReopened(false);
+		$item->setRestock(null);
+		$item->setUpdatedAt($now);
+		// "Once" items are soft-deleted from the list when marked done. The
+		// row stays in the DB (deleted_at set) so it can be surfaced in a
+		// trash view, while default queries hide it.
+		if ($item->getDeleteOnDone()) {
+			$item->setDeletedAt($now);
+			$this->itemMapper->update($item);
+			$this->fieldReminders->onItemDeleted((int)$item->getId());
+			$this->stampListCompletion((int)$item->getListId(), $now);
+			return $item;
+		}
+		if ($item->getRrule() !== null) {
+			$item->setNextDueAt($this->computeNextDueAt($item, $now)?->getTimestamp());
+		}
+		$this->itemMapper->update($item);
+		$this->fieldReminders->onItemDoneChanged((int)$item->getId(), true);
+		$this->stampListCompletion((int)$item->getListId(), $now);
+		return $item;
+	}
+
+	/**
+	 * Unchecking drops what the tick restocked. Only a member's uncheck takes
+	 * it back out of stock ({@see RestockService}), and it reads the record
+	 * before calling here.
+	 */
+	private function markUndone(ChecklistItem $item, int $now): void {
+		$item->setDone(false);
+		$item->setDoneAt(null);
+		$item->setDoneBy(null);
+		$item->setNextDueAt(null);
+		$item->setRestock(null);
+		$item->setUpdatedAt($now);
 	}
 
 	/**
@@ -1030,11 +1212,8 @@ class ChecklistService {
 				if (!$item->getDone()) {
 					continue;
 				}
-				$item->setDone(false);
-				$item->setDoneAt(null);
-				$item->setDoneBy(null);
-				$item->setNextDueAt(null);
-				$item->setUpdatedAt($now);
+				$this->markUndone($item, $now);
+				$item->setMemberReopened(true);
 				$this->itemMapper->update($item);
 				$this->fieldReminders->onItemDoneChanged((int)$item->getId(), false);
 				$changed[] = $item;
@@ -1163,6 +1342,8 @@ class ChecklistService {
 			$item->setDone(false);
 			$item->setDoneAt(null);
 			$item->setDoneBy(null);
+			$item->setMemberReopened(true);
+			$item->setRestock(null);
 			if ($item->getRepeatFromCompletion()) {
 				// Completion-based: next interval starts when the user checks
 				// the item off again, so clear the schedule for now.
@@ -1222,7 +1403,7 @@ class ChecklistService {
 		?string $imageUploadedBy,
 	): ChecklistItem {
 		$source = $this->getItem($itemId);
-		$this->getList($targetListId);
+		$target = $this->getList($targetListId);
 
 		$now = time();
 		$copy = new ChecklistItem();
@@ -1231,23 +1412,14 @@ class ChecklistService {
 		$copy->setDescription($source->getDescription());
 		$copy->setCategoryId($source->getCategoryId());
 		$copy->setQuantity($source->getQuantity());
-		$copy->setDone(false);
-		$copy->setDoneAt(null);
-		$copy->setDoneBy(null);
-		$copy->setRrule($source->getRrule());
-		$copy->setRepeatFromCompletion($source->getRepeatFromCompletion());
-		$copy->setDeleteOnDone($source->getDeleteOnDone());
-		if ($source->getRrule() !== null && !$source->getRepeatFromCompletion()) {
-			$copy->setNextDueAt($this->computeNextDueAt($copy, $now)?->getTimestamp());
-		} else {
-			$copy->setNextDueAt(null);
-		}
 		$copy->setImageFileId($imageFileId);
 		$copy->setImageUploadedBy($imageUploadedBy);
 		$copy->setAddedBy($addedBy);
 		$copy->setSortOrder(0);
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
+		$sourceList = $this->getList($source->getListId(), includeDeleted: true);
+		$this->crossItemInto($copy, $source, $sourceList, $target, keepDone: false, now: $now);
 		$saved = $this->itemMapper->insert($copy);
 		$this->itemStoreMapper->setStoresForItem(
 			(int)$saved->getId(),
@@ -1265,7 +1437,154 @@ class ChecklistService {
 			(int)$saved->getId(),
 			$this->fieldValueMapper->findForItem((int)$source->getId()),
 		);
+		$this->onItemSaved($saved, $target);
 		return $saved;
+	}
+
+	/**
+	 * Set the fields that differ by kind on an item landing on `$target`, from
+	 * the item it comes from. Crossing kinds keeps what fits, drops what does
+	 * not, and defaults what is new:
+	 *
+	 * - Done state survives only checklist to checklist, and only when
+	 *   `$keepDone`; anything else lands unchecked.
+	 * - Recurrence and delete-on-done carry into checklists and templates, and
+	 *   drop into inventories. Only a checklist schedules the next occurrence.
+	 * - Stock follows {@see crossStockInto()}.
+	 *
+	 * `$item` may be `$source` itself (a move). Its created time must be set,
+	 * since a fixed schedule counts from it.
+	 */
+	private function crossItemInto(ChecklistItem $item, ChecklistItem $source, Checklist $sourceList, Checklist $target, bool $keepDone, int $now): void {
+		$done = $keepDone && $source->getDone() && $sourceList->isChecklist() && $target->isChecklist();
+
+		$this->crossStockInto($item, $source, $sourceList, $target);
+
+		if ($target->keepsRecurrence()) {
+			$item->setRrule($source->getRrule());
+			$item->setRepeatFromCompletion($source->getRepeatFromCompletion());
+			$item->setDeleteOnDone($source->getDeleteOnDone());
+		} else {
+			$item->setRrule(null);
+			$item->setRepeatFromCompletion(false);
+			$item->setDeleteOnDone(false);
+		}
+
+		if ($done) {
+			// Same rule and same completion time as the source, so its scheduled
+			// reopen carries over unchanged.
+			$item->setDone(true);
+			$item->setDoneAt($source->getDoneAt());
+			$item->setDoneBy($source->getDoneBy());
+			$item->setNextDueAt($source->getNextDueAt());
+			return;
+		}
+		$item->setDone(false);
+		$item->setDoneAt(null);
+		$item->setDoneBy(null);
+		// An unchecked item on a fixed schedule gets its next occurrence now,
+		// the same way a newly added one does.
+		$item->setNextDueAt(
+			$target->isChecklist() && $item->getRrule() !== null && !$item->getRepeatFromCompletion()
+				? $this->computeNextDueAt($item, $now)?->getTimestamp()
+				: null,
+		);
+	}
+
+	/**
+	 * Set an item's quantity and stock fields for the kind it lands on:
+	 *
+	 * - Onto an inventory from another kind, it starts full
+	 *   ({@see StockRules::startFull()}), in the template item's stock mode or
+	 *   else the inventory's default one.
+	 * - Off an inventory onto a checklist, the quantity is what the checklist
+	 *   row should ask for ({@see StockRules::checklistQuantity()}).
+	 * - Off an inventory onto a template, the quantity is the full amount, and
+	 *   the template keeps the mode, target and reorder point.
+	 * - A template keeps its stock fields onto a template; a checklist has none.
+	 * - The shelf life carries onto templates and inventories. The date stays
+	 *   only inventory to inventory; arriving from a template, the item expires
+	 *   a shelf life from today.
+	 *
+	 * `$item` may be `$source` itself, so the source is read before writing.
+	 */
+	private function crossStockInto(ChecklistItem $item, ChecklistItem $source, Checklist $sourceList, Checklist $target): void {
+		$from = $sourceList->getKind();
+		$to = $target->getKind();
+		$shelfLife = $from !== Checklist::KIND_CHECKLIST && $to !== Checklist::KIND_CHECKLIST ? $source->getShelfLifeDays() : null;
+		$expiresAt = null;
+		if ($to === Checklist::KIND_INVENTORY) {
+			$expiresAt = $from === Checklist::KIND_INVENTORY
+				? $source->getExpiresAt()
+				: ($shelfLife !== null ? StockRules::addDays(StockRules::today(), $shelfLife) : null);
+		}
+		$stock = [
+			'stockMode' => $source->getStockMode(),
+			'stockLevel' => $source->getStockLevel(),
+			'quantity' => $source->getQuantity(),
+			'target' => $source->getTarget(),
+			'reorderPoint' => $source->getReorderPoint(),
+		];
+		if ($from === Checklist::KIND_INVENTORY) {
+			$stock['stockMode'] = $stock['stockMode'] === StockRules::MODE_LEVEL ? StockRules::MODE_LEVEL : StockRules::MODE_COUNT;
+		}
+
+		if ($to === Checklist::KIND_INVENTORY) {
+			if ($from !== Checklist::KIND_INVENTORY) {
+				$isTemplate = $from === Checklist::KIND_TEMPLATE;
+				$stock = StockRules::startFull(
+					($isTemplate ? $stock['stockMode'] : null) ?? $this->defaultStockMode($target),
+					$stock['quantity'],
+					$isTemplate ? $stock['target'] : null,
+					$isTemplate ? $stock['reorderPoint'] : null,
+				);
+			}
+		} elseif ($to === Checklist::KIND_TEMPLATE) {
+			if ($from === Checklist::KIND_INVENTORY) {
+				$stock['quantity'] = StockRules::fullAmount($stock);
+			} elseif ($from !== Checklist::KIND_TEMPLATE) {
+				$stock['stockMode'] = $stock['target'] = $stock['reorderPoint'] = null;
+			}
+			$stock['stockLevel'] = null;
+		} else {
+			if ($from === Checklist::KIND_INVENTORY) {
+				$stock['quantity'] = StockRules::checklistQuantity($stock);
+			}
+			$stock['stockMode'] = $stock['stockLevel'] = $stock['target'] = $stock['reorderPoint'] = null;
+		}
+
+		$item->setQuantity($stock['quantity']);
+		$item->setStockMode($stock['stockMode']);
+		$item->setStockLevel($stock['stockLevel']);
+		$item->setTarget($stock['target']);
+		$item->setReorderPoint($stock['reorderPoint']);
+		$item->setShelfLifeDays($shelfLife);
+		$item->setExpiresAt($expiresAt);
+	}
+
+	/**
+	 * The stock mode the inventory's item defaults start new items in; count
+	 * when it has none.
+	 *
+	 * @return 'count'|'level'
+	 */
+	public function defaultStockMode(Checklist $inventory): string {
+		$entry = ItemDefaults::decode($inventory->getItemDefaults())[ItemDefaults::KEY_STOCK_MODE] ?? null;
+		$mode = $entry !== null && $entry['mode'] !== ItemDefaults::MODE_NONE ? ($entry['value'] ?? null) : null;
+		return $mode === StockRules::MODE_LEVEL ? StockRules::MODE_LEVEL : StockRules::MODE_COUNT;
+	}
+
+	/**
+	 * A single item's list changes only within its kind, since each kind's
+	 * resource only ever serves its own items. Crossing kinds goes through
+	 * {@see moveItems()}.
+	 */
+	private function assertSameKind(int $sourceListId, int $targetListId): void {
+		$target = $this->getList($targetListId);
+		$source = $this->getList($sourceListId, includeDeleted: true);
+		if ($source->getKind() !== $target->getKind()) {
+			throw new \InvalidArgumentException('Items can only move or copy to a list of the same kind');
+		}
 	}
 
 	public function deleteItem(int $itemId): void {
@@ -1368,6 +1687,144 @@ class ChecklistService {
 			} catch (NotFoundException) {
 				continue;
 			}
+		}
+	}
+
+	/**
+	 * Write the stock fields present in `$stock` onto an inventory item. On an
+	 * existing item a change of stock mode first converts its values, and the
+	 * fields sent alongside it win over the conversion; so does a quantity
+	 * sent in the same update (`$keepQuantity`).
+	 *
+	 * @param array<array-key, mixed> $stock
+	 */
+	/**
+	 * @return array{stockMode: ?string, stockLevel: ?string, quantity: ?string}
+	 */
+	private static function stockOf(ChecklistItem $item): array {
+		return [
+			'stockMode' => $item->getStockMode(),
+			'stockLevel' => $item->getStockLevel(),
+			'quantity' => $item->getQuantity(),
+		];
+	}
+
+	private function applyStock(ChecklistItem $item, array $stock, bool $keepQuantity = false): void {
+		$isNew = $item->getId() === null;
+		if (array_key_exists('stockMode', $stock)) {
+			$mode = $stock['stockMode'];
+			if (!is_string($mode) || !in_array($mode, StockRules::MODES, true)) {
+				throw new \InvalidArgumentException('Stock mode must be count or level');
+			}
+			$current = $item->getStockMode() === StockRules::MODE_LEVEL ? StockRules::MODE_LEVEL : StockRules::MODE_COUNT;
+			if (!$isNew && $mode !== $current) {
+				$converted = StockRules::convert([
+					'stockMode' => $current,
+					'stockLevel' => $item->getStockLevel(),
+					'quantity' => $item->getQuantity(),
+					'target' => $item->getTarget(),
+					'reorderPoint' => $item->getReorderPoint(),
+				], $mode);
+				$item->setStockLevel($converted['stockLevel']);
+				$item->setTarget($converted['target']);
+				if (!$keepQuantity) {
+					$item->setQuantity($converted['quantity']);
+				}
+			}
+			$item->setStockMode($mode);
+		}
+		if (array_key_exists('stockLevel', $stock)) {
+			$level = $stock['stockLevel'];
+			if ($level !== null && (!is_string($level) || !in_array($level, StockRules::LEVELS, true))) {
+				throw new \InvalidArgumentException('Stock level must be full, low or out');
+			}
+			$item->setStockLevel($level);
+		}
+		$this->applyStockTexts($item, $stock);
+		if ($item->getStockMode() === StockRules::MODE_LEVEL && $item->getStockLevel() === null) {
+			$item->setStockLevel(StockRules::LEVEL_FULL);
+		}
+	}
+
+	/**
+	 * A template keeps how its items are stocked, never how much is on hand, so
+	 * a mode switch converts nothing. An empty mode leaves the choice to the
+	 * inventory the item is drawn into.
+	 *
+	 * @param array<array-key, mixed> $stock
+	 */
+	private function applyTemplateStock(ChecklistItem $item, array $stock): void {
+		if (array_key_exists('stockMode', $stock)) {
+			$mode = $this->strOrNull($stock['stockMode']);
+			if ($mode !== null && !in_array($mode, StockRules::MODES, true)) {
+				throw new \InvalidArgumentException('Stock mode must be count or level');
+			}
+			$item->setStockMode($mode);
+		}
+		$this->applyStockTexts($item, $stock);
+		if (array_key_exists('shelfLifeDays', $stock)) {
+			$item->setShelfLifeDays($this->shelfLife($stock['shelfLifeDays']));
+		}
+	}
+
+	/**
+	 * Write the expiry fields present in `$expiry` onto an inventory item.
+	 *
+	 * - A shelf life of N days sets it and the date to today + N.
+	 * - A date sets it; a date after today also sets the shelf life to match,
+	 *   so the next restock or copy reuses it.
+	 * - Sent together, each is taken as sent.
+	 * - 0 or null clears either one.
+	 *
+	 * @param array<array-key, mixed> $expiry
+	 */
+	private function applyExpiry(ChecklistItem $item, array $expiry): void {
+		$hasShelfLife = array_key_exists('shelfLifeDays', $expiry);
+		$hasDate = array_key_exists('expiresAt', $expiry);
+		$days = $hasShelfLife ? $this->shelfLife($expiry['shelfLifeDays']) : null;
+		$date = $hasDate ? $this->intOrNull($expiry['expiresAt']) : null;
+		$date = $date !== null && $date > 0 ? $date : null;
+		$today = StockRules::today();
+
+		if ($hasShelfLife) {
+			$item->setShelfLifeDays($days);
+			if (!$hasDate && $days !== null) {
+				$item->setExpiresAt(StockRules::addDays($today, $days));
+			}
+		}
+		if ($hasDate) {
+			$item->setExpiresAt($date);
+			$daysLeft = $date !== null ? StockRules::daysUntil($date, $today) : 0;
+			if (!$hasShelfLife && $daysLeft > 0) {
+				$item->setShelfLifeDays(min($daysLeft, StockRules::MAX_SHELF_LIFE_DAYS));
+			}
+		}
+	}
+
+	private function shelfLife(mixed $value): ?int {
+		$days = $this->intOrNull($value);
+		if ($days === null || $days <= 0) {
+			return null;
+		}
+		if ($days > StockRules::MAX_SHELF_LIFE_DAYS) {
+			throw new \InvalidArgumentException(sprintf('Shelf life cannot be longer than %d days', StockRules::MAX_SHELF_LIFE_DAYS));
+		}
+		return $days;
+	}
+
+	/**
+	 * @param array<array-key, mixed> $stock
+	 */
+	private function applyStockTexts(ChecklistItem $item, array $stock): void {
+		foreach (['target' => 'setTarget', 'reorderPoint' => 'setReorderPoint'] as $field => $setter) {
+			if (!array_key_exists($field, $stock)) {
+				continue;
+			}
+			$value = $this->strOrNull($stock[$field]);
+			if ($value !== null && mb_strlen($value) > 64) {
+				throw new \InvalidArgumentException('Stock values cannot be longer than 64 characters');
+			}
+			$item->$setter($value);
 		}
 	}
 

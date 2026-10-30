@@ -204,4 +204,34 @@ class NotificationServiceTest extends TestCase {
 
 		$this->assertFalse($this->svc->isNotificationEnabled('bob', 1, 'notify_photo'));
 	}
+
+	public function testAStockSummaryGoesToMembersWithThePrefOnAndOpensWhatNeedsRestocking(): void {
+		$this->houseService->method('get')->willReturn($this->makeHouse());
+		$this->prefs->method('getNotificationPref')->willReturnCallback(
+			static fn (string $uid, int $houseId, string $key): bool => !($uid === 'bob' && $key === NotificationService::PREF_NOTIFY_STOCK_SUMMARY),
+		);
+		$inventory = new \OCA\Pantry\Db\Checklist();
+		$inventory->setId(20);
+		$inventory->setHouseId(1);
+		$inventory->setName('Kitchen');
+
+		$users = [];
+		$notification = $this->createMock(INotification::class);
+		foreach (['setApp', 'setDateTime', 'setObject', 'setSubject', 'setIcon'] as $method) {
+			$notification->method($method)->willReturnSelf();
+		}
+		$notification->method('setUser')->willReturnCallback(function (string $uid) use (&$users, $notification) {
+			$users[] = $uid;
+			return $notification;
+		});
+		$notification->expects($this->once())->method('setLink')
+			->with('https://example.com/apps/pantry/houses/1/inventories/20?stock=restock')
+			->willReturnSelf();
+		$this->notifManager->method('createNotification')->willReturn($notification);
+		$this->notifManager->expects($this->once())->method('notify');
+
+		$this->svc->notifyStockSummary($inventory, ['low' => 1, 'out' => 0, 'expiring' => 0, 'expired' => 0], ['alice', 'bob']);
+
+		$this->assertSame(['alice', 'alice'], $users);
+	}
 }

@@ -115,6 +115,39 @@ class Provider implements IProvider {
 			case ActivityPublisher::SUBJECT_ITEM_DONE:
 				$item = $this->highlight('item', (string)($params['itemName'] ?? ''));
 				$list = $this->highlight((string)($params['listId'] ?? ''), (string)($params['listName'] ?? ''));
+				[$restocked, $replaced] = $this->restockedText($params, $l);
+				if ($restocked !== null || $replaced !== null) {
+					$restock = $this->highlight('restock', $restocked ?? '');
+					$replace = $this->highlight('replace', $replaced ?? '');
+					if ($replaced === null) {
+						return [
+							$isSelf
+								// TRANSLATORS: {restock} lists the inventories the checked-off item restocked, e.g. "Kitchen +4, Garage to Full".
+								? $l->t('You completed {item} on {list} in {house}, restocked {restock}')
+								// TRANSLATORS: {restock} lists the inventories the checked-off item restocked, e.g. "Kitchen +4, Garage to Full".
+								: $l->t('{author} completed {item} on {list} in {house}, restocked {restock}'),
+							$isSelf ? compact('item', 'list', 'house', 'restock') : compact('author', 'item', 'list', 'house', 'restock'),
+						];
+					}
+					if ($restocked === null) {
+						return [
+							$isSelf
+								// TRANSLATORS: {replace} lists the inventories whose expiring stock the checked-off item replaced, e.g. "Kitchen ×2, Garage, Full".
+								? $l->t('You completed {item} on {list} in {house}, replaced {replace}')
+								// TRANSLATORS: {replace} lists the inventories whose expiring stock the checked-off item replaced, e.g. "Kitchen ×2, Garage, Full".
+								: $l->t('{author} completed {item} on {list} in {house}, replaced {replace}'),
+							$isSelf ? compact('item', 'list', 'house', 'replace') : compact('author', 'item', 'list', 'house', 'replace'),
+						];
+					}
+					return [
+						$isSelf
+							// TRANSLATORS: {restock} lists the inventories the checked-off item restocked ("Garage +1"), {replace} those whose expiring stock it replaced ("Kitchen ×2").
+							? $l->t('You completed {item} on {list} in {house}, restocked {restock}, replaced {replace}')
+							// TRANSLATORS: {restock} lists the inventories the checked-off item restocked ("Garage +1"), {replace} those whose expiring stock it replaced ("Kitchen ×2").
+							: $l->t('{author} completed {item} on {list} in {house}, restocked {restock}, replaced {replace}'),
+						$isSelf ? compact('item', 'list', 'house', 'restock', 'replace') : compact('author', 'item', 'list', 'house', 'restock', 'replace'),
+					];
+				}
 				return [
 					$isSelf
 						? $l->t('You completed {item} on {list} in {house}')
@@ -405,6 +438,11 @@ class Provider implements IProvider {
 	 * @return array<string, string>
 	 */
 	private function userParam(string $uid): array {
+		// Writes nobody made, such as a restock sync after a setting changed,
+		// are the app's own.
+		if ($uid === '') {
+			return $this->highlight('pantry', 'Pantry');
+		}
 		return [
 			'type' => 'user',
 			'id' => $uid,
@@ -447,6 +485,47 @@ class Provider implements IProvider {
 	/** Whether an item batch renders as an inline list of names rather than a count. */
 	private function itemsAsNames(array $names, int $count): bool {
 		return $count <= 3 && !empty($names);
+	}
+
+	/**
+	 * What a tick put back into stock, by inventory: what it added ("Kitchen
+	 * +4, Garage to Full") and what it replaced ("Kitchen ×2, Garage, Full"),
+	 * each null when there is none.
+	 *
+	 * @param array<array-key, mixed> $params
+	 * @return array{0: string|null, 1: string|null}
+	 */
+	private function restockedText(array $params, IL10N $l): array {
+		$restocked = [];
+		$replaced = [];
+		foreach ((array)($params['restocked'] ?? []) as $entry) {
+			if (!is_array($entry)) {
+				continue;
+			}
+			$inventory = (string)($entry['listName'] ?? '');
+			$added = isset($entry['added']) ? (string)$entry['added'] : null;
+			$level = ($entry['level'] ?? $added === null) === true;
+			if ($added === null && !$level) {
+				continue;
+			}
+			if (($entry['replaced'] ?? false) === true) {
+				$replaced[] = $level
+					// TRANSLATORS: One inventory whose expiring item a checked-off item replaced, back to the Full stock level, e.g. "Kitchen, Full".
+					? $l->t('%s, Full', [$inventory])
+					// TRANSLATORS: One inventory whose expiring item a checked-off item replaced, and the amount now on hand, e.g. "Kitchen ×2".
+					: $l->t('%1$s ×%2$s', [$inventory, $added]);
+				continue;
+			}
+			$restocked[] = $level
+				// TRANSLATORS: One inventory whose item a checked-off item restocked to the Full stock level, e.g. "Kitchen to Full".
+				? $l->t('%s to Full', [$inventory])
+				// TRANSLATORS: One inventory a checked-off item restocked and how much it added, e.g. "Kitchen +4".
+				: $l->t('%1$s +%2$s', [$inventory, $added]);
+		}
+		return [
+			$restocked !== [] ? implode(', ', $restocked) : null,
+			$replaced !== [] ? implode(', ', $replaced) : null,
+		];
 	}
 
 	/**

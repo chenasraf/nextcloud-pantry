@@ -562,6 +562,54 @@ class PrefsService {
 		return $normalized;
 	}
 
+	// ----- Filling drawn template items from item defaults -----
+
+	private const KEY_FILL_FROM_ITEM_DEFAULTS = 'fill_from_item_defaults';
+	public const FILL_FROM_ITEM_DEFAULTS_LIST = 'list';
+	public const FILL_FROM_ITEM_DEFAULTS_ALWAYS = 'always';
+	public const FILL_FROM_ITEM_DEFAULTS_NEVER = 'never';
+	public const FILL_FROM_ITEM_DEFAULTS_OPTIONS = [
+		self::FILL_FROM_ITEM_DEFAULTS_LIST,
+		self::FILL_FROM_ITEM_DEFAULTS_ALWAYS,
+		self::FILL_FROM_ITEM_DEFAULTS_NEVER,
+	];
+
+	/**
+	 * @return 'list'|'always'|'never'
+	 */
+	public function getFillFromItemDefaults(string $uid, int $houseId): string {
+		$value = $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_FILL_FROM_ITEM_DEFAULTS . '_' . $houseId,
+			self::FILL_FROM_ITEM_DEFAULTS_LIST,
+		);
+		return match ($value) {
+			self::FILL_FROM_ITEM_DEFAULTS_ALWAYS => self::FILL_FROM_ITEM_DEFAULTS_ALWAYS,
+			self::FILL_FROM_ITEM_DEFAULTS_NEVER => self::FILL_FROM_ITEM_DEFAULTS_NEVER,
+			default => self::FILL_FROM_ITEM_DEFAULTS_LIST,
+		};
+	}
+
+	public function setFillFromItemDefaults(string $uid, int $houseId, string $value): string {
+		$normalized = in_array($value, self::FILL_FROM_ITEM_DEFAULTS_OPTIONS, true) ? $value : self::FILL_FROM_ITEM_DEFAULTS_LIST;
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_FILL_FROM_ITEM_DEFAULTS . '_' . $houseId, $normalized);
+		return $normalized;
+	}
+
+	/**
+	 * Whether a template item this member draws into the list fills its empty
+	 * fields from the list's item defaults: the member's Always or Never wins,
+	 * Follow list leaves it to the list.
+	 */
+	public function fillsFromItemDefaults(string $uid, int $houseId, bool $listFills): bool {
+		return match ($this->getFillFromItemDefaults($uid, $houseId)) {
+			self::FILL_FROM_ITEM_DEFAULTS_ALWAYS => true,
+			self::FILL_FROM_ITEM_DEFAULTS_NEVER => false,
+			default => $listFills,
+		};
+	}
+
 	// ----- Notification preferences -----
 
 	public function getNotificationPref(string $uid, int $houseId, string $prefKey): bool {
@@ -594,6 +642,7 @@ class PrefsService {
 			'notifyItemAdd' => $this->getNotificationPref($uid, $houseId, 'notify_item_add'),
 			'notifyItemRecur' => $this->getNotificationPref($uid, $houseId, 'notify_item_recur'),
 			'notifyItemDone' => $this->getNotificationPref($uid, $houseId, 'notify_item_done'),
+			'notifyStockSummary' => $this->getNotificationPref($uid, $houseId, 'notify_stock_summary'),
 		];
 	}
 
@@ -615,6 +664,7 @@ class PrefsService {
 			'storeSort' => $this->getStoreSort($uid, $houseId),
 			'showAddedBy' => $this->getShowAddedBy($uid, $houseId),
 			'lastCurrency' => $this->getLastCurrency($uid, $houseId),
+			'fillFromItemDefaults' => $this->getFillFromItemDefaults($uid, $houseId),
 			...$this->getNotificationPrefs($uid, $houseId),
 		];
 	}
@@ -656,6 +706,9 @@ class PrefsService {
 		if (array_key_exists('lastCurrency', $patch) && is_string($patch['lastCurrency'])) {
 			$this->setLastCurrency($uid, $houseId, $patch['lastCurrency']);
 		}
+		if (array_key_exists('fillFromItemDefaults', $patch) && is_string($patch['fillFromItemDefaults'])) {
+			$this->setFillFromItemDefaults($uid, $houseId, $patch['fillFromItemDefaults']);
+		}
 		// Notification prefs
 		$notifKeys = [
 			'notifyPhoto' => 'notify_photo',
@@ -664,6 +717,7 @@ class PrefsService {
 			'notifyItemAdd' => 'notify_item_add',
 			'notifyItemRecur' => 'notify_item_recur',
 			'notifyItemDone' => 'notify_item_done',
+			'notifyStockSummary' => 'notify_stock_summary',
 		];
 		foreach ($notifKeys as $camel => $dbKey) {
 			if (array_key_exists($camel, $patch) && is_bool($patch[$camel])) {

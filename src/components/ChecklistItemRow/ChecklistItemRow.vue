@@ -33,7 +33,11 @@
       <DragVerticalIcon :size="20" />
     </span>
     <div class="checklist-row__body">
-      <div v-if="!suggestion && !selectionMode" class="checklist-row__check" @click.stop>
+      <div
+        v-if="isChecklist && !suggestion && !selectionMode"
+        class="checklist-row__check"
+        @click.stop
+      >
         <NcCheckboxRadioSwitch
           :model-value="item.done"
           :disabled="!canCheck"
@@ -41,6 +45,12 @@
           @update:model-value="$emit('toggle', item.id)"
         />
       </div>
+      <StockStatusIcon
+        v-if="stock && !suggestion && !selectionMode"
+        class="checklist-row__stock-status"
+        :tone="stock.tone"
+        :label="stock.iconLabel"
+      />
       <button
         v-if="item.imageFileId"
         type="button"
@@ -52,9 +62,41 @@
       </button>
       <div class="checklist-row__content">
         <span class="checklist-row__label">
+          <span
+            v-if="restocksText"
+            class="checklist-row__restocks"
+            :title="restocksText"
+            :aria-label="restocksText"
+            role="img"
+            data-testid="restocks-marker"
+          >
+            <PackageVariantClosedIcon :size="16" />
+          </span>
           <span class="checklist-row__name">{{ item.name }}</span>
         </span>
+        <span
+          v-if="systemDone"
+          class="checklist-row__no-longer-needed"
+          data-testid="no-longer-needed"
+        >
+          {{ strings.noLongerNeeded }}
+        </span>
+        <span v-if="restockLine" class="checklist-row__restock-line" data-testid="restock-line">
+          {{ restockLine }}
+        </span>
         <div class="checklist-row__meta">
+          <PantryChip
+            v-if="suggestion && suggestionTemplates?.length"
+            class="checklist-row__archived"
+            size="sm"
+            :interactive="false"
+            :aria-label="strings.fromTemplates(suggestionTemplates.join(', '))"
+          >
+            <template #icon>
+              <ClipboardTextMultipleIcon :size="14" />
+            </template>
+            {{ suggestionTemplates.join(', ') }}
+          </PantryChip>
           <PantryChip
             v-if="suggestion && item.archivedAt"
             class="checklist-row__archived"
@@ -68,13 +110,124 @@
             {{ strings.archived }}
           </PantryChip>
           <PantryChip
-            v-if="item.quantity"
+            v-if="pinned"
+            class="checklist-row__pinned"
+            variant="primary"
+            size="sm"
+            :interactive="canEditItem"
+            :title="strings.pinnedTooltip"
+            :aria-label="pinnedLabel"
+            data-testid="pinned-quantity"
+            @click.stop="canEditItem && $emit('unpin', item)"
+          >
+            <template #icon>
+              <PinIcon :size="14" />
+            </template>
+            {{ pinnedText }}
+            <template v-if="canEditItem" #trailing>
+              <CloseIcon :size="14" />
+            </template>
+          </PantryChip>
+          <PantryChip
+            v-else-if="item.quantity && !stock"
             class="checklist-row__quantity"
             size="sm"
             :interactive="false"
           >
             &times; {{ item.quantity }}
           </PantryChip>
+          <template v-if="stock">
+            <PantryChip
+              v-if="narrow && stock.amountText"
+              class="checklist-row__stock-amount"
+              size="sm"
+              :interactive="false"
+            >
+              {{ stock.amountText }}
+            </PantryChip>
+            <PantryChip
+              v-if="stock.stockStatus === 'low' || stock.stockStatus === 'out'"
+              class="checklist-row__stock-chip"
+              :class="`checklist-row__stock-chip--${stock.stockTone}`"
+              size="sm"
+              :interactive="false"
+            >
+              {{ stock.statusText }}
+            </PantryChip>
+            <PantryChip
+              v-if="stock.expiryText"
+              class="checklist-row__stock-chip checklist-row__expiry-chip"
+              :class="`checklist-row__stock-chip--${stock.expiryTone}`"
+              size="sm"
+              :interactive="false"
+            >
+              {{ stock.expiryText }}
+            </PantryChip>
+            <PantryChip
+              v-if="renewOffer"
+              class="checklist-row__renew"
+              variant="primary"
+              size="sm"
+              :interactive="canEditItem"
+              data-testid="renew-expiry"
+              @click.stop="canEditItem && $emit('renew', item)"
+            >
+              <template #icon>
+                <CalendarRefreshIcon :size="14" />
+              </template>
+              {{ renewText }}
+            </PantryChip>
+            <PantryChip
+              v-if="stock.stockStatus === 'uncounted'"
+              class="checklist-row__stock-chip"
+              size="sm"
+              :interactive="false"
+            >
+              {{ stock.statusText }}
+            </PantryChip>
+            <template v-if="narrow && !suggestion">
+              <PantryChip
+                v-if="linkState === 'linked'"
+                class="checklist-row__link-chip"
+                :color="item.stockLink?.listColor || undefined"
+                size="sm"
+                :interactive="false"
+                :title="linkTooltip"
+                :aria-label="linkTooltip"
+                data-testid="stock-link-chip"
+              >
+                <template #icon>
+                  <LinkVariantIcon :size="14" />
+                </template>
+                {{ item.stockLink?.listName }}
+              </PantryChip>
+              <PantryChip
+                v-else-if="linkState === 'pick'"
+                class="checklist-row__stock-chip checklist-row__stock-chip--warning"
+                size="sm"
+                :interactive="false"
+                data-testid="stock-link-chip"
+              >
+                <template #icon>
+                  <AlertCircleOutlineIcon :size="14" />
+                </template>
+                {{ pickChipText }}
+              </PantryChip>
+              <PantryChip
+                v-else-if="
+                  linkState === 'off' && (stock.tone === 'warning' || stock.tone === 'error')
+                "
+                size="sm"
+                :interactive="false"
+                data-testid="stock-link-chip"
+              >
+                <template #icon>
+                  <LinkOffIcon :size="14" />
+                </template>
+                {{ strings.notAdded }}
+              </PantryChip>
+            </template>
+          </template>
           <PantryChip v-if="priceText" class="checklist-row__price" size="sm" :interactive="false">
             {{ priceText }}
           </PantryChip>
@@ -91,7 +244,7 @@
             </template>
           </PantryChip>
           <PantryChip
-            v-if="item.rrule && !compact"
+            v-if="isChecklist && item.rrule && !compact"
             class="checklist-row__recurrence"
             size="sm"
             :interactive="false"
@@ -153,8 +306,33 @@
             {{ label.name }}
           </PantryChip>
         </div>
+        <StockGauge
+          v-if="stock && stock.gauge !== null && !suggestion"
+          :fill="stock.gauge"
+          :tick="stock.tick"
+          :tone="stock.tone"
+          :segments="item.stockMode === 'level'"
+        />
       </div>
     </div>
+    <StockLinkButton
+      v-if="
+        stock && !narrow && !selectionMode && !suggestion && !compact && !trashMode && !archiveMode
+      "
+      :item="item"
+      :house-id="houseId"
+      :disabled="!canEditItem"
+      @link="$emit('link', item, $event)"
+      @unlink="$emit('unlink', item)"
+      @auto-link="$emit('auto-link', item, $event)"
+    />
+    <StockControl
+      v-if="stock && !selectionMode && !suggestion && !compact && !trashMode && !archiveMode"
+      :item="item"
+      :narrow="narrow"
+      :disabled="!canEditItem"
+      @update="$emit('stock', item, $event)"
+    />
     <div v-if="showAddedBy && !selectionMode && !suggestion" class="checklist-row__added-by">
       <NcAvatar
         v-if="item.addedBy"
@@ -269,7 +447,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcActions from '@nextcloud/vue/components/NcActions'
@@ -286,8 +464,22 @@ import DeleteRestoreIcon from '@icons/DeleteRestore.vue'
 import ArchiveArrowDownOutlineIcon from '@icons/ArchiveArrowDownOutline.vue'
 import ArchiveArrowUpOutlineIcon from '@icons/ArchiveArrowUpOutline.vue'
 import ArchiveOutlineIcon from '@icons/ArchiveOutline.vue'
+import ClipboardTextMultipleIcon from '@icons/ClipboardTextMultiple.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import ContentCopyIcon from '@icons/ContentCopy.vue'
+import PackageVariantClosedIcon from '@icons/PackageVariantClosed.vue'
+import PinIcon from '@icons/Pin.vue'
+import CalendarRefreshIcon from '@icons/CalendarRefresh.vue'
+import LinkVariantIcon from '@icons/LinkVariant.vue'
+import LinkOffIcon from '@icons/LinkOff.vue'
+import AlertCircleOutlineIcon from '@icons/AlertCircleOutline.vue'
+import StockLinkButton from '@/components/StockLink/StockLinkButton.vue'
+import {
+  restockedText,
+  restocksTooltip,
+  stockLinkState,
+  stockLinkTooltip,
+} from '@/components/StockLink/stockLink'
 import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
@@ -298,8 +490,38 @@ import { formatPrice, resolveItemPrice } from '@/utils/price'
 import { useHouseMembers } from '@/composables/useHouseMembers'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { labelIconComponent } from '@/components/LabelPicker/labelIcons'
-import type { ChecklistItem, Category, Checklist, Store, Label } from '@/api/types'
+import type {
+  ChecklistItem,
+  Category,
+  Checklist,
+  Store,
+  Label,
+  StockLevel,
+  StockLinkRow,
+} from '@/api/types'
 import type { RowClickAction } from '@/api/prefs'
+import { useListKind } from '@/composables/useListKind'
+import { useNarrow } from '@/composables/useNarrow'
+import StockControl from '@/components/InventoryStock/StockControl.vue'
+import StockGauge from '@/components/InventoryStock/StockGauge.vue'
+import StockStatusIcon from '@/components/InventoryStock/StockStatusIcon.vue'
+import { expiryChipText, stockStatusText } from '@/components/InventoryStock/stockStrings'
+import { formatShortDate } from '@/utils/datetime'
+import {
+  DEFAULT_EXPIRY_LEAD_DAYS,
+  evaluateStock,
+  expiryInput,
+  expiryStatus,
+  firstNumber,
+  formatNumber,
+  fullAmount,
+  gaugeFill,
+  gaugeTick,
+  itemTone,
+  stockInput,
+  stockTone,
+  todayEpoch,
+} from '@/utils/stock'
 
 const { can } = useCurrentHouse()
 
@@ -358,6 +580,10 @@ const props = withDefaults(
      * whole row a single tap target that emits `select`.
      */
     suggestion?: boolean
+    /** On a suggestion from the list's templates: the names of those templates. */
+    suggestionTemplates?: string[]
+    /** Inventory items: the date a raise by hand offers to renew the expiry date to. */
+    renewOffer?: number | null
     /**
      * Hides the per-row actions (view / edit / move / archive / delete). Used
      * where those operations do not belong, e.g. the shopping view, while
@@ -392,6 +618,7 @@ const props = withDefaults(
     selectionMode: false,
     selected: false,
     suggestion: false,
+    suggestionTemplates: undefined,
     compact: false,
     sessionRemovable: false,
     sessionRestorable: false,
@@ -400,7 +627,118 @@ const props = withDefaults(
 
 // Write affordances require both the list to be writable (a view-only shared
 // list disables all of them) and the specific role capability.
-const canCheck = computed(() => props.listWritable && can.value.canCheckItems)
+const { kind, isChecklist } = useListKind()
+const narrow = useNarrow()
+
+/** What the row shows about an inventory item's stock; null on other kinds. */
+const stock = computed(() => {
+  if (kind.value !== 'inventory') return null
+  const input = stockInput(props.item)
+  const result = props.item.stockStatus
+    ? { stockStatus: props.item.stockStatus, shortfall: props.item.shortfall ?? null }
+    : evaluateStock(input)
+  const today = todayEpoch()
+  const expiry =
+    props.item.expiryStatus ??
+    expiryStatus(expiryInput(props.item), DEFAULT_EXPIRY_LEAD_DAYS, today)
+  // While expiry asks for the row, it asks for the full replacement, so the
+  // stock chip no longer names an amount.
+  const expiryAsks = expiry === 'expiring' || expiry === 'expired'
+  const statusText = stockStatusText(result.stockStatus, expiryAsks ? null : result.shortfall)
+  const expiryText = expiryChipText(
+    expiry,
+    props.item.expiresAt ?? null,
+    today,
+    expiryAsks ? fullAmount(input) : null,
+  )
+  const onHand = (input.quantity ?? '').trim() === '' ? 0 : firstNumber(input.quantity)
+  const target = (input.target ?? '').trim()
+  const amountText =
+    input.stockMode !== 'level' && onHand !== null && firstNumber(target) !== null
+      ? // TRANSLATORS: Amount chip on an inventory item, on hand over target, e.g. "4 / 12 eggs".
+        t('pantry', '{onHand} / {target}', { onHand: formatNumber(onHand), target })
+      : null
+  const chips = [result.stockStatus === 'ok' ? null : statusText, expiryText].filter(Boolean)
+  return {
+    ...result,
+    tone: itemTone(result.stockStatus, expiry),
+    stockTone: stockTone(result.stockStatus),
+    expiryTone: expiry === 'expired' ? 'error' : expiry === 'expiring' ? 'warning' : 'muted',
+    statusText,
+    expiryText,
+    iconLabel: chips.length > 0 ? chips.join(', ') : statusText,
+    amountText,
+    gauge: gaugeFill({ ...input, ...result }),
+    tick: gaugeTick(input),
+  }
+})
+
+const linkState = computed(() => (stock.value ? stockLinkState(props.item) : null))
+const linkTooltip = computed(() => stockLinkTooltip(props.item))
+const pickChipText = computed(() =>
+  n(
+    'pantry',
+    'Not linked · %n match, pick one',
+    'Not linked · %n matches, pick one',
+    props.item.linkCandidates?.length ?? 0,
+  ),
+)
+const restocksText = computed(() =>
+  isChecklist.value && props.item.restocks?.length ? restocksTooltip(props.item.restocks) : null,
+)
+/** A quantity a member set on a row that restocks inventory items, which stock leaves alone. */
+const pinned = computed(
+  () =>
+    isChecklist.value &&
+    !props.item.done &&
+    !!props.item.quantityPinned &&
+    !!props.item.restocks?.length,
+)
+const pinnedText = computed(() =>
+  props.item.quantity
+    ? // TRANSLATORS: Chip on a checklist item whose quantity a member set by hand, e.g. "× 2 dozen · set by hand".
+      t(
+        'pantry',
+        '× {quantity} · set by hand',
+        { quantity: props.item.quantity },
+        { escape: false },
+      )
+    : // TRANSLATORS: Chip on a checklist item whose quantity a member cleared by hand, so stock leaves it empty.
+      t('pantry', 'Set by hand'),
+)
+const pinnedLabel = computed(() =>
+  canEditItem.value ? `${pinnedText.value}. ${strings.pinnedTooltip}` : pinnedText.value,
+)
+const renewText = computed(() =>
+  props.renewOffer
+    ? // TRANSLATORS: Chip offering to move an inventory item's expiry date to that of stock just added, e.g. "Renew expiry → Oct 30".
+      t(
+        'pantry',
+        'Renew expiry → {date}',
+        { date: formatShortDate(props.renewOffer) },
+        { escape: false },
+      )
+    : '',
+)
+/** What the member's tick put back into stock, which unchecking takes back out. */
+const restockLine = computed(() => {
+  if (!isChecklist.value || !props.item.done || !props.item.restock?.length) return null
+  const restock = restockedText(props.item.restock)
+  return restock !== null
+    ? // TRANSLATORS: Line under a checked-off item that restocked inventory items. {restock} is e.g. "Restocked Eggs (Kitchen) +8".
+      t('pantry', '{restock} · uncheck to undo', { restock }, { escape: false })
+    : null
+})
+/** Ticked off because nothing it restocks needs it any more, rather than by a member. */
+const systemDone = computed(
+  () => isChecklist.value && props.item.done && !props.item.doneBy && !!props.item.restocks?.length,
+)
+
+const canCheck = computed(() => isChecklist.value && props.listWritable && can.value.canCheckItems)
+// Items that are never checked off open instead of toggling.
+const clickAction = computed<RowClickAction>(() =>
+  !isChecklist.value && props.rowClickAction === 'done' ? 'view' : props.rowClickAction,
+)
 const canEditItem = computed(() => props.listWritable && can.value.canEditLists)
 const canMoveItem = computed(() => props.listWritable && can.value.canMoveItems)
 const canCopyItem = computed(() => props.listWritable && can.value.canCopyItems)
@@ -422,6 +760,12 @@ const emit = defineEmits<{
   preview: [item: ChecklistItem]
   select: [item: ChecklistItem]
   'toggle-select': [id: number]
+  stock: [item: ChecklistItem, patch: { quantity: string } | { stockLevel: StockLevel }]
+  link: [item: ChecklistItem, row: StockLinkRow]
+  unlink: [item: ChecklistItem]
+  'auto-link': [item: ChecklistItem, on: boolean]
+  unpin: [item: ChecklistItem]
+  renew: [item: ChecklistItem]
   'drag-start': [itemId: number, groupKey?: string]
   'reorder-over': [itemId: number, event: MouseEvent, groupKey?: string]
 }>()
@@ -441,11 +785,11 @@ function onRowClick() {
     return
   }
   if (props.compact) return
-  if (props.rowClickAction === 'view') {
+  if (clickAction.value === 'view') {
     emit('view', props.item)
-  } else if (props.rowClickAction === 'edit' && canEditItem.value) {
+  } else if (clickAction.value === 'edit' && canEditItem.value) {
     emit('edit', props.item)
-  } else if (props.rowClickAction === 'done' && canCheck.value) {
+  } else if (clickAction.value === 'done' && canCheck.value) {
     emit('toggle', props.item.id)
   }
 }
@@ -457,9 +801,9 @@ const rowClickable = computed(
     !props.suggestion &&
     !props.selectionMode &&
     !props.compact &&
-    (props.rowClickAction === 'view' ||
-      (props.rowClickAction === 'edit' && canEditItem.value) ||
-      (props.rowClickAction === 'done' && canCheck.value)),
+    (clickAction.value === 'view' ||
+      (clickAction.value === 'edit' && canEditItem.value) ||
+      (clickAction.value === 'done' && canCheck.value)),
 )
 
 // Keep the store chip's click from bubbling to the row's own click handler.
@@ -524,6 +868,9 @@ const strings = {
   archived: t('pantry', 'Archived'),
   // TRANSLATORS: Accessible label for the chip marking an archived reuse suggestion.
   archivedItem: t('pantry', 'Archived item'),
+  fromTemplates: (names: string) =>
+    // TRANSLATORS: Accessible label for the chip on a suggestion that comes from templates. {templates} is a comma-separated list of template names.
+    t('pantry', 'From templates: {templates}', { templates: names }),
   selectItem: t('pantry', 'Select item'),
   viewImage: t('pantry', 'View image'),
   viewItem: t('pantry', 'View item'),
@@ -543,6 +890,11 @@ const strings = {
   // TRANSLATORS: Verb. Menu action that moves this item to the archive.
   archiveItem: t('pantry', 'Archive item'),
   unarchiveItem: t('pantry', 'Unarchive'),
+  // TRANSLATORS: Chip on an inventory item that needs restock but is never added to a shopping list (unlinked, auto-link off).
+  notAdded: t('pantry', 'Not added to a shopping list'),
+  pinnedTooltip: t('pantry', 'Set by hand. Tap to let stock set it.'),
+  // TRANSLATORS: Line under a checklist item that was ticked off because the inventory items it restocks are back in stock.
+  noLongerNeeded: t('pantry', 'No longer needed'),
 }
 
 function storeLabel(name: string): string {
@@ -743,6 +1095,16 @@ function storeLabel(name: string): string {
     font-weight: 500;
   }
 
+  &__no-longer-needed {
+    font-size: 0.8rem;
+    color: var(--color-text-maxcontrast);
+  }
+
+  &__restock-line {
+    font-size: 0.8rem;
+    color: var(--color-success-text, var(--color-success));
+  }
+
   &__meta {
     display: flex;
     align-items: center;
@@ -779,6 +1141,29 @@ function storeLabel(name: string): string {
 
   &__description {
     cursor: help;
+  }
+
+  &__stock-amount {
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__restocks {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-primary-element);
+    flex-shrink: 0;
+    cursor: help;
+  }
+
+  // Saturated status colours, so the chip reads like the status icon beside it.
+  &__meta :deep(.pantry-chip.checklist-row__stock-chip--warning) {
+    --chip-border: var(--color-element-warning, var(--color-warning));
+    color: var(--color-element-warning, var(--color-warning));
+  }
+
+  &__meta :deep(.pantry-chip.checklist-row__stock-chip--error) {
+    --chip-border: var(--color-element-error, var(--color-error));
+    color: var(--color-element-error, var(--color-error));
   }
 }
 </style>

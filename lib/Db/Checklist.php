@@ -35,8 +35,30 @@ use OCP\AppFramework\Db\Entity;
  * @method void setArchivedAt(?int $archivedAt)
  * @method int|null getLastCompletedAt()
  * @method void setLastCompletedAt(?int $lastCompletedAt)
+ * @method void setKind(?string $kind)
+ * @method void setEveryList(?bool $everyList)
+ * @method void setFillFromDefaults(?bool $fillFromDefaults)
+ * @method int|null getExpiryLeadDays()
+ * @method void setExpiryLeadDays(?int $expiryLeadDays)
+ * @method void setStockSummary(?bool $stockSummary)
+ * @method int|null getSummarizedOn()
+ * @method void setSummarizedOn(?int $summarizedOn)
+ * @method int|null getRestockChecklistId()
+ * @method void setRestockChecklistId(?int $restockChecklistId)
  */
 class Checklist extends Entity implements \JsonSerializable {
+	public const KIND_CHECKLIST = 'checklist';
+	public const KIND_TEMPLATE = 'template';
+	public const KIND_INVENTORY = 'inventory';
+
+	public const KINDS = [
+		self::KIND_CHECKLIST,
+		self::KIND_TEMPLATE,
+		self::KIND_INVENTORY,
+	];
+
+	public const DEFAULT_EXPIRY_LEAD_DAYS = 2;
+
 	public const RECURRENCE_MODE_REMEMBER = 'remember';
 	public const RECURRENCE_KIND_NONE = 'none';
 	public const RECURRENCE_KIND_ONCE = 'once';
@@ -70,6 +92,19 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected ?int $deletedAt = null;
 	protected ?int $archivedAt = null;
 	protected ?int $lastCompletedAt = null;
+	protected ?string $kind = self::KIND_CHECKLIST;
+	/** A template attached to every checklist and inventory in its house. */
+	protected ?bool $everyList = false;
+	/** Whether a template item drawn here fills its empty fields from the item defaults. */
+	protected ?bool $fillFromDefaults = true;
+	/** An inventory's expiry warning, in days before the date; empty reads as {@see DEFAULT_EXPIRY_LEAD_DAYS}. */
+	protected ?int $expiryLeadDays = null;
+	/** The checklist an inventory's low stock goes to; see {@see \OCA\Pantry\Service\StockLinkService::restockChecklist()}. */
+	protected ?int $restockChecklistId = null;
+	/** Whether an inventory sends members a daily summary of what newly needs restocking. */
+	protected ?bool $stockSummary = true;
+	/** Midnight of the day the inventory was last summarised. */
+	protected ?int $summarizedOn = null;
 
 	public function __construct() {
 		$this->addType('houseId', 'integer');
@@ -79,6 +114,56 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('deletedAt', 'integer');
 		$this->addType('archivedAt', 'integer');
 		$this->addType('lastCompletedAt', 'integer');
+		$this->addType('everyList', 'boolean');
+		$this->addType('fillFromDefaults', 'boolean');
+		$this->addType('expiryLeadDays', 'integer');
+		$this->addType('restockChecklistId', 'integer');
+		$this->addType('stockSummary', 'boolean');
+		$this->addType('summarizedOn', 'integer');
+	}
+
+	public function expiryLeadDays(): int {
+		return $this->expiryLeadDays ?? self::DEFAULT_EXPIRY_LEAD_DAYS;
+	}
+
+	/** A row from before the column existed sends the summary, like a new inventory. */
+	public function sendsStockSummary(): bool {
+		return $this->stockSummary !== false;
+	}
+
+	public function isEveryList(): bool {
+		return $this->getKind() === self::KIND_TEMPLATE && (bool)$this->everyList;
+	}
+
+	/** A row from before the column existed fills, like a new list. */
+	public function fillsFromDefaults(): bool {
+		return $this->fillFromDefaults !== false;
+	}
+
+	/**
+	 * The column is nullable for the schema self-heal; a row without a kind is
+	 * a checklist.
+	 *
+	 * @return 'checklist'|'template'|'inventory'
+	 */
+	public function getKind(): string {
+		return match ($this->kind) {
+			self::KIND_TEMPLATE => self::KIND_TEMPLATE,
+			self::KIND_INVENTORY => self::KIND_INVENTORY,
+			default => self::KIND_CHECKLIST,
+		};
+	}
+
+	public function isChecklist(): bool {
+		return $this->getKind() === self::KIND_CHECKLIST;
+	}
+
+	/**
+	 * Whether this kind's items carry recurrence and delete-on-done. Templates
+	 * keep them so a drawn item can start with them, even though they never run.
+	 */
+	public function keepsRecurrence(): bool {
+		return $this->getKind() !== self::KIND_INVENTORY;
 	}
 
 	public function jsonSerialize(): array {
@@ -87,12 +172,14 @@ class Checklist extends Entity implements \JsonSerializable {
 		return [
 			'id' => $this->id,
 			'houseId' => $this->houseId,
+			'kind' => $this->getKind(),
 			'name' => $this->name,
 			'description' => $this->description,
 			'icon' => $this->icon,
 			'color' => $this->color,
 			'sortOrder' => $this->sortOrder,
 			'itemDefaults' => ItemDefaults::complete($defaults),
+			'fillFromDefaults' => $this->fillsFromDefaults(),
 			'deleteOnDoneDefault' => $recurrence['kind'] === self::RECURRENCE_KIND_ONCE,
 			'defaultRecurrenceMode' => $recurrence['mode'],
 			'defaultRecurrenceKind' => $recurrence['kind'],

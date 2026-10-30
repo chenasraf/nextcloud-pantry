@@ -31,9 +31,31 @@
         />
       </FieldCard>
 
-      <FieldCard :label="strings.quantityLabel">
+      <StockCard
+        v-if="isInventory"
+        v-model="editStock"
+        v-model:blocked="stockBlocked"
+        :expiry="previewExpiryStatus"
+      />
+      <FieldCard v-else :label="strings.quantityLabel">
         <QuantityInput v-model="editQuantity" />
       </FieldCard>
+      <TemplateStockCard v-if="isTemplate" v-model="editTemplateStock" :quantity="editQuantity" />
+      <ExpiryCard
+        v-if="isInventory || isTemplate"
+        v-model="editExpiry"
+        :stored="storedExpiry"
+        :shelf-life-only="isTemplate"
+      />
+      <StockLinkCard
+        v-if="isInventory && item.autoLink !== undefined"
+        :item="item"
+        :house-id="houseId"
+        :restock-checklist-name="restockChecklist?.name ?? null"
+        @link="$emit('link', item, $event)"
+        @unlink="$emit('unlink', item)"
+        @auto-link="$emit('auto-link', item, $event)"
+      />
 
       <FieldCard :label="strings.priceLabel">
         <ItemPricesEditor
@@ -63,7 +85,7 @@
         />
       </template>
 
-      <FieldCard :label="strings.typeLabel">
+      <FieldCard v-if="isChecklist" :label="strings.typeLabel">
         <div class="edit-item-form__type">
           <ItemTypeSelector
             :delete-on-done="editDeleteOnDone"
@@ -117,7 +139,7 @@
         form="pantry-edit-item-form"
         type="submit"
         variant="primary"
-        :disabled="!editName.trim() || saving"
+        :disabled="!editName.trim() || saving || (isInventory && stockBlocked)"
       >
         {{ strings.save }}
       </NcButton>
@@ -145,9 +167,29 @@ import ItemPricesEditor from '@/components/ItemPricesEditor'
 import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { itemImagePreviewUrl } from '@/api/images'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
-import type { ChecklistItem, ItemCustomFieldValue, ItemPrice } from '@/api/types'
+import type { ChecklistItem, ItemCustomFieldValue, ItemPrice, StockLinkRow } from '@/api/types'
 import type { ItemInput } from '@/api/lists'
 import { useCustomFields } from '@/composables/useCustomFields'
+import { useListKind } from '@/composables/useListKind'
+import StockCard from '@/components/InventoryStock/StockCard.vue'
+import TemplateStockCard, {
+  type TemplateStockDraft,
+} from '@/components/InventoryStock/TemplateStockCard.vue'
+import ExpiryCard from '@/components/InventoryStock/ExpiryCard.vue'
+import {
+  draftFromExpiry,
+  expiryPatch,
+  previewExpiry,
+  type ExpiryDraft,
+} from '@/components/InventoryStock/expiryDraft'
+import { useChecklists } from '@/composables/useChecklist'
+import StockLinkCard from '@/components/StockLink/StockLinkCard.vue'
+import { useRestockChecklist } from '@/components/StockLink/useRestockChecklist'
+import { DEFAULT_EXPIRY_LEAD_DAYS, expiryStatus, todayEpoch, type StockDraft } from '@/utils/stock'
+
+const { kind, isChecklist } = useListKind()
+const isInventory = computed(() => kind.value === 'inventory')
+const isTemplate = computed(() => kind.value === 'template')
 
 const props = withDefaults(
   defineProps<{
@@ -164,6 +206,9 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:open': [value: boolean]
   save: [itemId: number, patch: Partial<ItemInput>, pendingImage: File | null, clearImage: boolean]
+  link: [item: ChecklistItem, row: StockLinkRow]
+  unlink: [item: ChecklistItem]
+  'auto-link': [item: ChecklistItem, on: boolean]
 }>()
 
 const editName = ref('')
@@ -177,6 +222,37 @@ const editRepeatFromCompletion = ref(false)
 const editDeleteOnDone = ref(false)
 const editPrices = ref<ItemPrice[]>([])
 const editCustomFields = ref<ItemCustomFieldValue[]>([])
+const editStock = ref<StockDraft>({
+  stockMode: 'count',
+  stockLevel: null,
+  quantity: null,
+  target: null,
+  reorderPoint: null,
+})
+const stockBlocked = ref(false)
+const storedExpiry = computed(() => ({
+  expiresAt: props.item.expiresAt ?? null,
+  shelfLifeDays: props.item.shelfLifeDays ?? null,
+}))
+const editExpiry = ref<ExpiryDraft>(draftFromExpiry(storedExpiry.value))
+const inventories = useChecklists(props.houseId, 'inventory').lists
+const restockChecklist = useRestockChecklist(props.houseId, () => props.item.listId)
+const previewExpiryStatus = computed(() => {
+  const today = todayEpoch()
+  const leadDays =
+    inventories.value.find((l) => l.id === props.item.listId)?.expiryLeadDays ??
+    DEFAULT_EXPIRY_LEAD_DAYS
+  return expiryStatus(
+    { ...editStock.value, ...previewExpiry(editExpiry.value, storedExpiry.value, today) },
+    leadDays,
+    today,
+  )
+})
+const editTemplateStock = ref<TemplateStockDraft>({
+  stockMode: null,
+  target: null,
+  reorderPoint: null,
+})
 
 type ItemType = 'staple' | 'oneTime' | 'recurring'
 const currentType = computed<ItemType>(() => {
@@ -240,6 +316,20 @@ watch(
       editDeleteOnDone.value = props.item.deleteOnDone ?? false
       editPrices.value = (props.item.prices ?? []).map((p) => ({ ...p }))
       editCustomFields.value = (props.item.customFields ?? []).map((v) => ({ ...v }))
+      editStock.value = {
+        stockMode: props.item.stockMode ?? 'count',
+        stockLevel: props.item.stockLevel ?? 'full',
+        quantity: props.item.quantity ?? null,
+        target: props.item.target ?? null,
+        reorderPoint: props.item.reorderPoint ?? null,
+      }
+      stockBlocked.value = false
+      editExpiry.value = draftFromExpiry(storedExpiry.value)
+      editTemplateStock.value = {
+        stockMode: props.item.stockMode ?? null,
+        target: props.item.target ?? null,
+        reorderPoint: props.item.reorderPoint ?? null,
+      }
       void customFields.load()
       resetImageState()
     }
@@ -281,13 +371,34 @@ function submitEdit() {
     {
       name,
       description: editDescription.value.trim(),
-      quantity: editQuantity.value.trim(),
+      ...(isInventory.value
+        ? {
+            quantity: (editStock.value.quantity ?? '').trim(),
+            stockMode: editStock.value.stockMode,
+            stockLevel: editStock.value.stockLevel ?? 'full',
+            target: (editStock.value.target ?? '').trim(),
+            reorderPoint: (editStock.value.reorderPoint ?? '').trim(),
+            ...expiryPatch(editExpiry.value, storedExpiry.value),
+          }
+        : { quantity: editQuantity.value.trim() }),
+      ...(isTemplate.value
+        ? {
+            stockMode: editTemplateStock.value.stockMode ?? '',
+            target: (editTemplateStock.value.target ?? '').trim(),
+            reorderPoint: (editTemplateStock.value.reorderPoint ?? '').trim(),
+            ...expiryPatch(editExpiry.value, storedExpiry.value),
+          }
+        : {}),
       categoryId: editCategoryId.value,
       storeIds: editStoreIds.value,
       labelIds: editLabelIds.value,
-      rrule: once ? null : editRrule.value,
-      repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
-      deleteOnDone: once,
+      ...(isChecklist.value
+        ? {
+            rrule: once ? null : editRrule.value,
+            repeatFromCompletion: once ? false : editRepeatFromCompletion.value,
+            deleteOnDone: once,
+          }
+        : {}),
       // The full price set is replaced; an empty array clears all prices.
       prices: editPrices.value,
       // Likewise, the full custom-field value set is replaced.

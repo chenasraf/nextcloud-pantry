@@ -12,7 +12,8 @@
     </template>
   </NcEmptyContent>
   <div v-else class="house-layout">
-    <router-view />
+    <!-- The list views serve every kind; remount on a kind switch so their per-kind state starts fresh. -->
+    <router-view :key="String($route.meta.listKind ?? 'checklist')" />
   </div>
 </template>
 

@@ -19,6 +19,7 @@ use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\ShoppingSessionService;
+use OCA\Pantry\Service\StockLinkService;
 use OCA\Pantry\Service\StoreService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -37,6 +38,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-import-type PantryShoppingSession from ResponseDefinitions
  * @psalm-import-type PantryListItem from ResponseDefinitions
+ * @psalm-import-type PantryShoppingCheckResult from ResponseDefinitions
  * @psalm-import-type PantryShoppingReview from ResponseDefinitions
  * @psalm-import-type PantryShoppingHistoryRow from ResponseDefinitions
  * @psalm-import-type PantryShoppingPresenceEntry from ResponseDefinitions
@@ -56,6 +58,7 @@ final class ShoppingSessionController extends OCSController {
 		private ItemStoreMapper $itemStores,
 		private IUserSession $userSession,
 		private LoggerInterface $logger,
+		private StockLinkService $stockLinks,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -302,7 +305,7 @@ final class ShoppingSessionController extends OCSController {
 	 * @param int $sessionId Session id.
 	 * @param int $itemId Item id (must be in the session's scope).
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingCheckResult, array{}>
 	 *
 	 * 200: Item checked
 	 */
@@ -313,8 +316,7 @@ final class ShoppingSessionController extends OCSController {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
 			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$this->assertItemInScope($session, $itemId);
-			$this->sessions->checkItem($session, $itemId, $this->requireUid());
-			return new DataResponse(['success' => true]);
+			return new DataResponse($this->checkResult($this->sessions->checkItem($session, $itemId, $this->requireUid())));
 		});
 	}
 
@@ -325,7 +327,7 @@ final class ShoppingSessionController extends OCSController {
 	 * @param int $sessionId Session id.
 	 * @param int $itemId Item id.
 	 *
-	 * @return DataResponse<Http::STATUS_OK, PantrySuccess, array{}>
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingCheckResult, array{}>
 	 *
 	 * 200: Item unchecked
 	 */
@@ -335,9 +337,22 @@ final class ShoppingSessionController extends OCSController {
 	public function uncheckItem(int $houseId, int $sessionId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
 			$session = $this->loadJoinedSession($sessionId, $houseId);
-			$this->sessions->uncheckItem($session, $itemId);
-			return new DataResponse(['success' => true]);
+			return new DataResponse($this->checkResult($this->sessions->uncheckItem($session, $itemId, $this->requireUid())));
 		});
+	}
+
+	/**
+	 * @param array{item: ChecklistItem, restocked: list<array<string, mixed>>, undone: list<array<string, mixed>>, events: list<array<string, mixed>>}|null $result
+	 * @return PantryShoppingCheckResult
+	 */
+	private function checkResult(?array $result): array {
+		return [
+			'success' => true,
+			'restock' => $result !== null && $result['item']->getDone() ? $result['item']->getRestock() : null,
+			'restocked' => $result['restocked'] ?? [],
+			'restockUndone' => $result['undone'] ?? [],
+			'restockSync' => $result['events'] ?? [],
+		];
 	}
 
 	/**
@@ -726,9 +741,16 @@ final class ShoppingSessionController extends OCSController {
 			$this->logger->error('Failed to load store ids for shopping items; serializing without stores', ['exception' => $e]);
 			$storeMap = [];
 		}
-		return array_values(array_map(static function ($i) use ($storeMap) {
+		try {
+			$restocks = $this->stockLinks->restocksFor($items);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to load stock links for shopping items; serializing without them', ['exception' => $e]);
+			$restocks = [];
+		}
+		return array_values(array_map(static function ($i) use ($storeMap, $restocks) {
 			$data = $i->jsonSerialize();
 			$data['storeIds'] = $storeMap[(int)$i->getId()] ?? [];
+			$data['restocks'] = $restocks[(int)$i->getId()] ?? [];
 			return $data;
 		}, $items));
 	}
