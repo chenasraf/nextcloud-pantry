@@ -1,10 +1,12 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { computed, defineComponent } from 'vue'
 
 import { createIconMock, nextcloudL10nMock } from '@/test-utils'
+import { provideListKind } from '@/composables/useListKind'
 import { NO_CATEGORY_ID, NO_STORE_ID } from './constants'
 import { STOCK_NEEDS_RESTOCK } from './stockFilter'
-import type { Category, ChecklistItem, Store } from '@/api/types'
+import type { Category, Checklist, ChecklistItem, Store } from '@/api/types'
 
 vi.mock('@nextcloud/l10n', () => nextcloudL10nMock)
 vi.mock('@icons/Magnify.vue', () => createIconMock('MagnifyIcon'))
@@ -243,5 +245,37 @@ describe('ChecklistFilter — stock filter', () => {
     const wrapper = mountFilter({ items: inventoryItems })
     await optionByText(wrapper, 'Needs restock')!.trigger('click')
     expect(wrapper.emitted('update:selectedStock')?.[0]).toEqual([[STOCK_NEEDS_RESTOCK]])
+  })
+})
+
+describe('ChecklistFilter — list filter', () => {
+  const lists = [
+    { id: 10, name: 'Fridge', icon: null, color: null },
+    { id: 11, name: 'Freezer', icon: null, color: null },
+  ] as unknown as Checklist[]
+
+  it('names checklists on a checklist page', () => {
+    const wrapper = mountFilter({ lists })
+    expect(optionByText(wrapper, 'All checklists')).toBeDefined()
+  })
+
+  it('names inventories on the "All inventories" page', () => {
+    // The page provides its kind to everything inside it.
+    const Page = defineComponent({
+      components: { ChecklistFilter },
+      setup() {
+        provideListKind(computed(() => 'inventory' as const))
+        return { lists, items: [makeItem()] }
+      },
+      template:
+        '<ChecklistFilter query="" :selected-category-ids="[]" :items="items" :categories="[]" :lists="lists" />',
+    })
+    const labels = mount(Page)
+      .findAll('.filter-chip__row-label')
+      .map((label) => label.text())
+
+    expect(labels).toContain('All inventories')
+    expect(labels).not.toContain('All checklists')
+    expect(labels).toContain('Freezer')
   })
 })

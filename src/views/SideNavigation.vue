@@ -73,6 +73,18 @@
             <CupboardIcon :size="20" />
           </template>
           <NcAppNavigationItem
+            :name="strings.allInventories"
+            :to="{ name: 'all-inventories', params: { houseId: String(currentHouseId) } }"
+            :active="route.name === 'all-inventories'"
+          >
+            <template #icon>
+              <span class="pantry-nav__list-icon pantry-nav__list-icon--meta">
+                <ViewListIcon :size="16" />
+              </span>
+            </template>
+          </NcAppNavigationItem>
+          <li v-if="inventories.length > 0" class="pantry-nav__separator" role="separator"></li>
+          <NcAppNavigationItem
             v-for="list in inventories"
             :key="list.id"
             :name="list.name"
@@ -313,7 +325,7 @@ import { useHouses } from '@/composables/useHouses'
 import { NO_CAPS } from '@/composables/useCurrentHouse'
 import type { Capabilities } from '@/api/types'
 import { useChecklists } from '@/composables/useChecklist'
-import { listKindStrings } from '@/composables/useListKind'
+import { allListsStrings, listKindStrings } from '@/composables/useListKind'
 import { checklistIconComponent, contrastColor } from '@/components/ChecklistIconPicker'
 
 function iconWrapStyle(color: string | null) {
@@ -481,8 +493,9 @@ watch(currentHouseId, closeMenu)
 
 const strings = {
   lists: listKindStrings('checklist').title,
-  allLists: t('pantry', 'All checklists'),
+  allLists: allListsStrings('checklist').title,
   inventories: listKindStrings('inventory').title,
+  allInventories: allListsStrings('inventory').title,
   // TRANSLATORS: Tooltip of the counter on an inventory in the navigation.
   needsRestock: (count: number) =>
     n('pantry', '%n item needs restock', '%n items need restock', count),

@@ -226,6 +226,48 @@ class ListKindControllerTest extends TestCase {
 		}
 	}
 
+	public function testAllInventoriesListsTheItemsOfEveryInventoryTheCallerCanReach(): void {
+		$items = [];
+		foreach ([[3, 7, 'Eggs'], [4, 8, 'Butter'], [5, 9, 'Flour']] as [$id, $listId, $name]) {
+			$item = new ChecklistItem();
+			$item->setId($id);
+			$item->setListId($listId);
+			$item->setName($name);
+			$items[] = $item;
+		}
+		$kinds = [];
+		$this->lists->method('listItemsForHouse')->willReturnCallback(
+			function (int $houseId, string $sortBy, string $categorySort, ?int $now = null, string $kind = Checklist::KIND_CHECKLIST) use ($items, &$kinds): array {
+				$kinds[] = $kind;
+				return $items;
+			},
+		);
+		$this->permissions->method('canAccessList')->willReturnCallback(static fn (int $h, string $u, int $listId): bool => $listId !== 8);
+
+		$data = $this->makeController(InventoryController::class)->indexHouseInventoryItems(1)->getData();
+
+		$this->assertSame([Checklist::KIND_INVENTORY], $kinds);
+		$this->assertSame(['Eggs', 'Flour'], array_column($data, 'name'));
+		$this->assertSame([7, 9], array_column($data, 'listId'));
+		// Served in the inventory item shape: stock in, the done state out.
+		$this->assertSame('count', $data[0]['stockMode']);
+		$this->assertArrayNotHasKey('done', $data[0]);
+	}
+
+	public function testAllChecklistsStillListsOnlyChecklistItems(): void {
+		$kinds = [];
+		$this->lists->method('listItemsForHouse')->willReturnCallback(
+			function (int $houseId, string $sortBy, string $categorySort, ?int $now = null, string $kind = Checklist::KIND_CHECKLIST) use (&$kinds): array {
+				$kinds[] = $kind;
+				return [];
+			},
+		);
+
+		$this->makeController(ChecklistController::class)->indexHouseItems(1);
+
+		$this->assertSame([Checklist::KIND_CHECKLIST], $kinds);
+	}
+
 	public function testInventoryItemsCarryTheirStockStatus(): void {
 		$item = new ChecklistItem();
 		$item->setId(3);

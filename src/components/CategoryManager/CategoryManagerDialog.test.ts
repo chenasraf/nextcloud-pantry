@@ -59,7 +59,7 @@ vi.mock('./CategoryFormDialog.vue', () => ({
   default: {
     name: 'CategoryFormDialog',
     template: '<div />',
-    props: ['open', 'houseId', 'category', 'defaultListId', 'saving', 'error'],
+    props: ['open', 'houseId', 'category', 'saving', 'error'],
     emits: ['update:open', 'save'],
   },
 }))
@@ -183,12 +183,6 @@ describe('CategoryManagerDialog', () => {
       await vi.waitFor(() => expect(wrapper.find('.pantry-cat-hint').exists()).toBe(true))
 
       expect(wrapper.find('.pantry-cat-list').exists()).toBe(false)
-    })
-
-    it('offers the open list as the default scope for a new category', async () => {
-      const wrapper = await mountDialog(1)
-
-      expect(wrapper.findComponent({ name: 'CategoryFormDialog' }).props('defaultListId')).toBe(1)
     })
   })
 

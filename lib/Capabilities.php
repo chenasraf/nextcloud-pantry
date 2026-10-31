@@ -105,6 +105,8 @@ class Capabilities implements IPublicCapability {
 					'shopping-join-session',
 					'shopping-item-selection',
 					'shopping-history-delete',
+					'inventory-all-view',
+					'shopping-put-away',
 				],
 			],
 		];

@@ -55,6 +55,7 @@ class ChecklistService {
 		private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper,
 		private ScopedTaxonomyService $taxonomy,
 		private StockLinkService $stockLinks,
+		private LinkedProductService $linkedProducts,
 	) {
 	}
 
@@ -623,15 +624,16 @@ class ChecklistService {
 	}
 
 	/**
-	 * List non-deleted items from every non-deleted list in the house. Used by
-	 * the meta "All lists" view — sort_order is per-list, so "custom" is not
-	 * a supported sort here.
+	 * List non-deleted items from every non-deleted list of a kind in the
+	 * house. Used by the meta "All checklists" and "All inventories" views —
+	 * sort_order is per-list, so "custom" is not a supported sort here.
 	 *
+	 * @param 'checklist'|'template'|'inventory' $kind
 	 * @return ChecklistItem[]
 	 */
-	public function listItemsForHouse(int $houseId, string $sortBy = 'newest', string $categorySort = 'name_asc', ?int $now = null): array {
+	public function listItemsForHouse(int $houseId, string $sortBy = 'newest', string $categorySort = 'name_asc', ?int $now = null, string $kind = Checklist::KIND_CHECKLIST): array {
 		$this->reopenDueItems($now);
-		return $this->itemMapper->findByHouse($houseId, $sortBy, $categorySort);
+		return $this->itemMapper->findByHouse($houseId, $sortBy, $categorySort, $kind);
 	}
 
 	/**
@@ -904,7 +906,21 @@ class ChecklistService {
 			$rearmed = $this->fieldValueMapper->setValuesForItem((int)$item->getId(), (array)$patch['customFields']);
 			$this->fieldReminders->onValuesRearmed((int)$item->getId(), $rearmed);
 		}
+		// A linked inventory item and its checklist item are one product.
+		$productFields = array_values(array_filter(
+			LinkedProductService::FIELDS,
+			static fn (string $field): bool => array_key_exists($field, $patch) && ($field !== 'name' || $renamed),
+		));
+		$this->linkedProducts->afterChange($item, $productFields);
 		return $item;
+	}
+
+	/**
+	 * Make a newly linked inventory item and checklist item agree on what
+	 * either leaves empty. See {@see LinkedProductService::align()}.
+	 */
+	public function alignLinkedProduct(ChecklistItem $item, ChecklistItem $row): void {
+		$this->linkedProducts->align($item, $row);
 	}
 
 	/**

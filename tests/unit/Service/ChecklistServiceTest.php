@@ -99,6 +99,7 @@ class ChecklistServiceTest extends TestCase {
 				$this->fieldOptionMapper,
 			),
 			$this->stockLinks,
+			$this->createMock(\OCA\Pantry\Service\LinkedProductService::class),
 		);
 	}
 
@@ -1494,6 +1495,20 @@ class ChecklistServiceTest extends TestCase {
 			->willReturn([]);
 
 		$this->svc->listForHouse(42, 'name_asc');
+	}
+
+	public function testHouseItemsAreChecklistItemsUnlessAnotherKindIsAsked(): void {
+		$this->itemMapper->method('findDueRecurring')->willReturn([]);
+		$this->itemMapper->expects($this->exactly(2))
+			->method('findByHouse')
+			->willReturnCallback(function (int $houseId, string $sortBy, string $categorySort, string $kind): array {
+				$this->assertSame(42, $houseId);
+				$this->assertSame('category', $sortBy);
+				return [$this->makeItem(['name' => $kind])];
+			});
+
+		$this->assertSame('checklist', $this->svc->listItemsForHouse(42, 'category')[0]->getName());
+		$this->assertSame('inventory', $this->svc->listItemsForHouse(42, 'category', kind: Checklist::KIND_INVENTORY)[0]->getName());
 	}
 
 	public function testReorderListsUpdatesSortOrderForHouseLists(): void {

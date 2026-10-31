@@ -758,6 +758,21 @@ describe('useChecklistItems', () => {
       expect(c.items.value[0].done).toBe(false)
     })
 
+    it('loads the all-inventories view through the inventory resource', async () => {
+      mockApi.listAllItems.mockResolvedValue([
+        makeItem({ id: 1, listId: 7 }),
+        makeItem({ id: 2, listId: 8 }),
+      ])
+      apiKinds.length = 0
+
+      const c = useChecklistItems(1, ALL_LISTS_ID, 'inventory')
+      await c.load('name_asc')
+
+      expect(apiKinds).toEqual(['inventory'])
+      expect(mockApi.listAllItems).toHaveBeenCalledWith(1, 'name_asc')
+      expect(c.items.value.map((i) => i.listId)).toEqual([7, 8])
+    })
+
     it('draw targets the picked list in the all-lists view', async () => {
       mockApi.listAllItems.mockResolvedValue([])
       mockApi.drawItem.mockResolvedValue({ item: makeItem({ id: 9, listId: 12 }), reused: false })

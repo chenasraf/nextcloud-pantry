@@ -33,6 +33,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
  * Lifecycle is timestamp-driven and enforced here.
  *
  * @psalm-import-type RestockToggle from RestockService
+ * @psalm-import-type PutAwayPick from RestockService
  */
 class ShoppingSessionService {
 	/**
@@ -357,11 +358,28 @@ class ShoppingSessionService {
 	/**
 	 * Stamp `closed_at`. Closing an already-closed session is a 409 (no reopen).
 	 *
+	 * `$putAway` maps an item ticked on this trip to the inventories its
+	 * purchase goes to ({@see RestockService::putAway()}); an empty list of
+	 * picks takes it back out of stock. Items left out keep what their tick
+	 * restocked, as do items not ticked on this trip.
+	 *
+	 * @param array<int, list<PutAwayPick>> $putAway Checklist item id → picks.
 	 * @throws ShoppingSessionConflictException when already closed.
 	 */
-	public function close(ShoppingSession $session): ShoppingSession {
+	public function close(ShoppingSession $session, array $putAway = [], ?string $uid = null): ShoppingSession {
 		if ($session->getClosedAt() !== null) {
 			throw new ShoppingSessionConflictException($session, 'Shopping session is already closed');
+		}
+		if ($putAway !== [] && $uid !== null) {
+			$ticked = [];
+			foreach ($this->sessionItems->findBySession((int)$session->getId()) as $log) {
+				$ticked[(int)$log->getItemId()] = true;
+			}
+			foreach ($putAway as $itemId => $picks) {
+				if (isset($ticked[$itemId])) {
+					$this->restock->putAway($itemId, $picks, $uid);
+				}
+			}
 		}
 		$this->snapshotSessionItems($session);
 		$now = time();
