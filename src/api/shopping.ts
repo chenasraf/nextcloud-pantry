@@ -1,6 +1,7 @@
 import { ocs } from '@/axios'
 import type {
   ChecklistItem,
+  PutAwayEntry,
   ShoppingHistoryRow,
   ShoppingPresenceEntry,
   ShoppingReview,
@@ -67,11 +68,19 @@ export async function advanceStore(
   return resp.data
 }
 
-export async function closeSession(houseId: number, sessionId: number): Promise<ShoppingSession> {
+/**
+ * Finish a trip. `putAway` says where ticked items went; items left out keep
+ * what their tick restocked.
+ */
+export async function closeSession(
+  houseId: number,
+  sessionId: number,
+  putAway: PutAwayEntry[] = [],
+): Promise<ShoppingSession> {
   // A 409 (already closed) is treated as success — the trip is over either way.
   const resp = await ocs.post<ShoppingSession>(
     `/houses/${houseId}/shopping/sessions/${sessionId}/close`,
-    {},
+    putAway.length > 0 ? { putAway } : {},
     { validateStatus: (s) => s === 200 || s === 409 },
   )
   return resp.data

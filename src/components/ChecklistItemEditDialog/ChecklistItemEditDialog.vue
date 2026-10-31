@@ -52,9 +52,11 @@
         :item="item"
         :house-id="houseId"
         :restock-checklist-name="restockChecklist?.name ?? null"
+        :restock-checklist-id="restockChecklist?.id ?? null"
         @link="$emit('link', item, $event)"
         @unlink="$emit('unlink', item)"
         @auto-link="$emit('auto-link', item, $event)"
+        @add-to-list="$emit('add-to-list', item, $event)"
       />
 
       <FieldCard :label="strings.priceLabel">
@@ -209,6 +211,7 @@ const emit = defineEmits<{
   link: [item: ChecklistItem, row: StockLinkRow]
   unlink: [item: ChecklistItem]
   'auto-link': [item: ChecklistItem, on: boolean]
+  'add-to-list': [item: ChecklistItem, listId: number]
 }>()
 
 const editName = ref('')

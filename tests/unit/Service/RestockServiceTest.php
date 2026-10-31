@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Tests\Unit\Service;
 
+use OCA\Pantry\Db\Category;
+use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
@@ -36,13 +38,22 @@ class RestockServiceTest extends TestCase {
 	private int $nextId = 30;
 	/** @var list<array{int, array}> Inventory item and its stock before, for each sync the service ran. */
 	private array $synced = [];
+	/** @var array<string, mixed>|null What the last new inventory item was made from. */
+	private ?array $added = null;
 
 	protected function setUp(): void {
 		$lists = [];
-		foreach ([10 => 'Shopping', 20 => 'Kitchen', 21 => 'Garage'] as $id => $name) {
+		foreach ([
+			10 => ['Shopping', Checklist::KIND_CHECKLIST],
+			11 => ['Errands', Checklist::KIND_CHECKLIST],
+			20 => ['Kitchen', Checklist::KIND_INVENTORY],
+			21 => ['Garage', Checklist::KIND_INVENTORY],
+		] as $id => [$name, $kind]) {
 			$list = new Checklist();
 			$list->setId($id);
+			$list->setHouseId(1);
 			$list->setName($name);
+			$list->setKind($kind);
 			$lists[$id] = $list;
 		}
 		$listMapper = $this->createMock(ChecklistMapper::class);
@@ -51,6 +62,10 @@ class RestockServiceTest extends TestCase {
 		$itemMapper = $this->createMock(ChecklistItemMapper::class);
 		$itemMapper->method('findById')->willReturnCallback(fn (int $id): ChecklistItem => $this->items[$id] ?? throw new DoesNotExistException('missing'));
 		$itemMapper->method('update')->willReturnArgument(0);
+		$itemMapper->method('findByList')->willReturnCallback(fn (int $listId): array => array_values(array_filter(
+			$this->items,
+			static fn (ChecklistItem $i): bool => $i->getListId() === $listId && $i->getDeletedAt() === null,
+		)));
 
 		$row = new ChecklistItem();
 		$row->setId(self::ROW);
@@ -67,6 +82,27 @@ class RestockServiceTest extends TestCase {
 			$item->setRestock(null);
 			return $item;
 		});
+		$checklists->method('addItem')->willReturnCallback(function (int $listId, array $data, ?string $by): ChecklistItem {
+			$this->added = $data;
+			$item = new ChecklistItem();
+			$item->setId($this->nextId++);
+			$item->setListId($listId);
+			$item->setName($data['name']);
+			$item->setCategoryId($data['categoryId']);
+			$item->setStockMode($data['stockMode']);
+			$item->setTarget($data['target']);
+			$item->setQuantity($data['quantity']);
+			$this->items[(int)$item->getId()] = $item;
+			return $item;
+		});
+		$categories = $this->createMock(CategoryMapper::class);
+		$categories->method('findById')->willReturnCallback(static function (int $id): Category {
+			$category = new Category();
+			$category->setId($id);
+			// Category 1 is house-wide; any other belongs to a single list.
+			$category->setListId($id === 1 ? null : 10);
+			return $category;
+		});
 
 		$this->sync = $this->createMock(RestockSyncService::class);
 		$this->sync->method('contributors')->willReturnCallback(fn (ChecklistItem $row): array => array_values(array_filter(
@@ -79,7 +115,7 @@ class RestockServiceTest extends TestCase {
 			return [];
 		});
 
-		$this->svc = new RestockService($checklists, $itemMapper, $listMapper, $this->sync, $this->createMock(IDBConnection::class));
+		$this->svc = new RestockService($checklists, $itemMapper, $listMapper, $this->sync, $this->createMock(IDBConnection::class), $categories);
 	}
 
 	private function row(): ChecklistItem {
@@ -453,5 +489,126 @@ class RestockServiceTest extends TestCase {
 
 		$this->assertSame(self::inDays(1), $some->getExpiresAt());
 		$this->assertCount(1, $result['undone']);
+	}
+
+	// ----- Putting away after a trip -----
+
+	public function testPuttingAwayMovesWhatTheTickRestockedToAnotherInventory(): void {
+		$kitchen = $this->counted(20, '4 eggs', '12 eggs');
+		$garage = $this->counted(21, '0 eggs', '6 eggs');
+		$this->tick('8 eggs');
+		$this->assertSame('12 eggs', $kitchen->getQuantity(), 'the tick filled the first-linked inventory');
+
+		$result = $this->svc->putAway(self::ROW, [['listId' => 21, 'amount' => 8.0]], 'alice');
+
+		$this->assertSame('4 eggs', $kitchen->getQuantity());
+		$this->assertSame('8 eggs', $garage->getQuantity());
+		$this->assertSame([(int)$garage->getId()], array_column($this->row()->getRestock() ?? [], 'itemId'));
+		$this->assertSame(['8'], array_column($result['restocked'], 'added'));
+		$this->assertCount(1, $result['undone']);
+	}
+
+	public function testPuttingAwaySplitsBetweenInventories(): void {
+		$kitchen = $this->counted(20, '4 eggs', '12 eggs');
+		$garage = $this->counted(21, '0 eggs', '6 eggs');
+		$this->tick('8 eggs');
+
+		$this->svc->putAway(self::ROW, [['listId' => 20, 'amount' => 5.0], ['listId' => 21, 'amount' => 3.0]], 'alice');
+
+		$this->assertSame('9 eggs', $kitchen->getQuantity());
+		$this->assertSame('3 eggs', $garage->getQuantity());
+	}
+
+	public function testEachPutAwayItemIsSyncedOnceAgainstItsStockBeforeThePutAway(): void {
+		$kitchen = $this->counted(20, '4 eggs', '12 eggs');
+		$this->counted(21, '0 eggs', '6 eggs');
+		$this->tick('8 eggs');
+		$this->synced = [];
+
+		$this->svc->putAway(self::ROW, [['listId' => 21, 'amount' => 8.0]], 'alice');
+
+		$this->assertCount(2, $this->synced);
+		$this->assertSame((int)$kitchen->getId(), $this->synced[0][0]);
+		$this->assertSame('ok', $this->synced[0][1]['status'], "the kitchen's before is the tick's full stock, not its wound-back one");
+	}
+
+	public function testUncheckingAfterPuttingAwayTakesOutWhatThePicksAdded(): void {
+		$kitchen = $this->counted(20, '4 eggs', '12 eggs');
+		$garage = $this->counted(21, '0 eggs', '6 eggs');
+		$this->tick('8 eggs');
+		$this->svc->putAway(self::ROW, [['listId' => 21, 'amount' => 8.0]], 'alice');
+
+		$this->svc->toggle(self::ROW, 'alice');
+
+		$this->assertSame('4 eggs', $kitchen->getQuantity());
+		$this->assertSame('0 eggs', $garage->getQuantity());
+	}
+
+	public function testPuttingAwayInAnInventoryWithoutTheItemAddsItLinked(): void {
+		$this->row()->setCategoryId(1);
+		$this->tick('2 L');
+
+		$this->svc->putAway(self::ROW, [['listId' => 21, 'amount' => 2.0]], 'alice');
+
+		$this->assertSame(['name' => 'Eggs', 'categoryId' => 1, 'stockMode' => 'count', 'target' => '2 L', 'quantity' => '0 L'], $this->added);
+		$new = $this->items[(int)($this->row()->getRestock()[0]['itemId'] ?? 0)];
+		$this->assertSame(21, $new->getListId());
+		$this->assertSame('2 L', $new->getQuantity());
+		$this->assertSame(self::ROW, $new->getLinkedItemId(), 'linked, so the garage is offered first next time');
+	}
+
+	public function testANewItemOnlyKeepsAHouseWideCategory(): void {
+		$this->row()->setCategoryId(2);
+		$this->tick('1');
+
+		$this->svc->putAway(self::ROW, [['listId' => 21, 'amount' => 1.0]], 'alice');
+
+		$this->assertIsArray($this->added);
+		$this->assertArrayHasKey('categoryId', $this->added);
+		$this->assertNull($this->added['categoryId'], 'a category only the shopping list sees stays behind');
+	}
+
+	public function testPuttingAwayLinksAFreeSameNameItem(): void {
+		$loose = new ChecklistItem();
+		$loose->setId(77);
+		$loose->setListId(21);
+		$loose->setName(' eggs ');
+		$loose->setStockMode(StockRules::MODE_COUNT);
+		$loose->setQuantity('1');
+		$loose->setTarget('6');
+		$this->items[77] = $loose;
+		$this->tick('2');
+
+		$this->svc->putAway(self::ROW, [['listId' => 21, 'amount' => 2.0]], 'alice');
+
+		$this->assertSame('3', $loose->getQuantity());
+		$this->assertSame(self::ROW, $loose->getLinkedItemId());
+		$this->assertNull($this->added, 'no new item when one with the same name is there');
+	}
+
+	public function testNoPicksTakesThePurchaseBackOutOfStock(): void {
+		$kitchen = $this->counted(20, '4 eggs', '12 eggs');
+		$this->tick('8 eggs');
+
+		$this->svc->putAway(self::ROW, [], 'alice');
+
+		$this->assertSame('4 eggs', $kitchen->getQuantity());
+		$this->assertNull($this->row()->getRestock());
+	}
+
+	public function testAnUntickedItemIsNotPutAway(): void {
+		$kitchen = $this->counted(20, '4 eggs', '12 eggs');
+
+		$result = $this->svc->putAway(self::ROW, [['listId' => 20, 'amount' => 3.0]], 'alice');
+
+		$this->assertSame('4 eggs', $kitchen->getQuantity());
+		$this->assertSame([], $result['restocked']);
+	}
+
+	public function testPuttingAwayOnAChecklistIsRefused(): void {
+		$this->tick('2');
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->svc->putAway(self::ROW, [['listId' => 11, 'amount' => 2.0]], 'alice');
 	}
 }

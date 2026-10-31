@@ -432,6 +432,7 @@
       @link="handleLink"
       @unlink="handleUnlink"
       @auto-link="handleAutoLink"
+      @add-to-list="handleAddToList"
     />
 
     <ChecklistItemViewDialog
@@ -977,6 +978,7 @@ import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import {
   LIST_KIND_ROUTES,
   LIST_KINDS,
+  allListsStrings,
   listKindStrings,
   provideListKind,
 } from '@/composables/useListKind'
@@ -2478,6 +2480,25 @@ async function handleLink(item: ChecklistItem, row: StockLinkRow) {
   }
 }
 
+/**
+ * Add an inventory item with nothing to link to onto the checklist `listId` as
+ * a new item, then link it there. The server then settles the new row like any
+ * link: checked off while the stock is fine, asking for the shortfall when low.
+ */
+async function handleAddToList(item: ChecklistItem, listId: number) {
+  try {
+    const row = await listApi('checklist').addItem(houseIdNum.value, listId, {
+      name: item.name,
+      categoryId: item.categoryId,
+    })
+    const updated = await linkItem(item.id, row.id)
+    syncEditingLink(updated)
+    if (updated.stockLink) showSuccess(linkToasts.linked(updated.name, updated.stockLink))
+  } catch (e) {
+    showError((e as Error).message)
+  }
+}
+
 async function handleUnlink(item: ChecklistItem) {
   const row = item.stockLink
   try {
@@ -3121,7 +3142,7 @@ const strings = {
     'pantry',
     'This inventory has no restock checklist, so these items are only marked here. Pick one in the inventory settings.',
   ),
-  allListsTitle: t('pantry', 'All checklists'),
+  allListsTitle: allListsStrings(props.kind).title,
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),

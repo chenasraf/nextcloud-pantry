@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
+use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
@@ -38,10 +39,15 @@ use OCP\IDBConnection;
  *   leaves stock alone.
  * - Stock changing runs the restock sync, so a shared item that came up short
  *   goes straight back on the list asking for the rest.
+ * - At the end of a shopping trip the member can put a ticked item away
+ *   somewhere else: {@see putAway()} trades what the tick restocked for the
+ *   inventories and amounts they pick.
  *
  * @psalm-import-type RestockEntry from ChecklistItem
  * @psalm-import-type RestockSyncEvent from RestockSyncService
+ * @psalm-import-type RestockSnapshot from RestockSyncService
  * @psalm-type RestockToggle = array{item: ChecklistItem, restocked: list<RestockEntry>, undone: list<RestockEntry>, events: list<RestockSyncEvent>}
+ * @psalm-type PutAwayPick = array{listId: int, amount: float|null}
  */
 class RestockService {
 	use TTransactional;
@@ -55,6 +61,7 @@ class RestockService {
 		private ChecklistMapper $listMapper,
 		private RestockSyncService $sync,
 		private IDBConnection $db,
+		private CategoryMapper $categoryMapper,
 	) {
 	}
 
@@ -86,6 +93,140 @@ class RestockService {
 	}
 
 	/**
+	 * Put what a ticked checklist item bought away in the inventories the
+	 * member picks, in the amounts they pick, instead of where the tick put it.
+	 * The tick's restock is wound back and the picks applied on top, each
+	 * inventory item written once, so the restock sync sees a single change and
+	 * a later uncheck takes out exactly what the picks added.
+	 *
+	 * A pick lands on the inventory's item linked to the checklist item, else on
+	 * one with the same name (linked to it when free), else on a new item made
+	 * for it and linked, so that inventory comes first next time. A null amount
+	 * fills the item to its target; a level item goes to Full. Nothing happens
+	 * unless the item is ticked.
+	 *
+	 * @param list<PutAwayPick> $picks
+	 * @return RestockToggle
+	 * @throws \InvalidArgumentException when a pick is not an inventory of the item's house.
+	 */
+	public function putAway(int $rowId, array $picks, string $uid): array {
+		return $this->atomic(function () use ($rowId, $picks, $uid): array {
+			$this->itemMapper->lock($rowId);
+			$row = $this->itemMapper->findById($rowId, true);
+			if (!$row->getDone()) {
+				return $this->result($row, [], [], []);
+			}
+			$today = StockRules::today();
+			/** @var array<int, array{ChecklistItem, RestockSnapshot}> $touched Each item, as it stood before this call. */
+			$touched = [];
+			$touch = function (ChecklistItem $item) use (&$touched, $today): ChecklistItem {
+				$id = (int)$item->getId();
+				if (!isset($touched[$id])) {
+					$touched[$id] = [$item, $this->sync->snapshotOf($item, $today)];
+				}
+				return $touched[$id][0];
+			};
+
+			$undone = [];
+			foreach ($row->getRestock() ?? [] as $entry) {
+				try {
+					$item = $this->itemMapper->findById($entry['itemId'], true);
+				} catch (DoesNotExistException) {
+					continue;
+				}
+				if ($item->getLinkedItemId() === $rowId) {
+					self::rewind($touch($item), $entry);
+					$undone[] = $entry;
+				}
+			}
+
+			$grants = [];
+			foreach ($picks as $pick) {
+				$item = $touch($this->storedIn($row, $pick, $uid));
+				$snapshot = $this->sync->snapshotOf($item, $today);
+				$replace = $snapshot['needs'] && StockRules::expiryNeedsRestock($snapshot['expiry']);
+				$amount = $pick['amount'] ?? ($replace ? (StockRules::firstNumber($item->getTarget()) ?? 0.0) : self::missing($item));
+				$grants[] = ['item' => $item, 'amount' => $amount, 'replace' => $replace, 'stock' => true];
+			}
+			$restocked = $this->grant($grants, $today);
+
+			foreach ($touched as [$item]) {
+				$this->itemMapper->update($item);
+			}
+			$row->setRestock($restocked === [] ? null : $restocked);
+			$this->itemMapper->update($row);
+			$events = [];
+			foreach ($touched as [$item, $before]) {
+				array_push($events, ...$this->sync->afterWrite($item, $before, false, $uid));
+			}
+			return $this->result($row, $restocked, $undone, $events);
+		}, $this->db);
+	}
+
+	/**
+	 * The item on the picked inventory that holds what the row buys: the one
+	 * linked to the row, else a same-name one (linked to the row when free),
+	 * else a new one made for it, linked, and starting from nothing.
+	 *
+	 * @param PutAwayPick $pick
+	 * @throws \InvalidArgumentException when the pick is not an inventory of the row's house.
+	 */
+	private function storedIn(ChecklistItem $row, array $pick, string $uid): ChecklistItem {
+		$inventoryId = $pick['listId'];
+		$inventory = $this->list($inventoryId);
+		if ($inventory === null || $inventory->getKind() !== Checklist::KIND_INVENTORY || $inventory->getDeletedAt() !== null
+			|| $inventory->getHouseId() !== $this->list($row->getListId())?->getHouseId()) {
+			throw new \InvalidArgumentException('Items can only be put away in an inventory of the same house');
+		}
+		$rowId = (int)$row->getId();
+		foreach ($this->sync->contributors($row) as $item) {
+			if ($item->getListId() === $inventoryId) {
+				return $item;
+			}
+		}
+		$key = ScopedTaxonomyService::nameKey($row->getName());
+		foreach ($this->itemMapper->findByList($inventoryId) as $item) {
+			if (ScopedTaxonomyService::nameKey($item->getName()) !== $key) {
+				continue;
+			}
+			if ($item->getLinkedItemId() === null) {
+				$item->setLinkedItemId($rowId);
+				$item->setLinkedAt(time());
+			}
+			return $item;
+		}
+		// A new item aims for what was put in it, in the row's own words ("2 L").
+		$bought = trim($row->getQuantity() ?? '');
+		$amount = $pick['amount'] ?? StockRules::firstNumber($bought) ?? 1.0;
+		$target = StockRules::withNumber(StockRules::firstNumber($bought) !== null ? $bought : '1', $amount);
+		$item = $this->checklists->addItem($inventoryId, [
+			'name' => $row->getName(),
+			'categoryId' => $this->houseWideCategory($row->getCategoryId()),
+			'stockMode' => StockRules::MODE_COUNT,
+			'target' => $target,
+			'quantity' => StockRules::withNumber($target, 0),
+		], $uid);
+		$item->setLinkedItemId($rowId);
+		$item->setLinkedAt(time());
+		return $item;
+	}
+
+	/**
+	 * The category, when every list can use it, so a new inventory item keeps
+	 * the shopping list's category.
+	 */
+	private function houseWideCategory(?int $categoryId): ?int {
+		if ($categoryId === null) {
+			return null;
+		}
+		try {
+			return $this->categoryMapper->findById($categoryId)->getListId() === null ? $categoryId : null;
+		} catch (DoesNotExistException) {
+			return null;
+		}
+	}
+
+	/**
 	 * @return RestockToggle
 	 */
 	private function restock(ChecklistItem $row, string $uid): array {
@@ -94,34 +235,15 @@ class RestockService {
 			return $this->result($row, [], [], []);
 		}
 		$today = StockRules::today();
-		$restocked = [];
 		$updated = [];
 		$events = [];
-		foreach ($this->plan($contributors, StockRules::firstNumber($row->getQuantity()), $today) as $grant) {
-			$item = $grant['item'];
-			$before = $this->sync->snapshotOf($item, $today);
-			$entry = $this->entry($item);
-			if ($grant['stock'] && self::isLevel($item)) {
-				$entry['previousLevel'] = $item->getStockLevel() ?? StockRules::LEVEL_FULL;
-				$entry['replaced'] = $grant['replace'];
-				$item->setStockLevel(StockRules::LEVEL_FULL);
-			} elseif ($grant['stock']) {
-				$amount = $grant['amount'] ?? 0.0;
-				$entry['added'] = StockRules::formatNumber($amount);
-				if ($grant['replace']) {
-					$entry['replaced'] = true;
-					$entry['previousOnHand'] = $item->getQuantity();
-					$item->setQuantity(StockRules::withNumber(self::onHandText($item), $amount));
-				} else {
-					$item->setQuantity(self::onHandPlus($item, $amount));
-				}
-			}
-			$entry['expiresAt'] = StockRules::renewedExpiry($item->getShelfLifeDays(), $today);
-			$item->setExpiresAt($entry['expiresAt']);
-			$item->setUpdatedAt(time());
-			$this->itemMapper->update($item);
-			$restocked[] = $entry;
-			$updated[] = [$item, $before];
+		$grants = $this->plan($contributors, StockRules::firstNumber($row->getQuantity()), $today);
+		foreach ($grants as $grant) {
+			$updated[] = [$grant['item'], $this->sync->snapshotOf($grant['item'], $today)];
+		}
+		$restocked = $this->grant($grants, $today);
+		foreach ($grants as $grant) {
+			$this->itemMapper->update($grant['item']);
 		}
 		if ($restocked === []) {
 			return $this->result($row, [], [], []);
@@ -151,26 +273,7 @@ class RestockService {
 				continue;
 			}
 			$before = $this->sync->snapshotOf($item);
-			$changed = false;
-			if ($entry['previousLevel'] !== null) {
-				if (self::isLevel($item)) {
-					$item->setStockLevel($entry['previousLevel']);
-					$changed = true;
-				}
-			} elseif ($entry['added'] !== null && !self::isLevel($item) && self::onHand($item) !== null) {
-				if ($entry['replaced']) {
-					$item->setQuantity($entry['previousOnHand']);
-				} else {
-					$item->setQuantity(self::onHandPlus($item, -(StockRules::firstNumber($entry['added']) ?? 0.0)));
-				}
-				$changed = true;
-			}
-			// A date edited by hand since the tick is the member's, so it stays.
-			if ($item->getExpiresAt() === $entry['expiresAt'] && $entry['previousExpiresAt'] !== $entry['expiresAt']) {
-				$item->setExpiresAt($entry['previousExpiresAt']);
-				$changed = true;
-			}
-			if (!$changed) {
+			if (!self::rewind($item, $entry)) {
 				continue;
 			}
 			$item->setUpdatedAt(time());
@@ -179,6 +282,71 @@ class RestockService {
 			array_push($events, ...$this->sync->afterWrite($item, $before, false, $uid));
 		}
 		return $this->result($row, [], $undone, $events);
+	}
+
+	/**
+	 * Wind an inventory item back, in memory, to how it stood before the tick
+	 * `$entry` records: never below 0, levels and replaced amounts as they
+	 * were, the date unless it was edited by hand since.
+	 *
+	 * @param RestockEntry $entry
+	 * @return bool Whether anything changed.
+	 */
+	private static function rewind(ChecklistItem $item, array $entry): bool {
+		$changed = false;
+		if ($entry['previousLevel'] !== null) {
+			if (self::isLevel($item)) {
+				$item->setStockLevel($entry['previousLevel']);
+				$changed = true;
+			}
+		} elseif ($entry['added'] !== null && !self::isLevel($item) && self::onHand($item) !== null) {
+			if ($entry['replaced']) {
+				$item->setQuantity($entry['previousOnHand']);
+			} else {
+				$item->setQuantity(self::onHandPlus($item, -(StockRules::firstNumber($entry['added']) ?? 0.0)));
+			}
+			$changed = true;
+		}
+		// A date edited by hand since the tick is the member's, so it stays.
+		if ($item->getExpiresAt() === $entry['expiresAt'] && $entry['previousExpiresAt'] !== $entry['expiresAt']) {
+			$item->setExpiresAt($entry['previousExpiresAt']);
+			$changed = true;
+		}
+		return $changed;
+	}
+
+	/**
+	 * Apply grants to their items, in memory, and record what each changed.
+	 *
+	 * @param list<array{item: ChecklistItem, amount: float|null, replace: bool, stock: bool}> $grants
+	 * @return list<RestockEntry>
+	 */
+	private function grant(array $grants, int $today): array {
+		$restocked = [];
+		foreach ($grants as $grant) {
+			$item = $grant['item'];
+			$entry = $this->entry($item);
+			if ($grant['stock'] && self::isLevel($item)) {
+				$entry['previousLevel'] = $item->getStockLevel() ?? StockRules::LEVEL_FULL;
+				$entry['replaced'] = $grant['replace'];
+				$item->setStockLevel(StockRules::LEVEL_FULL);
+			} elseif ($grant['stock']) {
+				$amount = $grant['amount'] ?? 0.0;
+				$entry['added'] = StockRules::formatNumber($amount);
+				if ($grant['replace']) {
+					$entry['replaced'] = true;
+					$entry['previousOnHand'] = $item->getQuantity();
+					$item->setQuantity(StockRules::withNumber(self::onHandText($item), $amount));
+				} else {
+					$item->setQuantity(self::onHandPlus($item, $amount));
+				}
+			}
+			$entry['expiresAt'] = StockRules::renewedExpiry($item->getShelfLifeDays(), $today);
+			$item->setExpiresAt($entry['expiresAt']);
+			$item->setUpdatedAt(time());
+			$restocked[] = $entry;
+		}
+		return $restocked;
 	}
 
 	/**

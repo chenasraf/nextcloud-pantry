@@ -231,6 +231,7 @@ import { announceRestock, announceRestockSync } from '@/components/StockLink/res
 import type {
   Category,
   ChecklistItem,
+  PutAwayEntry,
   RestockEntry,
   ShoppingReview,
   Label,
@@ -624,21 +625,21 @@ function onPrimaryAction() {
   reviewOpen.value = true
 }
 
-async function onReviewConfirm() {
+async function onReviewConfirm(putAway: PutAwayEntry[] = []) {
   reviewOpen.value = false
   if (reviewMode.value === 'advance') {
     const next = sequence.value[activeIndex.value + 1]
     if (next) await goToStore(next.storeId)
   } else {
-    await finish()
+    await finish(putAway)
   }
 }
 
-async function finish() {
+async function finish(putAway: PutAwayEntry[] = []) {
   if (!session.value) return
   busy.value = true
   try {
-    await apiCloseSession(houseIdNum.value, session.value.id)
+    await apiCloseSession(houseIdNum.value, session.value.id, putAway)
     showInfo(strings.finished)
     await router.push({ name: 'lists', params: { houseId: String(houseIdNum.value) } })
   } catch (e) {

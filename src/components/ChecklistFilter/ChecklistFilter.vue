@@ -93,6 +93,7 @@ import { NO_CATEGORY_ID, NO_STORE_ID, NO_LABEL_ID } from './constants'
 import { STOCK_IN_STOCK, STOCK_NEEDS_RESTOCK } from './stockFilter'
 import { needsRestock } from '@/utils/stock'
 import { hasPrice } from '@/utils/price'
+import { allListsStrings, listKindStrings, useListKind } from '@/composables/useListKind'
 import type { Category, Checklist, ChecklistItem, Store, Label } from '@/api/types'
 
 const props = defineProps<{
@@ -120,6 +121,8 @@ const emit = defineEmits<{
   (e: 'update:selectedStock', v: number[]): void
   (e: 'update:priceFilter', v: PriceFilterValue): void
 }>()
+
+const { kind } = useListKind()
 
 // Facet trigger-chip icons, mirroring the Flutter filter bar.
 const ListIcon = FormatListChecksIcon
@@ -302,9 +305,9 @@ const strings = {
   // TRANSLATORS: First row of the category filter that clears it to show every category.
   allCategories: t('pantry', 'All categories'),
   noCategory: t('pantry', 'No category'),
-  // TRANSLATORS: Noun (plural). Label of the checklist filter dropdown.
-  lists: t('pantry', 'Checklists'),
-  allLists: t('pantry', 'All checklists'),
+  // The list filter names the kind of the page it filters: checklists or inventories.
+  lists: listKindStrings(kind.value).title,
+  allLists: allListsStrings(kind.value).title,
   // TRANSLATORS: Noun (plural). Label of the category filter dropdown.
   categories: t('pantry', 'Categories'),
   // TRANSLATORS: Noun (plural), shops where items are bought. Label of the store filter dropdown.
