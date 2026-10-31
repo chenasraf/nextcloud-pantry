@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.38.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.38.0...v0.38.1) (2026-10-31)
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([f3ace1b](https://github.com/chenasraf/nextcloud-pantry/commit/f3ace1bcec15261b93d0c22d23fa9c5e4052b5bf))
+* **lists:** refresh scoped categories after duplicating a list ([82b178d](https://github.com/chenasraf/nextcloud-pantry/commit/82b178db53e3f70bfe3448b0696069769370c0bf))
+
 ## [0.38.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.37.0...v0.38.0) (2026-10-30)
 
 
