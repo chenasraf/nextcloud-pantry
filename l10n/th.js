@@ -5,6 +5,7 @@ OC.L10N.register(
     "Checkbox" : "กล่องกาเครื่องหมาย",
     "Date" : "วันที่",
     "Select" : "เลือก",
+    "Templates" : "เทมเพลต",
     "Cancel" : "Cancel",
     "Name" : "ชื่อ",
     "Create" : "สร้าง",

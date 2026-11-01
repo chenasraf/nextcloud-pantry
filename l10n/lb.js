@@ -6,6 +6,7 @@ OC.L10N.register(
     "Date" : "Datum",
     "Select" : "Auswielen",
     "Checklists" : "Checklëschten",
+    "Templates" : "Virlagen",
     "Cancel" : "Cancel",
     "Name" : "Numm",
     "Create" : "Erstellen",

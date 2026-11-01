@@ -3,6 +3,7 @@ OC.L10N.register(
     {
     "Text" : "Tèxt",
     "Date" : "Data",
+    "Templates" : "Modèls",
     "Cancel" : "Cancel",
     "Name" : "Nom",
     "Create" : "Crear",
@@ -12,6 +13,7 @@ OC.L10N.register(
     "Delete" : "Suprimir",
     "Edit" : "Modificar",
     "Add" : "Apondre",
+    "Suggestions" : "Suggestions",
     "No category" : "Cap de categoria",
     "Categories" : "Categorias",
     "Max" : "Max",
@@ -69,6 +71,7 @@ OC.L10N.register(
     "Reminders" : "Rapèls",
     "Enabled" : "Activada",
     "Searching …" : "Recèrca…",
+    "Link" : "Ligam",
     "From:" : "Del :",
     "To:" : "Al :",
     "Location" : "Emplaçament",

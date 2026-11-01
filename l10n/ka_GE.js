@@ -38,6 +38,7 @@ OC.L10N.register(
     "Notes" : "ჩანაწერები",
     "Customize" : "პერსონალიზაცია",
     "None" : "არც ერთი",
+    "Level" : "დონე",
     "Remind me" : "შემახსენეთ",
     "Close" : "დახურვა",
     "Copied to clipboard" : "კოპირებულია კლიპბორდში",

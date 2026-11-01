@@ -1,6 +1,7 @@
 { "translations": {
     "Text" : "Tèxt",
     "Date" : "Data",
+    "Templates" : "Modèls",
     "Cancel" : "Cancel",
     "Name" : "Nom",
     "Create" : "Crear",
@@ -10,6 +11,7 @@
     "Delete" : "Suprimir",
     "Edit" : "Modificar",
     "Add" : "Apondre",
+    "Suggestions" : "Suggestions",
     "No category" : "Cap de categoria",
     "Categories" : "Categorias",
     "Max" : "Max",
@@ -67,6 +69,7 @@
     "Reminders" : "Rapèls",
     "Enabled" : "Activada",
     "Searching …" : "Recèrca…",
+    "Link" : "Ligam",
     "From:" : "Del :",
     "To:" : "Al :",
     "Location" : "Emplaçament",
