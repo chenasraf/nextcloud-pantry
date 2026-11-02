@@ -822,7 +822,7 @@ OC.L10N.register(
     "Delete items" : "刪除項目",
     "Apply" : "使用",
     "Remove category" : "移除分類",
-    "Remove stores" : "Remove stores",
+    "Remove stores" : "移除儲存",
     "Remove labels" : "移除標籤",
     "Delete items?" : "刪除項目？",
     "The selected items will be permanently removed. This cannot be undone." : "【待校對】The selected items will be permanently removed. This cannot be undone.",
