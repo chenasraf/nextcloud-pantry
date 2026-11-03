@@ -88,6 +88,7 @@ OC.L10N.register(
     "Join" : "Dołącz",
     "New label" : "Nowa etykieta",
     "Rich text" : "Tekst sformatowany",
+    "Export to Markdown" : "Eksportuj do Markdown",
     "Close" : "Zamknij",
     "Copied to clipboard" : "Kopiuj do schowka",
     "Could not copy to clipboard" : "Nie można skopiować do schowka",

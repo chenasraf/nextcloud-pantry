@@ -94,6 +94,7 @@ OC.L10N.register(
     "Join" : "Deelnemen",
     "New label" : "Nieuwe tekst",
     "Rich text" : "Rijke tekst",
+    "Export to Markdown" : "Exporteren naar Markdown",
     "Close" : "Sluit",
     "Copied to clipboard" : "Gekopieerd naar het klembord",
     "Could not copy to clipboard" : "Kon niet kopiëren naar het klembord",

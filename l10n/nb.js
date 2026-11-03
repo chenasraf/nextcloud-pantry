@@ -88,6 +88,7 @@ OC.L10N.register(
     "Join" : "Bli med",
     "New label" : "Ny etikett",
     "Rich text" : "Rik tekst",
+    "Export to Markdown" : "Eksporter til Markdown",
     "Close" : "Lukk",
     "Copied to clipboard" : "Kopiert til utklippstavlen",
     "Could not copy to clipboard" : "Kunne ikke kopiere til utklippstavlen",

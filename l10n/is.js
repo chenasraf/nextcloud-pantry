@@ -78,6 +78,7 @@ OC.L10N.register(
     "Join" : "Taka þátt",
     "New label" : "Ný skýring",
     "Rich text" : "Sniðinn texti",
+    "Export to Markdown" : "Flytja út sem Markdown",
     "Close" : "Loka",
     "Copied to clipboard" : "Afritað á klippispjald",
     "Could not copy to clipboard" : "Gat ekki afritað á klippispjald",
