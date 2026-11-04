@@ -134,6 +134,7 @@ OC.L10N.register(
     "Daily" : "每日",
     "Weekly" : "每週",
     "Monthly" : "每月",
+    "Presets" : "預設集",
     "Ends" : "結束",
     "Never" : "永不",
     "After" : "之後",
