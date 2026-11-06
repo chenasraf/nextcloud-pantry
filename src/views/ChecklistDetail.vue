@@ -2487,10 +2487,8 @@ async function handleLink(item: ChecklistItem, row: StockLinkRow) {
  */
 async function handleAddToList(item: ChecklistItem, listId: number) {
   try {
-    const row = await listApi('checklist').addItem(houseIdNum.value, listId, {
-      name: item.name,
-      categoryId: item.categoryId,
-    })
+    // Linking fills the row's category, matched or copied onto its list.
+    const row = await listApi('checklist').addItem(houseIdNum.value, listId, { name: item.name })
     const updated = await linkItem(item.id, row.id)
     syncEditingLink(updated)
     if (updated.stockLink) showSuccess(linkToasts.linked(updated.name, updated.stockLink))

@@ -211,7 +211,7 @@ class TemplateCopyService {
 		if ($category->getListId() !== $templateId) {
 			return $categoryId;
 		}
-		$match = $this->matchByName($all, $category->getName(), $targetId);
+		$match = ScopedTaxonomyService::matchByName($all, $category->getName(), $targetId);
 		return (int)($match ?? $this->taxonomy->copyCategory($category, $targetId, $now))->getId();
 	}
 
@@ -234,7 +234,7 @@ class TemplateCopyService {
 				$out[] = (int)$labelId;
 				continue;
 			}
-			$match = $this->matchByName($all, $label->getName(), $targetId);
+			$match = ScopedTaxonomyService::matchByName($all, $label->getName(), $targetId);
 			if ($match === null) {
 				$match = $this->taxonomy->copyLabel($label, $targetId, $now);
 				$all[] = $match;
@@ -348,28 +348,6 @@ class TemplateCopyService {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * A category or label the target can use with this name, preferring the
-	 * target's own over a house-wide one.
-	 *
-	 * @param list<Category>|list<Label> $all
-	 */
-	private function matchByName(array $all, string $name, int $targetId): Category|Label|null {
-		$key = ScopedTaxonomyService::nameKey($name);
-		$found = null;
-		foreach ($all as $entity) {
-			$scope = $entity->getListId();
-			if (($scope !== null && $scope !== $targetId) || ScopedTaxonomyService::nameKey($entity->getName()) !== $key) {
-				continue;
-			}
-			if ($scope === $targetId) {
-				return $entity;
-			}
-			$found ??= $entity;
-		}
-		return $found;
 	}
 
 	// ----- Item defaults -----

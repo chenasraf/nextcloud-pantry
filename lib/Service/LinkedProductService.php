@@ -23,8 +23,11 @@ use OCP\AppFramework\Db\DoesNotExistException;
  * inventory item linked to the same checklist item. Stock, quantity, the done
  * state and recurrence stay each side's own.
  *
- * A category or label scoped to one list is only carried to an item on that
- * list; an item elsewhere keeps its own.
+ * A change to a category or label scoped to one list is only carried to an
+ * item on that list; an item elsewhere keeps its own. Linking fills an empty
+ * category from the other side the way a template copy does: the same
+ * category when the list can see it, else one of the same name it can, else
+ * a copy made for it.
  */
 class LinkedProductService {
 	/** The item fields that describe the product rather than one list's view of it. */
@@ -36,6 +39,7 @@ class LinkedProductService {
 		private LabelMapper $labelMapper,
 		private ItemStoreMapper $itemStoreMapper,
 		private ItemLabelMapper $itemLabelMapper,
+		private ScopedTaxonomyService $taxonomy,
 	) {
 	}
 
@@ -149,10 +153,14 @@ class LinkedProductService {
 			$to->setBarcode($from->getBarcode());
 			$changed = true;
 		}
-		$category = $from->getCategoryId();
-		if ($to->getCategoryId() === null && $category !== null && $this->categoryVisibleOn($category, $to->getListId())) {
-			$to->setCategoryId($category);
-			$changed = true;
+		$categoryId = $from->getCategoryId();
+		if ($to->getCategoryId() === null && $categoryId !== null) {
+			try {
+				$category = $this->categoryMapper->findById($categoryId);
+				$to->setCategoryId((int)$this->taxonomy->categoryFor($category, $to->getListId(), time())->getId());
+				$changed = true;
+			} catch (DoesNotExistException) {
+			}
 		}
 		$toId = (int)$to->getId();
 		$fromId = (int)$from->getId();

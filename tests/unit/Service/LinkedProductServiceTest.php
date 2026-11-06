@@ -11,11 +11,14 @@ use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
+use OCA\Pantry\Db\FieldDefinitionMapper;
+use OCA\Pantry\Db\FieldOptionMapper;
 use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
 use OCA\Pantry\Db\Label;
 use OCA\Pantry\Db\LabelMapper;
 use OCA\Pantry\Service\LinkedProductService;
+use OCA\Pantry\Service\ScopedTaxonomyService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 
@@ -61,6 +64,11 @@ class LinkedProductServiceTest extends TestCase {
 		$categoryMapper->method('findById')->willReturnCallback(function (int $id): Category {
 			return $this->categories[$id] ?? throw new DoesNotExistException('category');
 		});
+		$categoryMapper->method('findByHouse')->willReturnCallback(fn (): array => $this->categories);
+		$categoryMapper->method('insert')->willReturnCallback(function (Category $category): Category {
+			$category->setId(max(array_keys($this->categories)) + 1);
+			return $this->categories[(int)$category->getId()] = $category;
+		});
 		$labelMapper = $this->createMock(LabelMapper::class);
 		$labelMapper->method('findById')->willReturnCallback(function (int $id): Label {
 			return $this->labelRows[$id] ?? throw new DoesNotExistException('label');
@@ -77,11 +85,17 @@ class LinkedProductServiceTest extends TestCase {
 			$this->labels[$id] = $ids;
 		});
 
-		$this->svc = new LinkedProductService($itemMapper, $categoryMapper, $labelMapper, $storeMapper, $labelLinks);
+		$taxonomy = new ScopedTaxonomyService(
+			$categoryMapper,
+			$labelMapper,
+			$this->createMock(FieldDefinitionMapper::class),
+			$this->createMock(FieldOptionMapper::class),
+		);
+		$this->svc = new LinkedProductService($itemMapper, $categoryMapper, $labelMapper, $storeMapper, $labelLinks, $taxonomy);
 
-		$this->category(1, null);
-		$this->category(2, null);
-		$this->category(3, self::FRIDGE);
+		$this->category(1, null, 'Dairy');
+		$this->category(2, null, 'Cheese');
+		$this->category(3, self::FRIDGE, 'Top shelf');
 		$this->label(1, null);
 		$this->label(2, self::FRIDGE);
 		$this->label(3, self::GROCERIES);
@@ -98,10 +112,12 @@ class LinkedProductServiceTest extends TestCase {
 		return $this->items[$id] = $item;
 	}
 
-	private function category(int $id, ?int $listId): void {
+	private function category(int $id, ?int $listId, string $name): void {
 		$category = new Category();
 		$category->setId($id);
+		$category->setHouseId(1);
 		$category->setListId($listId);
+		$category->setName($name);
 		$this->categories[$id] = $category;
 	}
 
@@ -193,6 +209,30 @@ class LinkedProductServiceTest extends TestCase {
 		$this->assertSame(1, $row->getCategoryId());
 		$this->assertSame('3017620422003', $row->getBarcode());
 		$this->assertSame([5], $this->stores[200]);
+	}
+
+	public function testLinkingFillsAScopedCategoryWithTheOneOfTheSameNameTheRowCanSee(): void {
+		$this->category(4, self::GROCERIES, ' top  SHELF ');
+		$row = $this->item(100, self::GROCERIES);
+		$fridge = $this->item(200, self::FRIDGE, linkedTo: 100, categoryId: 3);
+
+		$this->svc->align($fridge, $row);
+
+		$this->assertSame(4, $row->getCategoryId());
+		$this->assertCount(4, $this->categories, 'no copy when one with the same name is there');
+	}
+
+	public function testLinkingCopiesAScopedCategoryTheRowHasNoMatchFor(): void {
+		$row = $this->item(100, self::GROCERIES);
+		$fridge = $this->item(200, self::FRIDGE, linkedTo: 100, categoryId: 3);
+
+		$this->svc->align($fridge, $row);
+
+		$copy = $this->categories[(int)$row->getCategoryId()];
+		$this->assertNotSame(3, $copy->getId());
+		$this->assertSame(self::GROCERIES, $copy->getListId());
+		$this->assertSame('Top shelf', $copy->getName());
+		$this->assertSame(3, $fridge->getCategoryId());
 	}
 
 	public function testLinkingOverwritesNothing(): void {

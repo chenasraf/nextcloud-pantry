@@ -37,6 +37,44 @@ class ScopedTaxonomyService {
 		return mb_strtolower((string)preg_replace('/\s+/u', ' ', trim($name)));
 	}
 
+	/**
+	 * A category or label the target can use with this name, preferring the
+	 * target's own over a house-wide one.
+	 *
+	 * @template T of Category|Label
+	 * @param list<T> $all
+	 * @return T|null
+	 */
+	public static function matchByName(array $all, string $name, int $targetId): Category|Label|null {
+		$key = self::nameKey($name);
+		$found = null;
+		foreach ($all as $entity) {
+			$scope = $entity->getListId();
+			if (($scope !== null && $scope !== $targetId) || self::nameKey($entity->getName()) !== $key) {
+				continue;
+			}
+			if ($scope === $targetId) {
+				return $entity;
+			}
+			$found ??= $entity;
+		}
+		return $found;
+	}
+
+	/**
+	 * The category an item on `$listId` uses for `$source`: `$source` itself
+	 * when the list can see it, else the one of the same name the list can
+	 * see, else a copy made for the list.
+	 */
+	public function categoryFor(Category $source, int $listId, int $now): Category {
+		$scope = $source->getListId();
+		if ($scope === null || $scope === $listId) {
+			return $source;
+		}
+		$all = array_values($this->categoryMapper->findByHouse((int)$source->getHouseId()));
+		return self::matchByName($all, $source->getName(), $listId) ?? $this->copyCategory($source, $listId, $now);
+	}
+
 	public function copyCategory(Category $source, int $listId, int $now): Category {
 		$copy = new Category();
 		$copy->setHouseId($source->getHouseId());
