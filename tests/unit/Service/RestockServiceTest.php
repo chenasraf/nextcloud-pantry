@@ -586,6 +586,28 @@ class RestockServiceTest extends TestCase {
 		$this->assertNull($this->added, 'no new item when one with the same name is there');
 	}
 
+	public function testPuttingAwayLeavesASameNameItemLinkedToAnotherRowAlone(): void {
+		$taken = new ChecklistItem();
+		$taken->setId(78);
+		$taken->setListId(21);
+		$taken->setName('Eggs');
+		$taken->setStockMode(StockRules::MODE_COUNT);
+		$taken->setQuantity('1');
+		$taken->setTarget('6');
+		$taken->setLinkedItemId(50);
+		$this->items[78] = $taken;
+		$this->tick('2');
+
+		$this->svc->putAway(self::ROW, [['listId' => 21, 'amount' => 2.0]], 'alice');
+
+		$this->assertSame('1', $taken->getQuantity(), "another row's stock is not topped up by this one");
+		$this->assertSame(50, $taken->getLinkedItemId());
+		$this->assertIsArray($this->added, 'a new item holds what was put away');
+		$this->svc->toggle(self::ROW, 'alice');
+		$new = array_values(array_filter($this->items, static fn (ChecklistItem $i): bool => $i->getListId() === 21 && $i->getId() !== 78));
+		$this->assertSame('0', $new[0]->getQuantity(), 'unchecking takes out what was put away');
+	}
+
 	public function testNoPicksTakesThePurchaseBackOutOfStock(): void {
 		$kitchen = $this->counted(20, '4 eggs', '12 eggs');
 		$this->tick('8 eggs');

@@ -100,8 +100,8 @@ class RestockService {
 	 * a later uncheck takes out exactly what the picks added.
 	 *
 	 * A pick lands on the inventory's item linked to the checklist item, else on
-	 * one with the same name (linked to it when free), else on a new item made
-	 * for it and linked, so that inventory comes first next time. A null amount
+	 * an unlinked one with the same name, else on a new item made for it, and
+	 * either is linked, so that inventory comes first next time. A null amount
 	 * fills the item to its target; a level item goes to Full. Nothing happens
 	 * unless the item is ticked.
 	 *
@@ -165,8 +165,9 @@ class RestockService {
 
 	/**
 	 * The item on the picked inventory that holds what the row buys: the one
-	 * linked to the row, else a same-name one (linked to the row when free),
-	 * else a new one made for it, linked, and starting from nothing.
+	 * linked to the row, else a same-name one not linked to another row (linked
+	 * to this one), else a new one made for it, linked, and starting from
+	 * nothing.
 	 *
 	 * @param PutAwayPick $pick
 	 * @throws \InvalidArgumentException when the pick is not an inventory of the row's house.
@@ -186,13 +187,13 @@ class RestockService {
 		}
 		$key = ScopedTaxonomyService::nameKey($row->getName());
 		foreach ($this->itemMapper->findByList($inventoryId) as $item) {
-			if (ScopedTaxonomyService::nameKey($item->getName()) !== $key) {
+			// One linked to another row is that row's stock: an uncheck here
+			// could never take back what this pick added to it.
+			if (ScopedTaxonomyService::nameKey($item->getName()) !== $key || $item->getLinkedItemId() !== null) {
 				continue;
 			}
-			if ($item->getLinkedItemId() === null) {
-				$item->setLinkedItemId($rowId);
-				$item->setLinkedAt(time());
-			}
+			$item->setLinkedItemId($rowId);
+			$item->setLinkedAt(time());
 			return $item;
 		}
 		// A new item aims for what was put in it, in the row's own words ("2 L").
