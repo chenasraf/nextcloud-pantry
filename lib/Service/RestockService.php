@@ -164,6 +164,33 @@ class RestockService {
 	}
 
 	/**
+	 * Check that every pick names a live inventory of the item's house, so a
+	 * caller putting several items away can reject a bad pick before writing
+	 * any of them.
+	 *
+	 * @param list<PutAwayPick> $picks
+	 * @throws \InvalidArgumentException when a pick is not an inventory of the item's house.
+	 * @throws DoesNotExistException when the item does not exist.
+	 */
+	public function checkPutAway(int $rowId, array $picks): void {
+		$row = $this->itemMapper->findById($rowId, true);
+		foreach ($picks as $pick) {
+			$this->requireInventoryFor($row, $pick['listId']);
+		}
+	}
+
+	/**
+	 * @throws \InvalidArgumentException when the list is not an inventory of the row's house.
+	 */
+	private function requireInventoryFor(ChecklistItem $row, int $inventoryId): void {
+		$inventory = $this->list($inventoryId);
+		if ($inventory === null || $inventory->getKind() !== Checklist::KIND_INVENTORY || $inventory->getDeletedAt() !== null
+			|| $inventory->getHouseId() !== $this->list($row->getListId())?->getHouseId()) {
+			throw new \InvalidArgumentException('Items can only be put away in an inventory of the same house');
+		}
+	}
+
+	/**
 	 * The item on the picked inventory that holds what the row buys: the one
 	 * linked to the row, else a same-name one not linked to another row (linked
 	 * to this one), else a new one made for it, linked, and starting from
@@ -174,11 +201,7 @@ class RestockService {
 	 */
 	private function storedIn(ChecklistItem $row, array $pick, string $uid): ChecklistItem {
 		$inventoryId = $pick['listId'];
-		$inventory = $this->list($inventoryId);
-		if ($inventory === null || $inventory->getKind() !== Checklist::KIND_INVENTORY || $inventory->getDeletedAt() !== null
-			|| $inventory->getHouseId() !== $this->list($row->getListId())?->getHouseId()) {
-			throw new \InvalidArgumentException('Items can only be put away in an inventory of the same house');
-		}
+		$this->requireInventoryFor($row, $inventoryId);
 		$rowId = (int)$row->getId();
 		foreach ($this->sync->contributors($row) as $item) {
 			if ($item->getListId() === $inventoryId) {

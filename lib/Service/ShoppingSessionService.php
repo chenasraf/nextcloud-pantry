@@ -375,10 +375,14 @@ class ShoppingSessionService {
 			foreach ($this->sessionItems->findBySession((int)$session->getId()) as $log) {
 				$ticked[(int)$log->getItemId()] = true;
 			}
+			$putAway = array_intersect_key($putAway, $ticked);
+			// Each item is put away in its own transaction, so a bad pick has to
+			// be caught before the first one lands, not halfway through.
 			foreach ($putAway as $itemId => $picks) {
-				if (isset($ticked[$itemId])) {
-					$this->restock->putAway($itemId, $picks, $uid);
-				}
+				$this->restock->checkPutAway($itemId, $picks);
+			}
+			foreach ($putAway as $itemId => $picks) {
+				$this->restock->putAway($itemId, $picks, $uid);
 			}
 		}
 		$this->snapshotSessionItems($session);

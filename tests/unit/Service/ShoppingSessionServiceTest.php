@@ -404,6 +404,28 @@ class ShoppingSessionServiceTest extends TestCase {
 		], $putAway);
 	}
 
+	public function testABadPickPutsNothingAwayAndLeavesTheTripOpen(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(10, 3), $this->makeLog(11, 3)]);
+		$this->restock->method('checkPutAway')->willReturnCallback(static function (int $itemId): void {
+			if ($itemId === 11) {
+				throw new \InvalidArgumentException('Items can only be put away in an inventory of the same house');
+			}
+		});
+		$this->restock->expects($this->never())->method('putAway');
+		$this->sessions->expects($this->never())->method('update');
+
+		try {
+			$this->svc->close($session, [
+				10 => [['listId' => 20, 'amount' => 1.0]],
+				11 => [['listId' => 11, 'amount' => 1.0]],
+			], 'alice');
+			$this->fail('a bad pick is refused');
+		} catch (\InvalidArgumentException) {
+		}
+		$this->assertNull($session->getClosedAt());
+	}
+
 	public function testClosingWithoutPutAwayKeepsWhatTheTicksRestocked(): void {
 		$session = $this->makeSession(['id' => 5]);
 		$this->sessions->method('update')->willReturnArgument(0);
