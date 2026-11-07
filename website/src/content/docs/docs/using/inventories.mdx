@@ -30,25 +30,52 @@ your shopping list. When you tick it off there, the inventory is restocked.
 	<TabItem label="Mobile & desktop">
 		<Steps>
 
-		1. Open the **Checklists** tab and tap the list name at the top to open the list switcher.
+		1. Open the **Inventories** tab and tap the inventory name at the top to open the list
+		   switcher. With no inventory yet, tap **New inventory** on the empty page instead.
 
-		2. Pick **Inventories** at the top of the switcher, then **New inventory**.
+		2. Pick **New inventory**.
 
 		3. Give it a name, a color and an icon, and tap **Create list**.
 
 		</Steps>
 
-		On a wide window, inventories also have their own heading in the side rail.
+		The **Lists** tab reaches inventories too, from **Inventories** at the top of its switcher, and
+		on a wide window they have their own heading in the side rail. **Settings → Interface → Navigation
+		order** moves or hides the **Inventories** tab.
 	</TabItem>
 	<TabItem label="Watch">
-		Inventories are made on the web or in the mobile and desktop app. The watch lists them under
-		their own heading in the list switcher, after the checklists.
+		Inventories are made on the web or in the mobile and desktop app. The watch has an
+		**Inventories** page of its own, right after the lists; tap its title to switch inventory. The
+		lists page's switcher lists them too, under their own heading after the checklists.
 	</TabItem>
 </Tabs>
 
 Add items with the same composer as a checklist, with two extra chips: **Stock** and **Expiry**.
 Items are organized, edited, archived and trashed just as on a [checklist](/docs/using/checklists).
-Inventories have no checkboxes: you change how much is left instead.
+Inventories use the same categories as your checklists, so an item sorts under the same header on
+the shopping list and at home. Inventories have no checkboxes: you change how much is left instead.
+
+## All inventories
+
+**All inventories** shows the items of every inventory in one list — what is in the fridge, the
+freezer and the cupboard together — with the same stock controls, filters and group actions as a
+single inventory. The **Inventories** filter narrows it to the storages you pick, and the composer
+asks which inventory a new item goes to.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		**All inventories** is the first entry under **Inventories** in the left sidebar, and the first
+		card on the inventories page.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		**All inventories** heads the list switcher of the **Inventories** tab, and the **Inventories**
+		heading of the side rail on a wide window, once the house has two inventories.
+	</TabItem>
+	<TabItem label="Watch">
+		The **Inventories** page opens on **All inventories** when the house has two or more; tap the
+		page's title to pick a single inventory instead.
+	</TabItem>
+</Tabs>
 
 ## Counting stock
 
@@ -201,10 +228,21 @@ Each inventory item is linked to the one checklist item that restocks it:
   When several items match, nothing is linked until you pick one.
 - **By hand** — link it to any item on any checklist you can edit, for example to keep a separate
   row per inventory.
+- **On a new item** — when no checklist item fits, **Add to a shopping list …** on the item's
+  **Shopping list** card adds it to the checklist you pick, with its name and category, and links
+  it there. The new item is checked off while the stock is fine, and comes back with the missing
+  amount once it runs low.
 
 A linked item keeps its link even when either side is renamed. Several inventories can share one
 checklist item: Pantry and Fridge milk both restock **Milk** on Groceries, which then asks for what
 they both need.
+
+Linked items are one product. Change the name, description, category, barcode, stores or labels on
+either side — from the inventory or from the shopping list — and the other side, and every other
+inventory item linked to the same checklist item, follows. What each side counts stays its own: the
+stock, the quantity to buy and the tick. A category or label kept to one list does not travel to
+another list. Linking fills in what one side leaves empty from the other, and changes nothing either
+side already says.
 
 <Tabs syncKey="platform">
 	<TabItem label="Web">
@@ -294,6 +332,36 @@ The checked-off item says what it did until it is unchecked:
 	date someone changed by hand since stays as it is. **Uncheck all** and a repeat schedule
 	reopening an item leave stock alone.
 </Aside>
+
+### Putting a trip away
+
+When you finish a [shopping trip](/docs/using/shopping-mode#5-finishing--review), the review has a
+**Put away** section: every item you bought, and where its tick put it. Change it to match where
+things actually went:
+
+- **Split** an item between storages — 6 nuggets in the freezer, 4 in the fridge — or move it all
+  to another one.
+- **Add it to a storage** that does not have it yet. Pantry adds the item there, with what you put
+  in it as its target and the shopping list's category, and links it, so it goes there by default
+  next time.
+- **Remove** a storage to take that share back out of stock. An amount left empty fills the item to
+  its target.
+
+Finishing applies your choices in place of what the ticks restocked; an item you leave as it was
+keeps it. A storage that is still short of its target after your split goes back on the shopping
+list for the rest. Unchecking the item afterwards takes out exactly what you put away.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		Each storage is a row with its amount and **×** to remove it; **Add to a storage …** below the
+		item adds another.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		Each storage is a row with its amount and **×** to remove it; **Add to a storage…** below the
+		item opens the list of inventories it is not in yet. Typing 0 removes the storage once you leave
+		the field.
+	</TabItem>
+</Tabs>
 
 ### Raising stock by hand
 

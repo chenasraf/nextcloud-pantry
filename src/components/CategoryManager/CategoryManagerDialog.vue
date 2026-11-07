@@ -119,7 +119,6 @@
     :open="showForm"
     :house-id="houseId"
     :category="editingCat"
-    :default-list-id="listId ?? null"
     :saving="catSaving"
     :error="catError"
     @update:open="closeForm"

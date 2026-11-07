@@ -47,7 +47,6 @@
     <CategoryFormDialog
       :open="showCreate"
       :house-id="houseId"
-      :default-list-id="listId ?? null"
       :saving="saving"
       :error="createError"
       @update:open="showCreate = $event"

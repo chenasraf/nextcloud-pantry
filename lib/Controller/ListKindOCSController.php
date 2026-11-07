@@ -620,6 +620,33 @@ abstract class ListKindOCSController extends OCSController {
 	}
 
 	/**
+	 * Items across every list of this kind in the house, for the meta "All"
+	 * view.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<array<string, mixed>>, array{}>
+	 */
+	protected function doIndexHouseItems(int $houseId, string $sortBy, int $limit, int $offset): DataResponse {
+		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
+			$all = $this->lists->listItemsForHouse($houseId, $sortBy, $categorySort, kind: $this->kind());
+			// Items inherit their parent list's access; hide items in lists the
+			// caller cannot reach. Cache the verdict per list id.
+			$listAccess = [];
+			$all = array_values(array_filter($all, function ($i) use ($houseId, $uid, &$listAccess) {
+				$listId = (int)$i->getListId();
+				if (!isset($listAccess[$listId])) {
+					$listAccess[$listId] = $this->permissions->canAccessList($houseId, $uid, $listId);
+				}
+				return $listAccess[$listId];
+			}));
+			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
+			return new DataResponse($this->serializeItems($sliced));
+		});
+	}
+
+	/**
 	 * @return DataResponse<Http::STATUS_OK, list<array<string, mixed>>, array{}>
 	 */
 	protected function doIndexDeletedItems(int $houseId, int $listId, int $limit, int $offset): DataResponse {

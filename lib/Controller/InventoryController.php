@@ -465,6 +465,28 @@ final class InventoryController extends ListKindOCSController {
 	}
 
 	/**
+	 * List items across every inventory in a house (meta "All inventories" view)
+	 *
+	 * Sort modes: newest, oldest, name_asc, name_desc, category. "custom" is
+	 * not supported because sort_order is per-list.
+	 *
+	 * @param int $houseId House id.
+	 * @param string $sortBy Sort mode (newest, oldest, name_asc, name_desc, category).
+	 * @param int<1, 1000> $limit Maximum number of items to return.
+	 * @param int<0, max> $offset Number of items to skip.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, list<PantryInventoryItem>, array{}>
+	 *
+	 * 200: Items returned
+	 */
+	#[ApiRoute(verb: 'GET', url: '/api/houses/{houseId}/inventories/items')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function indexHouseInventoryItems(int $houseId, string $sortBy = 'newest', int $limit = 1000, int $offset = 0): DataResponse {
+		return $this->doIndexHouseItems($houseId, $sortBy, $limit, $offset);
+	}
+
+	/**
 	 * List items in an inventory
 	 *
 	 * @param int $houseId House id.
@@ -799,6 +821,7 @@ final class InventoryController extends ListKindOCSController {
 			}
 			$before = clone $item;
 			$linked = $this->stockLinks->link($item, $row);
+			$this->lists->alignLinkedProduct($linked, $row);
 			return new DataResponse($this->serializeItem($this->afterItemWrite($linked, $before)));
 		});
 	}

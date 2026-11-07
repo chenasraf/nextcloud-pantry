@@ -36,6 +36,15 @@ vi.mock('./StockLinkPickerDialog.vue', () => ({
   },
 }))
 
+vi.mock('./StockLinkAddDialog.vue', () => ({
+  default: {
+    name: 'StockLinkAddDialog',
+    template: '<div class="add-stub" />',
+    props: ['open', 'houseId', 'itemName', 'restockChecklistId'],
+    emits: ['update:open', 'pick'],
+  },
+}))
+
 import StockLinkCard from './StockLinkCard.vue'
 import StockLinkPanel from './StockLinkPanel.vue'
 import { rowOptionLabel, rowStateText, stockLinkState } from './stockLink'
@@ -208,5 +217,29 @@ describe('StockLinkCard', () => {
     wrapper.findComponent({ name: 'StockLinkPickerDialog' }).vm.$emit('pick', checked)
 
     expect(wrapper.emitted('link')).toEqual([[checked]])
+  })
+
+  it('adds the item to a shopping list picked in the dialog', async () => {
+    const wrapper = mount(StockLinkCard, {
+      props: {
+        item: makeItem(),
+        houseId: 1,
+        restockChecklistName: 'Groceries',
+        restockChecklistId: 3,
+      },
+    })
+
+    await wrapper.find('[data-testid="stock-link-card-add"]').trigger('click')
+    const dialog = wrapper.findComponent({ name: 'StockLinkAddDialog' })
+    expect(dialog.props('restockChecklistId')).toBe(3)
+    expect(dialog.props('itemName')).toBe('Eggs')
+    dialog.vm.$emit('pick', 4)
+
+    expect(wrapper.emitted('add-to-list')).toEqual([[4]])
+  })
+
+  it('offers no adding to a list once linked', () => {
+    const wrapper = mountCard(makeItem({ stockLink: row }))
+    expect(wrapper.find('[data-testid="stock-link-card-add"]').exists()).toBe(false)
   })
 })

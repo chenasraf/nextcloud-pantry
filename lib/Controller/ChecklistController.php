@@ -435,24 +435,7 @@ final class ChecklistController extends ListKindOCSController {
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
 	public function indexHouseItems(int $houseId, string $sortBy = 'newest', int $limit = 1000, int $offset = 0): DataResponse {
-		return $this->runAction(function () use ($houseId, $sortBy, $limit, $offset): DataResponse {
-			$uid = $this->requireUid();
-			$this->auth->requireMember($houseId, $uid);
-			$categorySort = $this->prefs->getCategorySort($uid, $houseId);
-			$all = $this->lists->listItemsForHouse($houseId, $sortBy, $categorySort);
-			// Items inherit their parent list's access; hide items in lists the
-			// caller cannot reach. Cache the verdict per list id.
-			$listAccess = [];
-			$all = array_values(array_filter($all, function ($i) use ($houseId, $uid, &$listAccess) {
-				$listId = (int)$i->getListId();
-				if (!isset($listAccess[$listId])) {
-					$listAccess[$listId] = $this->permissions->canAccessList($houseId, $uid, $listId);
-				}
-				return $listAccess[$listId];
-			}));
-			$sliced = array_slice($all, max(0, $offset), max(0, $limit));
-			return new DataResponse($this->serializeItems($sliced));
-		});
+		return $this->doIndexHouseItems($houseId, $sortBy, $limit, $offset);
 	}
 
 	/**
