@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.38.1](https://github.com/chenasraf/nextcloud-pantry/compare/v0.38.0...v0.38.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **l10n:** Update translations from Transifex ([52c70af](https://github.com/chenasraf/nextcloud-pantry/commit/52c70af3ae8a25593fd4cc01d38f4fabcb81769f))
+* **l10n:** Update translations from Transifex ([5182fc6](https://github.com/chenasraf/nextcloud-pantry/commit/5182fc65d077be230b43128e33485f23fd67332f))
+* **l10n:** Update translations from Transifex ([d9a308a](https://github.com/chenasraf/nextcloud-pantry/commit/d9a308af6a1cc89491626da549a74cdec6145bed))
+* **l10n:** Update translations from Transifex ([3f44e61](https://github.com/chenasraf/nextcloud-pantry/commit/3f44e613cb7d14d0f2a807a3194cd2bce335caa4))
+* **l10n:** Update translations from Transifex ([d8f1aa5](https://github.com/chenasraf/nextcloud-pantry/commit/d8f1aa51ef8260c1f50064e266fd4b54b3d347c2))
+* **l10n:** Update translations from Transifex ([ce3b5e3](https://github.com/chenasraf/nextcloud-pantry/commit/ce3b5e324bfd9bbaba126b8c91a92505d8f01128))
+* **l10n:** Update translations from Transifex ([a60764e](https://github.com/chenasraf/nextcloud-pantry/commit/a60764e93f01b1743cbaf4e795f3e05cc12bf99d))
+* **l10n:** Update translations from Transifex ([f3ace1b](https://github.com/chenasraf/nextcloud-pantry/commit/f3ace1bcec15261b93d0c22d23fa9c5e4052b5bf))
+* **lists:** refresh scoped categories after duplicating a list ([82b178d](https://github.com/chenasraf/nextcloud-pantry/commit/82b178db53e3f70bfe3448b0696069769370c0bf))
+
 ## [0.38.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.37.0...v0.38.0) (2026-10-30)
 
 
