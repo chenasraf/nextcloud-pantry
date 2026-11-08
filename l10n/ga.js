@@ -686,6 +686,7 @@ OC.L10N.register(
     "Searching …" : "Ag cuardach …",
     "No checklist items found" : "Níor aimsíodh aon mhíreanna sa liosta seiceála",
     "{matches} on the restock checklist. Which one is this?" : "{matches} ar an liosta seiceála athstocála. Cén ceann é seo?",
+    "Finds or adds \"{item}\" on {checklist} when it is needed." : "Aimsíonn nó cuireann \"{item}\" leis an {checklist} nuair a bhíonn gá leis.",
     "Shopping list" : "Liosta siopadóireachta",
     "Unlink" : "Dínascadh",
     "Link to a different item …" : "Nasc chuig mír eile …",
