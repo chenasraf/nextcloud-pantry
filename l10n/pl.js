@@ -62,6 +62,7 @@ OC.L10N.register(
     "Remove option" : "Usuń opcję",
     "Default value" : "Wartość domyślna",
     "Name cannot be empty" : "Nazwa nie może być pusta",
+    "Member" : "Członek",
     "Members" : "Członkowie",
     "Account" : "Konto",
     "Role" : "Rola społeczna",
