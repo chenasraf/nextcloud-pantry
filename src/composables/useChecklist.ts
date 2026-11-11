@@ -312,7 +312,7 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     const s = sort ?? sortBy.value
     try {
       if (isMeta) {
-        items.value = await api.listAllItems(houseId, s)
+        items.value = await resource.listAllItems(houseId, s)
       } else if (archiveMode.value) {
         items.value = await resource.listArchivedItems(houseId, listId)
       } else if (trashMode.value) {

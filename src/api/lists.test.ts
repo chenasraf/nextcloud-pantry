@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))
 vi.mock('@/axios', () => ({ ocs: { get } }))
 
-import { listItems, listAllItems } from './lists'
+import { listApi, listItems, listAllItems } from './lists'
 import type { ChecklistItem } from './types'
 
 function makeItems(count: number, startId = 0): ChecklistItem[] {
@@ -69,6 +69,20 @@ describe('item pagination', () => {
     expect(get).toHaveBeenCalledTimes(2)
     expect(get).toHaveBeenNthCalledWith(1, '/houses/1/items', {
       params: { limit: PAGE_SIZE, offset: 0 },
+    })
+  })
+
+  it('reads each kind\'s "All" view from its own endpoint', async () => {
+    get.mockResolvedValue({ data: makeItems(2) })
+
+    await listApi('checklist').listAllItems(1, 'newest')
+    await listApi('inventory').listAllItems(1, 'newest')
+
+    expect(get).toHaveBeenNthCalledWith(1, '/houses/1/items', {
+      params: { sortBy: 'newest', limit: PAGE_SIZE, offset: 0 },
+    })
+    expect(get).toHaveBeenNthCalledWith(2, '/houses/1/inventories/items', {
+      params: { sortBy: 'newest', limit: PAGE_SIZE, offset: 0 },
     })
   })
 })

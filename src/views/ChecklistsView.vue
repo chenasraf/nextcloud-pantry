@@ -126,9 +126,9 @@
       </NcEmptyContent>
 
       <ul v-else class="pantry-lists__grid">
-        <li v-if="isChecklist" class="pantry-list-card-wrap pantry-list-card-wrap--meta">
+        <li v-if="allRoute" class="pantry-list-card-wrap pantry-list-card-wrap--meta">
           <router-link
-            :to="{ name: 'all-lists', params: { houseId: String(houseIdNum) } }"
+            :to="{ name: allRoute, params: { houseId: String(houseIdNum) } }"
             class="pantry-list-card pantry-list-card--meta"
           >
             <span class="pantry-list-card__icon-wrap pantry-list-card__icon-wrap--meta">
@@ -371,7 +371,12 @@ import type { ChecklistSort } from '@/api/prefs'
 import { getChecklistSort, setChecklistSort } from '@/api/prefs'
 import { useChecklists } from '@/composables/useChecklist'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
-import { LIST_KIND_ROUTES, listKindStrings, provideListKind } from '@/composables/useListKind'
+import {
+  LIST_KIND_ROUTES,
+  allListsStrings,
+  listKindStrings,
+  provideListKind,
+} from '@/composables/useListKind'
 import { useTouchReorder } from '@/composables/useTouchReorder'
 import {
   checklistIconComponent,
@@ -400,6 +405,7 @@ const kindRef = computed(() => props.kind)
 provideListKind(kindRef)
 const isChecklist = computed(() => props.kind === 'checklist')
 const detailRoute = LIST_KIND_ROUTES[props.kind].detail
+const allRoute = LIST_KIND_ROUTES[props.kind].all
 
 const houseIdNum = computed(() => Number(props.houseId))
 const {
@@ -800,8 +806,8 @@ const strings = {
   archive: t('pantry', 'Archive'),
   // TRANSLATORS: Verb, menu button that restores a list from the archive.
   unarchive: t('pantry', 'Unarchive'),
-  allListsTitle: t('pantry', 'All checklists'),
-  allListsBody: t('pantry', 'Items from every checklist in this house.'),
+  allListsTitle: allListsStrings(props.kind).title,
+  allListsBody: allListsStrings(props.kind).body,
   sortLabel: t('pantry', 'Sort order'),
   // TRANSLATORS: Noun, label of the toggle button that shows deleted lists.
   trashLabel: t('pantry', 'Trash'),

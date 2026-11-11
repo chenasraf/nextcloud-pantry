@@ -15590,6 +15590,141 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/inventories/items": {
+            "get": {
+                "operationId": "inventory-index-house-inventory-items",
+                "summary": "List items across every inventory in a house (meta \"All inventories\" view)",
+                "description": "Sort modes: newest, oldest, name_asc, name_desc, category. \"custom\" is not supported because sort_order is per-list.",
+                "tags": [
+                    "inventory"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "sortBy",
+                        "in": "query",
+                        "description": "Sort mode (newest, oldest, name_asc, name_desc, category).",
+                        "schema": {
+                            "type": "string",
+                            "default": "newest"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of items to return.",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 1000,
+                            "minimum": 1,
+                            "maximum": 1000
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Number of items to skip.",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 0,
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Items returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/InventoryItem"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/inventories/{listId}/items": {
             "get": {
                 "operationId": "inventory-index-inventory-items",
@@ -25715,7 +25850,7 @@
             "post": {
                 "operationId": "shopping_session-close",
                 "summary": "Close a shopping session",
-                "description": "Empty body; stamps `closed_at`. Closing an already-closed session returns 409 (no reopen).",
+                "description": "Stamps `closed_at`. Closing an already-closed session returns 409 (no reopen).\n`putAway` says where the items ticked on this trip were put away: each entry replaces what that item's tick restocked with the inventories and amounts given (an item an inventory does not have yet is added to it), and an empty `storages` list takes it back out of stock. Items left out keep what their tick restocked.",
                 "tags": [
                     "shopping_session"
                 ],
@@ -25727,6 +25862,56 @@
                         "basic_auth": []
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "putAway": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Where ticked items were put away. A null amount fills the inventory item to its target.",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "itemId",
+                                                "storages"
+                                            ],
+                                            "properties": {
+                                                "itemId": {
+                                                    "type": "integer",
+                                                    "format": "int64"
+                                                },
+                                                "storages": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "listId"
+                                                        ],
+                                                        "properties": {
+                                                            "listId": {
+                                                                "type": "integer",
+                                                                "format": "int64"
+                                                            },
+                                                            "amount": {
+                                                                "type": "number",
+                                                                "format": "double",
+                                                                "nullable": true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 "parameters": [
                     {
                         "name": "houseId",

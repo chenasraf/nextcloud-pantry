@@ -381,6 +381,59 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertNotNull($closed->getClosedAt());
 	}
 
+	public function testClosePutsAwayOnlyItemsTickedOnThisTrip(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(10, 3), $this->makeLog(11, null)]);
+		$putAway = [];
+		$this->restock->method('putAway')->willReturnCallback(function (int $itemId, array $picks, string $uid) use (&$putAway): array {
+			$putAway[$itemId] = [$picks, $uid];
+			return ['item' => new ChecklistItem(), 'restocked' => [], 'undone' => [], 'events' => []];
+		});
+
+		$this->svc->close($session, [
+			10 => [['listId' => 20, 'amount' => 6.0], ['listId' => 21, 'amount' => 4.0]],
+			11 => [],
+			// Not ticked on this trip: someone else's item stays as it is.
+			12 => [['listId' => 20, 'amount' => 1.0]],
+		], 'alice');
+
+		$this->assertSame([
+			10 => [[['listId' => 20, 'amount' => 6.0], ['listId' => 21, 'amount' => 4.0]], 'alice'],
+			11 => [[], 'alice'],
+		], $putAway);
+	}
+
+	public function testABadPickPutsNothingAwayAndLeavesTheTripOpen(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(10, 3), $this->makeLog(11, 3)]);
+		$this->restock->method('checkPutAway')->willReturnCallback(static function (int $itemId): void {
+			if ($itemId === 11) {
+				throw new \InvalidArgumentException('Items can only be put away in an inventory of the same house');
+			}
+		});
+		$this->restock->expects($this->never())->method('putAway');
+		$this->sessions->expects($this->never())->method('update');
+
+		try {
+			$this->svc->close($session, [
+				10 => [['listId' => 20, 'amount' => 1.0]],
+				11 => [['listId' => 11, 'amount' => 1.0]],
+			], 'alice');
+			$this->fail('a bad pick is refused');
+		} catch (\InvalidArgumentException) {
+		}
+		$this->assertNull($session->getClosedAt());
+	}
+
+	public function testClosingWithoutPutAwayKeepsWhatTheTicksRestocked(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$this->restock->expects($this->never())->method('putAway');
+
+		$this->svc->close($session, [], 'alice');
+	}
+
 	public function testItemsForSessionNarrowsByActiveStore(): void {
 		$session = $this->makeSession(['id' => 5, 'activeStoreId' => 3, 'includeUnassigned' => false]);
 		$this->sessionLists->method('findListIdsForSession')->with(5)->willReturn([10, 11]);

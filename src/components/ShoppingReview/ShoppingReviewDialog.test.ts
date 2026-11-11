@@ -42,9 +42,24 @@ vi.mock('@/composables/useStores', () => ({
   }),
 }))
 
+vi.mock('@/composables/useChecklist', async () => {
+  const { ref } = await import('vue')
+  return {
+    useChecklists: () => ({
+      lists: ref([
+        { id: 20, name: 'Congel' },
+        { id: 21, name: 'Frigo' },
+      ]),
+      load: () => Promise.resolve([]),
+    }),
+  }
+})
+
 vi.mock('@/components/StoreMultiPicker/storeIcons', () => ({
   storeIconComponent: () => ({ name: 'StoreIcon', template: '<span />', props: ['size'] }),
 }))
+vi.mock('@icons/Cupboard.vue', () => createIconMock('CupboardIcon'))
+vi.mock('@icons/Close.vue', () => createIconMock('CloseIcon'))
 
 vi.mock('@/components/ShoppingReminders', () => ({
   ShoppingReminderBlock: { name: 'ShoppingReminderBlock', template: '<div />' },
@@ -144,5 +159,79 @@ describe('ShoppingReviewDialog history editing', () => {
     await buttonWithText(wrapper, 'Edit totals')?.trigger('click')
     await buttonWithText(wrapper, 'Done')?.trigger('click')
     expect(wrapper.find('.shop-review__billed-amount').exists()).toBe(false)
+  })
+})
+
+describe('ShoppingReviewDialog put away', () => {
+  /** Nuggets: the tick put all 10 in the freezer (20). */
+  function tripWithNuggets(): ShoppingReview {
+    const trip = review()
+    trip.stores[0].items = [
+      {
+        id: 10,
+        name: 'Nuggets',
+        quantity: '10',
+        prices: [],
+        restock: [
+          {
+            itemId: 100,
+            listId: 20,
+            itemName: 'Nuggets',
+            listName: 'Congel',
+            added: '10',
+            previousLevel: null,
+            replaced: false,
+            previousOnHand: null,
+            previousExpiresAt: null,
+            expiresAt: null,
+          },
+        ],
+      } as unknown as ShoppingReview['stores'][number]['items'][number],
+    ]
+    return trip
+  }
+
+  async function mountFinish(mode: 'close' | 'advance' = 'close') {
+    const wrapper = mount(ShoppingReviewDialog, {
+      props: { open: true, houseId: 1, sessionId: 42, mode, storeId: 7 },
+    })
+    await flushPromises()
+    return wrapper
+  }
+
+  beforeEach(() => {
+    summaryRef.current = tripWithNuggets()
+  })
+
+  it('starts each item where its tick put it, and sends nothing when left alone', async () => {
+    const wrapper = await mountFinish()
+
+    const storage = wrapper.find('.shop-putaway [data-list="20"]')
+    expect(storage.text()).toContain('Congel')
+    expect((storage.find('input').element as HTMLInputElement).value).toBe('10')
+
+    await buttonWithText(wrapper, 'Finish trip')?.trigger('click')
+    expect(wrapper.emitted('confirm')?.[0]).toEqual([[]])
+  })
+
+  it('sends the items whose storages changed on Finish', async () => {
+    const wrapper = await mountFinish()
+
+    const input = wrapper.find('.shop-putaway [data-list="20"] input')
+    ;(input.element as HTMLInputElement).value = '6'
+    await input.trigger('change')
+    await buttonWithText(wrapper, 'Finish trip')?.trigger('click')
+
+    expect(wrapper.emitted('confirm')?.[0]).toEqual([
+      [{ itemId: 10, storages: [{ listId: 20, amount: 6 }] }],
+    ])
+  })
+
+  it('has no put-away step between stores', async () => {
+    const wrapper = await mountFinish('advance')
+
+    expect(wrapper.find('.shop-putaway').exists()).toBe(false)
+    await buttonWithText(wrapper, 'Next store')?.trigger('click')
+    expect(wrapper.emitted('confirm')?.[0]).toEqual([[]])
   })
 })
