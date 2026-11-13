@@ -7,6 +7,7 @@ OC.L10N.register(
     "Date" : "Tanggal",
     "Select" : "Pilih",
     "Full" : "Penuh",
+    "Expired {date}" : "Berakhir {date}",
     "open" : "buka",
     "Checklists" : "Daftar periksa",
     "Checklist" : "Daftar periksa",
