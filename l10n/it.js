@@ -72,6 +72,7 @@ OC.L10N.register(
     "View" : "Visualizza",
     "Copy" : "Copia",
     "Move" : "Sposta",
+    "Photos" : "Foto",
     "Upload" : "Carica",
     "Notes" : "Note",
     "Customize" : "Personalizza",

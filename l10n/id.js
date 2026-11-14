@@ -176,6 +176,7 @@ OC.L10N.register(
     "Automation" : "Otomatisasi",
     "Danger zone" : "Zona berbahaya",
     "New folder" : "Folder baru",
+    "Caption" : "Keterangan",
     "Add a description" : "Tambah deskripsi",
     "Remove folder" : "Hapus folder",
     "Documentation" : "Dokumentasi",
