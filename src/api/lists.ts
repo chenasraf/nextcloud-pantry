@@ -235,6 +235,13 @@ export function listApi(kind: ListKind) {
       return fetchAllItems(`${base(houseId)}/${listId}/items`, sortBy)
     },
 
+    /** Items across every list of this kind, for the meta "All" view. */
+    async listAllItems(houseId: number, sortBy?: string): Promise<ChecklistItem[]> {
+      return kind === 'checklist'
+        ? listAllItems(houseId, sortBy)
+        : fetchAllItems(`${base(houseId)}/items`, sortBy)
+    },
+
     async listDeletedItems(houseId: number, listId: number): Promise<ChecklistItem[]> {
       const resp = await ocs.get<ChecklistItem[]>(`${base(houseId)}/${listId}/items/trash`)
       return resp.data ?? []

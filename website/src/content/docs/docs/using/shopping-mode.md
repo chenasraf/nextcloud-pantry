@@ -99,6 +99,13 @@ shopped storeless). Finishing stamps the trip closed.
 
 <img width="616" alt="Trip review grouped by store with per-currency estimates and an actual-paid field" src="/docs/review.png" />
 
+The review before **Finish trip** also has a **Put away** section, listing everything you bought and
+the [inventories](/docs/using/inventories) it goes to — where its tick restocked it, to start with.
+Split an item between storages, move it, or add it to a storage that does not have it yet, and
+finishing puts your purchases away there. Items you leave as they are keep what their tick
+restocked, and so does a trip finished by a housemate, from another device, or closed after a long
+idle period. See [Putting a trip away](/docs/using/inventories#putting-a-trip-away).
+
 ### 6. History
 
 Finished trips land in **Shopping history** (linked from the start screen). Each row shows the store

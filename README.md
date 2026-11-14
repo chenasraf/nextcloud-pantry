@@ -30,9 +30,14 @@ place.
   and switch between them freely.
 - **Checklists**: Create and manage shared checklists with support for recurring items (e.g. milk
   every week) that automatically reappear when due.
+- **Inventories**: Track what you have at home — the fridge, the freezer, the cupboard — and how
+  much is left of each thing. Items that run low or start to go off land on your shopping list, and
+  **All inventories** shows every storage in one view. Checklists and inventories share one set of
+  categories.
 - **Shopping Mode**: Turn your lists into a store-by-store trip — pick the lists and the route,
   check items off as you walk, see which housemates are out shopping, and finish with a priced
-  review that lands in your shopping history.
+  review that lands in your shopping history. Finishing puts what you bought away: pick the
+  inventories each item goes to, and how much in each.
 - **Barcode Scanning**: Prefill an item from a product's EAN or UPC — scan with the camera or type
   the code in, and Pantry looks up the name, category and photo for you to review.
 - **Custom Fields**: Attach your own information to checklist items — an expiry date, an aisle
@@ -54,8 +59,10 @@ Full guides and reference live on the [Pantry website](https://pantry.casraf.dev
   client, and using every feature.
 - [Permissions](https://pantry.casraf.dev/docs/administration/permissions) — how roles and
   capabilities work, and which action needs which permission.
+- [Inventories](https://pantry.casraf.dev/docs/using/inventories) — track stock, restock from your
+  shopping list, and see every storage in one view.
 - [Shopping Mode](https://pantry.casraf.dev/docs/using/shopping-mode) — start a trip, walk your
-  stores, and finish with a priced review.
+  stores, and finish with a priced review that puts your purchases away.
 
 ## Companion Apps
 

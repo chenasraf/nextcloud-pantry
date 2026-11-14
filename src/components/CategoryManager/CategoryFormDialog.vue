@@ -89,8 +89,6 @@ const props = defineProps<{
   houseId: number
   /** Existing category to edit, or null/undefined to create a new one. */
   category?: Category | null
-  /** Default list scope for a new category (e.g. the list currently in context). */
-  defaultListId?: number | null
   saving?: boolean
   error?: string | null
 }>()
@@ -154,7 +152,10 @@ watch(
         nameValue.value = ''
         iconValue.value = DEFAULT_CATEGORY_ICON_KEY
         colorValue.value = CATEGORY_COLORS[3]!
-        listSelection.value = optionForListId(props.defaultListId ?? null)
+        // A new category is house-wide, whichever list it is created from, so
+        // checklists and inventories keep one shared set. Narrowing it to a
+        // single list is an explicit choice in the picker.
+        listSelection.value = globalOption.value
       }
     }
   },

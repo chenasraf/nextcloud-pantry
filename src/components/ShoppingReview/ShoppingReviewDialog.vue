@@ -74,6 +74,13 @@
         </div>
       </section>
 
+      <ShoppingPutAway
+        v-if="showPutAway"
+        v-model="putAway"
+        :house-id="houseId"
+        :items="checkedItems"
+      />
+
       <div v-if="mode !== 'advance'" class="shop-review__grand">
         <div class="shop-review__grand-row">
           <span>{{ strings.grandTotal }}</span>
@@ -127,11 +134,15 @@ import PencilIcon from '@icons/Pencil.vue'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { ShoppingReminderBlock, ShoppingRemindersDialog } from '@/components/ShoppingReminders'
 import { useStores } from '@/composables/useStores'
+import { useChecklists } from '@/composables/useChecklist'
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/utils/currencies'
+import ShoppingPutAway from './ShoppingPutAway.vue'
+import { changedPutAway, putAwayDraft, type PutAwayDraft } from './putAway'
 import { formatPrice, formatEstimate, formatMoney, resolveItemPrice } from '@/utils/price'
 import { getReview, getSessionSummary, patchStoreBilled, patchSessionBilled } from '@/api/shopping'
 import type {
   ChecklistItem,
+  PutAwayEntry,
   ShoppingReminderMoment,
   ShoppingReview,
   ShoppingReviewStore,
@@ -159,7 +170,8 @@ const editing = ref(false)
 const readOnly = computed(() => props.mode === 'history' && !editing.value)
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  confirm: []
+  /** On finishing, where ticked items were put away when that changed. */
+  confirm: [putAway: PutAwayEntry[]]
   updated: []
 }>()
 
@@ -170,6 +182,26 @@ const loading = ref(false)
 const saving = ref(false)
 const billed = ref<Record<string, { total: BilledAmount; currency: string }>>({})
 const remindersOpen = ref(false)
+
+// ----- Put away -----
+//
+// Finishing a trip says where what was bought goes. Each item starts where its
+// tick restocked it; only the items whose storages change are sent.
+
+const { lists: inventories, load: loadInventories } = useChecklists(props.houseId, 'inventory')
+const putAway = ref<PutAwayDraft>({})
+
+/** Every item ticked on the trip, once, whichever store it was ticked at. */
+const checkedItems = computed<ChecklistItem[]>(() => {
+  const seen = new Set<number>()
+  return (review.value?.stores ?? [])
+    .flatMap((grp) => grp.items)
+    .filter((item) => !seen.has(item.id) && Boolean(seen.add(item.id)))
+})
+
+const showPutAway = computed(
+  () => props.mode === 'close' && checkedItems.value.length > 0 && inventories.value.length > 0,
+)
 
 // Which reminder moment this dialog surfaces: the next-store confirm shows
 // `on_store_advance`, the close review shows `on_close`; history shows none.
@@ -194,9 +226,10 @@ watch(
     editing.value = false
     loading.value = true
     try {
-      await loadStores()
+      await Promise.all([loadStores(), props.mode === 'close' ? loadInventories() : null])
       review.value = await fetchReview()
       seedBilled()
+      putAway.value = putAwayDraft(checkedItems.value)
     } catch (e) {
       showError((e as Error).message || strings.loadFailed)
     } finally {
@@ -273,7 +306,7 @@ async function saveBilled(grp: ShoppingReviewStore) {
 }
 
 function confirm() {
-  emit('confirm')
+  emit('confirm', showPutAway.value ? changedPutAway(checkedItems.value, putAway.value) : [])
 }
 
 function itemPrice(item: ChecklistItem, storeId: number | null): string | null {

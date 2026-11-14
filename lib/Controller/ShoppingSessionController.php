@@ -161,11 +161,18 @@ final class ShoppingSessionController extends OCSController {
 	/**
 	 * Close a shopping session
 	 *
-	 * Empty body; stamps `closed_at`. Closing an already-closed session returns
-	 * 409 (no reopen).
+	 * Stamps `closed_at`. Closing an already-closed session returns 409 (no
+	 * reopen).
+	 *
+	 * `putAway` says where the items ticked on this trip were put away: each
+	 * entry replaces what that item's tick restocked with the inventories and
+	 * amounts given (an item an inventory does not have yet is added to it), and
+	 * an empty `storages` list takes it back out of stock. Items left out keep
+	 * what their tick restocked.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $sessionId Session id.
+	 * @param list<array{itemId: int, storages: list<array{listId: int, amount?: float|null}>}> $putAway Where ticked items were put away. A null amount fills the inventory item to its target.
 	 *
 	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_CONFLICT, PantryShoppingSession, array{}>
 	 *
@@ -175,16 +182,68 @@ final class ShoppingSessionController extends OCSController {
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/close')]
 	#[NoAdminRequired]
 	#[Permission(['canViewLists'])]
-	public function close(int $houseId, int $sessionId): DataResponse {
-		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+	public function close(int $houseId, int $sessionId, array $putAway = []): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId, $putAway): DataResponse {
+			$uid = $this->requireUid();
 			$session = $this->loadJoinedSession($sessionId, $houseId);
+			$picks = $this->putAwayPicks($houseId, $uid, $putAway);
 			try {
-				$closed = $this->sessions->close($session);
+				$closed = $this->sessions->close($session, $picks, $uid);
 			} catch (ShoppingSessionConflictException $e) {
 				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
 			}
 			return new DataResponse($this->sessions->composeDto($closed));
 		});
+	}
+
+	/**
+	 * Validate where ticked items are put away, merging repeat picks of one
+	 * inventory and dropping zero amounts. Putting away is part of ticking, so
+	 * it takes the same right, plus access to every inventory picked.
+	 *
+	 * @param array<array-key, mixed> $putAway
+	 * @return array<int, list<array{listId: int, amount: float|null}>> Checklist item id → picks.
+	 */
+	private function putAwayPicks(int $houseId, string $uid, array $putAway): array {
+		if ($putAway === []) {
+			return [];
+		}
+		if (!$this->permissions->can($houseId, $uid, 'canCheckItems')) {
+			throw new ForbiddenException('Missing capability: canCheckItems');
+		}
+		$out = [];
+		foreach ($putAway as $entry) {
+			$itemId = is_array($entry) ? (int)($entry['itemId'] ?? 0) : 0;
+			$storages = is_array($entry) ? ($entry['storages'] ?? []) : null;
+			if ($itemId <= 0 || !is_array($storages)) {
+				throw new \InvalidArgumentException('Each put-away entry needs an item id and a list of storages');
+			}
+			/** @var array<int, float|null> $byList */
+			$byList = [];
+			foreach ($storages as $storage) {
+				$listId = is_array($storage) ? (int)($storage['listId'] ?? 0) : 0;
+				$raw = is_array($storage) ? ($storage['amount'] ?? null) : null;
+				if ($listId <= 0 || ($raw !== null && (!is_numeric($raw) || (float)$raw < 0))) {
+					throw new \InvalidArgumentException('Each storage needs an inventory id and an amount of 0 or more');
+				}
+				if (!$this->permissions->canAccessList($houseId, $uid, $listId)) {
+					throw new ForbiddenException('No access to that inventory');
+				}
+				$amount = $raw === null ? null : (float)$raw;
+				if ($amount === 0.0) {
+					continue;
+				}
+				$byList[$listId] = array_key_exists($listId, $byList)
+					? ($byList[$listId] === null || $amount === null ? null : $byList[$listId] + $amount)
+					: $amount;
+			}
+			$out[$itemId] = array_map(
+				static fn (int $listId, ?float $amount): array => ['listId' => $listId, 'amount' => $amount],
+				array_keys($byList),
+				array_values($byList),
+			);
+		}
+		return $out;
 	}
 
 	/**

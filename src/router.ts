@@ -56,6 +56,13 @@ const routes: RouteRecordRaw[] = [
         props: (route) => ({ houseId: route.params.houseId, kind: 'inventory' }),
       },
       {
+        path: 'inventories/all',
+        name: 'all-inventories',
+        meta: { listKind: 'inventory' },
+        component: () => import('@/views/ChecklistDetail.vue'),
+        props: (route) => ({ houseId: route.params.houseId, listId: 'all', kind: 'inventory' }),
+      },
+      {
         path: 'inventories/:listId',
         name: 'inventory-detail',
         meta: { listKind: 'inventory' },

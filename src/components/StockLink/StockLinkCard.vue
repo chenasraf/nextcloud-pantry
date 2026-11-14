@@ -62,6 +62,9 @@
       <p class="stock-link-card__hint">{{ autoHint }}</p>
       <div v-if="!disabled" class="stock-link-card__actions">
         <NcButton variant="tertiary" @click="picking = true">{{ strings.linkTo }}</NcButton>
+        <NcButton variant="tertiary" data-testid="stock-link-card-add" @click="adding = true">
+          {{ strings.addToList }}
+        </NcButton>
       </div>
     </template>
 
@@ -71,6 +74,14 @@
       :house-id="houseId"
       :inventory-id="item.listId"
       @pick="$emit('link', $event)"
+    />
+    <StockLinkAddDialog
+      v-if="adding"
+      v-model:open="adding"
+      :house-id="houseId"
+      :item-name="item.name"
+      :restock-checklist-id="restockChecklistId"
+      @pick="$emit('add-to-list', $event)"
     />
   </FieldCard>
 </template>
@@ -83,6 +94,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import LinkOffIcon from '@icons/LinkOff.vue'
 import FieldCard from '@/components/FieldCard'
 import type { ChecklistItem, StockLinkRow } from '@/api/types'
+import StockLinkAddDialog from './StockLinkAddDialog.vue'
 import StockLinkPickerDialog from './StockLinkPickerDialog.vue'
 import { candidateText, linkedToParts, splitAround } from './stockLink'
 
@@ -92,18 +104,23 @@ const props = withDefaults(
     houseId: number
     /** Name of the inventory's restock checklist; null when it has none. */
     restockChecklistName?: string | null
+    /** Id of the inventory's restock checklist; null when it has none. */
+    restockChecklistId?: number | null
     disabled?: boolean
   }>(),
-  { restockChecklistName: null, disabled: false },
+  { restockChecklistName: null, restockChecklistId: null, disabled: false },
 )
 
 defineEmits<{
   link: [row: StockLinkRow]
   unlink: []
   'auto-link': [on: boolean]
+  /** Add the item to this checklist as a new item, and link it there. */
+  'add-to-list': [listId: number]
 }>()
 
 const picking = ref(false)
+const adding = ref(false)
 const candidates = computed(() => props.item.linkCandidates ?? [])
 const candidateId = ref('')
 watch(
@@ -150,6 +167,7 @@ const strings = {
   unlink: t('pantry', 'Unlink'),
   linkDifferent: t('pantry', 'Link to a different item …'),
   linkTo: t('pantry', 'Link to an item …'),
+  addToList: t('pantry', 'Add to a shopping list …'),
   // TRANSLATORS: Verb, button that links an inventory item to the picked checklist item.
   link: t('pantry', 'Link'),
   linkedHint: t(

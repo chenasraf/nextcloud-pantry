@@ -472,6 +472,22 @@ export interface RestockEntry {
   expiresAt: number | null
 }
 
+/** One inventory an item bought on a trip is put away in, and how much went there. */
+export interface PutAwayStorage {
+  listId: number
+  /** Null fills the inventory's item to its target (a level item goes to Full). */
+  amount: number | null
+}
+
+/**
+ * Where an item ticked on a trip is put away, sent when the trip closes. It
+ * replaces what the tick restocked; no storages takes it back out of stock.
+ */
+export interface PutAwayEntry {
+  itemId: number
+  storages: PutAwayStorage[]
+}
+
 /** What Shopping Mode's check or uncheck did to stock. */
 export interface ShoppingCheckResult {
   success: true

@@ -7,11 +7,28 @@ const LIST_KIND_KEY: InjectionKey<Readonly<Ref<ListKind>>> = Symbol('pantry-list
 /** Every kind, in navigation order. */
 export const LIST_KINDS: readonly ListKind[] = ['checklist', 'inventory', 'template']
 
-/** Route names of each kind's index and list pages. */
-export const LIST_KIND_ROUTES: Record<ListKind, { index: string; detail: string }> = {
-  checklist: { index: 'lists', detail: 'list-detail' },
+/**
+ * Route names of each kind's index and list pages, and of its meta "All" view
+ * for the kinds that have one.
+ */
+export const LIST_KIND_ROUTES: Record<ListKind, { index: string; detail: string; all?: string }> = {
+  checklist: { index: 'lists', detail: 'list-detail', all: 'all-lists' },
   template: { index: 'templates', detail: 'template-detail' },
-  inventory: { index: 'inventories', detail: 'inventory-detail' },
+  inventory: { index: 'inventories', detail: 'inventory-detail', all: 'all-inventories' },
+}
+
+/** Title and blurb of a kind's meta "All" view, which spans every list of the kind. */
+export function allListsStrings(kind: ListKind) {
+  if (kind === 'inventory') {
+    return {
+      title: t('pantry', 'All inventories'),
+      body: t('pantry', 'Items from every inventory in this house.'),
+    }
+  }
+  return {
+    title: t('pantry', 'All checklists'),
+    body: t('pantry', 'Items from every checklist in this house.'),
+  }
 }
 
 /** Make `kind` the list kind of every component below this one. */
