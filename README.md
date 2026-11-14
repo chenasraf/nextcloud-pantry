@@ -20,9 +20,13 @@ place.
 
 ## Screenshots
 
-| Checklist                                          | Photo Board                                          | Notes Wall                                          |
-| -------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------- |
-| ![Checklist](screenshots/screenshot-0.33.0-01.png) | ![Photo Board](screenshots/screenshot-0.33.0-02.png) | ![Notes Wall](screenshots/screenshot-0.33.0-03.png) |
+| Checklist                                          | Inventory                                          |
+| -------------------------------------------------- | -------------------------------------------------- |
+| ![Checklist](screenshots/screenshot-0.38.0-01.png) | ![Inventory](screenshots/screenshot-0.38.0-02.png) |
+
+| Photo Board                                          | Notes Wall                                          |
+| ---------------------------------------------------- | --------------------------------------------------- |
+| ![Photo Board](screenshots/screenshot-0.38.0-03.png) | ![Notes Wall](screenshots/screenshot-0.38.0-04.png) |
 
 ## Features
 
