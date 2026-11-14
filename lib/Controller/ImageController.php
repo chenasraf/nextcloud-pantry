@@ -28,6 +28,8 @@ use OCP\IUserSession;
 /**
  * Serve images from the owner's storage so any house member can view them,
  * regardless of Nextcloud sharing settings.
+ *
+ * @psalm-api
  */
 final class ImageController extends OCSController {
 	use TranslatesDomainExceptions;

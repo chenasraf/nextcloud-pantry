@@ -27,6 +27,7 @@ use OCP\IUserSession;
  * @psalm-import-type PantryHousePrefs from ResponseDefinitions
  * @psalm-import-type PantryListPrefs from ResponseDefinitions
  * @psalm-import-type PantryLanguageList from ResponseDefinitions
+ * @psalm-api
  */
 final class PrefsController extends OCSController {
 	use TranslatesDomainExceptions;

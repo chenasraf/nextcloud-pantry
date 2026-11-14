@@ -66,6 +66,8 @@ class BarcodeService {
 	/**
 	 * Server-side resolution via the configured provider. Only used by the
 	 * deferred proxy endpoint — the default path resolves client-side.
+	 *
+	 * @psalm-api
 	 */
 	public function resolveViaProvider(string $ean): ?BarcodeResult {
 		return $this->provider()->lookup($this->normalizeEan($ean));

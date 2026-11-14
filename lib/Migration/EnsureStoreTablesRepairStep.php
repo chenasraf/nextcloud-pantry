@@ -23,6 +23,8 @@ use Psr\Log\LoggerInterface;
  * missing it surfaces a loud, actionable warning in the occ output and the log
  * rather than letting the breakage stay invisible until a user reports empty
  * lists.
+ *
+ * @psalm-api
  */
 class EnsureStoreTablesRepairStep implements IRepairStep {
 	public function __construct(

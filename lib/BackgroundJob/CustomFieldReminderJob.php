@@ -15,6 +15,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Fires due date custom-field reminders. Day-granularity lead-times make the
  * exact run minute irrelevant, so a missed run simply catches up on the next.
+ *
+ * @psalm-api
  */
 class CustomFieldReminderJob extends TimedJob {
 	public function __construct(

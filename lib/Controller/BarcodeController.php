@@ -20,6 +20,7 @@ use OCP\IRequest;
 
 /**
  * @psalm-import-type PantryBarcode from ResponseDefinitions
+ * @psalm-api
  */
 final class BarcodeController extends OCSController {
 	use TranslatesDomainExceptions;

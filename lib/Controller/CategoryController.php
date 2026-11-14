@@ -26,6 +26,7 @@ use OCP\IUserSession;
  * @psalm-import-type PantryCategory from ResponseDefinitions
  * @psalm-import-type PantryStoreCategoryOrder from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class CategoryController extends OCSController {
 	use TranslatesDomainExceptions;

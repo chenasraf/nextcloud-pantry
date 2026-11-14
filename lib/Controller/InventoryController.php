@@ -30,6 +30,7 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryListTemplates from ResponseDefinitions
  * @psalm-import-type PantryInventoryDrawResult from ResponseDefinitions
  * @psalm-import-type PantryStockLinkRow from ResponseDefinitions
+ * @psalm-api
  */
 final class InventoryController extends ListKindOCSController {
 	use TranslatesDomainExceptions;

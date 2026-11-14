@@ -34,6 +34,7 @@ use OCP\IUserSession;
  * @psalm-import-type PantryPhoto from ResponseDefinitions
  * @psalm-import-type PantryPhotoFolder from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class PhotoController extends OCSController {
 	use TranslatesDomainExceptions;

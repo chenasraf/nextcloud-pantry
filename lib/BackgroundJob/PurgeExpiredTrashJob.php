@@ -16,6 +16,8 @@ use Psr\Log\LoggerInterface;
  * Runs once per day and permanently deletes any soft-deleted checklist,
  * checklist item, note, or photo whose deleted_at is older than the owning
  * house's configured retention window.
+ *
+ * @psalm-api
  */
 class PurgeExpiredTrashJob extends TimedJob {
 	private const INTERVAL_SECONDS = 86400;

@@ -23,6 +23,7 @@ use OCP\IUserSession;
 /**
  * @psalm-import-type PantryFieldDefinition from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class FieldDefinitionController extends OCSController {
 	use TranslatesDomainExceptions;

@@ -17,6 +17,9 @@ use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\L10N\IFactory;
 
+/**
+ * @psalm-api
+ */
 class Provider implements IProvider {
 	public function __construct(
 		private IFactory $languageFactory,

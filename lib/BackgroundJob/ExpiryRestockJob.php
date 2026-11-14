@@ -19,6 +19,8 @@ use Psr\Log\LoggerInterface;
  * midnight but each house is handled only once its recurrence time has
  * passed, so a missed run catches up on the next and re-runs find nothing
  * left to do.
+ *
+ * @psalm-api
  */
 class ExpiryRestockJob extends TimedJob {
 	public function __construct(

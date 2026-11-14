@@ -19,6 +19,8 @@ use Psr\Log\LoggerInterface;
  * 1. Reopens done items whose next_due_at has passed.
  * 2. Re-notifies for undone fixed-schedule items whose next_due_at has passed
  *    (the item is already visible but the schedule ticked again — nudge).
+ *
+ * @psalm-api
  */
 class ReopenRecurringItemsJob extends TimedJob {
 	public function __construct(

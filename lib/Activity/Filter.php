@@ -12,6 +12,9 @@ use OCP\Activity\IFilter;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 
+/**
+ * @psalm-api
+ */
 class Filter implements IFilter {
 	public function __construct(
 		private IL10N $l,

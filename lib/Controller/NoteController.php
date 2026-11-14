@@ -32,6 +32,7 @@ use OCP\IUserSession;
 /**
  * @psalm-import-type PantryNote from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class NoteController extends OCSController {
 	use TranslatesDomainExceptions;

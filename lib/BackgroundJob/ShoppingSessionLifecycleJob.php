@@ -22,6 +22,8 @@ use Psr\Log\LoggerInterface;
  * 2. Retention purge — when the `shopping_history_retention_days` app config is
  *    positive, permanently delete closed sessions older than that horizon
  *    (cascading their child rows). Default 0 = keep forever.
+ *
+ * @psalm-api
  */
 class ShoppingSessionLifecycleJob extends TimedJob {
 	private const INTERVAL_SECONDS = 3600;

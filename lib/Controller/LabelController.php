@@ -24,6 +24,7 @@ use OCP\IUserSession;
 /**
  * @psalm-import-type PantryLabel from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class LabelController extends OCSController {
 	use TranslatesDomainExceptions;

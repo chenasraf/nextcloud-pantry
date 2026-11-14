@@ -30,6 +30,7 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryListSuggestions from ResponseDefinitions
  * @psalm-import-type PantryListTemplates from ResponseDefinitions
  * @psalm-import-type PantryDrawResult from ResponseDefinitions
+ * @psalm-api
  */
 final class ChecklistController extends ListKindOCSController {
 	use TranslatesDomainExceptions;

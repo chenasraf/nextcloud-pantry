@@ -25,6 +25,7 @@ use OCP\IUserSession;
 /**
  * @psalm-import-type PantryShare from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class ShareController extends OCSController {
 	use TranslatesDomainExceptions;

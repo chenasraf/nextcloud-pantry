@@ -31,6 +31,7 @@ use OCP\IUserSession;
  * @psalm-import-type PantryHouseDetail from ResponseDefinitions
  * @psalm-import-type PantryMember from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class HouseController extends OCSController {
 	use TranslatesDomainExceptions;

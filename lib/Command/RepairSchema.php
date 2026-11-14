@@ -23,6 +23,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Only ever adds columns an earlier migration already intended or drops columns
  * a later migration already meant to remove, so it is safe to run repeatedly;
  * `--dry-run` prints the SQL without applying it.
+ *
+ * @psalm-api
  */
 class RepairSchema extends Command {
 	public function __construct(

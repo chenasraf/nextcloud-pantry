@@ -23,6 +23,7 @@ use OCP\AppFramework\Http\DataResponse;
  * @psalm-import-type PantryTemplateItem from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  * @psalm-import-type PantryTemplateLists from ResponseDefinitions
+ * @psalm-api
  */
 final class TemplateController extends ListKindOCSController {
 	/** Checklist-only list fields: completion and the per-column recurrence default. */

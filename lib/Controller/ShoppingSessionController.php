@@ -43,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @psalm-import-type PantryShoppingHistoryRow from ResponseDefinitions
  * @psalm-import-type PantryShoppingPresenceEntry from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class ShoppingSessionController extends OCSController {
 	use TranslatesDomainExceptions;

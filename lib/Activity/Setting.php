@@ -11,6 +11,9 @@ use OCA\Pantry\AppInfo\Application;
 use OCP\Activity\ActivitySettings;
 use OCP\IL10N;
 
+/**
+ * @psalm-api
+ */
 class Setting extends ActivitySettings {
 	public function __construct(
 		private IL10N $l,

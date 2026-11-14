@@ -19,6 +19,8 @@ use Psr\Log\LoggerInterface;
  * a legacy column behind, this drops it — so the app stops erroring on the next
  * request, with no manual `occ db:add-missing-columns` (which cannot drop)
  * needed. When the schema is already whole it is a silent no-op.
+ *
+ * @psalm-api
  */
 class RepairSchemaColumnsStep implements IRepairStep {
 	public function __construct(

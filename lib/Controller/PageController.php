@@ -16,13 +16,14 @@ use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IRequest;
 use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
 
+/**
+ * @psalm-api
+ */
 class PageController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private LoggerInterface $logger,
 		private IEventDispatcher $eventDispatcher,
 		private IInitialState $initialState,
 		private IUserSession $userSession,

@@ -21,6 +21,7 @@ use OCP\IRequest;
 /**
  * @psalm-import-type PantryRole from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
+ * @psalm-api
  */
 final class RoleController extends OCSController {
 	use TranslatesDomainExceptions;
