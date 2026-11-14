@@ -211,6 +211,7 @@ import { useLabels } from '@/composables/useLabels'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useRowClickAction } from '@/composables/useRowClickAction'
 import { formatEstimate, resolveItemPrice } from '@/utils/price'
+import { firstNumber } from '@/utils/stock'
 import { getCurrentUserId } from '@/utils/currentUser'
 import {
   getCurrentSession,
@@ -361,9 +362,10 @@ const doneEstimateText = computed(() => {
     const cur = price.priceCurrency ?? ''
     const max =
       price.priceType === 'range' && price.priceMax != null ? price.priceMax : price.priceMin
+    const units = firstNumber(item.quantity) ?? 1
     const entry = byCurrency.get(cur) ?? { min: 0, max: 0 }
-    entry.min += price.priceMin
-    entry.max += max
+    entry.min += price.priceMin * units
+    entry.max += max * units
     byCurrency.set(cur, entry)
   }
   return formatEstimate([...byCurrency].map(([currency, r]) => ({ currency, ...r })))

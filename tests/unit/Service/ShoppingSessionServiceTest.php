@@ -118,6 +118,7 @@ class ShoppingSessionServiceTest extends TestCase {
 		$i->setListId($o['listId'] ?? 1);
 		$i->setName($o['name'] ?? 'Milk');
 		$i->setDone($o['done'] ?? false);
+		$i->setQuantity($o['quantity'] ?? null);
 		if (isset($o['id'])) {
 			$ref = new \ReflectionProperty($i, 'id');
 			$ref->setValue($i, $o['id']);
@@ -721,6 +722,42 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame(3, $review['stores'][0]['storeId']);
 		$this->assertSame(0, $review['uncheckedCount']);
 		$this->assertSame([['currency' => 'USD', 'min' => 5.0, 'max' => 5.0]], $review['grandTotal']);
+	}
+
+	public function testReviewEstimateMultipliesPriceByQuantity(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([
+			$this->makeLog(10, 3),
+			$this->makeLog(11, 3),
+			$this->makeLog(12, 3),
+		]);
+		$this->items->method('findByIds')->willReturn([
+			$this->makeItem(['id' => 10, 'done' => true, 'quantity' => '5 steaks', 'priceType' => 'set', 'priceMin' => 10.0, 'priceCurrency' => 'USD']),
+			$this->makeItem(['id' => 11, 'done' => true, 'quantity' => '2', 'priceType' => 'range', 'priceMin' => 1.0, 'priceMax' => 1.5, 'priceCurrency' => 'USD']),
+			$this->makeItem(['id' => 12, 'done' => true, 'quantity' => 'a few', 'priceType' => 'set', 'priceMin' => 4.0, 'priceCurrency' => 'USD']),
+		]);
+		$this->itemStores->method('findStoreIdsForItems')->willReturn([]);
+		$this->sessionStores->method('findBySession')->with(5)->willReturn([$this->makeSessionStore(3, 0)]);
+		$this->sessionLists->method('findListIdsForSession')->willReturn([1]);
+		$this->items->method('findForShoppingScope')->willReturn([]);
+
+		$review = $this->svc->review($session);
+		// 5 × 10 + 2 × (1–1.5) + 4 (no number counts as one).
+		$this->assertSame([['currency' => 'USD', 'min' => 56.0, 'max' => 57.0]], $review['stores'][0]['estimate']);
+		$this->assertSame([['currency' => 'USD', 'min' => 56.0, 'max' => 57.0]], $review['grandTotal']);
+	}
+
+	public function testClosedReviewEstimateUsesSnapshotQuantity(): void {
+		$session = $this->makeSession(['id' => 5, 'closedAt' => 500]);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([
+			$this->makeLog(10, 3, ['name' => 'Steak', 'quantity' => '5', 'priceType' => 'set', 'priceMin' => 10.0, 'priceCurrency' => 'USD']),
+		]);
+		$this->items->method('findByIds')->willReturn([]);
+		$this->itemStores->method('findStoreIdsForItems')->willReturn([]);
+		$this->sessionStores->method('findBySession')->with(5)->willReturn([$this->makeSessionStore(3, 0)]);
+
+		$review = $this->svc->review($session);
+		$this->assertSame([['currency' => 'USD', 'min' => 50.0, 'max' => 50.0]], $review['grandTotal']);
 	}
 
 	public function testReviewUsesBilledOverEstimate(): void {

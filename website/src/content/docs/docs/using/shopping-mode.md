@@ -93,9 +93,9 @@ can tick them off as you go, but nothing is required and the ticks are just for 
 ### 5. Finishing & review
 
 When you finish a store or the whole trip you get a **review**: items grouped by the store you
-bought them at, an estimated total per currency (from item prices, shown as a range when prices are
-ranges), and a field to **enter what you actually paid** per store (or for the whole trip if you
-shopped storeless). Finishing stamps the trip closed.
+bought them at, an estimated total per currency (each item's price times the number in its quantity,
+shown as a range when prices are ranges), and a field to **enter what you actually paid** per store
+(or for the whole trip if you shopped storeless). Finishing stamps the trip closed.
 
 <img width="616" alt="Trip review grouped by store with per-currency estimates and an actual-paid field" src="/docs/review.png" />
 

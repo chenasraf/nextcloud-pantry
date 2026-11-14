@@ -984,7 +984,8 @@ class ShoppingSessionService {
 
 	/**
 	 * Per-currency, range-aware estimate over a set of items. `'set'` prices are
-	 * a point; `'range'` prices spread min..max. Quantity is ignored (free-text).
+	 * a point; `'range'` prices spread min..max. A price is per unit, multiplied
+	 * by the first number in the free-text quantity (one when it has none).
 	 * Items with no usable price are excluded and counted.
 	 *
 	 * Each item's price is resolved for the group's store (store-less fallback).
@@ -1005,7 +1006,8 @@ class ShoppingSessionService {
 				continue;
 			}
 			$max = ($type === 'range' && $price['priceMax'] !== null) ? (float)$price['priceMax'] : (float)$min;
-			$this->addToTotal($byCurrency, $price['priceCurrency'] ?? '', (float)$min, $max);
+			$units = StockRules::firstNumber($item->getQuantity()) ?? 1.0;
+			$this->addToTotal($byCurrency, $price['priceCurrency'] ?? '', (float)$min * $units, $max * $units);
 		}
 		return ['byCurrency' => $byCurrency, 'noPrice' => $noPrice];
 	}
