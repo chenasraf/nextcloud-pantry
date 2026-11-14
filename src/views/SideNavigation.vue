@@ -168,15 +168,12 @@
 
     <template #footer>
       <ul class="pantry-nav__footer-list">
-        <NcAppNavigationItem :name="strings.documentation" href="https://pantry.casraf.dev/docs">
+        <NcAppNavigationItem :name="strings.documentation" :href="docsUrl">
           <template #icon>
             <BookOpenPageVariantIcon :size="20" />
           </template>
         </NcAppNavigationItem>
-        <NcAppNavigationItem
-          :name="strings.companionApps"
-          href="https://pantry.casraf.dev/docs/getting-started/apps"
-        >
+        <NcAppNavigationItem :name="strings.companionApps" :href="companionAppsUrl">
           <template #icon>
             <CellphoneLinkIcon :size="20" />
           </template>
@@ -490,6 +487,11 @@ async function submitCreate() {
 
 // Close the menu on route change so it does not linger after navigation.
 watch(currentHouseId, closeMenu)
+
+// Bound rather than static: vue-tsc turns the `//` of a static attribute value
+// into a comment opener, which breaks type checking for the rest of the template.
+const docsUrl = 'https://pantry.casraf.dev/docs'
+const companionAppsUrl = 'https://pantry.casraf.dev/docs/getting-started/apps'
 
 const strings = {
   lists: listKindStrings('checklist').title,
