@@ -71,9 +71,45 @@ class OpenFoodFactsProviderTest extends TestCase {
 		$this->assertNull($this->provider->lookup('0000000000000'));
 	}
 
-	public function testLookupReturnsNullWhenNoName(): void {
-		$this->respondWith(json_encode(['status' => 1, 'product' => ['brands' => 'Acme']]));
+	public function testLookupReturnsNullWhenNothingNamesTheProduct(): void {
+		$this->respondWith(json_encode(['status' => 1, 'product' => ['product_name' => '', 'image_url' => 'https://images/x.jpg']]));
 		$this->assertNull($this->provider->lookup('4001724819103'));
+	}
+
+	public function testLookupUsesLanguageSuffixedName(): void {
+		$this->respondWith(json_encode([
+			'status' => 1,
+			'product' => ['lang' => 'de', 'product_name' => '', 'product_name_de' => 'Eistee Pfirsich'],
+		]));
+		$result = $this->provider->lookup('4063367386923');
+		$this->assertNotNull($result);
+		$this->assertSame('Eistee Pfirsich', $result->name);
+	}
+
+	public function testLookupFallsBackToCategoryWhenUnnamed(): void {
+		$this->respondWith(json_encode([
+			'status' => 1,
+			'product' => [
+				'lang' => 'de',
+				'product_name' => '',
+				'product_name_de' => '',
+				'generic_name' => '',
+				'brands' => 'K-Classic, Kaufland',
+				'categories' => 'Eistees, Gezuckerte Getränke',
+			],
+		]));
+		$result = $this->provider->lookup('4063367386923');
+		$this->assertNotNull($result);
+		$this->assertSame('Eistees', $result->name);
+		$this->assertSame('K-Classic', $result->brand);
+		$this->assertSame('Eistees', $result->category);
+	}
+
+	public function testLookupFallsBackToBrandWhenUnnamedAndUncategorized(): void {
+		$this->respondWith(json_encode(['status' => 1, 'product' => ['brands' => 'Acme']]));
+		$result = $this->provider->lookup('4001724819103');
+		$this->assertNotNull($result);
+		$this->assertSame('Acme', $result->name);
 	}
 
 	public function testLookupReturnsNullOnHttpError(): void {

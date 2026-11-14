@@ -56,7 +56,9 @@ class OpenFoodFactsProvider implements BarcodeLookupProvider {
 
 		/** @var array<string, mixed> $product */
 		$product = $body['product'];
-		$name = $this->pickName($product);
+		$brand = $this->firstOf((string)($product['brands'] ?? ''));
+		$category = $this->firstOf((string)($product['categories'] ?? ''));
+		$name = $this->pickName($product) ?? $category ?? $brand;
 		if ($name === null) {
 			// A row with no usable name is not worth caching.
 			return null;
@@ -66,8 +68,8 @@ class OpenFoodFactsProvider implements BarcodeLookupProvider {
 		return new BarcodeResult(
 			ean: $ean,
 			name: $name,
-			brand: $this->firstOf((string)($product['brands'] ?? '')),
-			category: $this->firstOf((string)($product['categories'] ?? '')),
+			brand: $brand,
+			category: $category,
 			imageUrl: $this->strOrNull($product['image_url'] ?? null),
 			provider: self::ID,
 			raw: $raw === false ? null : $raw,
@@ -75,10 +77,25 @@ class OpenFoodFactsProvider implements BarcodeLookupProvider {
 	}
 
 	/**
+	 * Products often carry their name only under a language-suffixed key, and
+	 * some carry none at all — callers fall back to the category or brand so a
+	 * known product never reads as "not found".
+	 *
 	 * @param array<string, mixed> $product
 	 */
 	private function pickName(array $product): ?string {
-		foreach (['product_name', 'generic_name', 'abbreviated_product_name'] as $key) {
+		$lang = $this->strOrNull($product['lang'] ?? null);
+		$keys = [];
+		foreach (['product_name', 'generic_name'] as $base) {
+			$keys[] = $base;
+			if ($lang !== null) {
+				$keys[] = $base . '_' . $lang;
+			}
+			$keys[] = $base . '_en';
+		}
+		$keys[] = 'abbreviated_product_name';
+
+		foreach ($keys as $key) {
 			$value = $this->strOrNull($product[$key] ?? null);
 			if ($value !== null) {
 				return $value;

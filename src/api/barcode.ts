@@ -69,30 +69,57 @@ export async function resolveExternally(ean: string): Promise<BarcodeResult | nu
     return null
   }
   const p = body.product
-  const name = firstNonEmpty(p.product_name, p.generic_name, p.abbreviated_product_name)
+  const brand = firstOf(p.brands)
+  const category = firstOf(p.categories)
+  const name = pickName(p) ?? category ?? brand
   if (!name) {
     return null
   }
   return {
     ean,
     name,
-    brand: firstOf(p.brands),
-    category: firstOf(p.categories),
+    brand,
+    category,
     imageUrl: strOrNull(p.image_url),
     provider: 'openfoodfacts',
   }
 }
 
+interface OffProduct {
+  lang?: string
+  product_name?: string
+  generic_name?: string
+  abbreviated_product_name?: string
+  brands?: string
+  categories?: string
+  image_url?: string
+  [key: string]: unknown
+}
+
 interface OffResponse {
   status?: number
-  product?: {
-    product_name?: string
-    generic_name?: string
-    abbreviated_product_name?: string
-    brands?: string
-    categories?: string
-    image_url?: string
+  product?: OffProduct
+}
+
+/**
+ * Products often carry their name only under a language-suffixed key, and
+ * some carry none at all — the caller falls back to the category or brand so
+ * a known product never reads as "not found".
+ */
+function pickName(p: OffProduct): string | null {
+  const lang = strOrNull(p.lang)
+  const keys: string[] = []
+  for (const base of ['product_name', 'generic_name']) {
+    keys.push(base)
+    if (lang) {
+      keys.push(`${base}_${lang}`)
+    }
+    keys.push(`${base}_en`)
   }
+  keys.push('abbreviated_product_name')
+  return firstNonEmpty(
+    ...keys.map((key) => (typeof p[key] === 'string' ? (p[key] as string) : undefined)),
+  )
 }
 
 /** Open Food Facts returns comma-separated lists; keep the primary entry. */

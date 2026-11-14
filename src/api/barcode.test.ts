@@ -104,9 +104,41 @@ describe('resolveExternally', () => {
     expect(await resolveExternally('0000000000000')).toBeNull()
   })
 
-  it('returns null when the product has no usable name', async () => {
-    mockFetch(200, { status: 1, product: { brands: 'Acme' } })
+  it('returns null when nothing names the product', async () => {
+    mockFetch(200, { status: 1, product: { product_name: '', image_url: 'https://images/x.jpg' } })
     expect(await resolveExternally('4001724819103')).toBeNull()
+  })
+
+  it('uses the language-suffixed name when the plain one is empty', async () => {
+    mockFetch(200, {
+      status: 1,
+      product: { lang: 'de', product_name: '', product_name_de: 'Eistee Pfirsich' },
+    })
+    expect((await resolveExternally('4063367386923'))?.name).toBe('Eistee Pfirsich')
+  })
+
+  it('falls back to the category when the product is unnamed', async () => {
+    mockFetch(200, {
+      status: 1,
+      product: {
+        lang: 'de',
+        product_name: '',
+        product_name_de: '',
+        generic_name: '',
+        brands: 'K-Classic, Kaufland',
+        categories: 'Eistees, Gezuckerte Getränke',
+      },
+    })
+    expect(await resolveExternally('4063367386923')).toMatchObject({
+      name: 'Eistees',
+      brand: 'K-Classic',
+      category: 'Eistees',
+    })
+  })
+
+  it('falls back to the brand when the product is unnamed and uncategorized', async () => {
+    mockFetch(200, { status: 1, product: { brands: 'Acme' } })
+    expect((await resolveExternally('4001724819103'))?.name).toBe('Acme')
   })
 
   it('returns null on a network error', async () => {
