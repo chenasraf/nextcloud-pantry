@@ -54,6 +54,9 @@ class Share extends Entity implements \JsonSerializable {
 		$this->addType('entityId', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
+		// permission has no DB default, and the ORM drops a set that matches the
+		// PHP default ('view') from the INSERT, violating the not-null constraint.
+		$this->markFieldUpdated('permission');
 	}
 
 	public function jsonSerialize(): array {
