@@ -89,7 +89,7 @@ export default createAppConfig(
           },
         },
         checker({
-          vueTsc: true,
+          vueTsc: { root: __dirname, tsconfigPath: 'tsconfig.app.json' },
         }),
         visualizer({
           open: process.env.VITE_BUILD_ANALYZE === 'true',
