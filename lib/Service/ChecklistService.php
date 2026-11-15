@@ -853,8 +853,12 @@ class ChecklistService {
 		if (isset($patch['listId'])) {
 			$targetListId = (int)$patch['listId'];
 			$this->assertSameKind($item->getListId(), $targetListId);
+			if ($targetListId !== $sourceListId) {
+				$this->carryScopedTaxonomy($item, $sourceListId, $this->getList($targetListId), time());
+			}
 			$item->setListId($targetListId);
 		}
+		$moved = $item->getListId() !== $sourceListId;
 		if (isset($patch['sortOrder'])) {
 			$item->setSortOrder((int)$patch['sortOrder']);
 		}
@@ -894,8 +898,15 @@ class ChecklistService {
 		if (array_key_exists('storeIds', $patch)) {
 			$this->itemStoreMapper->setStoresForItem((int)$item->getId(), $this->toIntList($patch['storeIds']));
 		}
+		// Labels and values sent along with a move may still name the old list's own.
+		$houseId = (int)$list->getHouseId();
+		$listId = (int)$list->getId();
 		if (array_key_exists('labelIds', $patch)) {
-			$this->itemLabelMapper->setLabelsForItem((int)$item->getId(), $this->toIntList($patch['labelIds']));
+			$labelIds = $this->toIntList($patch['labelIds']);
+			if ($moved) {
+				$labelIds = $this->taxonomy->labelIdsFor($labelIds, $houseId, $sourceListId, $listId, time());
+			}
+			$this->itemLabelMapper->setLabelsForItem((int)$item->getId(), $labelIds);
 		}
 		// The whole price set is replaced when 'prices' is present in the patch.
 		if (array_key_exists('prices', $patch)) {
@@ -903,7 +914,12 @@ class ChecklistService {
 		}
 		// Likewise, the whole custom-field value set is replaced when present.
 		if (array_key_exists('customFields', $patch)) {
-			$rearmed = $this->fieldValueMapper->setValuesForItem((int)$item->getId(), (array)$patch['customFields']);
+			/** @var list<array<string, mixed>> $values */
+			$values = array_values(array_filter((array)$patch['customFields'], 'is_array'));
+			if ($moved) {
+				$values = $this->taxonomy->fieldValuesFor($values, $houseId, $sourceListId, $listId, time());
+			}
+			$rearmed = $this->fieldValueMapper->setValuesForItem((int)$item->getId(), $values);
 			$this->fieldReminders->onValuesRearmed((int)$item->getId(), $rearmed);
 		}
 		// A linked inventory item and its checklist item are one product.
@@ -980,6 +996,7 @@ class ChecklistService {
 				if ($sourceList->getKind() !== $target->getKind()) {
 					$this->crossItemInto($item, $item, $sourceList, $target, keepDone: true, now: $now);
 				}
+				$this->carryScopedTaxonomy($item, (int)$sourceList->getId(), $target, $now);
 				$item->setListId($targetListId);
 				$item->setUpdatedAt($now);
 				$this->itemMapper->update($item);
@@ -993,6 +1010,32 @@ class ChecklistService {
 			}
 			return $updated;
 		}, $this->db);
+	}
+
+	/**
+	 * Point the category, labels and custom-field values of an item moving off
+	 * `$fromListId` at ones `$target` can use
+	 * ({@see ScopedTaxonomyService::categoryIdFor()}). The category is set on
+	 * `$item` for the caller to save; labels and values are written here.
+	 */
+	private function carryScopedTaxonomy(ChecklistItem $item, int $fromListId, Checklist $target, int $now): void {
+		$houseId = (int)$target->getHouseId();
+		$targetId = (int)$target->getId();
+		$itemId = (int)$item->getId();
+		$item->setCategoryId($this->taxonomy->categoryIdFor($item->getCategoryId(), $houseId, $fromListId, $targetId, $now));
+
+		$labelIds = array_values(array_map('intval', $this->itemLabelMapper->findLabelIdsForItem($itemId)));
+		$carriedLabels = $this->taxonomy->labelIdsFor($labelIds, $houseId, $fromListId, $targetId, $now);
+		if ($carriedLabels !== $labelIds) {
+			$this->itemLabelMapper->setLabelsForItem($itemId, $carriedLabels);
+		}
+
+		$values = $this->fieldValueMapper->findForItem($itemId);
+		$carriedValues = $this->taxonomy->fieldValuesFor($values, $houseId, $fromListId, $targetId, $now);
+		if ($carriedValues !== $values) {
+			$rearmed = $this->fieldValueMapper->setValuesForItem($itemId, $carriedValues);
+			$this->fieldReminders->onValuesRearmed($itemId, $rearmed);
+		}
 	}
 
 	/**
@@ -1406,10 +1449,13 @@ class ChecklistService {
 
 	/**
 	 * Create a fresh copy of an item on a target list. The copy carries over
-	 * name, description, category, quantity, recurrence, delete-on-done and
-	 * image references, but starts undone with no completion metadata. The
-	 * caller is responsible for duplicating the image file (if any) and
-	 * passing the new file id/owner.
+	 * name, description, category, labels, custom fields, quantity, barcode,
+	 * recurrence, delete-on-done and image references, but starts undone with
+	 * no completion metadata. Categories, labels and fields scoped to the
+	 * source list are matched or copied onto the target
+	 * ({@see ScopedTaxonomyService::categoryIdFor()}). The caller is
+	 * responsible for duplicating the image file (if any) and passing the new
+	 * file id/owner.
 	 */
 	public function copyItem(
 		int $itemId,
@@ -1422,19 +1468,22 @@ class ChecklistService {
 		$target = $this->getList($targetListId);
 
 		$now = time();
+		$houseId = (int)$target->getHouseId();
+		$sourceListId = (int)$source->getListId();
 		$copy = new ChecklistItem();
 		$copy->setListId($targetListId);
 		$copy->setName($source->getName());
 		$copy->setDescription($source->getDescription());
-		$copy->setCategoryId($source->getCategoryId());
+		$copy->setCategoryId($this->taxonomy->categoryIdFor($source->getCategoryId(), $houseId, $sourceListId, $targetListId, $now));
 		$copy->setQuantity($source->getQuantity());
+		$copy->setBarcode($source->getBarcode());
 		$copy->setImageFileId($imageFileId);
 		$copy->setImageUploadedBy($imageUploadedBy);
 		$copy->setAddedBy($addedBy);
 		$copy->setSortOrder(0);
 		$copy->setCreatedAt($now);
 		$copy->setUpdatedAt($now);
-		$sourceList = $this->getList($source->getListId(), includeDeleted: true);
+		$sourceList = $this->getList($sourceListId, includeDeleted: true);
 		$this->crossItemInto($copy, $source, $sourceList, $target, keepDone: false, now: $now);
 		$saved = $this->itemMapper->insert($copy);
 		$this->itemStoreMapper->setStoresForItem(
@@ -1443,7 +1492,7 @@ class ChecklistService {
 		);
 		$this->itemLabelMapper->setLabelsForItem(
 			(int)$saved->getId(),
-			$this->itemLabelMapper->findLabelIdsForItem((int)$source->getId()),
+			$this->taxonomy->labelIdsFor($this->itemLabelMapper->findLabelIdsForItem((int)$source->getId()), $houseId, $sourceListId, $targetListId, $now),
 		);
 		$this->itemPriceMapper->setPricesForItem(
 			(int)$saved->getId(),
@@ -1451,7 +1500,7 @@ class ChecklistService {
 		);
 		$this->fieldValueMapper->setValuesForItem(
 			(int)$saved->getId(),
-			$this->fieldValueMapper->findForItem((int)$source->getId()),
+			$this->taxonomy->fieldValuesFor($this->fieldValueMapper->findForItem((int)$source->getId()), $houseId, $sourceListId, $targetListId, $now),
 		);
 		$this->onItemSaved($saved, $target);
 		return $saved;

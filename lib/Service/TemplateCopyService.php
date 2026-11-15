@@ -7,20 +7,15 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
-use OCA\Pantry\Db\Category;
-use OCA\Pantry\Db\CategoryMapper;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\FieldDefinition;
 use OCA\Pantry\Db\FieldDefinitionMapper;
-use OCA\Pantry\Db\FieldOptionMapper;
 use OCA\Pantry\Db\FieldValueMapper;
 use OCA\Pantry\Db\ItemLabelMapper;
 use OCA\Pantry\Db\ItemPriceMapper;
 use OCA\Pantry\Db\ItemStoreMapper;
-use OCA\Pantry\Db\Label;
-use OCA\Pantry\Db\LabelMapper;
 
 /**
  * The template-copy rule: how a template item lands on a checklist or
@@ -46,10 +41,7 @@ class TemplateCopyService {
 	public function __construct(
 		private ChecklistService $lists,
 		private ChecklistItemMapper $itemMapper,
-		private CategoryMapper $categoryMapper,
-		private LabelMapper $labelMapper,
 		private FieldDefinitionMapper $fieldDefMapper,
-		private FieldOptionMapper $fieldOptionMapper,
 		private ItemStoreMapper $itemStoreMapper,
 		private ItemLabelMapper $itemLabelMapper,
 		private ItemPriceMapper $itemPriceMapper,
@@ -152,13 +144,13 @@ class TemplateCopyService {
 		$data = [
 			'name' => $source->getName(),
 			'description' => $source->getDescription(),
-			'categoryId' => $this->targetCategory($source->getCategoryId(), $houseId, $templateId, $targetId, $now),
+			'categoryId' => $this->taxonomy->categoryIdFor($source->getCategoryId(), $houseId, $templateId, $targetId, $now),
 			'quantity' => $isRestock ? $restockQuantity : $source->getQuantity(),
 			'barcode' => $source->getBarcode(),
 			'storeIds' => $this->itemStoreMapper->findStoreIdsForItem($sourceId),
-			'labelIds' => $this->targetLabels($this->itemLabelMapper->findLabelIdsForItem($sourceId), $houseId, $templateId, $targetId, $now),
+			'labelIds' => $this->taxonomy->labelIdsFor($this->itemLabelMapper->findLabelIdsForItem($sourceId), $houseId, $templateId, $targetId, $now),
 			'prices' => $this->itemPriceMapper->findForItem($sourceId),
-			'customFields' => $this->targetFieldValues($this->fieldValueMapper->findForItem($sourceId), $houseId, $templateId, $targetId, $now),
+			'customFields' => $this->taxonomy->fieldValuesFor($this->fieldValueMapper->findForItem($sourceId), $houseId, $templateId, $targetId, $now),
 		];
 		if (!$isRestock) {
 			$data += [
@@ -195,159 +187,6 @@ class TemplateCopyService {
 		}
 
 		return $this->lists->addItem($targetId, $data, $addedBy);
-	}
-
-	// ----- Scoped taxonomy -----
-
-	private function targetCategory(?int $categoryId, int $houseId, int $templateId, int $targetId, int $now): ?int {
-		if ($categoryId === null) {
-			return null;
-		}
-		$all = array_values($this->categoryMapper->findByHouse($houseId));
-		$category = $this->byId($all, $categoryId);
-		if (!$category instanceof Category) {
-			return null;
-		}
-		if ($category->getListId() !== $templateId) {
-			return $categoryId;
-		}
-		$match = ScopedTaxonomyService::matchByName($all, $category->getName(), $targetId);
-		return (int)($match ?? $this->taxonomy->copyCategory($category, $targetId, $now))->getId();
-	}
-
-	/**
-	 * @param int[] $labelIds
-	 * @return list<int>
-	 */
-	private function targetLabels(array $labelIds, int $houseId, int $templateId, int $targetId, int $now): array {
-		if ($labelIds === []) {
-			return [];
-		}
-		$all = array_values($this->labelMapper->findByHouse($houseId));
-		$out = [];
-		foreach ($labelIds as $labelId) {
-			$label = $this->byId($all, (int)$labelId);
-			if (!$label instanceof Label) {
-				continue;
-			}
-			if ($label->getListId() !== $templateId) {
-				$out[] = (int)$labelId;
-				continue;
-			}
-			$match = ScopedTaxonomyService::matchByName($all, $label->getName(), $targetId);
-			if ($match === null) {
-				$match = $this->taxonomy->copyLabel($label, $targetId, $now);
-				$all[] = $match;
-			}
-			$out[] = (int)$match->getId();
-		}
-		return array_values(array_unique($out));
-	}
-
-	/**
-	 * Point the template item's custom-field values at fields the target can
-	 * use. A template-scoped field matches a target field of the same name and
-	 * type, its select option matched by label; without a match the field is
-	 * copied onto the target with its options.
-	 *
-	 * @param list<array<string, mixed>> $values
-	 * @return list<array<string, mixed>>
-	 */
-	private function targetFieldValues(array $values, int $houseId, int $templateId, int $targetId, int $now): array {
-		if ($values === []) {
-			return [];
-		}
-		/** @var array<int, FieldDefinition> $defs */
-		$defs = [];
-		foreach ($this->fieldDefMapper->findByHouse($houseId) as $def) {
-			if ($def->getDeletedAt() === null) {
-				$defs[(int)$def->getId()] = $def;
-			}
-		}
-
-		$out = [];
-		foreach ($values as $value) {
-			$def = $defs[(int)$value['fieldId']] ?? null;
-			if ($def === null) {
-				continue;
-			}
-			if ($def->getListId() !== $templateId) {
-				$out[] = $value;
-				continue;
-			}
-			$match = $this->matchField($defs, $def, $targetId);
-			if ($match === null) {
-				[$copy, $optionMap] = $this->taxonomy->copyField($def, $targetId, $now);
-				$defs[(int)$copy->getId()] = $copy;
-				$value['fieldId'] = (int)$copy->getId();
-				$optionId = $value['valueOptionId'] ?? null;
-				if ($optionId !== null) {
-					$value['valueOptionId'] = $optionMap[(int)$optionId] ?? null;
-				}
-				$out[] = $value;
-				continue;
-			}
-			$value['fieldId'] = (int)$match->getId();
-			$optionId = $value['valueOptionId'] ?? null;
-			if ($optionId !== null) {
-				$value['valueOptionId'] = $this->matchOption((int)$optionId, (int)$def->getId(), (int)$match->getId());
-			}
-			$out[] = $value;
-		}
-		return $out;
-	}
-
-	/**
-	 * @param array<int, FieldDefinition> $defs
-	 */
-	private function matchField(array $defs, FieldDefinition $source, int $targetId): ?FieldDefinition {
-		$key = ScopedTaxonomyService::nameKey($source->getName());
-		$found = null;
-		foreach ($defs as $def) {
-			$scope = $def->getListId();
-			if (($scope !== null && $scope !== $targetId)
-				|| $def->getType() !== $source->getType()
-				|| ScopedTaxonomyService::nameKey($def->getName()) !== $key) {
-				continue;
-			}
-			// The target's own field wins over a house-wide one of the same name.
-			if ($scope === $targetId) {
-				return $def;
-			}
-			$found ??= $def;
-		}
-		return $found;
-	}
-
-	private function matchOption(int $optionId, int $sourceFieldId, int $targetFieldId): ?int {
-		$label = null;
-		foreach ($this->fieldOptionMapper->findByField($sourceFieldId) as $option) {
-			if ((int)$option->getId() === $optionId) {
-				$label = ScopedTaxonomyService::nameKey($option->getLabel());
-				break;
-			}
-		}
-		if ($label === null) {
-			return null;
-		}
-		foreach ($this->fieldOptionMapper->findByField($targetFieldId) as $option) {
-			if (ScopedTaxonomyService::nameKey($option->getLabel()) === $label) {
-				return (int)$option->getId();
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * @param list<Category>|list<Label> $all
-	 */
-	private function byId(array $all, int $id): Category|Label|null {
-		foreach ($all as $entity) {
-			if ((int)$entity->getId() === $id) {
-				return $entity;
-			}
-		}
-		return null;
 	}
 
 	// ----- Item defaults -----

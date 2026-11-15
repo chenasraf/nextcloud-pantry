@@ -614,10 +614,7 @@ class TemplateCopyServiceTest extends TestCase {
 		$this->svc = new TemplateCopyService(
 			$this->lists,
 			$this->itemMapper,
-			$this->categoryMapper,
-			$this->labelMapper,
 			$this->fieldDefMapper,
-			$this->fieldOptionMapper,
 			$this->itemStoreMapper,
 			$this->itemLabelMapper,
 			$this->itemPriceMapper,

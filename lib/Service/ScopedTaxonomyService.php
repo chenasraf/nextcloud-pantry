@@ -75,6 +75,151 @@ class ScopedTaxonomyService {
 		return self::matchByName($all, $source->getName(), $listId) ?? $this->copyCategory($source, $listId, $now);
 	}
 
+	// ----- Items leaving a list -----
+
+	/**
+	 * The category an item leaving `$sourceListId` uses on `$targetListId`.
+	 *
+	 * Every reference the target can already see is kept. One scoped to the
+	 * source list matches the target's own or a house-wide one of the same name
+	 * (a field also by type, its select option by label), or is copied onto the
+	 * target when there is none, so later items match that copy instead of
+	 * piling up more. {@see labelIdsFor()} and {@see fieldValuesFor()} follow
+	 * the same rule.
+	 */
+	public function categoryIdFor(?int $categoryId, int $houseId, int $sourceListId, int $targetListId, int $now): ?int {
+		if ($categoryId === null || $sourceListId === $targetListId) {
+			return $categoryId;
+		}
+		$all = array_values($this->categoryMapper->findByHouse($houseId));
+		$category = self::byId($all, $categoryId);
+		if (!$category instanceof Category || $category->getListId() !== $sourceListId) {
+			return $categoryId;
+		}
+		$match = self::matchByName($all, $category->getName(), $targetListId);
+		return (int)($match ?? $this->copyCategory($category, $targetListId, $now))->getId();
+	}
+
+	/**
+	 * @param int[] $labelIds
+	 * @return list<int>
+	 */
+	public function labelIdsFor(array $labelIds, int $houseId, int $sourceListId, int $targetListId, int $now): array {
+		$labelIds = array_map('intval', $labelIds);
+		if ($labelIds === [] || $sourceListId === $targetListId) {
+			return array_values($labelIds);
+		}
+		$all = array_values($this->labelMapper->findByHouse($houseId));
+		$out = [];
+		foreach ($labelIds as $labelId) {
+			$label = self::byId($all, $labelId);
+			if (!$label instanceof Label || $label->getListId() !== $sourceListId) {
+				$out[] = $labelId;
+				continue;
+			}
+			$match = self::matchByName($all, $label->getName(), $targetListId);
+			if ($match === null) {
+				$match = $this->copyLabel($label, $targetListId, $now);
+				$all[] = $match;
+			}
+			$out[] = (int)$match->getId();
+		}
+		return array_values(array_unique($out));
+	}
+
+	/**
+	 * A matched field without an option of the same label leaves the value's
+	 * option empty.
+	 *
+	 * @param list<array<string, mixed>> $values
+	 * @return list<array<string, mixed>>
+	 */
+	public function fieldValuesFor(array $values, int $houseId, int $sourceListId, int $targetListId, int $now): array {
+		if ($values === [] || $sourceListId === $targetListId) {
+			return $values;
+		}
+		/** @var array<int, FieldDefinition> $defs */
+		$defs = [];
+		foreach ($this->fieldDefMapper->findByHouse($houseId) as $def) {
+			if ($def->getDeletedAt() === null) {
+				$defs[(int)$def->getId()] = $def;
+			}
+		}
+
+		$out = [];
+		foreach ($values as $value) {
+			$def = $defs[(int)($value['fieldId'] ?? 0)] ?? null;
+			if ($def === null || $def->getListId() !== $sourceListId) {
+				$out[] = $value;
+				continue;
+			}
+			$optionId = isset($value['valueOptionId']) ? (int)$value['valueOptionId'] : null;
+			$match = $this->matchField($defs, $def, $targetListId);
+			if ($match === null) {
+				[$match, $optionMap] = $this->copyField($def, $targetListId, $now);
+				$defs[(int)$match->getId()] = $match;
+				$value['valueOptionId'] = $optionId !== null ? ($optionMap[$optionId] ?? null) : null;
+			} elseif ($optionId !== null) {
+				$value['valueOptionId'] = $this->matchOption($optionId, (int)$def->getId(), (int)$match->getId());
+			}
+			$value['fieldId'] = (int)$match->getId();
+			$out[] = $value;
+		}
+		return $out;
+	}
+
+	/**
+	 * @param array<int, FieldDefinition> $defs
+	 */
+	private function matchField(array $defs, FieldDefinition $source, int $targetId): ?FieldDefinition {
+		$key = self::nameKey($source->getName());
+		$found = null;
+		foreach ($defs as $def) {
+			$scope = $def->getListId();
+			if (($scope !== null && $scope !== $targetId)
+				|| $def->getType() !== $source->getType()
+				|| self::nameKey($def->getName()) !== $key) {
+				continue;
+			}
+			if ($scope === $targetId) {
+				return $def;
+			}
+			$found ??= $def;
+		}
+		return $found;
+	}
+
+	private function matchOption(int $optionId, int $sourceFieldId, int $targetFieldId): ?int {
+		$label = null;
+		foreach ($this->fieldOptionMapper->findByField($sourceFieldId) as $option) {
+			if ((int)$option->getId() === $optionId) {
+				$label = self::nameKey($option->getLabel());
+				break;
+			}
+		}
+		if ($label === null) {
+			return null;
+		}
+		foreach ($this->fieldOptionMapper->findByField($targetFieldId) as $option) {
+			if (self::nameKey($option->getLabel()) === $label) {
+				return (int)$option->getId();
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * @param list<Category>|list<Label> $all
+	 */
+	private static function byId(array $all, int $id): Category|Label|null {
+		foreach ($all as $entity) {
+			if ((int)$entity->getId() === $id) {
+				return $entity;
+			}
+		}
+		return null;
+	}
+
 	public function copyCategory(Category $source, int $listId, int $now): Category {
 		$copy = new Category();
 		$copy->setHouseId($source->getHouseId());

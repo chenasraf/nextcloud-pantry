@@ -7,12 +7,16 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Tests\Unit\Service;
 
+use OCA\Pantry\Db\Category;
 use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistItem;
 use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\ChecklistMapper;
+use OCA\Pantry\Db\FieldDefinition;
+use OCA\Pantry\Db\FieldOption;
 use OCA\Pantry\Db\House;
 use OCA\Pantry\Db\HouseMapper;
+use OCA\Pantry\Db\Label;
 use OCA\Pantry\Db\ListRoleMapper;
 use OCA\Pantry\Migration\Version39Date20261009000000;
 use OCA\Pantry\Service\ChecklistService;
@@ -2705,5 +2709,197 @@ class ChecklistServiceTest extends TestCase {
 		$this->svc->updateItem(9, ['quantity' => '5 eggs', 'quantityPinned' => true]);
 
 		$this->assertFalse($item->isQuantityPinned());
+	}
+
+	// ----- Scoped taxonomy across lists -----
+
+	/** @var list<object> Categories, labels, fields and options inserted, in order. */
+	private array $insertedTaxonomy = [];
+
+	/**
+	 * Item 42 sits on checklist 10; checklist 20 is where it goes. A copy of
+	 * the item gets id 77, and every category, label, field or option inserted
+	 * gets id 900.
+	 */
+	private function itemOnSourceList(?int $categoryId = null): ChecklistItem {
+		$item = $this->withId($this->makeItem(['listId' => 10, 'categoryId' => $categoryId]), 42);
+		$this->itemMapper->method('findById')->willReturn($item);
+		$this->itemMapper->method('insert')->willReturnCallback(fn (ChecklistItem $i): ChecklistItem => $this->withId($i, 77));
+		$this->listMapper->method('findById')->willReturnCallback(function (int $id): Checklist {
+			$list = $this->makeList(Checklist::KIND_CHECKLIST);
+			$list->setId($id);
+			return $list;
+		});
+		$insert = function ($entity) {
+			$entity->setId(900);
+			$this->insertedTaxonomy[] = $entity;
+			return $entity;
+		};
+		foreach ([$this->categoryMapper, $this->labelMapper, $this->fieldDefMapper, $this->fieldOptionMapper] as $mapper) {
+			$mapper->method('insert')->willReturnCallback($insert);
+		}
+		return $item;
+	}
+
+	private function category(int $id, string $name, ?int $listId): Category {
+		$c = new Category();
+		$c->setId($id);
+		$c->setHouseId(1);
+		$c->setListId($listId);
+		$c->setName($name);
+		return $c;
+	}
+
+	private function label(int $id, string $name, ?int $listId): Label {
+		$l = new Label();
+		$l->setId($id);
+		$l->setHouseId(1);
+		$l->setListId($listId);
+		$l->setName($name);
+		return $l;
+	}
+
+	/**
+	 * Select field 70 scoped to list 10 and its twin 72 on list 20, each with
+	 * a "Dairy" option, and the item's value picking 70's.
+	 */
+	private function aisleFieldOnBothLists(): void {
+		$field = static function (int $id, ?int $listId): FieldDefinition {
+			$f = new FieldDefinition();
+			$f->setId($id);
+			$f->setHouseId(1);
+			$f->setListId($listId);
+			$f->setName('Aisle');
+			$f->setType(FieldDefinition::TYPE_SELECT);
+			return $f;
+		};
+		$option = static function (int $id, int $fieldId): FieldOption {
+			$o = new FieldOption();
+			$o->setId($id);
+			$o->setFieldId($fieldId);
+			$o->setLabel('Dairy');
+			return $o;
+		};
+		$this->fieldDefMapper->method('findByHouse')->willReturn([$field(70, 10), $field(72, 20)]);
+		$this->fieldOptionMapper->method('findByField')->willReturnCallback(
+			fn (int $id): array => [$option($id * 10, $id)],
+		);
+		$this->fieldValueMapper->method('findForItem')->willReturn([['fieldId' => 70, 'valueOptionId' => 700]]);
+	}
+
+	public function testACopyUsesTheTargetsCategoryOfTheSameName(): void {
+		$this->itemOnSourceList(30);
+		$this->categoryMapper->method('findByHouse')->willReturn([
+			$this->category(30, 'Dairy', 10),
+			$this->category(31, ' dairy', 20),
+		]);
+		$this->categoryMapper->expects($this->never())->method('insert');
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertSame(31, $copy->getCategoryId());
+	}
+
+	public function testACopyBringsAlongACategoryTheTargetLacks(): void {
+		$this->itemOnSourceList(30);
+		$this->categoryMapper->method('findByHouse')->willReturn([$this->category(30, 'Dairy', 10)]);
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertCount(1, $this->insertedTaxonomy);
+		[$inserted] = $this->insertedTaxonomy;
+		$this->assertInstanceOf(Category::class, $inserted);
+		$this->assertSame(20, $inserted->getListId());
+		$this->assertSame('Dairy', $inserted->getName());
+		$this->assertSame(900, $copy->getCategoryId());
+	}
+
+	public function testACopyKeepsAHouseWideCategory(): void {
+		$this->itemOnSourceList(30);
+		$this->categoryMapper->method('findByHouse')->willReturn([$this->category(30, 'Dairy', null)]);
+		$this->categoryMapper->expects($this->never())->method('insert');
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertSame(30, $copy->getCategoryId());
+	}
+
+	public function testACopyCarriesItsLabelsAndFieldValuesOntoTheTarget(): void {
+		$this->itemOnSourceList();
+		$this->itemLabelMapper->method('findLabelIdsForItem')->willReturn([60, 61]);
+		$this->labelMapper->method('findByHouse')->willReturn([
+			$this->label(60, 'Organic', 10),
+			$this->label(61, 'On sale', null),
+			$this->label(62, 'organic', 20),
+		]);
+		$this->aisleFieldOnBothLists();
+
+		$this->itemLabelMapper->expects($this->once())->method('setLabelsForItem')->with(77, [62, 61]);
+		$this->fieldValueMapper->expects($this->once())->method('setValuesForItem')
+			->with(77, [['fieldId' => 72, 'valueOptionId' => 720]]);
+
+		$this->svc->copyItem(42, 20, 'bob', null, null);
+	}
+
+	public function testACopyKeepsTheBarcode(): void {
+		$item = $this->itemOnSourceList();
+		$item->setBarcode('4006381333931');
+
+		$copy = $this->svc->copyItem(42, 20, 'bob', null, null);
+
+		$this->assertSame('4006381333931', $copy->getBarcode());
+	}
+
+	public function testAMovedItemTakesTheTargetsCategoryLabelsAndFields(): void {
+		$item = $this->itemOnSourceList(30);
+		$this->categoryMapper->method('findByHouse')->willReturn([
+			$this->category(30, 'Dairy', 10),
+			$this->category(31, 'Dairy', 20),
+		]);
+		$this->itemLabelMapper->method('findLabelIdsForItem')->willReturn([60]);
+		$this->labelMapper->method('findByHouse')->willReturn([$this->label(60, 'Organic', 10)]);
+		$this->aisleFieldOnBothLists();
+
+		$this->itemLabelMapper->expects($this->once())->method('setLabelsForItem')->with(42, [900]);
+		$this->fieldValueMapper->expects($this->once())->method('setValuesForItem')
+			->with(42, [['fieldId' => 72, 'valueOptionId' => 720]])
+			->willReturn([]);
+
+		$this->svc->moveItems([42], 20);
+
+		$this->assertSame(20, $item->getListId());
+		$this->assertSame(31, $item->getCategoryId());
+	}
+
+	public function testAnItemMovedOntoItsOwnListKeepsItsReferences(): void {
+		$item = $this->itemOnSourceList(30);
+		$this->categoryMapper->method('findByHouse')->willReturn([$this->category(30, 'Dairy', 10)]);
+		$this->itemLabelMapper->method('findLabelIdsForItem')->willReturn([60]);
+		$this->labelMapper->method('findByHouse')->willReturn([$this->label(60, 'Organic', 10)]);
+		$this->categoryMapper->expects($this->never())->method('insert');
+		$this->itemLabelMapper->expects($this->never())->method('setLabelsForItem');
+
+		$this->svc->moveItems([42], 10);
+
+		$this->assertSame(30, $item->getCategoryId());
+	}
+
+	public function testMovingOneItemCarriesWhatTheMoveSends(): void {
+		$item = $this->itemOnSourceList(30);
+		$this->categoryMapper->method('findByHouse')->willReturn([
+			$this->category(30, 'Dairy', 10),
+			$this->category(31, 'Dairy', 20),
+		]);
+		$this->labelMapper->method('findByHouse')->willReturn([
+			$this->label(60, 'Organic', 10),
+			$this->label(62, 'Organic', 20),
+		]);
+
+		$this->itemLabelMapper->expects($this->once())->method('setLabelsForItem')->with(42, [62]);
+
+		$this->svc->updateItem(42, ['listId' => 20, 'labelIds' => [60]]);
+
+		$this->assertSame(20, $item->getListId());
+		$this->assertSame(31, $item->getCategoryId());
 	}
 }
