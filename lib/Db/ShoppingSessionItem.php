@@ -39,6 +39,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setPriceMax(?float $priceMax)
  * @method string|null getPriceCurrency()
  * @method void setPriceCurrency(?string $priceCurrency)
+ * @method string|null getCheckedBy()
+ * @method void setCheckedBy(?string $checkedBy)
  */
 class ShoppingSessionItem extends Entity {
 	protected int $sessionId = 0;
@@ -51,6 +53,7 @@ class ShoppingSessionItem extends Entity {
 	protected ?float $priceMin = null;
 	protected ?float $priceMax = null;
 	protected ?string $priceCurrency = null;
+	protected ?string $checkedBy = null;
 
 	public function __construct() {
 		$this->addType('sessionId', 'integer');

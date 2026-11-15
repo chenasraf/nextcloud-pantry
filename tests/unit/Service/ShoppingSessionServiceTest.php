@@ -556,10 +556,11 @@ class ShoppingSessionServiceTest extends TestCase {
 				$this->assertSame(5, $row->getSessionId());
 				$this->assertSame(10, $row->getItemId());
 				$this->assertSame(3, $row->getStoreId());
+				$this->assertSame('alice', $row->getCheckedBy());
 				return $row;
 			});
 
-		$this->svc->checkItem($session, 10);
+		$this->svc->checkItem($session, 10, 'alice');
 	}
 
 	public function testCheckItemAgainUpdatesTheLog(): void {
@@ -568,7 +569,7 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->sessionItems->expects($this->once())->method('update');
 		$this->sessionItems->expects($this->never())->method('insert');
 
-		$this->svc->checkItem($session, 10);
+		$this->svc->checkItem($session, 10, 'alice');
 	}
 
 	public function testUncheckItemOnlyDropsTheLog(): void {
@@ -596,6 +597,25 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->svc->close($session, [], 'bob');
 
 		$this->assertSame([[10, 'bob', true, 700], [11, 'bob', true, 1000]], $toggled);
+	}
+
+	public function testCloseCreditsWhoeverCheckedEachItem(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$byCarol = $this->makeLog(10, null);
+		$byCarol->setCheckedBy('carol');
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$byCarol, $this->makeLog(11, null)]);
+		$this->items->method('findById')->willReturnCallback(fn (int $id): ChecklistItem => $this->makeItem(['id' => $id]));
+		$credited = [];
+		$this->restock->method('toggle')->willReturnCallback(function (int $itemId, string $uid) use (&$credited): array {
+			$credited[$itemId] = $uid;
+			return ['item' => new ChecklistItem(), 'restocked' => [], 'undone' => [], 'events' => [], 'changed' => true];
+		});
+
+		$this->svc->close($session, [], 'bob');
+
+		// A check logged without a checker falls back to whoever finishes.
+		$this->assertSame([10 => 'carol', 11 => 'bob'], $credited);
 	}
 
 	public function testCloseSkipsItemsGoneArchivedOrAlreadyDone(): void {

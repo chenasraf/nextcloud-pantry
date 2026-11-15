@@ -376,7 +376,7 @@ final class ShoppingSessionController extends OCSController {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
 			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$this->assertItemInScope($session, $itemId);
-			$this->sessions->checkItem($session, $itemId);
+			$this->sessions->checkItem($session, $itemId, $this->requireUid());
 			return new DataResponse($this->checkResult());
 		});
 	}

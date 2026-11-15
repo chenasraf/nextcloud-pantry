@@ -105,6 +105,8 @@ final class ExpectedColumns {
 			self::col('shopsess_items', 'price_min', Types::FLOAT, ['notnull' => false, 'default' => null]),
 			self::col('shopsess_items', 'price_max', Types::FLOAT, ['notnull' => false, 'default' => null]),
 			self::col('shopsess_items', 'price_currency', Types::STRING, ['notnull' => false, 'length' => 8, 'default' => null]),
+			// shopsess_items — who checked the item on the trip (Version52).
+			self::col('shopsess_items', 'checked_by', Types::STRING, ['notnull' => false, 'length' => 64, 'default' => null]),
 
 			// shopping_sessions — combined-stores trip flag (Version41). The session
 			// SELECT * hydrates every column, so a missing one breaks shopping mode.

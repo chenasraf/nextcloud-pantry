@@ -402,11 +402,13 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * Check off each logged item, once, as of when it was checked on the trip,
-	 * each in its own transaction. Items gone, archived or already done since
-	 * are skipped, so one of them never stops the trip from closing.
+	 * Check off each logged item, once, as of when it was checked on the trip
+	 * and by whoever checked it, each in its own transaction. Items gone,
+	 * archived or already done since are skipped, so one of them never stops
+	 * the trip from closing.
 	 *
 	 * @param ShoppingSessionItem[] $logs
+	 * @param string $uid Credited for checks logged without a checker.
 	 */
 	private function commitChecks(array $logs, string $uid): void {
 		foreach ($logs as $log) {
@@ -416,7 +418,7 @@ class ShoppingSessionService {
 				if ($item->getArchivedAt() !== null || $item->getDone()) {
 					continue;
 				}
-				$this->restock->toggle($itemId, $uid, true, $log->getCheckedAt());
+				$this->restock->toggle($itemId, $log->getCheckedBy() ?? $uid, true, $log->getCheckedAt());
 			} catch (DoesNotExistException|NotFoundException|\InvalidArgumentException) {
 				continue;
 			}
@@ -617,7 +619,7 @@ class ShoppingSessionService {
 	 * is finished, so the trip can still be walked back without touching any
 	 * list. Idempotent.
 	 */
-	public function checkItem(ShoppingSession $session, int $itemId): void {
+	public function checkItem(ShoppingSession $session, int $itemId, string $uid): void {
 		$sessionId = (int)$session->getId();
 		$now = time();
 		$existing = $this->sessionItems->findBySessionAndItem($sessionId, $itemId);
@@ -627,10 +629,12 @@ class ShoppingSessionService {
 			$row->setItemId($itemId);
 			$row->setStoreId($session->getActiveStoreId());
 			$row->setCheckedAt($now);
+			$row->setCheckedBy($uid);
 			$this->sessionItems->insert($row);
 		} else {
 			$existing->setStoreId($session->getActiveStoreId());
 			$existing->setCheckedAt($now);
+			$existing->setCheckedBy($uid);
 			$this->sessionItems->update($existing);
 		}
 	}
