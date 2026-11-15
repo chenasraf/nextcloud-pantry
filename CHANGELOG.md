@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.39.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.38.0...v0.39.0) (2026-11-15)
+
+
+### Features
+
+* **inventory:** add all-inventories view, shopping put away and linked product sync ([#327](https://github.com/chenasraf/nextcloud-pantry/issues/327)) ([a0e83ac](https://github.com/chenasraf/nextcloud-pantry/commit/a0e83aced3e9b4816a4b13ffe0046e53d7985c3c))
+* **items:** toggle to a target done state ([a8b7d88](https://github.com/chenasraf/nextcloud-pantry/commit/a8b7d8877397d4d873ae0fbbe626368c72fee6ec))
+* **shopping:** allow cancelling a shopping trip without changing any lists ([9581559](https://github.com/chenasraf/nextcloud-pantry/commit/9581559bf5119c4e106d51a8380e5f4efc280b72)), closes [#330](https://github.com/chenasraf/nextcloud-pantry/issues/330)
+* **shopping:** defer trip checks until the trip is finished ([d21abc6](https://github.com/chenasraf/nextcloud-pantry/commit/d21abc69605d6dd8ca7bd95ad6992bb730ba2b55))
+* **shopping:** include joined trips in my shopping history ([192ea40](https://github.com/chenasraf/nextcloud-pantry/commit/192ea408f51ba04e7e6c01d2957eb6f1e0106c20))
+* **shopping:** show everyone on a trip in its history ([4a8fc75](https://github.com/chenasraf/nextcloud-pantry/commit/4a8fc752724e9248318cb18c032990884080d008))
+* **shopping:** step the amount bought on trip items ([d8f290a](https://github.com/chenasraf/nextcloud-pantry/commit/d8f290af870e26e5290143fe9fb0a691c4969d4d))
+
+
+### Bug Fixes
+
+* **barcode:** fall back to category or brand for unnamed products ([b2398ce](https://github.com/chenasraf/nextcloud-pantry/commit/b2398ce2f5d5b23128305ebf2b51908786e9b5b9)), closes [#338](https://github.com/chenasraf/nextcloud-pantry/issues/338)
+* **l10n:** Update translations from Transifex ([d32c582](https://github.com/chenasraf/nextcloud-pantry/commit/d32c582c2aa5401dd5d81cf6c20022c7780eff9a))
+* **l10n:** Update translations from Transifex ([9cfdbd6](https://github.com/chenasraf/nextcloud-pantry/commit/9cfdbd66088e7363705131b253d3f226ed030dc5))
+* **l10n:** Update translations from Transifex ([5506cf4](https://github.com/chenasraf/nextcloud-pantry/commit/5506cf47f3179d6c7f93f287cca64b1f3869c8a0))
+* **l10n:** Update translations from Transifex ([0a210c5](https://github.com/chenasraf/nextcloud-pantry/commit/0a210c5afd9a909759ab41dcabdd5e069edb66e4))
+* **l10n:** Update translations from Transifex ([f902516](https://github.com/chenasraf/nextcloud-pantry/commit/f9025163faf42e5dcb3cb266bd076ac8606c21d0))
+* **l10n:** Update translations from Transifex ([cb9e4ec](https://github.com/chenasraf/nextcloud-pantry/commit/cb9e4ec9f10a5f9fd4bc3f0c34b5c3292e931c2a))
+* **l10n:** Update translations from Transifex ([d8800ef](https://github.com/chenasraf/nextcloud-pantry/commit/d8800ef2b23ec71ea602567b0eb3d0811bb57fc5))
+* **l10n:** Update translations from Transifex ([126e8c2](https://github.com/chenasraf/nextcloud-pantry/commit/126e8c27d46f8732022138f598f5d29e7d3e1246))
+* **l10n:** Update translations from Transifex ([52c70af](https://github.com/chenasraf/nextcloud-pantry/commit/52c70af3ae8a25593fd4cc01d38f4fabcb81769f))
+* **l10n:** Update translations from Transifex ([5182fc6](https://github.com/chenasraf/nextcloud-pantry/commit/5182fc65d077be230b43128e33485f23fd67332f))
+* **l10n:** Update translations from Transifex ([d9a308a](https://github.com/chenasraf/nextcloud-pantry/commit/d9a308af6a1cc89491626da549a74cdec6145bed))
+* **l10n:** Update translations from Transifex ([3f44e61](https://github.com/chenasraf/nextcloud-pantry/commit/3f44e613cb7d14d0f2a807a3194cd2bce335caa4))
+* **l10n:** Update translations from Transifex ([d8f1aa5](https://github.com/chenasraf/nextcloud-pantry/commit/d8f1aa51ef8260c1f50064e266fd4b54b3d347c2))
+* **l10n:** Update translations from Transifex ([ce3b5e3](https://github.com/chenasraf/nextcloud-pantry/commit/ce3b5e324bfd9bbaba126b8c91a92505d8f01128))
+* **l10n:** Update translations from Transifex ([a60764e](https://github.com/chenasraf/nextcloud-pantry/commit/a60764e93f01b1743cbaf4e795f3e05cc12bf99d))
+* **l10n:** Update translations from Transifex ([f3ace1b](https://github.com/chenasraf/nextcloud-pantry/commit/f3ace1bcec15261b93d0c22d23fa9c5e4052b5bf))
+* **lists:** copied and moved items will now keep their categories, labels, fields and barcode ([a06ab83](https://github.com/chenasraf/nextcloud-pantry/commit/a06ab8318fc29e0c68521e91e52bd562df88ff59))
+* **lists:** refresh scoped categories after duplicating a list ([82b178d](https://github.com/chenasraf/nextcloud-pantry/commit/82b178db53e3f70bfe3448b0696069769370c0bf))
+* **nav:** bind docs links so vue-tsc checks the whole template ([aa3fa01](https://github.com/chenasraf/nextcloud-pantry/commit/aa3fa015fb13859e8843ed8f8bbe73a40ce8622b))
+* **shares:** persist default view permission on insert ([ea6d593](https://github.com/chenasraf/nextcloud-pantry/commit/ea6d593d5f55c4c02c8dc958727087a8586e4da7)), closes [#336](https://github.com/chenasraf/nextcloud-pantry/issues/336)
+* **shopping:** credit trip checks to whoever made them ([16a6d96](https://github.com/chenasraf/nextcloud-pantry/commit/16a6d96b8c14318608715fc23105ef8dd6126a0c))
+* **shopping:** multiply estimated totals by item quantity ([981fc9f](https://github.com/chenasraf/nextcloud-pantry/commit/981fc9ff9b9732350476e3bd88ba83b9dfd100eb)), closes [#349](https://github.com/chenasraf/nextcloud-pantry/issues/349)
+
 ## [0.38.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.37.0...v0.38.0) (2026-10-30)
 
 
