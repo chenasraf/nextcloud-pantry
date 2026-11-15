@@ -72,20 +72,36 @@ class RestockService {
 	 * @param bool|null $done The state the item must end in; null flips it. An
 	 *                        item already in that state is left untouched, so a
 	 *                        replayed request changes nothing.
+	 * @param int|null $now When the check happened, so recurrence schedules from it.
 	 * @return RestockToggled
 	 */
-	public function toggle(int $itemId, string $uid, ?bool $done = null): array {
-		return $this->atomic(function () use ($itemId, $uid, $done): array {
+	public function toggle(int $itemId, string $uid, ?bool $done = null, ?int $now = null): array {
+		return $this->atomic(function () use ($itemId, $uid, $done, $now): array {
 			$this->itemMapper->lock($itemId);
 			$before = $this->checklists->getItem($itemId);
 			if ($done === $before->getDone()) {
 				return [...$this->result($before, [], [], []), 'changed' => false];
 			}
 			$record = $before->getDone() ? $before->getRestock() : null;
-			$item = $this->checklists->toggleItem($itemId, $uid);
+			$item = $this->checklists->toggleItem($itemId, $uid, $now);
 			$result = $item->getDone() ? $this->restock($item, $uid) : $this->undo($item, $record ?? [], $uid);
 			return [...$result, 'changed' => true];
 		}, $this->db);
+	}
+
+	/**
+	 * What ticking the checklist item would put back into stock right now,
+	 * without writing anything: the record a tick would keep.
+	 *
+	 * @return list<RestockEntry>
+	 */
+	public function preview(ChecklistItem $row): array {
+		$contributors = array_map(static fn (ChecklistItem $item): ChecklistItem => clone $item, $this->sync->contributors($row));
+		if ($contributors === []) {
+			return [];
+		}
+		$today = StockRules::today();
+		return $this->grant($this->plan($contributors, StockRules::firstNumber($row->getQuantity()), $today), $today);
 	}
 
 	/**

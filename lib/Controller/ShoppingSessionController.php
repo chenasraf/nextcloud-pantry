@@ -162,8 +162,8 @@ final class ShoppingSessionController extends OCSController {
 	/**
 	 * Close a shopping session
 	 *
-	 * Stamps `closed_at`. Closing an already-closed session returns 409 (no
-	 * reopen).
+	 * Checks off every item checked on the trip, then stamps `closed_at`.
+	 * Closing an already-closed session returns 409 (no reopen).
 	 *
 	 * `putAway` says where the items ticked on this trip were put away: each
 	 * entry replaces what that item's tick restocked with the inventories and
@@ -358,8 +358,8 @@ final class ShoppingSessionController extends OCSController {
 	/**
 	 * Check an item off during a shopping session
 	 *
-	 * Marks the item done and records it in the session log against the active
-	 * store.
+	 * Records the check in the session log against the active store. The item
+	 * is checked off on its list when the trip is finished.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $sessionId Session id.
@@ -376,7 +376,8 @@ final class ShoppingSessionController extends OCSController {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
 			$session = $this->loadJoinedSession($sessionId, $houseId);
 			$this->assertItemInScope($session, $itemId);
-			return new DataResponse($this->checkResult($this->sessions->checkItem($session, $itemId, $this->requireUid())));
+			$this->sessions->checkItem($session, $itemId);
+			return new DataResponse($this->checkResult());
 		});
 	}
 
@@ -397,21 +398,24 @@ final class ShoppingSessionController extends OCSController {
 	public function uncheckItem(int $houseId, int $sessionId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $sessionId, $itemId): DataResponse {
 			$session = $this->loadJoinedSession($sessionId, $houseId);
-			return new DataResponse($this->checkResult($this->sessions->uncheckItem($session, $itemId, $this->requireUid())));
+			$this->sessions->uncheckItem($session, $itemId);
+			return new DataResponse($this->checkResult());
 		});
 	}
 
 	/**
-	 * @param array{item: ChecklistItem, restocked: list<array<string, mixed>>, undone: list<array<string, mixed>>, events: list<array<string, mixed>>, ...}|null $result
+	 * A trip's check touches no stock until the trip is finished, so there is
+	 * nothing to report.
+	 *
 	 * @return PantryShoppingCheckResult
 	 */
-	private function checkResult(?array $result): array {
+	private function checkResult(): array {
 		return [
 			'success' => true,
-			'restock' => $result !== null && $result['item']->getDone() ? $result['item']->getRestock() : null,
-			'restocked' => $result['restocked'] ?? [],
-			'restockUndone' => $result['undone'] ?? [],
-			'restockSync' => $result['events'] ?? [],
+			'restock' => null,
+			'restocked' => [],
+			'restockUndone' => [],
+			'restockSync' => [],
 		];
 	}
 

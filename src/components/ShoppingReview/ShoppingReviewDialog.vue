@@ -89,6 +89,9 @@
         <p v-if="review.uncheckedCount > 0" class="shop-review__unchecked">
           {{ uncheckedText(review.uncheckedCount) }}
         </p>
+        <p v-if="mode === 'close' && checkedItems.length > 0" class="shop-review__unchecked">
+          {{ strings.finishChecksOff }}
+        </p>
       </div>
     </template>
 
@@ -394,6 +397,7 @@ const strings = {
   currency: t('pantry', 'Currency'),
   anyStore: t('pantry', 'Any store'),
   nothingChecked: t('pantry', 'Nothing checked off here yet.'),
+  finishChecksOff: t('pantry', 'Finishing the trip checks these items off on their lists.'),
   finish: t('pantry', 'Finish trip'),
   nextStore: t('pantry', 'Next store'),
   back: t('pantry', 'Back'),

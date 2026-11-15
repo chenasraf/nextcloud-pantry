@@ -545,10 +545,10 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame(2, $dto['houseId']);
 	}
 
-	public function testCheckItemMarksDoneAndLogsAgainstActiveStore(): void {
+	public function testCheckItemOnlyLogsAgainstActiveStore(): void {
 		$session = $this->makeSession(['id' => 5, 'activeStoreId' => 3]);
-		$this->checklists->method('getItem')->with(10)->willReturn($this->makeItem(['id' => 10, 'done' => false]));
-		$this->restock->expects($this->once())->method('toggle')->with(10, 'alice');
+		$this->restock->expects($this->never())->method('toggle');
+		$this->items->expects($this->never())->method('update');
 		$this->sessionItems->method('findBySessionAndItem')->with(5, 10)->willReturn(null);
 		$this->sessionItems->expects($this->once())
 			->method('insert')
@@ -559,51 +559,102 @@ class ShoppingSessionServiceTest extends TestCase {
 				return $row;
 			});
 
-		$this->svc->checkItem($session, 10, 'alice');
+		$this->svc->checkItem($session, 10);
 	}
 
-	public function testCheckItemSkipsToggleWhenAlreadyDoneAndUpdatesLog(): void {
+	public function testCheckItemAgainUpdatesTheLog(): void {
 		$session = $this->makeSession(['id' => 5, 'activeStoreId' => 3]);
-		$this->checklists->method('getItem')->with(10)->willReturn($this->makeItem(['id' => 10, 'done' => true]));
-		$this->restock->expects($this->never())->method('toggle');
 		$this->sessionItems->method('findBySessionAndItem')->with(5, 10)->willReturn($this->makeLog(10, null));
 		$this->sessionItems->expects($this->once())->method('update');
 		$this->sessionItems->expects($this->never())->method('insert');
 
-		$this->svc->checkItem($session, 10, 'alice');
+		$this->svc->checkItem($session, 10);
 	}
 
-	public function testUncheckItemRemovesLogAndUnchecks(): void {
+	public function testUncheckItemOnlyDropsTheLog(): void {
 		$session = $this->makeSession(['id' => 5]);
 		$this->sessionItems->expects($this->once())->method('deleteBySessionAndItem')->with(5, 10);
-		$this->items->method('findById')->with(10, true)->willReturn($this->makeItem(['id' => 10, 'done' => true]));
-		$this->items->expects($this->once())
-			->method('update')
-			->willReturnCallback(function (ChecklistItem $i) {
-				$this->assertFalse($i->getDone());
-				return $i;
-			});
+		$this->items->expects($this->never())->method('update');
+		$this->restock->expects($this->never())->method('afterMemberUncheck');
 
-		$this->svc->uncheckItem($session, 10, 'alice');
+		$this->svc->uncheckItem($session, 10);
 	}
 
-	public function testUncheckItemTakesBackWhatTheCheckRestocked(): void {
+	public function testCloseChecksOffEveryLoggedItemAsOfItsCheck(): void {
 		$session = $this->makeSession(['id' => 5]);
-		$entry = ['itemId' => 30, 'listId' => 3, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null, 'replaced' => false, 'previousOnHand' => null, 'previousExpiresAt' => null, 'expiresAt' => null];
-		$item = $this->makeItem(['id' => 10, 'done' => true]);
-		$item->setRestock([$entry]);
-		$this->items->method('findById')->with(10, true)->willReturn($item);
-		$this->items->expects($this->once())->method('update')->willReturnCallback(function (ChecklistItem $i) {
-			$this->assertNull($i->getRestock());
-			$this->assertTrue($i->isMemberReopened());
-			return $i;
+		$this->sessions->method('update')->willReturnArgument(0);
+		$milk = $this->makeLog(10, 3);
+		$milk->setCheckedAt(700);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$milk, $this->makeLog(11, null)]);
+		$this->items->method('findById')->willReturnCallback(fn (int $id): ChecklistItem => $this->makeItem(['id' => $id]));
+		$toggled = [];
+		$this->restock->method('toggle')->willReturnCallback(function (int $itemId, string $uid, ?bool $done, ?int $now) use (&$toggled): array {
+			$toggled[] = [$itemId, $uid, $done, $now];
+			return ['item' => new ChecklistItem(), 'restocked' => [], 'undone' => [], 'events' => [], 'changed' => true];
 		});
-		$this->restock->expects($this->once())->method('afterMemberUncheck')
-			->with($item, [$entry], 'alice')
-			->willReturn(['item' => $item, 'restocked' => [], 'undone' => [$entry], 'events' => []]);
 
-		$result = $this->svc->uncheckItem($session, 10, 'alice');
-		$this->assertSame([$entry], $result['undone'] ?? null);
+		$this->svc->close($session, [], 'bob');
+
+		$this->assertSame([[10, 'bob', true, 700], [11, 'bob', true, 1000]], $toggled);
+	}
+
+	public function testCloseSkipsItemsGoneArchivedOrAlreadyDone(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([
+			$this->makeLog(10, null),
+			$this->makeLog(11, null),
+			$this->makeLog(12, null),
+			$this->makeLog(13, null),
+		]);
+		$archived = $this->makeItem(['id' => 11]);
+		$archived->setArchivedAt(500);
+		$this->items->method('findById')->willReturnCallback(fn (int $id): ChecklistItem => match ($id) {
+			10 => throw new DoesNotExistException('gone'),
+			11 => $archived,
+			12 => $this->makeItem(['id' => 12, 'done' => true]),
+			default => $this->makeItem(['id' => $id]),
+		});
+		$this->restock->expects($this->once())->method('toggle')->with(13, 'alice', true, 1000);
+
+		$closed = $this->svc->close($session);
+
+		$this->assertNotNull($closed->getClosedAt());
+	}
+
+	public function testCloseCommitsBeforePuttingAway(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(10, 3)]);
+		$this->items->method('findById')->willReturn($this->makeItem(['id' => 10]));
+		$calls = [];
+		$this->restock->method('toggle')->willReturnCallback(function () use (&$calls): array {
+			$calls[] = 'toggle';
+			return ['item' => new ChecklistItem(), 'restocked' => [], 'undone' => [], 'events' => [], 'changed' => true];
+		});
+		$this->restock->method('putAway')->willReturnCallback(function () use (&$calls): array {
+			$calls[] = 'putAway';
+			return ['item' => new ChecklistItem(), 'restocked' => [], 'undone' => [], 'events' => []];
+		});
+
+		$this->svc->close($session, [10 => [['listId' => 20, 'amount' => 1.0]]], 'alice');
+
+		$this->assertSame(['toggle', 'putAway'], $calls);
+	}
+
+	public function testItemsForSessionDropsItemsAlreadyInTheCart(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessionLists->method('findListIdsForSession')->with(5)->willReturn([10]);
+		$this->items->method('findForShoppingScope')->willReturn([
+			$this->makeItem(['id' => 10]),
+			$this->makeItem(['id' => 11]),
+		]);
+		$this->sessionSkips->method('findItemIdsForSession')->willReturn([]);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(11, null)]);
+
+		$result = $this->svc->itemsForSession($session);
+
+		$this->assertSame([10], array_map(static fn (ChecklistItem $i): int => (int)$i->getId(), $result));
 	}
 
 	public function testItemsForSessionDropsSkippedItems(): void {
@@ -780,26 +831,47 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame([['currency' => 'USD', 'min' => 9.5, 'max' => 9.5]], $review['grandTotal']);
 	}
 
-	public function testReviewExcludesItemsUndoneSinceCheck(): void {
+	public function testLiveReviewListsCheckedItemsThatAreNotDoneYet(): void {
 		$session = $this->makeSession(['id' => 5]);
 		$this->sessionItems->method('findBySession')->with(5)->willReturn([
 			$this->makeLog(10, 3),
 			$this->makeLog(11, 3),
+			$this->makeLog(12, 3),
 		]);
-		// Item 11 was un-done outside shopping mode; its log row is now stale.
+		$deleted = $this->makeItem(['id' => 12, 'priceType' => 'set', 'priceMin' => 5.0, 'priceCurrency' => 'USD']);
+		$deleted->setDeletedAt(500);
 		$this->items->method('findByIds')->willReturn([
-			$this->makeItem(['id' => 10, 'done' => true, 'priceType' => 'set', 'priceMin' => 2.0, 'priceCurrency' => 'USD']),
-			$this->makeItem(['id' => 11, 'done' => false, 'priceType' => 'set', 'priceMin' => 3.0, 'priceCurrency' => 'USD']),
+			$this->makeItem(['id' => 10, 'priceType' => 'set', 'priceMin' => 2.0, 'priceCurrency' => 'USD']),
+			$this->makeItem(['id' => 11, 'done' => true, 'priceType' => 'set', 'priceMin' => 3.0, 'priceCurrency' => 'USD']),
+			$deleted,
 		]);
 		$this->itemStores->method('findStoreIdsForItems')->willReturn([]);
 		$this->sessionStores->method('findBySession')->with(5)->willReturn([$this->makeSessionStore(3, 0)]);
 		$this->sessionLists->method('findListIdsForSession')->willReturn([1]);
+		$this->items->method('findForShoppingScope')->willReturn([$this->makeItem(['id' => 10]), $this->makeItem(['id' => 20])]);
+
+		$review = $this->svc->review($session);
+
+		$this->assertSame([10, 11], array_column($review['stores'][0]['items'], 'id'));
+		$this->assertSame([['currency' => 'USD', 'min' => 5.0, 'max' => 5.0]], $review['grandTotal']);
+		$this->assertSame(1, $review['uncheckedCount']);
+	}
+
+	public function testLiveReviewShowsWhatFinishingWouldRestock(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$entry = ['itemId' => 30, 'listId' => 3, 'itemName' => 'Eggs', 'listName' => 'Kitchen', 'added' => '8', 'previousLevel' => null, 'replaced' => false, 'previousOnHand' => null, 'previousExpiresAt' => null, 'expiresAt' => null];
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(10, null)]);
+		$this->items->method('findByIds')->willReturn([$this->makeItem(['id' => 10])]);
+		$this->items->expects($this->never())->method('update');
+		$this->restock->method('preview')->willReturn([$entry]);
+		$this->itemStores->method('findStoreIdsForItems')->willReturn([]);
+		$this->sessionStores->method('findBySession')->willReturn([]);
+		$this->sessionLists->method('findListIdsForSession')->willReturn([1]);
 		$this->items->method('findForShoppingScope')->willReturn([]);
 
 		$review = $this->svc->review($session);
-		$this->assertCount(1, $review['stores'][0]['items']);
-		// Only the still-done item contributes to the total.
-		$this->assertSame([['currency' => 'USD', 'min' => 2.0, 'max' => 2.0]], $review['grandTotal']);
+
+		$this->assertSame([$entry], $review['stores'][0]['items'][0]['restock']);
 	}
 
 	public function testClosedReviewRendersFromSnapshotEvenIfItemDeleted(): void {
@@ -913,6 +985,17 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame(1, $count);
 		// Closed at the last-seen time, not the job's "now".
 		$this->assertSame(1000, $idle->getClosedAt());
+	}
+
+	public function testCloseIdleSessionsCommitsTheChecksAsTheStarter(): void {
+		$idle = $this->makeSession(['id' => 5, 'userId' => 'carol', 'lastSeenAt' => 1000]);
+		$this->sessions->method('findIdleLive')->willReturn([$idle]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(10, null)]);
+		$this->items->method('findById')->willReturn($this->makeItem(['id' => 10]));
+		$this->restock->expects($this->once())->method('toggle')->with(10, 'carol', true, 1000);
+
+		$this->svc->closeIdleSessions(4 * 3600, 100000);
 	}
 
 	public function testPurgeAgedSessionsKeepsForeverWhenRetentionOff(): void {

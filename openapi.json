@@ -25868,7 +25868,7 @@
             "post": {
                 "operationId": "shopping_session-close",
                 "summary": "Close a shopping session",
-                "description": "Stamps `closed_at`. Closing an already-closed session returns 409 (no reopen).\n`putAway` says where the items ticked on this trip were put away: each entry replaces what that item's tick restocked with the inventories and amounts given (an item an inventory does not have yet is added to it), and an empty `storages` list takes it back out of stock. Items left out keep what their tick restocked.",
+                "description": "Checks off every item checked on the trip, then stamps `closed_at`. Closing an already-closed session returns 409 (no reopen).\n`putAway` says where the items ticked on this trip were put away: each entry replaces what that item's tick restocked with the inventories and amounts given (an item an inventory does not have yet is added to it), and an empty `storages` list takes it back out of stock. Items left out keep what their tick restocked.",
                 "tags": [
                     "shopping_session"
                 ],
@@ -26534,7 +26534,7 @@
             "post": {
                 "operationId": "shopping_session-check-item",
                 "summary": "Check an item off during a shopping session",
-                "description": "Marks the item done and records it in the session log against the active store.",
+                "description": "Records the check in the session log against the active store. The item is checked off on its list when the trip is finished.",
                 "tags": [
                     "shopping_session"
                 ],

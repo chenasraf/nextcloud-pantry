@@ -32,8 +32,6 @@ use OCP\AppFramework\Db\DoesNotExistException;
  * (checklists), its ordered store sequence, and the aggregated shopping list.
  * Lifecycle is timestamp-driven and enforced here.
  *
- * @psalm-import-type RestockToggle from RestockService
- * @psalm-import-type RestockToggled from RestockService
  * @psalm-import-type PutAwayPick from RestockService
  */
 class ShoppingSessionService {
@@ -357,7 +355,8 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * Stamp `closed_at`. Closing an already-closed session is a 409 (no reopen).
+	 * Check off everything checked on the trip, then stamp `closed_at`. Closing
+	 * an already-closed session is a 409 (no reopen).
 	 *
 	 * `$putAway` maps an item ticked on this trip to the inventories its
 	 * purchase goes to ({@see RestockService::putAway()}); an empty list of
@@ -371,9 +370,10 @@ class ShoppingSessionService {
 		if ($session->getClosedAt() !== null) {
 			throw new ShoppingSessionConflictException($session, 'Shopping session is already closed');
 		}
+		$logs = $this->sessionItems->findBySession((int)$session->getId());
 		if ($putAway !== [] && $uid !== null) {
 			$ticked = [];
-			foreach ($this->sessionItems->findBySession((int)$session->getId()) as $log) {
+			foreach ($logs as $log) {
 				$ticked[(int)$log->getItemId()] = true;
 			}
 			$putAway = array_intersect_key($putAway, $ticked);
@@ -382,6 +382,9 @@ class ShoppingSessionService {
 			foreach ($putAway as $itemId => $picks) {
 				$this->restock->checkPutAway($itemId, $picks);
 			}
+		}
+		$this->commitChecks($logs, $uid ?? $session->getUserId());
+		if ($putAway !== [] && $uid !== null) {
 			foreach ($putAway as $itemId => $picks) {
 				$this->restock->putAway($itemId, $picks, $uid);
 			}
@@ -399,10 +402,34 @@ class ShoppingSessionService {
 	}
 
 	/**
+	 * Check off each logged item, once, as of when it was checked on the trip,
+	 * each in its own transaction. Items gone, archived or already done since
+	 * are skipped, so one of them never stops the trip from closing.
+	 *
+	 * @param ShoppingSessionItem[] $logs
+	 */
+	private function commitChecks(array $logs, string $uid): void {
+		foreach ($logs as $log) {
+			$itemId = (int)$log->getItemId();
+			try {
+				$item = $this->items->findById($itemId);
+				if ($item->getArchivedAt() !== null || $item->getDone()) {
+					continue;
+				}
+				$this->restock->toggle($itemId, $uid, true, $log->getCheckedAt());
+			} catch (DoesNotExistException|NotFoundException|\InvalidArgumentException) {
+				continue;
+			}
+		}
+	}
+
+	/**
 	 * Auto-close abandoned live sessions: those whose last activity
-	 * (`last_seen_at`) predates now − $idleSeconds. The trip is stamped closed at
-	 * its last-seen time (the truthful end), so its history duration reflects real
-	 * activity rather than when the job happened to run. Runs from the lifecycle
+	 * (`last_seen_at`) predates now − $idleSeconds. An idle trip is one whose
+	 * shopper forgot to finish it, so its checks are committed as a finish
+	 * would. The trip is stamped closed at its last-seen time (the truthful
+	 * end), so its history duration reflects real activity rather than when the
+	 * job happened to run. Runs from the lifecycle
 	 * {@see \OCA\Pantry\BackgroundJob\ShoppingSessionLifecycleJob}.
 	 *
 	 * @return int Number of sessions closed.
@@ -412,6 +439,7 @@ class ShoppingSessionService {
 		$cutoff = $now - $idleSeconds;
 		$stale = $this->sessions->findIdleLive($cutoff);
 		foreach ($stale as $session) {
+			$this->commitChecks($this->sessionItems->findBySession((int)$session->getId()), $session->getUserId());
 			$this->snapshotSessionItems($session);
 			$session->setClosedAt((int)$session->getLastSeenAt());
 			$session->setUpdatedAt($now);
@@ -467,9 +495,11 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * The unchecked, in-scope items to shop, ordered: narrowed to the active
-	 * store, or — on a trip shopping all stores at once — to any store in its
-	 * sequence. Flat array; the client groups by category.
+	 * The in-scope items still to shop, ordered: narrowed to the active store,
+	 * or — on a trip shopping all stores at once — to any store in its
+	 * sequence. Items checked on this trip are not done until it is finished,
+	 * so the trip's log leaves them out. Flat array; the client groups by
+	 * category.
 	 *
 	 * @return ChecklistItem[]
 	 */
@@ -487,17 +517,30 @@ class ShoppingSessionService {
 				$session->getIncludeUnassigned(),
 			);
 		// Drop items the shopper skipped from this trip (kept on the list, not
-		// marked done — the skip is session-scoped and reversible).
-		$skipped = $this->sessionSkips->findItemIdsForSession((int)$session->getId());
-		if ($skipped !== []) {
-			$skippedSet = array_fill_keys($skipped, true);
+		// marked done — the skip is session-scoped and reversible) and those
+		// already in the cart.
+		$hidden = array_fill_keys([
+			...$this->sessionSkips->findItemIdsForSession($sessionId),
+			...$this->checkedItemIds($sessionId),
+		], true);
+		if ($hidden !== []) {
 			$items = array_values(array_filter(
 				$items,
-				static fn (ChecklistItem $item) => !isset($skippedSet[(int)$item->getId()]),
+				static fn (ChecklistItem $item) => !isset($hidden[(int)$item->getId()]),
 			));
 		}
 		$this->attachPrices($items);
 		return $items;
+	}
+
+	/**
+	 * @return list<int> The items checked on this trip.
+	 */
+	private function checkedItemIds(int $sessionId): array {
+		return array_map(
+			static fn (ShoppingSessionItem $log): int => (int)$log->getItemId(),
+			$this->sessionItems->findBySession($sessionId),
+		);
 	}
 
 	/**
@@ -569,16 +612,12 @@ class ShoppingSessionService {
 	}
 
 	/**
-	 * Check an item off during the trip: mark it done (reusing the normal check
-	 * behavior — recurrence rescheduling, delete-on-done, restocking) and record
-	 * it in the session log against the currently active store. Idempotent.
-	 *
-	 * @return RestockToggled|null What the tick restocked; null when it was already checked.
+	 * Check an item off during the trip: record it in the session log against
+	 * the currently active store. The item itself is checked off when the trip
+	 * is finished, so the trip can still be walked back without touching any
+	 * list. Idempotent.
 	 */
-	public function checkItem(ShoppingSession $session, int $itemId, string $uid): ?array {
-		$item = $this->checklists->getItem($itemId);
-		$result = !$item->getDone() ? $this->restock->toggle($itemId, $uid) : null;
-
+	public function checkItem(ShoppingSession $session, int $itemId): void {
 		$sessionId = (int)$session->getId();
 		$now = time();
 		$existing = $this->sessionItems->findBySessionAndItem($sessionId, $itemId);
@@ -594,42 +633,14 @@ class ShoppingSessionService {
 			$existing->setCheckedAt($now);
 			$this->sessionItems->update($existing);
 		}
-		return $result;
 	}
 
 	/**
-	 * Undo a check: drop the log row and mark the item not-done again. A
-	 * delete-on-done item soft-deleted by the check is restored, and what the
-	 * check restocked is taken back out of stock.
-	 *
-	 * @return RestockToggle|null What unchecking took back out; null when it was not checked.
+	 * Undo a check: drop the log row, so finishing the trip leaves the item as
+	 * it is.
 	 */
-	public function uncheckItem(ShoppingSession $session, int $itemId, string $uid): ?array {
+	public function uncheckItem(ShoppingSession $session, int $itemId): void {
 		$this->sessionItems->deleteBySessionAndItem((int)$session->getId(), $itemId);
-
-		try {
-			$item = $this->items->findById($itemId, includeDeleted: true);
-		} catch (DoesNotExistException) {
-			return null;
-		}
-		if (!$item->getDone()) {
-			return null;
-		}
-		$now = time();
-		$record = $item->getRestock() ?? [];
-		$item->setDone(false);
-		$item->setDoneAt(null);
-		$item->setDoneBy(null);
-		$item->setNextDueAt(null);
-		$item->setRestock(null);
-		$item->setMemberReopened(true);
-		// Restore an item the check soft-deleted via delete-on-done.
-		if ($item->getDeletedAt() !== null && $item->getDeleteOnDone()) {
-			$item->setDeletedAt(null);
-		}
-		$item->setUpdatedAt($now);
-		$this->items->update($item);
-		return $this->restock->afterMemberUncheck($item, $record, $uid);
 	}
 
 	/**
@@ -725,9 +736,9 @@ class ShoppingSessionService {
 	 *
 	 * A **closed** trip is frozen history: it renders from the per-row snapshot
 	 * captured at close, independent of the live item (which may since have been
-	 * edited, un-done, or hard-deleted). A **live** trip reads the live items and
-	 * drops any un-done outside shopping mode (a stale log row) so the roll-up
-	 * reflects the real cart.
+	 * edited, un-done, or hard-deleted). A **live** trip reads the live items in
+	 * its log, dropping any deleted or archived since. One not yet done carries
+	 * what finishing the trip would restock, so the put-away step can show it.
 	 *
 	 * @return array<int|string, ChecklistItem[]>
 	 */
@@ -758,8 +769,12 @@ class ShoppingSessionService {
 		}
 		foreach ($logs as $log) {
 			$item = $itemsById[(int)$log->getItemId()] ?? null;
-			if ($item === null || !$item->getDone()) {
+			if ($item === null || $item->getDeletedAt() !== null || $item->getArchivedAt() !== null) {
 				continue;
+			}
+			if (!$item->getDone()) {
+				$preview = $this->restock->preview($item);
+				$item->setRestock($preview === [] ? null : $preview);
 			}
 			$key = $log->getStoreId() === null ? 'none' : (int)$log->getStoreId();
 			$byStore[$key][] = $item;
@@ -979,8 +994,13 @@ class ShoppingSessionService {
 	 * Count of items still unchecked in the session's scope (across all stores).
 	 */
 	private function uncheckedCount(ShoppingSession $session): int {
-		$listIds = $this->sessionLists->findListIdsForSession((int)$session->getId());
-		return count($this->items->findForShoppingScope($listIds, null, true));
+		$sessionId = (int)$session->getId();
+		$listIds = $this->sessionLists->findListIdsForSession($sessionId);
+		$checked = array_fill_keys($this->checkedItemIds($sessionId), true);
+		return count(array_filter(
+			$this->items->findForShoppingScope($listIds, null, true),
+			static fn (ChecklistItem $item): bool => !isset($checked[(int)$item->getId()]),
+		));
 	}
 
 	/**

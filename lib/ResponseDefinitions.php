@@ -301,8 +301,8 @@ namespace OCA\Pantry;
  *     previousLevel: string|null,
  * }
  *
- * What Shopping Mode's check or uncheck did to stock, and what the restock
- * sync did after it.
+ * What Shopping Mode's check or uncheck did to stock. A trip's checks land
+ * when it is finished, so these are empty.
  *
  * @psalm-type PantryShoppingCheckResult = array{
  *     success: true,

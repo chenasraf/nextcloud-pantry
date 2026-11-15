@@ -379,6 +379,20 @@ class RestockServiceTest extends TestCase {
 		$this->assertCount(1, $result['undone']);
 	}
 
+	// ----- Preview -----
+
+	public function testAPreviewSaysWhatATickWouldRestockWithoutWriting(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$this->row()->setQuantity('8');
+		$this->sync->expects($this->never())->method('afterWrite');
+
+		$preview = $this->svc->preview($this->row());
+
+		$this->assertSame(['8'], array_column($preview, 'added'));
+		$this->assertSame('4', $eggs->getQuantity());
+		$this->assertNull($this->row()->getRestock());
+	}
+
 	// ----- Target state -----
 
 	public function testATargetStateTicksAnOpenItem(): void {

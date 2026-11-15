@@ -230,12 +230,11 @@ import {
   listRemovedSessionItems,
 } from '@/api/shopping'
 import { updateItem } from '@/api/lists'
-import { announceRestock, announceRestockSync } from '@/components/StockLink/restockToasts'
+import { announceRestockSync } from '@/components/StockLink/restockToasts'
 import type {
   Category,
   ChecklistItem,
   PutAwayEntry,
-  RestockEntry,
   ShoppingReview,
   Label,
   ShoppingPresenceEntry,
@@ -436,11 +435,11 @@ async function loadItems() {
 let togglesInFlight = 0
 
 /**
- * The trip's checked items still checked off. One restocking inventory items
- * comes straight back when it fell short, so it is to buy again.
+ * The trip's checked items. They are checked off on their lists only when the
+ * trip is finished, so the cart shows them done from the log.
  */
 function checkedOff(review: ShoppingReview): ChecklistItem[] {
-  return review.stores.flatMap((s) => s.items).filter((i) => i.done)
+  return review.stores.flatMap((s) => s.items).map((i) => ({ ...i, done: true }))
 }
 
 // Pull the shared check log back into the Done drawer, so items a housemate
@@ -480,8 +479,8 @@ async function handleUnpin(item: ChecklistItem) {
 const pendingQuantity = new Map<number, string>()
 
 /**
- * Record buying more or less than asked for. The item's quantity is what the
- * check restocks, so it is set before the item goes into the cart.
+ * Record buying more or less than asked for. The item's quantity is what
+ * finishing the trip restocks, so it is set before the item goes into the cart.
  */
 async function handleQuantity(item: ChecklistItem, quantity: string) {
   const previous = item.quantity
@@ -507,21 +506,6 @@ async function handleQuantity(item: ChecklistItem, quantity: string) {
   }
 }
 
-/**
- * Show what a check put back into stock on the checked item. A shared item
- * that came up short is already back on the list, so it goes back to shop.
- */
-function afterRestock(id: number, restock: RestockEntry[] | null) {
-  const item = doneItems.value.find((i) => i.id === id)
-  if (!item) return
-  if (restock) {
-    item.restock = restock
-    return
-  }
-  doneItems.value = doneItems.value.filter((i) => i.id !== id)
-  void loadItems()
-}
-
 async function handleToggle(id: number) {
   if (!session.value) return
   const sessionId = session.value.id
@@ -532,11 +516,7 @@ async function handleToggle(id: number) {
     doneItems.value = [item, ...doneItems.value]
     togglesInFlight++
     try {
-      const result = await checkSessionItem(houseIdNum.value, sessionId, item.id)
-      announceRestock(result)
-      if (result.restocked.length) {
-        afterRestock(item.id, result.restock)
-      }
+      await checkSessionItem(houseIdNum.value, sessionId, item.id)
     } catch (e) {
       doneItems.value = doneItems.value.filter((i) => i.id !== id)
       item.done = false
@@ -554,9 +534,7 @@ async function handleToggle(id: number) {
     items.value = [...items.value, item]
     togglesInFlight++
     try {
-      const result = await uncheckSessionItem(houseIdNum.value, sessionId, item.id)
-      announceRestock(result)
-      item.restock = null
+      await uncheckSessionItem(houseIdNum.value, sessionId, item.id)
     } catch (e) {
       items.value = items.value.filter((i) => i.id !== id)
       item.done = true
