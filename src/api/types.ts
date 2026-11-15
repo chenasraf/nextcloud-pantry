@@ -577,6 +577,8 @@ export interface ShoppingHistoryTotal {
 export interface ShoppingHistoryRow {
   id: number
   userId: string
+  /** Everyone who shopped the trip: its starter first, then whoever joined. */
+  memberIds: string[]
   createdAt: number
   closedAt: number | null
   /** Store-sequence names in order; empty for a storeless trip. */

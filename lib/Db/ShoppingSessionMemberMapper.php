@@ -66,6 +66,32 @@ class ShoppingSessionMemberMapper extends QBMapper {
 	}
 
 	/**
+	 * Everyone who ever joined each trip, whether or not they have left, by
+	 * join time.
+	 *
+	 * @param list<int> $sessionIds
+	 * @return array<int, list<string>> Session id → user ids.
+	 */
+	public function findUserIdsForSessions(array $sessionIds): array {
+		if ($sessionIds === []) {
+			return [];
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('session_id', 'user_id')
+			->from($this->getTableName())
+			->where($qb->expr()->in('session_id', $qb->createNamedParameter($sessionIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->orderBy('joined_at', 'ASC')
+			->addOrderBy('id', 'ASC');
+		$result = $qb->executeQuery();
+		$map = [];
+		while ($row = $result->fetch()) {
+			$map[(int)$row['session_id']][] = (string)$row['user_id'];
+		}
+		$result->closeCursor();
+		return $map;
+	}
+
+	/**
 	 * The membership row for a user in a trip, whether or not they have left.
 	 */
 	public function findBySessionAndUser(int $sessionId, string $uid): ?ShoppingSessionMember {

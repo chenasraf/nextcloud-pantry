@@ -697,9 +697,11 @@ class ShoppingSessionService {
 
 	/**
 	 * Read-only history of closed trips, newest first. Each row carries
-	 * cheap roll-ups: the store-sequence names, the checked-item count, and the
-	 * blended grand total collapsed to a single figure per currency (the ≈X–Y
-	 * range and no-price count are detail-view only, so a row stays glanceable).
+	 * cheap roll-ups: everyone who shopped it (its starter first, then whoever
+	 * joined, even if they left before the end), the store-sequence names, the
+	 * checked-item count, and the blended grand total collapsed to a single
+	 * figure per currency (the ≈X–Y range and no-price count are detail-view
+	 * only, so a row stays glanceable).
 	 *
 	 * @param 'mine'|'house' $scope
 	 * @return list<array<string, mixed>>
@@ -710,6 +712,10 @@ class ShoppingSessionService {
 			return [];
 		}
 		$storeNames = $this->storeNamesForHouse($houseId);
+		$joined = $this->sessionMembers->findUserIdsForSessions(array_values(array_map(
+			static fn (ShoppingSession $s): int => (int)$s->getId(),
+			$sessions,
+		)));
 		$rows = [];
 		foreach ($sessions as $session) {
 			$sessionId = (int)$session->getId();
@@ -724,6 +730,7 @@ class ShoppingSessionService {
 			$rows[] = [
 				'id' => $sessionId,
 				'userId' => $session->getUserId(),
+				'memberIds' => array_values(array_unique([$session->getUserId(), ...($joined[$sessionId] ?? [])])),
 				'createdAt' => $session->getCreatedAt(),
 				'closedAt' => $session->getClosedAt(),
 				'stores' => $names,

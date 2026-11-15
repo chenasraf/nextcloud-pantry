@@ -563,6 +563,7 @@ namespace OCA\Pantry;
  * @psalm-type PantryShoppingHistoryRow = array{
  *     id: int,
  *     userId: string,
+ *     memberIds: list<string>,
  *     createdAt: int,
  *     closedAt: int|null,
  *     stores: list<string>,

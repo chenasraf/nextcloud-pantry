@@ -955,6 +955,8 @@ class ShoppingSessionServiceTest extends TestCase {
 			$this->makeSessionStore(7, 1),
 		]);
 		$this->sessionItems->method('countBySession')->with(5)->willReturn(4);
+		// Carol left before the trip ended; she still shopped it.
+		$this->sessionMembers->method('findUserIdsForSessions')->with([5])->willReturn([5 => ['bob', 'carol']]);
 		// A closed trip rolls up from the frozen per-row snapshot, one per store.
 		$this->sessionItems->method('findBySession')->with(5)->willReturn([
 			$this->makeLog(10, 3, ['name' => 'A', 'priceType' => 'set', 'priceMin' => 2.0, 'priceCurrency' => 'USD']),
@@ -967,6 +969,7 @@ class ShoppingSessionServiceTest extends TestCase {
 		$row = $rows[0];
 		$this->assertSame(5, $row['id']);
 		$this->assertSame('alice', $row['userId']);
+		$this->assertSame(['alice', 'bob', 'carol'], $row['memberIds']);
 		$this->assertSame(100, $row['createdAt']);
 		$this->assertSame(500, $row['closedAt']);
 		$this->assertSame(['Aldi', 'Rewe'], $row['stores']);

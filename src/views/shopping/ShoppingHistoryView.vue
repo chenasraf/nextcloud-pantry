@@ -44,12 +44,17 @@
         <ul class="shop-history__list">
           <li v-for="row in rows" :key="row.id" class="shop-history__item">
             <button type="button" class="shop-history__row" @click="openTrip(row)">
-              <NcAvatar
-                class="shop-history__avatar"
-                :user="row.userId"
-                :size="32"
-                :show-user-status="false"
-              />
+              <span class="shop-history__avatars">
+                <NcAvatar
+                  v-for="uid in row.memberIds"
+                  :key="uid"
+                  class="shop-history__avatar"
+                  :user="uid"
+                  :size="32"
+                  :show-user-status="false"
+                  disable-menu
+                />
+              </span>
               <span class="shop-history__main">
                 <span class="shop-history__stores">{{ storesLabel(row) }}</span>
                 <span class="shop-history__meta">
@@ -360,8 +365,19 @@ const strings = {
     }
   }
 
+  &__avatars {
+    display: flex;
+    flex-shrink: 0;
+  }
+
   &__avatar {
     flex-shrink: 0;
+    border: 2px solid var(--color-main-background);
+    border-radius: 50%;
+
+    & + & {
+      margin-inline-start: -12px;
+    }
   }
 
   &__main {

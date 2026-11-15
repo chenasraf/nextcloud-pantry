@@ -2716,6 +2716,7 @@
                 "required": [
                     "id",
                     "userId",
+                    "memberIds",
                     "createdAt",
                     "closedAt",
                     "stores",
@@ -2729,6 +2730,12 @@
                     },
                     "userId": {
                         "type": "string"
+                    },
+                    "memberIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     },
                     "createdAt": {
                         "type": "integer",
