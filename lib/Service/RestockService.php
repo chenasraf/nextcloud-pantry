@@ -47,6 +47,7 @@ use OCP\IDBConnection;
  * @psalm-import-type RestockSyncEvent from RestockSyncService
  * @psalm-import-type RestockSnapshot from RestockSyncService
  * @psalm-type RestockToggle = array{item: ChecklistItem, restocked: list<RestockEntry>, undone: list<RestockEntry>, events: list<RestockSyncEvent>}
+ * @psalm-type RestockToggled = array{item: ChecklistItem, restocked: list<RestockEntry>, undone: list<RestockEntry>, events: list<RestockSyncEvent>, changed: bool}
  * @psalm-type PutAwayPick = array{listId: int, amount: float|null}
  */
 class RestockService {
@@ -68,15 +69,22 @@ class RestockService {
 	/**
 	 * A member checks a checklist item off, or unchecks it.
 	 *
-	 * @return RestockToggle
+	 * @param bool|null $done The state the item must end in; null flips it. An
+	 *                        item already in that state is left untouched, so a
+	 *                        replayed request changes nothing.
+	 * @return RestockToggled
 	 */
-	public function toggle(int $itemId, string $uid): array {
-		return $this->atomic(function () use ($itemId, $uid): array {
+	public function toggle(int $itemId, string $uid, ?bool $done = null): array {
+		return $this->atomic(function () use ($itemId, $uid, $done): array {
 			$this->itemMapper->lock($itemId);
 			$before = $this->checklists->getItem($itemId);
+			if ($done === $before->getDone()) {
+				return [...$this->result($before, [], [], []), 'changed' => false];
+			}
 			$record = $before->getDone() ? $before->getRestock() : null;
 			$item = $this->checklists->toggleItem($itemId, $uid);
-			return $item->getDone() ? $this->restock($item, $uid) : $this->undo($item, $record ?? [], $uid);
+			$result = $item->getDone() ? $this->restock($item, $uid) : $this->undo($item, $record ?? [], $uid);
+			return [...$result, 'changed' => true];
 		}, $this->db);
 	}
 

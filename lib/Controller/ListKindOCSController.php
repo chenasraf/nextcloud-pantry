@@ -266,7 +266,7 @@ abstract class ListKindOCSController extends OCSController {
 	 * Remember what a member's tick or uncheck did to stock, and what the
 	 * restock sync did after it, so the item's response tells the member.
 	 *
-	 * @param array{item: ChecklistItem, restocked: list<array<string, mixed>>, undone: list<array<string, mixed>>, events: list<array<string, mixed>>} $result
+	 * @param array{item: ChecklistItem, restocked: list<array<string, mixed>>, undone: list<array<string, mixed>>, events: list<array<string, mixed>>, ...} $result
 	 */
 	protected function withRestock(array $result): ChecklistItem {
 		$item = $result['item'];

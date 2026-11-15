@@ -742,6 +742,7 @@ final class ChecklistController extends ListKindOCSController {
 	 * @param int $houseId House id.
 	 * @param int $listId List id.
 	 * @param int $itemId Item id.
+	 * @param bool|null $done The state the item must end in; null flips it. An item already in that state is returned unchanged.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -750,15 +751,19 @@ final class ChecklistController extends ListKindOCSController {
 	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/lists/{listId}/items/{itemId}/toggle')]
 	#[NoAdminRequired]
 	#[Permission(['canCheckItems'])]
-	public function toggleItem(int $houseId, int $listId, int $itemId): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
+	public function toggleItem(int $houseId, int $listId, int $itemId, ?bool $done = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $done): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			[$before, $list] = $this->loadItem($houseId, $listId, $itemId);
 			// A tick that restocked a shared item short may come straight back
 			// unchecked, so the activity follows the tick, not the result.
-			$ticked = !$before->getDone();
-			$toggled = $this->withRestock($this->restock->toggle($itemId, $uid));
+			$ticked = $done ?? !$before->getDone();
+			$result = $this->restock->toggle($itemId, $uid, $done);
+			$toggled = $this->withRestock($result);
+			if (!$result['changed']) {
+				return new DataResponse($this->serializeItem($toggled));
+			}
 			$houseName = $this->houses->get($houseId)->getName();
 			if ($ticked) {
 				$this->notifications->notifyItemDone($houseId, $uid, $toggled->getName(), $list->getName());

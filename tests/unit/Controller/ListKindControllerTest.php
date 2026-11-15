@@ -67,12 +67,15 @@ class ListKindControllerTest extends TestCase {
 	private RestockSyncService $restockSync;
 	/** @var RestockService&MockObject */
 	private RestockService $restock;
+	/** @var NotificationService&MockObject */
+	private NotificationService $notifications;
 
 	protected function setUp(): void {
 		$this->activity = $this->createMock(ActivityPublisher::class);
 		$this->stockLinks = $this->createMock(StockLinkService::class);
 		$this->restockSync = $this->createMock(RestockSyncService::class);
 		$this->restock = $this->createMock(RestockService::class);
+		$this->notifications = $this->createMock(NotificationService::class);
 		$this->lists = $this->createMock(ChecklistService::class);
 		$this->attachments = $this->createMock(TemplateAttachmentService::class);
 		$this->templateCopy = $this->createMock(TemplateCopyService::class);
@@ -114,7 +117,7 @@ class ListKindControllerTest extends TestCase {
 			$this->createMock(HouseAuthService::class),
 			$houses,
 			$this->createMock(ImageService::class),
-			$this->createMock(NotificationService::class),
+			$this->notifications,
 			$this->activity,
 			$this->createMock(PrefsService::class),
 			$this->permissions,
@@ -793,7 +796,7 @@ class ListKindControllerTest extends TestCase {
 		$ticked->setDone(true);
 		$ticked->setRestock([self::RESTOCKED]);
 		$this->restock->expects($this->once())->method('toggle')->with(50, 'alice')
-			->willReturn(['item' => $ticked, 'restocked' => [self::RESTOCKED], 'undone' => [], 'events' => []]);
+			->willReturn(['item' => $ticked, 'restocked' => [self::RESTOCKED], 'undone' => [], 'events' => [], 'changed' => true]);
 		$this->activity->expects($this->once())->method('publishItemDone')
 			->with(1, 'Home', 'alice', 50, 'Eggs', 7, 'Weekly staples', [self::RESTOCKED]);
 
@@ -809,7 +812,7 @@ class ListKindControllerTest extends TestCase {
 		$revived = clone $row;
 		$event = ['event' => 'revived', 'itemId' => 4, 'rowId' => 50, 'rowName' => 'Eggs', 'quantity' => '4', 'listId' => 7, 'listName' => 'Weekly staples'];
 		$this->restock->method('toggle')
-			->willReturn(['item' => $revived, 'restocked' => [self::RESTOCKED], 'undone' => [], 'events' => [$event]]);
+			->willReturn(['item' => $revived, 'restocked' => [self::RESTOCKED], 'undone' => [], 'events' => [$event], 'changed' => true]);
 		$this->lists->method('getItem')->willReturn($revived);
 		$this->activity->expects($this->once())->method('publishItemDone');
 		$this->activity->expects($this->never())->method('publishItemReopened');
@@ -825,13 +828,40 @@ class ListKindControllerTest extends TestCase {
 		$unchecked = clone $row;
 		$unchecked->setDone(false);
 		$this->restock->method('toggle')
-			->willReturn(['item' => $unchecked, 'restocked' => [], 'undone' => [self::RESTOCKED], 'events' => []]);
+			->willReturn(['item' => $unchecked, 'restocked' => [], 'undone' => [self::RESTOCKED], 'events' => [], 'changed' => true]);
 		$this->activity->expects($this->once())->method('publishItemReopened');
 
 		$data = $this->makeController(ChecklistController::class)->toggleItem(1, 7, 50)->getData();
 
 		$this->assertSame([self::RESTOCKED], $data['restockUndone']);
 		$this->assertNull($data['restock']);
+	}
+
+	public function testATargetStateIsPassedToTheToggle(): void {
+		$row = $this->stageRow(false);
+		$ticked = clone $row;
+		$ticked->setDone(true);
+		$this->restock->expects($this->once())->method('toggle')->with(50, 'alice', true)
+			->willReturn(['item' => $ticked, 'restocked' => [], 'undone' => [], 'events' => [], 'changed' => true]);
+		$this->notifications->expects($this->once())->method('notifyItemDone');
+		$this->activity->expects($this->once())->method('publishItemDone');
+
+		$data = $this->makeController(ChecklistController::class)->toggleItem(1, 7, 50, done: true)->getData();
+
+		$this->assertTrue($data['done']);
+	}
+
+	public function testAToggleThatChangedNothingLeavesNoTrace(): void {
+		$row = $this->stageRow(true);
+		$this->restock->method('toggle')
+			->willReturn(['item' => $row, 'restocked' => [], 'undone' => [], 'events' => [], 'changed' => false]);
+		$this->notifications->expects($this->never())->method('notifyItemDone');
+		$this->activity->expects($this->never())->method('publishItemDone');
+		$this->activity->expects($this->never())->method('publishItemReopened');
+
+		$data = $this->makeController(ChecklistController::class)->toggleItem(1, 7, 50, done: true)->getData();
+
+		$this->assertTrue($data['done']);
 	}
 
 	public function testInventoryItemsHaveNoRestockRecord(): void {

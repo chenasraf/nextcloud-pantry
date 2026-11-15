@@ -33,6 +33,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
  * Lifecycle is timestamp-driven and enforced here.
  *
  * @psalm-import-type RestockToggle from RestockService
+ * @psalm-import-type RestockToggled from RestockService
  * @psalm-import-type PutAwayPick from RestockService
  */
 class ShoppingSessionService {
@@ -572,7 +573,7 @@ class ShoppingSessionService {
 	 * behavior — recurrence rescheduling, delete-on-done, restocking) and record
 	 * it in the session log against the currently active store. Idempotent.
 	 *
-	 * @return RestockToggle|null What the tick restocked; null when it was already checked.
+	 * @return RestockToggled|null What the tick restocked; null when it was already checked.
 	 */
 	public function checkItem(ShoppingSession $session, int $itemId, string $uid): ?array {
 		$item = $this->checklists->getItem($itemId);

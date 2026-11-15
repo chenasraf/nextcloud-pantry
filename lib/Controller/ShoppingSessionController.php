@@ -402,7 +402,7 @@ final class ShoppingSessionController extends OCSController {
 	}
 
 	/**
-	 * @param array{item: ChecklistItem, restocked: list<array<string, mixed>>, undone: list<array<string, mixed>>, events: list<array<string, mixed>>}|null $result
+	 * @param array{item: ChecklistItem, restocked: list<array<string, mixed>>, undone: list<array<string, mixed>>, events: list<array<string, mixed>>, ...}|null $result
 	 * @return PantryShoppingCheckResult
 	 */
 	private function checkResult(?array $result): array {

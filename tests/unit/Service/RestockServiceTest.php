@@ -379,6 +379,55 @@ class RestockServiceTest extends TestCase {
 		$this->assertCount(1, $result['undone']);
 	}
 
+	// ----- Target state -----
+
+	public function testATargetStateTicksAnOpenItem(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$this->row()->setQuantity('8');
+
+		$result = $this->svc->toggle(self::ROW, 'alice', true);
+
+		$this->assertTrue($result['changed']);
+		$this->assertTrue($this->row()->getDone());
+		$this->assertSame('12', $eggs->getQuantity());
+	}
+
+	public function testATargetStateTheItemIsAlreadyInChangesNothing(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$this->tick('8');
+		$this->synced = [];
+
+		$result = $this->svc->toggle(self::ROW, 'alice', true);
+
+		$this->assertFalse($result['changed']);
+		$this->assertTrue($this->row()->getDone());
+		$this->assertSame('12', $eggs->getQuantity());
+		$this->assertSame([], $result['restocked']);
+		$this->assertSame([], $this->synced);
+	}
+
+	public function testATargetOpenStateUnchecksAndTakesItBackOut(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$this->tick('8');
+
+		$result = $this->svc->toggle(self::ROW, 'alice', false);
+
+		$this->assertTrue($result['changed']);
+		$this->assertFalse($this->row()->getDone());
+		$this->assertSame('4', $eggs->getQuantity());
+		$this->assertCount(1, $result['undone']);
+	}
+
+	public function testATargetOpenStateOnAnOpenItemChangesNothing(): void {
+		$eggs = $this->counted(20, '4', '12');
+
+		$result = $this->svc->toggle(self::ROW, 'alice', false);
+
+		$this->assertFalse($result['changed']);
+		$this->assertFalse($this->row()->getDone());
+		$this->assertSame('4', $eggs->getQuantity());
+	}
+
 	// ----- Expiring stock and the date -----
 
 	private static function inDays(int $days): int {
