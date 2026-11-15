@@ -64,7 +64,18 @@
                     </template>
                     {{ timeLabel(row) }}
                   </PantryChip>
-                  <PantryChip class="shop-history__chip" size="sm" :interactive="false">
+                  <PantryChip
+                    v-if="row.abortedAt != null"
+                    class="shop-history__chip"
+                    size="sm"
+                    :interactive="false"
+                  >
+                    <template #icon>
+                      <CloseCircleOutlineIcon :size="14" />
+                    </template>
+                    {{ strings.cancelled }}
+                  </PantryChip>
+                  <PantryChip v-else class="shop-history__chip" size="sm" :interactive="false">
                     <template #icon>
                       <FormatListChecksIcon :size="14" />
                     </template>
@@ -139,6 +150,7 @@ import DeleteIcon from '@icons/Delete.vue'
 import HistoryIcon from '@icons/History.vue'
 import CartOffIcon from '@icons/CartOff.vue'
 import ClockOutlineIcon from '@icons/ClockOutline.vue'
+import CloseCircleOutlineIcon from '@icons/CloseCircleOutline.vue'
 import FormatListChecksIcon from '@icons/FormatListChecks.vue'
 import { ShoppingReviewDialog } from '@/components/ShoppingReview'
 import PantryChip from '@/components/PantryChip'
@@ -273,6 +285,8 @@ const strings = {
   // TRANSLATORS: History filter showing everyone in the house's trips.
   house: t('pantry', 'House'),
   noStore: t('pantry', 'No store'),
+  // TRANSLATORS: Adjective, marks a shopping trip in history that was ended without checking anything off
+  cancelled: t('pantry', 'Cancelled'),
   empty: t('pantry', 'No shopping history yet'),
   emptyMineBody: t('pantry', 'Trips you shop, alone or with others, will show up here.'),
   emptyHouseBody: t('pantry', 'Finished trips in this house will show up here.'),

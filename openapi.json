@@ -2719,6 +2719,7 @@
                     "memberIds",
                     "createdAt",
                     "closedAt",
+                    "abortedAt",
                     "stores",
                     "itemCount",
                     "grandTotal"
@@ -2742,6 +2743,11 @@
                         "format": "int64"
                     },
                     "closedAt": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "abortedAt": {
                         "type": "integer",
                         "format": "int64",
                         "nullable": true
@@ -2927,6 +2933,7 @@
                     "activeStoreId",
                     "lastSeenAt",
                     "closedAt",
+                    "abortedAt",
                     "includeUnassigned",
                     "isPrivate",
                     "allStores",
@@ -2961,6 +2968,11 @@
                         "format": "int64"
                     },
                     "closedAt": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "abortedAt": {
                         "type": "integer",
                         "format": "int64",
                         "nullable": true
@@ -26061,6 +26073,146 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/abort": {
+            "post": {
+                "operationId": "shopping_session-abort",
+                "summary": "Cancel a shopping session",
+                "description": "Ends the trip for everyone on it without checking anything off: every item checked on the trip stays as it is on its list, and no inventory is restocked. The trip stays in history, marked cancelled, with no totals. Cancelling a session that already ended returns 409 with it in the body.",
+                "tags": [
+                    "shopping_session"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "description": "Session id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session cancelled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ShoppingSession"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Session had already ended",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ShoppingSession"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/join": {
             "post": {
                 "operationId": "shopping_session-join",
@@ -33428,7 +33580,7 @@
         },
         {
             "name": "shopping_session",
-            "description": "Shopping Mode — session lifecycle (create/current/advance/close), the live store-narrowed shopping list, per-store check logging, and the review + price totals. Checking an item off marks it done and records it in the session log against the active store."
+            "description": "Shopping Mode — session lifecycle (create/current/advance/close/abort), the live store-narrowed shopping list, per-store check logging, and the review + price totals. Checking an item off marks it done and records it in the session log against the active store."
         },
         {
             "name": "template",

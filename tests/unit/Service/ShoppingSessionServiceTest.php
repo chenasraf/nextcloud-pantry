@@ -382,6 +382,72 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertNotNull($closed->getClosedAt());
 	}
 
+	public function testAbortLeavesCheckedItemsAndStockUntouched(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$this->makeLog(10, 3)]);
+		$this->restock->expects($this->never())->method('toggle');
+		$this->restock->expects($this->never())->method('putAway');
+		$this->sessionItems->expects($this->never())->method('update');
+		$this->sessionItems->expects($this->once())->method('deleteBySession')->with(5);
+
+		$this->svc->abort($session);
+	}
+
+	public function testAbortEndsTheTripForEveryoneAndMarksItCancelled(): void {
+		$session = $this->makeSession(['id' => 5]);
+		$this->sessions->expects($this->once())->method('update')->willReturnArgument(0);
+		$this->sessionMembers->expects($this->once())->method('markAllLeft')->with(5, $this->isType('int'));
+
+		$aborted = $this->svc->abort($session);
+
+		$this->assertNotNull($aborted->getClosedAt());
+		$this->assertSame($aborted->getClosedAt(), $aborted->getAbortedAt());
+		$this->assertFalse($aborted->jsonSerialize()['live']);
+	}
+
+	public function testAbortThrowsConflictWhenAlreadyClosed(): void {
+		$session = $this->makeSession(['id' => 5, 'closedAt' => 1000]);
+		$this->sessions->expects($this->never())->method('update');
+		$this->sessionItems->expects($this->never())->method('deleteBySession');
+
+		try {
+			$this->svc->abort($session);
+			$this->fail('Expected conflict');
+		} catch (ShoppingSessionConflictException $e) {
+			$this->assertSame($session, $e->getSession());
+		}
+	}
+
+	public function testReviewOfAbortedTripIsEmpty(): void {
+		$session = $this->makeSession(['id' => 5, 'closedAt' => 500]);
+		$session->setAbortedAt(500);
+		$session->setBilledTotal(20.0);
+		$this->sessionItems->expects($this->never())->method('findBySession');
+
+		$this->assertSame(
+			['stores' => [], 'grandTotal' => [], 'uncheckedCount' => 0],
+			$this->svc->review($session),
+		);
+	}
+
+	public function testHistoryShowsAbortedTripWithoutTotals(): void {
+		$session = $this->makeSession(['id' => 5, 'houseId' => 1, 'userId' => 'alice', 'closedAt' => 500]);
+		$session->setAbortedAt(500);
+		$session->setBilledTotal(20.0);
+		$session->setBilledCurrency('USD');
+		$this->sessions->method('findClosedForHistory')->willReturn([$session]);
+		$this->storeMapper->method('findByHouse')->willReturn([]);
+		$this->sessionStores->method('findBySession')->willReturn([]);
+		$this->sessionItems->method('countBySession')->willReturn(0);
+
+		$rows = $this->svc->history(1, 'alice', 'mine', 30, 0);
+
+		$this->assertSame(500, $rows[0]['abortedAt']);
+		$this->assertSame(0, $rows[0]['itemCount']);
+		$this->assertSame([], $rows[0]['grandTotal']);
+	}
+
 	public function testClosePutsAwayOnlyItemsTickedOnThisTrip(): void {
 		$session = $this->makeSession(['id' => 5]);
 		$this->sessions->method('update')->willReturnArgument(0);

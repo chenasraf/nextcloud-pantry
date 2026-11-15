@@ -48,6 +48,7 @@ function makeSession(createdAtMsAgo: number): ShoppingSession {
     activeStoreId: null,
     lastSeenAt: now,
     closedAt: null,
+    abortedAt: null,
     includeUnassigned: true,
     isPrivate: false,
     allStores: false,

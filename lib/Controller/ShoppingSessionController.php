@@ -31,7 +31,7 @@ use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
- * Shopping Mode — session lifecycle (create/current/advance/close), the live
+ * Shopping Mode — session lifecycle (create/current/advance/close/abort), the live
  * store-narrowed shopping list, per-store check logging, and the review + price
  * totals. Checking an item off marks it done and records it in the session log
  * against the active store.
@@ -194,6 +194,37 @@ final class ShoppingSessionController extends OCSController {
 				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
 			}
 			return new DataResponse($this->sessions->composeDto($closed));
+		});
+	}
+
+	/**
+	 * Cancel a shopping session
+	 *
+	 * Ends the trip for everyone on it without checking anything off: every
+	 * item checked on the trip stays as it is on its list, and no inventory is
+	 * restocked. The trip stays in history, marked cancelled, with no totals.
+	 * Cancelling a session that already ended returns 409 with it in the body.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_CONFLICT, PantryShoppingSession, array{}>
+	 *
+	 * 200: Session cancelled
+	 * 409: Session had already ended
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/abort')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function abort(int $houseId, int $sessionId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$session = $this->loadJoinedSession($sessionId, $houseId);
+			try {
+				$aborted = $this->sessions->abort($session);
+			} catch (ShoppingSessionConflictException $e) {
+				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
+			}
+			return new DataResponse($this->sessions->composeDto($aborted));
 		});
 	}
 

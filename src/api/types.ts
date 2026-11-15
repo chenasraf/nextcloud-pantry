@@ -529,6 +529,8 @@ export interface ShoppingSession {
   activeStoreId: number | null
   lastSeenAt: number
   closedAt: number | null
+  /** Set when the trip was cancelled: closed without checking anything off. */
+  abortedAt: number | null
   includeUnassigned: boolean
   isPrivate: boolean
   /** Every store in `stores` is shopped from one combined list, with no active store. */
@@ -581,6 +583,8 @@ export interface ShoppingHistoryRow {
   memberIds: string[]
   createdAt: number
   closedAt: number | null
+  /** Set when the trip was cancelled; such a trip has no items or totals. */
+  abortedAt: number | null
   /** Store-sequence names in order; empty for a storeless trip. */
   stores: string[]
   itemCount: number

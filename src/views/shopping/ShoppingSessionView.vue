@@ -158,11 +158,38 @@
         </div>
       </div>
 
-      <button type="button" class="shop__fab" :disabled="busy" @click="onPrimaryAction">
-        <span>{{ hasNextStore ? strings.nextStore : strings.finish }}</span>
-        <ArrowRightIcon v-if="hasNextStore" :size="20" />
-        <FlagCheckeredIcon v-else :size="20" />
-      </button>
+      <div class="shop__actions">
+        <button
+          type="button"
+          class="shop__fab shop__fab--secondary"
+          :disabled="busy"
+          @click="abortOpen = true"
+        >
+          <CloseCircleOutlineIcon :size="20" />
+          <span>{{ strings.abort }}</span>
+        </button>
+        <button type="button" class="shop__fab" :disabled="busy" @click="onPrimaryAction">
+          <span>{{ hasNextStore ? strings.nextStore : strings.finish }}</span>
+          <ArrowRightIcon v-if="hasNextStore" :size="20" />
+          <FlagCheckeredIcon v-else :size="20" />
+        </button>
+      </div>
+
+      <NcDialog
+        v-if="abortOpen"
+        :name="strings.abortTitle"
+        :open="abortOpen"
+        close-on-click-outside
+        @update:open="(v) => !v && (abortOpen = false)"
+      >
+        <p>{{ strings.abortBody }}</p>
+        <template #actions>
+          <NcButton @click="abortOpen = false">{{ strings.keepShopping }}</NcButton>
+          <NcButton variant="error" :disabled="busy" @click="abort">
+            {{ strings.abortConfirm }}
+          </NcButton>
+        </template>
+      </NcDialog>
 
       <ChecklistImagePreview
         v-if="previewing"
@@ -194,7 +221,10 @@ import { showError, showInfo, showUndo } from '@nextcloud/dialogs'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcAvatar from '@nextcloud/vue/components/NcAvatar'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import CartCheckIcon from '@icons/CartCheck.vue'
+import CloseCircleOutlineIcon from '@icons/CloseCircleOutline.vue'
 import ArrowRightIcon from '@icons/ArrowRight.vue'
 import FlagCheckeredIcon from '@icons/FlagCheckered.vue'
 import ChevronDownIcon from '@icons/ChevronDown.vue'
@@ -220,6 +250,7 @@ import {
   listSessionItems,
   advanceStore,
   closeSession as apiCloseSession,
+  abortSession,
   checkSessionItem,
   uncheckSessionItem,
   getReview,
@@ -281,6 +312,7 @@ const doneOpen = ref(false)
 const removedOpen = ref(false)
 const reviewOpen = ref(false)
 const reviewMode = ref<'advance' | 'close'>('close')
+const abortOpen = ref(false)
 // Derived presence of housemates out shopping, refreshed on the same
 // focused poll as the item list. The caller's own entry is filtered client-side.
 const presence = ref<ShoppingPresenceEntry[]>([])
@@ -662,11 +694,25 @@ async function finish(putAway: PutAwayEntry[] = []) {
   }
 }
 
+async function abort() {
+  if (!session.value) return
+  busy.value = true
+  try {
+    const result = await abortSession(houseIdNum.value, session.value.id)
+    abortOpen.value = false
+    showInfo(result.status === 'conflict' ? strings.alreadyEnded : strings.aborted)
+    await router.push({ name: 'lists', params: { houseId: String(houseIdNum.value) } })
+  } catch (e) {
+    showError((e as Error).message || strings.abortFailed)
+    busy.value = false
+  }
+}
+
 // ----- Live refresh: poll while the tab is focused, and on refocus. -----
 let pollTimer: ReturnType<typeof setInterval> | null = null
 const POLL_MS = 60000
 
-// A shared trip ends for everyone the moment any of its shoppers finishes it,
+// A shared trip ends for everyone the moment any of its shoppers ends it,
 // so each tick confirms the trip is still ours and still live before syncing.
 async function pollTick() {
   try {
@@ -748,7 +794,20 @@ const strings = {
   nextStore: t('pantry', 'Next store'),
   finish: t('pantry', 'Finish'),
   finished: t('pantry', 'Shopping trip finished'),
-  endedByHousemate: t('pantry', 'This shopping trip was finished'),
+  endedByHousemate: t('pantry', 'This shopping trip has ended'),
+  // TRANSLATORS: Verb, button that ends a shopping trip without checking anything off
+  abort: t('pantry', 'Cancel trip'),
+  abortTitle: t('pantry', 'Cancel this trip?'),
+  abortBody: t(
+    'pantry',
+    'The trip ends for everyone on it. Nothing checked off on this trip is checked off on your lists, and no stock is changed.',
+  ),
+  keepShopping: t('pantry', 'Keep shopping'),
+  // TRANSLATORS: Verb, button confirming that a shopping trip is cancelled
+  abortConfirm: t('pantry', 'Cancel trip'),
+  aborted: t('pantry', 'Shopping trip cancelled'),
+  alreadyEnded: t('pantry', 'This shopping trip had already ended'),
+  abortFailed: t('pantry', 'Could not cancel the trip.'),
   emptyStoreTitle: t('pantry', 'All checked off here'),
   emptyStoreBody: t('pantry', 'Move on to the next store when you are ready.'),
   emptyDoneTitle: t('pantry', 'All done'),
@@ -1005,10 +1064,16 @@ const strings = {
     font-variant-numeric: tabular-nums;
   }
 
-  &__fab {
+  &__actions {
     position: absolute;
     bottom: 1.5rem;
     inset-inline-end: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__fab {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1021,6 +1086,12 @@ const strings = {
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+
+    &--secondary {
+      background: var(--color-main-background);
+      color: var(--color-main-text);
+      border: 1px solid var(--color-border);
+    }
 
     &:disabled {
       opacity: 0.6;

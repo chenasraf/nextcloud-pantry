@@ -411,6 +411,30 @@ class ShoppingSessionService {
 	}
 
 	/**
+	 * End a live trip without applying it: its checks are dropped rather than
+	 * committed, so no list, inventory or restock is touched. The trip stays in
+	 * history, marked cancelled, so a mis-tap is visible rather than silently
+	 * erasing a trip.
+	 *
+	 * @throws ShoppingSessionConflictException when already closed.
+	 */
+	public function abort(ShoppingSession $session): ShoppingSession {
+		if ($session->getClosedAt() !== null) {
+			throw new ShoppingSessionConflictException($session, 'Shopping session is already closed');
+		}
+		$sessionId = (int)$session->getId();
+		$this->sessionItems->deleteBySession($sessionId);
+		$now = time();
+		$session->setClosedAt($now);
+		$session->setAbortedAt($now);
+		$session->setLastSeenAt($now);
+		$session->setUpdatedAt($now);
+		$this->sessions->update($session);
+		$this->sessionMembers->markAllLeft($sessionId, $now);
+		return $session;
+	}
+
+	/**
 	 * Check off each logged item, once, as of when it was checked on the trip
 	 * and by whoever checked it, each in its own transaction. Items gone,
 	 * archived or already done since are skipped, so one of them never stops
@@ -666,6 +690,11 @@ class ShoppingSessionService {
 	 * @return array<string, mixed>
 	 */
 	public function review(ShoppingSession $session): array {
+		// A cancelled trip bought nothing, even if a till total was typed in
+		// before it was cancelled.
+		if ($session->getAbortedAt() !== null) {
+			return ['stores' => [], 'grandTotal' => [], 'uncheckedCount' => 0];
+		}
 		$sessionId = (int)$session->getId();
 		$byStore = $this->bucketCheckedItems($session);
 		$grand = [];
@@ -742,9 +771,10 @@ class ShoppingSessionService {
 				'memberIds' => array_values(array_unique([$session->getUserId(), ...($joined[$sessionId] ?? [])])),
 				'createdAt' => $session->getCreatedAt(),
 				'closedAt' => $session->getClosedAt(),
+				'abortedAt' => $session->getAbortedAt(),
 				'stores' => $names,
 				'itemCount' => $this->sessionItems->countBySession($sessionId),
-				'grandTotal' => $this->collapseTotal($this->computeGrandTotal($session)),
+				'grandTotal' => $session->getAbortedAt() !== null ? [] : $this->collapseTotal($this->computeGrandTotal($session)),
 			];
 		}
 		return $rows;

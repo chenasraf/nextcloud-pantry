@@ -12,6 +12,7 @@ use OCP\AppFramework\Db\Entity;
 /**
  * A shopper's persisted shopping trip. Lifecycle is timestamp-driven:
  * `closed_at` null = live. At most one live session exists per user, globally.
+ * A cancelled trip is closed too, and also carries `aborted_at`.
  *
  * jsonSerialize() emits this row's own columns plus a derived `live` flag; the
  * full session payload (scope listIds, ordered stores) is composed by
@@ -27,6 +28,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setLastSeenAt(int $lastSeenAt)
  * @method int|null getClosedAt()
  * @method void setClosedAt(?int $closedAt)
+ * @method int|null getAbortedAt()
+ * @method void setAbortedAt(?int $abortedAt)
  * @method bool getIncludeUnassigned()
  * @method void setIncludeUnassigned(bool $includeUnassigned)
  * @method bool getIsPrivate()
@@ -48,6 +51,7 @@ class ShoppingSession extends Entity implements \JsonSerializable {
 	protected ?int $activeStoreId = null;
 	protected int $lastSeenAt = 0;
 	protected ?int $closedAt = null;
+	protected ?int $abortedAt = null;
 	protected bool $includeUnassigned = true;
 	protected bool $isPrivate = false;
 	protected bool $allStores = false;
@@ -61,6 +65,7 @@ class ShoppingSession extends Entity implements \JsonSerializable {
 		$this->addType('activeStoreId', 'integer');
 		$this->addType('lastSeenAt', 'integer');
 		$this->addType('closedAt', 'integer');
+		$this->addType('abortedAt', 'integer');
 		$this->addType('includeUnassigned', 'boolean');
 		$this->addType('isPrivate', 'boolean');
 		$this->addType('allStores', 'boolean');
@@ -84,6 +89,7 @@ class ShoppingSession extends Entity implements \JsonSerializable {
 			'activeStoreId' => $this->activeStoreId,
 			'lastSeenAt' => $this->lastSeenAt,
 			'closedAt' => $this->closedAt,
+			'abortedAt' => $this->abortedAt,
 			'includeUnassigned' => $this->includeUnassigned,
 			'isPrivate' => $this->isPrivate,
 			'allStores' => $this->allStores,

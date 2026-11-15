@@ -87,6 +87,23 @@ export async function closeSession(
 }
 
 /**
+ * Cancel a trip without checking anything off. A 409 means it had already
+ * ended — finished by a housemate, whose checks went through — so the caller
+ * can say so instead of claiming it was cancelled.
+ */
+export async function abortSession(
+  houseId: number,
+  sessionId: number,
+): Promise<{ status: 'aborted' | 'conflict'; session: ShoppingSession }> {
+  const resp = await ocs.post<ShoppingSession>(
+    `/houses/${houseId}/shopping/sessions/${sessionId}/abort`,
+    {},
+    { validateStatus: (s) => s === 200 || s === 409 },
+  )
+  return { status: resp.status === 409 ? 'conflict' : 'aborted', session: resp.data }
+}
+
+/**
  * Join a housemate's trip. A 409 means the caller still has a live trip of
  * their own — the body carries it so the caller can offer to end it first.
  */
