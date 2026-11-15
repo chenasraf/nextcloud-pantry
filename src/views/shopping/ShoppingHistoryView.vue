@@ -274,7 +274,7 @@ const strings = {
   house: t('pantry', 'House'),
   noStore: t('pantry', 'No store'),
   empty: t('pantry', 'No shopping history yet'),
-  emptyMineBody: t('pantry', 'Trips you finish will show up here.'),
+  emptyMineBody: t('pantry', 'Trips you shop, alone or with others, will show up here.'),
   emptyHouseBody: t('pantry', 'Finished trips in this house will show up here.'),
   loadMore: t('pantry', 'Load more'),
   loadFailed: t('pantry', 'Could not load shopping history.'),

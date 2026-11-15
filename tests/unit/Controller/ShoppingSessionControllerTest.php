@@ -16,8 +16,10 @@ use OCA\Pantry\Service\PermissionService;
 use OCA\Pantry\Service\ShoppingSessionService;
 use OCA\Pantry\Service\StockLinkService;
 use OCA\Pantry\Service\StoreService;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\AppFramework\OCS\OCSNotFoundException;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -26,7 +28,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Closing a trip with the items' put-away picks.
+ * Closing a trip with the items' put-away picks, and who may read a
+ * finished one.
  */
 class ShoppingSessionControllerTest extends TestCase {
 	/** @var ShoppingSessionService&MockObject */
@@ -36,12 +39,14 @@ class ShoppingSessionControllerTest extends TestCase {
 	private ShoppingSessionController $controller;
 	/** @var array<int, list<array{listId: int, amount: float|null}>>|null What the service was asked to put away. */
 	private ?array $closedWith = null;
+	private ShoppingSession $session;
 
 	protected function setUp(): void {
 		$session = new ShoppingSession();
 		$session->setId(5);
 		$session->setHouseId(1);
 		$session->setUserId('alice');
+		$this->session = $session;
 
 		$this->sessions = $this->createMock(ShoppingSessionService::class);
 		$this->sessions->method('get')->willReturn($session);
@@ -128,6 +133,25 @@ class ShoppingSessionControllerTest extends TestCase {
 	public function testAnEntryWithoutAnItemIsRefused(): void {
 		$this->expectException(OCSBadRequestException::class);
 		$this->controller->close(1, 5, [['storages' => []]]);
+	}
+
+	public function testAPrivateTripIsReadableBySomeoneWhoJoinedIt(): void {
+		$this->session->setUserId('bob');
+		$this->session->setIsPrivate(true);
+		$this->session->setClosedAt(500);
+		$this->sessions->method('hasShopped')->with($this->session, 'alice')->willReturn(true);
+
+		$this->assertSame(Http::STATUS_OK, $this->controller->summary(1, 5)->getStatus());
+	}
+
+	public function testAPrivateTripIsHiddenFromHousematesWhoWereNotOnIt(): void {
+		$this->session->setUserId('bob');
+		$this->session->setIsPrivate(true);
+		$this->session->setClosedAt(500);
+		$this->sessions->method('hasShopped')->willReturn(false);
+
+		$this->expectException(OCSNotFoundException::class);
+		$this->controller->summary(1, 5);
 	}
 
 	private function replacePermissions(PermissionService $permissions): void {

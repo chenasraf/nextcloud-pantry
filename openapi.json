@@ -27129,7 +27129,7 @@
             "get": {
                 "operationId": "shopping_session-history",
                 "summary": "List closed shopping trips (history)",
-                "description": "Read-only history of finished trips, newest first. `scope=mine` (default) shows only the caller's; `scope=house` adds housemates' non-private trips. Each row carries the store-sequence names, checked-item count, and a per-currency grand total collapsed to a single figure.",
+                "description": "Read-only history of finished trips, newest first. `scope=mine` (default) shows the trips the caller started or joined; `scope=house` adds housemates' non-private trips. Each row carries the store-sequence names, checked-item count, and a per-currency grand total collapsed to a single figure.",
                 "tags": [
                     "shopping_session"
                 ],
@@ -27267,7 +27267,7 @@
             "get": {
                 "operationId": "shopping_session-summary",
                 "summary": "Read-only summary of a shopping trip",
-                "description": "The history detail view: the same grouped review computation as `/review`, exposed under its own route so history's read-only intent stays independent of the mid-trip amend contract. Viewable by the trip's owner, or by any house member when the trip is not private.",
+                "description": "The history detail view: the same grouped review computation as `/review`, exposed under its own route so history's read-only intent stays independent of the mid-trip amend contract. Viewable by anyone who shopped the trip, or by any house member when the trip is not private.",
                 "tags": [
                     "shopping_session"
                 ],

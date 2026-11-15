@@ -495,7 +495,8 @@ final class ShoppingSessionController extends OCSController {
 	 * List closed shopping trips (history)
 	 *
 	 * Read-only history of finished trips, newest first. `scope=mine` (default)
-	 * shows only the caller's; `scope=house` adds housemates' non-private trips.
+	 * shows the trips the caller started or joined; `scope=house` adds housemates'
+	 * non-private trips.
 	 * Each row carries the store-sequence names, checked-item count, and a
 	 * per-currency grand total collapsed to a single figure.
 	 *
@@ -527,8 +528,8 @@ final class ShoppingSessionController extends OCSController {
 	 *
 	 * The history detail view: the same grouped review computation as `/review`,
 	 * exposed under its own route so history's read-only intent stays independent
-	 * of the mid-trip amend contract. Viewable by the trip's owner, or by any
-	 * house member when the trip is not private.
+	 * of the mid-trip amend contract. Viewable by anyone who shopped the trip, or
+	 * by any house member when the trip is not private.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $sessionId Session id.
@@ -767,8 +768,8 @@ final class ShoppingSessionController extends OCSController {
 
 	/**
 	 * Load a session for read-only viewing (history detail): house member, and
-	 * either the caller's own trip or a non-private one. Unlike loadOwnedSession,
-	 * a housemate may view another member's non-private trip.
+	 * either a trip the caller shopped or a non-private one. Unlike
+	 * loadOwnedSession, a housemate may view another member's non-private trip.
 	 */
 	private function loadViewableSession(int $sessionId, int $houseId): ShoppingSession {
 		$uid = $this->requireUid();
@@ -777,7 +778,7 @@ final class ShoppingSessionController extends OCSController {
 		if ($session->getHouseId() !== $houseId) {
 			throw new NotFoundException('Shopping session not found');
 		}
-		if ($session->getUserId() !== $uid && $session->getIsPrivate()) {
+		if ($session->getIsPrivate() && !$this->sessions->hasShopped($session, $uid)) {
 			throw new NotFoundException('Shopping session not found');
 		}
 		return $session;

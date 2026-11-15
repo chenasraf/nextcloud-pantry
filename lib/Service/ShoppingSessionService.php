@@ -99,6 +99,15 @@ class ShoppingSessionService {
 	}
 
 	/**
+	 * Whether the user took part in this trip at any point, as its starter or
+	 * as a housemate who joined it, even if they have left since.
+	 */
+	public function hasShopped(ShoppingSession $session, string $uid): bool {
+		return $session->getUserId() === $uid
+			|| $this->sessionMembers->findBySessionAndUser((int)$session->getId(), $uid) !== null;
+	}
+
+	/**
 	 * Everyone in a trip: its starter first, then joined housemates by join time.
 	 *
 	 * @return list<string>

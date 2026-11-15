@@ -1247,6 +1247,22 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertFalse($this->svc->isMember($session, 'carol'));
 	}
 
+	public function testHasShoppedCountsAHousemateWhoLeft(): void {
+		$session = $this->makeSession(['id' => 7, 'userId' => 'alice', 'closedAt' => 500]);
+		$left = new ShoppingSessionMember();
+		$left->setSessionId(7);
+		$left->setUserId('bob');
+		$left->setLeftAt(400);
+		$this->sessionMembers->method('findBySessionAndUser')->willReturnMap([
+			[7, 'bob', $left],
+			[7, 'carol', null],
+		]);
+
+		$this->assertTrue($this->svc->hasShopped($session, 'alice'));
+		$this->assertTrue($this->svc->hasShopped($session, 'bob'));
+		$this->assertFalse($this->svc->hasShopped($session, 'carol'));
+	}
+
 	public function testSetPrivacyPersistsFlag(): void {
 		$session = $this->makeSession(['id' => 5, 'isPrivate' => false]);
 		$this->sessions->expects($this->once())->method('update')->willReturnArgument(0);

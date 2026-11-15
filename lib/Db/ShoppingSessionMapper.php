@@ -54,28 +54,36 @@ class ShoppingSessionMapper extends QBMapper {
 
 	/**
 	 * Closed sessions for the history view, newest first (by closed_at).
-	 *  - 'mine'  → house AND user_id = me
-	 *  - 'house' → house AND (user_id = me OR is_private = false)
+	 *  - 'mine'  → house AND (I started it OR I joined it)
+	 *  - 'house' → house AND (I started it OR I joined it OR is_private = false)
 	 *
-	 * The `is_private` widening (a private trip is hidden from housemates even
-	 * after close) is implemented purely by this predicate — no schema change.
+	 * A private trip is hidden from housemates even after close, but not from
+	 * those who shopped it.
 	 *
 	 * @param 'mine'|'house' $scope
 	 * @return ShoppingSession[]
 	 */
 	public function findClosedForHistory(int $houseId, string $uid, string $scope, int $limit, int $offset): array {
 		$qb = $this->db->getQueryBuilder();
+		$joined = $this->db->getQueryBuilder();
+		$joined->select('session_id')
+			->from(Application::tableName('shopsess_members'))
+			->where($joined->expr()->eq('user_id', $qb->createNamedParameter($uid, IQueryBuilder::PARAM_STR)));
+		$shopped = $qb->expr()->orX(
+			$qb->expr()->eq('user_id', $qb->createNamedParameter($uid, IQueryBuilder::PARAM_STR)),
+			$qb->expr()->in('id', $qb->createFunction($joined->getSQL())),
+		);
 		$qb->select('*')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->isNotNull('closed_at'));
 		if ($scope === 'house') {
 			$qb->andWhere($qb->expr()->orX(
-				$qb->expr()->eq('user_id', $qb->createNamedParameter($uid, IQueryBuilder::PARAM_STR)),
+				$shopped,
 				$qb->expr()->eq('is_private', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)),
 			));
 		} else {
-			$qb->andWhere($qb->expr()->eq('user_id', $qb->createNamedParameter($uid, IQueryBuilder::PARAM_STR)));
+			$qb->andWhere($shopped);
 		}
 		$qb->orderBy('closed_at', 'DESC')
 			->addOrderBy('id', 'DESC')
