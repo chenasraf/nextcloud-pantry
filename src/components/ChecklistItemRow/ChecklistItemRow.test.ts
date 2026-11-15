@@ -572,6 +572,57 @@ describe('ChecklistItemRow', () => {
     })
   })
 
+  describe('amount bought stepper', () => {
+    const mountBuyRow = (item: ChecklistItem, props: Record<string, unknown> = {}) =>
+      mount(ChecklistItemRow, {
+        props: { ...defaultProps, item, compact: true, quantityStepper: true, ...props },
+      })
+
+    it('steps the quantity, keeping its unit', async () => {
+      narrowRef.value = false
+      const item = makeItem({ quantity: '3 L' })
+      const wrapper = mountBuyRow(item)
+
+      expect(wrapper.find('.amount-stepper__amount').text()).toBe('3 L')
+      expect(wrapper.find('.checklist-row__quantity').exists()).toBe(false)
+      const [minus, plus] = wrapper.findAll('.amount-stepper__step')
+      await plus.trigger('click')
+      await minus.trigger('click')
+
+      expect(wrapper.emitted('quantity')).toEqual([
+        [item, '4 L'],
+        [item, '2 L'],
+      ])
+      expect(wrapper.emitted('toggle')).toBeFalsy()
+    })
+
+    it('stops − at 1', () => {
+      const wrapper = mountBuyRow(makeItem({ quantity: '1' }))
+      const [minus, plus] = wrapper.findAll('.amount-stepper__step')
+      expect(minus.attributes('disabled')).toBeDefined()
+      expect(plus.attributes('disabled')).toBeUndefined()
+    })
+
+    it('keeps the quantity chip and drops the amount on a narrow row', () => {
+      narrowRef.value = true
+      const wrapper = mountBuyRow(makeItem({ quantity: '2' }))
+      expect(wrapper.find('.checklist-row__quantity').exists()).toBe(true)
+      expect(wrapper.find('.amount-stepper__amount').exists()).toBe(false)
+      expect(wrapper.findAll('.amount-stepper__step')).toHaveLength(2)
+      narrowRef.value = false
+    })
+
+    it.each([
+      ['no quantity', makeItem({ quantity: null }), {}],
+      ['an uncounted quantity', makeItem({ quantity: 'some' }), {}],
+      ['a checked item', makeItem({ quantity: '2', done: true, doneAt: 1 }), {}],
+      ['a read-only list', makeItem({ quantity: '2' }), { listWritable: false }],
+      ['the prop off', makeItem({ quantity: '2' }), { quantityStepper: false }],
+    ])('is hidden with %s', (_, item, props) => {
+      expect(mountBuyRow(item, props).find('.amount-stepper').exists()).toBe(false)
+    })
+  })
+
   describe('selection mode', () => {
     it('shows a selection checkbox and hides the actions', () => {
       const wrapper = mount(ChecklistItemRow, {
@@ -783,7 +834,7 @@ describe('ChecklistItemRow on an inventory', () => {
       'Low · buy 8 eggs',
     )
     expect(wrapper.find('.checklist-row__stock-chip').text()).toBe('Low · buy 8 eggs')
-    expect(wrapper.find('.stock-control__amount').text()).toBe('4 eggs')
+    expect(wrapper.find('.amount-stepper__amount').text()).toBe('4 eggs')
     expect(wrapper.find('.checklist-row__quantity').exists()).toBe(false)
     expect(wrapper.find('.stock-gauge').exists()).toBe(true)
   })
@@ -792,7 +843,7 @@ describe('ChecklistItemRow on an inventory', () => {
     narrowRef.value = false
     const { wrapper, stockEvents } = mountInventoryRow(countItem('4 eggs'))
 
-    const [minus, plus] = wrapper.findAll('.stock-control__step')
+    const [minus, plus] = wrapper.findAll('.amount-stepper__step')
     await plus.trigger('click')
     await minus.trigger('click')
 
@@ -801,13 +852,13 @@ describe('ChecklistItemRow on an inventory', () => {
 
   it('disables − at 0, and both buttons when on hand has no number', () => {
     narrowRef.value = false
-    const empty = mountInventoryRow(countItem('0')).wrapper.findAll('.stock-control__step')
+    const empty = mountInventoryRow(countItem('0')).wrapper.findAll('.amount-stepper__step')
     expect(empty[0].attributes('disabled')).toBeDefined()
     expect(empty[1].attributes('disabled')).toBeUndefined()
 
     const some = mountInventoryRow(countItem('some', { stockStatus: 'uncounted' })).wrapper
     expect(
-      some.findAll('.stock-control__step').every((b) => b.attributes('disabled') !== undefined),
+      some.findAll('.amount-stepper__step').every((b) => b.attributes('disabled') !== undefined),
     ).toBe(true)
     expect(some.find('.checklist-row__stock-chip').text()).toBe('Not counted')
     expect(some.find('.stock-gauge').exists()).toBe(false)
@@ -818,8 +869,8 @@ describe('ChecklistItemRow on an inventory', () => {
     const { wrapper } = mountInventoryRow(countItem('4'))
 
     expect(wrapper.find('.checklist-row__stock-amount').text()).toBe('4 / 12 eggs')
-    expect(wrapper.find('.stock-control__amount').exists()).toBe(false)
-    expect(wrapper.findAll('.stock-control__step')).toHaveLength(2)
+    expect(wrapper.find('.amount-stepper__amount').exists()).toBe(false)
+    expect(wrapper.findAll('.amount-stepper__step')).toHaveLength(2)
     narrowRef.value = false
   })
 

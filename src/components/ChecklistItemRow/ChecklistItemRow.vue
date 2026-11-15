@@ -129,7 +129,7 @@
             </template>
           </PantryChip>
           <PantryChip
-            v-else-if="item.quantity && !stock"
+            v-else-if="item.quantity && !stock && !(buyStepper && !narrow)"
             class="checklist-row__quantity"
             size="sm"
             :interactive="false"
@@ -333,6 +333,15 @@
       :disabled="!canEditItem"
       @update="$emit('stock', item, $event)"
     />
+    <AmountStepper
+      v-if="buyStepper"
+      :amount="narrow ? null : item.quantity"
+      :bare="narrow"
+      :can-decrease="canStepDown(item.quantity ?? '')"
+      :decrease-label="strings.buyLess"
+      :increase-label="strings.buyMore"
+      @step="stepBuy"
+    />
     <div v-if="showAddedBy && !selectionMode && !suggestion" class="checklist-row__added-by">
       <NcAvatar
         v-if="item.addedBy"
@@ -503,6 +512,8 @@ import type { RowClickAction } from '@/api/prefs'
 import { useListKind } from '@/composables/useListKind'
 import { useNarrow } from '@/composables/useNarrow'
 import StockControl from '@/components/InventoryStock/StockControl.vue'
+import { AmountStepper } from '@/components/AmountStepper'
+import { canStepDown, stepQuantity } from '@/utils/quantity'
 import StockGauge from '@/components/InventoryStock/StockGauge.vue'
 import StockStatusIcon from '@/components/InventoryStock/StockStatusIcon.vue'
 import { expiryChipText, stockStatusText } from '@/components/InventoryStock/stockStrings'
@@ -602,6 +613,12 @@ const props = withDefaults(
      * section to bring a skipped item back onto the current trip.
      */
     sessionRestorable?: boolean
+    /**
+     * Shows a stepper on an unchecked row whose quantity holds a number, emitting
+     * `quantity` with the stepped amount. Used in shopping mode to record buying
+     * more or less than was asked for before checking the item off.
+     */
+    quantityStepper?: boolean
   }>(),
   {
     hideCategory: false,
@@ -622,6 +639,7 @@ const props = withDefaults(
     compact: false,
     sessionRemovable: false,
     sessionRestorable: false,
+    quantityStepper: false,
   },
 )
 
@@ -744,6 +762,19 @@ const canMoveItem = computed(() => props.listWritable && can.value.canMoveItems)
 const canCopyItem = computed(() => props.listWritable && can.value.canCopyItems)
 const canDeleteItem = computed(() => props.listWritable && can.value.canDeleteItems)
 
+const buyStepper = computed(
+  () =>
+    props.quantityStepper &&
+    isChecklist.value &&
+    !props.item.done &&
+    canEditItem.value &&
+    firstNumber(props.item.quantity ?? '') !== null,
+)
+
+function stepBuy(direction: number) {
+  emit('quantity', props.item, stepQuantity(props.item.quantity ?? '', direction))
+}
+
 const emit = defineEmits<{
   toggle: [id: number]
   view: [item: ChecklistItem]
@@ -761,6 +792,7 @@ const emit = defineEmits<{
   select: [item: ChecklistItem]
   'toggle-select': [id: number]
   stock: [item: ChecklistItem, patch: { quantity: string } | { stockLevel: StockLevel }]
+  quantity: [item: ChecklistItem, quantity: string]
   link: [item: ChecklistItem, row: StockLinkRow]
   unlink: [item: ChecklistItem]
   'auto-link': [item: ChecklistItem, on: boolean]
@@ -895,6 +927,8 @@ const strings = {
   pinnedTooltip: t('pantry', 'Set by hand. Tap to let stock set it.'),
   // TRANSLATORS: Line under a checklist item that was ticked off because the inventory items it restocks are back in stock.
   noLongerNeeded: t('pantry', 'No longer needed'),
+  buyLess: t('pantry', 'Decrease the amount bought'),
+  buyMore: t('pantry', 'Increase the amount bought'),
 }
 
 function storeLabel(name: string): string {

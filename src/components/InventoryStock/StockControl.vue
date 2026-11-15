@@ -29,29 +29,16 @@
         @update:model-value="setLevel"
       />
     </template>
-    <div v-else class="stock-control__stepper" :class="{ 'stock-control__stepper--bare': narrow }">
-      <button
-        type="button"
-        class="stock-control__step"
-        :disabled="disabled || !counted || !canStepDown(onHand, 0)"
-        :aria-label="strings.decrease"
-        :title="strings.decrease"
-        @click="step(-1)"
-      >
-        <MinusIcon :size="18" />
-      </button>
-      <span v-if="!narrow" class="stock-control__amount">{{ amountText }}</span>
-      <button
-        type="button"
-        class="stock-control__step"
-        :disabled="disabled || !counted"
-        :aria-label="strings.increase"
-        :title="strings.increase"
-        @click="step(1)"
-      >
-        <PlusIcon :size="18" />
-      </button>
-    </div>
+    <AmountStepper
+      v-else
+      :amount="narrow ? null : amountText"
+      :bare="narrow"
+      :disabled="disabled || !counted"
+      :can-decrease="canStepDown(onHand, 0)"
+      :decrease-label="strings.decrease"
+      :increase-label="strings.increase"
+      @step="step"
+    />
   </div>
 </template>
 
@@ -61,8 +48,7 @@ import { t } from '@nextcloud/l10n'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import MenuDownIcon from '@icons/MenuDown.vue'
-import MinusIcon from '@icons/Minus.vue'
-import PlusIcon from '@icons/Plus.vue'
+import { AmountStepper } from '@/components/AmountStepper'
 import type { ChecklistItem, StockLevel } from '@/api/types'
 import { canStepDown, stepQuantity } from '@/utils/quantity'
 import { firstNumber, withNumber } from '@/utils/stock'
@@ -128,60 +114,5 @@ const strings = {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-
-  &__stepper {
-    display: inline-flex;
-    align-items: center;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-element, var(--border-radius, 6px));
-    background: var(--color-main-background);
-
-    &--bare {
-      border-color: transparent;
-      background: transparent;
-      gap: 0.25rem;
-    }
-  }
-
-  &__step {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 34px;
-    min-height: 34px;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    border-radius: var(--border-radius-element, var(--border-radius, 6px));
-    background: transparent;
-    color: var(--color-main-text);
-    cursor: pointer;
-
-    &:hover:not(:disabled) {
-      background: var(--color-background-hover);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--color-primary-element);
-      outline-offset: -2px;
-    }
-
-    &:disabled {
-      cursor: default;
-      opacity: 0.4;
-    }
-  }
-
-  &__stepper--bare &__step {
-    border: 1px solid var(--color-border);
-  }
-
-  &__amount {
-    min-width: 3.5rem;
-    padding: 0 0.25rem;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
 }
 </style>

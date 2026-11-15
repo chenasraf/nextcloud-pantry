@@ -96,7 +96,9 @@
                 :row-click-action="rowClickAction"
                 compact
                 session-removable
+                quantity-stepper
                 @toggle="handleToggle"
+                @quantity="handleQuantity"
                 @session-remove="handleSessionRemove"
                 @preview="openPreview"
                 @unpin="handleUnpin"
@@ -473,6 +475,38 @@ async function handleUnpin(item: ChecklistItem) {
   }
 }
 
+// The latest amount asked for per item, so a slow response to an earlier tap
+// cannot overwrite a later one.
+const pendingQuantity = new Map<number, string>()
+
+/**
+ * Record buying more or less than asked for. The item's quantity is what the
+ * check restocks, so it is set before the item goes into the cart.
+ */
+async function handleQuantity(item: ChecklistItem, quantity: string) {
+  const previous = item.quantity
+  const row = items.value.find((i) => i.id === item.id)
+  if (row) row.quantity = quantity
+  pendingQuantity.set(item.id, quantity)
+  try {
+    const updated = await updateItem(houseIdNum.value, item.listId, item.id, { quantity })
+    if (pendingQuantity.get(item.id) !== quantity) return
+    pendingQuantity.delete(item.id)
+    announceRestockSync(updated.restockSync)
+    items.value = items.value.map((i) =>
+      i.id === item.id
+        ? { ...i, quantity: updated.quantity, quantityPinned: updated.quantityPinned }
+        : i,
+    )
+  } catch (e) {
+    if (pendingQuantity.get(item.id) !== quantity) return
+    pendingQuantity.delete(item.id)
+    const current = items.value.find((i) => i.id === item.id)
+    if (current) current.quantity = previous
+    showError((e as Error).message || strings.quantityFailed)
+  }
+}
+
 /**
  * Show what a check put back into stock on the checked item. A shared item
  * that came up short is already back on the list, so it goes back to shop.
@@ -742,6 +776,7 @@ const strings = {
   emptyDoneTitle: t('pantry', 'All done'),
   emptyDoneBody: t('pantry', 'Everything on your list is in the cart.'),
   checkFailed: t('pantry', 'Could not check off the item.'),
+  quantityFailed: t('pantry', 'Could not change the amount bought.'),
   // TRANSLATORS: Undo toast shown after removing an item from the current
   // shopping trip only (it stays on the list).
   removedFromTrip: t('pantry', 'Item removed from this trip'),
