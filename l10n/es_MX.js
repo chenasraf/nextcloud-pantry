@@ -126,6 +126,7 @@ OC.L10N.register(
     "New folder" : "Carpeta nueva ",
     "Add a description" : "Añadir una descripción",
     "Documentation" : "Documentación",
+    "Cancelled" : "Cancelado",
     "Load more" : "Cargar más",
     "Finish" : "Terminar"
 },

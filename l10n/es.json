@@ -177,6 +177,7 @@
     "Move to folder" : "Mover a la carpeta",
     "Documentation" : "Documentación",
     "_%n item_::_%n items_" : ["%n ítem","%n ítems","%n ítems"],
+    "Cancelled" : "Cancelado",
     "Load more" : "Cargar más",
     "Finish" : "Terminar"
 },"pluralForm" :"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"

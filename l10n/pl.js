@@ -178,6 +178,7 @@ OC.L10N.register(
     "Documentation" : "Dokumentacja",
     "_%n item_::_%n items_" : ["%n element","%n elementów","%n elementów","%n elementów"],
     "Mine" : "Moje",
+    "Cancelled" : "Anulowane",
     "Load more" : "Wczytaj więcej",
     "Finish" : "Koniec"
 },

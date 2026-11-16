@@ -146,6 +146,7 @@ OC.L10N.register(
     "Move to folder" : "폴더로 이동",
     "Documentation" : "문서",
     "_%n item_::_%n items_" : ["%n개 항목"],
+    "Cancelled" : "취소됨",
     "Load more" : "더 불러오기",
     "Finish" : "끝내기"
 },

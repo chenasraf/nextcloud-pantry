@@ -135,6 +135,7 @@ OC.L10N.register(
     "New folder" : "–®–∏–Ω—ç —Ö–∞–≤—Ç–∞—Å",
     "Documentation" : "Баримт бичиг",
     "Mine" : "Минийх",
+    "Cancelled" : "Цуцлагдсан",
     "Load more" : "Цааш ачаалах",
     "Finish" : "–ë–∞—Ä–∏–∞"
 },

@@ -194,6 +194,7 @@ OC.L10N.register(
     "Creating …" : "建立中…",
     "_%n item_::_%n items_" : ["%n 個項目"],
     "Mine" : "我的",
+    "Cancelled" : "已取消",
     "Load more" : "載入更多",
     "Finish" : "完成",
     "{hours} h {minutes} min" : "{hours} 小時 {minutes} 分鐘"

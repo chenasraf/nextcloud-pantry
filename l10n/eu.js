@@ -168,6 +168,7 @@ OC.L10N.register(
     "Move to folder" : "Eraman karpetara",
     "Documentation" : "Dokumentazioa",
     "_%n item_::_%n items_" : ["elementu %n","%n elementu"],
+    "Cancelled" : "Ezeztatua",
     "Load more" : "Kargatu gehiago",
     "Finish" : "Amaitu"
 },

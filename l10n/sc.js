@@ -115,6 +115,7 @@ OC.L10N.register(
     "New folder" : "Cartella noa",
     "Add a description" : "Agiunghe una descritzione",
     "Documentation" : "Documentatzione",
+    "Cancelled" : "Annulladu",
     "Load more" : "Càrriga àteru"
 },
 "nplurals=2; plural=(n != 1);");

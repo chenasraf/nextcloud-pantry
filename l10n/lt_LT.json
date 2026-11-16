@@ -209,6 +209,7 @@
     "Creating …" : "Kuriama…",
     "_%n item_::_%n items_" : ["%n elementas","%n elementai","%n elementų","%n elementų"],
     "Mine" : "Mano",
+    "Cancelled" : "Atsisakyta",
     "Load more" : "Įkelti daugiau",
     "Finish" : "Užbaigti"
 },"pluralForm" :"nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < 11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? 1 : n % 1 != 0 ? 2: 3);"

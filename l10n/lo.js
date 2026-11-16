@@ -151,6 +151,7 @@ OC.L10N.register(
     "Move to folder" : "ຍ້າຍໄປທີ່ໂຟນເດີ",
     "Documentation" : "ເອກະສານ",
     "_%n item_::_%n items_" : ["%n ລາຍການ"],
+    "Cancelled" : "ຍົກເລີກແລ້ວ",
     "Load more" : "Load more",
     "Finish" : "ສຳເລັດ"
 },

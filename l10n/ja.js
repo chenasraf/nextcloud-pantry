@@ -175,6 +175,7 @@ OC.L10N.register(
     "Documentation" : "ドキュメント",
     "_%n item_::_%n items_" : ["%nアイテム"],
     "Mine" : "私",
+    "Cancelled" : "キャンセル済",
     "Load more" : "さらに読み込む",
     "Finish" : "完了"
 },

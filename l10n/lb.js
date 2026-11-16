@@ -82,6 +82,7 @@ OC.L10N.register(
     "General" : "Allgemeng",
     "New folder" : "Neien Dossier",
     "Documentation" : "Dokumentatioun",
-    "Mine" : "Meng"
+    "Mine" : "Meng",
+    "Cancelled" : "Ofgesot"
 },
 "nplurals=2; plural=(n != 1);");

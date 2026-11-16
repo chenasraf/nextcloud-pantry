@@ -173,6 +173,7 @@ OC.L10N.register(
     "Documentation" : "Dokumentaatio",
     "_%n item_::_%n items_" : ["%n kohde","%n kohdetta"],
     "Mine" : "Omat",
+    "Cancelled" : "Peruttu",
     "Load more" : "Lataa lisää",
     "Finish" : "Valmis"
 },

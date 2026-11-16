@@ -94,6 +94,7 @@ OC.L10N.register(
     "Note restored" : "Shënimi i rivendos",
     "New folder" : "Dosje e re",
     "Documentation" : "Dokumentacioni",
+    "Cancelled" : "U anulua",
     "Finish" : "Përfundo"
 },
 "nplurals=2; plural=(n != 1);");

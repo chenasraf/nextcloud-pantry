@@ -79,6 +79,7 @@ OC.L10N.register(
     "General" : "General",
     "Note restored" : "Nota restaurada",
     "New folder" : "Carpeta nueva",
-    "Documentation" : "Documentación"
+    "Documentation" : "Documentación",
+    "Cancelled" : "Cancelado"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

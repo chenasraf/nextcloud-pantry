@@ -110,6 +110,7 @@ OC.L10N.register(
     "New folder" : "New folder",
     "Add a description" : "Add a description",
     "Documentation" : "დოკუმენტაცია",
+    "Cancelled" : "Cancelled",
     "Load more" : "Load more"
 },
 "nplurals=2; plural=(n!=1);");

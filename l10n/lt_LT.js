@@ -211,6 +211,7 @@ OC.L10N.register(
     "Creating …" : "Kuriama…",
     "_%n item_::_%n items_" : ["%n elementas","%n elementai","%n elementų","%n elementų"],
     "Mine" : "Mano",
+    "Cancelled" : "Atsisakyta",
     "Load more" : "Įkelti daugiau",
     "Finish" : "Užbaigti"
 },

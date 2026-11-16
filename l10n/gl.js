@@ -182,6 +182,7 @@ OC.L10N.register(
     "Documentation" : "Documentación",
     "Creating …" : "Creando…",
     "_%n item_::_%n items_" : ["%n elemento","%n elementos"],
+    "Cancelled" : "Cancelado",
     "Load more" : "Cargar máis",
     "Finish" : "Rematar"
 },

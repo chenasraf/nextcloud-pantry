@@ -115,6 +115,7 @@ OC.L10N.register(
     "New folder" : "Akaram amaynut",
     "Documentation" : "Tasemlit",
     "Mine" : "Inu",
+    "Cancelled" : "Ittwasefsex",
     "Load more" : "Sali-d ugar",
     "Finish" : "Fak"
 },

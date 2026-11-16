@@ -179,6 +179,7 @@ OC.L10N.register(
     "Documentation" : "Documentatie",
     "_%n item_::_%n items_" : ["%n object","%n objecten"],
     "Mine" : "Mijn",
+    "Cancelled" : "Geannuleerd",
     "Load more" : "Laad meer",
     "Finish" : "Afronden"
 },

@@ -169,6 +169,7 @@ OC.L10N.register(
     "Move to folder" : "Flytt til mappe",
     "Documentation" : "Dokumentasjo",
     "_%n item_::_%n items_" : ["%n element","%nelementer"],
+    "Cancelled" : "Avbrutt",
     "Load more" : "Last mer",
     "Finish" : "Fullfør"
 },

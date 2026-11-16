@@ -154,6 +154,7 @@
     "Remove folder" : "Fjarlægja möppu",
     "Documentation" : "Leiðbeiningar",
     "_%n item_::_%n items_" : ["%n atriði","%n atriði"],
+    "Cancelled" : "Hætt við",
     "Load more" : "Hlaða inn fleiri",
     "Finish" : "Ljúka"
 },"pluralForm" :"nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);"

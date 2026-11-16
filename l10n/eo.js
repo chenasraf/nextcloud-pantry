@@ -87,6 +87,7 @@ OC.L10N.register(
     "General" : "Ĝenerala",
     "Automation" : "Aŭtomatigo",
     "New folder" : "Nova dosierujo",
-    "Documentation" : "Dokumentaro"
+    "Documentation" : "Dokumentaro",
+    "Cancelled" : "Nuligita"
 },
 "nplurals=2; plural=(n != 1);");

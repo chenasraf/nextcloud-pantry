@@ -112,6 +112,7 @@ OC.L10N.register(
     "Add a description" : "Thêm vào một mô tả",
     "Remove folder" : "Xoá thư mục",
     "Documentation" : "Tài liệu",
+    "Cancelled" : "Đã hủy",
     "Load more" : "Xem thêm"
 },
 "nplurals=1; plural=0;");

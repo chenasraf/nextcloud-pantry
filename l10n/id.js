@@ -183,6 +183,7 @@ OC.L10N.register(
     "Creating …" : "Membuat …",
     "_%n item_::_%n items_" : ["%n jumlah"],
     "Mine" : "Milik saya",
+    "Cancelled" : "Dibatalkan",
     "Load more" : "Muat lebih banyak",
     "Finish" : "Selesai"
 },

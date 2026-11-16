@@ -166,6 +166,7 @@
     "Move to folder" : "Eraman karpetara",
     "Documentation" : "Dokumentazioa",
     "_%n item_::_%n items_" : ["elementu %n","%n elementu"],
+    "Cancelled" : "Ezeztatua",
     "Load more" : "Kargatu gehiago",
     "Finish" : "Amaitu"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

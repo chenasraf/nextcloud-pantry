@@ -384,6 +384,7 @@
     "Use the house picker at the bottom of the sidebar to create one." : "Use o seletor de lares na parte inferior da barra lateral para criar um.",
     "_%n item_::_%n items_" : ["%n item","%n itens","%n itens"],
     "Mine" : "Meus",
+    "Cancelled" : "Cancelado",
     "Load more" : "Carregar mais",
     "Finish" : "Terminar",
     "Exported {date}" : "Exportado em {date}",

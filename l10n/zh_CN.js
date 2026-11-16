@@ -167,6 +167,7 @@ OC.L10N.register(
     "Move to folder" : "移动到文件夹",
     "Documentation" : "文档",
     "_%n item_::_%n items_" : ["%n 个项目"],
+    "Cancelled" : "已取消",
     "Load more" : "加载更多",
     "Finish" : "完成"
 },

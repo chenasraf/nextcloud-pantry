@@ -136,6 +136,7 @@
     "Deleted photos will appear here." : "Избришаните фотографии ќе се појават овде",
     "Documentation" : "Документација",
     "_%n item_::_%n items_" : ["%n ставка","%n ставки"],
+    "Cancelled" : "Откажано",
     "Load more" : "Вчитај повеќе",
     "Finish" : "Крај"
 },"pluralForm" :"nplurals=2; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : 1;"

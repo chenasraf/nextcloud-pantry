@@ -436,6 +436,7 @@ OC.L10N.register(
     "Use the house picker at the bottom of the sidebar to create one." : "Χρησιμοποιήστε τον επιλογέα σπιτιού στο κάτω μέρος της πλευρικής εργαλειοθήκης για να δημιουργήσετε ένα.",
     "_%n item_::_%n items_" : ["%n στοιχείο","%n στοιχεία"],
     "Mine" : "Δικά μου",
+    "Cancelled" : "Ακυρώθηκε",
     "Load more" : "Φόρτωση περισσότερων",
     "Finish" : "Ολοκλήρωση",
     "Exported {date}" : "Εξήχθη στις {date}",

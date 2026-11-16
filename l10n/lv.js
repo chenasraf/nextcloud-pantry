@@ -111,6 +111,7 @@ OC.L10N.register(
     "New folder" : "Jauna mape",
     "Add a description" : "Pievienot aprakstu",
     "Documentation" : "Dokumentācija",
+    "Cancelled" : "Atcelts",
     "Load more" : "Ielādēt vairāk",
     "Finish" : "Pabeigt"
 },

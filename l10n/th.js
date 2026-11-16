@@ -75,6 +75,7 @@ OC.L10N.register(
     "General" : "ทั่วไป",
     "Automation" : "อัตโนมัติ",
     "New folder" : "โฟลเดอร์ใหม่",
-    "Documentation" : "เอกสารประกอบ"
+    "Documentation" : "เอกสารประกอบ",
+    "Cancelled" : "ยกเลิกแล้ว"
 },
 "nplurals=1; plural=0;");

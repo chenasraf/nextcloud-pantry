@@ -156,6 +156,7 @@ OC.L10N.register(
     "Remove folder" : "Fjarlægja möppu",
     "Documentation" : "Leiðbeiningar",
     "_%n item_::_%n items_" : ["%n atriði","%n atriði"],
+    "Cancelled" : "Hætt við",
     "Load more" : "Hlaða inn fleiri",
     "Finish" : "Ljúka"
 },

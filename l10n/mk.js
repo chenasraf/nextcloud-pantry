@@ -138,6 +138,7 @@ OC.L10N.register(
     "Deleted photos will appear here." : "Избришаните фотографии ќе се појават овде",
     "Documentation" : "Документација",
     "_%n item_::_%n items_" : ["%n ставка","%n ставки"],
+    "Cancelled" : "Откажано",
     "Load more" : "Вчитај повеќе",
     "Finish" : "Крај"
 },

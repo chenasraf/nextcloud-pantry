@@ -151,6 +151,7 @@ OC.L10N.register(
     "Move to folder" : "Mover a carpeta",
     "Documentation" : "Documentación",
     "_%n item_::_%n items_" : ["%n elemento","%n elementos","%n elementos"],
+    "Cancelled" : "Cancelado",
     "Load more" : "Cargar más"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

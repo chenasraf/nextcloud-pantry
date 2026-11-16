@@ -410,6 +410,7 @@ OC.L10N.register(
     "Welcome to Pantry" : "Velkomen til Pantry",
     "Use the house picker at the bottom of the sidebar to create one." : "Bruk husveljaren nedst i sidestolpen for å lage eit.",
     "_%n item_::_%n items_" : ["%n oppføring","%n oppføringar"],
+    "Cancelled" : "Avlyst",
     "Exported {date}" : "Eksportert {date}",
     "Starts after completion" : "Startar etter fullføring"
 },

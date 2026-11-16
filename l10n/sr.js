@@ -171,6 +171,7 @@ OC.L10N.register(
     "Move to folder" : "Премести у фолдер",
     "Documentation" : "Документација",
     "_%n item_::_%n items_" : ["%n ставка","%n ставке","%n ставки"],
+    "Cancelled" : "Отказано",
     "Load more" : "Учитај још",
     "Finish" : "Заврши"
 },

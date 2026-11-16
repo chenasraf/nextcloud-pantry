@@ -171,6 +171,7 @@ OC.L10N.register(
     "Documentation" : "Dokumentáció",
     "_%n item_::_%n items_" : ["%n elem","%n elem"],
     "Mine" : "Saját",
+    "Cancelled" : "Megszakítva",
     "Load more" : "Továbbiak betöltése",
     "Finish" : "Befejez"
 },

@@ -358,6 +358,7 @@
     "Use the house picker at the bottom of the sidebar to create one." : "برای ایجاد یک خانه، از انتخابگر خانه در پایین نوار کناری استفاده کنید.",
     "_%n item_::_%n items_" : ["%n مورد","%n مورد"],
     "Mine" : "مال من",
+    "Cancelled" : "لغو شد",
     "Load more" : "بارگذاری بیشتر",
     "Finish" : "پایان",
     "Starts after completion" : "پس از تکمیل آغاز می‌شود"

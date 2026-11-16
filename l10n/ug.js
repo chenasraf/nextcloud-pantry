@@ -168,6 +168,7 @@ OC.L10N.register(
     "Move to folder" : "قىسقۇچقا يۆتكەڭ",
     "Documentation" : "پۈتۈك",
     "_%n item_::_%n items_" : ["%n تۈر","%n تۈرلەر"],
+    "Cancelled" : "ئەمەلدىن قالدۇرۇلدى",
     "Load more" : "تېخىمۇ كۆپ يۈكلەڭ",
     "Finish" : "تامام"
 },

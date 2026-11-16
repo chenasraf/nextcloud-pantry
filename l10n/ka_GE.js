@@ -77,6 +77,7 @@ OC.L10N.register(
     "Note restored" : "ჩანაწერი აღდგა",
     "New folder" : "ახალი დირექტორია",
     "Documentation" : "დოკუმენტაცია",
+    "Cancelled" : "უარყოფილია",
     "Finish" : "დასრულება"
 },
 "nplurals=2; plural=(n!=1);");

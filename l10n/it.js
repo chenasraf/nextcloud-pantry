@@ -169,6 +169,7 @@ OC.L10N.register(
     "Documentation" : "Documentazione",
     "_%n item_::_%n items_" : ["%n elemento ","%n file","%n file"],
     "Mine" : "Miei",
+    "Cancelled" : "Annullato",
     "Load more" : "Carica altro",
     "Finish" : "Fine"
 },

@@ -87,6 +87,7 @@ OC.L10N.register(
     "Danger zone" : "Zòna perilhosa",
     "New folder" : "Novèl dorsièr",
     "Add a description" : "Apondre una descripcion",
-    "Documentation" : "Documentacion"
+    "Documentation" : "Documentacion",
+    "Cancelled" : "Anullat"
 },
 "nplurals=2; plural=(n > 1);");

@@ -179,6 +179,7 @@ OC.L10N.register(
     "Move to folder" : "Mover a la carpeta",
     "Documentation" : "Documentación",
     "_%n item_::_%n items_" : ["%n ítem","%n ítems","%n ítems"],
+    "Cancelled" : "Cancelado",
     "Load more" : "Cargar más",
     "Finish" : "Terminar"
 },

@@ -180,6 +180,7 @@
     "Documentation" : "Documentación",
     "Creating …" : "Creando…",
     "_%n item_::_%n items_" : ["%n elemento","%n elementos"],
+    "Cancelled" : "Cancelado",
     "Load more" : "Cargar máis",
     "Finish" : "Rematar"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

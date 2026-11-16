@@ -155,6 +155,7 @@ OC.L10N.register(
     "Remove folder" : "Ondoa folda",
     "Documentation" : "Uhifadhi wa nyaraka",
     "_%n item_::_%n items_" : ["%n item","%n vipengele"],
+    "Cancelled" : "Imeghairiwa",
     "Load more" : "Pakia zaidi"
 },
 "nplurals=2; plural=(n != 1);");

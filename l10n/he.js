@@ -127,6 +127,7 @@ OC.L10N.register(
     "New folder" : "תיקייה חדשה",
     "Add a description" : "הוסף תיאור",
     "Documentation" : "תיעוד",
+    "Cancelled" : "בוטל",
     "Load more" : "לטעון עוד",
     "Finish" : "סיים"
 },
