@@ -154,6 +154,7 @@ OC.L10N.register(
     "Move to folder" : "Преместване в папка",
     "Documentation" : "Документация",
     "_%n item_::_%n items_" : ["%nелементи ","%n елементи"],
+    "Cancelled" : "Отказано",
     "Load more" : "Зареждане на още",
     "Finish" : "Край"
 },

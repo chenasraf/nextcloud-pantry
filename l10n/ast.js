@@ -128,6 +128,7 @@ OC.L10N.register(
     "New folder" : "Carpeta nueva",
     "Remove folder" : "Quitar la carpeta",
     "Documentation" : "Documentación",
+    "Cancelled" : "Encaboxáu",
     "Load more" : "Cargar más",
     "Finish" : "Finar"
 },

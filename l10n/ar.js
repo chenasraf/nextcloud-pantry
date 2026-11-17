@@ -162,6 +162,7 @@ OC.L10N.register(
     "Documentation" : "توثيق النظام",
     "_%n item_::_%n items_" : ["%n عناصر","%n عنصر","%n عناصر","%n عناصر","%n عناصر","%n عناصر"],
     "Mine" : "ملكي",
+    "Cancelled" : "ملغى",
     "Load more" : "حمّل أكثر",
     "Finish" : "تم"
 },
