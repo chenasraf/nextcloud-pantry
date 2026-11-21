@@ -67,6 +67,7 @@ OC.L10N.register(
     "Count" : "Број",
     "Level" : "Ниво",
     "Remind me" : "Потсети ме",
+    "Checked" : "Проверено",
     "Join" : "Приклучи се",
     "Rich text" : "Богат текст",
     "Close" : "Затвори",
