@@ -56,6 +56,8 @@ class ChecklistServiceTest extends TestCase {
 	private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper;
 	/** @var \OCA\Pantry\Service\StockLinkService&MockObject */
 	private \OCA\Pantry\Service\StockLinkService $stockLinks;
+	/** @var \OCA\Pantry\Service\ItemMemoryService&MockObject */
+	private \OCA\Pantry\Service\ItemMemoryService $memory;
 	private ChecklistService $svc;
 
 	protected function setUp(): void {
@@ -104,6 +106,7 @@ class ChecklistServiceTest extends TestCase {
 			),
 			$this->stockLinks,
 			$this->createMock(\OCA\Pantry\Service\LinkedProductService::class),
+			$this->memory = $this->createMock(\OCA\Pantry\Service\ItemMemoryService::class),
 		);
 	}
 
@@ -1661,6 +1664,16 @@ class ChecklistServiceTest extends TestCase {
 		$this->itemMapper->expects($this->once())->method('deleteByList')->with(99);
 		$this->listTemplateMapper->expects($this->once())->method('deleteByList')->with(99);
 		$this->listMapper->expects($this->once())->method('delete')->with($list);
+
+		$this->svc->permanentlyDeleteList(99);
+	}
+
+	public function testPermanentlyDeleteListForgetsItsItemMemory(): void {
+		$list = new Checklist();
+		$list->setId(99);
+		$this->listMapper->method('findById')->willReturn($list);
+		$this->categoryMapper->method('findIdsByList')->with(99)->willReturn([4, 5]);
+		$this->memory->expects($this->once())->method('forgetList')->with(99, [4, 5]);
 
 		$this->svc->permanentlyDeleteList(99);
 	}

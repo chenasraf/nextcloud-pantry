@@ -19,6 +19,7 @@ class CategoryService {
 		private CategoryMapper $mapper,
 		private ChecklistMapper $listMapper,
 		private StoreCategoryOrderMapper $storeOrderMapper,
+		private ItemMemoryService $memory,
 	) {
 	}
 
@@ -155,6 +156,7 @@ class CategoryService {
 		// Detach from any items first, then delete the row.
 		$this->mapper->detachFromItems((int)$cat->getId());
 		$this->storeOrderMapper->deleteByCategory((int)$cat->getId());
+		$this->memory->forgetCategories([(int)$cat->getId()]);
 		$this->mapper->delete($cat);
 	}
 

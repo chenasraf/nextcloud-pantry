@@ -28,6 +28,7 @@ use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\ItemDefaults;
 use OCA\Pantry\Service\ItemDefaultsService;
+use OCA\Pantry\Service\ItemMemoryService;
 use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
@@ -69,8 +70,14 @@ class ListKindControllerTest extends TestCase {
 	private RestockService $restock;
 	/** @var NotificationService&MockObject */
 	private NotificationService $notifications;
+	/** @var ItemMemoryService&MockObject */
+	private ItemMemoryService $memory;
+	/** @var CategoryService&MockObject */
+	private CategoryService $categories;
 
 	protected function setUp(): void {
+		$this->memory = $this->createMock(ItemMemoryService::class);
+		$this->categories = $this->createMock(CategoryService::class);
 		$this->activity = $this->createMock(ActivityPublisher::class);
 		$this->stockLinks = $this->createMock(StockLinkService::class);
 		$this->restockSync = $this->createMock(RestockSyncService::class);
@@ -106,7 +113,7 @@ class ListKindControllerTest extends TestCase {
 			'pantry',
 			$this->createMock(IRequest::class),
 			$this->lists,
-			$this->createMock(CategoryService::class),
+			$this->categories,
 			$this->createMock(LabelService::class),
 			$this->createMock(StoreService::class),
 			$this->createMock(ItemStoreMapper::class),
@@ -130,6 +137,7 @@ class ListKindControllerTest extends TestCase {
 			$this->stockLinks,
 			$this->restockSync,
 			$this->restock,
+			$this->memory,
 		);
 	}
 
@@ -1003,5 +1011,94 @@ class ListKindControllerTest extends TestCase {
 		$controller = $this->makeController(ChecklistController::class);
 		$controller->restoreList(1, 7);
 		$controller->unarchiveList(1, 7);
+	}
+
+	private function memoryItem(string $kind, ?int $categoryId = null, ?string $quantity = null): ChecklistItem {
+		$item = new ChecklistItem();
+		$item->setId(3);
+		$item->setListId(7);
+		$item->setName('Milk');
+		$item->setCategoryId($categoryId);
+		$item->setQuantity($quantity);
+		$this->lists->method('getList')->willReturn($this->makeList($kind));
+		$this->lists->method('getItem')->willReturn($item);
+		return $item;
+	}
+
+	public function testAddingAnItemTeachesItemMemoryWhatWasTyped(): void {
+		$item = $this->memoryItem(Checklist::KIND_CHECKLIST, 12, '2 L');
+		$this->lists->method('addItem')->willReturn($item);
+		$this->memory->expects($this->once())->method('learnCreated')
+			->with(1, $item, '2 L', ['categoryId' => 4, 'quantity' => true]);
+
+		$this->makeController(ChecklistController::class)
+			->addItem(1, 7, 'Milk', categoryId: 12, quantity: '2 L', suggestionRejected: ['categoryId' => 4, 'quantity' => true]);
+	}
+
+	public function testARejectedCategoryOfAnotherHouseIsIgnored(): void {
+		$item = $this->memoryItem(Checklist::KIND_INVENTORY);
+		$this->lists->method('addItem')->willReturn($item);
+		$this->categories->method('assertInHouse')->willReturnCallback(static function (int $categoryId): void {
+			if ($categoryId === 99) {
+				throw new \OCA\Pantry\Exception\NotFoundException('Category not found');
+			}
+		});
+		$this->memory->expects($this->once())->method('learnCreated')
+			->with(1, $item, null, ['categoryId' => null, 'quantity' => false]);
+
+		$this->makeController(InventoryController::class)
+			->addInventoryItem(1, 7, 'Milk', suggestionRejected: ['categoryId' => 99]);
+	}
+
+	public function testEditingAnItemTeachesItemMemory(): void {
+		$before = $this->memoryItem(Checklist::KIND_TEMPLATE);
+		$after = clone $before;
+		$after->setCategoryId(12);
+		$this->lists->method('updateItem')->willReturn($after);
+		$this->memory->expects($this->once())->method('learnUpdated')
+			->with(1, $before, $after, false, true, null);
+
+		$this->makeController(TemplateController::class)->updateTemplateItem(1, 7, 3, categoryId: 12);
+	}
+
+	public function testAnInventoryItemsOnHandAmountIsNotAnAmountToRemember(): void {
+		$before = $this->memoryItem(Checklist::KIND_INVENTORY, null, '3');
+		$after = clone $before;
+		$after->setQuantity('2');
+		$this->lists->method('updateItem')->willReturn($after);
+		$this->memory->expects($this->once())->method('learnUpdated')
+			->with(1, $before, $after, true, false, null);
+
+		$this->makeController(InventoryController::class)->updateInventoryItem(1, 7, 3, quantity: '2');
+	}
+
+	public function testMovingAnItemTeachesItemMemoryNothing(): void {
+		$item = $this->memoryItem(Checklist::KIND_CHECKLIST, 12);
+		$this->lists->method('updateItem')->willReturn($item);
+		$this->memory->expects($this->never())->method('learnUpdated');
+
+		$this->makeController(ChecklistController::class)->updateItem(1, 7, 3, targetListId: 8);
+	}
+
+	public function testAMemoryFailureDoesNotFailTheWrite(): void {
+		$item = $this->memoryItem(Checklist::KIND_CHECKLIST);
+		$this->lists->method('addItem')->willReturn($item);
+		$this->memory->method('learnCreated')->willThrowException(new \RuntimeException('down'));
+
+		$data = $this->makeController(ChecklistController::class)->addItem(1, 7, 'Milk')->getData();
+
+		$this->assertSame('Milk', $data['name']);
+	}
+
+	public function testBatchCategoryTeachesEachItemsChange(): void {
+		$before = $this->memoryItem(Checklist::KIND_CHECKLIST, 4);
+		$after = clone $before;
+		$after->setCategoryId(12);
+		$this->lists->method('getItem')->willReturn($before);
+		$this->permissions->method('canAccessList')->willReturn(true);
+		$this->lists->method('setItemsCategory')->willReturn([$after]);
+		$this->memory->expects($this->once())->method('learnCategoryChange')->with(1, $before, $after);
+
+		$this->makeController(ChecklistController::class)->batchSetCategory(1, [3], 12);
 	}
 }

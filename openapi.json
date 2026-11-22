@@ -1275,6 +1275,37 @@
                     }
                 }
             },
+            "ItemCategoryMemory": {
+                "type": "object",
+                "required": [
+                    "nameKey",
+                    "categoryId",
+                    "uses",
+                    "rejections",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "nameKey": {
+                        "type": "string"
+                    },
+                    "categoryId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "uses": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "rejections": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "updatedAt": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
             "ItemDefaultField": {
                 "type": "object",
                 "required": [
@@ -1457,6 +1488,32 @@
                     }
                 }
             },
+            "ItemMemory": {
+                "type": "object",
+                "required": [
+                    "categories",
+                    "quantities",
+                    "serverTime"
+                ],
+                "properties": {
+                    "categories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemCategoryMemory"
+                        }
+                    },
+                    "quantities": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemQuantityMemory"
+                        }
+                    },
+                    "serverTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
             "ItemPrice": {
                 "type": "object",
                 "required": [
@@ -1489,6 +1546,32 @@
                     "priceCurrency": {
                         "type": "string",
                         "nullable": true
+                    }
+                }
+            },
+            "ItemQuantityMemory": {
+                "type": "object",
+                "required": [
+                    "listId",
+                    "nameKey",
+                    "quantity",
+                    "updatedAt"
+                ],
+                "properties": {
+                    "listId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "nameKey": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "updatedAt": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             },
@@ -7591,6 +7674,22 @@
                                                 }
                                             }
                                         }
+                                    },
+                                    "suggestionRejected": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.",
+                                        "properties": {
+                                            "categoryId": {
+                                                "type": "integer",
+                                                "format": "int64",
+                                                "nullable": true
+                                            },
+                                            "quantity": {
+                                                "type": "boolean"
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -8765,6 +8864,22 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "False lets stock set the quantity of an item that restocks inventory items again, and sets it to what they ask for. Changing such an item's quantity pins it until it is next done."
+                                    },
+                                    "suggestionRejected": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.",
+                                        "properties": {
+                                            "categoryId": {
+                                                "type": "integer",
+                                                "format": "int64",
+                                                "nullable": true
+                                            },
+                                            "quantity": {
+                                                "type": "boolean"
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -16120,6 +16235,22 @@
                                         "description": "Shelf life in days. Without a date alongside, the item expires today plus the shelf life.",
                                         "minimum": 1,
                                         "maximum": 36500
+                                    },
+                                    "suggestionRejected": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.",
+                                        "properties": {
+                                            "categoryId": {
+                                                "type": "integer",
+                                                "format": "int64",
+                                                "nullable": true
+                                            },
+                                            "quantity": {
+                                                "type": "boolean"
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -17325,6 +17456,22 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Whether an unlinked item is linked to the same-name item on the restock checklist. Turning it on links it when exactly one matches."
+                                    },
+                                    "suggestionRejected": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.",
+                                        "properties": {
+                                            "categoryId": {
+                                                "type": "integer",
+                                                "format": "int64",
+                                                "nullable": true
+                                            },
+                                            "quantity": {
+                                                "type": "boolean"
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -18901,6 +19048,117 @@
                                                 },
                                                 "data": {
                                                     "$ref": "#/components/schemas/InventoryItem"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/item-memory": {
+            "get": {
+                "operationId": "item_memory-index",
+                "summary": "Get the house's item memory",
+                "description": "The category and amount the household picked for each item name, for suggesting them when an item is typed in. Names are keyed by their folded form. A category's score is its uses minus its rejections; suggest the highest above zero among the categories usable on the target list, the most recently changed on a tie. Amounts are per list and only cover lists the caller can open.\nWithout `since` every row is returned. With it, only rows changed at or after that time, including amounts forgotten since (a null quantity). Rows of deleted categories and lists are not reported: drop any row whose category or list is no longer known.",
+                "tags": [
+                    "item_memory"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "since",
+                        "in": "query",
+                        "description": "The `serverTime` of the previous sync.",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "nullable": true,
+                            "default": null
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item memory returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ItemMemory"
                                                 }
                                             }
                                         }
@@ -31386,6 +31644,22 @@
                                         "description": "Shelf life in days; drawn into an inventory, the item expires that many days later.",
                                         "minimum": 1,
                                         "maximum": 36500
+                                    },
+                                    "suggestionRejected": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.",
+                                        "properties": {
+                                            "categoryId": {
+                                                "type": "integer",
+                                                "format": "int64",
+                                                "nullable": true
+                                            },
+                                            "quantity": {
+                                                "type": "boolean"
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -32337,6 +32611,22 @@
                                         "description": "New shelf life in days (0 clears).",
                                         "minimum": 0,
                                         "maximum": 36500
+                                    },
+                                    "suggestionRejected": {
+                                        "type": "object",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.",
+                                        "properties": {
+                                            "categoryId": {
+                                                "type": "integer",
+                                                "format": "int64",
+                                                "nullable": true
+                                            },
+                                            "quantity": {
+                                                "type": "boolean"
+                                            }
+                                        }
                                     }
                                 }
                             }

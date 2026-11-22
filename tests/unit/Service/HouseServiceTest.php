@@ -32,6 +32,8 @@ class HouseServiceTest extends TestCase {
 	private HouseMapper $houseMapper;
 	/** @var \OCA\Pantry\Db\ListTemplateMapper&MockObject */
 	private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper;
+	/** @var \OCA\Pantry\Service\ItemMemoryService&MockObject */
+	private \OCA\Pantry\Service\ItemMemoryService $memory;
 	private HouseService $svc;
 
 	protected function setUp(): void {
@@ -64,12 +66,20 @@ class HouseServiceTest extends TestCase {
 			$this->createMock(IDBConnection::class),
 			$this->createMock(IUserManager::class),
 			$this->listTemplateMapper,
+			$this->memory = $this->createMock(\OCA\Pantry\Service\ItemMemoryService::class),
 		);
 	}
 
 	public function testDeleteClearsTemplateAttachments(): void {
 		$this->houseMapper->method('findById')->willReturn($this->makeHouse());
 		$this->listTemplateMapper->expects($this->once())->method('deleteByHouse')->with(7);
+
+		$this->svc->delete(7);
+	}
+
+	public function testDeleteForgetsTheHousesItemMemory(): void {
+		$this->houseMapper->method('findById')->willReturn($this->makeHouse());
+		$this->memory->expects($this->once())->method('forgetHouse')->with(7);
 
 		$this->svc->delete(7);
 	}

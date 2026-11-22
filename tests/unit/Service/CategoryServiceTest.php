@@ -13,6 +13,7 @@ use OCA\Pantry\Db\Checklist;
 use OCA\Pantry\Db\ChecklistMapper;
 use OCA\Pantry\Db\StoreCategoryOrderMapper;
 use OCA\Pantry\Service\CategoryService;
+use OCA\Pantry\Service\ItemMemoryService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -24,13 +25,16 @@ class CategoryServiceTest extends TestCase {
 	private ChecklistMapper $listMapper;
 	/** @var StoreCategoryOrderMapper&MockObject */
 	private StoreCategoryOrderMapper $storeOrderMapper;
+	/** @var ItemMemoryService&MockObject */
+	private ItemMemoryService $memory;
 	private CategoryService $svc;
 
 	protected function setUp(): void {
 		$this->mapper = $this->createMock(CategoryMapper::class);
 		$this->listMapper = $this->createMock(ChecklistMapper::class);
 		$this->storeOrderMapper = $this->createMock(StoreCategoryOrderMapper::class);
-		$this->svc = new CategoryService($this->mapper, $this->listMapper, $this->storeOrderMapper);
+		$this->memory = $this->createMock(ItemMemoryService::class);
+		$this->svc = new CategoryService($this->mapper, $this->listMapper, $this->storeOrderMapper, $this->memory);
 	}
 
 	private function makeList(int $id, int $houseId): Checklist {
@@ -341,6 +345,14 @@ class CategoryServiceTest extends TestCase {
 		$this->mapper->method('findById')->with(5)->willReturn($cat);
 
 		$this->storeOrderMapper->expects($this->once())->method('deleteByCategory')->with(5);
+
+		$this->svc->delete(5);
+	}
+
+	public function testDeleteForgetsWhatItemMemoryKnewOfTheCategory(): void {
+		$this->mapper->method('findById')->with(5)->willReturn($this->makeCategory(['id' => 5]));
+
+		$this->memory->expects($this->once())->method('forgetCategories')->with([5]);
 
 		$this->svc->delete(5);
 	}

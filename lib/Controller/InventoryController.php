@@ -667,6 +667,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param string|null $reorderPoint A count item's reorder point: low at or below it, instead of below the target.
 	 * @param int|null $expiresAt Expiry date (midnight timestamp). A date after today also sets the shelf life to match.
 	 * @param int<1, 36500>|null $shelfLifeDays Shelf life in days. Without a date alongside, the item expires today plus the shelf life.
+	 * @param array{categoryId?: int|null, quantity?: bool}|null $suggestionRejected Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
 	 *
@@ -694,6 +695,7 @@ final class InventoryController extends ListKindOCSController {
 		?string $reorderPoint = null,
 		?int $expiresAt = null,
 		?int $shelfLifeDays = null,
+		?array $suggestionRejected = null,
 	): DataResponse {
 		return $this->doAddItem($houseId, $listId, [
 			'name' => $name,
@@ -715,6 +717,7 @@ final class InventoryController extends ListKindOCSController {
 			'reorderPoint' => $reorderPoint,
 			'expiresAt' => $expiresAt,
 			'shelfLifeDays' => $shelfLifeDays,
+			'suggestionRejected' => $suggestionRejected,
 		]);
 	}
 
@@ -743,6 +746,7 @@ final class InventoryController extends ListKindOCSController {
 	 * @param int|null $expiresAt New expiry date (midnight timestamp; 0 clears). Without a shelf life alongside, a date after today also sets the shelf life to match.
 	 * @param int<0, 36500>|null $shelfLifeDays New shelf life in days (0 clears). Without a date alongside, a shelf life also sets the date to today plus the shelf life.
 	 * @param bool|null $autoLink Whether an unlinked item is linked to the same-name item on the restock checklist. Turning it on links it when exactly one matches.
+	 * @param array{categoryId?: int|null, quantity?: bool}|null $suggestionRejected Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryInventoryItem, array{}>
 	 *
@@ -774,6 +778,7 @@ final class InventoryController extends ListKindOCSController {
 		?int $expiresAt = null,
 		?int $shelfLifeDays = null,
 		?bool $autoLink = null,
+		?array $suggestionRejected = null,
 	): DataResponse {
 		$stock = array_filter([
 			'stockMode' => $stockMode,
@@ -784,7 +789,7 @@ final class InventoryController extends ListKindOCSController {
 			'shelfLifeDays' => $shelfLifeDays,
 			'autoLink' => $autoLink,
 		], static fn (string|int|bool|null $v): bool => $v !== null);
-		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, null, null, null, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock);
+		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, null, null, null, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock, $suggestionRejected);
 	}
 
 	/**

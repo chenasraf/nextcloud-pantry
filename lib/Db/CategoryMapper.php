@@ -139,6 +139,20 @@ class CategoryMapper extends QBMapper {
 	}
 
 	/**
+	 * @return list<int>
+	 */
+	public function findIdsByList(int $listId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('id')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_INT)));
+		$result = $qb->executeQuery();
+		$ids = array_values(array_map('intval', $result->fetchAll(\PDO::FETCH_COLUMN)));
+		$result->closeCursor();
+		return $ids;
+	}
+
+	/**
 	 * Delete every category scoped to the given list. Global categories
 	 * (null list_id) are untouched. Used when a list is permanently removed.
 	 */

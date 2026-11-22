@@ -700,6 +700,27 @@ namespace OCA\Pantry;
  *     deletedAt: int|null,
  *     canEdit: bool,
  * }
+ *
+ * @psalm-type PantryItemCategoryMemory = array{
+ *     nameKey: string,
+ *     categoryId: int,
+ *     uses: int,
+ *     rejections: int,
+ *     updatedAt: int,
+ * }
+ *
+ * @psalm-type PantryItemQuantityMemory = array{
+ *     listId: int,
+ *     nameKey: string,
+ *     quantity: string|null,
+ *     updatedAt: int,
+ * }
+ *
+ * @psalm-type PantryItemMemory = array{
+ *     categories: list<PantryItemCategoryMemory>,
+ *     quantities: list<PantryItemQuantityMemory>,
+ *     serverTime: int,
+ * }
  */
 class ResponseDefinitions {
 }

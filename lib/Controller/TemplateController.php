@@ -488,6 +488,7 @@ final class TemplateController extends ListKindOCSController {
 	 * @param string|null $target The target an inventory count item starts with.
 	 * @param string|null $reorderPoint The reorder point an inventory count item starts with.
 	 * @param int<1, 36500>|null $shelfLifeDays Shelf life in days; drawn into an inventory, the item expires that many days later.
+	 * @param array{categoryId?: int|null, quantity?: bool}|null $suggestionRejected Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryTemplateItem, array{}>
 	 *
@@ -516,6 +517,7 @@ final class TemplateController extends ListKindOCSController {
 		?string $target = null,
 		?string $reorderPoint = null,
 		?int $shelfLifeDays = null,
+		?array $suggestionRejected = null,
 	): DataResponse {
 		return $this->doAddItem($houseId, $listId, [
 			'name' => $name,
@@ -535,6 +537,7 @@ final class TemplateController extends ListKindOCSController {
 			'target' => $target,
 			'reorderPoint' => $reorderPoint,
 			'shelfLifeDays' => $shelfLifeDays,
+			'suggestionRejected' => $suggestionRejected,
 		]);
 	}
 
@@ -563,6 +566,7 @@ final class TemplateController extends ListKindOCSController {
 	 * @param string|null $target New target (empty string clears).
 	 * @param string|null $reorderPoint New reorder point (empty string clears).
 	 * @param int<0, 36500>|null $shelfLifeDays New shelf life in days (0 clears).
+	 * @param array{categoryId?: int|null, quantity?: bool}|null $suggestionRejected Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryTemplateItem, array{}>
 	 *
@@ -594,6 +598,7 @@ final class TemplateController extends ListKindOCSController {
 		?string $target = null,
 		?string $reorderPoint = null,
 		?int $shelfLifeDays = null,
+		?array $suggestionRejected = null,
 	): DataResponse {
 		$stock = array_filter([
 			'stockMode' => $stockMode,
@@ -601,7 +606,7 @@ final class TemplateController extends ListKindOCSController {
 			'reorderPoint' => $reorderPoint,
 			'shelfLifeDays' => $shelfLifeDays,
 		], static fn (string|int|null $v): bool => $v !== null);
-		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock);
+		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock, $suggestionRejected);
 	}
 
 	/**

@@ -56,6 +56,7 @@ class ChecklistService {
 		private ScopedTaxonomyService $taxonomy,
 		private StockLinkService $stockLinks,
 		private LinkedProductService $linkedProducts,
+		private ItemMemoryService $memory,
 	) {
 	}
 
@@ -336,6 +337,7 @@ class ChecklistService {
 		$this->itemMapper->deleteByList((int)$list->getId());
 		$this->listRoleMapper->deleteByList((int)$list->getId());
 		$this->listTemplateMapper->deleteByList((int)$list->getId());
+		$this->memory->forgetList((int)$list->getId(), $this->categoryMapper->findIdsByList((int)$list->getId()));
 		$this->categoryMapper->deleteByList((int)$list->getId());
 		$this->labelMapper->deleteByList((int)$list->getId());
 		$this->fieldOptionMapper->deleteByList((int)$list->getId());
@@ -352,6 +354,7 @@ class ChecklistService {
 		foreach ($removed as $list) {
 			$this->itemMapper->deleteByList((int)$list->getId());
 			$this->listTemplateMapper->deleteByList((int)$list->getId());
+			$this->memory->forgetList((int)$list->getId(), $this->categoryMapper->findIdsByList((int)$list->getId()));
 			$this->categoryMapper->deleteByList((int)$list->getId());
 			$this->labelMapper->deleteByList((int)$list->getId());
 			$this->fieldOptionMapper->deleteByList((int)$list->getId());

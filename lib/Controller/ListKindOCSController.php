@@ -25,6 +25,7 @@ use OCA\Pantry\Service\HouseService;
 use OCA\Pantry\Service\ImageService;
 use OCA\Pantry\Service\ItemDefaults;
 use OCA\Pantry\Service\ItemDefaultsService;
+use OCA\Pantry\Service\ItemMemoryService;
 use OCA\Pantry\Service\LabelService;
 use OCA\Pantry\Service\NotificationService;
 use OCA\Pantry\Service\PermissionService;
@@ -81,6 +82,7 @@ abstract class ListKindOCSController extends OCSController {
 		protected StockLinkService $stockLinks,
 		protected RestockSyncService $restockSync,
 		protected RestockService $restock,
+		protected ItemMemoryService $memory,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -319,6 +321,40 @@ abstract class ListKindOCSController extends OCSController {
 	 * Called after a list's settings are updated, with the list as it was
 	 * before.
 	 */
+	/**
+	 * Teach item memory. The item is already saved, so a failure here is only
+	 * logged: failing the request would make the client retry a write that
+	 * already happened.
+	 */
+	protected function learn(callable $teach): void {
+		try {
+			$teach();
+		} catch (\Throwable $e) {
+			$this->logger->warning('Pantry: could not update item memory', ['exception' => $e]);
+		}
+	}
+
+	/**
+	 * The suggestions a client says were dropped, keeping only a category of
+	 * this house.
+	 *
+	 * @return array{categoryId: int|null, quantity: bool}|null
+	 */
+	protected function rejectedSuggestions(int $houseId, mixed $raw): ?array {
+		if (!is_array($raw)) {
+			return null;
+		}
+		$categoryId = isset($raw['categoryId']) && is_numeric($raw['categoryId']) ? (int)$raw['categoryId'] : null;
+		if ($categoryId !== null) {
+			try {
+				$this->categories->assertInHouse($categoryId, $houseId);
+			} catch (\Throwable) {
+				$categoryId = null;
+			}
+		}
+		return ['categoryId' => $categoryId, 'quantity' => ($raw['quantity'] ?? false) === true];
+	}
+
 	protected function afterListUpdated(Checklist $list, Checklist $before): void {
 	}
 
@@ -673,7 +709,7 @@ abstract class ListKindOCSController extends OCSController {
 	}
 
 	/**
-	 * @param array{name: string, description: string|null, categoryId: int|null, quantity: string|null, rrule: string|null, repeatFromCompletion: bool, deleteOnDone: bool, sortOrder: int|null, storeIds: list<int>, barcode: string|null, prices: list<array<string, mixed>>, labelIds: list<int>, customFields: list<array<string, mixed>>, stockMode?: string|null, stockLevel?: string|null, target?: string|null, reorderPoint?: string|null, expiresAt?: int|null, shelfLifeDays?: int|null} $data
+	 * @param array{name: string, description: string|null, categoryId: int|null, quantity: string|null, rrule: string|null, repeatFromCompletion: bool, deleteOnDone: bool, sortOrder: int|null, storeIds: list<int>, barcode: string|null, prices: list<array<string, mixed>>, labelIds: list<int>, customFields: list<array<string, mixed>>, stockMode?: string|null, stockLevel?: string|null, target?: string|null, reorderPoint?: string|null, expiresAt?: int|null, shelfLifeDays?: int|null, suggestionRejected?: array<string, mixed>|null} $data
 	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
 	 */
 	protected function doAddItem(int $houseId, int $listId, array $data): DataResponse {
@@ -708,6 +744,12 @@ abstract class ListKindOCSController extends OCSController {
 				'shelfLifeDays' => $data['shelfLifeDays'] ?? null,
 			], $uid);
 			$item = $this->afterItemWrite($item, null);
+			$this->learn(fn () => $this->memory->learnCreated(
+				$houseId,
+				$item,
+				$data['quantity'],
+				$this->rejectedSuggestions($houseId, $data['suggestionRejected'] ?? null),
+			));
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
 				$houseId,
@@ -750,8 +792,9 @@ abstract class ListKindOCSController extends OCSController {
 		?array $labelIds,
 		?array $customFields,
 		array $stock = [],
+		?array $suggestionRejected = null,
 	): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $stock, $suggestionRejected): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			[$before, $list] = $this->loadItem($houseId, $listId, $itemId);
@@ -827,6 +870,16 @@ abstract class ListKindOCSController extends OCSController {
 				$patch['listId'] = $targetListId;
 			}
 			$updated = $this->afterItemWrite($this->lists->updateItem($itemId, $patch), $before);
+			if ($targetList === null) {
+				$this->learn(fn () => $this->memory->learnUpdated(
+					$houseId,
+					$before,
+					$updated,
+					$quantity !== null,
+					$list->getKind() !== Checklist::KIND_INVENTORY,
+					$this->rejectedSuggestions($houseId, $suggestionRejected),
+				));
+			}
 
 			$houseName = $this->houses->get($houseId)->getName();
 			if ($targetList !== null && $targetList->getId() !== $list->getId()) {

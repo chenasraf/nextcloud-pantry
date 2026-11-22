@@ -754,4 +754,35 @@ class ChecklistItemMapper extends QBMapper {
 
 		return $this->findEntities($qb);
 	}
+
+	/**
+	 * What item memory is seeded from: every item in the house not in the
+	 * trash, archived ones included, oldest change first.
+	 *
+	 * @return list<array{name: string, categoryId: int|null, listId: int, listKind: string, quantity: string|null}>
+	 */
+	public function findMemorySeedRows(int $houseId): array {
+		$qb = $this->db->getQueryBuilder();
+		$lists = Application::tableName('lists');
+		$qb->select('i.name', 'i.category_id', 'i.list_id', 'i.quantity', 'l.kind')
+			->from($this->getTableName(), 'i')
+			->innerJoin('i', $lists, 'l', $qb->expr()->eq('i.list_id', 'l.id'))
+			->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->isNull('i.deleted_at'))
+			->orderBy('i.updated_at', 'ASC')
+			->addOrderBy('i.id', 'ASC');
+		$result = $qb->executeQuery();
+		$rows = [];
+		while ($row = $result->fetch()) {
+			$rows[] = [
+				'name' => (string)$row['name'],
+				'categoryId' => $row['category_id'] !== null ? (int)$row['category_id'] : null,
+				'listId' => (int)$row['list_id'],
+				'listKind' => (string)$row['kind'],
+				'quantity' => $row['quantity'] !== null ? (string)$row['quantity'] : null,
+			];
+		}
+		$result->closeCursor();
+		return $rows;
+	}
 }

@@ -616,6 +616,7 @@ final class ChecklistController extends ListKindOCSController {
 	 * @param list<array{storeId?: int|null, priceType?: string|null, priceMin?: float|null, priceMax?: float|null, priceCurrency?: string|null}> $prices Optional prices. A null store id is the store-less (default) price; at most one per store and one store-less.
 	 * @param list<int> $labelIds Optional label ids to attach (must belong to the same house).
 	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}> $customFields Optional custom-field values. Each field must belong to the house and apply to this list; at most one value per field.
+	 * @param array{categoryId?: int|null, quantity?: bool}|null $suggestionRejected Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -640,6 +641,7 @@ final class ChecklistController extends ListKindOCSController {
 		array $prices = [],
 		array $labelIds = [],
 		array $customFields = [],
+		?array $suggestionRejected = null,
 	): DataResponse {
 		return $this->doAddItem($houseId, $listId, [
 			'name' => $name,
@@ -655,6 +657,7 @@ final class ChecklistController extends ListKindOCSController {
 			'prices' => $prices,
 			'labelIds' => $labelIds,
 			'customFields' => $customFields,
+			'suggestionRejected' => $suggestionRejected,
 		]);
 	}
 
@@ -680,6 +683,7 @@ final class ChecklistController extends ListKindOCSController {
 	 * @param list<int>|null $labelIds New set of label ids (empty array clears; null leaves unchanged). All must belong to the same house.
 	 * @param list<array{fieldId: int, valueText?: string|null, valueNumber?: float|null, valueBool?: bool, valueDate?: int|null, valueOptionId?: int|null, offsetDays?: int|null, notifyOverride?: bool, notifyEnabled?: bool, notifyLeadDays?: int|null}>|null $customFields New full set of custom-field values (empty array clears all; null leaves them unchanged). Each field must belong to the house and apply to the item's list.
 	 * @param bool|null $quantityPinned False lets stock set the quantity of an item that restocks inventory items again, and sets it to what they ask for. Changing such an item's quantity pins it until it is next done.
+	 * @param array{categoryId?: int|null, quantity?: bool}|null $suggestionRejected Suggestions the person dropped before saving: a guessed category, and whether the guessed quantity was dropped. Teaches item memory; the item is saved as sent.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryListItem, array{}>
 	 *
@@ -708,9 +712,10 @@ final class ChecklistController extends ListKindOCSController {
 		?array $labelIds = null,
 		?array $customFields = null,
 		?bool $quantityPinned = null,
+		?array $suggestionRejected = null,
 	): DataResponse {
 		$extra = $quantityPinned !== null ? ['quantityPinned' => $quantityPinned] : [];
-		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $extra);
+		return $this->doUpdateItem($houseId, $listId, $itemId, $name, $description, $categoryId, $quantity, $rrule, $repeatFromCompletion, $deleteOnDone, $imageFileId, $sortOrder, $targetListId, $storeIds, $barcode, $prices, $labelIds, $customFields, $extra, $suggestionRejected);
 	}
 
 	/**
@@ -1252,6 +1257,17 @@ final class ChecklistController extends ListKindOCSController {
 				array_map(fn (ChecklistItem $i) => (int)$i->getId(), $collected['items']),
 				$resolvedCategoryId,
 			);
+			$before = [];
+			foreach ($collected['items'] as $item) {
+				$before[(int)$item->getId()] = $item;
+			}
+			$this->learn(function () use ($houseId, $updated, $before): void {
+				foreach ($updated as $item) {
+					if (isset($before[(int)$item->getId()])) {
+						$this->memory->learnCategoryChange($houseId, $before[(int)$item->getId()], $item);
+					}
+				}
+			});
 
 			$houseName = $this->houses->get($houseId)->getName();
 			foreach ($groups as $listId => $group) {

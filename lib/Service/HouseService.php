@@ -56,6 +56,7 @@ class HouseService {
 		private IDBConnection $db,
 		private IUserManager $userManager,
 		private \OCA\Pantry\Db\ListTemplateMapper $listTemplateMapper,
+		private ItemMemoryService $memory,
 	) {
 	}
 
@@ -207,6 +208,7 @@ class HouseService {
 				$this->listRoleMapper->deleteByList((int)$list->getId());
 			}
 			$this->listTemplateMapper->deleteByHouse($houseId);
+			$this->memory->forgetHouse($houseId);
 			$this->listMapper->deleteByHouse($houseId);
 			$this->categoryMapper->deleteByHouse($houseId);
 			$this->labelMapper->deleteByHouse($houseId);
