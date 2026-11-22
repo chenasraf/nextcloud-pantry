@@ -21,6 +21,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Required status check on master: the release PR can't merge until
+  # release-notes/<version>/ is complete. On the push that releases a version,
+  # the App Store publish waits on it too, so a merge past the check isn't
+  # published.
+  release-notes:
+    uses: chenasraf/workflows/.github/workflows/release-notes-check.yml@release-notes-latest
+    with:
+      mode: ${{ github.event_name == 'pull_request' && 'pr' || 'release' }}
+
   release:
     name: Release
     runs-on: ubuntu-latest
@@ -102,12 +111,25 @@ jobs:
   release-nextcloud:
     name: Release to Nextcloud Apps
     runs-on: ubuntu-latest
-    needs: [build, release, upload]
+    needs: [build, release, upload, release-notes]
     if: ${{ needs.release.outputs.release_created }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pantry.tar.gz
+
+      - name: Check the App Store changelog
+        run: |
+          VERSION="$(cat version.txt)"
+          if ! tar -xzOf pantry.tar.gz pantry/CHANGELOG.md | grep -qx "## ${VERSION}"; then
+            echo "::error::The tarball's CHANGELOG.md has no section for ${VERSION}. Add release-notes/${VERSION}/appstore.md and release again."
+            exit 1
+          fi
 
       - name: Write Private Key to File
         run: |

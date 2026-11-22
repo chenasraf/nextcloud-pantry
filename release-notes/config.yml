@@ -1,0 +1,31 @@
+# Release notes destinations for the Pantry server app. The same file drives
+# writing the notes and CI's release-notes-check, which gates the release PR
+# and the App Store publish on them.
+
+version:
+  file: version.txt
+  pattern: '^([0-9]+\.[0-9]+\.[0-9]+)'
+tag-prefix: v
+
+# Linked from the notes; `{version}` is the version name.
+full-notes-url: https://github.com/chenasraf/nextcloud-pantry/releases/tag/v{version}
+
+# Release notes per destination, rendered into release-notes/<version>/<file>.
+# `make appstore` collects every version's appstore.md into the CHANGELOG.md the
+# Nextcloud App Store reads from the tarball.
+destinations:
+  appstore:
+    file: appstore.md
+    format: markdown
+    name: Nextcloud App Store
+
+# Which destinations a fragment's `platforms` reach.
+platforms:
+  all: [appstore]
+  web: [appstore]
+
+# The other Pantry repo. A change people see in both gets matching fragments on
+# both sides.
+paired-repo:
+  github: chenasraf/pantry-flutter
+  path: ~/Dev/pantry-flutter

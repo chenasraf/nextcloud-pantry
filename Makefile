@@ -206,12 +206,22 @@ appstore:
 		--exclude="/scripts" \
 		--exclude="/src" \
 		--exclude="/website" \
+		--exclude="/release-notes" \
+		--exclude="/CHANGELOG.md" \
 		--exclude="rename-template.sh" \
 		--exclude="*.config.cjs" \
 		--exclude="*.config.js" \
 		--exclude="*.config.ts" \
 		--exclude="tsconfig*.json" \
 		$(CURDIR)/ $(app_intermediate_directory)
+	@# The App Store shows the tarball's CHANGELOG.md, so it gets the curated
+	@# notes (release-notes/<version>/appstore.md) instead of release-please's log.
+	@{ printf '# Changelog\n'; \
+		for dir in $$(/bin/ls -d release-notes/*/ | sed 's|release-notes/||; s|/$$||' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$$' | sort -rV); do \
+			[ -f "release-notes/$$dir/appstore.md" ] || continue; \
+			printf '\n## %s\n\n' "$$dir"; \
+			cat "release-notes/$$dir/appstore.md"; \
+		done; } > $(app_intermediate_directory)/CHANGELOG.md
 	cd $(CURDIR)/build/artifacts/intermediate && \
 	tar czf $(appstore_package_name).tar.gz $(app_name)
 	@echo "Restoring dev dependencies..."
