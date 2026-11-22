@@ -378,7 +378,7 @@ describe('ChecklistAddForm', () => {
     await wrapper.find('form').trigger('submit')
 
     expect(wrapper.emitted('add')).toBeTruthy()
-    const [input, pendingImage] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    const [input, pendingImage] = wrapper.emitted('add')![0]
     expect(input).toEqual({
       name: 'Milk',
       description: null,
@@ -438,7 +438,7 @@ describe('ChecklistAddForm', () => {
     await wrapper.find('[data-testid="compose-expiry-days"]').setValue('10')
     await wrapper.find('form').trigger('submit')
 
-    const [input] = form.emitted('add')![0] as [ItemInput, File | null]
+    const [input] = form.emitted('add')![0]
     expect(input.shelfLifeDays).toBe(10)
     expect(input.expiresAt).toBeUndefined()
   })
@@ -451,7 +451,7 @@ describe('ChecklistAddForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    const [input] = wrapper.emitted('add')![0]
     expect(input.quantity).toBe('2 L')
   })
 
@@ -463,7 +463,7 @@ describe('ChecklistAddForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    const [input] = wrapper.emitted('add')![0]
     expect(input.description).toBe('Whole milk preferred')
   })
 
@@ -479,7 +479,7 @@ describe('ChecklistAddForm', () => {
     expect(wrapper.emitted('remember-defaults')).toBeFalsy()
 
     await wrapper.find('form').trigger('submit')
-    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    const [input] = wrapper.emitted('add')![0]
     expect(input.deleteOnDone).toBe(true)
     expect(wrapper.emitted('remember-defaults')![0]).toEqual([
       { recurrence: { value: { kind: 'once', rrule: null, repeatFromCompletion: false } } },
@@ -501,7 +501,7 @@ describe('ChecklistAddForm', () => {
     await wrapper.find('.nc-text-field').setValue('Milk')
 
     await wrapper.find('form').trigger('submit')
-    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    const [input] = wrapper.emitted('add')![0]
     expect(input.deleteOnDone).toBe(true)
   })
 
@@ -514,7 +514,7 @@ describe('ChecklistAddForm', () => {
     await wrapper.find('.nc-text-field').setValue('Milk')
 
     await wrapper.find('form').trigger('submit')
-    const [input] = wrapper.emitted('add')![0] as [ItemInput, File | null]
+    const [input] = wrapper.emitted('add')![0]
     expect(input.deleteOnDone).toBe(false)
     expect(input.rrule).toBe('FREQ=DAILY;INTERVAL=2')
     expect(input.repeatFromCompletion).toBe(true)
@@ -564,7 +564,7 @@ describe('ChecklistAddForm', () => {
       await wrapper.find('.nc-text-field').setValue('Bread')
       await wrapper.find('form').trigger('submit')
 
-      for (const [input] of wrapper.emitted('add') as [ItemInput][]) {
+      for (const [input] of wrapper.emitted('add')!) {
         expect(input.storeIds).toEqual([3])
         expect(input.categoryId).toBe(5)
         expect(input.labelIds).toEqual([7])
@@ -585,7 +585,7 @@ describe('ChecklistAddForm', () => {
       await wrapper.find('.nc-text-field').setValue('Bread')
       await wrapper.find('form').trigger('submit')
 
-      const adds = wrapper.emitted('add') as [ItemInput][]
+      const adds = wrapper.emitted('add')!
       expect(adds[0]![0].storeIds).toEqual([4])
       expect(adds[1]![0].storeIds).toEqual([3])
     })
@@ -608,7 +608,7 @@ describe('ChecklistAddForm', () => {
 
       await wrapper.find('.nc-text-field').setValue('Bread')
       await wrapper.find('form').trigger('submit')
-      const adds = wrapper.emitted('add') as [ItemInput][]
+      const adds = wrapper.emitted('add')!
       expect(adds[1]![0].storeIds).toEqual([4])
       // Same store again: nothing new to remember.
       expect(wrapper.emitted('remember-defaults')).toHaveLength(1)
@@ -623,7 +623,7 @@ describe('ChecklistAddForm', () => {
       await wrapper.find('.nc-text-field').setValue('Bread')
       await wrapper.find('form').trigger('submit')
 
-      const adds = wrapper.emitted('add') as [ItemInput][]
+      const adds = wrapper.emitted('add')!
       expect(adds[0]![0].quantity).toBe('3')
       expect(adds[1]![0].quantity).toBeNull()
     })

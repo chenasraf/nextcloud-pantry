@@ -264,8 +264,11 @@ class NotificationService {
 		);
 
 		// Use a hashed object id so markProcessed matches the same group.
-		$objectId = substr(md5($scope), 0, 32);
-		$stateKey = 'notif_state_' . substr(md5($scope), 0, 32);
+		// md5 derives a key, not a secret. Changing it would orphan stored
+		// accumulator state and stop markProcessed matching delivered notifications.
+		/** @psalm-suppress WeakHash */
+		$objectId = md5($scope);
+		$stateKey = 'notif_state_' . $objectId;
 		$now = time();
 
 		foreach ($recipients as $uid) {

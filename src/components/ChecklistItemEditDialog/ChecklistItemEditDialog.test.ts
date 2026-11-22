@@ -378,7 +378,7 @@ describe('ChecklistItemEditDialog', () => {
     expect(selector.attributes('data-delete-on-done')).toBe('true')
 
     await wrapper.find('#pantry-edit-item-form').trigger('submit')
-    const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
+    const [, patch] = wrapper.emitted('save')![0]
     expect(patch.deleteOnDone).toBe(true)
   })
 
@@ -387,7 +387,7 @@ describe('ChecklistItemEditDialog', () => {
     await wrapper.find('.mock-one-time').trigger('click')
 
     await wrapper.find('#pantry-edit-item-form').trigger('submit')
-    const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
+    const [, patch] = wrapper.emitted('save')![0]
     expect(patch.deleteOnDone).toBe(true)
   })
 
@@ -398,7 +398,7 @@ describe('ChecklistItemEditDialog', () => {
     await wrapper.find('.mock-staple').trigger('click')
 
     await wrapper.find('#pantry-edit-item-form').trigger('submit')
-    const [, patch] = wrapper.emitted('save')![0] as [number, Record<string, unknown>]
+    const [, patch] = wrapper.emitted('save')![0]
     expect(patch.deleteOnDone).toBe(false)
     expect(patch.rrule).toBeNull()
   })
