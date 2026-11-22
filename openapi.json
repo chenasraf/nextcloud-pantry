@@ -3717,7 +3717,8 @@
                 "type": "object",
                 "required": [
                     "everyList",
-                    "listIds"
+                    "listIds",
+                    "learnItems"
                 ],
                 "properties": {
                     "everyList": {
@@ -3729,6 +3730,9 @@
                             "type": "integer",
                             "format": "int64"
                         }
+                    },
+                    "learnItems": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -32899,7 +32903,7 @@
             "get": {
                 "operationId": "template-template-lists",
                 "summary": "Lists a template is attached to",
-                "description": "`everyList` attaches the template to every checklist and inventory in the house, including ones made later; `listIds` are the lists it is attached to by name. Archived and trashed lists are left out.",
+                "description": "`everyList` attaches the template to every checklist and inventory in the house, including ones made later; `listIds` are the lists it is attached to by name. Archived and trashed lists are left out. `learnItems` adds a new item typed on those lists to the template, unless an attached template already has an item of that name.",
                 "tags": [
                     "template"
                 ],
@@ -33007,7 +33011,7 @@
             "put": {
                 "operationId": "template-set-template-lists",
                 "summary": "Set the lists a template is attached to",
-                "description": "Replaces the template's attachments and its every-list switch. Attachments to lists the caller cannot access, or that are archived or trashed, are kept. Templates never attach to templates.",
+                "description": "Replaces the template's attachments, its every-list switch and, when sent, its learn-items switch. Attachments to lists the caller cannot access, or that are archived or trashed, are kept. Templates never attach to templates.",
                 "tags": [
                     "template"
                 ],
@@ -33039,6 +33043,12 @@
                                             "type": "integer",
                                             "format": "int64"
                                         }
+                                    },
+                                    "learnItems": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether new items typed on the attached lists are added to the template; left as it is when omitted."
                                     }
                                 }
                             }

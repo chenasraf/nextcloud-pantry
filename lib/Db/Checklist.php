@@ -37,6 +37,7 @@ use OCP\AppFramework\Db\Entity;
  * @method void setLastCompletedAt(?int $lastCompletedAt)
  * @method void setKind(?string $kind)
  * @method void setEveryList(?bool $everyList)
+ * @method void setLearnItems(?bool $learnItems)
  * @method void setFillFromDefaults(?bool $fillFromDefaults)
  * @method int|null getExpiryLeadDays()
  * @method void setExpiryLeadDays(?int $expiryLeadDays)
@@ -95,6 +96,8 @@ class Checklist extends Entity implements \JsonSerializable {
 	protected ?string $kind = self::KIND_CHECKLIST;
 	/** A template attached to every checklist and inventory in its house. */
 	protected ?bool $everyList = false;
+	/** A template that adds the new items typed on its attached lists to itself. */
+	protected ?bool $learnItems = false;
 	/** Whether a template item drawn here fills its empty fields from the item defaults. */
 	protected ?bool $fillFromDefaults = true;
 	/** An inventory's expiry warning, in days before the date; empty reads as {@see DEFAULT_EXPIRY_LEAD_DAYS}. */
@@ -115,6 +118,7 @@ class Checklist extends Entity implements \JsonSerializable {
 		$this->addType('archivedAt', 'integer');
 		$this->addType('lastCompletedAt', 'integer');
 		$this->addType('everyList', 'boolean');
+		$this->addType('learnItems', 'boolean');
 		$this->addType('fillFromDefaults', 'boolean');
 		$this->addType('expiryLeadDays', 'integer');
 		$this->addType('restockChecklistId', 'integer');
@@ -133,6 +137,10 @@ class Checklist extends Entity implements \JsonSerializable {
 
 	public function isEveryList(): bool {
 		return $this->getKind() === self::KIND_TEMPLATE && (bool)$this->everyList;
+	}
+
+	public function learnsItems(): bool {
+		return $this->getKind() === self::KIND_TEMPLATE && (bool)$this->learnItems;
 	}
 
 	/** A row from before the column existed fills, like a new list. */

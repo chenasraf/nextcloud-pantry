@@ -79,10 +79,11 @@ class TemplateAttachmentService {
 	}
 
 	/**
-	 * The lists a template is attached to, and whether it covers every list.
-	 * Lists that are archived or trashed are left out.
+	 * The lists a template is attached to, whether it covers every list, and
+	 * whether it learns new items from them. Lists that are archived or
+	 * trashed are left out.
 	 *
-	 * @return array{everyList: bool, listIds: list<int>}
+	 * @return array{everyList: bool, listIds: list<int>, learnItems: bool}
 	 */
 	public function forTemplate(Checklist $template): array {
 		$this->assertTemplate($template);
@@ -91,18 +92,23 @@ class TemplateAttachmentService {
 			$this->attachments->findListIdsForTemplate((int)$template->getId()),
 			static fn (int $id): bool => isset($active[$id]),
 		));
-		return ['everyList' => $template->isEveryList(), 'listIds' => $listIds];
+		return [
+			'everyList' => $template->isEveryList(),
+			'listIds' => $listIds,
+			'learnItems' => $template->learnsItems(),
+		];
 	}
 
 	/**
-	 * Replace the lists a template is attached to, and its every-list switch.
+	 * Replace the lists a template is attached to, its every-list switch and,
+	 * when given, its learn-items switch.
 	 *
 	 * Attachments to lists the caller cannot see are kept as they are.
 	 *
 	 * @param int[] $listIds
 	 * @param callable(int $listId): bool $canAccess
 	 */
-	public function setForTemplate(Checklist $template, bool $everyList, array $listIds, callable $canAccess): void {
+	public function setForTemplate(Checklist $template, bool $everyList, array $listIds, callable $canAccess, ?bool $learnItems = null): void {
 		$this->assertTemplate($template);
 		$houseId = (int)$template->getHouseId();
 		$active = $this->activeAttachableLists($houseId);
@@ -121,8 +127,16 @@ class TemplateAttachmentService {
 		);
 		$this->attachments->setListsForTemplate($houseId, (int)$template->getId(), [...$kept, ...$wanted]);
 
+		$changed = false;
 		if ($template->isEveryList() !== $everyList) {
 			$template->setEveryList($everyList);
+			$changed = true;
+		}
+		if ($learnItems !== null && $template->learnsItems() !== $learnItems) {
+			$template->setLearnItems($learnItems);
+			$changed = true;
+		}
+		if ($changed) {
 			$template->setUpdatedAt(time());
 			$this->listMapper->update($template);
 		}
@@ -131,8 +145,9 @@ class TemplateAttachmentService {
 	/**
 	 * Items of the active templates attached to a list that the caller can
 	 * access, one row per name. Names match ignoring case and runs of
-	 * whitespace; the row is the most recently edited copy and names every
-	 * template the name is in.
+	 * whitespace; the row is the copy from an explicitly attached template
+	 * over one from an every-list template, then the most recently edited, and
+	 * names every template the name is in.
 	 *
 	 * @param callable(int $listId): bool $canAccess
 	 * @return list<array{item: ChecklistItem, templates: list<array{id: int, name: string}>}>
@@ -142,34 +157,93 @@ class TemplateAttachmentService {
 		$active = $this->activeTemplates((int)$list->getHouseId());
 		$explicit = array_flip($this->attachments->findTemplateIdsForList((int)$list->getId()));
 
-		/** @var array<string, array{item: ChecklistItem, templates: list<array{id: int, name: string}>}> $rows */
+		/** @var array<string, array{item: ChecklistItem, explicit: bool, templates: list<array{id: int, name: string}>}> $rows */
 		$rows = [];
 		foreach ($active as $id => $template) {
-			if ((!isset($explicit[$id]) && !$template->isEveryList()) || !$canAccess($id)) {
+			$isExplicit = isset($explicit[$id]);
+			if ((!$isExplicit && !$template->isEveryList()) || !$canAccess($id)) {
 				continue;
 			}
 			$source = ['id' => $id, 'name' => $template->getName()];
 			foreach ($this->itemMapper->findByList($id) as $item) {
 				$key = self::nameKey($item->getName());
 				if (!isset($rows[$key])) {
-					$rows[$key] = ['item' => $item, 'templates' => [$source]];
+					$rows[$key] = ['item' => $item, 'explicit' => $isExplicit, 'templates' => [$source]];
 					continue;
 				}
 				if (!in_array($source, $rows[$key]['templates'], true)) {
 					$rows[$key]['templates'][] = $source;
 				}
-				if ($item->getUpdatedAt() > $rows[$key]['item']->getUpdatedAt()) {
+				$wins = $isExplicit === $rows[$key]['explicit']
+					? $item->getUpdatedAt() > $rows[$key]['item']->getUpdatedAt()
+					: $isExplicit;
+				if ($wins) {
 					$rows[$key]['item'] = $item;
+					$rows[$key]['explicit'] = $isExplicit;
 				}
 			}
 		}
-		return array_values($rows);
+		return array_values(array_map(
+			static fn (array $row): array => ['item' => $row['item'], 'templates' => $row['templates']],
+			$rows,
+		));
+	}
+
+	/**
+	 * The template a new item on a list is added to, or null when none learns
+	 * it.
+	 *
+	 * Nothing learns a name that any template attached to the list already
+	 * has, so an entry tuned by hand is never doubled or overwritten. Otherwise
+	 * the item goes to one template only, so it is not copied into several: an
+	 * explicitly attached template over an every-list one, then the first in
+	 * the house's template order. Templates the caller cannot access are
+	 * skipped as a destination, the same way they give no suggestions.
+	 *
+	 * @param callable(int $listId): bool $canAccess
+	 */
+	public function learningTemplate(Checklist $list, string $itemName, callable $canAccess): ?Checklist {
+		if ($list->getKind() === Checklist::KIND_TEMPLATE) {
+			return null;
+		}
+		$active = $this->activeTemplates((int)$list->getHouseId());
+		$explicit = array_flip($this->attachments->findTemplateIdsForList((int)$list->getId()));
+		$attached = array_filter(
+			$active,
+			static fn (Checklist $t, int $id): bool => isset($explicit[$id]) || $t->isEveryList(),
+			ARRAY_FILTER_USE_BOTH,
+		);
+		$learners = array_filter(
+			$attached,
+			static fn (Checklist $t, int $id): bool => $t->learnsItems() && $canAccess($id),
+			ARRAY_FILTER_USE_BOTH,
+		);
+		if ($learners === []) {
+			return null;
+		}
+
+		$key = self::nameKey($itemName);
+		foreach (array_keys($attached) as $id) {
+			foreach ($this->itemMapper->findByList($id) as $item) {
+				if (self::nameKey($item->getName()) === $key) {
+					return null;
+				}
+			}
+		}
+
+		foreach ($learners as $id => $template) {
+			if (isset($explicit[$id])) {
+				return $template;
+			}
+		}
+		return reset($learners);
 	}
 
 	/**
 	 * Carry a list's attachments onto its duplicate, where they still fit: a
-	 * checklist or inventory keeps its templates, a template keeps its lists and
-	 * its every-list switch. Crossing to or from a template drops them.
+	 * checklist or inventory keeps its templates, a template keeps its lists,
+	 * its every-list switch and its learn-items switch. Crossing to or from a
+	 * template drops them.
 	 */
 	public function copyAttachments(Checklist $source, Checklist $copy): void {
 		$sourceIsTemplate = $source->getKind() === Checklist::KIND_TEMPLATE;
@@ -184,8 +258,9 @@ class TemplateAttachmentService {
 				(int)$copy->getId(),
 				$this->attachments->findListIdsForTemplate((int)$source->getId()),
 			);
-			if ($source->isEveryList()) {
-				$copy->setEveryList(true);
+			if ($source->isEveryList() || $source->learnsItems()) {
+				$copy->setEveryList($source->isEveryList());
+				$copy->setLearnItems($source->learnsItems());
 				$this->listMapper->update($copy);
 			}
 			return;

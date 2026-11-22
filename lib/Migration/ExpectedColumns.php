@@ -79,6 +79,10 @@ final class ExpectedColumns {
 			// search reads it through the suggestions endpoint.
 			self::col('lists', 'every_list', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
 
+			// lists — template learns new items from its lists (Version57). Same
+			// SELECT * hydration as the item defaults above.
+			self::col('lists', 'learn_items', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+
 			// lists — fill drawn items from item defaults (Version44). Same SELECT *
 			// hydration as the item defaults above.
 			self::col('lists', 'fill_from_defaults', Types::BOOLEAN, ['notnull' => false, 'default' => true]),

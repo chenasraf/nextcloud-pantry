@@ -17,6 +17,10 @@
       @update:model-value="(opts: Option[]) => setListIds(opts.map((o) => o.id))"
     />
     <p class="pantry-attach__hint">{{ strings.hint }}</p>
+    <NcCheckboxRadioSwitch v-model="learnItems">
+      {{ strings.learnItems }}
+    </NcCheckboxRadioSwitch>
+    <p class="pantry-attach__hint">{{ strings.learnItemsHint }}</p>
   </div>
 </template>
 
@@ -63,6 +67,11 @@ const everyList = computed({
   set: (value: boolean) => (model.value = { ...model.value, everyList: value }),
 })
 
+const learnItems = computed({
+  get: () => model.value.learnItems,
+  set: (value: boolean) => (model.value = { ...model.value, learnItems: value }),
+})
+
 function setListIds(listIds: number[]) {
   model.value = { ...model.value, listIds }
 }
@@ -76,6 +85,11 @@ const strings = {
   hint: t(
     'pantry',
     'Typing a new item on these lists suggests matching items from this template. Selecting "Every list" includes lists made later.',
+  ),
+  learnItems: t('pantry', 'Automatically add new items from attached lists'),
+  learnItemsHint: t(
+    'pantry',
+    'An item added on these lists is copied into this template, unless a template attached to that list already has an item with the same name.',
   ),
 }
 </script>

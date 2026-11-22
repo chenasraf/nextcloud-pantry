@@ -204,7 +204,7 @@ async function changeAccess(options: AccessOption[]) {
 // picks until the list exists (see ChecklistFormData.attachments).
 const templateIds = ref<number[]>([])
 const everyListTemplateIds = ref<number[]>([])
-const templateLists = ref<TemplateLists>({ everyList: false, listIds: [] })
+const templateLists = ref<TemplateLists>({ everyList: false, listIds: [], learnItems: false })
 
 async function loadAttachments(list: Checklist) {
   const resource = listApi(kind.value)
@@ -252,7 +252,7 @@ watch(
     if (isOpen) {
       templateIds.value = []
       everyListTemplateIds.value = []
-      templateLists.value = { everyList: false, listIds: [] }
+      templateLists.value = { everyList: false, listIds: [], learnItems: false }
       if (props.list) {
         nameValue.value = props.list.name
         descriptionValue.value = props.list.description ?? ''

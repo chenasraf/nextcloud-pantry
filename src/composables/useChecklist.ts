@@ -125,8 +125,8 @@ export function useChecklists(houseId: number, kind: ListKind = 'checklist') {
     const created = await resource.createList(houseId, name, description, icon, color)
     lists.value = [...lists.value, created]
     if (attachments && 'templateLists' in attachments) {
-      const { everyList, listIds } = attachments.templateLists
-      if (everyList || listIds.length > 0) {
+      const { everyList, listIds, learnItems } = attachments.templateLists
+      if (everyList || listIds.length > 0 || learnItems) {
         await resource.setTemplateLists(houseId, created.id, attachments.templateLists)
       }
     } else if (attachments && attachments.templateIds.length > 0) {

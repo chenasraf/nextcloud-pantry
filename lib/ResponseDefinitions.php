@@ -399,6 +399,7 @@ namespace OCA\Pantry;
  * @psalm-type PantryTemplateLists = array{
  *     everyList: bool,
  *     listIds: list<int>,
+ *     learnItems: bool,
  * }
  *
  * @psalm-type PantryTemplateSource = array{

@@ -39,13 +39,14 @@ class TemplateAttachmentServiceTest extends TestCase {
 		$this->svc = new TemplateAttachmentService($this->listMapper, $this->itemMapper, $this->attachments);
 	}
 
-	private function makeList(int $id, string $kind, string $name = 'List', bool $everyList = false): Checklist {
+	private function makeList(int $id, string $kind, string $name = 'List', bool $everyList = false, bool $learnItems = false): Checklist {
 		$list = new Checklist();
 		$list->setId($id);
 		$list->setHouseId(1);
 		$list->setKind($kind);
 		$list->setName($name);
 		$list->setEveryList($everyList);
+		$list->setLearnItems($learnItems);
 		$this->active[$kind][] = $list;
 		return $list;
 	}
@@ -188,6 +189,118 @@ class TemplateAttachmentServiceTest extends TestCase {
 		$this->assertSame([['id' => 10, 'name' => 'Weekly'], ['id' => 11, 'name' => 'Party']], $rows[0]['templates']);
 	}
 
+	public function testSuggestionsPreferAnExplicitTemplateOverAnEveryListOne(): void {
+		$list = $this->makeList(1, Checklist::KIND_CHECKLIST);
+		$this->makeList(10, Checklist::KIND_TEMPLATE, 'Weekly');
+		$this->makeList(11, Checklist::KIND_TEMPLATE, 'Staples', everyList: true);
+		$this->attachments->method('findTemplateIdsForList')->willReturn([10]);
+		$explicitCopy = $this->makeItem(100, 10, 'Milk', 100);
+		$this->itemMapper->method('findByList')->willReturnCallback(fn (int $id): array => match ($id) {
+			10 => [$explicitCopy],
+			11 => [$this->makeItem(110, 11, 'milk', 200)],
+		});
+
+		$rows = $this->svc->suggestions($list, self::anyone());
+
+		$this->assertSame($explicitCopy, $rows[0]['item']);
+		$this->assertSame(['item', 'templates'], array_keys($rows[0]));
+	}
+
+	public function testForTemplateReportsTheLearnItemsSwitch(): void {
+		$template = $this->makeList(10, Checklist::KIND_TEMPLATE, learnItems: true);
+		$this->attachments->method('findListIdsForTemplate')->willReturn([]);
+
+		$this->assertSame(['everyList' => false, 'listIds' => [], 'learnItems' => true], $this->svc->forTemplate($template));
+	}
+
+	public function testSetForTemplateTurnsLearningOnAndLeavesItWhenOmitted(): void {
+		$template = $this->makeList(10, Checklist::KIND_TEMPLATE);
+		$this->attachments->method('findListIdsForTemplate')->willReturn([]);
+		$this->listMapper->expects($this->once())->method('update')->with($template);
+
+		$this->svc->setForTemplate($template, false, [], self::anyone(), true);
+		$this->svc->setForTemplate($template, false, [], self::anyone());
+
+		$this->assertTrue($template->learnsItems());
+	}
+
+	public function testOnlyATemplateLearnsItems(): void {
+		$list = new Checklist();
+		$list->setKind(Checklist::KIND_CHECKLIST);
+		$list->setLearnItems(true);
+
+		$this->assertFalse($list->learnsItems());
+	}
+
+	public function testANewItemIsLearnedByTheAttachedLearningTemplate(): void {
+		$list = $this->makeList(1, Checklist::KIND_CHECKLIST);
+		$this->makeList(10, Checklist::KIND_TEMPLATE, 'Weekly');
+		$learner = $this->makeList(11, Checklist::KIND_TEMPLATE, 'Staples', learnItems: true);
+		$this->attachments->method('findTemplateIdsForList')->willReturn([10, 11]);
+		$this->itemMapper->method('findByList')->willReturn([$this->makeItem(100, 10, 'Bread')]);
+
+		$this->assertSame($learner, $this->svc->learningTemplate($list, 'Milk', self::anyone()));
+	}
+
+	public function testANameAnyAttachedTemplateHasIsNotLearned(): void {
+		$list = $this->makeList(1, Checklist::KIND_INVENTORY);
+		$this->makeList(10, Checklist::KIND_TEMPLATE, 'Hand-tuned', everyList: true);
+		$this->makeList(11, Checklist::KIND_TEMPLATE, 'Learner', learnItems: true);
+		$this->attachments->method('findTemplateIdsForList')->willReturn([11]);
+		$this->itemMapper->method('findByList')->willReturnCallback(fn (int $id): array => match ($id) {
+			10 => [$this->makeItem(100, 10, 'Oat milk')],
+			11 => [],
+		});
+
+		$this->assertNull($this->svc->learningTemplate($list, ' oat  MILK ', self::anyone()));
+	}
+
+	public function testAnExplicitLearningTemplateBeatsAnEveryListOne(): void {
+		$list = $this->makeList(1, Checklist::KIND_CHECKLIST);
+		$this->makeList(10, Checklist::KIND_TEMPLATE, 'Everywhere', everyList: true, learnItems: true);
+		$explicit = $this->makeList(11, Checklist::KIND_TEMPLATE, 'Weekly', learnItems: true);
+		$this->makeList(12, Checklist::KIND_TEMPLATE, 'Party', learnItems: true);
+		$this->attachments->method('findTemplateIdsForList')->willReturn([12, 11]);
+		$this->itemMapper->method('findByList')->willReturn([]);
+
+		// 11 and 12 are both explicit; 11 comes first in the house's template order.
+		$this->assertSame($explicit, $this->svc->learningTemplate($list, 'Milk', self::anyone()));
+	}
+
+	public function testAnEveryListLearningTemplateLearnsWhenNoExplicitOneDoes(): void {
+		$list = $this->makeList(1, Checklist::KIND_CHECKLIST);
+		$everywhere = $this->makeList(10, Checklist::KIND_TEMPLATE, 'Everywhere', everyList: true, learnItems: true);
+		$this->makeList(11, Checklist::KIND_TEMPLATE, 'Weekly');
+		$this->attachments->method('findTemplateIdsForList')->willReturn([11]);
+		$this->itemMapper->method('findByList')->willReturn([]);
+
+		$this->assertSame($everywhere, $this->svc->learningTemplate($list, 'Milk', self::anyone()));
+	}
+
+	public function testNothingLearnsWithoutALearningTemplate(): void {
+		$list = $this->makeList(1, Checklist::KIND_CHECKLIST);
+		$this->makeList(10, Checklist::KIND_TEMPLATE, 'Weekly', everyList: true);
+		$this->makeList(11, Checklist::KIND_TEMPLATE, 'Not attached', learnItems: true);
+		$this->attachments->method('findTemplateIdsForList')->willReturn([]);
+		$this->itemMapper->expects($this->never())->method('findByList');
+
+		$this->assertNull($this->svc->learningTemplate($list, 'Milk', self::anyone()));
+	}
+
+	public function testALearningTemplateTheCallerCannotAccessLearnsNothing(): void {
+		$list = $this->makeList(1, Checklist::KIND_CHECKLIST);
+		$this->makeList(10, Checklist::KIND_TEMPLATE, 'Private', learnItems: true);
+		$this->attachments->method('findTemplateIdsForList')->willReturn([10]);
+
+		$this->assertNull($this->svc->learningTemplate($list, 'Milk', static fn (int $id): bool => false));
+	}
+
+	public function testAnItemOnATemplateIsNotLearned(): void {
+		$template = $this->makeList(10, Checklist::KIND_TEMPLATE, learnItems: true, everyList: true);
+
+		$this->assertNull($this->svc->learningTemplate($template, 'Milk', self::anyone()));
+	}
+
 	public function testDuplicatingAListKeepsItsTemplates(): void {
 		$source = $this->makeList(1, Checklist::KIND_CHECKLIST);
 		$copy = $this->makeList(2, Checklist::KIND_INVENTORY);
@@ -197,8 +310,8 @@ class TemplateAttachmentServiceTest extends TestCase {
 		$this->svc->copyAttachments($source, $copy);
 	}
 
-	public function testDuplicatingATemplateKeepsItsListsAndEveryList(): void {
-		$source = $this->makeList(10, Checklist::KIND_TEMPLATE, everyList: true);
+	public function testDuplicatingATemplateKeepsItsListsAndSwitches(): void {
+		$source = $this->makeList(10, Checklist::KIND_TEMPLATE, everyList: true, learnItems: true);
 		$copy = $this->makeList(20, Checklist::KIND_TEMPLATE);
 		$this->attachments->method('findListIdsForTemplate')->with(10)->willReturn([1]);
 		$this->attachments->expects($this->once())->method('setListsForTemplate')->with(1, 20, [1]);
@@ -206,6 +319,7 @@ class TemplateAttachmentServiceTest extends TestCase {
 		$this->svc->copyAttachments($source, $copy);
 
 		$this->assertTrue($copy->isEveryList());
+		$this->assertTrue($copy->learnsItems());
 	}
 
 	public function testDuplicatingIntoOrOutOfATemplateDropsAttachments(): void {

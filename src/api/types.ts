@@ -145,6 +145,8 @@ export interface TemplateLists {
   /** Attached to every checklist and inventory in the house, including later ones. */
   everyList: boolean
   listIds: number[]
+  /** New items typed on the attached lists are added to the template. */
+  learnItems: boolean
 }
 
 /** A template item offered in an add box, once per name. */

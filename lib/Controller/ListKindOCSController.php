@@ -322,15 +322,15 @@ abstract class ListKindOCSController extends OCSController {
 	 * before.
 	 */
 	/**
-	 * Teach item memory. The item is already saved, so a failure here is only
-	 * logged: failing the request would make the client retry a write that
-	 * already happened.
+	 * Teach item memory or a learning template. The item is already saved, so
+	 * a failure here is only logged: failing the request would make the client
+	 * retry a write that already happened.
 	 */
 	protected function learn(callable $teach): void {
 		try {
 			$teach();
 		} catch (\Throwable $e) {
-			$this->logger->warning('Pantry: could not update item memory', ['exception' => $e]);
+			$this->logger->warning('Pantry: could not learn from an item', ['exception' => $e]);
 		}
 	}
 
@@ -750,6 +750,12 @@ abstract class ListKindOCSController extends OCSController {
 				$data['quantity'],
 				$this->rejectedSuggestions($houseId, $data['suggestionRejected'] ?? null),
 			));
+			$this->learn(function () use ($houseId, $uid, $list, $item): void {
+				$template = $this->attachments->learningTemplate($list, $item->getName(), $this->accessCheck($houseId, $uid));
+				if ($template !== null) {
+					$this->lists->copyItem((int)$item->getId(), (int)$template->getId(), $uid, null, null);
+				}
+			});
 			$this->notifications->notifyItemAdded($houseId, $uid, $item->getName(), $list->getName());
 			$this->activity->publishItemAdded(
 				$houseId,
@@ -1207,7 +1213,7 @@ abstract class ListKindOCSController extends OCSController {
 	}
 
 	/**
-	 * @return DataResponse<Http::STATUS_OK, array{everyList: bool, listIds: list<int>}, array{}>
+	 * @return DataResponse<Http::STATUS_OK, array{everyList: bool, listIds: list<int>, learnItems: bool}, array{}>
 	 */
 	protected function doTemplateLists(int $houseId, int $listId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId): DataResponse {
@@ -1220,14 +1226,14 @@ abstract class ListKindOCSController extends OCSController {
 
 	/**
 	 * @param list<int> $listIds
-	 * @return DataResponse<Http::STATUS_OK, array{everyList: bool, listIds: list<int>}, array{}>
+	 * @return DataResponse<Http::STATUS_OK, array{everyList: bool, listIds: list<int>, learnItems: bool}, array{}>
 	 */
-	protected function doSetTemplateLists(int $houseId, int $listId, bool $everyList, array $listIds): DataResponse {
-		return $this->runAction(function () use ($houseId, $listId, $everyList, $listIds): DataResponse {
+	protected function doSetTemplateLists(int $houseId, int $listId, bool $everyList, array $listIds, ?bool $learnItems): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $everyList, $listIds, $learnItems): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
 			$template = $this->loadList($houseId, $listId);
-			$this->attachments->setForTemplate($template, $everyList, $listIds, $this->accessCheck($houseId, $uid));
+			$this->attachments->setForTemplate($template, $everyList, $listIds, $this->accessCheck($houseId, $uid), $learnItems);
 			return new DataResponse($this->attachments->forTemplate($template));
 		});
 	}

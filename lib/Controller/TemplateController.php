@@ -427,7 +427,9 @@ final class TemplateController extends ListKindOCSController {
 	 *
 	 * `everyList` attaches the template to every checklist and inventory in the
 	 * house, including ones made later; `listIds` are the lists it is attached
-	 * to by name. Archived and trashed lists are left out.
+	 * to by name. Archived and trashed lists are left out. `learnItems` adds a
+	 * new item typed on those lists to the template, unless an attached
+	 * template already has an item of that name.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId Template id.
@@ -446,14 +448,16 @@ final class TemplateController extends ListKindOCSController {
 	/**
 	 * Set the lists a template is attached to
 	 *
-	 * Replaces the template's attachments and its every-list switch.
-	 * Attachments to lists the caller cannot access, or that are archived or
-	 * trashed, are kept. Templates never attach to templates.
+	 * Replaces the template's attachments, its every-list switch and, when
+	 * sent, its learn-items switch. Attachments to lists the caller cannot
+	 * access, or that are archived or trashed, are kept. Templates never
+	 * attach to templates.
 	 *
 	 * @param int $houseId House id.
 	 * @param int $listId Template id.
 	 * @param bool $everyList Whether the template is attached to every checklist and inventory in the house.
 	 * @param list<int> $listIds Ids of checklists and inventories in the same house.
+	 * @param bool|null $learnItems Whether new items typed on the attached lists are added to the template; left as it is when omitted.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryTemplateLists, array{}>
 	 *
@@ -462,8 +466,8 @@ final class TemplateController extends ListKindOCSController {
 	#[ApiRoute(verb: 'PUT', url: '/api/houses/{houseId}/templates/{listId}/lists', requirements: ['listId' => '\d+'])]
 	#[NoAdminRequired]
 	#[Permission(['canEditLists'])]
-	public function setTemplateLists(int $houseId, int $listId, bool $everyList = false, array $listIds = []): DataResponse {
-		return $this->doSetTemplateLists($houseId, $listId, $everyList, $listIds);
+	public function setTemplateLists(int $houseId, int $listId, bool $everyList = false, array $listIds = [], ?bool $learnItems = null): DataResponse {
+		return $this->doSetTemplateLists($houseId, $listId, $everyList, $listIds, $learnItems);
 	}
 
 	/**
