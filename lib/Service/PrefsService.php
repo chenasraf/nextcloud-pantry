@@ -301,7 +301,10 @@ class PrefsService {
 		if ($value !== '') {
 			return $value;
 		}
-		if ($this->config->getUserKeys($uid, Application::APP_ID) !== []) {
+		// IUserConfig::getKeys replaces this, but only exists from Nextcloud 32.
+		/** @psalm-suppress DeprecatedMethod */
+		$existingKeys = $this->config->getUserKeys($uid, Application::APP_ID);
+		if ($existingKeys !== []) {
 			return self::WHATS_NEW_BASELINE;
 		}
 		$this->setWhatsNewSeenVersion($uid, $installedVersion);
