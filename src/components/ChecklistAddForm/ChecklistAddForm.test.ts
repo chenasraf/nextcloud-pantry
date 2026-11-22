@@ -10,6 +10,9 @@ vi.mock('@nextcloud/dialogs', () => ({
   showWarning: vi.fn(),
   showError: vi.fn(),
 }))
+vi.mock('@/components/ImageSourceMenu', () => ({
+  default: { name: 'ImageSourceMenu', template: '<div />', props: ['label', 'variant'] },
+}))
 vi.mock('@/components/ItemCustomFieldsEditor', () => ({
   default: {
     name: 'ItemCustomFieldsEditor',

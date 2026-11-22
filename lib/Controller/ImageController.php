@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Controller;
 
+use OCA\Pantry\Db\ChecklistItemMapper;
 use OCA\Pantry\Db\PhotoMapper;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
@@ -39,6 +40,7 @@ final class ImageController extends OCSController {
 		IRequest $request,
 		private HouseAuthService $auth,
 		private PhotoMapper $photoMapper,
+		private ChecklistItemMapper $itemMapper,
 		private IRootFolder $rootFolder,
 		private IPreview $previewManager,
 		private IUserSession $userSession,
@@ -98,6 +100,12 @@ final class ImageController extends OCSController {
 	public function itemImagePreview(int $houseId, int $fileId, string $owner, int $size = 300): FileDisplayResponse|DataResponse {
 		return $this->runAction(function () use ($houseId, $fileId, $owner, $size) {
 			$this->auth->requireMember($houseId, $this->requireUid());
+
+			// Previews read straight from the owner's storage, so only files that
+			// are an item image in this house may be served.
+			if (!$this->itemMapper->houseHasItemImage($houseId, $fileId, $owner)) {
+				return new DataResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
+			}
 
 			return $this->servePreview($owner, $fileId, $size);
 		});

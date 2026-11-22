@@ -21,6 +21,7 @@
           :aria-label="action.caption ?? action.label"
           :title="action.caption ?? action.label"
           type="tertiary"
+          :variant="action.variant"
         >
           <template #icon>
             <component :is="action.icon" :size="20" />

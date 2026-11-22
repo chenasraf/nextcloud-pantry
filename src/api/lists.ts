@@ -4,6 +4,7 @@ import type {
   AttachedTemplates,
   Checklist,
   ChecklistItem,
+  FileAttachMode,
   ItemCustomFieldValue,
   ItemDefaultsPatch,
   ItemPrice,
@@ -394,6 +395,20 @@ export function listApi(kind: ListKind) {
       return resp.data
     },
 
+    async attachItemImageFromFiles(
+      houseId: number,
+      listId: number,
+      itemId: number,
+      fileId: number,
+      mode: FileAttachMode,
+    ): Promise<ChecklistItem> {
+      const resp = await ocs.post<ChecklistItem>(
+        `${base(houseId)}/${listId}/items/${itemId}/image/files`,
+        { fileId, mode },
+      )
+      return resp.data
+    },
+
     async clearItemImage(houseId: number, listId: number, itemId: number): Promise<ChecklistItem> {
       const resp = await ocs.delete<ChecklistItem>(
         `${base(houseId)}/${listId}/items/${itemId}/image`,
@@ -434,6 +449,7 @@ export const {
   unarchiveItem,
   reorderItems,
   uploadItemImage,
+  attachItemImageFromFiles,
   clearItemImage,
 } = listApi('checklist')
 

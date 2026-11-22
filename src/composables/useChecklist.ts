@@ -14,6 +14,7 @@ import {
   stockInput,
   todayEpoch,
 } from '@/utils/stock'
+import { isFilesImage, type PendingImage } from '@/utils/filesImage'
 import { announceRestock, announceRestockSync } from '@/components/StockLink/restockToasts'
 import { useCategories } from '@/composables/useCategories'
 import { useCustomFields } from '@/composables/useCustomFields'
@@ -746,8 +747,16 @@ export function useChecklistItems(houseId: number, listId: number, kind: ListKin
     items.value = [...items.value, ...restored]
   }
 
-  async function uploadImage(itemId: number, file: File): Promise<void> {
-    const updated = await resource.uploadItemImage(houseId, listIdFor(itemId), itemId, file)
+  async function uploadImage(itemId: number, image: PendingImage): Promise<void> {
+    const updated = isFilesImage(image)
+      ? await resource.attachItemImageFromFiles(
+          houseId,
+          listIdFor(itemId),
+          itemId,
+          image.fileId,
+          image.mode,
+        )
+      : await resource.uploadItemImage(houseId, listIdFor(itemId), itemId, image)
     items.value = items.value.map((i) => (i.id === itemId ? updated : i))
   }
 

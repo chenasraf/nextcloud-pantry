@@ -198,12 +198,11 @@
         <div v-else-if="openSection === 'image'" class="item-field-chips__image">
           <div v-if="imageUrl" class="item-field-chips__image-row">
             <img class="item-field-chips__image-preview" :src="imageUrl" :alt="strings.imageAlt" />
-            <NcButton variant="tertiary" type="button" @click="triggerImagePick">
-              <template #icon>
-                <UploadIcon :size="20" />
-              </template>
-              {{ strings.replaceImage }}
-            </NcButton>
+            <ImageSourceMenu
+              :label="strings.replaceImage"
+              @computer="triggerImagePick"
+              @files="pickFromFiles"
+            />
             <NcButton variant="tertiary" type="button" @click="image = null">
               <template #icon>
                 <DeleteIcon :size="20" />
@@ -211,12 +210,16 @@
               {{ strings.removeImage }}
             </NcButton>
           </div>
-          <NcButton v-else variant="tertiary" type="button" @click="triggerImagePick">
+          <ImageSourceMenu
+            v-else
+            :label="strings.addImage"
+            @computer="triggerImagePick"
+            @files="pickFromFiles"
+          >
             <template #icon>
               <ImagePlusIcon :size="20" />
             </template>
-            {{ strings.addImage }}
-          </NcButton>
+          </ImageSourceMenu>
           <input
             ref="imageInputRef"
             type="file"
@@ -246,7 +249,13 @@ import DeleteIcon from '@icons/Delete.vue'
 import RepeatIcon from '@icons/Repeat.vue'
 import ImageIcon from '@icons/Image.vue'
 import ImagePlusIcon from '@icons/ImagePlus.vue'
-import UploadIcon from '@icons/Upload.vue'
+import ImageSourceMenu from '@/components/ImageSourceMenu'
+import {
+  filesImagePreviewUrl,
+  isFilesImage,
+  pickImageFromFiles,
+  type PendingImage,
+} from '@/utils/filesImage'
 import FormatListBulletedTypeIcon from '@icons/FormatListBulletedType.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import { RecurrenceForm } from '@/components/RecurrenceEditor'
@@ -322,7 +331,7 @@ const description = defineModel<string>('description', { default: '' })
 const deleteOnDone = defineModel<boolean>('deleteOnDone', { default: false })
 const rrule = defineModel<string | null>('rrule', { default: null })
 const repeatFromCompletion = defineModel<boolean>('repeatFromCompletion', { default: false })
-const image = defineModel<File | null>('image', { default: null })
+const image = defineModel<PendingImage | null>('image', { default: null })
 const stockMode = defineModel<StockMode>('stockMode', { default: 'count' })
 const target = defineModel<string>('target', { default: '' })
 const reorderPoint = defineModel<string>('reorderPoint', { default: '' })
@@ -420,22 +429,38 @@ function selectRecurring() {
 
 const imageUrl = ref<string | null>(null)
 const imageInputRef = ref<HTMLInputElement | null>(null)
+let imageObjectUrl: string | null = null
+
+function revokeImageObjectUrl() {
+  if (imageObjectUrl) URL.revokeObjectURL(imageObjectUrl)
+  imageObjectUrl = null
+}
 
 watch(
   image,
-  (file) => {
-    if (imageUrl.value) URL.revokeObjectURL(imageUrl.value)
-    imageUrl.value = file ? URL.createObjectURL(file) : null
+  (picked) => {
+    revokeImageObjectUrl()
+    if (isFilesImage(picked)) {
+      imageUrl.value = filesImagePreviewUrl(picked)
+    } else if (picked) {
+      imageObjectUrl = URL.createObjectURL(picked)
+      imageUrl.value = imageObjectUrl
+    } else {
+      imageUrl.value = null
+    }
   },
   { immediate: true },
 )
 
-onBeforeUnmount(() => {
-  if (imageUrl.value) URL.revokeObjectURL(imageUrl.value)
-})
+onBeforeUnmount(revokeImageObjectUrl)
 
 function triggerImagePick() {
   imageInputRef.value?.click()
+}
+
+async function pickFromFiles() {
+  const picked = await pickImageFromFiles()
+  if (picked) image.value = picked
 }
 
 function onImagePicked(e: Event) {

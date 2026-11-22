@@ -52,6 +52,9 @@ vi.mock('@/components/RecurrenceEditor', () => ({
 vi.mock('@/components/ItemCustomFieldsEditor', () => ({
   default: { name: 'ItemCustomFieldsEditor', template: '<div />' },
 }))
+vi.mock('@/components/ImageSourceMenu', () => ({
+  default: { name: 'ImageSourceMenu', template: '<div />', props: ['label', 'variant'] },
+}))
 vi.mock('@/components/ItemPricesEditor', () => ({
   default: { name: 'ItemPricesEditor', template: '<div />' },
 }))

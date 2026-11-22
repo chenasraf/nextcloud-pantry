@@ -187,6 +187,7 @@ import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import { configSignature, rememberPatch, startValues, withRemembered } from '@/utils/itemDefaults'
 import { itemNameKey } from '@/utils/string'
 import type { ItemInput } from '@/api/lists'
+import type { PendingImage } from '@/utils/filesImage'
 import type {
   Checklist,
   ChecklistItem,
@@ -239,7 +240,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  add: [input: ItemInput, pendingImage: File | null, targetListId: number | null]
+  add: [input: ItemInput, pendingImage: PendingImage | null, targetListId: number | null]
   /** Values for the target list's "remember last" defaults, from the item just added. */
   'remember-defaults': [patch: ItemDefaultsPatch, listId: number]
   'reuse-existing': [item: ChecklistItem]
@@ -301,7 +302,7 @@ function listIconStyle(list: Checklist) {
   return { background: list.color, color: contrastColor(list.color) }
 }
 
-const pendingImage = ref<File | null>(null)
+const pendingImage = ref<PendingImage | null>(null)
 const userPickedType = ref(false)
 
 // Loaded by the chips; read here for reuse-suggestion rows and barcode matching.

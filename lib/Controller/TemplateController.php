@@ -778,6 +778,29 @@ final class TemplateController extends ListKindOCSController {
 	}
 
 	/**
+	 * Attach an image from the account's own files to a template item
+	 *
+	 * In **link** mode the item shows the picked file itself, which stays where
+	 * it is. In **import** mode the file is copied into the Pantry image folder.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $listId Template id.
+	 * @param int $itemId Item id.
+	 * @param int $fileId Nextcloud file id of an image the account can read.
+	 * @param 'link'|'import' $mode Whether to link the file or import a copy.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryTemplateItem, array{}>
+	 *
+	 * 200: Image attached
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/templates/{listId}/items/{itemId}/image/files')]
+	#[NoAdminRequired]
+	#[Permission(['canEditLists'])]
+	public function attachTemplateItemImageFromFiles(int $houseId, int $listId, int $itemId, int $fileId, string $mode): DataResponse {
+		return $this->doAttachItemImageFromFiles($houseId, $listId, $itemId, $fileId, $mode);
+	}
+
+	/**
 	 * Clear the image attached to a template item
 	 *
 	 * @param int $houseId House id.

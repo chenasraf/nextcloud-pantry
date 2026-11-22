@@ -339,6 +339,36 @@ class PhotoServiceTest extends TestCase {
 		$this->assertSame([[10, 'alice'], [20, 'alice']], $removedFiles);
 	}
 
+	public function testPermanentlyDeletePhotoKeepsLinkedFile(): void {
+		$photo = $this->makePhoto(['id' => 1, 'fileId' => 42]);
+		$photo->setFileLinked(true);
+		$this->photoMapper->method('findById')->willReturn($photo);
+		$this->imageService->expects($this->never())->method('deleteFile');
+		$this->photoMapper->expects($this->once())->method('delete')->with($photo);
+
+		$this->svc->permanentlyDeletePhoto(1, 'alice');
+	}
+
+	public function testEmptyTrashKeepsLinkedFilesAndDeletesOwnedOnes(): void {
+		$owned = $this->makePhoto(['id' => 1, 'fileId' => 10]);
+		$linked = $this->makePhoto(['id' => 2, 'fileId' => 20]);
+		$linked->setFileLinked(true);
+		$this->photoMapper->method('findDeletedByHouse')->willReturn([$owned, $linked]);
+		$this->imageService->expects($this->once())->method('deleteFile')->with(10, 'alice');
+		$this->photoMapper->expects($this->exactly(2))->method('delete');
+
+		$this->svc->emptyTrash(7, 'alice');
+	}
+
+	public function testAddPhotoRecordsLinkedFile(): void {
+		$this->photoMapper->method('insert')->willReturnArgument(0);
+
+		$photo = $this->svc->addPhoto(1, 'alice', 42, null, null, true);
+
+		$this->assertTrue($photo->isFileLinked());
+		$this->assertTrue($photo->jsonSerialize()['fileLinked']);
+	}
+
 	public function testEmptyTrashWithoutUidSkipsFileDeletion(): void {
 		$a = $this->makePhoto(['id' => 1, 'fileId' => 10]);
 		$this->photoMapper->method('findDeletedByHouse')->willReturn([$a]);

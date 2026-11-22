@@ -116,6 +116,10 @@ final class ExpectedColumns {
 			// shopping_sessions — undone-trip stamp (Version55).
 			self::col('shopping_sessions', 'undone_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
+			// photos — linked-file flag (Version56). Photos hydrate with SELECT *,
+			// so a missing column breaks the photo board.
+			self::col('photos', 'file_linked', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
+
 			// roles — custom-fields capability (Version30). The role SELECT * hydrates
 			// every column into the entity, so a missing column breaks role loading
 			// and, with it, every permission-gated request.

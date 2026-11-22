@@ -914,6 +914,7 @@ import CategoryPicker, { categoryIconComponent } from '@/components/CategoryPick
 import StoreMultiPicker from '@/components/StoreMultiPicker'
 import LabelChipList from '@/components/LabelChipList'
 import { sharedListId } from '@/utils/sharedListId'
+import type { PendingImage } from '@/utils/filesImage'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import {
   checklistIconComponent,
@@ -2212,7 +2213,7 @@ async function reuseArchivedItem(item: ChecklistItem) {
 
 async function handleAdd(
   input: ItemInput,
-  pendingImage: File | null,
+  pendingImage: PendingImage | null,
   targetListId: number | null,
   modeOverride?: ReuseExistingItems,
 ) {
@@ -2544,7 +2545,7 @@ function startEdit(item: ChecklistItem) {
 async function handleSaveEdit(
   itemId: number,
   patch: Partial<ItemInput>,
-  pendingImage: File | null,
+  pendingImage: PendingImage | null,
   shouldClearImage: boolean,
 ) {
   rememberCurrencyFrom(patch.prices)

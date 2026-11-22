@@ -707,6 +707,7 @@ namespace OCA\Pantry;
  *     createdAt: int,
  *     updatedAt: int,
  *     deletedAt: int|null,
+ *     fileLinked: bool,
  *     canEdit: bool,
  * }
  *

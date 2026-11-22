@@ -173,6 +173,24 @@ class TrashCleanupServiceTest extends TestCase {
 		$this->assertSame(['bob', 'alice'], $attempts);
 	}
 
+	public function testPurgeHouseKeepsLinkedPhotoFile(): void {
+		$house = $this->makeHouse(7, 30);
+		$photo = new Photo();
+		$photo->setFileId(99);
+		$photo->setUploadedBy('bob');
+		$photo->setFileLinked(true);
+
+		$this->itemMapper->method('findExpiredTrashByHouse')->willReturn([]);
+		$this->listMapper->method('findExpiredTrashByHouse')->willReturn([]);
+		$this->noteMapper->method('findExpiredTrashByHouse')->willReturn([]);
+		$this->photoMapper->method('findExpiredTrashByHouse')->willReturn([$photo]);
+
+		$this->images->expects($this->never())->method('deleteFile');
+		$this->photoMapper->expects($this->once())->method('delete')->with($photo);
+
+		$this->svc->purgeHouse($house);
+	}
+
 	public function testPurgeAllSumsCountsAcrossHouses(): void {
 		$houseA = $this->makeHouse(1, 30);
 		$houseB = $this->makeHouse(2, 0); // disabled — contributes zeros

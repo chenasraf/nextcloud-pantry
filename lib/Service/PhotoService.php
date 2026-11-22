@@ -152,12 +152,13 @@ class PhotoService {
 		}
 	}
 
-	public function addPhoto(int $houseId, string $uid, int $fileId, ?int $folderId, ?string $caption): Photo {
+	public function addPhoto(int $houseId, string $uid, int $fileId, ?int $folderId, ?string $caption, bool $fileLinked = false): Photo {
 		$now = time();
 		$photo = new Photo();
 		$photo->setHouseId($houseId);
 		$photo->setFolderId($folderId);
 		$photo->setFileId($fileId);
+		$photo->setFileLinked($fileLinked);
 		$photo->setCaption($caption !== null && trim($caption) !== '' ? trim($caption) : null);
 		$photo->setUploadedBy($uid);
 		$photo->setSortOrder(0);
@@ -203,10 +204,19 @@ class PhotoService {
 	 */
 	public function permanentlyDeletePhoto(int $photoId, ?string $uid = null): void {
 		$photo = $this->getPhoto($photoId, includeDeleted: true);
-		if ($uid !== null) {
-			$this->images->deleteFile($photo->getFileId(), $uid);
-		}
+		$this->deletePhotoFile($photo, $uid);
 		$this->photoMapper->delete($photo);
+	}
+
+	/**
+	 * A linked photo's file belongs to the uploader's own files, so it is
+	 * never deleted along with the photo.
+	 */
+	private function deletePhotoFile(Photo $photo, ?string $uid): void {
+		if ($uid === null || $photo->isFileLinked()) {
+			return;
+		}
+		$this->images->deleteFile($photo->getFileId(), $uid);
 	}
 
 	/**
@@ -227,9 +237,7 @@ class PhotoService {
 	public function emptyTrash(int $houseId, ?string $uid = null): void {
 		$rows = $this->photoMapper->findDeletedByHouse($houseId);
 		foreach ($rows as $photo) {
-			if ($uid !== null) {
-				$this->images->deleteFile($photo->getFileId(), $uid);
-			}
+			$this->deletePhotoFile($photo, $uid);
 			$this->photoMapper->delete($photo);
 		}
 	}

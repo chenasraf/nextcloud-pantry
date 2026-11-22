@@ -49,6 +49,7 @@ export interface ToolbarButtonAction extends ToolbarActionBase {
 
 export interface ToolbarMenuAction extends ToolbarActionBase {
   type: 'menu'
+  variant?: 'primary' | 'secondary' | 'tertiary'
   /** Short heading shown above the options when collapsed into the overflow menu. */
   caption?: string
   options: ToolbarMenuOption[]

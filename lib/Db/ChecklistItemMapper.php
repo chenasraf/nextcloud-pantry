@@ -756,6 +756,26 @@ class ChecklistItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Whether any item in the house (trashed and archived included) shows
+	 * this file from this owner's storage as its image.
+	 */
+	public function houseHasItemImage(int $houseId, int $fileId, string $ownerUid): bool {
+		$qb = $this->db->getQueryBuilder();
+		$lists = Application::tableName('lists');
+		$qb->select('i.id')
+			->from($this->getTableName(), 'i')
+			->innerJoin('i', $lists, 'l', $qb->expr()->eq('i.list_id', 'l.id'))
+			->where($qb->expr()->eq('l.house_id', $qb->createNamedParameter($houseId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('i.image_file_id', $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('i.image_uploaded_by', $qb->createNamedParameter($ownerUid)))
+			->setMaxResults(1);
+		$result = $qb->executeQuery();
+		$found = $result->fetchOne() !== false;
+		$result->closeCursor();
+		return $found;
+	}
+
+	/**
 	 * What item memory is seeded from: every item in the house not in the
 	 * trash, archived ones included, oldest change first.
 	 *

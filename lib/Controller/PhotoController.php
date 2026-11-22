@@ -321,13 +321,7 @@ final class PhotoController extends OCSController {
 		return $this->runAction(function () use ($houseId, $folderId, $caption): DataResponse {
 			$uid = $this->requireUid();
 			$this->auth->requireMember($houseId, $uid);
-
-			if ($folderId !== null && $folderId > 0) {
-				$folder = $this->photos->getFolder($folderId);
-				$this->assertInHouse($folder->getHouseId(), $houseId, 'Folder');
-			} else {
-				$folderId = null;
-			}
+			$folderId = $this->resolveTargetFolder($houseId, $folderId);
 
 			$data = $this->request->getUploadedFile('image');
 			if ($data === null || !is_array($data) || ($data['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
@@ -344,28 +338,73 @@ final class PhotoController extends OCSController {
 			$original = (string)($data['name'] ?? 'image.jpg');
 			$fileId = $this->images->uploadPhoto($uid, $houseId, $original, $bytes);
 
-			$photo = $this->photos->addPhoto($houseId, $uid, $fileId, $folderId, $caption);
-			$this->notifications->notifyPhotoUploaded($houseId, $uid);
-			$folderName = null;
-			if ($folderId !== null) {
-				try {
-					$folderName = $this->photos->getFolder($folderId)->getName();
-				} catch (\Throwable) {
-					// best-effort
-				}
-			}
-			$this->activity->publishPhotoUploaded(
-				$houseId,
-				$this->houses->get($houseId)->getName(),
-				$uid,
-				(int)$photo->getId(),
-				$photo->getCaption(),
-				$folderId,
-				$folderName,
-			);
-			$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
-			return new DataResponse($this->photoJson($photo, $roleEdit, $this->shares->userShareMap($houseId, $uid)));
+			return new DataResponse($this->addPhoto($houseId, $uid, $fileId, $folderId, $caption, false));
 		});
+	}
+
+	/**
+	 * Add a photo from the account's own files
+	 *
+	 * In **link** mode the photo shows the picked file itself, which stays where
+	 * it is and is never deleted with the photo. In **import** mode the file is
+	 * copied into the Pantry photo folder and the photo owns that copy.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $fileId Nextcloud file id of an image the account can read.
+	 * @param 'link'|'import' $mode Whether to link the file or import a copy.
+	 * @param int|null $folderId Optional folder id to place the photo in.
+	 * @param string|null $caption Optional caption.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryPhoto, array{}>
+	 *
+	 * 200: Photo added
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/photos/files')]
+	#[NoAdminRequired]
+	#[Permission(['canUploadPhotos'])]
+	public function addPhotoFromFiles(int $houseId, int $fileId, string $mode, ?int $folderId = null, ?string $caption = null): DataResponse {
+		return $this->runAction(function () use ($houseId, $fileId, $mode, $folderId, $caption): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$folderId = $this->resolveTargetFolder($houseId, $folderId);
+
+			$photoFileId = $this->images->attachPhotoFromFiles($uid, $houseId, $fileId, $mode);
+
+			return new DataResponse($this->addPhoto($houseId, $uid, $photoFileId, $folderId, $caption, $this->images->isLinkMode($mode)));
+		});
+	}
+
+	private function resolveTargetFolder(int $houseId, ?int $folderId): ?int {
+		if ($folderId === null || $folderId <= 0) {
+			return null;
+		}
+		$folder = $this->photos->getFolder($folderId);
+		$this->assertInHouse($folder->getHouseId(), $houseId, 'Folder');
+		return $folderId;
+	}
+
+	private function addPhoto(int $houseId, string $uid, int $fileId, ?int $folderId, ?string $caption, bool $fileLinked): array {
+		$photo = $this->photos->addPhoto($houseId, $uid, $fileId, $folderId, $caption, $fileLinked);
+		$this->notifications->notifyPhotoUploaded($houseId, $uid);
+		$folderName = null;
+		if ($folderId !== null) {
+			try {
+				$folderName = $this->photos->getFolder($folderId)->getName();
+			} catch (\Throwable) {
+				// best-effort
+			}
+		}
+		$this->activity->publishPhotoUploaded(
+			$houseId,
+			$this->houses->get($houseId)->getName(),
+			$uid,
+			(int)$photo->getId(),
+			$photo->getCaption(),
+			$folderId,
+			$folderName,
+		);
+		$roleEdit = $this->permissions->can($houseId, $uid, 'canUpdatePhotos');
+		return $this->photoJson($photo, $roleEdit, $this->shares->userShareMap($houseId, $uid));
 	}
 
 	/**

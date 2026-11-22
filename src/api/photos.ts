@@ -1,5 +1,5 @@
 import { ocs } from '@/axios'
-import type { Photo, PhotoFolder } from './types'
+import type { FileAttachMode, Photo, PhotoFolder } from './types'
 
 // ----- Folders -----
 
@@ -69,6 +69,22 @@ export async function uploadPhoto(
     onUploadProgress: onProgress
       ? (e) => onProgress(e.total ? Math.round((e.loaded / e.total) * 100) : 0)
       : undefined,
+  })
+  return resp.data
+}
+
+export async function addPhotoFromFiles(
+  houseId: number,
+  fileId: number,
+  mode: FileAttachMode,
+  folderId?: number | null,
+  caption?: string | null,
+): Promise<Photo> {
+  const resp = await ocs.post<Photo>(`/houses/${houseId}/photos/files`, {
+    fileId,
+    mode,
+    ...(folderId != null && folderId > 0 ? { folderId } : {}),
+    ...(caption ? { caption } : {}),
   })
   return resp.data
 }

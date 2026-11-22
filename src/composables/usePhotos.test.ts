@@ -5,6 +5,7 @@ const mockApi = vi.hoisted(() => ({
   listPhotos: vi.fn(),
   listFolders: vi.fn(),
   uploadPhoto: vi.fn(),
+  addPhotoFromFiles: vi.fn(),
   updatePhoto: vi.fn(),
   deletePhoto: vi.fn(),
   reorderPhotos: vi.fn(),
@@ -136,6 +137,24 @@ describe('usePhotos', () => {
       expect(result.id).toBe(newPhoto.id)
       expect(board.photos.value).toHaveLength(1)
       expect(board.photos.value[0].id).toBe(newPhoto.id)
+    })
+  })
+
+  describe('addFromFiles', () => {
+    it('adds the picked file and shows it first in its folder', async () => {
+      mockApi.listPhotos.mockResolvedValue([makePhoto({ id: 1, folderId: 5, sortOrder: 3 })])
+      mockApi.listFolders.mockResolvedValue([])
+      mockApi.addPhotoFromFiles.mockResolvedValue(
+        makePhoto({ id: 10, folderId: 5, fileId: 77, fileLinked: true }),
+      )
+
+      const board = usePhotos(1)
+      await board.load()
+      const result = await board.addFromFiles({ fileId: 77, name: 'cake.jpg', mode: 'link' }, 5)
+
+      expect(mockApi.addPhotoFromFiles).toHaveBeenCalledWith(1, 77, 'link', 5)
+      expect(result.sortOrder).toBe(2)
+      expect(board.photos.value.map((p) => p.id)).toEqual([1, 10])
     })
   })
 

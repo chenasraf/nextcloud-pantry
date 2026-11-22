@@ -114,6 +114,9 @@ class TrashCleanupService {
 	 * owner. Best-effort — the row is removed regardless.
 	 */
 	private function safeDeletePhotoFile(Photo $photo, House $house): void {
+		if ($photo->isFileLinked()) {
+			return;
+		}
 		$uids = array_filter([$photo->getUploadedBy(), $house->getOwnerUid()]);
 		foreach (array_unique($uids) as $uid) {
 			try {

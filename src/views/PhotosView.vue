@@ -90,9 +90,13 @@
             <ImageIcon />
           </template>
           <template #action>
-            <NcButton v-if="can.canUploadPhotos" variant="primary" @click="triggerUpload">
-              {{ strings.upload }}
-            </NcButton>
+            <ImageSourceMenu
+              v-if="can.canUploadPhotos"
+              :label="strings.upload"
+              variant="primary"
+              @computer="triggerUpload"
+              @files="addFromNextcloudFiles"
+            />
           </template>
         </NcEmptyContent>
 
@@ -164,9 +168,13 @@
             <ImageIcon />
           </template>
           <template #action>
-            <NcButton v-if="can.canUploadPhotos" variant="primary" @click="triggerUpload">
-              {{ strings.upload }}
-            </NcButton>
+            <ImageSourceMenu
+              v-if="can.canUploadPhotos"
+              :label="strings.upload"
+              variant="primary"
+              @computer="triggerUpload"
+              @files="addFromNextcloudFiles"
+            />
           </template>
         </NcEmptyContent>
 
@@ -417,6 +425,10 @@ import TrashCanIcon from '@icons/TrashCan.vue'
 import FolderIcon from '@icons/Folder.vue'
 import FolderMoveIcon from '@icons/FolderMove.vue'
 import FolderPlusIcon from '@icons/FolderPlus.vue'
+import FolderImageIcon from '@icons/FolderImage.vue'
+import MonitorIcon from '@icons/Monitor.vue'
+import ImageSourceMenu from '@/components/ImageSourceMenu'
+import { pickImageFromFiles } from '@/utils/filesImage'
 import SortIcon from '@icons/Sort.vue'
 import type { Photo, PhotoFolder } from '@/api/types'
 import type { PhotoSort, PhotoSortPrefs } from '@/api/prefs'
@@ -440,6 +452,7 @@ const {
   rootPhotos,
   photosInFolder,
   upload,
+  addFromFiles,
   updatePhoto,
   removePhoto,
   restorePhoto,
@@ -751,6 +764,16 @@ async function onFilesSelected(e: Event) {
   input.value = ''
 }
 
+async function addFromNextcloudFiles() {
+  const picked = await pickImageFromFiles()
+  if (!picked) return
+  try {
+    await addFromFiles(picked, activeFolderId.value)
+  } catch {
+    showError(strings.addFromFilesFailed)
+  }
+}
+
 // ----- Drag and drop (file upload) -----
 
 let dragCounter = 0
@@ -1003,6 +1026,9 @@ async function submitCreateFolderAndMove(name: string) {
 const strings = {
   title: t('pantry', 'Photo board'),
   upload: t('pantry', 'Upload'),
+  fromDevice: t('pantry', 'From this device'),
+  fromFiles: t('pantry', 'From Nextcloud files'),
+  addFromFilesFailed: t('pantry', 'Could not add the photo from your files'),
   newFolder: t('pantry', 'New folder'),
   back: t('pantry', 'Back'),
   cancel: t('pantry', 'Cancel'),
@@ -1111,11 +1137,25 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   if (!trashMode.value && can.value.canUploadPhotos) {
     actions.push({
       key: 'upload',
+      type: 'menu',
       label: strings.upload,
       icon: UploadIcon,
       variant: 'primary',
       priority: 6,
-      onClick: triggerUpload,
+      options: [
+        {
+          key: 'from-device',
+          label: strings.fromDevice,
+          icon: MonitorIcon,
+          onClick: triggerUpload,
+        },
+        {
+          key: 'from-files',
+          label: strings.fromFiles,
+          icon: FolderImageIcon,
+          onClick: addFromNextcloudFiles,
+        },
+      ],
     })
   }
 

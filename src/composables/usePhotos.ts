@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import * as api from '@/api/photos'
 import type { Photo, PhotoFolder } from '@/api/types'
 import type { PhotoSort } from '@/api/prefs'
+import type { FilesImage } from '@/utils/filesImage'
 
 export interface UploadEntry {
   id: string
@@ -79,15 +80,24 @@ export function usePhotos(houseId: number) {
       const created = await api.uploadPhoto(houseId, file, folderId, null, (progress) => {
         uploads.value = uploads.value.map((u) => (u.id === entry.id ? { ...u, progress } : u))
       })
-      // Place new photo first by giving it a sortOrder below the current minimum.
-      const siblings = photos.value.filter((p) => p.folderId === (folderId ?? null))
-      const minSort = siblings.length > 0 ? Math.min(...siblings.map((p) => p.sortOrder)) : 0
-      const placed = { ...created, sortOrder: minSort - 1 }
-      photos.value = [...photos.value, placed]
-      return placed
+      return placeFirst(created)
     } finally {
       uploads.value = uploads.value.filter((u) => u.id !== entry.id)
     }
+  }
+
+  async function addFromFiles(image: FilesImage, folderId?: number | null): Promise<Photo> {
+    const created = await api.addPhotoFromFiles(houseId, image.fileId, image.mode, folderId)
+    return placeFirst(created)
+  }
+
+  /** Show a new photo first by giving it a sortOrder below its siblings'. */
+  function placeFirst(created: Photo): Photo {
+    const siblings = photos.value.filter((p) => p.folderId === created.folderId)
+    const minSort = siblings.length > 0 ? Math.min(...siblings.map((p) => p.sortOrder)) : 0
+    const placed = { ...created, sortOrder: minSort - 1 }
+    photos.value = [...photos.value, placed]
+    return placed
   }
 
   async function updatePhoto(
@@ -179,6 +189,7 @@ export function usePhotos(houseId: number) {
     rootPhotos,
     photosInFolder,
     upload,
+    addFromFiles,
     updatePhoto,
     removePhoto,
     restorePhoto,

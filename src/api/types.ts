@@ -673,6 +673,9 @@ export interface PhotoFolder {
   canEdit?: boolean
 }
 
+/** Whether an image from the account's files is shown in place (`link`) or copied into Pantry (`import`). */
+export type FileAttachMode = 'link' | 'import'
+
 export interface Photo {
   id: number
   houseId: number
@@ -684,6 +687,8 @@ export interface Photo {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  /** The photo shows a file from the uploader's own files, which deleting the photo leaves in place. */
+  fileLinked?: boolean
   /** Effective edit permission for the current user (role capability or an editor share on the photo or its folder). */
   canEdit?: boolean
 }

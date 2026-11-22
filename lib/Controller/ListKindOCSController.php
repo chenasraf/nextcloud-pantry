@@ -1078,6 +1078,22 @@ abstract class ListKindOCSController extends OCSController {
 	/**
 	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
 	 */
+	protected function doAttachItemImageFromFiles(int $houseId, int $listId, int $itemId, int $fileId, string $mode): DataResponse {
+		return $this->runAction(function () use ($houseId, $listId, $itemId, $fileId, $mode): DataResponse {
+			$uid = $this->requireUid();
+			$this->auth->requireMember($houseId, $uid);
+			$this->loadItem($houseId, $listId, $itemId);
+
+			$imageFileId = $this->images->attachItemImageFromFiles($uid, $houseId, $fileId, $mode);
+
+			$updated = $this->lists->updateItem($itemId, ['imageFileId' => $imageFileId, 'imageUploadedBy' => $uid]);
+			return new DataResponse($this->serializeItem($updated));
+		});
+	}
+
+	/**
+	 * @return DataResponse<Http::STATUS_OK, array<string, mixed>, array{}>
+	 */
 	protected function doClearItemImage(int $houseId, int $listId, int $itemId): DataResponse {
 		return $this->runAction(function () use ($houseId, $listId, $itemId): DataResponse {
 			$this->auth->requireMember($houseId, $this->requireUid());

@@ -112,12 +112,11 @@
             :src="previewImageUrl"
             :alt="item.name"
           />
-          <NcButton variant="tertiary" type="button" @click="triggerImagePick">
-            <template #icon>
-              <UploadIcon :size="20" />
-            </template>
-            {{ hasImage ? strings.replaceImage : strings.uploadImage }}
-          </NcButton>
+          <ImageSourceMenu
+            :label="hasImage ? strings.replaceImage : strings.uploadImage"
+            @computer="triggerImagePick"
+            @files="pickFromFiles"
+          />
           <NcButton v-if="hasImage" variant="tertiary" type="button" @click="clearPendingImage">
             <template #icon>
               <DeleteIcon :size="20" />
@@ -155,7 +154,7 @@ import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import UploadIcon from '@icons/Upload.vue'
+import ImageSourceMenu from '@/components/ImageSourceMenu'
 import DeleteIcon from '@icons/Delete.vue'
 import { MarkdownEditor } from '@/components/MarkdownEditor'
 import { RecurrenceForm } from '@/components/RecurrenceEditor'
@@ -168,6 +167,12 @@ import QuantityInput from '@/components/QuantityInput'
 import ItemPricesEditor from '@/components/ItemPricesEditor'
 import ItemCustomFieldsEditor from '@/components/ItemCustomFieldsEditor'
 import { itemImagePreviewUrl } from '@/api/images'
+import {
+  filesImagePreviewUrl,
+  isFilesImage,
+  pickImageFromFiles,
+  type PendingImage,
+} from '@/utils/filesImage'
 import { DEFAULT_CURRENCY } from '@/utils/currencies'
 import type { ChecklistItem, ItemCustomFieldValue, ItemPrice, StockLinkRow } from '@/api/types'
 import type { ItemInput } from '@/api/lists'
@@ -207,7 +212,12 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [itemId: number, patch: Partial<ItemInput>, pendingImage: File | null, clearImage: boolean]
+  save: [
+    itemId: number,
+    patch: Partial<ItemInput>,
+    pendingImage: PendingImage | null,
+    clearImage: boolean,
+  ]
   link: [item: ChecklistItem, row: StockLinkRow]
   unlink: [item: ChecklistItem]
   'auto-link': [item: ChecklistItem, on: boolean]
@@ -270,7 +280,7 @@ const hasCustomFields = computed(() =>
 )
 const imageInputRef = ref<HTMLInputElement | null>(null)
 
-const pendingImageFile = ref<File | null>(null)
+const pendingImage = ref<PendingImage | null>(null)
 const pendingImageObjectUrl = ref<string | null>(null)
 const pendingClearImage = ref(false)
 
@@ -281,12 +291,13 @@ const serverThumbUrl = computed(() =>
 )
 
 const hasImage = computed(() => {
-  if (pendingClearImage.value) return !!pendingImageFile.value
-  return !!pendingImageFile.value || !!props.item.imageFileId
+  if (pendingClearImage.value) return !!pendingImage.value
+  return !!pendingImage.value || !!props.item.imageFileId
 })
 
 const previewImageUrl = computed(() => {
   if (pendingImageObjectUrl.value) return pendingImageObjectUrl.value
+  if (isFilesImage(pendingImage.value)) return filesImagePreviewUrl(pendingImage.value)
   if (pendingClearImage.value) return null
   return serverThumbUrl.value
 })
@@ -300,7 +311,7 @@ function revokeObjectUrl() {
 
 function resetImageState() {
   revokeObjectUrl()
-  pendingImageFile.value = null
+  pendingImage.value = null
   pendingClearImage.value = false
 }
 
@@ -407,7 +418,7 @@ function submitEdit() {
       // Likewise, the full custom-field value set is replaced.
       customFields: editCustomFields.value,
     },
-    pendingImageFile.value,
+    pendingImage.value,
     pendingClearImage.value,
   )
 }
@@ -421,15 +432,23 @@ function onImagePicked(e: Event) {
   const file = input.files?.[0]
   if (!file) return
   revokeObjectUrl()
-  pendingImageFile.value = file
+  pendingImage.value = file
   pendingImageObjectUrl.value = URL.createObjectURL(file)
   pendingClearImage.value = false
   input.value = ''
 }
 
+async function pickFromFiles() {
+  const picked = await pickImageFromFiles()
+  if (!picked) return
+  revokeObjectUrl()
+  pendingImage.value = picked
+  pendingClearImage.value = false
+}
+
 function clearPendingImage() {
   revokeObjectUrl()
-  pendingImageFile.value = null
+  pendingImage.value = null
   pendingClearImage.value = true
 }
 

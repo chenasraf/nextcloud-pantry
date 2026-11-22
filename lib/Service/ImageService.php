@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Service;
 
+use OCA\Pantry\Exception\NotFoundException;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -15,6 +16,8 @@ use OCP\Files\NotPermittedException;
 class ImageService {
 	public const CHECKLIST_ITEMS_SUBDIR = 'Checklist items';
 	public const PHOTOS_SUBDIR = 'Photo board';
+	public const MODE_LINK = 'link';
+	public const MODE_IMPORT = 'import';
 
 	public function __construct(
 		private IRootFolder $rootFolder,
@@ -81,6 +84,49 @@ class ImageService {
 			return null;
 		}
 		return $this->uploadForUser($newOwnerUid, $houseId, $node->getName(), $bytes);
+	}
+
+	/**
+	 * Attach an image from the account's own files as an item image. Linking
+	 * returns the picked file's id; importing copies it into the Pantry image
+	 * folder and returns the copy's id.
+	 */
+	public function attachItemImageFromFiles(string $uid, int $houseId, int $fileId, string $mode): int {
+		$file = $this->resolveUserImage($uid, $fileId);
+		if ($this->isLinkMode($mode)) {
+			return $file->getId();
+		}
+		return $this->uploadForUser($uid, $houseId, $file->getName(), $file->getContent());
+	}
+
+	/**
+	 * Same as {@see attachItemImageFromFiles()}, importing into the photo board folder.
+	 */
+	public function attachPhotoFromFiles(string $uid, int $houseId, int $fileId, string $mode): int {
+		$file = $this->resolveUserImage($uid, $fileId);
+		if ($this->isLinkMode($mode)) {
+			return $file->getId();
+		}
+		return $this->uploadPhoto($uid, $houseId, $file->getName(), $file->getContent());
+	}
+
+	public function isLinkMode(string $mode): bool {
+		return match ($mode) {
+			self::MODE_LINK => true,
+			self::MODE_IMPORT => false,
+			default => throw new \InvalidArgumentException('Unknown mode: ' . $mode),
+		};
+	}
+
+	private function resolveUserImage(string $uid, int $fileId): File {
+		$node = $this->rootFolder->getUserFolder($uid)->getFirstNodeById($fileId);
+		if (!$node instanceof File || !$node->isReadable()) {
+			throw new NotFoundException('File not found');
+		}
+		if (!str_starts_with($node->getMimetype(), 'image/')) {
+			throw new \InvalidArgumentException('File is not an image');
+		}
+		return $node;
 	}
 
 	/**

@@ -65,6 +65,9 @@ vi.mock('@/components/ItemTypeSelector', () => ({
     emits: ['select-staple', 'select-one-time', 'select-recurring'],
   },
 }))
+vi.mock('@/components/ImageSourceMenu', () => ({
+  default: { name: 'ImageSourceMenu', template: '<div />', props: ['label', 'variant'] },
+}))
 vi.mock('@/components/ItemPricesEditor', () => ({
   default: {
     name: 'ItemPricesEditor',
