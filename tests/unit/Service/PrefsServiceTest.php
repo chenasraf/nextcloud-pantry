@@ -33,6 +33,37 @@ class PrefsServiceTest extends TestCase {
 		$this->svc = new PrefsService($this->config, $this->l, $this->l10nFactory);
 	}
 
+	// ----- What's new -----
+
+	public function testWhatsNewSeenVersionReturnsStoredVersion(): void {
+		$this->config->method('getUserValue')
+			->with('alice', Application::APP_ID, 'whats_new_seen_version', '')
+			->willReturn('0.40.0');
+		$this->config->expects($this->never())->method('setUserValue');
+
+		$this->assertSame('0.40.0', $this->svc->getWhatsNewSeenVersion('alice', '0.42.0'));
+	}
+
+	public function testWhatsNewSeenVersionFallsBackToBaselineForExistingUser(): void {
+		$this->config->method('getUserValue')->willReturn('');
+		$this->config->method('getUserKeys')
+			->with('alice', Application::APP_ID)
+			->willReturn(['last_house_id']);
+		$this->config->expects($this->never())->method('setUserValue');
+
+		$this->assertSame(PrefsService::WHATS_NEW_BASELINE, $this->svc->getWhatsNewSeenVersion('alice', '0.40.0'));
+	}
+
+	public function testWhatsNewSeenVersionRecordsInstalledVersionForNewUser(): void {
+		$this->config->method('getUserValue')->willReturn('');
+		$this->config->method('getUserKeys')->willReturn([]);
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'whats_new_seen_version', '0.40.0');
+
+		$this->assertSame('0.40.0', $this->svc->getWhatsNewSeenVersion('alice', '0.40.0'));
+	}
+
 	// ----- Notification preferences -----
 
 	public function testGetNotificationPrefDefaultsToTrue(): void {

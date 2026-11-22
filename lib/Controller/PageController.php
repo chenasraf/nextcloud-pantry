@@ -6,6 +6,7 @@ namespace OCA\Pantry\Controller;
 
 use OCA\Pantry\AppInfo\Application;
 use OCA\Pantry\Service\PrefsService;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -28,6 +29,7 @@ class PageController extends Controller {
 		private IInitialState $initialState,
 		private IUserSession $userSession,
 		private PrefsService $prefs,
+		private IAppManager $appManager,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -62,6 +64,13 @@ class PageController extends Controller {
 		// render, so it has to arrive with the page rather than over the API.
 		$uid = $this->userSession->getUser()?->getUID();
 		$this->initialState->provideInitialState('language', $uid !== null ? ($this->prefs->getLanguage($uid) ?? '') : '');
+		if ($uid !== null) {
+			$installed = $this->appManager->getAppVersion(Application::APP_ID);
+			$this->initialState->provideInitialState('whatsNew', [
+				'seenVersion' => $this->prefs->getWhatsNewSeenVersion($uid, $installed),
+				'installedVersion' => $installed,
+			]);
+		}
 		$response = new TemplateResponse(Application::APP_ID, 'app', [
 			'script' => Application::getViteEntryScript('app.ts'),
 			'style' => Application::getViteEntryScript('style.css'),

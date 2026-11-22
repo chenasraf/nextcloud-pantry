@@ -133,6 +133,12 @@ export async function setSmartInput(value: boolean): Promise<boolean> {
   return prefs.smartInput
 }
 
+/** Records the installed version's "What's new" notes as seen, on every device. */
+export async function markWhatsNewSeen(): Promise<string> {
+  const resp = await ocs.post<{ seenVersion: string }>('/prefs/whats-new/seen')
+  return resp.data.seenVersion
+}
+
 export async function getShopAllStores(): Promise<boolean> {
   const prefs = await getUserPrefs()
   return prefs.shopAllStores

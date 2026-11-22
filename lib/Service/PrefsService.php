@@ -282,6 +282,36 @@ class PrefsService {
 		return $value;
 	}
 
+	// ----- What's new -----
+
+	private const KEY_WHATS_NEW_SEEN = 'whats_new_seen_version';
+	/**
+	 * The release before "What's new" existed. Someone who already used Pantry
+	 * then has no stored version, but has still seen everything up to it.
+	 */
+	public const WHATS_NEW_BASELINE = '0.39.0';
+
+	/**
+	 * The last version whose notes the user has seen. Someone who never used
+	 * Pantry has nothing to catch up on, so the installed version is recorded
+	 * for them and returned.
+	 */
+	public function getWhatsNewSeenVersion(string $uid, string $installedVersion): string {
+		$value = $this->config->getUserValue($uid, Application::APP_ID, self::KEY_WHATS_NEW_SEEN, '');
+		if ($value !== '') {
+			return $value;
+		}
+		if ($this->config->getUserKeys($uid, Application::APP_ID) !== []) {
+			return self::WHATS_NEW_BASELINE;
+		}
+		$this->setWhatsNewSeenVersion($uid, $installedVersion);
+		return $installedVersion;
+	}
+
+	public function setWhatsNewSeenVersion(string $uid, string $version): void {
+		$this->config->setUserValue($uid, Application::APP_ID, self::KEY_WHATS_NEW_SEEN, $version);
+	}
+
 	// ----- Unified user prefs -----
 
 	/**

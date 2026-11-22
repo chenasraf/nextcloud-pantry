@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Pantry\Controller;
 
+use OCA\Pantry\AppInfo\Application;
 use OCA\Pantry\Exception\ForbiddenException;
 use OCA\Pantry\Exception\NotFoundException;
 use OCA\Pantry\Permission\Permission;
@@ -14,6 +15,7 @@ use OCA\Pantry\ResponseDefinitions;
 use OCA\Pantry\Service\ChecklistService;
 use OCA\Pantry\Service\HouseAuthService;
 use OCA\Pantry\Service\PrefsService;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -39,6 +41,7 @@ final class PrefsController extends OCSController {
 		private HouseAuthService $auth,
 		private ChecklistService $lists,
 		private IUserSession $userSession,
+		private IAppManager $appManager,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -134,6 +137,24 @@ final class PrefsController extends OCSController {
 			}
 			$this->prefs->setUserPrefs($uid, $patch);
 			return new DataResponse($this->prefs->getAllUserPrefs($uid));
+		});
+	}
+
+	/**
+	 * Mark the installed version's "What's new" notes as seen
+	 *
+	 * @return DataResponse<Http::STATUS_OK, array{seenVersion: string}, array{}>
+	 *
+	 * 200: Notes marked as seen
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/prefs/whats-new/seen')]
+	#[NoAdminRequired]
+	public function markWhatsNewSeen(): DataResponse {
+		return $this->runAction(function (): DataResponse {
+			$uid = $this->requireUid();
+			$version = $this->appManager->getAppVersion(Application::APP_ID);
+			$this->prefs->setWhatsNewSeenVersion($uid, $version);
+			return new DataResponse(['seenVersion' => $version]);
 		});
 	}
 

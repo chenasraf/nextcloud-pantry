@@ -11,6 +11,7 @@
         <router-view v-else />
       </div>
     </NcAppContent>
+    <WhatsNewDialog />
   </NcContent>
 </template>
 
@@ -20,6 +21,7 @@ import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { ResumeShoppingBanner } from '@/components/ResumeShoppingBanner'
 import { JoinShoppingBanner } from '@/components/JoinShoppingBanner'
+import { WhatsNewDialog } from '@/components/WhatsNewDialog'
 
 export default {
   name: 'PantryApp',
@@ -29,6 +31,7 @@ export default {
     NcLoadingIcon,
     ResumeShoppingBanner,
     JoinShoppingBanner,
+    WhatsNewDialog,
   },
   provide() {
     return { 'NcContent:setHasAppNavigation': () => true }
