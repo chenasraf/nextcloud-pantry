@@ -1,6 +1,6 @@
 {
-  "name": "nextcloud/forum",
-  "description": "A community-driven forum built right into your Nextcloud instance",
+  "name": "chenasraf/pantry",
+  "description": "Manage your household: shared checklists, photo boards, and notes.",
   "license": "AGPL-3.0-or-later",
   "authors": [
     {
