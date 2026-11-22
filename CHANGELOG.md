@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.40.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.39.0...v0.40.0) (2026-11-22)
+
+
+### Features
+
+* **checklists:** show an item's stores as a single chip ([3c6440e](https://github.com/chenasraf/nextcloud-pantry/commit/3c6440e324b56f01ba112c3986b6de3acab46c96))
+* **items:** fill in the amount and suggest a category as you type an item ([ef94ef0](https://github.com/chenasraf/nextcloud-pantry/commit/ef94ef0e387e831e8ea2c55bd2764721380d6b3c))
+* **items:** remember the category and amount you pick for each item ([78e0378](https://github.com/chenasraf/nextcloud-pantry/commit/78e0378b0ee7522eceb93569c2ffc6709fedcebb))
+* **lists:** show an estimated total for the items you still need to buy ([9ffc9a2](https://github.com/chenasraf/nextcloud-pantry/commit/9ffc9a23d09492ea6750f4d1e6a604a105803c27)), closes [#350](https://github.com/chenasraf/nextcloud-pantry/issues/350)
+* **notes:** show whose files a synced note is saved in when they are not yours ([9effbad](https://github.com/chenasraf/nextcloud-pantry/commit/9effbad64f83953b5311344138f72051a611d715))
+* **photos:** allow attaching photos that are already in your Nextcloud files ([07f73cf](https://github.com/chenasraf/nextcloud-pantry/commit/07f73cf68d0496b250e2ba4b9278717f46a4cfdc)), closes [#311](https://github.com/chenasraf/nextcloud-pantry/issues/311)
+* **shopping:** allow undoing a finished shopping trip ([ac63598](https://github.com/chenasraf/nextcloud-pantry/commit/ac635985710f596031cc6db292ae22c0b6303974))
+* show what's new after Pantry updates ([d915aac](https://github.com/chenasraf/nextcloud-pantry/commit/d915aac7df95b0afc8db46e374ef673317d4cce9))
+* **templates:** allow a template to add new items from its lists automatically ([9f16d00](https://github.com/chenasraf/nextcloud-pantry/commit/9f16d0017efc8254eb888fe4c65f82af43e55669)), closes [#329](https://github.com/chenasraf/nextcloud-pantry/issues/329)
+
+
+### Bug Fixes
+
+* **ci:** adapt to typed test-utils emits and psalm WeakHash ([cf9b5c6](https://github.com/chenasraf/nextcloud-pantry/commit/cf9b5c6d5a9598b5f6f044d9fb226b09eb79e4e0))
+* **l10n:** Update translations from Transifex ([24f9258](https://github.com/chenasraf/nextcloud-pantry/commit/24f9258e28b5762ac7f3ef6c9d660aa0ac46260f))
+* **l10n:** Update translations from Transifex ([a8642bf](https://github.com/chenasraf/nextcloud-pantry/commit/a8642bff1880e218cc12d6411faba0457a507184))
+* **l10n:** Update translations from Transifex ([b2d73dd](https://github.com/chenasraf/nextcloud-pantry/commit/b2d73ddc682d68db760875f41d4e198f4c68d0c2))
+* **l10n:** Update translations from Transifex ([9f6fd2b](https://github.com/chenasraf/nextcloud-pantry/commit/9f6fd2b5f0f8b80068018d413dd1aac8f9747c82))
+* **l10n:** Update translations from Transifex ([1397c75](https://github.com/chenasraf/nextcloud-pantry/commit/1397c75013f53635989d6efa409c27fbf1bf7d4b))
+* **l10n:** Update translations from Transifex ([ab33d66](https://github.com/chenasraf/nextcloud-pantry/commit/ab33d66c1cc27a14e2c167376d323914168e69da))
+* **lists:** assigning a category or labels to several items will now offer the ones from their lists ([1b54992](https://github.com/chenasraf/nextcloud-pantry/commit/1b549925c23aa30b4250259d232f3fdba83cefbb))
+
 ## [0.39.0](https://github.com/chenasraf/nextcloud-pantry/compare/v0.38.0...v0.39.0) (2026-11-15)
 
 
