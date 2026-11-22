@@ -288,6 +288,23 @@ class PrefsServiceTest extends TestCase {
 		$this->assertFalse($this->svc->setSuggestArchivedItems('alice', false));
 	}
 
+	public function testSmartInputIsOnUnlessSwitchedOff(): void {
+		$this->config->method('getUserValue')->willReturnCallback(
+			fn (string $uid, string $app, string $key, string $default): string => $default,
+		);
+
+		$this->assertTrue($this->svc->getSmartInput('alice'));
+		$this->assertTrue($this->svc->getAllUserPrefs('alice')['smartInput']);
+	}
+
+	public function testSmartInputIsSwitchedOffThroughThePrefsPatch(): void {
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', Application::APP_ID, 'smart_input', '0');
+
+		$this->svc->setUserPrefs('alice', ['smartInput' => false]);
+	}
+
 	public function testGetAllUserPrefsIncludesSuggestArchivedItems(): void {
 		$this->config->method('getUserValue')->willReturnCallback(
 			function (string $uid, string $app, string $key, string $default): string {

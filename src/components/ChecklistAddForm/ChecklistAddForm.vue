@@ -68,6 +68,13 @@
         </NcButton>
       </div>
 
+      <ItemGuessChips
+        v-if="guessRows.length > 0"
+        :rows="guessRows"
+        :categories="guessCategories"
+        @drop="dropGuess"
+      />
+
       <ItemFieldChips
         v-model:category-id="categoryId"
         v-model:store-ids="storeIds"
@@ -158,6 +165,7 @@ import BarcodeScanIcon from '@icons/BarcodeScan.vue'
 import TuneVariantIcon from '@icons/TuneVariant.vue'
 import { AutoResizeTextarea } from '@/components/AutoResizeTextarea'
 import ItemFieldChips, { type ItemFieldSection } from '@/components/ItemFieldChips'
+import ItemGuessChips from '@/components/ItemGuessChips'
 import { newItemExpiry, type ExpiryDraft } from '@/components/InventoryStock/expiryDraft'
 import PantryChip from '@/components/PantryChip'
 import FieldCard from '@/components/FieldCard'
@@ -170,6 +178,7 @@ import { useLabels } from '@/composables/useLabels'
 import { useCustomFields } from '@/composables/useCustomFields'
 import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
 import { useBarcodeFill } from '@/composables/useBarcodeFill'
+import { useItemGuesses } from '@/composables/useItemGuesses'
 import { listApi } from '@/api/lists'
 import { useListKind } from '@/composables/useListKind'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
@@ -418,6 +427,20 @@ const itemNames = computed(() =>
       : [],
 )
 
+const {
+  rows: guessRows,
+  categories: guessCategories,
+  drop: dropGuess,
+  resolve: resolveGuess,
+  reset: resetGuesses,
+} = useItemGuesses({
+  houseId: props.houseId,
+  lines: itemNames,
+  listId: effectiveListId,
+  formCategoryId: categoryId,
+  formQuantity: quantity,
+})
+
 const formLabel = computed(() => (multiple.value ? strings.addItems : strings.addItem))
 
 const canSubmit = computed(() => {
@@ -595,13 +618,15 @@ function submitAdd() {
   const usedRrule = once ? null : rrule.value
   const usedFromCompletion = once ? false : repeatFromCompletion.value
   names.forEach((itemName, index) => {
+    const { suggestionRejected, ...resolved } = resolveGuess(itemName)
     emit(
       'add',
       {
-        name: itemName,
+        name: resolved.name,
         description: description.value.trim() || null,
-        quantity: quantity.value.trim() || null,
-        categoryId: categoryId.value,
+        quantity: resolved.quantity,
+        categoryId: resolved.categoryId,
+        ...(suggestionRejected ? { suggestionRejected } : {}),
         storeIds: storeIds.value,
         labelIds: labelIds.value,
         prices: prices.value,
@@ -661,6 +686,7 @@ function submitAdd() {
   userPickedType.value = false
   pendingImage.value = null
   openSection.value = null
+  resetGuesses()
 }
 
 const strings = {

@@ -70,6 +70,15 @@
       </div>
       <div class="settings__field">
         <NcCheckboxRadioSwitch
+          :model-value="smartInput"
+          @update:model-value="updateSmartInput($event)"
+        >
+          {{ strings.smartInputLabel }}
+        </NcCheckboxRadioSwitch>
+        <p class="settings__hint settings__hint--inline">{{ strings.smartInputHint }}</p>
+      </div>
+      <div class="settings__field">
+        <NcCheckboxRadioSwitch
           :model-value="showAddedBy"
           @update:model-value="updateShowAddedBy($event)"
         >
@@ -224,6 +233,7 @@ import { leaveHouse } from '@/api/houses'
 import { useRowClickAction } from '@/composables/useRowClickAction'
 import { useReuseExistingItems } from '@/composables/useReuseExistingItems'
 import { useSuggestArchivedItems } from '@/composables/useSuggestArchivedItems'
+import { useSmartInput } from '@/composables/useSmartInput'
 import { useShowAddedBy } from '@/composables/useShowAddedBy'
 import { useBarcodeFill } from '@/composables/useBarcodeFill'
 
@@ -432,6 +442,16 @@ async function updateSuggestArchivedItems(value: boolean) {
   }
 }
 
+const { smartInput, set: setSmartInputPref } = useSmartInput()
+
+async function updateSmartInput(value: boolean) {
+  try {
+    await setSmartInputPref(value)
+  } catch {
+    // Composable already reverted the optimistic update.
+  }
+}
+
 // ----- Filling drawn template items from item defaults (per-house) -----
 
 const fillFromItemDefaults = ref<FillFromItemDefaults>('list')
@@ -575,6 +595,12 @@ const strings = {
   suggestArchivedItemsHint: t(
     'pantry',
     'When adding an item, also search archived items for reuse suggestions. Reusing an archived item unarchives it.',
+  ),
+  // TRANSLATORS: Name of a setting that reads the amount out of a typed item and suggests details for it.
+  smartInputLabel: t('pantry', 'Smart input'),
+  smartInputHint: t(
+    'pantry',
+    'Typing "2 L milk" fills in the amount, and items you added before suggest the category and amount you picked then.',
   ),
   barcodeSection: t('pantry', 'Barcode scanning'),
   barcodeHint: t('pantry', 'Choose which details a barcode scan fills in.'),

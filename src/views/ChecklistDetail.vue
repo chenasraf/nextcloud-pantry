@@ -941,6 +941,7 @@ import {
   ALL_LISTS_ID,
 } from '@/composables/useChecklist'
 import { useCategories } from '@/composables/useCategories'
+import { useItemMemory } from '@/composables/useItemMemory'
 import { useLabels } from '@/composables/useLabels'
 import { useStores } from '@/composables/useStores'
 import { useTouchReorder } from '@/composables/useTouchReorder'
@@ -2237,6 +2238,7 @@ async function handleAdd(
   adding.value = true
   try {
     const created = await add(input, targetListId ?? undefined)
+    void useItemMemory(houseIdNum.value).refresh()
     announceSeveralMatches(undefined, created)
     if (pendingImage) {
       try {

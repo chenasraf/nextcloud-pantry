@@ -33,6 +33,8 @@ export interface UserPrefs {
   barcodeFillCategory: boolean
   /** When true, a resolved barcode fills in the item image. */
   barcodeFillImage: boolean
+  /** When true, typing an item splits off its amount and suggests a category and amount. */
+  smartInput: boolean
   /** Pantry UI language override; an empty string follows the Nextcloud language. */
   language: string
 }
@@ -55,6 +57,7 @@ const userPrefsDefaults: UserPrefs = {
   barcodeFillName: true,
   barcodeFillCategory: true,
   barcodeFillImage: true,
+  smartInput: true,
   language: '',
 }
 
@@ -118,6 +121,16 @@ export async function getSuggestArchivedItems(): Promise<boolean> {
 export async function setSuggestArchivedItems(value: boolean): Promise<boolean> {
   const prefs = await setUserPrefs({ suggestArchivedItems: value })
   return prefs.suggestArchivedItems
+}
+
+export async function getSmartInput(): Promise<boolean> {
+  const prefs = await getUserPrefs()
+  return prefs.smartInput
+}
+
+export async function setSmartInput(value: boolean): Promise<boolean> {
+  const prefs = await setUserPrefs({ smartInput: value })
+  return prefs.smartInput
 }
 
 export async function getShopAllStores(): Promise<boolean> {

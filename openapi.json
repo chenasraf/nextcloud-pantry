@@ -3710,6 +3710,7 @@
                     "barcodeFillName",
                     "barcodeFillCategory",
                     "barcodeFillImage",
+                    "smartInput",
                     "language"
                 ],
                 "properties": {
@@ -3744,6 +3745,9 @@
                         "type": "boolean"
                     },
                     "barcodeFillImage": {
+                        "type": "boolean"
+                    },
+                    "smartInput": {
                         "type": "boolean"
                     },
                     "language": {
@@ -23188,6 +23192,12 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Pantry UI language override. An empty string clears the override so the app follows the Nextcloud language again."
+                                    },
+                                    "smartInput": {
+                                        "type": "boolean",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Whether typing an item splits off its amount and suggests a category and amount."
                                     }
                                 }
                             }

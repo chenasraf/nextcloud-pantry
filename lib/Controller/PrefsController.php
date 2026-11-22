@@ -86,6 +86,7 @@ final class PrefsController extends OCSController {
 	 * @param bool|null $barcodeFillCategory Whether a resolved barcode fills in the item category.
 	 * @param bool|null $barcodeFillImage Whether a resolved barcode fills in the item image.
 	 * @param string|null $language Pantry UI language override. An empty string clears the override so the app follows the Nextcloud language again.
+	 * @param bool|null $smartInput Whether typing an item splits off its amount and suggests a category and amount.
 	 *
 	 * @return DataResponse<Http::STATUS_OK, PantryUserPrefs, array{}>
 	 *
@@ -93,8 +94,8 @@ final class PrefsController extends OCSController {
 	 */
 	#[ApiRoute(verb: 'PUT', url: '/api/prefs')]
 	#[NoAdminRequired]
-	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null, ?bool $suggestArchivedItems = null, ?bool $shopAllStores = null, ?bool $barcodeFillName = null, ?bool $barcodeFillCategory = null, ?bool $barcodeFillImage = null, ?string $language = null): DataResponse {
-		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems, $suggestArchivedItems, $shopAllStores, $barcodeFillName, $barcodeFillCategory, $barcodeFillImage, $language): DataResponse {
+	public function setUserPrefs(?int $lastHouseId = null, ?bool $tapRowToComplete = null, ?string $rowClickAction = null, ?string $reuseExistingItems = null, ?bool $suggestArchivedItems = null, ?bool $shopAllStores = null, ?bool $barcodeFillName = null, ?bool $barcodeFillCategory = null, ?bool $barcodeFillImage = null, ?string $language = null, ?bool $smartInput = null): DataResponse {
+		return $this->runAction(function () use ($lastHouseId, $tapRowToComplete, $rowClickAction, $reuseExistingItems, $suggestArchivedItems, $shopAllStores, $barcodeFillName, $barcodeFillCategory, $barcodeFillImage, $language, $smartInput): DataResponse {
 			$uid = $this->requireUid();
 			$patch = [];
 			if ($lastHouseId !== null) {
@@ -127,6 +128,9 @@ final class PrefsController extends OCSController {
 			}
 			if ($language !== null) {
 				$patch['language'] = $language;
+			}
+			if ($smartInput !== null) {
+				$patch['smartInput'] = $smartInput;
 			}
 			$this->prefs->setUserPrefs($uid, $patch);
 			return new DataResponse($this->prefs->getAllUserPrefs($uid));

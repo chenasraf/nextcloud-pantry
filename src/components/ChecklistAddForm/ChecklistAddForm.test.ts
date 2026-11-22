@@ -219,6 +219,28 @@ vi.mock('@/composables/useBarcodeFill', async () => {
     }),
   }
 })
+const smartInputMocks = vi.hoisted(() => ({
+  smartInput: null as unknown as { value: boolean },
+  index: null as unknown as { value: import('@/utils/itemMemory').MemoryIndex },
+}))
+vi.mock('@/composables/useSmartInput', async () => {
+  const { ref } = await import('vue')
+  smartInputMocks.smartInput = ref(true)
+  return {
+    useSmartInput: () => ({ smartInput: smartInputMocks.smartInput, set: vi.fn() }),
+  }
+})
+vi.mock('@/composables/useItemMemory', async () => {
+  const { shallowRef } = await import('vue')
+  const { emptyMemoryIndex } = await import('@/utils/itemMemory')
+  smartInputMocks.index = shallowRef(emptyMemoryIndex())
+  return {
+    useItemMemory: () => ({
+      index: smartInputMocks.index,
+      refresh: vi.fn().mockResolvedValue(undefined),
+    }),
+  }
+})
 vi.mock('@/utils/rrule', () => ({
   DEFAULT_RRULE: 'FREQ=WEEKLY;INTERVAL=1',
   formatRrule: (s: string) => `text(${s})`,
@@ -235,6 +257,7 @@ vi.mock('@/components/ChecklistItemRow', () => ({
 
 import { computed, defineComponent, h } from 'vue'
 import { provideListKind } from '@/composables/useListKind'
+import { emptyMemoryIndex, mergeMemory } from '@/utils/itemMemory'
 import ChecklistAddForm from './ChecklistAddForm.vue'
 
 function makeItem(overrides: Partial<ChecklistItem> = {}): ChecklistItem {
@@ -927,6 +950,96 @@ describe('ChecklistAddForm', () => {
       const wrapper = mountForm({ currentListId: 10 })
       await resolveBarcode(wrapper)
       expect(chipForKey(wrapper, 'Barcode attached').exists()).toBe(true)
+    })
+  })
+
+  describe('smart input', () => {
+    beforeEach(() => {
+      categoryMocks.categories = [{ id: 2, name: 'Dairy' }]
+      smartInputMocks.index.value = mergeMemory(
+        emptyMemoryIndex(),
+        [{ nameKey: 'milk', categoryId: 2, uses: 3, rejections: 0, updatedAt: 1 }],
+        [{ listId: 10, nameKey: 'eggs', quantity: '6', updatedAt: 1 }],
+      )
+    })
+
+    afterEach(() => {
+      categoryMocks.categories = []
+      smartInputMocks.index.value = emptyMemoryIndex()
+      smartInputMocks.smartInput.value = true
+    })
+
+    async function submit(wrapper: ReturnType<typeof mountForm>, text: string) {
+      await wrapper.find('.nc-text-field').setValue(text)
+      await wrapper.find('form').trigger('submit')
+      return wrapper.emitted('add')!.at(-1)![0] as ItemInput
+    }
+
+    it('splits the typed amount off the name', async () => {
+      const input = await submit(mountForm({ currentListId: 10 }), '2 L milk')
+
+      expect(input.name).toBe('milk')
+      expect(input.quantity).toBe('2 L')
+    })
+
+    it('adds the remembered category and amount the person kept', async () => {
+      const wrapper = mountForm({ currentListId: 10 })
+
+      expect((await submit(wrapper, 'Milk')).categoryId).toBe(2)
+      expect((await submit(wrapper, 'Eggs')).quantity).toBe('6')
+    })
+
+    it('sends a dropped category as rejected and leaves it off', async () => {
+      const wrapper = mountForm({ currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('Milk')
+      await chipForKey(wrapper, 'Dairy').trigger('click')
+
+      const input = await submit(wrapper, 'Milk')
+
+      expect(input.categoryId).toBeNull()
+      expect(input.suggestionRejected).toEqual({ categoryId: 2 })
+    })
+
+    it('keeps the amount in the name once its chip is dropped', async () => {
+      const wrapper = mountForm({ currentListId: 10 })
+      await wrapper.find('.nc-text-field').setValue('2 L milk')
+      await chipForKey(wrapper, '2 L').trigger('click')
+
+      const input = await submit(wrapper, '2 L milk')
+
+      expect(input.name).toBe('2 L milk')
+      expect(input.quantity).toBeNull()
+      expect(input).not.toHaveProperty('suggestionRejected')
+    })
+
+    it("never guesses over the list's default category", async () => {
+      const wrapper = mountForm({
+        currentListId: 10,
+        itemDefaults: makeDefaults({ category: { mode: 'fixed', value: 5 } }),
+      })
+      await wrapper.find('.nc-text-field').setValue('Milk')
+
+      expect(chipForKey(wrapper, 'Dairy')).toBeUndefined()
+      expect((await submit(wrapper, 'Milk')).categoryId).toBe(5)
+    })
+
+    it('guesses per line when adding several items', async () => {
+      const wrapper = mountForm({ currentListId: 10 })
+      await wrapper.find('.nc-checkbox input').setValue(true)
+      await wrapper.find('.nc-text-area').setValue('2 L milk\nEggs')
+      await wrapper.find('form').trigger('submit')
+
+      const [milk, eggs] = wrapper.emitted('add')!.map((e) => e[0] as ItemInput)
+      expect(milk).toMatchObject({ name: 'milk', quantity: '2 L', categoryId: 2 })
+      expect(eggs).toMatchObject({ name: 'Eggs', quantity: '6', categoryId: null })
+    })
+
+    it('leaves the text alone when smart input is off', async () => {
+      smartInputMocks.smartInput.value = false
+
+      const input = await submit(mountForm({ currentListId: 10 }), '2 L milk')
+
+      expect(input).toMatchObject({ name: '2 L milk', quantity: null, categoryId: null })
     })
   })
 })

@@ -24,6 +24,7 @@ class PrefsService {
 	private const KEY_REUSE_EXISTING_ITEMS = 'reuse_existing_items';
 	private const KEY_SUGGEST_ARCHIVED_ITEMS = 'suggest_archived_items';
 	private const KEY_SHOP_ALL_STORES = 'shop_all_stores';
+	private const KEY_SMART_INPUT = 'smart_input';
 	private const KEY_BARCODE_FILL_PREFIX = 'barcode_fill_';
 	private const KEY_LANGUAGE = 'language';
 	public const DEFAULT_IMAGE_FOLDER = '/Pantry';
@@ -218,6 +219,25 @@ class PrefsService {
 		return $value;
 	}
 
+	public function getSmartInput(string $uid): bool {
+		return $this->config->getUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_SMART_INPUT,
+			'1',
+		) === '1';
+	}
+
+	public function setSmartInput(string $uid, bool $value): bool {
+		$this->config->setUserValue(
+			$uid,
+			Application::APP_ID,
+			self::KEY_SMART_INPUT,
+			$value ? '1' : '0',
+		);
+		return $value;
+	}
+
 	public function getShopAllStores(string $uid): bool {
 		return $this->config->getUserValue(
 			$uid,
@@ -279,6 +299,7 @@ class PrefsService {
 			'barcodeFillName' => $this->getBarcodeFill($uid, 'name'),
 			'barcodeFillCategory' => $this->getBarcodeFill($uid, 'category'),
 			'barcodeFillImage' => $this->getBarcodeFill($uid, 'image'),
+			'smartInput' => $this->getSmartInput($uid),
 			'language' => $this->getLanguage($uid) ?? '',
 		];
 	}
@@ -311,6 +332,9 @@ class PrefsService {
 			if (array_key_exists($key, $patch) && is_bool($patch[$key])) {
 				$this->setBarcodeFill($uid, $field, $patch[$key]);
 			}
+		}
+		if (array_key_exists('smartInput', $patch) && is_bool($patch['smartInput'])) {
+			$this->setSmartInput($uid, $patch['smartInput']);
 		}
 		if (array_key_exists('language', $patch) && is_string($patch['language'])) {
 			$this->setLanguage($uid, $patch['language'] === '' ? null : $patch['language']);

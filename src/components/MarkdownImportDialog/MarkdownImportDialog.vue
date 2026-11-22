@@ -83,8 +83,15 @@
         <ul class="md-import__list">
           <li v-for="(it, i) in parsed" :key="i" class="md-import__row">
             <NcCheckboxRadioSwitch v-model="selected[i]">
-              {{ it.name }}
+              {{ guessRows[i]?.guess.name ?? it.name }}
             </NcCheckboxRadioSwitch>
+            <ItemGuessChips
+              v-if="guessRows[i]"
+              :rows="[guessRows[i]]"
+              :categories="guessCategories"
+              :show-names="false"
+              @drop="dropGuess"
+            />
           </li>
         </ul>
       </div>
@@ -179,6 +186,8 @@ import CategoryChipList from '@/components/CategoryChipList'
 import ItemTypeSelector from '@/components/ItemTypeSelector'
 import QuantityInput from '@/components/QuantityInput'
 import PantryChip from '@/components/PantryChip'
+import ItemGuessChips from '@/components/ItemGuessChips'
+import { useItemGuesses } from '@/composables/useItemGuesses'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import { contrastColor } from '@/components/ChecklistIconPicker/checklistColors'
 import { useCategories } from '@/composables/useCategories'
@@ -279,6 +288,20 @@ void loadCategories()
 
 const parsed = computed(() => parseMarkdownItems(rawText.value))
 
+const {
+  rows: guessRows,
+  categories: guessCategories,
+  drop: dropGuess,
+  resolve: resolveGuess,
+  reset: resetGuesses,
+} = useItemGuesses({
+  houseId: props.houseId,
+  lines: computed(() => parsed.value.map((it) => it.name)),
+  listId: effectiveListId,
+  formCategoryId: categoryId,
+  formQuantity: quantity,
+})
+
 // Re-mark everything as selected whenever the parsed set changes.
 watch(
   parsed,
@@ -306,6 +329,7 @@ watch(
     forceReuse.value = false
     dragActive.value = false
     targetListId.value = null
+    resetGuesses()
   },
   { immediate: true },
 )
@@ -463,15 +487,19 @@ function submit() {
   const once = deleteOnDone.value
   const inputs: ItemInput[] = parsed.value
     .filter((_, i) => selected.value[i])
-    .map((it) => ({
-      name: it.name,
-      description: description.value.trim() || null,
-      quantity: quantity.value.trim() || null,
-      categoryId: categoryId.value,
-      rrule: once ? null : rrule.value,
-      repeatFromCompletion: once ? false : repeatFromCompletion.value,
-      deleteOnDone: once,
-    }))
+    .map((it) => {
+      const { suggestionRejected, ...resolved } = resolveGuess(it.name)
+      return {
+        name: resolved.name,
+        description: description.value.trim() || null,
+        quantity: resolved.quantity,
+        categoryId: resolved.categoryId,
+        ...(suggestionRejected ? { suggestionRejected } : {}),
+        rrule: once ? null : rrule.value,
+        repeatFromCompletion: once ? false : repeatFromCompletion.value,
+        deleteOnDone: once,
+      }
+    })
   if (inputs.length === 0) return
   emit('import', inputs, canForceReuse.value && forceReuse.value, targetListId.value)
 }
@@ -600,6 +628,13 @@ const strings = {
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-large, 8px);
     padding: 0.5rem 0.75rem;
+  }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.5rem;
   }
 
   &__empty {

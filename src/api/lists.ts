@@ -1,4 +1,5 @@
 import { ocs } from '@/axios'
+import type { SuggestionRejected } from './itemMemory'
 import type {
   AttachedTemplates,
   Checklist,
@@ -87,6 +88,8 @@ export interface ItemInput {
   autoLink?: boolean
   /** Checklist items: false lets stock set a quantity a member set by hand again. */
   quantityPinned?: boolean
+  /** Suggestions the person dropped before saving; teaches item memory. */
+  suggestionRejected?: SuggestionRejected
 }
 
 /** The API route each kind's lists are served from. `lists` is the checklist resource. */

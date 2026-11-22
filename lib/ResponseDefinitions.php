@@ -620,6 +620,7 @@ namespace OCA\Pantry;
  *     barcodeFillName: bool,
  *     barcodeFillCategory: bool,
  *     barcodeFillImage: bool,
+ *     smartInput: bool,
  *     language: string,
  * }
  *
