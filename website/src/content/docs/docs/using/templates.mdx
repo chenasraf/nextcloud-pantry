@@ -89,6 +89,39 @@ Attach from either side:
 A list can have any number of templates, and a template can suggest on any number of lists. An
 archived or trashed template keeps its attachments but suggests nothing until it is back in use.
 
+### Learn new items from attached lists
+
+A template can fill itself in from the lists it is attached to. Turn on **Automatically add new
+items from attached lists**, under **Suggest in:** in **Edit template**, and an item someone adds on
+one of those lists is copied into the template, ready to suggest on the others. It is off by
+default.
+
+- The copy takes the item's details as they are when it is added: description, category, quantity,
+  stores, labels, prices, custom fields and barcode. An item added on an inventory also brings its
+  stock mode, target, reorder point and shelf life, and its quantity is the full amount rather than
+  what is on hand.
+- A name that any template attached to that list already has is left alone, so the entries you set
+  up by hand never change or double up. Names match ignoring case and extra spaces.
+- Each item goes into one template only. A template attached to the list by name comes before one
+  set to **Every list**; between two of the same kind, the one higher in the template list wins. A
+  template you cannot open never receives items from you.
+- Only items people add count. Items added from a template, added to an inventory by a shopping
+  trip, or copied or moved from another list are not learned.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		The switch sits under the **Suggest in:** field of **Edit template**, and saves as soon as you
+		flip it.
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		The switch sits under the **Suggest in:** field of **Edit template**, and saves with the rest of
+		the form. Like **Suggest in:**, it needs a connection, so it is left out of the form while you
+		are offline. Items you add from the app are learned the same way as on the web.
+	</TabItem>
+</Tabs>
+
+![The Suggest in field of Edit template with Fridge and Groceries picked and Automatically add new items from attached lists turned on.](/docs/templates-learn-items.png)
+
 ## Suggestions as you type
 
 While you type an item name on a checklist or inventory, a **Suggestions** panel shows the closest
