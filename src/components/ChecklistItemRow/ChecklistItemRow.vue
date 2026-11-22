@@ -280,18 +280,29 @@
             {{ category.name }}
           </PantryChip>
           <PantryChip
-            v-for="store in hideStore ? [] : stores"
-            :key="store.id"
+            v-if="singleStore"
             class="checklist-row__store"
-            :color="store.color || undefined"
+            :color="singleStore.color || undefined"
             size="sm"
-            :aria-label="storeLabel(store.name)"
-            @click="onViewStore(store, $event)"
+            :aria-label="storeLabel(singleStore.name)"
+            @click="onStoreChip"
           >
             <template #icon>
-              <component :is="storeIconComponent(store.icon)" :size="14" />
+              <component :is="storeIconComponent(singleStore.icon)" :size="14" />
             </template>
-            {{ store.name }}
+            {{ singleStore.name }}
+          </PantryChip>
+          <PantryChip
+            v-else-if="!hideStore && stores.length > 1"
+            class="checklist-row__store"
+            size="sm"
+            :aria-label="storesLabel(stores.length)"
+            @click="onStoreChip"
+          >
+            <template #icon>
+              <component :is="entityIcon.store" :size="14" />
+            </template>
+            {{ storesCount(stores.length) }}
           </PantryChip>
           <PantryChip
             v-for="label in labels"
@@ -451,6 +462,15 @@
         </template>
       </NcButton>
     </div>
+    <!-- Mounted only while open: every row would otherwise carry its own dialog. -->
+    <StorePickDialog
+      v-if="showStorePick"
+      :open="showStorePick"
+      :name="item.name"
+      :stores="stores"
+      @update:open="showStorePick = $event"
+      @pick="$emit('view-store', $event)"
+    />
   </li>
 </template>
 
@@ -493,6 +513,8 @@ import { categoryIconComponent } from '@/components/CategoryPicker'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import { checklistIconComponent } from '@/components/ChecklistIconPicker/checklistIcons'
 import PantryChip from '@/components/PantryChip'
+import StorePickDialog from '@/components/StoreManager/StorePickDialog.vue'
+import { entityIcon } from '@/utils/entityIcons'
 import { itemImagePreviewUrl } from '@/api/images'
 import { formatRrule, formatNextRecurrence } from '@/utils/rrule'
 import { formatPrice, resolveItemPrice } from '@/utils/price'
@@ -838,10 +860,20 @@ const rowClickable = computed(
       (clickAction.value === 'done' && canCheck.value)),
 )
 
+const singleStore = computed<Store | null>(() =>
+  !props.hideStore && props.stores.length === 1 ? props.stores[0]! : null,
+)
+
+const showStorePick = ref(false)
+
 // Keep the store chip's click from bubbling to the row's own click handler.
-function onViewStore(store: Store, e: MouseEvent) {
+function onStoreChip(e: MouseEvent) {
   e.stopPropagation()
-  emit('view-store', store)
+  if (singleStore.value) {
+    emit('view-store', singleStore.value)
+  } else {
+    showStorePick.value = true
+  }
 }
 
 function onDragStart(e: DragEvent) {
@@ -934,6 +966,16 @@ const strings = {
 function storeLabel(name: string): string {
   // TRANSLATORS: Accessible label for a store chip that opens the store details. The placeholder is the store name.
   return t('pantry', 'View store {name}', { name })
+}
+
+function storesCount(count: number): string {
+  // TRANSLATORS: Chip on an item sold at several stores, e.g. "3 stores".
+  return n('pantry', '%n store', '%n stores', count)
+}
+
+function storesLabel(count: number): string {
+  // TRANSLATORS: Accessible label for the chip that lists the stores an item is sold at, e.g. "View 3 stores".
+  return n('pantry', 'View %n store', 'View %n stores', count)
 }
 </script>
 

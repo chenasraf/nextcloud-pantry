@@ -63,6 +63,14 @@ vi.mock('@nextcloud/vue/components/NcPopover', () => ({
   },
 }))
 vi.mock('@/api/lists', () => ({ listLinkTargets: vi.fn().mockResolvedValue([]) }))
+vi.mock('@nextcloud/vue/components/NcDialog', () => ({
+  default: {
+    name: 'NcDialog',
+    template: '<div class="nc-dialog"><slot /></div>',
+    props: ['name', 'open', 'size', 'closeOnClickOutside'],
+    emits: ['update:open'],
+  },
+}))
 vi.mock('@nextcloud/vue/components/NcTextField', () => ({
   default: { name: 'NcTextField', template: '<input class="nc-text-field" />' },
 }))
@@ -317,6 +325,45 @@ describe('ChecklistItemRow', () => {
       await chip.trigger('click')
       expect(wrapper.emitted('view-store')).toBeTruthy()
       expect(wrapper.emitted('view-store')![0]).toEqual([store])
+    })
+
+    it('renders one count chip for several stores and lists them on click', async () => {
+      const a = makeStore({ id: 7, name: 'Pharmacy' })
+      const b = makeStore({ id: 8, name: 'Bakery' })
+      const c = makeStore({ id: 9, name: 'Market' })
+      const wrapper = mount(ChecklistItemRow, {
+        props: {
+          ...defaultProps,
+          item: makeItem({ storeIds: [7, 8, 9] }),
+          stores: [a, b, c],
+        },
+      })
+      const chips = wrapper.findAll('.checklist-row__store')
+      expect(chips).toHaveLength(1)
+      expect(chips[0]!.text()).toContain('3 stores')
+      expect(wrapper.find('.store-pick').exists()).toBe(false)
+
+      await chips[0]!.trigger('click')
+      expect(wrapper.emitted('view-store')).toBeFalsy()
+      expect(wrapper.emitted('view')).toBeFalsy()
+      const picks = wrapper.findAll('.store-pick__main')
+      expect(picks.map((p) => p.text())).toEqual(['Pharmacy', 'Bakery', 'Market'])
+
+      await picks[1]!.trigger('click')
+      expect(wrapper.emitted('view-store')![0]).toEqual([b])
+      expect(wrapper.find('.store-pick').exists()).toBe(false)
+    })
+
+    it('hides the store chip when rows are grouped by store', () => {
+      const wrapper = mount(ChecklistItemRow, {
+        props: {
+          ...defaultProps,
+          item: makeItem({ storeIds: [7, 8] }),
+          stores: [makeStore({ id: 7 }), makeStore({ id: 8 })],
+          hideStore: true,
+        },
+      })
+      expect(wrapper.find('.checklist-row__store').exists()).toBe(false)
     })
 
     it('does not emit view when a store chip is clicked', async () => {
