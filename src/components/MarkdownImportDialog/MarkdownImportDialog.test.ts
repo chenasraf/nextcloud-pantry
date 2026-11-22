@@ -111,6 +111,20 @@ vi.mock('@/composables/useCategories', () => ({
     categoriesForList: () => [],
   }),
 }))
+vi.mock('@/composables/useSmartInput', async () => {
+  const { ref } = await import('vue')
+  return { useSmartInput: () => ({ smartInput: ref(true), set: vi.fn() }) }
+})
+vi.mock('@/composables/useItemMemory', async () => {
+  const { shallowRef } = await import('vue')
+  const { emptyMemoryIndex } = await import('@/utils/itemMemory')
+  return {
+    useItemMemory: () => ({
+      index: shallowRef(emptyMemoryIndex()),
+      refresh: vi.fn().mockResolvedValue(undefined),
+    }),
+  }
+})
 vi.mock('@/utils/rrule', () => ({
   DEFAULT_RRULE: 'FREQ=WEEKLY;INTERVAL=1',
   formatRrule: (s: string) => `text(${s})`,

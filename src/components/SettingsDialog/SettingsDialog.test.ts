@@ -19,6 +19,8 @@ vi.mock('@/api/prefs', () => ({
   setReuseExistingItems: vi.fn().mockResolvedValue('ask'),
   getSuggestArchivedItems: vi.fn().mockResolvedValue(false),
   setSuggestArchivedItems: vi.fn().mockResolvedValue(false),
+  getSmartInput: vi.fn().mockResolvedValue(true),
+  setSmartInput: vi.fn().mockResolvedValue(true),
   getHousePrefs: vi.fn().mockResolvedValue({ showAddedBy: false }),
   setHousePrefs: vi.fn().mockResolvedValue({ showAddedBy: false }),
   getLanguages: vi.fn().mockResolvedValue([]),
