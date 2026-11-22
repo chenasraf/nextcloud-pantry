@@ -55,7 +55,7 @@ silently vanishing from your buy list.
 Categories are grouped in the order you walk the store you're in — see
 [per-store category order](#per-store-category-order) below.
 
-<img width="965" alt="Dense shopping view: sticky store bar with progress, category-grouped items, and the next-store action" src="/docs/shopping-view.png" />
+<img width="933" alt="Dense shopping view: sticky store bar with progress, category-grouped items with amount steppers, and the Cancel trip and Next store actions" src="/docs/shopping-view.png" />
 
 ### 3. Shopping together
 
@@ -142,7 +142,7 @@ Got a total wrong, or paid at the till after the trip was closed? **Edit totals*
 a trip you shopped yourself, reopens the amounts — what you paid per store, or the grand total for a
 storeless trip — and the history row follows the correction. Housemates' trips stay look-only.
 
-<img width="714" alt="Shopping history list: store route, item count, duration, and total per finished trip" src="/docs/history.png" />
+<img width="713" alt="Shopping history list: each trip's shoppers, store route, duration, item count and total, with a cancelled trip marked Cancelled" src="/docs/history.png" />
 
 ## Per-store category order
 
