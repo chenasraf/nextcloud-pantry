@@ -616,10 +616,13 @@
       @update:open="(v) => !v && (showBulkCategory = false)"
     >
       <div class="pantry-bulk-category">
+        <p v-if="bulkSpansLists" class="pantry-bulk-category__hint">
+          {{ strings.bulkCategorySpansLists }}
+        </p>
         <CategoryPicker
           v-model="bulkCategoryId"
           :house-id="houseIdNum"
-          :list-id="isMeta ? null : listIdNum"
+          :list-id="bulkScopeListId"
         />
       </div>
       <template #actions>
@@ -668,11 +671,10 @@
       @update:open="(v) => !v && (showBulkLabels = false)"
     >
       <div class="pantry-bulk-category">
-        <LabelChipList
-          v-model="bulkLabelIds"
-          :house-id="houseIdNum"
-          :list-id="isMeta ? null : listIdNum"
-        />
+        <p v-if="bulkSpansLists" class="pantry-bulk-category__hint">
+          {{ strings.bulkLabelsSpanLists }}
+        </p>
+        <LabelChipList v-model="bulkLabelIds" :house-id="houseIdNum" :list-id="bulkScopeListId" />
       </div>
       <template #actions>
         <NcButton @click="showBulkLabels = false">{{ strings.cancel }}</NcButton>
@@ -911,6 +913,7 @@ import { MarkdownImportDialog } from '@/components/MarkdownImportDialog'
 import CategoryPicker, { categoryIconComponent } from '@/components/CategoryPicker'
 import StoreMultiPicker from '@/components/StoreMultiPicker'
 import LabelChipList from '@/components/LabelChipList'
+import { sharedListId } from '@/utils/sharedListId'
 import { storeIconComponent } from '@/components/StoreMultiPicker/storeIcons'
 import {
   checklistIconComponent,
@@ -2896,9 +2899,17 @@ function itemWritable(item: ChecklistItem): boolean {
   return isMeta.value ? listWritable(listFor(item.listId)) : writableHere.value
 }
 
+const writableSelectedItems = computed(() => selectedItems.value.filter(itemWritable))
 // Ids eligible for write actions (move / delete / assign category).
-const writableSelectedIds = computed(() =>
-  selectedItems.value.filter(itemWritable).map((i) => i.id),
+const writableSelectedIds = computed(() => writableSelectedItems.value.map((i) => i.id))
+
+// List whose scoped categories/labels the bulk pickers may offer. A selection
+// spanning lists only gets globals, since anything scoped is invalid for some item.
+const bulkScopeListId = computed(() =>
+  isMeta.value ? sharedListId(writableSelectedItems.value) : listIdNum.value,
+)
+const bulkSpansLists = computed(
+  () => isMeta.value && writableSelectedItems.value.length > 0 && bulkScopeListId.value == null,
 )
 
 const canBulkMove = computed(() => can.value.canMoveItems && writableSelectedIds.value.length > 0)
@@ -3254,6 +3265,14 @@ const strings = {
   // TRANSLATORS: Verb. Dialog button that applies the chosen category to the selected items.
   apply: t('pantry', 'Apply'),
   removeCategory: t('pantry', 'Remove category'),
+  bulkCategorySpansLists: t(
+    'pantry',
+    'The selected items are on different lists, so only categories shared by all lists are shown.',
+  ),
+  bulkLabelsSpanLists: t(
+    'pantry',
+    'The selected items are on different lists, so only labels shared by all lists are shown.',
+  ),
   // TRANSLATORS: Noun (plural), shops where items are bought. Dialog title for bulk assignment.
   assignStoresTitle: t('pantry', 'Assign stores'),
   // TRANSLATORS: Verb. Dialog button that detaches all stores from the selected items.
@@ -3658,6 +3677,11 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
 
 .pantry-bulk-category {
   padding: 0.5rem 0 1rem;
+
+  &__hint {
+    margin: 0 0 0.75rem;
+    color: var(--color-text-maxcontrast);
+  }
 }
 
 .pantry-sort-active {
