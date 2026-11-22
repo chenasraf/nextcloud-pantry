@@ -4,7 +4,7 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "engines": {
-    "node": "^22.22.0 || ^24.11.0",
+    "node": "^22.22.0 || ^24.11.0 || ^26.0.0",
     "pnpm": "^11.9.0"
   },
   "packageManager": "pnpm@11.9.0",
