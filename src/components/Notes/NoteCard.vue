@@ -133,9 +133,11 @@ const isDragging = ref(false)
 
 // A synced note whose path will not resolve is bound to a file that is out of
 // reach — in the trash, or gone. Saying so beats showing an empty path.
-const syncLabel = computed(() =>
-  props.note.syncPath ? props.note.syncPath.replace(/^\//, '') : strings.fileMissing,
-)
+const syncLabel = computed(() => {
+  if (!props.note.syncPath) return strings.fileMissing
+  const path = props.note.syncPath.replace(/^\//, '')
+  return props.note.syncPathHost ? `@${props.note.syncPathHost}/${path}` : path
+})
 
 const cardStyle = computed(() => {
   if (!props.note.color) return {}

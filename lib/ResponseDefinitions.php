@@ -692,6 +692,7 @@ namespace OCA\Pantry;
  *     syncFileId: int|null,
  *     syncOwnerUid: string|null,
  *     syncPath: string|null,
+ *     syncPathHost: string|null,
  *     syncAt: int|null,
  *     canEdit: bool,
  * }

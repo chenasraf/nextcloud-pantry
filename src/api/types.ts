@@ -654,8 +654,14 @@ export interface Note {
   syncFileId: number | null
   /** Account whose storage holds the file; edits by any member are written as them. */
   syncOwnerUid: string | null
-  /** Path of the file, resolved per request — null while the file is out of reach. */
+  /**
+   * Path of the file, resolved per request — null while the file is out of reach.
+   * Relative to the viewer's own files when they can reach it there, otherwise
+   * to `syncPathHost`'s.
+   */
   syncPath: string | null
+  /** Display name of the account whose files `syncPath` is in, when not the viewer's. */
+  syncPathHost?: string | null
   /** When the two sides last agreed. */
   syncAt: number | null
   /** Effective edit permission for the current user (role capability or an editor share). */

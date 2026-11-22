@@ -2224,6 +2224,7 @@
                     "syncFileId",
                     "syncOwnerUid",
                     "syncPath",
+                    "syncPathHost",
                     "syncAt",
                     "canEdit"
                 ],
@@ -2284,6 +2285,10 @@
                         "nullable": true
                     },
                     "syncPath": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "syncPathHost": {
                         "type": "string",
                         "nullable": true
                     },

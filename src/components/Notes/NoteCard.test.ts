@@ -220,6 +220,17 @@ describe('NoteCard', () => {
       })
       expect(bound.find('.note-card__sync-path').text()).toBe('Notes/Groceries.md')
 
+      const hosted = mount(NoteCard, {
+        props: {
+          note: makeNote({
+            syncFileId: 42,
+            syncPath: '/Notes/Groceries.md',
+            syncPathHost: 'Alice',
+          }),
+        },
+      })
+      expect(hosted.find('.note-card__sync-path').text()).toBe('@Alice/Notes/Groceries.md')
+
       const missing = mount(NoteCard, {
         props: { note: makeNote({ syncFileId: 42, syncPath: null }) },
       })

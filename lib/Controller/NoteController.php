@@ -27,6 +27,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\IRequest;
+use OCP\IUserManager;
 use OCP\IUserSession;
 
 /**
@@ -49,6 +50,7 @@ final class NoteController extends OCSController {
 		private PermissionService $permissions,
 		private ShareService $shares,
 		private IUserSession $userSession,
+		private IUserManager $userManager,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -422,17 +424,20 @@ final class NoteController extends OCSController {
 	 * file it syncs with.
 	 *
 	 * `syncPath` is resolved rather than stored, so it can never name a file
-	 * that has since moved. It costs a lookup in the syncing account's storage,
-	 * which `$folderCache` shares across a batch — and which unsynced notes,
-	 * the overwhelming majority, skip entirely.
+	 * that has since moved. It costs a lookup in the viewer's and the syncing
+	 * account's storage, which `$folderCache` shares across a batch — and
+	 * which unsynced notes, the overwhelming majority, skip entirely.
 	 *
 	 * @param array<string, array<int, string>> $shareMap
 	 * @param array<string, \OCP\Files\Folder|null> $folderCache
 	 */
 	private function noteJson(Note $note, bool $roleEdit, array $shareMap, array &$folderCache = []): array {
+		$sync = $this->noteSync->resolvePath($note, $this->userSession->getUser()?->getUID(), $folderCache);
+
 		return array_merge($note->jsonSerialize(), [
 			'canEdit' => $this->shares->canEditFromMap(Share::TYPE_NOTE, (int)$note->getId(), $roleEdit, $shareMap),
-			'syncPath' => $this->noteSync->resolvePath($note, $folderCache),
+			'syncPath' => $sync['path'],
+			'syncPathHost' => $sync['host'] === null ? null : ($this->userManager->getDisplayName($sync['host']) ?? $sync['host']),
 		]);
 	}
 

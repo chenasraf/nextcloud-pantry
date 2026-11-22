@@ -260,21 +260,45 @@ class NoteSyncService {
 	}
 
 	/**
-	 * Path of a note's file, relative to the account that owns it, or null when
-	 * the note is unsynced or the file is out of reach.
+	 * Where a note's file sits, as `$viewerUid` would find it.
 	 *
-	 * `$folderCache` memoizes the owner's folder across a batch of notes, so
+	 * When the viewer reaches the file through their own files — they own it,
+	 * or it is in a folder shared with them — the path is relative to their
+	 * files and `host` is null. Otherwise the path is relative to the syncing
+	 * account's files and `host` is that account, since the bare path would
+	 * read as if it were in the viewer's own files. `path` is null when the
+	 * note is unsynced or the file is out of reach.
+	 *
+	 * `$folderCache` memoizes each account's folder across a batch of notes, so
 	 * listing a wall mounts each account's storage at most once.
 	 *
 	 * @param array<string, Folder|null> $folderCache
+	 * @return array{path: string|null, host: string|null}
 	 */
-	public function resolvePath(Note $note, array &$folderCache = []): ?string {
+	public function resolvePath(Note $note, ?string $viewerUid, array &$folderCache = []): array {
 		$fileId = $note->getSyncFileId();
-		$uid = $note->getSyncOwnerUid();
-		if ($fileId === null || $uid === null) {
-			return null;
+		$ownerUid = $note->getSyncOwnerUid();
+		if ($fileId === null || $ownerUid === null) {
+			return ['path' => null, 'host' => null];
 		}
 
+		if ($viewerUid !== null && $viewerUid !== $ownerUid) {
+			$viewerPath = $this->relativePath($viewerUid, $fileId, $folderCache);
+			if ($viewerPath !== null) {
+				return ['path' => $viewerPath, 'host' => null];
+			}
+		}
+
+		$path = $this->relativePath($ownerUid, $fileId, $folderCache);
+		$host = $path !== null && $viewerUid !== $ownerUid ? $ownerUid : null;
+
+		return ['path' => $path, 'host' => $host];
+	}
+
+	/**
+	 * @param array<string, Folder|null> $folderCache
+	 */
+	private function relativePath(string $uid, int $fileId, array &$folderCache): ?string {
 		if (!array_key_exists($uid, $folderCache)) {
 			try {
 				$folderCache[$uid] = $this->rootFolder->getUserFolder($uid);
@@ -287,7 +311,11 @@ class NoteSyncService {
 			return null;
 		}
 
-		$node = $userFolder->getFirstNodeById($fileId);
+		try {
+			$node = $userFolder->getFirstNodeById($fileId);
+		} catch (\Throwable) {
+			return null;
+		}
 
 		return $node === null ? null : $userFolder->getRelativePath($node->getPath());
 	}

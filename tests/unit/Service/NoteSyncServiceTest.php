@@ -420,7 +420,10 @@ class NoteSyncServiceTest extends TestCase {
 
 	public function testResolvePathReturnsNullForAnUnsyncedNote(): void {
 		$cache = [];
-		$this->assertNull($this->svc->resolvePath($this->makeNote(), $cache));
+		$this->assertSame(
+			['path' => null, 'host' => null],
+			$this->svc->resolvePath($this->makeNote(), 'alice', $cache),
+		);
 	}
 
 	public function testResolvePathMemoizesTheOwnerFolderAcrossNotes(): void {
@@ -433,7 +436,59 @@ class NoteSyncServiceTest extends TestCase {
 		$this->rootFolder->expects($this->once())->method('getUserFolder');
 
 		$cache = [];
-		$this->assertSame('/Notes/Groceries.md', $this->svc->resolvePath($note, $cache));
-		$this->assertSame('/Notes/Groceries.md', $this->svc->resolvePath($note, $cache));
+		$expected = ['path' => '/Notes/Groceries.md', 'host' => null];
+		$this->assertSame($expected, $this->svc->resolvePath($note, 'alice', $cache));
+		$this->assertSame($expected, $this->svc->resolvePath($note, 'alice', $cache));
+	}
+
+	public function testResolvePathUsesTheViewersPathWhenTheFileIsSharedWithThem(): void {
+		$note = $this->makeNote(['syncFileId' => 42, 'syncOwnerUid' => 'alice']);
+		$bobFolder = $this->createMock(self::userFolderClass());
+		$file = $this->makeFile(42, 'Groceries.md', '');
+		$file->method('getPath')->willReturn('/bob/files/Shared/Groceries.md');
+		$bobFolder->method('getFirstNodeById')->willReturn($file);
+		$bobFolder->method('getRelativePath')->willReturn('/Shared/Groceries.md');
+
+		$rootFolder = $this->createMock(IRootFolder::class);
+		$rootFolder->method('getUserFolder')->willReturnMap([['bob', $bobFolder]]);
+		$svc = new NoteSyncService($this->noteMapper, $rootFolder, $this->createMock(LoggerInterface::class));
+
+		$cache = [];
+		$this->assertSame(
+			['path' => '/Shared/Groceries.md', 'host' => null],
+			$svc->resolvePath($note, 'bob', $cache),
+		);
+	}
+
+	public function testResolvePathNamesTheHostWhenTheViewerCannotReachTheFile(): void {
+		$note = $this->makeNote(['syncFileId' => 42, 'syncOwnerUid' => 'alice']);
+		$aliceFolder = $this->createMock(self::userFolderClass());
+		$file = $this->makeFile(42, 'Groceries.md', '');
+		$file->method('getPath')->willReturn('/alice/files/Notes/Groceries.md');
+		$aliceFolder->method('getFirstNodeById')->willReturn($file);
+		$aliceFolder->method('getRelativePath')->willReturn('/Notes/Groceries.md');
+		$bobFolder = $this->createMock(self::userFolderClass());
+		$bobFolder->method('getFirstNodeById')->willReturn(null);
+
+		$rootFolder = $this->createMock(IRootFolder::class);
+		$rootFolder->method('getUserFolder')->willReturnMap([['alice', $aliceFolder], ['bob', $bobFolder]]);
+		$svc = new NoteSyncService($this->noteMapper, $rootFolder, $this->createMock(LoggerInterface::class));
+
+		$cache = [];
+		$this->assertSame(
+			['path' => '/Notes/Groceries.md', 'host' => 'alice'],
+			$svc->resolvePath($note, 'bob', $cache),
+		);
+	}
+
+	public function testResolvePathNamesNoHostWhenTheFileIsOutOfReach(): void {
+		$note = $this->makeNote(['syncFileId' => 42, 'syncOwnerUid' => 'alice']);
+		$this->userFolder->method('getFirstNodeById')->willReturn(null);
+
+		$cache = [];
+		$this->assertSame(
+			['path' => null, 'host' => null],
+			$this->svc->resolvePath($note, 'bob', $cache),
+		);
 	}
 }
