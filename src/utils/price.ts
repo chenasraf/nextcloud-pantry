@@ -2,7 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { resolveCurrency } from './currencies'
+import { firstNumber } from './stock'
 import type { ItemPrice } from '@/api/types'
+
+export interface EstimateEntry {
+  currency: string
+  min: number
+  max: number
+}
 
 export interface PriceValue {
   priceType: 'set' | 'range' | null
@@ -35,6 +42,31 @@ export function hasPrice(p: PriceValue): boolean {
 }
 
 /**
+ * Sum price × quantity per currency, range-aware. The quantity's first number
+ * is the unit count (1 when it has none); unpriced items are skipped, and
+ * currencies are kept apart because there is no rate to convert between them.
+ */
+export function estimateTotal(
+  items: { prices: ItemPrice[]; quantity: string | null }[],
+  storeId: number | null,
+): EstimateEntry[] {
+  const byCurrency = new Map<string, { min: number; max: number }>()
+  for (const item of items) {
+    const price = resolveItemPrice(item.prices, storeId)
+    if (!price || !hasPrice(price)) continue
+    const min = price.priceMin!
+    const max = price.priceType === 'range' && price.priceMax != null ? price.priceMax : min
+    const units = firstNumber(item.quantity) ?? 1
+    const cur = price.priceCurrency ?? ''
+    const entry = byCurrency.get(cur) ?? { min: 0, max: 0 }
+    entry.min += min * units
+    entry.max += max * units
+    byCurrency.set(cur, entry)
+  }
+  return [...byCurrency].map(([currency, r]) => ({ currency, ...r }))
+}
+
+/**
  * Format an amount using the currency's decimals but trimming trailing zeros,
  * so 1 → "1", 1.5 → "1.5", 1.25 → "1.25" (never "1.00").
  */
@@ -57,13 +89,13 @@ export function formatMoney(amount: number, currency: string | null): string {
  * Format one per-currency total. A point value (min === max) renders as a single
  * amount; a range renders as "≈ X–Y".
  */
-export function formatEstimateEntry(entry: { currency: string; min: number; max: number }): string {
+export function formatEstimateEntry(entry: EstimateEntry): string {
   if (entry.min === entry.max) return formatMoney(entry.min, entry.currency)
   return `≈ ${formatMoney(entry.min, entry.currency)}–${formatMoney(entry.max, entry.currency)}`
 }
 
 /** Format a per-currency total list into one string (currencies never summed). */
-export function formatEstimate(entries: { currency: string; min: number; max: number }[]): string {
+export function formatEstimate(entries: EstimateEntry[]): string {
   if (entries.length === 0) return '—'
   return entries.map(formatEstimateEntry).join(' · ')
 }

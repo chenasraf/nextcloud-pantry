@@ -209,6 +209,10 @@
             {{ strings.emptyTrashAction }}
           </NcButton>
         </div>
+        <p v-if="estimateText" class="pantry-detail__estimate" data-testid="list-estimate">
+          <span>{{ strings.estimatedTotal }}</span>
+          <strong>{{ estimateText }}</strong>
+        </p>
         <ul v-if="uncheckedItems.length > 0" ref="uncheckedListRef" class="pantry-detail__items">
           <template v-for="gi in uncheckedGridItems" :key="gi.key">
             <li
@@ -970,7 +974,7 @@ import {
   getLastCurrency,
   setLastCurrency,
 } from '@/api/prefs'
-import { hasPrice } from '@/utils/price'
+import { estimateTotal, formatEstimate, hasPrice } from '@/utils/price'
 import { reorderToTrueOrder } from '@/utils/reorderItems'
 import { orderItemsByCategory } from '@/utils/categoryOrder'
 import { storeGroupKey, byStoreGroupOrder, itemsInStoreGroup } from '@/utils/storeGroupOrder'
@@ -1664,6 +1668,20 @@ const uncheckedItems = computed(() =>
   sortWithinPartition(filteredItems.value.filter((i) => !i.done)),
 )
 const checkedItems = computed(() => sortWithinPartition(filteredItems.value.filter((i) => i.done)))
+
+// Inventories are left out: their quantity is what's on hand, not what to buy.
+// With a single store filtered, prices resolve against that store as they do
+// on a trip there.
+const estimateText = computed(() => {
+  if (props.kind === 'inventory' || trashMode.value || archiveMode.value) return null
+  const realStores = filterStoreIds.value.filter((id) => id !== NO_STORE_ID)
+  const storeId = realStores.length === 1 ? realStores[0] : null
+  const entries = estimateTotal(
+    filteredItems.value.filter((i) => !i.done),
+    storeId,
+  )
+  return entries.length > 0 ? formatEstimate(entries) : null
+})
 
 // ----- Multi-select state -----
 // Declared here (ahead of the drag/drop + long-press wiring that reads them) so
@@ -3155,6 +3173,8 @@ const strings = {
     'This inventory has no restock checklist, so these items are only marked here. Pick one in the inventory settings.',
   ),
   allListsTitle: allListsStrings(props.kind).title,
+  // TRANSLATORS: Label before the summed price of the unchecked items shown in the list, e.g. "Estimated total: $42"
+  estimatedTotal: t('pantry', 'Estimated total:'),
   emptyTitle: t('pantry', 'No items yet'),
   emptyBody: t('pantry', 'Add items using the form above.'),
   trashEmptyTitle: t('pantry', 'Trash is empty'),
@@ -3517,6 +3537,20 @@ const toolbarActions = computed<ToolbarAction[]>(() => {
   &__filter {
     margin-top: 1rem;
     margin-bottom: 1.5rem;
+  }
+
+  &__estimate {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem 0.5rem;
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+    color: var(--color-text-maxcontrast);
+
+    strong {
+      color: var(--color-main-text);
+    }
   }
 
   &__notice {

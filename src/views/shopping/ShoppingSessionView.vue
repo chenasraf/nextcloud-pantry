@@ -242,8 +242,7 @@ import { useCategories } from '@/composables/useCategories'
 import { useLabels } from '@/composables/useLabels'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { useRowClickAction } from '@/composables/useRowClickAction'
-import { formatEstimate, resolveItemPrice } from '@/utils/price'
-import { firstNumber } from '@/utils/stock'
+import { estimateTotal, formatEstimate } from '@/utils/price'
 import { getCurrentUserId } from '@/utils/currentUser'
 import {
   getCurrentSession,
@@ -381,28 +380,9 @@ const removedTitle = computed(() =>
 
 // Client-side estimate of what's in the cart this trip, shown in the drawer
 // header. Range-aware, per-currency; the authoritative totals live in the review.
-const doneEstimateText = computed(() => {
-  const byCurrency = new Map<string, { min: number; max: number }>()
-  const storeId = session.value?.activeStoreId ?? null
-  for (const item of doneItems.value) {
-    const price = resolveItemPrice(item.prices, storeId)
-    if (
-      !price ||
-      (price.priceType !== 'set' && price.priceType !== 'range') ||
-      price.priceMin == null
-    )
-      continue
-    const cur = price.priceCurrency ?? ''
-    const max =
-      price.priceType === 'range' && price.priceMax != null ? price.priceMax : price.priceMin
-    const units = firstNumber(item.quantity) ?? 1
-    const entry = byCurrency.get(cur) ?? { min: 0, max: 0 }
-    entry.min += price.priceMin * units
-    entry.max += max * units
-    byCurrency.set(cur, entry)
-  }
-  return formatEstimate([...byCurrency].map(([currency, r]) => ({ currency, ...r })))
-})
+const doneEstimateText = computed(() =>
+  formatEstimate(estimateTotal(doneItems.value, session.value?.activeStoreId ?? null)),
+)
 
 interface Group {
   key: number | null

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatPrice, hasPrice, resolveItemPrice, storelessPrice, type PriceValue } from './price'
+import {
+  estimateTotal,
+  formatPrice,
+  hasPrice,
+  resolveItemPrice,
+  storelessPrice,
+  type PriceValue,
+} from './price'
 import type { ItemPrice } from '@/api/types'
 
 function itemPrice(partial: Partial<ItemPrice>): ItemPrice {
@@ -115,5 +122,50 @@ describe('resolveItemPrice', () => {
   it('returns null when neither a store price nor a store-less price exists', () => {
     expect(resolveItemPrice([atStore3], 7)).toBeNull()
     expect(resolveItemPrice([], 3)).toBeNull()
+  })
+})
+
+describe('estimateTotal', () => {
+  const item = (prices: ItemPrice[], quantity: string | null = null) => ({ prices, quantity })
+
+  it('multiplies each price by the first number in the quantity', () => {
+    expect(
+      estimateTotal(
+        [item([itemPrice({ priceMin: 2 })], '3 boxes'), item([itemPrice({ priceMin: 5 })])],
+        null,
+      ),
+    ).toEqual([{ currency: 'USD', min: 11, max: 11 }])
+  })
+
+  it('carries ranges through as min and max', () => {
+    expect(
+      estimateTotal(
+        [item([itemPrice({ priceType: 'range', priceMin: 1, priceMax: 4 })], '2')],
+        null,
+      ),
+    ).toEqual([{ currency: 'USD', min: 2, max: 8 }])
+  })
+
+  it('keeps currencies apart and skips unpriced items', () => {
+    expect(
+      estimateTotal(
+        [
+          item([itemPrice({ priceMin: 1 })]),
+          item([itemPrice({ priceMin: 7, priceCurrency: 'EUR' })]),
+          item([]),
+          item([itemPrice({ priceType: null, priceMin: null })]),
+        ],
+        null,
+      ),
+    ).toEqual([
+      { currency: 'USD', min: 1, max: 1 },
+      { currency: 'EUR', min: 7, max: 7 },
+    ])
+  })
+
+  it('prefers the given store price over the store-less one', () => {
+    const prices = [itemPrice({ priceMin: 10 }), itemPrice({ storeId: 3, priceMin: 6 })]
+    expect(estimateTotal([item(prices)], 3)).toEqual([{ currency: 'USD', min: 6, max: 6 }])
+    expect(estimateTotal([item(prices)], null)).toEqual([{ currency: 'USD', min: 10, max: 10 }])
   })
 })
