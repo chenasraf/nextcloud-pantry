@@ -120,6 +120,73 @@ Two settings shape this:
 - **Suggest archived items** — off by default; turn it on to search archived items for suggestions
   too. Reusing an archived item unarchives it.
 
+### Smart input
+
+Type the amount along with the name and Pantry splits it off: **2 L milk** adds _milk_ with the
+quantity _2 L_. Items you have added before also suggest the category and amount picked for them
+then, so a regular shop mostly fills itself in.
+
+What gets read out of a typed item:
+
+| You type            | Item  | Quantity  |
+| :------------------ | :---- | :-------- |
+| `2 L milk`          | milk  | 2 L       |
+| `500g flour`        | flour | 500 g     |
+| `Milk 2L`           | Milk  | 2 L       |
+| `3x eggs`           | eggs  | 3         |
+| `eggs x3`           | eggs  | 3         |
+| `2 bottles of wine` | wine  | 2 bottles |
+| `1/2 cup sugar`     | sugar | 1/2 cup   |
+| `- [ ] 6 eggs`      | eggs  | 6         |
+
+- The amount can come before or after the name, as a number with a unit, a plain number in front
+  (`2 eggs`), or a count like `3x`, `x3` or `3×`. Fractions (`1/2`, `½`) work too.
+- Units are matched in English and metric symbols everywhere, plus the words of the language Pantry
+  is set to. Languages that write `1,5` use a decimal comma.
+- A word after a unit like _of_ (`2 bottles of wine`) is dropped from the name.
+- A number that is part of the name stays in it: `7up`, `3M tape` and `Pixel 8` are added as typed.
+- Markdown list markers (`-`, `*`, `1.`, `[ ]`) are removed, so a pasted list adds cleanly.
+
+**Suggestions learn from your household.** When you add an item by a name you have used before,
+Pantry suggests the category the house usually picks for it, and on the same list, the amount you
+added it with last time. A suggestion only fills a detail you have not set: the list's
+[item defaults](#item-defaults), a scanned [barcode](#barcodes), and anything you pick yourself
+always win. Names match loosely — case, accents and notes in brackets don't matter, so _Milk (2%)_
+counts as _milk_.
+
+Each guess shows as a chip you can drop before adding:
+
+- Dropping an **amount read from what you typed** keeps the text in the name, for when the number
+  really is part of it.
+- Dropping a **suggested category or amount** tells Pantry the guess was wrong, so it is less likely
+  to suggest it for that item again.
+
+<Tabs syncKey="platform">
+	<TabItem label="Web">
+		Guesses appear under the **Item name** field as chips; click one to drop it. With **Multiple**
+		turned on, each line gets its own row of chips, and so does each item in a Markdown
+		[import](#import-and-export).
+	</TabItem>
+	<TabItem label="Mobile & desktop">
+		Guesses fill the composer's **Category** and **Quantity** chips; tap the **×** on a chip to drop
+		it. With **Multiple** turned on, and when reviewing a Markdown import, each line gets its own row
+		of guesses.
+	</TabItem>
+</Tabs>
+
+![The add item form with "500g rice" typed in, showing chips for the 500 g read from the text and a suggested Dry goods category.](/docs/checklists-smart-input.png)
+
+![Multiple mode with four lines typed. Rice, jam and tomatoes each get a row of chips for their amount and category; "Pixel 8 case" is left as typed.](/docs/checklists-smart-input-multiple.png)
+
+![The Import from Markdown dialog with a pasted checklist. Each found item shows the amount read from its line and a suggested category.](/docs/checklists-smart-input-import.png)
+
+On [inventories](/docs/using/inventories), the amount remembered is the one typed when adding an
+item — updating its stock count later does not change what is suggested.
+
+Smart input is on by default. Turn it off from **Settings** → **Interface** → **Smart input** to
+have every item added exactly as typed. On the web the choice is saved to your account, so it
+applies in every browser; in the app it applies to that device.
+
 ## Item defaults
 
 A list can pre-fill the composer, so that every item you add to your groceries list starts at your
