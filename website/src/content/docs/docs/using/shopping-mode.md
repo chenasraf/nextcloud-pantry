@@ -37,6 +37,16 @@ of the list and into a **Done** drawer at the bottom (tap again to undo). A stic
 your store sequence and progress; tap a store to jump to it, or use the floating action button to
 move to the **next store** / **finish**.
 
+Ticking an item puts it in your cart, not off the list: your checklists and
+[inventories](/docs/using/inventories) stay as they are until the trip is finished. Finishing checks
+off everything in the cart, as of when each item was ticked and by whoever ticked it.
+
+Bought more or less than the list asked for? An item whose quantity has a number — _"6 eggs"_, _"2
+L"_ — has **−** and **+** on its row to step the amount before you tick it. The new amount is saved
+to the item straight away, and it is what restocks the inventory when the trip is finished. On a
+wide screen the stepper shows the amount between its buttons; on a narrow one the amount stays in
+its chip and the row keeps only **−** and **+**.
+
 The list refreshes about once a minute (and immediately when you return to the tab), so if a
 housemate checks something off, it disappears from yours too. A trip has a single shared check log,
 so on a trip you share with a housemate their ticks land in your **Done** drawer rather than
@@ -70,8 +80,8 @@ Supermarket"_, or _"Alice and 2 others are shopping"_ once a trip has several sh
 Joining while you have a live trip of your own offers to end and save yours first. A private trip
 never surfaces for housemates to join.
 
-A trip belongs to the shopper who started it, so that is whose history it lands in. A trip you
-joined shows up under the **house** view of [history](#6-history) rather than your own.
+A trip you joined shows up in your own [history](#6-history) as well as that of the shopper who
+started it.
 
 ### 4. Reminders
 
@@ -95,22 +105,35 @@ can tick them off as you go, but nothing is required and the ticks are just for 
 When you finish a store or the whole trip you get a **review**: items grouped by the store you
 bought them at, an estimated total per currency (each item's price times the number in its quantity,
 shown as a range when prices are ranges), and a field to **enter what you actually paid** per store
-(or for the whole trip if you shopped storeless). Finishing stamps the trip closed.
+(or for the whole trip if you shopped storeless). Finishing checks off what is in the cart and
+stamps the trip closed. A trip left idle for a long time is finished the same way, so nothing you
+ticked is lost. An item someone archived or checked off on the list during the trip is left as it
+is.
 
 <img width="616" alt="Trip review grouped by store with per-currency estimates and an actual-paid field" src="/docs/review.png" />
 
 The review before **Finish trip** also has a **Put away** section, listing everything you bought and
-the [inventories](/docs/using/inventories) it goes to — where its tick restocked it, to start with.
-Split an item between storages, move it, or add it to a storage that does not have it yet, and
-finishing puts your purchases away there. Items you leave as they are keep what their tick
-restocked, and so does a trip finished by a housemate, from another device, or closed after a long
-idle period. See [Putting a trip away](/docs/using/inventories#putting-a-trip-away).
+the [inventories](/docs/using/inventories) it goes to — where its tick will restock it, to start
+with. Split an item between storages, move it, or add it to a storage that does not have it yet, and
+finishing puts your purchases away there. Items you leave as they are restock where they are linked,
+and so does every item on a trip finished by a housemate, from another device, or closed after a
+long idle period. See [Putting a trip away](/docs/using/inventories#putting-a-trip-away).
+
+### Cancelling a trip
+
+Started a trip by mistake, or came home empty-handed? **Cancel trip**, beside **Next store** /
+**Finish**, ends the trip without checking anything off: no list is changed and no stock is
+restocked. Amounts you stepped on an item stay as you set them. Cancelling ends the trip for
+everyone on it, and housemates who joined are sent back to their lists.
+
+A cancelled trip stays in [history](#6-history), marked **Cancelled** and with no total.
 
 ### 6. History
 
-Finished trips land in **Shopping history** (linked from the start screen). Each row shows the store
-route, item count, duration, and total; opening one shows the same grouped review. You can view just
-**your** trips or the whole **house's** (private trips stay hidden from housemates). Closed trips
+Finished trips land in **Shopping history** (linked from the start screen). Each row shows the
+avatars of everyone who shopped it, the store route, item count, duration, and total; opening one
+shows the same grouped review. You can view just **your** trips — the ones you started and the ones
+you joined — or the whole **house's** (private trips stay hidden from housemates). Closed trips
 render from a **snapshot** taken at close time, so they stay intact even if the underlying items are
 later edited or deleted. Old trips can be auto-pruned via a configurable retention period (default:
 keep forever).
