@@ -31,7 +31,7 @@ use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
- * Shopping Mode — session lifecycle (create/current/advance/close/abort), the live
+ * Shopping Mode — session lifecycle (create/current/advance/close/abort/undo), the live
  * store-narrowed shopping list, per-store check logging, and the review + price
  * totals. Checking an item off marks it done and records it in the session log
  * against the active store.
@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @psalm-import-type PantryShoppingReview from ResponseDefinitions
  * @psalm-import-type PantryShoppingHistoryRow from ResponseDefinitions
  * @psalm-import-type PantryShoppingPresenceEntry from ResponseDefinitions
+ * @psalm-import-type PantryShoppingUndo from ResponseDefinitions
  * @psalm-import-type PantrySuccess from ResponseDefinitions
  * @psalm-api
  */
@@ -225,6 +226,48 @@ final class ShoppingSessionController extends OCSController {
 				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
 			}
 			return new DataResponse($this->sessions->composeDto($aborted));
+		});
+	}
+
+	/**
+	 * Undo a finished shopping trip
+	 *
+	 * Walks back everything finishing the trip did: each item it checked off is
+	 * unchecked again (and brought back from the trash if checking it off
+	 * deleted it), and what it restocked or put away is taken back out of the
+	 * inventories, never below empty. An item changed since the trip is left as
+	 * it is and listed in `skipped` — `changed` when it was unchecked, checked
+	 * again, reopened or archived since, `gone` when it was deleted for good.
+	 * The trip stays in history, marked undone, with no totals.
+	 *
+	 * Anyone who shopped the trip may undo it. Undoing a live, cancelled or
+	 * already-undone trip returns 409 with the session in the body.
+	 *
+	 * @param int $houseId House id.
+	 * @param int $sessionId Session id.
+	 *
+	 * @return DataResponse<Http::STATUS_OK, PantryShoppingUndo, array{}>|DataResponse<Http::STATUS_CONFLICT, PantryShoppingSession, array{}>
+	 *
+	 * 200: Trip undone
+	 * 409: Trip is live, cancelled or already undone
+	 */
+	#[ApiRoute(verb: 'POST', url: '/api/houses/{houseId}/shopping/sessions/{sessionId}/undo')]
+	#[NoAdminRequired]
+	#[Permission(['canViewLists'])]
+	public function undo(int $houseId, int $sessionId): DataResponse {
+		return $this->runAction(function () use ($houseId, $sessionId): DataResponse {
+			$uid = $this->requireUid();
+			$session = $this->loadShoppedSession($sessionId, $houseId);
+			try {
+				$result = $this->sessions->undo($session, $uid);
+			} catch (ShoppingSessionConflictException $e) {
+				return new DataResponse($this->sessions->composeDto($e->getSession()), Http::STATUS_CONFLICT);
+			}
+			return new DataResponse([
+				'session' => $this->sessions->composeDto($result['session']),
+				'reverted' => $result['reverted'],
+				'skipped' => $result['skipped'],
+			]);
 		});
 	}
 
@@ -774,6 +817,20 @@ final class ShoppingSessionController extends OCSController {
 		$this->auth->requireMember($houseId, $uid);
 		$session = $this->sessions->get($sessionId);
 		if ($session->getHouseId() !== $houseId || !$this->sessions->isMember($session, $uid)) {
+			throw new NotFoundException('Shopping session not found');
+		}
+		return $session;
+	}
+
+	/**
+	 * Load a session the caller took part in, as its starter or as a housemate
+	 * who joined it, even after the trip ended and they left it.
+	 */
+	private function loadShoppedSession(int $sessionId, int $houseId): ShoppingSession {
+		$uid = $this->requireUid();
+		$this->auth->requireMember($houseId, $uid);
+		$session = $this->sessions->get($sessionId);
+		if ($session->getHouseId() !== $houseId || !$this->sessions->hasShopped($session, $uid)) {
 			throw new NotFoundException('Shopping session not found');
 		}
 		return $session;

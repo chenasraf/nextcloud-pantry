@@ -81,21 +81,43 @@
                     </template>
                     {{ itemsLabel(row) }}
                   </PantryChip>
+                  <PantryChip
+                    v-if="row.undoneAt != null"
+                    class="shop-history__chip"
+                    size="sm"
+                    :interactive="false"
+                  >
+                    <template #icon>
+                      <UndoIcon :size="14" />
+                    </template>
+                    {{ strings.undone }}
+                  </PantryChip>
                 </span>
               </span>
               <span v-if="row.grandTotal.length > 0" class="shop-history__total">
                 {{ totalLabel(row) }}
               </span>
             </button>
-            <NcButton
-              v-if="row.userId === currentUid"
-              variant="tertiary"
-              :aria-label="strings.deleteTrip"
-              :title="strings.deleteTrip"
-              @click="deletingRow = row"
-            >
-              <template #icon><DeleteIcon :size="20" /></template>
-            </NcButton>
+            <span class="shop-history__actions">
+              <NcButton
+                v-if="canUndo(row)"
+                variant="tertiary"
+                :aria-label="strings.undoTrip"
+                :title="strings.undoTrip"
+                @click="undoingRow = row"
+              >
+                <template #icon><UndoIcon :size="20" /></template>
+              </NcButton>
+              <NcButton
+                v-if="row.userId === currentUid"
+                variant="tertiary"
+                :aria-label="strings.deleteTrip"
+                :title="strings.deleteTrip"
+                @click="deletingRow = row"
+              >
+                <template #icon><DeleteIcon :size="20" /></template>
+              </NcButton>
+            </span>
           </li>
         </ul>
 
@@ -131,6 +153,41 @@
         </NcButton>
       </template>
     </NcDialog>
+
+    <NcDialog
+      v-if="undoingRow"
+      :name="strings.undoTripTitle"
+      :open="!!undoingRow"
+      close-on-click-outside
+      @update:open="(v) => !v && (undoingRow = null)"
+    >
+      <p>{{ strings.undoTripBody }}</p>
+      <template #actions>
+        <NcButton @click="undoingRow = null">{{ strings.cancel }}</NcButton>
+        <NcButton variant="primary" :disabled="undoing" @click="submitUndo">
+          {{ strings.undoConfirm }}
+        </NcButton>
+      </template>
+    </NcDialog>
+
+    <NcDialog
+      v-if="undoSkipped.length > 0"
+      :name="strings.undoSkippedTitle"
+      :open="undoSkipped.length > 0"
+      close-on-click-outside
+      @update:open="(v) => !v && (undoSkipped = [])"
+    >
+      <p>{{ strings.undoSkippedBody }}</p>
+      <ul class="shop-history__skipped">
+        <li v-for="skip in undoSkipped" :key="skip.itemId">
+          <strong>{{ skip.itemName ?? strings.unnamedItem }}</strong>
+          — {{ skip.reason === 'gone' ? strings.skippedGone : strings.skippedChanged }}
+        </li>
+      </ul>
+      <template #actions>
+        <NcButton variant="primary" @click="undoSkipped = []">{{ strings.ok }}</NcButton>
+      </template>
+    </NcDialog>
   </div>
 </template>
 
@@ -138,7 +195,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { t, n } from '@nextcloud/l10n'
-import { showError } from '@nextcloud/dialogs'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -152,14 +209,15 @@ import CartOffIcon from '@icons/CartOff.vue'
 import ClockOutlineIcon from '@icons/ClockOutline.vue'
 import CloseCircleOutlineIcon from '@icons/CloseCircleOutline.vue'
 import FormatListChecksIcon from '@icons/FormatListChecks.vue'
+import UndoIcon from '@icons/Undo.vue'
 import { ShoppingReviewDialog } from '@/components/ShoppingReview'
 import PantryChip from '@/components/PantryChip'
 import { useCurrentHouse } from '@/composables/useCurrentHouse'
 import { getCurrentUserId } from '@/utils/currentUser'
-import { deleteSession, getHistory } from '@/api/shopping'
+import { deleteSession, getHistory, undoSession } from '@/api/shopping'
 import { formatMoney } from '@/utils/price'
 import { formatDateTime, formatDuration } from '@/utils/datetime'
-import type { ShoppingHistoryRow } from '@/api/types'
+import type { ShoppingHistoryRow, ShoppingUndoSkip } from '@/api/types'
 
 const router = useRouter()
 const { houseId } = useCurrentHouse()
@@ -175,6 +233,9 @@ const canLoadMore = ref(false)
 const detailRow = ref<ShoppingHistoryRow | null>(null)
 const deletingRow = ref<ShoppingHistoryRow | null>(null)
 const deleting = ref(false)
+const undoingRow = ref<ShoppingHistoryRow | null>(null)
+const undoing = ref(false)
+const undoSkipped = ref<ShoppingUndoSkip[]>([])
 const currentUid = getCurrentUserId()
 
 async function load() {
@@ -250,6 +311,44 @@ async function submitDelete() {
   }
 }
 
+function canUndo(row: ShoppingHistoryRow): boolean {
+  return (
+    row.closedAt != null &&
+    row.itemCount > 0 &&
+    row.abortedAt == null &&
+    row.undoneAt == null &&
+    currentUid !== null &&
+    row.memberIds.includes(currentUid)
+  )
+}
+
+async function submitUndo() {
+  const row = undoingRow.value
+  if (!row) return
+  undoing.value = true
+  try {
+    const outcome = await undoSession(houseIdNum.value, row.id)
+    undoingRow.value = null
+    if (outcome.status === 'conflict') {
+      showError(strings.undoConflict)
+    } else if (outcome.result.skipped.length > 0) {
+      undoSkipped.value = outcome.result.skipped
+    } else {
+      showSuccess(strings.undoDone)
+    }
+    // Either way the row's state moved on: undone now, or by whoever got there first.
+    const index = rows.value.findIndex((r) => r.id === row.id)
+    if (index !== -1) {
+      const [fetched] = await getHistory(houseIdNum.value, scope.value, 1, index)
+      if (fetched?.id === row.id) rows.value.splice(index, 1, fetched)
+    }
+  } catch (e) {
+    showError((e as Error).message || strings.undoFailed)
+  } finally {
+    undoing.value = false
+  }
+}
+
 function goBack() {
   router.push({ name: 'shopping-start', params: { houseId: String(houseIdNum.value) } })
 }
@@ -302,6 +401,25 @@ const strings = {
   // TRANSLATORS: Verb, button confirming a shopping trip's deletion.
   delete: t('pantry', 'Delete'),
   deleteFailed: t('pantry', 'Could not delete the trip.'),
+  // TRANSLATORS: Adjective, marks a finished shopping trip in history whose check-offs were reversed
+  undone: t('pantry', 'Undone'),
+  undoTrip: t('pantry', 'Undo trip'),
+  undoTripTitle: t('pantry', 'Undo this trip?'),
+  undoTripBody: t(
+    'pantry',
+    'Everything checked off on this trip goes back on its list, and what it added to your inventories is taken back out. Items changed since the trip are left as they are.',
+  ),
+  // TRANSLATORS: Verb, button confirming that a finished shopping trip is reversed
+  undoConfirm: t('pantry', 'Undo trip'),
+  undoDone: t('pantry', 'Shopping trip undone'),
+  undoConflict: t('pantry', 'This trip can no longer be undone'),
+  undoFailed: t('pantry', 'Could not undo the trip.'),
+  undoSkippedTitle: t('pantry', 'Some items were left as they are'),
+  undoSkippedBody: t('pantry', 'The trip was undone, but these items were not put back:'),
+  unnamedItem: t('pantry', 'An item'),
+  skippedChanged: t('pantry', 'it changed after the trip'),
+  skippedGone: t('pantry', 'it was deleted'),
+  ok: t('pantry', 'OK'),
 }
 </script>
 
@@ -430,6 +548,21 @@ const strings = {
     color: var(--color-primary-element-light-text);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+  }
+
+  // Room for both row buttons whichever of them a row has, so the cards line up.
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    min-width: calc(2 * var(--default-clickable-area, 34px) + 0.25rem);
+  }
+
+  &__skipped {
+    margin: 0.5rem 0 0;
+    padding-inline-start: 1.25rem;
+    list-style: disc;
   }
 
   &__more {

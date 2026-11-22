@@ -75,12 +75,17 @@ class RestockServiceTest extends TestCase {
 
 		$checklists = $this->createMock(ChecklistService::class);
 		$checklists->method('getItem')->willReturnCallback(fn (int $id): ChecklistItem => clone $this->items[$id]);
-		$checklists->method('toggleItem')->willReturnCallback(function (int $id, string $uid): ChecklistItem {
+		$checklists->method('toggleItem')->willReturnCallback(function (int $id, string $uid, ?int $now = null): ChecklistItem {
 			$item = $this->items[$id];
 			$item->setDone(!$item->getDone());
+			$item->setDoneAt($item->getDone() ? ($now ?? time()) : null);
 			$item->setDoneBy($item->getDone() ? $uid : null);
 			$item->setRestock(null);
 			return $item;
+		});
+		$checklists->method('restoreItem')->willReturnCallback(function (int $id): ChecklistItem {
+			$this->items[$id]->setDeletedAt(null);
+			return $this->items[$id];
 		});
 		$checklists->method('addItem')->willReturnCallback(function (int $listId, array $data, ?string $by): ChecklistItem {
 			$this->added = $data;
@@ -377,6 +382,79 @@ class RestockServiceTest extends TestCase {
 
 		$this->assertSame('4', $eggs->getQuantity());
 		$this->assertCount(1, $result['undone']);
+	}
+
+	// ----- Reverting a tick -----
+
+	public function testRevertingATickUnchecksAndTakesItBackOut(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$this->row()->setQuantity('8');
+		$this->svc->toggle(self::ROW, 'carol', true, 700);
+
+		$result = $this->svc->revertTick(self::ROW, 700, 'carol', 'alice');
+
+		$this->assertNotNull($result);
+		$this->assertFalse($this->row()->getDone());
+		$this->assertSame('4', $eggs->getQuantity());
+		$this->assertCount(1, $result['undone']);
+	}
+
+	public function testRevertingATickTakesBackWhatWasPutAway(): void {
+		$kitchen = $this->counted(20, '4', '12');
+		$garage = $this->counted(21, '0', '6');
+		$this->row()->setQuantity('8');
+		$this->svc->toggle(self::ROW, 'alice', true, 700);
+		$this->svc->putAway(self::ROW, [['listId' => 21, 'amount' => 5.0]], 'alice');
+
+		$this->svc->revertTick(self::ROW, 700, 'alice', 'alice');
+
+		$this->assertSame('4', $kitchen->getQuantity());
+		$this->assertSame('0', $garage->getQuantity());
+	}
+
+	public function testRevertingATickNeverTakesStockBelowEmpty(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$this->row()->setQuantity('8');
+		$this->svc->toggle(self::ROW, 'alice', true, 700);
+		$eggs->setQuantity('3');
+
+		$this->svc->revertTick(self::ROW, 700, 'alice', 'alice');
+
+		$this->assertSame('0', $eggs->getQuantity());
+	}
+
+	public function testRevertingATickBringsAOnceItemBackFromTheTrash(): void {
+		$this->row()->setDeleteOnDone(true);
+		$this->row()->setDone(true);
+		$this->row()->setDoneAt(700);
+		$this->row()->setDeletedAt(700);
+
+		$this->assertNotNull($this->svc->revertTick(self::ROW, 700, null, 'alice'));
+		$this->assertNull($this->row()->getDeletedAt());
+		$this->assertFalse($this->row()->getDone());
+	}
+
+	public function testRevertingATickLeavesAnItemChangedSince(): void {
+		$eggs = $this->counted(20, '4', '12');
+		$this->row()->setQuantity('8');
+		$this->svc->toggle(self::ROW, 'alice', true, 900);
+
+		// Ticked again after the trip, by someone else, or not ticked at all.
+		$this->assertNull($this->svc->revertTick(self::ROW, 700, 'alice', 'alice'));
+		$this->assertNull($this->svc->revertTick(self::ROW, 900, 'bob', 'alice'));
+		$this->svc->toggle(self::ROW, 'alice', false);
+		$this->assertNull($this->svc->revertTick(self::ROW, 900, 'alice', 'alice'));
+		$this->assertSame('4', $eggs->getQuantity());
+	}
+
+	public function testRevertingATickLeavesAnItemTrashedByHand(): void {
+		$this->row()->setDone(true);
+		$this->row()->setDoneAt(700);
+		$this->row()->setDeletedAt(800);
+
+		$this->assertNull($this->svc->revertTick(self::ROW, 700, null, 'alice'));
+		$this->assertTrue($this->row()->getDone());
+		$this->assertSame(800, $this->row()->getDeletedAt());
 	}
 
 	// ----- Preview -----

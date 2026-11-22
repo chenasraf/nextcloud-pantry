@@ -508,6 +508,7 @@ namespace OCA\Pantry;
  *     lastSeenAt: int,
  *     closedAt: int|null,
  *     abortedAt: int|null,
+ *     undoneAt: int|null,
  *     includeUnassigned: bool,
  *     isPrivate: bool,
  *     allStores: bool,
@@ -553,6 +554,12 @@ namespace OCA\Pantry;
  *     updatedAt: int,
  * }
  *
+ * @psalm-type PantryShoppingUndo = array{
+ *     session: PantryShoppingSession,
+ *     reverted: list<int>,
+ *     skipped: list<array{itemId: int, itemName: string|null, reason: 'changed'|'gone'}>,
+ * }
+ *
  * @psalm-type PantryShoppingPresenceEntry = array{
  *     userId: string,
  *     sessionId: int,
@@ -568,6 +575,7 @@ namespace OCA\Pantry;
  *     createdAt: int,
  *     closedAt: int|null,
  *     abortedAt: int|null,
+ *     undoneAt: int|null,
  *     stores: list<string>,
  *     itemCount: int,
  *     grandTotal: list<array{currency: string, amount: float}>,

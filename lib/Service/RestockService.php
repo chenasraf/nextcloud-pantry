@@ -117,6 +117,39 @@ class RestockService {
 	}
 
 	/**
+	 * Walk back a tick: uncheck the item as its member would, out of the trash
+	 * when the tick put it there, taking back out of stock what the tick (or a
+	 * put-away after it) restocked. Only an item still exactly as that tick
+	 * left it is touched — one unchecked, ticked again, reopened or archived
+	 * since belongs to whoever changed it.
+	 *
+	 * @param int $doneAt When the tick happened.
+	 * @param string|null $doneBy Who the tick credited; null accepts anyone.
+	 * @return RestockToggle|null Null when the item changed since the tick.
+	 * @throws DoesNotExistException when the item is gone for good.
+	 */
+	public function revertTick(int $itemId, int $doneAt, ?string $doneBy, string $uid): ?array {
+		return $this->atomic(function () use ($itemId, $doneAt, $doneBy, $uid): ?array {
+			$this->itemMapper->lock($itemId);
+			$before = $this->itemMapper->findById($itemId, true);
+			if (!$before->getDone() || $before->getDoneAt() !== $doneAt || $before->getArchivedAt() !== null
+				|| ($doneBy !== null && $before->getDoneBy() !== $doneBy)) {
+				return null;
+			}
+			if ($before->getDeletedAt() !== null) {
+				// Trashed by hand rather than by its own "once" tick.
+				if (!$before->getDeleteOnDone() || $before->getDeletedAt() !== $doneAt) {
+					return null;
+				}
+				$this->checklists->restoreItem($itemId);
+			}
+			$record = $before->getRestock() ?? [];
+			$item = $this->checklists->toggleItem($itemId, $uid);
+			return $this->undo($item, $record, $uid);
+		}, $this->db);
+	}
+
+	/**
 	 * Put what a ticked checklist item bought away in the inventories the
 	 * member picks, in the amounts they pick, instead of where the tick put it.
 	 * The tick's restock is wound back and the picks applied on top, each

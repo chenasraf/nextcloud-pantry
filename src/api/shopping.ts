@@ -7,6 +7,7 @@ import type {
   ShoppingReview,
   ShoppingCheckResult,
   ShoppingSession,
+  ShoppingUndoResult,
 } from './types'
 
 export interface CreateSessionInput {
@@ -202,6 +203,28 @@ export async function getHistory(
     params: { scope, limit, offset },
   })
   return resp.data ?? []
+}
+
+/**
+ * Undo a finished trip: its items are unchecked again and what it restocked
+ * is taken back out. A 409 means the trip can no longer be undone — it was
+ * cancelled, or someone already undid it — and the body carries it as it is.
+ */
+export async function undoSession(
+  houseId: number,
+  sessionId: number,
+): Promise<
+  | { status: 'undone'; result: ShoppingUndoResult }
+  | { status: 'conflict'; session: ShoppingSession }
+> {
+  const resp = await ocs.post<ShoppingUndoResult | ShoppingSession>(
+    `/houses/${houseId}/shopping/sessions/${sessionId}/undo`,
+    {},
+    { validateStatus: (s) => s === 200 || s === 409 },
+  )
+  return resp.status === 409
+    ? { status: 'conflict', session: resp.data as ShoppingSession }
+    : { status: 'undone', result: resp.data as ShoppingUndoResult }
 }
 
 /** Permanently delete one of the caller's closed trips from history. */

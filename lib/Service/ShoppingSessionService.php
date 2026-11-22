@@ -435,6 +435,54 @@ class ShoppingSessionService {
 	}
 
 	/**
+	 * Walk a finished trip back, as if its checks had never landed: each item
+	 * it checked off is unchecked, out of the trash if the check put it there,
+	 * and what it restocked or put away is taken back out of stock. Each item is
+	 * walked back in its own transaction ({@see RestockService::revertTick()}).
+	 *
+	 * An item changed since the trip — unchecked, checked again, reopened,
+	 * archived — is left as it is and reported as skipped, as is one deleted
+	 * for good. The trip stays in history, marked undone.
+	 *
+	 * @return array{session: ShoppingSession, reverted: list<int>, skipped: list<array{itemId: int, itemName: string|null, reason: 'changed'|'gone'}>}
+	 * @throws ShoppingSessionConflictException when the trip is live, cancelled, or already undone.
+	 */
+	public function undo(ShoppingSession $session, string $uid): array {
+		if ($session->getClosedAt() === null) {
+			throw new ShoppingSessionConflictException($session, 'Shopping session is still live');
+		}
+		if ($session->getAbortedAt() !== null) {
+			throw new ShoppingSessionConflictException($session, 'A cancelled shopping session checked nothing off');
+		}
+		if ($session->getUndoneAt() !== null) {
+			throw new ShoppingSessionConflictException($session, 'Shopping session is already undone');
+		}
+		$reverted = [];
+		$skipped = [];
+		foreach ($this->sessionItems->findBySession((int)$session->getId()) as $log) {
+			$itemId = (int)$log->getItemId();
+			try {
+				$result = $this->restock->revertTick($itemId, (int)$log->getCheckedAt(), $log->getCheckedBy(), $uid);
+			} catch (DoesNotExistException|NotFoundException) {
+				$skipped[] = ['itemId' => $itemId, 'itemName' => $log->getItemName(), 'reason' => 'gone'];
+				continue;
+			} catch (\InvalidArgumentException) {
+				$result = null;
+			}
+			if ($result === null) {
+				$skipped[] = ['itemId' => $itemId, 'itemName' => $log->getItemName(), 'reason' => 'changed'];
+				continue;
+			}
+			$reverted[] = $itemId;
+		}
+		$now = time();
+		$session->setUndoneAt($now);
+		$session->setUpdatedAt($now);
+		$this->sessions->update($session);
+		return ['session' => $session, 'reverted' => $reverted, 'skipped' => $skipped];
+	}
+
+	/**
 	 * Check off each logged item, once, as of when it was checked on the trip
 	 * and by whoever checked it, each in its own transaction. Items gone,
 	 * archived or already done since are skipped, so one of them never stops
@@ -772,9 +820,14 @@ class ShoppingSessionService {
 				'createdAt' => $session->getCreatedAt(),
 				'closedAt' => $session->getClosedAt(),
 				'abortedAt' => $session->getAbortedAt(),
+				'undoneAt' => $session->getUndoneAt(),
 				'stores' => $names,
 				'itemCount' => $this->sessionItems->countBySession($sessionId),
-				'grandTotal' => $session->getAbortedAt() !== null ? [] : $this->collapseTotal($this->computeGrandTotal($session)),
+				// An undone trip's purchases were walked back, so it no longer
+				// counts towards what was spent.
+				'grandTotal' => $session->getAbortedAt() !== null || $session->getUndoneAt() !== null
+					? []
+					: $this->collapseTotal($this->computeGrandTotal($session)),
 			];
 		}
 		return $rows;

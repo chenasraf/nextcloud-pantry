@@ -113,6 +113,8 @@ final class ExpectedColumns {
 			self::col('shopping_sessions', 'all_stores', Types::BOOLEAN, ['notnull' => false, 'default' => false]),
 			// shopping_sessions — cancelled-trip stamp (Version53).
 			self::col('shopping_sessions', 'aborted_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
+			// shopping_sessions — undone-trip stamp (Version55).
+			self::col('shopping_sessions', 'undone_at', Types::BIGINT, ['notnull' => false, 'length' => 20]),
 
 			// roles — custom-fields capability (Version30). The role SELECT * hydrates
 			// every column into the entity, so a missing column breaks role loading

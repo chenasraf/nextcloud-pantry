@@ -448,6 +448,86 @@ class ShoppingSessionServiceTest extends TestCase {
 		$this->assertSame([], $rows[0]['grandTotal']);
 	}
 
+	public function testUndoWalksBackEachCheckAsTheTripMadeIt(): void {
+		$session = $this->makeSession(['id' => 5, 'closedAt' => 2000]);
+		$this->sessions->expects($this->once())->method('update')->willReturnArgument(0);
+		$byCarol = $this->makeLog(10, 3);
+		$byCarol->setCheckedAt(700);
+		$byCarol->setCheckedBy('carol');
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([$byCarol, $this->makeLog(11, null)]);
+		$reverted = [];
+		$this->restock->method('revertTick')->willReturnCallback(function (int $itemId, int $doneAt, ?string $doneBy, string $uid) use (&$reverted): array {
+			$reverted[] = [$itemId, $doneAt, $doneBy, $uid];
+			return ['item' => new ChecklistItem(), 'restocked' => [], 'undone' => [], 'events' => []];
+		});
+
+		$result = $this->svc->undo($session, 'bob');
+
+		$this->assertSame([[10, 700, 'carol', 'bob'], [11, 1000, null, 'bob']], $reverted);
+		$this->assertSame([10, 11], $result['reverted']);
+		$this->assertSame([], $result['skipped']);
+		$this->assertNotNull($result['session']->getUndoneAt());
+	}
+
+	public function testUndoSkipsItemsChangedOrGoneSinceTheTrip(): void {
+		$session = $this->makeSession(['id' => 5, 'closedAt' => 2000]);
+		$this->sessions->method('update')->willReturnArgument(0);
+		$this->sessionItems->method('findBySession')->with(5)->willReturn([
+			$this->makeLog(10, null, ['name' => 'Milk']),
+			$this->makeLog(11, null, ['name' => 'Eggs']),
+			$this->makeLog(12, null, ['name' => 'Bread']),
+		]);
+		$this->restock->method('revertTick')->willReturnCallback(fn (int $itemId): ?array => match ($itemId) {
+			10 => null,
+			11 => throw new DoesNotExistException('purged'),
+			default => ['item' => new ChecklistItem(), 'restocked' => [], 'undone' => [], 'events' => []],
+		});
+
+		$result = $this->svc->undo($session, 'alice');
+
+		$this->assertSame([12], $result['reverted']);
+		$this->assertSame([
+			['itemId' => 10, 'itemName' => 'Milk', 'reason' => 'changed'],
+			['itemId' => 11, 'itemName' => 'Eggs', 'reason' => 'gone'],
+		], $result['skipped']);
+	}
+
+	public function testUndoConflictsOnALiveCancelledOrUndoneTrip(): void {
+		$live = $this->makeSession(['id' => 5]);
+		$cancelled = $this->makeSession(['id' => 6, 'closedAt' => 500]);
+		$cancelled->setAbortedAt(500);
+		$undone = $this->makeSession(['id' => 7, 'closedAt' => 500]);
+		$undone->setUndoneAt(600);
+		$this->restock->expects($this->never())->method('revertTick');
+		$this->sessions->expects($this->never())->method('update');
+
+		foreach ([$live, $cancelled, $undone] as $session) {
+			try {
+				$this->svc->undo($session, 'alice');
+				$this->fail('Expected conflict');
+			} catch (ShoppingSessionConflictException $e) {
+				$this->assertSame($session, $e->getSession());
+			}
+		}
+	}
+
+	public function testHistoryShowsUndoneTripWithoutTotals(): void {
+		$session = $this->makeSession(['id' => 5, 'houseId' => 1, 'userId' => 'alice', 'closedAt' => 500]);
+		$session->setUndoneAt(600);
+		$session->setBilledTotal(20.0);
+		$session->setBilledCurrency('USD');
+		$this->sessions->method('findClosedForHistory')->willReturn([$session]);
+		$this->storeMapper->method('findByHouse')->willReturn([]);
+		$this->sessionStores->method('findBySession')->willReturn([]);
+		$this->sessionItems->method('countBySession')->willReturn(2);
+
+		$rows = $this->svc->history(1, 'alice', 'mine', 30, 0);
+
+		$this->assertSame(600, $rows[0]['undoneAt']);
+		$this->assertSame(2, $rows[0]['itemCount']);
+		$this->assertSame([], $rows[0]['grandTotal']);
+	}
+
 	public function testClosePutsAwayOnlyItemsTickedOnThisTrip(): void {
 		$session = $this->makeSession(['id' => 5]);
 		$this->sessions->method('update')->willReturnArgument(0);

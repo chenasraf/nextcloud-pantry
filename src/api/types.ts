@@ -531,6 +531,8 @@ export interface ShoppingSession {
   closedAt: number | null
   /** Set when the trip was cancelled: closed without checking anything off. */
   abortedAt: number | null
+  /** Set when the trip was undone after it finished: its checks were walked back. */
+  undoneAt: number | null
   includeUnassigned: boolean
   isPrivate: boolean
   /** Every store in `stores` is shopped from one combined list, with no active store. */
@@ -585,10 +587,28 @@ export interface ShoppingHistoryRow {
   closedAt: number | null
   /** Set when the trip was cancelled; such a trip has no items or totals. */
   abortedAt: number | null
+  /** Set when the trip was undone after it finished; such a trip has no totals. */
+  undoneAt: number | null
   /** Store-sequence names in order; empty for a storeless trip. */
   stores: string[]
   itemCount: number
   grandTotal: ShoppingHistoryTotal[]
+}
+
+/** An item undoing a trip left as it was. */
+export interface ShoppingUndoSkip {
+  itemId: number
+  /** The item's name as the trip recorded it, when it did. */
+  itemName: string | null
+  /** `changed`: unchecked, checked again, reopened or archived since. `gone`: deleted for good. */
+  reason: 'changed' | 'gone'
+}
+
+/** What undoing a finished trip walked back, and what it left alone. */
+export interface ShoppingUndoResult {
+  session: ShoppingSession
+  reverted: number[]
+  skipped: ShoppingUndoSkip[]
 }
 
 /** The moment a reminder surfaces during a trip. */

@@ -2803,6 +2803,7 @@
                     "createdAt",
                     "closedAt",
                     "abortedAt",
+                    "undoneAt",
                     "stores",
                     "itemCount",
                     "grandTotal"
@@ -2831,6 +2832,11 @@
                         "nullable": true
                     },
                     "abortedAt": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "undoneAt": {
                         "type": "integer",
                         "format": "int64",
                         "nullable": true
@@ -3017,6 +3023,7 @@
                     "lastSeenAt",
                     "closedAt",
                     "abortedAt",
+                    "undoneAt",
                     "includeUnassigned",
                     "isPrivate",
                     "allStores",
@@ -3056,6 +3063,11 @@
                         "nullable": true
                     },
                     "abortedAt": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true
+                    },
+                    "undoneAt": {
                         "type": "integer",
                         "format": "int64",
                         "nullable": true
@@ -3135,6 +3147,54 @@
                     "billedCurrency": {
                         "type": "string",
                         "nullable": true
+                    }
+                }
+            },
+            "ShoppingUndo": {
+                "type": "object",
+                "required": [
+                    "session",
+                    "reverted",
+                    "skipped"
+                ],
+                "properties": {
+                    "session": {
+                        "$ref": "#/components/schemas/ShoppingSession"
+                    },
+                    "reverted": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    "skipped": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "itemId",
+                                "itemName",
+                                "reason"
+                            ],
+                            "properties": {
+                                "itemId": {
+                                    "type": "integer",
+                                    "format": "int64"
+                                },
+                                "itemName": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "reason": {
+                                    "type": "string",
+                                    "enum": [
+                                        "changed",
+                                        "gone"
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -26481,6 +26541,146 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/undo": {
+            "post": {
+                "operationId": "shopping_session-undo",
+                "summary": "Undo a finished shopping trip",
+                "description": "Walks back everything finishing the trip did: each item it checked off is unchecked again (and brought back from the trash if checking it off deleted it), and what it restocked or put away is taken back out of the inventories, never below empty. An item changed since the trip is left as it is and listed in `skipped` — `changed` when it was unchecked, checked again, reopened or archived since, `gone` when it was deleted for good. The trip stays in history, marked undone, with no totals.\nAnyone who shopped the trip may undo it. Undoing a live, cancelled or already-undone trip returns 409 with the session in the body.",
+                "tags": [
+                    "shopping_session"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "houseId",
+                        "in": "path",
+                        "description": "House id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "description": "Session id.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Trip undone",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ShoppingUndo"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Trip is live, cancelled or already undone",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ShoppingSession"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/pantry/api/houses/{houseId}/shopping/sessions/{sessionId}/join": {
             "post": {
                 "operationId": "shopping_session-join",
@@ -33880,7 +34080,7 @@
         },
         {
             "name": "shopping_session",
-            "description": "Shopping Mode — session lifecycle (create/current/advance/close/abort), the live store-narrowed shopping list, per-store check logging, and the review + price totals. Checking an item off marks it done and records it in the session log against the active store."
+            "description": "Shopping Mode — session lifecycle (create/current/advance/close/abort/undo), the live store-narrowed shopping list, per-store check logging, and the review + price totals. Checking an item off marks it done and records it in the session log against the active store."
         },
         {
             "name": "template",
