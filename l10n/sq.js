@@ -95,6 +95,7 @@ OC.L10N.register(
     "New folder" : "Dosje e re",
     "Documentation" : "Dokumentacioni",
     "Cancelled" : "U anulua",
+    "OK" : "OK",
     "Finish" : "Përfundo"
 },
 "nplurals=2; plural=(n != 1);");

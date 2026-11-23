@@ -156,6 +156,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%nелементи ","%n елементи"],
     "Cancelled" : "Отказано",
     "Load more" : "Зареждане на още",
+    "An item" : "Елемент",
+    "OK" : "OK",
     "Finish" : "Край"
 },
 "nplurals=2; plural=(n != 1);");

@@ -160,6 +160,7 @@
     "To:" : "Untuk:",
     "Location" : "Lokasi",
     "Contact" : "Kontak",
+    "Got it" : "Mengerti",
     "Newest first" : "Terbaru terlebih dahulu",
     "Oldest first" : "Terlama terlebih dahulu",
     "Uncheck all" : "Hapus centang semua",
@@ -183,6 +184,9 @@
     "Mine" : "Milik saya",
     "Cancelled" : "Dibatalkan",
     "Load more" : "Muat lebih banyak",
-    "Finish" : "Selesai"
+    "An item" : "Sebuah item",
+    "OK" : "OKE",
+    "Finish" : "Selesai",
+    "Choose an image" : "Pilih gambar"
 },"pluralForm" :"nplurals=1; plural=0;"
 }

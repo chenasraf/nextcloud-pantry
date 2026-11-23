@@ -144,6 +144,7 @@ OC.L10N.register(
     "To:" : "Noiz arte:",
     "Location" : "Kokapena",
     "Contact" : "Kontaktua",
+    "Got it" : "Lortu",
     "Newest first" : "Berrienak lehenengo ",
     "Oldest first" : "Zaharrenak lehenengo",
     "Date added" : "Gehitze data",
@@ -170,6 +171,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["elementu %n","%n elementu"],
     "Cancelled" : "Ezeztatua",
     "Load more" : "Kargatu gehiago",
+    "An item" : "Elementu bat",
+    "OK" : "OK",
     "Finish" : "Amaitu"
 },
 "nplurals=2; plural=(n != 1);");

@@ -78,6 +78,7 @@ OC.L10N.register(
     "New folder" : "ახალი დირექტორია",
     "Documentation" : "დოკუმენტაცია",
     "Cancelled" : "უარყოფილია",
+    "OK" : "OK",
     "Finish" : "დასრულება"
 },
 "nplurals=2; plural=(n!=1);");

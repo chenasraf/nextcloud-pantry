@@ -154,6 +154,8 @@
     "_%n item_::_%n items_" : ["%nелементи ","%n елементи"],
     "Cancelled" : "Отказано",
     "Load more" : "Зареждане на още",
+    "An item" : "Елемент",
+    "OK" : "OK",
     "Finish" : "Край"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

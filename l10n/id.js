@@ -162,6 +162,7 @@ OC.L10N.register(
     "To:" : "Untuk:",
     "Location" : "Lokasi",
     "Contact" : "Kontak",
+    "Got it" : "Mengerti",
     "Newest first" : "Terbaru terlebih dahulu",
     "Oldest first" : "Terlama terlebih dahulu",
     "Uncheck all" : "Hapus centang semua",
@@ -185,6 +186,9 @@ OC.L10N.register(
     "Mine" : "Milik saya",
     "Cancelled" : "Dibatalkan",
     "Load more" : "Muat lebih banyak",
-    "Finish" : "Selesai"
+    "An item" : "Sebuah item",
+    "OK" : "OKE",
+    "Finish" : "Selesai",
+    "Choose an image" : "Pilih gambar"
 },
 "nplurals=1; plural=0;");

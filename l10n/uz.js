@@ -100,6 +100,7 @@ OC.L10N.register(
     "No notes yet" : "Hozircha qaydlar yoʻq",
     "New folder" : "Yangi jild",
     "Add a description" : "Tavsif qo'shing",
-    "Documentation" : "Hujjatlar"
+    "Documentation" : "Hujjatlar",
+    "OK" : "OK"
 },
 "nplurals=1; plural=0;");

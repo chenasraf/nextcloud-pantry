@@ -52,6 +52,7 @@ OC.L10N.register(
     "Completed" : "Bitmişdir",
     "General" : "Ümumi",
     "New folder" : "Yeni qovluq",
-    "Documentation" : "Sənədlər"
+    "Documentation" : "Sənədlər",
+    "OK" : "OK"
 },
 "nplurals=2; plural=(n != 1);");

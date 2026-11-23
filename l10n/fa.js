@@ -257,6 +257,7 @@ OC.L10N.register(
     "To:" : "به:",
     "Location" : "موقعیت مکانی",
     "Contact" : "تماس",
+    "Got it" : "متوجه شدم",
     "Newest first" : "نخست جدیدترین",
     "Oldest first" : "نخست قدیمی‌ترین",
     "{item} moved to {list}" : "{item} به {list} منتقل شد",
@@ -362,6 +363,8 @@ OC.L10N.register(
     "Mine" : "مال من",
     "Cancelled" : "لغو شد",
     "Load more" : "بارگذاری بیشتر",
+    "An item" : "یک آیتم",
+    "OK" : "تأیید",
     "Finish" : "پایان",
     "Starts after completion" : "پس از تکمیل آغاز می‌شود"
 },

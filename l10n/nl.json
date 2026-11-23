@@ -151,6 +151,7 @@
     "To:" : "Aan:",
     "Location" : "Locatie",
     "Contact" : "Contact",
+    "Got it" : "Begrepen",
     "Newest first" : "Nieuwste eerst",
     "Oldest first" : "Oudste eerst",
     "Date added" : "Datum toegevoegd",
@@ -179,6 +180,8 @@
     "Mine" : "Mijn",
     "Cancelled" : "Geannuleerd",
     "Load more" : "Laad meer",
+    "An item" : "Een object",
+    "OK" : "OK",
     "Finish" : "Afronden"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

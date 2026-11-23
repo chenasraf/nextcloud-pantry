@@ -145,6 +145,7 @@ OC.L10N.register(
     "To:" : "غا:",
     "Location" : "ئورنى",
     "Contact" : "ئالاقىلىشىڭ",
+    "Got it" : "چۈشەندىم",
     "Newest first" : "ئەڭ يېڭى",
     "Oldest first" : "ئەڭ كونا",
     "Uncheck all" : "ھەممىنى تاللاڭ",
@@ -170,6 +171,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n تۈر","%n تۈرلەر"],
     "Cancelled" : "ئەمەلدىن قالدۇرۇلدى",
     "Load more" : "تېخىمۇ كۆپ يۈكلەڭ",
+    "An item" : "بىر تۈر",
+    "OK" : "ماقۇل",
     "Finish" : "تامام"
 },
 "nplurals=2; plural=(n != 1);");

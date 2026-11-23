@@ -116,6 +116,7 @@ OC.L10N.register(
     "Add a description" : "Agiunghe una descritzione",
     "Documentation" : "Documentatzione",
     "Cancelled" : "Annulladu",
-    "Load more" : "Càrriga àteru"
+    "Load more" : "Càrriga àteru",
+    "OK" : "OK"
 },
 "nplurals=2; plural=(n != 1);");

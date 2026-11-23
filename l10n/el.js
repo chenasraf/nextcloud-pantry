@@ -304,6 +304,7 @@ OC.L10N.register(
     "To:" : "Προς:",
     "Location" : "Τοποθεσία",
     "Contact" : "Επαφή",
+    "Got it" : "Το κατάλαβα",
     "_Imported %n item_::_Imported %n items_" : ["Εισηχθη %n στοιχείο","Εισηχθήσαν %n στοιχεία"],
     "Newest first" : "Νεότερα πρώτα",
     "Oldest first" : "Παλαιότερα πρώτα",
@@ -438,7 +439,10 @@ OC.L10N.register(
     "Mine" : "Δικά μου",
     "Cancelled" : "Ακυρώθηκε",
     "Load more" : "Φόρτωση περισσότερων",
+    "An item" : "Ένα στοιχείο",
+    "OK" : "OK",
     "Finish" : "Ολοκλήρωση",
+    "Choose an image" : "Επιλέξτε μια εικόνα",
     "Exported {date}" : "Εξήχθη στις {date}",
     "Starts after completion" : "Ξεκινά μετά την ολοκλήρωση"
 },

@@ -136,6 +136,7 @@ OC.L10N.register(
     "To:" : "Mpaka:",
     "Location" : "Mahali/eneo",
     "Contact" : "Mawasiliano",
+    "Got it" : "Nimeipata",
     "Newest first" : "Mpya kwanza",
     "Oldest first" : "Ya zamani kwanza",
     "Uncheck all" : "Batilisha uteuzi wote",
@@ -156,6 +157,7 @@ OC.L10N.register(
     "Documentation" : "Uhifadhi wa nyaraka",
     "_%n item_::_%n items_" : ["%n item","%n vipengele"],
     "Cancelled" : "Imeghairiwa",
-    "Load more" : "Pakia zaidi"
+    "Load more" : "Pakia zaidi",
+    "OK" : "SAWA"
 },
 "nplurals=2; plural=(n != 1);");

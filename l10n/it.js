@@ -171,6 +171,9 @@ OC.L10N.register(
     "Mine" : "Miei",
     "Cancelled" : "Annullato",
     "Load more" : "Carica altro",
-    "Finish" : "Fine"
+    "An item" : "Un elemento",
+    "OK" : "OK",
+    "Finish" : "Fine",
+    "Choose an image" : "Scegli un'immagine"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

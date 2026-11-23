@@ -171,6 +171,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n element","%nelementer"],
     "Cancelled" : "Avbrutt",
     "Load more" : "Last mer",
+    "An item" : "Et element",
+    "OK" : "OK",
     "Finish" : "Fullfør"
 },
 "nplurals=2; plural=(n != 1);");

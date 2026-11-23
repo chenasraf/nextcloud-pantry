@@ -111,6 +111,7 @@ OC.L10N.register(
     "Add a description" : "Add a description",
     "Documentation" : "დოკუმენტაცია",
     "Cancelled" : "Cancelled",
-    "Load more" : "Load more"
+    "Load more" : "Load more",
+    "OK" : "დიახ"
 },
 "nplurals=2; plural=(n!=1);");

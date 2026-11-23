@@ -126,6 +126,7 @@ OC.L10N.register(
     "To:" : "끝:",
     "Location" : "위치",
     "Contact" : "연락처",
+    "Got it" : "알았음",
     "Newest first" : "최신순",
     "Oldest first" : "오래된순",
     "Date added" : "추가한 날짜",
@@ -148,6 +149,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n개 항목"],
     "Cancelled" : "취소됨",
     "Load more" : "더 불러오기",
+    "An item" : "하나의 항목",
+    "OK" : "OK",
     "Finish" : "끝내기"
 },
 "nplurals=1; plural=0;");

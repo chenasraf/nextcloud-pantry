@@ -153,6 +153,7 @@ OC.L10N.register(
     "To:" : "Aan:",
     "Location" : "Locatie",
     "Contact" : "Contact",
+    "Got it" : "Begrepen",
     "Newest first" : "Nieuwste eerst",
     "Oldest first" : "Oudste eerst",
     "Date added" : "Datum toegevoegd",
@@ -181,6 +182,8 @@ OC.L10N.register(
     "Mine" : "Mijn",
     "Cancelled" : "Geannuleerd",
     "Load more" : "Laad meer",
+    "An item" : "Een object",
+    "OK" : "OK",
     "Finish" : "Afronden"
 },
 "nplurals=2; plural=(n != 1);");

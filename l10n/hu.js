@@ -173,6 +173,8 @@ OC.L10N.register(
     "Mine" : "Saját",
     "Cancelled" : "Megszakítva",
     "Load more" : "Továbbiak betöltése",
+    "An item" : "Egy elem",
+    "OK" : "OK",
     "Finish" : "Befejez"
 },
 "nplurals=2; plural=(n != 1);");

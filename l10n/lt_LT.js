@@ -178,6 +178,7 @@ OC.L10N.register(
     "Location" : "Vieta",
     "Notes:" : "Užrašai:",
     "Contact" : "Kontaktas",
+    "Got it" : "Supratau",
     "Newest first" : "Naujausi pirmi",
     "Oldest first" : "Seniausi pirmi",
     "Uncheck all" : "Panaikinkite visų žymėjimą",
@@ -213,6 +214,9 @@ OC.L10N.register(
     "Mine" : "Mano",
     "Cancelled" : "Atsisakyta",
     "Load more" : "Įkelti daugiau",
-    "Finish" : "Užbaigti"
+    "An item" : "Punktas",
+    "OK" : "OK",
+    "Finish" : "Užbaigti",
+    "Choose an image" : "Pasirinkite paveikslėlį"
 },
 "nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < 11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? 1 : n % 1 != 0 ? 2: 3);");

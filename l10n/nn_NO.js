@@ -91,6 +91,7 @@ OC.L10N.register(
     "Archive item" : "Arkiver oppføring",
     "Unarchive" : "Angre arkivering",
     "View store {name}" : "Vis butikken {name}",
+    "_%n store_::_%n stores_" : ["%n butikk","%n butikkar"],
     "Staple" : "Fest",
     "One-time" : "Eingongsbruk",
     "Recurring" : "Gjentek",
@@ -136,7 +137,6 @@ OC.L10N.register(
     "Notifications" : "Varsel",
     "Count" : "Tal",
     "Not set" : "Ikkje satt",
-    "_%n store_::_%n stores_" : ["%n butikk","%n butikkar"],
     "Notes, instructions, links …" : "Notat, instruksjonar, lenkjer…",
     "Image attached" : "Bilete vedlagd",
     "Add image" : "Legg til bilete",
@@ -411,6 +411,7 @@ OC.L10N.register(
     "Use the house picker at the bottom of the sidebar to create one." : "Bruk husveljaren nedst i sidestolpen for å lage eit.",
     "_%n item_::_%n items_" : ["%n oppføring","%n oppføringar"],
     "Cancelled" : "Avlyst",
+    "OK" : "OK",
     "Exported {date}" : "Eksportert {date}",
     "Starts after completion" : "Startar etter fullføring"
 },

@@ -141,6 +141,7 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n ставка","%n ставки"],
     "Cancelled" : "Откажано",
     "Load more" : "Вчитај повеќе",
+    "OK" : "Добро",
     "Finish" : "Крај"
 },
 "nplurals=2; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : 1;");

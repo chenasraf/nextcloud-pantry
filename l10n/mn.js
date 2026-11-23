@@ -137,6 +137,8 @@ OC.L10N.register(
     "Mine" : "Минийх",
     "Cancelled" : "Цуцлагдсан",
     "Load more" : "Цааш ачаалах",
+    "An item" : "Нэг зүйл",
+    "OK" : "ок",
     "Finish" : "–ë–∞—Ä–∏–∞"
 },
 "nplurals=2; plural=(n != 1);");

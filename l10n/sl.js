@@ -162,6 +162,8 @@ OC.L10N.register(
     "Documentation" : "Dokumentacija",
     "_%n item_::_%n items_" : ["%n predmet","%n predmeta","%n predmeti","%n predmetov"],
     "Cancelled" : "Preklicano",
-    "Load more" : "Naloži več"
+    "Load more" : "Naloži več",
+    "An item" : "Predmet",
+    "OK" : "V redu"
 },
 "nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);");

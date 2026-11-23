@@ -144,6 +144,7 @@ OC.L10N.register(
     "To:" : "到：",
     "Location" : "地点",
     "Contact" : "联系",
+    "Got it" : "明白",
     "Newest first" : "从新到旧",
     "Oldest first" : "从旧到新",
     "Date added" : "添加日期",
@@ -169,6 +170,9 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n 个项目"],
     "Cancelled" : "已取消",
     "Load more" : "加载更多",
-    "Finish" : "完成"
+    "An item" : "一个项目",
+    "OK" : "确定",
+    "Finish" : "完成",
+    "Choose an image" : "选择图片"
 },
 "nplurals=1; plural=0;");

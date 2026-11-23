@@ -194,7 +194,10 @@
     "Mine" : "我的",
     "Cancelled" : "已取消",
     "Load more" : "載入更多",
+    "An item" : "項目",
+    "OK" : "確定",
     "Finish" : "完成",
-    "{hours} h {minutes} min" : "{hours} 小時 {minutes} 分鐘"
+    "{hours} h {minutes} min" : "{hours} 小時 {minutes} 分鐘",
+    "Choose an image" : "選擇影像"
 },"pluralForm" :"nplurals=1; plural=0;"
 }

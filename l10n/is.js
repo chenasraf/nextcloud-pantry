@@ -158,6 +158,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n atriði","%n atriði"],
     "Cancelled" : "Hætt við",
     "Load more" : "Hlaða inn fleiri",
+    "An item" : "Atriði",
+    "OK" : "OK",
     "Finish" : "Ljúka"
 },
 "nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);");

@@ -147,6 +147,7 @@ OC.L10N.register(
     "To:" : "За:",
     "Location" : "Локација",
     "Contact" : "Контакт",
+    "Got it" : "Разумем",
     "Newest first" : "Прво новије",
     "Oldest first" : "Прво старије",
     "Date added" : "Датум додавања",
@@ -173,6 +174,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n ставка","%n ставке","%n ставки"],
     "Cancelled" : "Отказано",
     "Load more" : "Учитај још",
+    "An item" : "Ставка",
+    "OK" : "OK",
     "Finish" : "Заврши"
 },
 "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);");

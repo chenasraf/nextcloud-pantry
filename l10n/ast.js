@@ -130,6 +130,8 @@ OC.L10N.register(
     "Documentation" : "Documentación",
     "Cancelled" : "Encaboxáu",
     "Load more" : "Cargar más",
+    "An item" : "Un elementu",
+    "OK" : "OK",
     "Finish" : "Finar"
 },
 "nplurals=2; plural=(n != 1);");

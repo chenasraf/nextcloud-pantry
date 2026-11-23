@@ -283,6 +283,7 @@ OC.L10N.register(
     "To:" : "Para:",
     "Location" : "Localização:",
     "Contact" : "Contacto",
+    "Got it" : "Entendi",
     "Newest first" : "Recentes primeiro",
     "Oldest first" : "Antigos primeiro",
     "Sort by: {value}" : "Ordenar por: {value}",
@@ -388,6 +389,8 @@ OC.L10N.register(
     "Mine" : "Meus",
     "Cancelled" : "Cancelado",
     "Load more" : "Carregar mais",
+    "An item" : "Um item",
+    "OK" : "OK",
     "Finish" : "Terminar",
     "Exported {date}" : "Exportado em {date}",
     "Starts after completion" : "Começa após a conclusão"

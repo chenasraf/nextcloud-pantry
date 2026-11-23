@@ -154,6 +154,7 @@ OC.L10N.register(
     "To:" : "Hasta:",
     "Location" : "Ubicación",
     "Contact" : "Contacto",
+    "Got it" : "Entiendo",
     "Newest first" : "Más nuevas primero",
     "Oldest first" : "Más antiguas primero",
     "Date added" : "Fecha en que se añadió",
@@ -181,6 +182,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n ítem","%n ítems","%n ítems"],
     "Cancelled" : "Cancelado",
     "Load more" : "Cargar más",
+    "An item" : "Un ítem",
+    "OK" : "Aceptar",
     "Finish" : "Terminar"
 },
 "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

@@ -130,6 +130,7 @@ OC.L10N.register(
     "To:" : "ເຖິງ:",
     "Location" : "ສະຖານທີ່",
     "Contact" : "ຕິດຕໍ່",
+    "Got it" : "ເຂົ້າໃຈແລ້ວ",
     "Newest first" : "ໃໝ່ສຸດກ່ອນ",
     "Oldest first" : "ເກົ່າສຸດກ່ອນ",
     "Uncheck all" : "ຍົກເລີກການເລືອກທັງໝົດ",
@@ -153,6 +154,8 @@ OC.L10N.register(
     "_%n item_::_%n items_" : ["%n ລາຍການ"],
     "Cancelled" : "ຍົກເລີກແລ້ວ",
     "Load more" : "Load more",
+    "An item" : "ລາຍການ",
+    "OK" : "ຕົກລົງ",
     "Finish" : "ສຳເລັດ"
 },
 "nplurals=1; plural=0;");

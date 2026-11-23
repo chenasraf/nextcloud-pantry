@@ -113,6 +113,7 @@ OC.L10N.register(
     "Remove folder" : "Xoá thư mục",
     "Documentation" : "Tài liệu",
     "Cancelled" : "Đã hủy",
-    "Load more" : "Xem thêm"
+    "Load more" : "Xem thêm",
+    "OK" : "OK"
 },
 "nplurals=1; plural=0;");

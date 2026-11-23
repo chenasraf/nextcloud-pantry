@@ -177,6 +177,9 @@ OC.L10N.register(
     "Mine" : "私",
     "Cancelled" : "キャンセル済",
     "Load more" : "さらに読み込む",
-    "Finish" : "完了"
+    "An item" : "項目",
+    "OK" : "OK",
+    "Finish" : "完了",
+    "Choose an image" : "画像を選択"
 },
 "nplurals=1; plural=0;");

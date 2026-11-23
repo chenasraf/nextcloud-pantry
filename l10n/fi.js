@@ -175,6 +175,8 @@ OC.L10N.register(
     "Mine" : "Omat",
     "Cancelled" : "Peruttu",
     "Load more" : "Lataa lisää",
+    "An item" : "Tietue",
+    "OK" : "OK",
     "Finish" : "Valmis"
 },
 "nplurals=2; plural=(n != 1);");

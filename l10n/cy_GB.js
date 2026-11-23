@@ -63,6 +63,8 @@ OC.L10N.register(
     "Note restored" : "Nodyn wedi'i adfer",
     "New folder" : "Ffolder newydd",
     "Add a description" : "Ychwanegu disgrifiad",
-    "Documentation" : "Dogfennaeth"
+    "Documentation" : "Dogfennaeth",
+    "Cancelled" : "Diddymwyd",
+    "OK" : "OK"
 },
 "nplurals=4; plural=(n==1) ? 0 : (n==2) ? 1 : (n != 8 && n != 11) ? 2 : 3;");

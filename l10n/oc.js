@@ -88,6 +88,7 @@ OC.L10N.register(
     "New folder" : "Novèl dorsièr",
     "Add a description" : "Apondre una descripcion",
     "Documentation" : "Documentacion",
-    "Cancelled" : "Anullat"
+    "Cancelled" : "Anullat",
+    "OK" : "OK"
 },
 "nplurals=2; plural=(n > 1);");

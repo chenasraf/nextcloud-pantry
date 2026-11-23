@@ -117,6 +117,7 @@ OC.L10N.register(
     "Mine" : "Inu",
     "Cancelled" : "Ittwasefsex",
     "Load more" : "Sali-d ugar",
+    "OK" : "Ih",
     "Finish" : "Fak"
 },
 "nplurals=2; plural=(n != 1);");
