@@ -3,7 +3,7 @@ title: Pantry Privacy Policy
 description: How the Pantry server app and the Pantry companion apps handle your data.
 ---
 
-_Effective Date: October 30, 2026_
+_Effective Date: November 23, 2026_
 
 Chen Asraf ("we", "our", or "us") built Pantry as free, open-source software, provided at no cost
 and intended for use as is. This policy covers both parts of Pantry:
@@ -53,11 +53,18 @@ and intended for use as is. This policy covers both parts of Pantry:
 - Your server address and an app-specific password are kept on your device in encrypted storage.
 - Your credentials are never sent to us.
 
+#### Data sent to your server
+
+- Your Nextcloud login name, which may be your email address, is sent to your Nextcloud server with
+  every request to sign you in. Items you add store it to show who added them.
+- Everything you add — houses, lists, items, notes and photos — is sent directly to your Nextcloud
+  server and stored there.
+- None of it is sent to us.
+
 #### Data on your device
 
 - The apps cache lists, items, photos, notes and preferences on your device for offline use and
   faster loading.
-- Photos you upload are sent directly to your Nextcloud server.
 
 #### Wear OS watch
 
