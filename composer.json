@@ -31,6 +31,10 @@
   },
   "require": {
     "php": "^8.2",
+    "ext-ctype": "*",
+    "ext-filter": "*",
+    "ext-mbstring": "*",
+    "ext-pdo": "*",
     "sabre/vobject": "^4.5",
     "sabre/xml": "^2.1"
   },
