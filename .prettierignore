@@ -1,2 +1,5 @@
 templates/
 gen/
+# What's new renders every newline as a line break, so the notes can't be wrapped.
+release-notes/**/*.md
+!release-notes/README.md
