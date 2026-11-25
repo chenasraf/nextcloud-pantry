@@ -591,7 +591,7 @@ OC.L10N.register(
     "Repeat on" : "Yinelenme",
     "Days of the month" : "Ayın günü",
     "Leave empty to repeat on the same day each month." : "Her ay aynı günde yinelenmesi için boş bırakın.",
-    "Pick one or more days" : "Bir ya da bir kaç gün seçin",
+    "Pick one or more days" : "Bir ya da birkaç gün seçin",
     "A weekday of the month" : "Ay içindeki haftanın günü",
     "Position in the month" : "Ay içindeki konumu",
     "Weekday" : "Haftanın günü",
