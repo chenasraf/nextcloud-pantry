@@ -763,6 +763,7 @@
     "Every list" : "Toutes les listes",
     "No lists" : "Aucune liste",
     "Typing a new item on these lists suggests matching items from this template. Selecting \"Every list\" includes lists made later." : "Lors de la saisie d’un nouvel article dans ces listes, des articles correspondants provenant de ce modèle sont suggérés. Sélectionner « Toutes les listes » inclut également les listes créées ultérieurement.",
+    "Read the full release notes" : "Lire les notes de version complètes",
     "Got it" : "Compris",
     "Pantry {version}" : "Pantry {version}",
     "_Imported %n item_::_Imported %n items_" : ["%n article importé","%n articles importés","%n article(s) importé(s)"],
