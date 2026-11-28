@@ -51,7 +51,7 @@
     "happy-dom": "^21.0.4",
     "lefthook": "^2.2.2",
     "prettier": "^3.10.1",
-    "rollup-plugin-visualizer": "^7.1.3",
+    "rollup-plugin-visualizer": "^7.3.0",
     "sass": "^1.108.2",
     "sass-embedded": "^1.108.2",
     "typescript": "^6.0.3",
