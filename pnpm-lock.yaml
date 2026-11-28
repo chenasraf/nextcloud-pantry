@@ -33,8 +33,8 @@ importers:
         specifier: ^9.14.1
         version: 9.14.1(@nextcloud/dialogs@8.0.0(@vue/compiler-sfc@3.5.46)(axios@1.21.1)(esbuild@0.28.2)(rolldown@1.2.19)(rollup@4.60.1)(typescript@6.0.3)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(sass-embedded@1.108.2)(sass@1.108.2)(yaml@2.9.0)))(@nextcloud/files@4.1.1(axios@1.21.1))(@vue/compiler-sfc@3.5.46)(axios@1.21.1)(esbuild@0.28.2)(rolldown@1.2.19)(rollup@4.60.1)(typescript@6.0.3)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(sass-embedded@1.108.2)(sass@1.108.2)(yaml@2.9.0))
       barcode-detector:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/emscripten@1.41.5)
+        specifier: ^3.2.5
+        version: 3.2.5(@types/emscripten@1.41.5)
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
@@ -1638,8 +1638,8 @@ packages:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
 
-  barcode-detector@3.2.4:
-    resolution: {integrity: sha512-4tjallFXSratRbkzyccnfgL8w/3FtTexjWpQoPes3niFQ2DybGeaktH8w5ukc6wVUrOL7yNsoUUqmaRVn1YtJg==}
+  barcode-detector@3.2.5:
+    resolution: {integrity: sha512-TuJdsjU5U+b8+O5G1/ZgR8VeLHd1T/5GpjPDJLoafNZYuf438vVP6jriuvR1S9PWVbR2ZoOKleKEzG5ltdaM5g==}
 
   base-64@1.0.0:
     resolution: {integrity: sha512-kwDPIFCGx0NZHog36dj+tHiwP4QMzsZ3AgMViUBKI0+V5n4U0ufTCUMhnQ04diaRI8EX/QcPfql7zlhZ7j4zgg==}
@@ -1755,8 +1755,8 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
-  caniuse-lite@1.0.30001826:
-    resolution: {integrity: sha512-wTB+9tIbLro/BCXwLuNV1meHE4L9dS6dArMDwgYfNBPMYScqClHyGunhkCSDtHhe/69Xl0sHlKgBVZ+fNsYtWA==}
+  caniuse-lite@1.0.30001828:
+    resolution: {integrity: sha512-7MWeT+3DlrpuDybTWHl4Zb1Z80Z1fLLnOXuBjDXebzDVcqnEWUlV8JcbASg8B8BhcW8QT2UiR1KAtzYFIZHZYA==}
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -2009,8 +2009,8 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  electron-to-chromium@1.5.492:
-    resolution: {integrity: sha512-4uMs7omhajKiud0GqALLTazS/zyvHLTLmDWVTR+e6BnyJo5bSNrph/JoRWEFJJmY75ct9hCiSGsbFF9fLe5gDw==}
+  electron-to-chromium@1.5.494:
+    resolution: {integrity: sha512-Tph7ohL4Xc0ft3DXElYEIVTmPI3H0MtPCTdgtz5AwWGZG6q+vMiT3IzJ3RJX/HJQ8pYzeimQyvi6SsBTOS0nyQ==}
 
   elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
@@ -3879,13 +3879,9 @@ packages:
   tabbable@6.5.2:
     resolution: {integrity: sha512-XgdnB1nGU6KU4VgMnZPaZCx7M1hBrLyEiZYau2G2gq9UT0d7d4FUBlNX7vvPlm/B1vk1PjrzJBx9Lbv4fsqS9g==}
 
-  table@6.10.1:
-    resolution: {integrity: sha512-f05boz6UD5S70AJiUxqKOnDuE45mBIVagX490oQmcW38+Lq/H1s7CjIpFgJjR/kpV87L4lw/AN+14D2PktQJsQ==}
+  table@6.10.2:
+    resolution: {integrity: sha512-8hxlFbKvz0li0OBM24GXVZjoY+tUweFlcLAiJVoSSg9+J/SyigcLPcNDcq9uIH6GaB1P6YN4WLPFblhWxetPHQ==}
     engines: {node: '>=10.0.0'}
-
-  tagged-tag@1.0.0:
-    resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
-    engines: {node: '>=20'}
 
   timers-browserify@2.0.12:
     resolution: {integrity: sha512-9phl76Cqm6FhSX9Xe1ZUAMLtm1BLkKj2Qd5ApyWkXzsMRaA7dgr81kf4wJmQf/hAvg8EEyJxDo3du/0KlhPiKQ==}
@@ -3943,10 +3939,6 @@ packages:
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
-
-  type-fest@5.10.0:
-    resolution: {integrity: sha512-NoSdpq/WEiAg5sjmBkmV/hfxv6HJH4NqPNrqjtSO5CwRmpsDfaf4begxW34KdJykH/l1yHtwBWQkCRdoXO8mPA==}
-    engines: {node: '>=20'}
 
   typed-array-buffer@1.0.3:
     resolution: {integrity: sha512-nAYYwfY3qnzX30IkA6AQZjVbtK6duGontcQm1WSG1MD94YLqK0515GNApXkoxKOWMusVssAHWLh9SeaoefYFGw==}
@@ -4370,8 +4362,8 @@ packages:
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
-  zxing-wasm@3.1.7:
-    resolution: {integrity: sha512-LI94ndlOY+xoqlkNcc0EwByrMpUXKrCX171EQ38kGWqpiRq/gcnC+ZrbRipvxI3uV4LaDtNlKo1p9Uayg1sesQ==}
+  zxing-wasm@3.1.8:
+    resolution: {integrity: sha512-FpxLK7/lfZrlnmqoRUZd+4qpVlYabsuPx6tRxzN7V/E9IwijQ1dOJSlJGHoA2Yc62hkdvzDD8+qjRPGUx+5j+g==}
     peerDependencies:
       '@types/emscripten': '>=1.39.6'
 
@@ -5813,9 +5805,9 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  barcode-detector@3.2.4(@types/emscripten@1.41.5):
+  barcode-detector@3.2.5(@types/emscripten@1.41.5):
     dependencies:
-      zxing-wasm: 3.1.7(@types/emscripten@1.41.5)
+      zxing-wasm: 3.1.8(@types/emscripten@1.41.5)
     transitivePeerDependencies:
       - '@types/emscripten'
 
@@ -5905,8 +5897,8 @@ snapshots:
   browserslist@4.29.6:
     dependencies:
       baseline-browser-mapping: 2.11.39
-      caniuse-lite: 1.0.30001826
-      electron-to-chromium: 1.5.492
+      caniuse-lite: 1.0.30001828
+      electron-to-chromium: 1.5.494
       node-releases: 2.0.65
       update-browserslist-db: 1.4.0(browserslist@4.29.6)
 
@@ -5956,7 +5948,7 @@ snapshots:
 
   callsites@3.1.0: {}
 
-  caniuse-lite@1.0.30001826: {}
+  caniuse-lite@1.0.30001828: {}
 
   ccount@2.0.1: {}
 
@@ -6195,7 +6187,7 @@ snapshots:
       minimatch: 10.2.6
       semver: 7.8.6
 
-  electron-to-chromium@1.5.492: {}
+  electron-to-chromium@1.5.494: {}
 
   elliptic@6.6.1:
     dependencies:
@@ -8313,7 +8305,7 @@ snapshots:
       string-width: 4.2.3
       supports-hyperlinks: 3.2.0
       svg-tags: 1.0.0
-      table: 6.10.1
+      table: 6.10.2
       write-file-atomic: 5.0.1
     transitivePeerDependencies:
       - supports-color
@@ -8344,14 +8336,12 @@ snapshots:
 
   tabbable@6.5.2: {}
 
-  table@6.10.1:
+  table@6.10.2:
     dependencies:
       ajv: 8.20.0
       slice-ansi: 4.0.0
       string-width: 4.2.3
       strip-ansi: 6.0.1
-
-  tagged-tag@1.0.0: {}
 
   timers-browserify@2.0.12:
     dependencies:
@@ -8400,10 +8390,6 @@ snapshots:
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
-
-  type-fest@5.10.0:
-    dependencies:
-      tagged-tag: 1.0.0
 
   typed-array-buffer@1.0.3:
     dependencies:
@@ -8786,7 +8772,6 @@ snapshots:
 
   zwitch@2.0.4: {}
 
-  zxing-wasm@3.1.7(@types/emscripten@1.41.5):
+  zxing-wasm@3.1.8(@types/emscripten@1.41.5):
     dependencies:
       '@types/emscripten': 1.41.5
-      type-fest: 5.10.0
